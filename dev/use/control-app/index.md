@@ -21,11 +21,11 @@ You need the **setup code**, eight letters and digits written as `XXXX-XXXX`. It
   to create the administrator account. The code works once.
   ```
 
-  The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo cat /etc/traffic-monitor/setup-code` also shows the code.
+  The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo tm-control card` shows the code with the device's hotspot name and password, and `sudo cat /etc/traffic-monitor/setup-code` shows the code alone.
 
 To claim the device:
 
-1. Open `http://<device>/`. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains how to find the address.
+1. Open `http://<device>/`. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains how to find the address. On the device's own hotspot, the phone's sign-in window opens it for you; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 1. Choose **Start setup**, read the license agreement, and accept it.
 1. Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.
 1. Choose **Claim this device**. You're logged in as the administrator.

@@ -16,7 +16,7 @@
         <link rel="prev" href="../home-page/">
       
       
-        <link rel="next" href="../device-health/">
+        <link rel="next" href="../wifi-hotspot/">
       
       
         
@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -1035,6 +1037,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../device-health/" class="md-nav__link">
         
   
@@ -1137,10 +1167,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -1158,8 +1188,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2320,12 +2350,12 @@
 <div class="highlight"><pre><span></span><code>This device isn't claimed yet. Open http://tm-01.local/ (or its IP address) and enter the setup code ABCD-EFGH
 to create the administrator account. The code works once.
 </code></pre></div>
-<p>The installer prints the same code on every run until the device is claimed. The installer's log, <code>~/tmsetup-&lt;date&gt;-&lt;time&gt;.log</code> on the computer that ran it, has the same output. On the device, <code>sudo cat /etc/traffic-monitor/setup-code</code> also shows the code.</p>
+<p>The installer prints the same code on every run until the device is claimed. The installer's log, <code>~/tmsetup-&lt;date&gt;-&lt;time&gt;.log</code> on the computer that ran it, has the same output. On the device, <code>sudo tm-control card</code> shows the code with the device's hotspot name and password, and <code>sudo cat /etc/traffic-monitor/setup-code</code> shows the code alone.</p>
 </li>
 </ul>
 <p>To claim the device:</p>
 <ol>
-<li>Open <code>http://&lt;device&gt;/</code>. <a href="../home-page/">Home page and apps</a> explains how to find the address.</li>
+<li>Open <code>http://&lt;device&gt;/</code>. <a href="../home-page/">Home page and apps</a> explains how to find the address. On the device's own hotspot, the phone's sign-in window opens it for you; see <a href="../wifi-hotspot/">Wi-Fi and the hotspot</a>.</li>
 <li>Choose <strong>Start setup</strong>, read the license agreement, and accept it.</li>
 <li>Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.</li>
 <li>Choose <strong>Claim this device</strong>. You're logged in as the administrator.</li>

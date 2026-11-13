@@ -435,11 +435,11 @@ git clone https://github.com/glossyio/traffic-monitor
 bash traffic-monitor/script/tmsetup.sh
 ```
 
-The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
+The installer asks for your password when it needs administrator rights. If the device has no Wi-Fi country yet, it also asks for one, as a two-letter code such as `US` or `GB`, because the device's hotspot needs it; press Enter for `US`. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-Near the end, the installer prints the device's **setup code**, which you need once to claim the device and create its administrator account. Keep it; [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find it.
+Near the end, the installer shows the device's card on the terminal: its **setup code**, which you need once to claim the device and create its administrator account, and the name and password of its hotspot. Keep them; the hotspot's password isn't in the installer's log, and `sudo tm-control card` prints the card again. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find the setup code.
 
-Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). A device that isn't on a network you can reach runs its own hotspot. Join it with the password from the card, and your phone's sign-in window opens the setup page; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md).
 
@@ -459,7 +459,7 @@ bash traffic-monitor/script/tmsetup.sh -H <address>[,<address>] -l <username> -k
 | `-k` | Ask for the SSH password                                                          |
 | `-K` | Ask for the password for administrator rights. Raspberry Pi OS requires it.       |
 
-Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address.
+Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address. A remote run doesn't ask for a Wi-Fi country. It keeps the device's, or sets `US` when the device has none; add `-w <code>` to set another, as in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md). The hotspot's password isn't printed, because it would end up in the installer's log. Run `sudo tm-control card` on each device to read it.
 
 ## Next steps
 
@@ -553,7 +553,7 @@ Plug the device in. It starts by itself, and the green LED on the Raspberry Pi s
 
 # First-time setup
 
-Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.
+Do these steps once the device is [mounted](https://docs.trafficmonitor.ai/dev/deployment-and-mounting-guide/index.md) and powered on, and again whenever you move it. You need a computer or phone on the same network or on the device's own hotspot, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.
 
 As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
@@ -561,10 +561,12 @@ As installed, the camera and the first radar are turned on in the Traffic Monito
 
 Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains each link and how to find the address.
 
+A device at the roadside has no network to join. If its Wi-Fi isn't on a network it knows, it runs its own hotspot, named `TM-` and four characters. Join it with the password from the device's card; your phone's sign-in window then opens the setup page by itself, or you can open `http://10.42.0.1/`. [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) has the details, including what to do on an iPhone or an Android 17 phone.
+
 A device that hasn't been claimed opens its setup page:
 
 1. Choose **Start setup**, and read and accept the license agreement.
-1. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.
+1. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit. `sudo tm-control card` on the device shows it again.
 1. Create the administrator account with a username and password, and choose **Claim this device**.
 1. Optionally, set a new system password for Cockpit and SSH.
 
@@ -667,11 +669,11 @@ You need the **setup code**, eight letters and digits written as `XXXX-XXXX`. It
   to create the administrator account. The code works once.
   ```
 
-  The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo cat /etc/traffic-monitor/setup-code` also shows the code.
+  The installer prints the same code on every run until the device is claimed. The installer's log, `~/tmsetup-<date>-<time>.log` on the computer that ran it, has the same output. On the device, `sudo tm-control card` shows the code with the device's hotspot name and password, and `sudo cat /etc/traffic-monitor/setup-code` shows the code alone.
 
 To claim the device:
 
-1. Open `http://<device>/`. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains how to find the address.
+1. Open `http://<device>/`. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains how to find the address. On the device's own hotspot, the phone's sign-in window opens it for you; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 1. Choose **Start setup**, read the license agreement, and accept it.
 1. Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.
 1. Choose **Claim this device**. You're logged in as the administrator.
@@ -855,7 +857,7 @@ The ThingsBoard and Plate Recognizer keys are on the [Device page](https://docs.
 
 Three pages in the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, [Detection](https://docs.trafficmonitor.ai/dev/use/detection/index.md), shows the object detection model and changes it:
 
-- **Status** checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.
+- **Status** checks the services, apps, settings, hardware, network, and clock, and offers a fix for what's wrong.
 - **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
 - **Date and time** compares the device's clock with your phone's or computer's and sets it.
 
@@ -882,14 +884,26 @@ The checks come in groups:
 | Apps          | Frigate answers, isn't in safe mode (with no cameras because of a config error), and gets frames from each camera. When Frigate stopped on an error, the Frigate check quotes it. When Frigate isn't answering because it keeps stopping itself, the check says so and points at the Hardware group and the diagnostics. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera is enabled in `config.yml`, it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, and each camera's radar is enabled. The Location check is a problem when a `deployment` value in `config.yml` is one Node-RED won't accept, such as a coordinate out of range or a bearing with spaces around it, and names the key. It warns when a sensor still has its own `lat` or `lon`, when the device's places haven't been set up since an update, which the control app does by itself once Node-RED answers, and when `survey_id` names a place the device doesn't have, and links to the [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md). In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see [The Frigate+ check](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#the-frigate-check). See [config.yml settings](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/index.md) and [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). |
 | Hardware      | Each AI accelerator, from plugged in to passed to Frigate and listed in its config, or a warning when there's none and Frigate detects on the CPU. Whether detection works is Frigate's to report: when its detector keeps failing, Frigate restarts itself, and the Services and Apps rows say so. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Network       | The device's [Wi-Fi](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md), in four checks. An offline device is normal, so none of them is a problem for lack of internet. See [The Network group](#the-network-group).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Device        | Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Date and time | Whether the clock was ever set, and whether it keeps time from the internet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+### The Network group
+
+| Check         | What it says                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hotspot       | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (see [A hotspot you set up by hand](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
+| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Internet      | **Reachable**, or **Not reachable. That's normal for an offline unit.** It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Wi-Fi country | The country, or a warning that none is set. Rerun the installer with `-t wifi` and it asks; see [The Wi-Fi country](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#the-wi-fi-country).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+A check that can't read the Wi-Fi state shows a question mark.
 
 ### Fix a problem
 
 A check that isn't passing offers one of these:
 
-- **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
+- **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The Hotspot check's **Restart the hotspot** has the device look at its Wi-Fi radio and start the hotspot if it should be on. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 - **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
 - **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus), or **Open the Location page** for the Location check.
 - **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md)).
@@ -974,7 +988,7 @@ Finding the device's address
 
 - If you set a hostname in Raspberry Pi Imager, `http://<hostname>.local/` works from most computers and phones on the same network.
 - Otherwise, look the device up in your router's list of connected devices, or see [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address).
-- A pre-built unit may host its own Wi-Fi network. Connect to it and use the hostname or the gateway address. Your provider's instructions take precedence.
+- A device whose Wi-Fi isn't on a network it knows runs its own hotspot. Join it, and your phone's sign-in window opens the home page; or open `http://10.42.0.1/`. See [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 
 If the home page doesn't load
 
@@ -1142,6 +1156,10 @@ sudo podman ps                                  # running containers
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-control-app-is-down).                                                                                                                                                                                                            |
 | Move the device to a new site                     | Choose **Deploy here** on the new place on the [Location page](https://docs.trafficmonitor.ai/dev/use/location/#move-or-turn-the-device), then adjust the zones as in [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones).                                                                                                                                                    |
 
+## The device's card
+
+`sudo tm-control card` prints the device's address, the name and password of its [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md), and its setup code while it's unclaimed. It needs `sudo` because the code is in a file only root can read, and the password in a file only root and the installing user's group can. `sudo tm-control card --json` prints the same values as JSON. If you lose the administrator's password, `sudo tm-control reset-admin` starts the accounts over; see [If the administrator's password is lost](https://docs.trafficmonitor.ai/dev/use/control-app/#if-the-administrators-password-is-lost).
+
 ## Where things are
 
 The settings and data live under `/opt/traffic-monitor/`.
@@ -1159,12 +1177,121 @@ The settings and data live under `/opt/traffic-monitor/`.
 
 The control app and the installer keep a few files elsewhere. Read them, but don't edit them.
 
-| Path                                 | Contents                                                                                                                                                                                                                                                                         |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.                                                                                                                                                                |
-| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                                                                                                                                                                                              |
-| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys) and the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus) |
-| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                                                                                                                                                                                      |
+| Path                                 | Contents                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/var/lib/tm-control/state.sqlite`   | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it.                                                                                                                                                                                                  |
+| `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads                                                                                                                                                                                                                                                |
+| `/etc/traffic-monitor/secrets/`      | Passwords and keys the installer generated on the device, including the hotspot's password, and the tokens and keys you enter on the [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys) and the [Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#frigate-plus) |
+| `/etc/traffic-monitor/setup-code`    | The setup code, until the device is claimed                                                                                                                                                                                                                                                                        |
+
+# Wi-Fi and the hotspot
+
+When a Traffic Monitor's Wi-Fi isn't on a network it knows, the unit runs a hotspot of its own. The hotspot is how you reach a unit at the roadside, where there's no router. It runs whether or not the unit is also on Ethernet.
+
+The hotspot's name is `TM-` and four characters from the unit's serial number, such as `TM-4F2A`. It uses WPA2 on the 2.4 GHz band. The [Status page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-status-page) shows its state.
+
+## Join the hotspot
+
+1. Find the hotspot's name and password on the unit's card. The card is the printout that came with a pre-built unit; for a unit you installed yourself, the installer shows it at the end of its run on the device. `sudo tm-control card` on the unit prints it again, together with the setup code while the unit is [unclaimed](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device).
+1. On your phone, join the hotspot with that password. Your phone may say the network has no internet. Stay connected.
+1. The phone's sign-in window opens the control app by itself, on its login or setup page. If it doesn't, open `http://10.42.0.1/` in a browser. The unit's `.local` name, `http://<hostname>.local/`, also works.
+
+The hotspot has no internet, and a phone on it reaches only the unit. Nothing on the unit's Ethernet or home network is reachable from the hotspot.
+
+### Phones
+
+- **Android 17:** the sign-in window is the way in. Android 17 browsers can't open the unit while the phone is on its hotspot, so don't close the window until you're done. See [the Android 17 entry](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/#troubleshooting) if the page doesn't open on your home network either.
+  - The database and JSON downloads on the [Data export page](https://docs.trafficmonitor.ai/dev/ui/database/index.md) save from the sign-in window. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
+  - **Download diagnostics** on the Device page doesn't save from the sign-in window: the phone says "Could not download". Download it from a computer on the unit's network instead.
+  - Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
+- **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. The login and setup pages show that name while the phone is on the hotspot. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
+
+Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, in November 2026.
+
+## When the hotspot runs
+
+The hotspot yields to the networks the unit has saved. A unit joins a saved network that's in range, and the hotspot runs when none is.
+
+| Situation                                      | What happens                                                                              |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| The unit starts with a saved network in range  | It's on the network within a minute. The hotspot stays off.                               |
+| The unit starts with no saved network in range | The hotspot is up about 15 seconds after the unit starts.                                 |
+| The unit's Wi-Fi network disappears            | The hotspot starts about 75 seconds later.                                                |
+| A saved network has the wrong password         | The hotspot is away for about a minute while the unit tries the network, then comes back. |
+
+While the hotspot is up and nobody is joined to it, the unit looks for its saved networks every 5 minutes and joins one it hears. A network that won't join is tried again about 10 minutes after the failure, then about 20 minutes after the next one, then about 65 minutes after each further failure. While a phone is joined to the hotspot, the unit doesn't look, so nothing interrupts the phone.
+
+The Status page's Hotspot check says which of these the unit is in, and its **Restart the hotspot** button has the unit look at its radio at once.
+
+Turn the hotspot off
+
+A unit with its hotspot off has no wireless way in when its Wi-Fi network is missing. To stop the hotspot from starting by itself, run `sudo nmcli connection modify tm-hotspot connection.autoconnect no`. The installer leaves that setting as you set it. To turn the hotspot on again, set it to `yes`.
+
+## The password
+
+The installer makes the password on the unit, at random, when it sets up the hotspot. It's twelve letters and digits in three groups, such as `ABCD-EFGH-JKLM`, and it's different on every unit. It never comes from the serial number, so knowing the name tells nobody the password.
+
+The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable only by root and the installing user's group (`tmadmin` unless you installed with `-g`). To read it, run `sudo tm-control card` on the unit. Over Ethernet or SSH works when you're locked out of the hotspot. The installer shows the card on the terminal and keeps the password out of its log; a run from another computer with `-H` prints only a reminder of the command.
+
+### Change the password
+
+1. On the unit, open the password file for editing with `sudoedit /etc/traffic-monitor/secrets/hotspot_password`. Replace its contents with one line of 8 to 63 characters.
+1. Run `bash traffic-monitor/script/tmsetup.sh -t wifi`. The installer sets the hotspot's password to the file's.
+1. Restart the hotspot, or wait for its next start. The installer never restarts a hotspot that is up, so a phone joined to it stays joined until then. To apply the password at once, reboot the unit, or run `sudo nmcli connection up tm-hotspot`. Every phone on the hotspot drops, and each rejoins with the new password.
+
+A screen in the control app for changing the password is planned.
+
+### For sellers
+
+`sudo tm-control card --json` prints the card's values as JSON, for a label or a packing slip:
+
+```
+{
+  "hostname": "tm-01",
+  "local_url": "http://tm-01.local/",
+  "hotspot": {"name": "TM-4F2A", "password": "ABCD-EFGH-JKLM", "url": "http://10.42.0.1/"},
+  "claimed": false,
+  "setup_code": "ABCD-EFGH"
+}
+```
+
+`setup_code` is `null` once the unit is claimed. The command needs `sudo`, and it prints to the terminal only. Nothing stores or logs the card, so don't paste the output where others can read it.
+
+## A hotspot you set up by hand
+
+A hotspot you made yourself in NetworkManager is kept. When a unit has no profile named `tm-hotspot`, the installer takes over your access-point profile, the one that starts by itself and was used last, renames it `tm-hotspot`, and stops any other access point from starting. Its name on air, password, band, and hidden setting stay as you set them. The installer sets the profile's address to `10.42.0.1` and its priority below your saved networks, and copies the password into the password file.
+
+A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. To set a password, run these two commands on the unit, with a password of 8 to 63 characters in place of `<password>`:
+
+```
+sudo nmcli connection modify tm-hotspot 802-11-wireless-security.key-mgmt wpa-psk 802-11-wireless-security.proto rsn 802-11-wireless-security.pairwise ccmp 802-11-wireless-security.group ccmp 802-11-wireless-security.psk '<password>'
+sudoedit /etc/traffic-monitor/secrets/hotspot_password
+```
+
+In the file, write the same password on one line. That keeps the card right, and the installer then keeps the profile's password the same as the file's. An empty file tells the installer to leave the hotspot's security alone. The new password applies when the hotspot next starts; see step 3 of [Change the password](#change-the-password).
+
+A hotspot with a hidden name
+
+If you hid your hand-made hotspot's name, a phone doesn't list it. On Android, choose **Add network**, type the name, and tick **Hidden network**.
+
+## Who can see the hotspot
+
+A hotspot on a pole is visible to anyone passing, and public Wi-Fi maps record where names are seen. The name `TM-` and four characters shows that a Traffic Monitor is nearby and doesn't say where it is. The password is what keeps people out of the control app. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) explains what its login protects.
+
+## The Wi-Fi country
+
+Wi-Fi rules differ by country, and a radio with no country set uses limited worldwide settings. The installer asks for the country, as a two-letter code such as `US` or `GB`, when the unit has none. Press Enter to accept `US`. With `-y`, it keeps the unit's country, or sets `US` when there is none. To set it without being asked, or to change it, run the installer with `-w`:
+
+```
+bash traffic-monitor/script/tmsetup.sh -t wifi -w GB
+```
+
+The change applies at once, with no reboot. The Status page warns while no country is set.
+
+## Limits
+
+- A network the unit is also connected to that uses `10.42.0.x` addresses clashes with the hotspot's fixed address. Give that network another range.
+- The hotspot runs on the built-in radio, `wlan0`. If a USB Wi-Fi adapter takes that name, the hotspot stays off, and the Status page says so. Unplug the adapter and reboot.
 
 ______________________________________________________________________
 
@@ -1183,6 +1310,8 @@ A comment is a timestamped note stored in the `comments` table, for whoever anal
 ## Download the database
 
 Downloads the whole database as a compressed archive named `<hostname>_<time>_tmdb.tar.gz`. The page shows the database's size in megabytes. The device first makes a consistent copy of the database, so a large one can take a minute or two before the download starts. The copy needs free space about the size of the database; if there isn't enough, the page says so. A 3 GB file can then take about 5 minutes to compress and several more to download. Cancel also works while the copy is being made: the download stops once the copy is done, and no archive is sent. If a download fails, you see the reason instead of a broken file.
+
+On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save on Android and on an iPhone.
 
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
 
@@ -1587,7 +1716,21 @@ Other computers reach the Traffic Monitor's apps through the [home page](https:/
 | 8554       | The camera stream (RTSP), with a username and password                                                                                       |
 | 9090       | Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering.                         |
 
-When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
+## The hotspot
+
+When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) on the built-in radio (`wlan0`).
+
+|         |                                                                                                                                                                                                                             |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Address | The device is `10.42.0.1`, on the network `10.42.0.0/24`. The address is fixed.                                                                                                                                             |
+| DHCP    | The device gives each phone an address in that network.                                                                                                                                                                     |
+| DNS     | The device answers every name with its own address, so a phone's connection test lands on the device and opens the control app's sign-in window.                                                                            |
+| Ports   | The same as on your network, in the table above.                                                                                                                                                                            |
+| Reach   | A phone on the hotspot reaches only the device. A firewall rule drops anything that would pass from the hotspot to another network, or back, so the hotspot has no internet and doesn't open your wired network to a phone. |
+
+A request that reaches the device on the hotspot's address with any other name, such as the one a phone's connection test uses, gets a redirect to `http://10.42.0.1/`. A request for `10.42.0.1` or for the device's own name is answered as usual.
+
+Whenever the device has a network, NetworkManager asks `connectivity-check.ubuntu.com` every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer.
 
 ## Camera stream login
 
@@ -1622,6 +1765,7 @@ bash traffic-monitor/script/tmsetup.sh [flags]
 | `-d PATH`        | Install folder. Default `/opt/traffic-monitor`. The docs assume the default.                                                                                                                                                                                                                                                                                |
 | `-o USER`        | Owner of the installed files and processes. Default `tmadmin`, created by the installer.                                                                                                                                                                                                                                                                    |
 | `-g GROUP`       | Group of the installed files. Default `tmadmin`.                                                                                                                                                                                                                                                                                                            |
+| `-w CODE`        | The Wi-Fi country, a two-letter code such as `US` or `GB`. Without it, the installer asks when the device has none and the run includes the `wifi` tag; with `-y` or a remote run it keeps the device's country, or sets `US` when there is none. See [The Wi-Fi country](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#the-wi-fi-country).          |
 | `-z TIMEZONE`    | Time zone for the system and the dashboards, as a [tz database name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Default `America/Los_Angeles`.                                                                                                                                                                                          |
 | `-L PATH`        | Where to write the installer's log.                                                                                                                                                                                                                                                                                                                         |
 | `-a ARG`         | Pass an extra argument to the underlying Ansible run, without its leading hyphen.                                                                                                                                                                                                                                                                           |
@@ -1639,19 +1783,23 @@ Remote runs:
 
 Each tag reruns one part of the install. Without `-t`, everything runs. The pod, the reverse proxy, and the control app that checks every login have to change together, so the `podman`, `frigate`, `node-red-tm`, `go2rtc`, `revproxy`, and `tm-control` tags each update all three.
 
-| Tag                | What it does                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                                                                                                                                                                                               |
-| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                                                                                                                                                                                        |
-| `wifi`             | Wi-Fi setup                                                                                                                                                                                                                                                                                                                                                       |
-| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                                                                                                                                                                                            |
-| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                                                                                                                                                                                        |
-| `podman`           | The container runtime and the pod                                                                                                                                                                                                                                                                                                                                 |
-| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                                                                                                                                                                                           |
-| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                                                                                                                                                                                               |
-| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                                                                                                                                                                                           |
-| `revproxy`         | The reverse proxy, with the home page built into its image                                                                                                                                                                                                                                                                                                        |
-| `tm-control`       | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login. |
+| Tag                | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`             | Operating system packages, the owner account, and Cockpit. It runs with every `-t`.                                                                                                                                                                                                                                                                                                                                                             |
+| `full_upgrade`     | The `apt full-upgrade`, when `-u` is given                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `wifi`             | The Wi-Fi country, the [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) (its profile, its password file, the firewall that keeps phones on it from reaching other networks, and the DNS that sends every name on it to the device), and the timer that moves the radio between a saved network and the hotspot. It sets the hotspot's password to the one in the password file, and never restarts a hotspot that is up. |
+| `go2rtc`           | The camera streaming service on the host, and the stream login Frigate uses to read it                                                                                                                                                                                                                                                                                                                                                          |
+| `detectors`        | Detects the Coral or Hailo accelerator, installs its driver, and writes the boot configuration. See [Add an accelerator later](#add-an-accelerator-later).                                                                                                                                                                                                                                                                                      |
+| `podman`           | The container runtime and the pod                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `frigate`          | Frigate's container, settings, and the devices it needs                                                                                                                                                                                                                                                                                                                                                                                         |
+| `node-red-tm`      | Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.                                                                                                                                                                                                                                                                                                                                             |
+| `plate-recognizer` | The optional Plate Recognizer container                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `revproxy`         | The reverse proxy, with the home page built into its image                                                                                                                                                                                                                                                                                                                                                                                      |
+| `tm-control`       | The [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login.                                                                               |
+
+## The device's card
+
+When a run on the device ends while the device is unclaimed, the installer shows its **card** on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, so the hotspot's password stays out of the installer's log; the setup code is still in it. A run from another computer with `-H` prints a reminder only. `sudo tm-control card` prints the card on the device at any time.
 
 ## What `-f` replaces
 
@@ -2279,7 +2427,11 @@ Without an AI accelerator, Frigate detects on the CPU and can't keep up with a b
 
 The home page opens on a computer but not on an Android phone
 
-On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (**Settings > Apps > Chrome**, for example), allow **Nearby devices** or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone.
+On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (**Settings > Apps > Chrome**, for example), allow **Nearby devices** or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone. On the device's own hotspot, use the phone's sign-in window instead: Android 17 browsers can't open the device there. See [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones).
+
+A hotspot I set up by hand doesn't show up on my phone
+
+If you hid its name, the phone doesn't list it. On Android, choose **Add network**, type the name, and tick **Hidden network**. See [A hotspot you set up by hand](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#a-hotspot-you-set-up-by-hand).
 
 The first install seems stuck
 
@@ -2505,7 +2657,7 @@ It has three parts, all in the repository's [`tm-control/`](https://github.com/g
 It reads two things the installer writes, and keeps one database of its own:
 
 - `/etc/traffic-monitor/secrets/`: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the `set-secret` job writes them. `GENERATED_SECRETS` and `ENTERED_SECRETS` in `core/secrets.py` match the role's `tmsetup_secret_names` and `tmsetup_entered_secret_names` (a test keeps each pair equal), `DEVICE_SECRETS` is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The `secrets` module (`GET /secrets`, and `POST` and `DELETE /secrets/{name}`) lists what is set, never a value, and starts the job.
-- `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (`frigate.coral_model`, from the role's `tmsetup_frigate_coral_model`), which the Detection page puts back.
+- `/etc/traffic-monitor/manifest.json`: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (`frigate.coral_model`, from the role's `tmsetup_frigate_coral_model`), which the Detection page puts back, and `network`, the hotspot's Wi-Fi device, profile name, and address (`wlan0`, `tm-hotspot`, `10.42.0.1`, from the role's `tmsetup_wifi_device`, `tmsetup_hotspot_profile`, and `tmsetup_hotspot_address`), which the Network checks and `tm-control card` read.
 - `/var/lib/tm-control/state.sqlite`: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (`surveys`, `survey_bearings`, and `survey_corrections`). Numbered migrations in `core/state.py` create and update it, recorded in `PRAGMA user_version`. Never change a migration that has shipped; add the next one.
 
 While the device is unclaimed, the installer keeps the setup code in a root-only file, `/etc/traffic-monitor/setup-code`, and hands it to `tm-control set-setup-code` on every run, which stores only its hash. The installer's command-line steps run as the code owner, and `sudo tm-control reset-admin` drops to that user after writing a new code file, so root never writes the database.
@@ -2519,6 +2671,7 @@ browser ──GET /frigate/──▶ nginx (port 80)
                              │  auth_request /_auth  (internal location)
                              │    X-Original-URI: /frigate/
                              │    X-TM-Required-Role: viewer   (admin for /_auth_admin)
+                             │    X-Forwarded-For: the browser's address
                              │    Cookie: tm_session=…
                              ▼
                            tm-control 127.0.0.1:8090  /api/v1/auth/verify
@@ -2552,21 +2705,32 @@ The Node-RED token is `base64url(JSON {"u", "r", "exp"})`, a dot, and `base64url
 
 The rest of the API, under `/api/v1/`, checks the session cookie itself. Every error has one shape, `{"error": {"code", "message", "detail"}}`. A request that changes something must send JSON from a page on the device (a matching `Origin` or `Referer`), or it gets 403.
 
+### Download links
+
+Android's sign-in window, which on Android 17 is the only browser that can reach a unit on its hotspot, fetches a download twice: its own request carries the session cookie, then it hands the address to a download helper that sends no cookie. So the Data export page asks for a link that passes the check once without the cookie:
+
+1. Just before it starts a download, the page sends `POST /api/v1/auth/download-link` with `{"files": …}`. tm-control answers an administrator with `/storefiles?files=…&tm_token=…`, a random one-time token kept in memory. Anyone else gets an error, and the page falls back to the plain `/storefiles?files=…` address, which still works wherever the browser downloads the file itself.
+1. The browser's own request has a session, so verify checks it as usual and leaves the link unused.
+1. The helper's request has no session. verify lets it through as the administrator only when the address is exactly `/storefiles` with `files` and `tm_token` and nothing else, on an admin location, within 600 seconds, from the address the link was made for (`X-Forwarded-For`, which the `/_auth` locations set to nginx's own `$remote_addr`), and for the same `files`. The user must still be an administrator with the same sessions, and the current license agreement must be accepted. The answer carries `X-TM-User` and `X-TM-Role` only: no Frigate secret, no Node-RED token, no cookie.
+
+The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its `next=`. nginx's access log records the token; the parameter is named `tm_token` so that the diagnostics download hides its value with every other key ending in `token`. The two download templates live in `flows.json` (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and `script/tests/test_node_red_flows.py` checks that they ask for the same link.
+
 ## Backend layout
 
 ```
 tm-control/backend/tm_control/
   app.py         create_app(): loads the state, secrets, manifest, and license agreement, and mounts the modules
-  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin,
+  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin, card,
                  and for development fake-reset and dump-openapi
   fake.py        fake mode's reset and the OpenAPI dump
   core/          shared rules: auth (passwords, sessions, backoff, setup code, users), csrf, errors, jobs,
-                 manifest, migrate (config updates for older installs), secrets, settings, state
+                 card (the device's card), manifest, migrate (config updates for older installs), secrets, settings, state
   adapters/      the outside world: command (runs an argv list with a timeout and an output cap, never a shell),
-                 systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
+                 systemd, timedate, sysinfo, hardware, network (nmcli and iw, read-only), the apps' HTTP APIs (frigate,
+                 nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time, detection, location
+                 hardware, network, secrets, system, time, detection, location
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
@@ -2575,7 +2739,7 @@ Rules live in the backend; the UI shows what the API returns and posts what the 
 
 tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in `tmsetup_tm_control_polkit` in the role's `vars/main.yml`, and nothing else:
 
-- Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH.
+- Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. `tm-network-retry.service` is on it for the Hotspot check's fix, and `FIX_UNITS` in `modules/services/units.py` lists the units like it, which a check's fix may start but the Services list doesn't show; `POST /services/{unit}/restart` accepts them.
 - Seven actions: `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp` for the Date and time page, and `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` for the Device page. The `-ignore-inhibit` variants aren't granted, so tm-control asks logind (`CanReboot`, `CanPowerOff`) first and answers 409 while an inhibitor, such as an update, holds the device up.
 
 A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are two jobs:
@@ -2589,7 +2753,7 @@ A time zone change restarts `traffic-monitor.service` and `revproxy.service` aft
 
 ## Status checks
 
-`GET /api/v1/status` returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in `Module.check_groups`, and the report shows them in `MODULES` order: Services, Apps, Configuration (the apps module's second group), Hardware, Device (from the system module), and Date and time.
+`GET /api/v1/status` returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in `Module.check_groups`, and the report shows them in `MODULES` order: Services, Apps, Configuration (the apps module's second group), Hardware, Network, Device (from the system module), and Date and time.
 
 A check function takes a `Context` and returns a list of `Check`s, each with an `id`, a `title`, a `status` (`ok`, `warn`, `error`, or `unknown`), a one- or two-sentence `detail` that says what to do, and an optional `fix`:
 
@@ -2682,11 +2846,29 @@ The module calls six Node-RED endpoints, besides `/tm-internal/status`, on `127.
 
 `tm-control migrate --node-red-config`, run by the installer, also brings `deployment:` up to date: it adds `database_precision: '2'` where it's missing, and removes `lat` and `lon` from a sensor's own `deployment:` block. The Location check (`location` in `modules/apps/contracts.py`) checks the same keys at run time.
 
+### The Network module and the hotspot
+
+The `network` module has no routes yet. It adds the Network check group (`hotspot`, `wifi`, `internet`, and `wifi_country`, in `modules/network/checks.py`), read-only through `adapters/network.py`, which runs `nmcli` and `iw` and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is `unknown`. The hotspot's values come from the manifest's `network` section. The checks' words are the contract with [the operator page](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
+
+Two scripts in `jobs/` run as root, and neither is a `tm-job` unit. Both are standard-library Python with no `tm_control` imports, run as `/usr/bin/python3 -EP` from the root-owned `/usr/local/libexec/traffic-monitor/`, and read no password into their output:
+
+| Script             | Run by                                                                                                                             | What it does                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tm-hotspot-setup` | The installer's `wifi` tasks                                                                                                       | Creates the `tm-hotspot` profile, or adopts an access-point profile made by hand, and ensures its device, priority, mode, address, and IPv6 setting. The password file is the source of truth for the password. It never activates or deactivates a profile, so a joined phone stays joined. Its docstring lists the order of its steps and its exit statuses.                             |
+| `tm-network-retry` | `tm-network-retry.timer`, 90 seconds after boot and 5 minutes after each run ends, and the Hotspot check's **Restart the hotspot** | Keeps the radio on a known network or on the hotspot. It starts the hotspot when no network holds the radio, leaves it alone while a phone is joined, and scans for the saved networks otherwise, one network per run, with a 5, 15, then 60 minute wait after each failure. Its docstring lists its steps and outcomes. It keeps its memory in `/run/traffic-monitor/network-retry.json`. |
+
+`tm-hotspot-firewall.service` loads the `inet tm_hotspot` nftables table before NetworkManager can start the hotspot. The table drops forwarded traffic into and out of the hotspot's subnet, so phones on it reach the unit and nothing behind it.
+
+nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign `Host`. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to `http://10.42.0.1/`, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets `X-TM-Hotspot: 1` from the address a request arrived on, replacing any value the client sent, and `GET /api/v1/setup/status` then returns `hotspot.local_name`, which the login and setup pages show to an iPhone.
+
+`sudo tm-control card` (`core/card.py`) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. `--json` prints the same values, and `--unclaimed-only`, which the installer passes, prints nothing and exits 3 once the device is claimed.
+
 ### What the sandbox allows
 
-`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and two config directories under the code directory (`ReadWritePaths`): Frigate's, `frigate/config`, for the models the Detection page manages, and Node-RED's, `node-red-tm/config`, for the `config.yml` the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:
+`tm-control.service` runs with `ProtectSystem=strict`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK`, and `SupplementaryGroups=systemd-journal video`. It writes its state and runtime directories and two config directories under the code directory (`ReadWritePaths`): Frigate's, `frigate/config`, for the models the Detection page manages, and Node-RED's, `node-red-tm/config`, for the `config.yml` the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:
 
-- No netlink socket, so `lsusb` can't start. The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` instead, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
+- The Coral USB check reads the vendor and product ids from `/sys/bus/usb/devices` rather than running `lsusb`, which needed a netlink socket the service first lacked, and `ss` falls back to reading `/proc/net` for the MQTT broker's port.
+- `AF_NETLINK` is there for `iw`, which reads the Wi-Fi country for the Network checks. The Network checks otherwise use `nmcli`, which needs nothing more, and never ask it for a password.
 - `vcgencmd get_throttled` needs the `video` group to open `/dev/vcio_gencmd`. Without it, the power check says to rerun the installer.
 - The HEVC decoder check compares `/dev/rpi-hevc-dec` with the media device whose `/sys/bus/media/devices/mediaN/model` names the decoder.
 - `timedatectl show` prints its times as local strings; tm-control reads the clock itself.

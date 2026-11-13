@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -857,6 +859,34 @@
     
   
     Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
   
 
     
@@ -979,10 +1009,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -1000,8 +1030,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1224,6 +1254,17 @@
     <span class="md-ellipsis">
       
         When to restart what
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-devices-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The device's card
       
     </span>
   </a>
@@ -2129,6 +2170,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-devices-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The device's card
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-things-are" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2267,6 +2319,8 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 </tr>
 </tbody>
 </table>
+<h2 id="the-devices-card">The device's card<a class="headerlink" href="#the-devices-card" title="Permanent link">&para;</a></h2>
+<p><code>sudo tm-control card</code> prints the device's address, the name and password of its <a href="../wifi-hotspot/">hotspot</a>, and its setup code while it's unclaimed. It needs <code>sudo</code> because the code is in a file only root can read, and the password in a file only root and the installing user's group can. <code>sudo tm-control card --json</code> prints the same values as JSON. If you lose the administrator's password, <code>sudo tm-control reset-admin</code> starts the accounts over; see <a href="../control-app/#if-the-administrators-password-is-lost">If the administrator's password is lost</a>.</p>
 <h2 id="where-things-are">Where things are<a class="headerlink" href="#where-things-are" title="Permanent link">&para;</a></h2>
 <p>The settings and data live under <code>/opt/traffic-monitor/</code>.</p>
 <table>
@@ -2330,7 +2384,7 @@ sudo<span class="w"> </span>podman<span class="w"> </span>ps<span class="w">    
 </tr>
 <tr>
 <td><code>/etc/traffic-monitor/secrets/</code></td>
-<td>Passwords and keys the installer generated on the device, and the tokens and keys you enter on the <a href="../device-health/#tokens-and-keys">Device page</a> and the <a href="../detection/#frigate-plus">Detection page</a></td>
+<td>Passwords and keys the installer generated on the device, including the hotspot's password, and the tokens and keys you enter on the <a href="../device-health/#tokens-and-keys">Device page</a> and the <a href="../detection/#frigate-plus">Detection page</a></td>
 </tr>
 <tr>
 <td><code>/etc/traffic-monitor/setup-code</code></td>

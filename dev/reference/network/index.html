@@ -767,6 +767,8 @@
       
         
       
+        
+      
     
     
     
@@ -855,6 +857,34 @@
     
   
     Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
   
 
     
@@ -977,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -998,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1379,6 +1409,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-hotspot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hotspot
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#camera-stream-login" class="md-nav__link">
@@ -2063,6 +2104,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-hotspot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hotspot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#camera-stream-login" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2140,7 +2192,40 @@
 </tr>
 </tbody>
 </table>
-<p>When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.</p>
+<h2 id="the-hotspot">The hotspot<a class="headerlink" href="#the-hotspot" title="Permanent link">&para;</a></h2>
+<p>When the device's Wi-Fi isn't on a network it knows, it runs a <a href="../../use/wifi-hotspot/">hotspot</a> on the built-in radio (<code>wlan0</code>).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Address</td>
+<td>The device is <code>10.42.0.1</code>, on the network <code>10.42.0.0/24</code>. The address is fixed.</td>
+</tr>
+<tr>
+<td>DHCP</td>
+<td>The device gives each phone an address in that network.</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>The device answers every name with its own address, so a phone's connection test lands on the device and opens the control app's sign-in window.</td>
+</tr>
+<tr>
+<td>Ports</td>
+<td>The same as on your network, in the table above.</td>
+</tr>
+<tr>
+<td>Reach</td>
+<td>A phone on the hotspot reaches only the device. A firewall rule drops anything that would pass from the hotspot to another network, or back, so the hotspot has no internet and doesn't open your wired network to a phone.</td>
+</tr>
+</tbody>
+</table>
+<p>A request that reaches the device on the hotspot's address with any other name, such as the one a phone's connection test uses, gets a redirect to <code>http://10.42.0.1/</code>. A request for <code>10.42.0.1</code> or for the device's own name is answered as usual.</p>
+<p>Whenever the device has a network, NetworkManager asks <code>connectivity-check.ubuntu.com</code> every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer.</p>
 <h2 id="camera-stream-login">Camera stream login<a class="headerlink" href="#camera-stream-login" title="Permanent link">&para;</a></h2>
 <p>The camera stream on port 8554 needs the username <code>frigate</code> and a password generated on the device at install. To play the stream in another program, such as VLC, read the password on the device:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/traffic-monitor/secrets/go2rtc_rtsp_password

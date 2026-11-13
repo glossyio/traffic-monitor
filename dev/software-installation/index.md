@@ -27,11 +27,11 @@ git clone https://github.com/glossyio/traffic-monitor
 bash traffic-monitor/script/tmsetup.sh
 ```
 
-The installer asks for your password when it needs administrator rights. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
+The installer asks for your password when it needs administrator rights. If the device has no Wi-Fi country yet, it also asks for one, as a two-letter code such as `US` or `GB`, because the device's hotspot needs it; press Enter for `US`. A first install takes 30 minutes or more. Building Frigate's container image compiles ffmpeg on the device, which alone takes about 20 minutes with little output, so leave it running.
 
-Near the end, the installer prints the device's **setup code**, which you need once to claim the device and create its administrator account. Keep it; [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find it.
+Near the end, the installer shows the device's card on the terminal: its **setup code**, which you need once to claim the device and create its administrator account, and the name and password of its hotspot. Keep them; the hotspot's password isn't in the installer's log, and `sudo tm-control card` prints the card again. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find the setup code.
 
-Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md).
+Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). A device that isn't on a network you can reach runs its own hotspot. Join it with the password from the card, and your phone's sign-in window opens the setup page; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md).
 
@@ -51,7 +51,7 @@ bash traffic-monitor/script/tmsetup.sh -H <address>[,<address>] -l <username> -k
 | `-k` | Ask for the SSH password                                                          |
 | `-K` | Ask for the password for administrator rights. Raspberry Pi OS requires it.       |
 
-Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address.
+Remote devices reboot by themselves when the install needs it. The installer prints a setup code for each device, labeled with the device's address. A remote run doesn't ask for a Wi-Fi country. It keeps the device's, or sets `US` when the device has none; add `-w <code>` to set another, as in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md). The hotspot's password isn't printed, because it would end up in the installer's log. Run `sudo tm-control card` on each device to read it.
 
 ## Next steps
 

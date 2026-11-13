@@ -21,7 +21,7 @@ Finding the device's address
 
 - If you set a hostname in Raspberry Pi Imager, `http://<hostname>.local/` works from most computers and phones on the same network.
 - Otherwise, look the device up in your router's list of connected devices, or see [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address).
-- A pre-built unit may host its own Wi-Fi network. Connect to it and use the hostname or the gateway address. Your provider's instructions take precedence.
+- A device whose Wi-Fi isn't on a network it knows runs its own hotspot. Join it, and your phone's sign-in window opens the home page; or open `http://10.42.0.1/`. See [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
 
 If the home page doesn't load
 

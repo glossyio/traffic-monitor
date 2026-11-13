@@ -31,6 +31,7 @@ The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an 
 - [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md)
 - [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md)
 - [System administration](https://docs.trafficmonitor.ai/dev/use/system-admin/index.md)
+- [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md)
 - [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md)
 - [Monitoring](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md)
 - [Movements](https://docs.trafficmonitor.ai/dev/ui/movements/index.md)

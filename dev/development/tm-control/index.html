@@ -767,6 +767,8 @@
       
         
       
+        
+      
     
     
     
@@ -855,6 +857,34 @@
     
   
     Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
   
 
     
@@ -977,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -998,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2020,6 +2050,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The login check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download links
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2100,6 +2147,17 @@
     <span class="md-ellipsis">
       
         The Location module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-module-and-the-hotspot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Network module and the hotspot
       
     </span>
   </a>
@@ -2260,6 +2318,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The login check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download links
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2340,6 +2415,17 @@
     <span class="md-ellipsis">
       
         The Location module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-network-module-and-the-hotspot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Network module and the hotspot
       
     </span>
   </a>
@@ -2452,7 +2538,7 @@
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
 <li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
-<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back.</li>
+<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read.</li>
 <li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
 <p>While the device is unclaimed, the installer keeps the setup code in a root-only file, <code>/etc/traffic-monitor/setup-code</code>, and hands it to <code>tm-control set-setup-code</code> on every run, which stores only its hash. The installer's command-line steps run as the code owner, and <code>sudo tm-control reset-admin</code> drops to that user after writing a new code file, so root never writes the database.</p>
@@ -2462,6 +2548,7 @@
                              │  auth_request /_auth  (internal location)
                              │    X-Original-URI: /frigate/
                              │    X-TM-Required-Role: viewer   (admin for /_auth_admin)
+                             │    X-Forwarded-For: the browser's address
                              │    Cookie: tm_session=…
                              ▼
                            tm-control 127.0.0.1:8090  /api/v1/auth/verify
@@ -2507,25 +2594,34 @@
 </ul>
 <p>The Node-RED token is <code>base64url(JSON {"u", "r", "exp"})</code>, a dot, and <code>base64url(HMAC-SHA256(key, first part))</code>, without padding, valid for 5 minutes. <code>NodeRedToken</code> in <code>backend/tm_control/core/auth.py</code> mints it, and <code>verifyProxyToken</code> in <code>container/node-red-tm/data/settings.js</code> checks it. Change both together; <code>script/tests/test_node_red_settings.py</code> runs tokens from one through the other.</p>
 <p>The rest of the API, under <code>/api/v1/</code>, checks the session cookie itself. Every error has one shape, <code>{"error": {"code", "message", "detail"}}</code>. A request that changes something must send JSON from a page on the device (a matching <code>Origin</code> or <code>Referer</code>), or it gets 403.</p>
+<h3 id="download-links">Download links<a class="headerlink" href="#download-links" title="Permanent link">&para;</a></h3>
+<p>Android's sign-in window, which on Android 17 is the only browser that can reach a unit on its hotspot, fetches a download twice: its own request carries the session cookie, then it hands the address to a download helper that sends no cookie. So the Data export page asks for a link that passes the check once without the cookie:</p>
+<ol>
+<li>Just before it starts a download, the page sends <code>POST /api/v1/auth/download-link</code> with <code>{"files": …}</code>. tm-control answers an administrator with <code>/storefiles?files=…&amp;tm_token=…</code>, a random one-time token kept in memory. Anyone else gets an error, and the page falls back to the plain <code>/storefiles?files=…</code> address, which still works wherever the browser downloads the file itself.</li>
+<li>The browser's own request has a session, so verify checks it as usual and leaves the link unused.</li>
+<li>The helper's request has no session. verify lets it through as the administrator only when the address is exactly <code>/storefiles</code> with <code>files</code> and <code>tm_token</code> and nothing else, on an admin location, within 600 seconds, from the address the link was made for (<code>X-Forwarded-For</code>, which the <code>/_auth</code> locations set to nginx's own <code>$remote_addr</code>), and for the same <code>files</code>. The user must still be an administrator with the same sessions, and the current license agreement must be accepted. The answer carries <code>X-TM-User</code> and <code>X-TM-Role</code> only: no Frigate secret, no Node-RED token, no cookie.</li>
+</ol>
+<p>The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its <code>next=</code>. nginx's access log records the token; the parameter is named <code>tm_token</code> so that the diagnostics download hides its value with every other key ending in <code>token</code>. The two download templates live in <code>flows.json</code> (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and <code>script/tests/test_node_red_flows.py</code> checks that they ask for the same link.</p>
 <h2 id="backend-layout">Backend layout<a class="headerlink" href="#backend-layout" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>tm-control/backend/tm_control/
   app.py         create_app(): loads the state, secrets, manifest, and license agreement, and mounts the modules
-  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin,
+  cli.py         the tm-control command: serve, migrate, claim-status, set-setup-code, reset-admin, card,
                  and for development fake-reset and dump-openapi
   fake.py        fake mode's reset and the OpenAPI dump
   core/          shared rules: auth (passwords, sessions, backoff, setup code, users), csrf, errors, jobs,
-                 manifest, migrate (config updates for older installs), secrets, settings, state
+                 card (the device's card), manifest, migrate (config updates for older installs), secrets, settings, state
   adapters/      the outside world: command (runs an argv list with a timeout and an output cap, never a shell),
-                 systemd, timedate, sysinfo, hardware, the apps' HTTP APIs (frigate, nodered, go2rtc), mqtt,
+                 systemd, timedate, sysinfo, hardware, network (nmcli and iw, read-only), the apps' HTTP APIs (frigate,
+                 nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, secrets, system, time, detection, location
+                 hardware, network, secrets, system, time, detection, location
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
 <p>tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in <code>tmsetup_tm_control_polkit</code> in the role's <code>vars/main.yml</code>, and nothing else:</p>
 <ul>
-<li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH.</li>
+<li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. <code>tm-network-retry.service</code> is on it for the Hotspot check's fix, and <code>FIX_UNITS</code> in <code>modules/services/units.py</code> lists the units like it, which a check's fix may start but the Services list doesn't show; <code>POST /services/{unit}/restart</code> accepts them.</li>
 <li>Seven actions: <code>org.freedesktop.timedate1.set-time</code>, <code>set-timezone</code>, and <code>set-ntp</code> for the Date and time page, and <code>org.freedesktop.login1.reboot</code>, <code>reboot-multiple-sessions</code>, <code>power-off</code>, and <code>power-off-multiple-sessions</code> for the Device page. The <code>-ignore-inhibit</code> variants aren't granted, so tm-control asks logind (<code>CanReboot</code>, <code>CanPowerOff</code>) first and answers 409 while an inhibitor, such as an update, holds the device up.</li>
 </ul>
 <p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are two jobs:</p>
@@ -2549,7 +2645,7 @@
 </table>
 <p><code>SECRETS</code> in <code>tm-control/jobs/tm-job-set-secret</code> repeats the secrets' patterns (<code>VALUE_PATTERNS</code> in <code>core/secrets.py</code>) and restart units (<code>ENTERED</code> in <code>modules/secrets/router.py</code>), because the script imports nothing from tm-control; tests keep them the same.</p>
 <h2 id="status-checks">Status checks<a class="headerlink" href="#status-checks" title="Permanent link">&para;</a></h2>
-<p><code>GET /api/v1/status</code> returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in <code>Module.check_groups</code>, and the report shows them in <code>MODULES</code> order: Services, Apps, Configuration (the apps module's second group), Hardware, Device (from the system module), and Date and time.</p>
+<p><code>GET /api/v1/status</code> returns a report of check groups, which the Status page shows and the home page sums up in one line. Each module lists its groups in <code>Module.check_groups</code>, and the report shows them in <code>MODULES</code> order: Services, Apps, Configuration (the apps module's second group), Hardware, Network, Device (from the system module), and Date and time.</p>
 <p>A check function takes a <code>Context</code> and returns a list of <code>Check</code>s, each with an <code>id</code>, a <code>title</code>, a <code>status</code> (<code>ok</code>, <code>warn</code>, <code>error</code>, or <code>unknown</code>), a one- or two-sentence <code>detail</code> that says what to do, and an optional <code>fix</code>:</p>
 <table>
 <thead>
@@ -2739,10 +2835,38 @@
 </tbody>
 </table>
 <p><code>tm-control migrate --node-red-config</code>, run by the installer, also brings <code>deployment:</code> up to date: it adds <code>database_precision: '2'</code> where it's missing, and removes <code>lat</code> and <code>lon</code> from a sensor's own <code>deployment:</code> block. The Location check (<code>location</code> in <code>modules/apps/contracts.py</code>) checks the same keys at run time.</p>
+<h3 id="the-network-module-and-the-hotspot">The Network module and the hotspot<a class="headerlink" href="#the-network-module-and-the-hotspot" title="Permanent link">&para;</a></h3>
+<p>The <code>network</code> module has no routes yet. It adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>), read-only through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
+<p>Two scripts in <code>jobs/</code> run as root, and neither is a <code>tm-job</code> unit. Both are standard-library Python with no <code>tm_control</code> imports, run as <code>/usr/bin/python3 -EP</code> from the root-owned <code>/usr/local/libexec/traffic-monitor/</code>, and read no password into their output:</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Run by</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tm-hotspot-setup</code></td>
+<td>The installer's <code>wifi</code> tasks</td>
+<td>Creates the <code>tm-hotspot</code> profile, or adopts an access-point profile made by hand, and ensures its device, priority, mode, address, and IPv6 setting. The password file is the source of truth for the password. It never activates or deactivates a profile, so a joined phone stays joined. Its docstring lists the order of its steps and its exit statuses.</td>
+</tr>
+<tr>
+<td><code>tm-network-retry</code></td>
+<td><code>tm-network-retry.timer</code>, 90 seconds after boot and 5 minutes after each run ends, and the Hotspot check's <strong>Restart the hotspot</strong></td>
+<td>Keeps the radio on a known network or on the hotspot. It starts the hotspot when no network holds the radio, leaves it alone while a phone is joined, and scans for the saved networks otherwise, one network per run, with a 5, 15, then 60 minute wait after each failure. Its docstring lists its steps and outcomes. It keeps its memory in <code>/run/traffic-monitor/network-retry.json</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>tm-hotspot-firewall.service</code> loads the <code>inet tm_hotspot</code> nftables table before NetworkManager can start the hotspot. The table drops forwarded traffic into and out of the hotspot's subnet, so phones on it reach the unit and nothing behind it.</p>
+<p>nginx's sign-in rule is in <code>container/revproxy/nginx.conf.j2</code>. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign <code>Host</code>. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to <code>http://10.42.0.1/</code>, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets <code>X-TM-Hotspot: 1</code> from the address a request arrived on, replacing any value the client sent, and <code>GET /api/v1/setup/status</code> then returns <code>hotspot.local_name</code>, which the login and setup pages show to an iPhone.</p>
+<p><code>sudo tm-control card</code> (<code>core/card.py</code>) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. <code>--json</code> prints the same values, and <code>--unclaimed-only</code>, which the installer passes, prints nothing and exits 3 once the device is claimed.</p>
 <h3 id="what-the-sandbox-allows">What the sandbox allows<a class="headerlink" href="#what-the-sandbox-allows" title="Permanent link">&para;</a></h3>
-<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and two config directories under the code directory (<code>ReadWritePaths</code>): Frigate's, <code>frigate/config</code>, for the models the Detection page manages, and Node-RED's, <code>node-red-tm/config</code>, for the <code>config.yml</code> the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
+<p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and two config directories under the code directory (<code>ReadWritePaths</code>): Frigate's, <code>frigate/config</code>, for the models the Detection page manages, and Node-RED's, <code>node-red-tm/config</code>, for the <code>config.yml</code> the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
 <ul>
-<li>No netlink socket, so <code>lsusb</code> can't start. The Coral USB check reads the vendor and product ids from <code>/sys/bus/usb/devices</code> instead, and <code>ss</code> falls back to reading <code>/proc/net</code> for the MQTT broker's port.</li>
+<li>The Coral USB check reads the vendor and product ids from <code>/sys/bus/usb/devices</code> rather than running <code>lsusb</code>, which needed a netlink socket the service first lacked, and <code>ss</code> falls back to reading <code>/proc/net</code> for the MQTT broker's port.</li>
+<li><code>AF_NETLINK</code> is there for <code>iw</code>, which reads the Wi-Fi country for the Network checks. The Network checks otherwise use <code>nmcli</code>, which needs nothing more, and never ask it for a password.</li>
 <li><code>vcgencmd get_throttled</code> needs the <code>video</code> group to open <code>/dev/vcio_gencmd</code>. Without it, the power check says to rerun the installer.</li>
 <li>The HEVC decoder check compares <code>/dev/rpi-hevc-dec</code> with the media device whose <code>/sys/bus/media/devices/mediaN/model</code> names the decoder.</li>
 <li><code>timedatectl show</code> prints its times as local strings; tm-control reads the clock itself.</li>

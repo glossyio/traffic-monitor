@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/use/device-health/">
       
       
-        <link rel="prev" href="../control-app/">
+        <link rel="prev" href="../wifi-hotspot/">
       
       
         <link rel="next" href="../detection/">
@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -874,6 +876,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -947,6 +977,17 @@
   
     <nav class="md-nav" aria-label="The Status page">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-network-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Network group
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#fix-a-problem" class="md-nav__link">
@@ -1126,10 +1167,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -1147,8 +1188,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2164,6 +2205,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-network-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Network group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fix-a-problem" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2285,7 +2337,7 @@
 <p class="tm-description">Use the control app&#39;s Status, Device, and Date and time pages to see whether a Traffic Monitor works, restart what stopped, download diagnostics, reboot, and set the clock.</p>
 <p>Three pages in the <a href="../control-app/">control app</a>'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, <a href="../detection/">Detection</a>, shows the object detection model and changes it:</p>
 <ul>
-<li><strong>Status</strong> checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.</li>
+<li><strong>Status</strong> checks the services, apps, settings, hardware, network, and clock, and offers a fix for what's wrong.</li>
 <li><strong>Device</strong> shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.</li>
 <li><strong>Date and time</strong> compares the device's clock with your phone's or computer's and sets it.</li>
 </ul>
@@ -2345,6 +2397,10 @@
 <td>Each AI accelerator, from plugged in to passed to Frigate and listed in its config, or a warning when there's none and Frigate detects on the CPU. Whether detection works is Frigate's to report: when its detector keeps failing, Frigate restarts itself, and the Services and Apps rows say so. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED.</td>
 </tr>
 <tr>
+<td>Network</td>
+<td>The device's <a href="../wifi-hotspot/">Wi-Fi</a>, in four checks. An offline device is normal, so none of them is a problem for lack of internet. See <a href="#the-network-group">The Network group</a>.</td>
+</tr>
+<tr>
 <td>Device</td>
 <td>Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started.</td>
 </tr>
@@ -2354,10 +2410,38 @@
 </tr>
 </tbody>
 </table>
+<h3 id="the-network-group">The Network group<a class="headerlink" href="#the-network-group" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>What it says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hotspot</td>
+<td><strong>On as <code>TM-4F2A</code>, at <code>http://10.42.0.1/</code></strong> while the hotspot is up. <strong>Standing by</strong> while the device is on a saved network; the hotspot starts when that network is out of reach. <strong>Off by choice</strong> when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with <code>-t wifi</code>), the Wi-Fi radio is switched off, the hotspot should be on and isn't (<strong>Restart the hotspot</strong>), the hotspot has no password (see <a href="../wifi-hotspot/#a-hotspot-you-set-up-by-hand">A hotspot you set up by hand</a>), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2.</td>
+</tr>
+<tr>
+<td>Wi-Fi network</td>
+<td>The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach.</td>
+</tr>
+<tr>
+<td>Internet</td>
+<td><strong>Reachable</strong>, or <strong>Not reachable. That's normal for an offline unit.</strong> It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem.</td>
+</tr>
+<tr>
+<td>Wi-Fi country</td>
+<td>The country, or a warning that none is set. Rerun the installer with <code>-t wifi</code> and it asks; see <a href="../wifi-hotspot/#the-wi-fi-country">The Wi-Fi country</a>.</td>
+</tr>
+</tbody>
+</table>
+<p>A check that can't read the Wi-Fi state shows a question mark.</p>
 <h3 id="fix-a-problem">Fix a problem<a class="headerlink" href="#fix-a-problem" title="Permanent link">&para;</a></h3>
 <p>A check that isn't passing offers one of these:</p>
 <ul>
-<li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
+<li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The Hotspot check's <strong>Restart the hotspot</strong> has the device look at its Wi-Fi radio and start the hotspot if it should be on. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
 <li><strong>Re-scan hardware</strong>, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.</li>
 <li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>, or <strong>Set the key</strong> for Frigate+, which opens the Frigate+ API key section of the <a href="../detection/#frigate-plus">Detection page</a>, or <strong>Open the Location page</strong> for the Location check.</li>
 <li><strong>A sentence</strong> with the next step, such as rerunning the installer for Node-RED (<code>tmsetup.sh -t node-red-tm</code>; see <a href="../../reference/tmsetup/">Installer options</a>).</li>

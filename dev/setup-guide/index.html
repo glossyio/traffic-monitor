@@ -871,6 +871,8 @@
       
         
       
+        
+      
     
     
     
@@ -959,6 +961,34 @@
     
   
     Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use/wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
   
 
     
@@ -1081,10 +1111,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -1102,8 +1132,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2193,14 +2223,15 @@
   
   <h1 id="first-time-setup">First-time setup<a class="headerlink" href="#first-time-setup" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Turn on detection, adjust the zones to your roadway, and record the device&#39;s location so it starts counting.</p>
-<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.</p>
+<p>Do these steps once the device is <a href="../deployment-and-mounting-guide/">mounted</a> and powered on, and again whenever you move it. You need a computer or phone on the same network or on the device's own hotspot, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.</p>
 <p>As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.</p>
 <h2 id="1-claim-the-device">1. Claim the device<a class="headerlink" href="#1-claim-the-device" title="Permanent link">&para;</a></h2>
 <p>Open <code>http://&lt;device&gt;/</code>, where <code>&lt;device&gt;</code> is the hostname you set when imaging the card followed by <code>.local</code>, or the device's IP address. <a href="../use/home-page/">Home page and apps</a> explains each link and how to find the address.</p>
+<p>A device at the roadside has no network to join. If its Wi-Fi isn't on a network it knows, it runs its own hotspot, named <code>TM-</code> and four characters. Join it with the password from the device's card; your phone's sign-in window then opens the setup page by itself, or you can open <code>http://10.42.0.1/</code>. <a href="../use/wifi-hotspot/">Wi-Fi and the hotspot</a> has the details, including what to do on an iPhone or an Android 17 phone.</p>
 <p>A device that hasn't been claimed opens its setup page:</p>
 <ol>
 <li>Choose <strong>Start setup</strong>, and read and accept the license agreement.</li>
-<li>Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.</li>
+<li>Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit. <code>sudo tm-control card</code> on the device shows it again.</li>
 <li>Create the administrator account with a username and password, and choose <strong>Claim this device</strong>.</li>
 <li>Optionally, set a new system password for Cockpit and SSH.</li>
 </ol>

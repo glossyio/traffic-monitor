@@ -767,6 +767,8 @@
       
         
       
+        
+      
     
     
     
@@ -855,6 +857,34 @@
     
   
     Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
   
 
     
@@ -977,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
             
   
   
@@ -998,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1368,6 +1398,17 @@
     <span class="md-ellipsis">
       
         Tags
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-devices-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The device's card
       
     </span>
   </a>
@@ -2129,6 +2170,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-devices-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The device's card
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-f-replaces" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2250,6 +2302,10 @@
 <td>Group of the installed files. Default <code>tmadmin</code>.</td>
 </tr>
 <tr>
+<td><code>-w CODE</code></td>
+<td>The Wi-Fi country, a two-letter code such as <code>US</code> or <code>GB</code>. Without it, the installer asks when the device has none and the run includes the <code>wifi</code> tag; with <code>-y</code> or a remote run it keeps the device's country, or sets <code>US</code> when there is none. See <a href="../../use/wifi-hotspot/#the-wi-fi-country">The Wi-Fi country</a>.</td>
+</tr>
+<tr>
 <td><code>-z TIMEZONE</code></td>
 <td>Time zone for the system and the dashboards, as a <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">tz database name</a>. Default <code>America/Los_Angeles</code>.</td>
 </tr>
@@ -2310,7 +2366,7 @@
 </tr>
 <tr>
 <td><code>wifi</code></td>
-<td>Wi-Fi setup</td>
+<td>The Wi-Fi country, the <a href="../../use/wifi-hotspot/">hotspot</a> (its profile, its password file, the firewall that keeps phones on it from reaching other networks, and the DNS that sends every name on it to the device), and the timer that moves the radio between a saved network and the hotspot. It sets the hotspot's password to the one in the password file, and never restarts a hotspot that is up.</td>
 </tr>
 <tr>
 <td><code>go2rtc</code></td>
@@ -2346,6 +2402,8 @@
 </tr>
 </tbody>
 </table>
+<h2 id="the-devices-card">The device's card<a class="headerlink" href="#the-devices-card" title="Permanent link">&para;</a></h2>
+<p>When a run on the device ends while the device is unclaimed, the installer shows its <strong>card</strong> on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, so the hotspot's password stays out of the installer's log; the setup code is still in it. A run from another computer with <code>-H</code> prints a reminder only. <code>sudo tm-control card</code> prints the card on the device at any time.</p>
 <h2 id="what-f-replaces">What <code>-f</code> replaces<a class="headerlink" href="#what-f-replaces" title="Permanent link">&para;</a></h2>
 <p>Every run replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. These files are kept unless you pass <code>-f</code>:</p>
 <ul>
