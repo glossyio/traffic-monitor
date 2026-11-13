@@ -1911,6 +1911,16 @@ def test_the_frigate_summary_chart_is_empty_without_the_map():
     assert chart["series"] == [] and chart["data"] == []
 
 
+@needs_node
+def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
+    """An unmapped camera's frigate_cameras lookup is undefined, as is an unset selection: they must not match."""
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})],
+                        context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}}, flow={})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == [] and chart["data"] == []
+
+
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
     """Nodes that call Frigate's API (frigate:5000): config/raw, config/save, version, events/summary, and the
     thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
