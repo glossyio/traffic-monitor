@@ -13,7 +13,8 @@ import shutil
 import tempfile
 import threading
 import time
-from datetime import datetime
+import uuid as uuid_module
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -226,6 +227,123 @@ class FakeClock:
 
     def set_time(self, when: datetime) -> CommandResult:
         return CommandResult(0, "", "", False)
+
+
+class FakeNetwork:
+    """Fake mode's hotspot, kept in memory so the Network page sees its own changes. `hotspot` is what GET /network
+    shows (it starts on and secured); the password is kept apart and never part of that answer."""
+
+    def __init__(self):
+        self.hotspot = {
+            "enabled": True,
+            "active": True,
+            "name": "TM-AB12",
+            "hidden": False,
+            "security": "wpa2",
+            "address": "10.42.0.1",
+        }
+        self.password: str | None = "ABCD-EFGH-JKLM"
+        self.saved: list[dict] = [
+            {
+                "uuid": "11111111-1111-4111-8111-111111111111", "name": "Home", "in_use": False, "automatic": True,
+                "hidden": False, "in_range": True, "could_not_join": False,
+            },
+            {
+                "uuid": "22222222-2222-4222-8222-222222222222", "name": "Depot", "in_use": False, "automatic": True,
+                "hidden": False, "in_range": False, "could_not_join": False,
+            },
+        ]
+        self.nearby: list[dict] = [
+            {"name": "Home", "signal": 82, "security": "password"},
+            {"name": "Cafe", "signal": 64, "security": "password"},
+            {"name": "Guest", "signal": 41, "security": "open"},
+            {"name": "Office", "signal": 30, "security": "password"},
+            {"name": "Neighbour", "signal": 18, "security": "wpa3"},
+        ]
+        self.scanned: float | None = None  # time.monotonic() of the last scan
+        self.join: dict | None = None  # the join job's state file, as tm-job-network-join writes it
+
+    def apply(self, change: dict) -> None:
+        """Set what a job request names: for the hotspot, enabled, name, hidden, and password; for the saved Wi-Fi
+        networks, an `action` of scan, forget, or order; for a join, switch-now or cancel."""
+        action = change.get("action")
+        if action == "switch-now":
+            self.switch()
+        elif action == "cancel":
+            self.cancel()
+        elif action == "scan":
+            self.scanned = time.monotonic()
+        elif action == "forget":
+            self.saved = [n for n in self.saved if n["uuid"] != change["uuid"]]
+        elif action == "order":
+            rank = {uuid: i for i, uuid in enumerate(change["uuids"])}
+            automatic = sorted((n for n in self.saved if n["uuid"] in rank), key=lambda n: rank[n["uuid"]])
+            self.saved = automatic + [n for n in self.saved if n["uuid"] not in rank]
+        if "enabled" in change:
+            self.hotspot["enabled"] = self.hotspot["active"] = change["enabled"]
+        if "name" in change:
+            self.hotspot["name"] = change["name"]
+        if "hidden" in change:
+            self.hotspot["hidden"] = change["hidden"]
+        if "password" in change:
+            self.password = change["password"]
+            self.hotspot["security"] = "wpa2"
+
+    COUNTDOWN = 300  # seconds
+
+    def start_join(self, name: str, password: str | None, saved: bool) -> None:
+        """A join to `name`: the password `wrong-password` ends as failed (not_joined) and `no-address-pass` as failed
+        (no_address); anything else passes the test and counts down. No password is kept."""
+        before = "tm-hotspot" if self.hotspot["active"] else next((n["name"] for n in self.saved if n["in_use"]), None)
+        uuid = next((n["uuid"] for n in self.saved if n["name"] == name), None) if saved else None
+        self.join = {
+            "stage": "countdown", "ssid": name, "uuid": uuid, "saved": saved, "before": before, "joined": True,
+            "reason": None, "address": "192.168.1.80", "internet": "reachable",
+            "switch_monotonic": time.monotonic() + self.COUNTDOWN, "finished_at": None,
+        }
+        reason = {"wrong-password": "not_joined", "no-address-pass": "no_address"}.get(password)
+        if reason is not None:
+            self.join.update(
+                stage="failed", joined=False, reason=reason, address=None, internet=None, switch_monotonic=None,
+                finished_at=self._now(),
+            )
+
+    @staticmethod
+    def _now() -> str:
+        return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    def read_join(self) -> dict | None:
+        """The join's state; a countdown that has run out has switched."""
+        join = self.join
+        if join is not None and join["stage"] == "countdown" and time.monotonic() >= join["switch_monotonic"]:
+            self.switch()
+        return self.join
+
+    def switch(self) -> None:
+        """Switch now: the network is saved, first in the order and in use, and the hotspot is down."""
+        join = self.join
+        if join is None or join["stage"] != "countdown":
+            return
+        name = join["ssid"]
+        known = next((n for n in self.saved if n["name"] == name), None)
+        if known is None:
+            known = {
+                "uuid": str(uuid_module.uuid4()), "name": name, "in_use": False, "automatic": True,
+                "hidden": False, "in_range": True, "could_not_join": False,
+            }
+        for n in self.saved:
+            n["in_use"] = False
+        known.update(in_use=True, in_range=True, could_not_join=False)
+        self.saved = [known] + [n for n in self.saved if n is not known]
+        self.hotspot["active"] = False
+        join.update(stage="joined", saved=True, uuid=known["uuid"], switch_monotonic=None, finished_at=self._now())
+
+    def cancel(self) -> None:
+        """Cancel a countdown (the result stays to be dismissed), or dismiss a finished join."""
+        if self.join is not None and self.join["stage"] == "countdown":
+            self.join.update(stage="cancelled", switch_monotonic=None, finished_at=self._now())
+        else:
+            self.join = None
 
 
 def journal_tail(unit: str, lines: int) -> list[str]:

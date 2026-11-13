@@ -1,0 +1,11 @@
+{
+    "at": "2026-11-11T10:00:00+00:00",
+    "monotonic": 1000.0,
+    "networks": [
+        {"ssid": "Home", "signal": 82, "security": "password"},
+        {"ssid": "Cafe", "signal": 64, "security": "wpa3"},
+        {"ssid": "Guest", "signal": 41, "security": "open"},
+        {"ssid": "Office", "signal": 30, "security": "enterprise"},
+        {"ssid": "Neighbour", "signal": 18, "security": "other"}
+    ]
+}

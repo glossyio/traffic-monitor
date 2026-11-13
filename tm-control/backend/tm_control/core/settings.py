@@ -38,6 +38,7 @@ class Settings:
     fake: bool
     eula_path: Path
     setup_code_file: Path  # the root-only copy of the setup code that tmsetup and reset-admin write
+    network_run_dir: Path = Path("/run/traffic-monitor")  # root's network job writes its scan and retry files here
 
     @classmethod
     def from_env(cls, environ=None):
@@ -69,4 +70,7 @@ class Settings:
             fake=fake,
             eula_path=EULA_PATH,
             setup_code_file=Path(setup_code_file),
+            network_run_dir=Path(
+                env.get("TM_NETWORK_RUN_DIR") or (fake_dir / "network" if fake else "/run/traffic-monitor")
+            ),
         )

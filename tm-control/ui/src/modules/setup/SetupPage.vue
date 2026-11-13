@@ -9,6 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { Device, Eula, Job } from '../../api/types'
 import EulaText from '../../components/EulaText.vue'
+import HotspotNote from '../../components/HotspotNote.vue'
 import { followJob } from '../../components/jobs'
 import { goNext } from '../../next'
 import { useSession } from '../../stores/session'
@@ -173,6 +174,7 @@ function finish() {
 
 <template>
   <div>
+    <HotspotNote />
     <p class="text-body-2 text-secondary mb-2">Step {{ step }} of {{ STEPS.length }}: {{ STEPS[step - 1] }}</p>
     <v-progress-linear :model-value="progress" color="primary" rounded height="4" class="mb-8" />
 

@@ -13,6 +13,7 @@ from tm_control.core.auth import Audit, Device, SetupCode, User, check_password_
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import client_ip, rate_limited, require_admin, set_session_cookie
 from tm_control.modules.location import reconcile
+from tm_control.modules.system.router import hostname
 
 log = logging.getLogger(__name__)
 
@@ -26,15 +27,18 @@ def _check_eula_version(request: Request, version: str) -> None:
 
 @router.get("/status")
 def status(request: Request):
-    """Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in."""
+    """Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when
+    the page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it."""
     app_state = request.app.state
     device = Device(app_state.state)
     version = app_state.eula.version
     homepage = app_state.manifest.homepage
+    on_hotspot = request.headers.get("X-TM-Hotspot") == "1"
     return {
         "claimed": device.is_claimed(),
         "eula": {"version": version, "accepted": device.eula_accepted(version)},
         "theme": {"font": homepage.font, "colors": homepage.colors},
+        "hotspot": {"local_name": f"{hostname(app_state)}.local"} if on_hotspot else None,
     }
 
 

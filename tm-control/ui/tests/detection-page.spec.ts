@@ -558,11 +558,11 @@ describe('the Detection page', () => {
     expect(fact(wrapper, 'Running model')).toBe('Test site yolov9, a Frigate+ model')
   })
 
-  it('is linked from the menu after Device', async () => {
+  it('is linked from the menu after Network', async () => {
     signedIn(VIEWER, { [MODELS_PATH]: MODELS })
     const { wrapper } = await mountApp('/detection')
     const menu = wrapper.findAll('.v-navigation-drawer a').map((a) => a.attributes('href'))
-    expect(menu.indexOf('/detection')).toBe(menu.indexOf('/device') + 1)
+    expect(menu.indexOf('/detection')).toBe(menu.indexOf('/network') + 1)
   })
 
   it("opens the key panel when a link names it, as the Status page's Set the key does", async () => {

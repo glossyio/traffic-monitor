@@ -386,3 +386,116 @@ def test_require_admin_refuses_viewers(probe_client, login):
     assert r.status_code == 403 and r.json()["error"]["code"] == "forbidden"
     login(probe_client, *ADMIN)
     assert probe_client.get("/api/v1/admin-only").status_code == 200
+
+
+# Download links: Android's sign-in window hands a download to a helper that sends no cookie
+
+
+def link(client, files="/db/tmdb.sqlite"):
+    return client.post("/api/v1/auth/download-link", json={"files": files}, headers=ORIGIN)
+
+
+def admin_link(client, login, files="/db/tmdb.sqlite"):
+    login(client, *ADMIN)
+    return link(client, files).json()["url"]
+
+
+def test_an_admin_gets_a_link_with_the_token_last(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    assert url.startswith("/storefiles?files=/db/tmdb.sqlite&tm_token=")
+    assert len(url.rpartition("=")[2]) == 43
+
+
+def test_a_links_files_are_encoded(claimed_client, login):
+    files = "a b.json,c&d=e.json"
+    query = parse_qs(urlsplit(admin_link(claimed_client, login, files)).query)
+    assert list(query) == ["files", "tm_token"] and query["files"] == [files]
+
+
+def test_a_link_needs_an_admin_on_the_devices_own_page(claimed_client, login):
+    assert link(claimed_client).status_code == 401
+    login(claimed_client, *ADMIN)
+    assert claimed_client.post("/api/v1/auth/download-link", json={"files": "x.json"}).status_code == 403  # no Origin
+    add_viewer(claimed_client)
+    viewer = other_client(claimed_client)
+    login(viewer, *VIEWER)
+    assert link(viewer).status_code == 403
+
+
+@pytest.mark.parametrize("files", ["", "x" * 2049])
+def test_a_link_needs_files(claimed_client, login, files):
+    login(claimed_client, *ADMIN)
+    assert link(claimed_client, files).status_code == 422
+
+
+def test_a_link_passes_verify_once_without_a_cookie(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    helper = other_client(claimed_client)
+    r = verify(helper, url, role="admin")
+    assert r.status_code == 200
+    assert (r.headers["X-TM-User"], r.headers["X-TM-Role"]) == ("admin", "admin")
+    assert "X-TM-Frigate-Secret" not in r.headers and "X-TM-NR-Token" not in r.headers
+    assert set_cookie_headers(r) == []
+    assert verify(helper, url, role="admin").status_code == 401
+
+
+def test_a_request_with_a_session_leaves_the_link_unused(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    r = verify(claimed_client, url, role="admin")
+    assert r.status_code == 200 and "X-TM-Frigate-Secret" in r.headers
+    assert verify(other_client(claimed_client), url, role="admin").status_code == 200
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda url: url.replace("/storefiles?", "/storefiles/?"),
+        lambda url: url.replace("/storefiles?", "/dashboard/?"),
+        lambda url: url.replace("/storefiles?", "/frigate/../storefiles?"),
+        lambda url: url + "&files=events.json",
+        lambda url: url + "&other=1",
+        lambda url: url + "&tm_token=" + url.rpartition("=")[2],
+        lambda url: url.replace("tmdb.sqlite", "tmdb.sqlite-wal"),
+    ],
+)
+def test_verify_refuses_a_link_that_was_changed(claimed_client, login, change):
+    url = admin_link(claimed_client, login)
+    assert verify(other_client(claimed_client), change(url), role="admin").status_code == 401
+
+
+def test_a_link_opens_no_viewer_location(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    assert verify(other_client(claimed_client), url, role="viewer").status_code == 401
+
+
+def test_verify_refuses_a_link_from_another_address_and_spends_it(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    elsewhere = TestClient(claimed_client.app, base_url=BASE, client=("10.42.0.24", 50000))
+    assert verify(elsewhere, url, role="admin").status_code == 401
+    assert verify(other_client(claimed_client), url, role="admin").status_code == 401
+
+
+def test_a_link_ends_with_the_users_sessions(claimed_client, login):
+    url = admin_link(claimed_client, login)
+    users = Users(claimed_client.app.state.state)
+    users.bump_epoch(users.by_username("admin").id)
+    assert verify(other_client(claimed_client), url, role="admin").status_code == 401
+
+
+def test_a_link_waits_for_the_license_agreement_like_a_session(claimed_client, login, monkeypatch):
+    url = admin_link(claimed_client, login)
+    monkeypatch.setattr(claimed_client.app.state, "eula", Eula(version="2", markdown="# New terms\n"))
+    assert verify(other_client(claimed_client), url, role="admin").status_code == 401
+
+
+def test_the_login_redirect_leaves_the_token_out(claimed_client):
+    r = verify(claimed_client, "/storefiles?files=x.json&tm_token=PLACEHOLDER", role="admin")
+    assert r.status_code == 401 and login_next(r) == "/storefiles?files=x.json"
+
+
+def test_no_log_line_holds_the_token(claimed_client, login, caplog):
+    caplog.set_level(logging.INFO)
+    url = admin_link(claimed_client, login)
+    verify(other_client(claimed_client), url, role="admin")
+    assert "download link made" in caplog.text and "download link used" in caplog.text
+    assert url.rpartition("=")[2] not in caplog.text

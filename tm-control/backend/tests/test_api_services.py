@@ -219,6 +219,24 @@ def test_restart_refuses_a_unit_off_the_list(device_client, login, systemctl, un
     assert not [row for row in audit_rows(device_client) if row[0] == "services.restart"]
 
 
+def test_a_fix_unit_can_be_restarted_but_is_not_a_service_row(device_client, login, systemctl):
+    """tm-network-retry.service is what the Network check's fix starts: a restart works and is audited, and the
+    Services list doesn't show it. The firewall unit is not one a check may start."""
+    unit = "tm-network-retry.service"
+    login(device_client, *VIEWER)
+    assert restart(device_client, unit).status_code == 403
+    assert unit not in [s["unit"] for s in device_client.get("/api/v1/services").json()]
+    login(device_client, *ADMIN)
+    r = restart(device_client, unit)
+    assert r.status_code == 202 and r.json() == {"unit": unit}
+    assert systemctl.restarts() == [["systemctl", "restart", "--no-block", unit]]
+    assert ("services.restart", unit) in audit_rows(device_client)
+    assert unit not in [s["unit"] for s in device_client.get("/api/v1/services").json()]
+    r = restart(device_client, "tm-hotspot-firewall.service")
+    assert r.status_code == 404
+    assert systemctl.restarts() == [["systemctl", "restart", "--no-block", unit]]
+
+
 def test_restart_refuses_a_dot_dot_path(device_client, login, systemctl):
     login(device_client, *ADMIN)
     r = device_client.post("/api/v1/services/../frigate.service/restart", json={}, headers=ORIGIN)

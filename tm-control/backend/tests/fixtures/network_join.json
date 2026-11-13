@@ -1,0 +1,13 @@
+{
+    "stage": "countdown",
+    "ssid": "HomeNet",
+    "uuid": "33333333-3333-4333-8333-333333333333",
+    "saved": false,
+    "before": "tm-hotspot",
+    "joined": true,
+    "reason": null,
+    "address": "192.168.1.57",
+    "internet": "reachable",
+    "switch_monotonic": 1000.0,
+    "finished_at": null
+}
