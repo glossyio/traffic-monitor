@@ -42,7 +42,8 @@ export function appDetails(id: string, systemUser: string | null = null): AppDet
 
 // A tile's link. An app nginx serves is a path on this page's own address; an app on its own port gets that port on
 // the name the browser used (window.location.hostname keeps an IPv6 address's brackets). Always http: Cockpit, the one
-// such app, is set up for plain HTTP.
+// such app, is set up for plain HTTP. An answer with no port at all (an older tm-control, for a moment during an
+// upgrade) is a path too, hence == null.
 export function appHref(app: Pick<DeviceApp, 'path' | 'port'>, hostname: string = window.location.hostname): string {
-  return app.port === null ? app.path : `http://${hostname}:${app.port}${app.path}`
+  return app.port == null ? app.path : `http://${hostname}:${app.port}${app.path}`
 }

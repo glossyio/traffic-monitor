@@ -41,6 +41,11 @@ describe('the home page', () => {
     expect(appHref({ path: '/', port: 9090 }, '[2001:db8::1]')).toBe('http://[2001:db8::1]:9090/')
   })
 
+  it('links to the path when an older answer has no port', () => {
+    const app = { path: '/frigate/' } as { path: string; port: number | null }
+    expect(appHref(app, 'tm.local')).toBe('/frigate/')
+  })
+
   const COCKPIT = { id: 'cockpit', path: '/', title: 'Cockpit', admin_only: true, port: 9090 }
 
   it('names the system account on the Cockpit tile', async () => {

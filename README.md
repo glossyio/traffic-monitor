@@ -42,7 +42,7 @@ The Traffic Monitor is designed on the [Raspberry Pi 5](https://www.raspberrypi.
 See [Setup Guide](https://docs.trafficmonitor.ai/latest/setup-guide/).
 
 ## User Interfaces (UI) / port numbers references 🖥️
-Every path below needs the device's login. On a new device, the home page first asks you to claim it with the setup code the installer prints; see [Control app and login](https://docs.trafficmonitor.ai/latest/use/control-app/).
+Every address below except Cockpit's needs the device's login. On a new device, the home page first asks you to claim it with the setup code the installer prints; see [Control app and login](https://docs.trafficmonitor.ai/latest/use/control-app/).
 
 - `http://<device_ip_address>/` is the home page, with links to every app below that your account can open.
 - `http://<device_ip_address>/ui/` is the [Node-RED](https://nodered.org/) dashboard and your primary device dashboard, use it to ensure it is capturing events, see the latest events, and see summarized stats.
