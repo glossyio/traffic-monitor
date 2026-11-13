@@ -1,0 +1,11 @@
+#!/usr/sbin/nft -f
+# Phones on the hotspot reach this device and nothing behind it. Loaded by tm-hotspot-firewall.service.
+table inet tm_hotspot
+delete table inet tm_hotspot
+table inet tm_hotspot {
+    chain forward {
+        type filter hook forward priority filter - 10; policy accept;
+        iifname "{{ tmsetup_wifi_device }}" ip saddr {{ tmsetup_hotspot_subnet }} drop
+        oifname "{{ tmsetup_wifi_device }}" ip daddr {{ tmsetup_hotspot_subnet }} drop
+    }
+}

@@ -5,11 +5,11 @@ import hashlib
 import hmac
 import json
 import os
-import shutil
 import subprocess
 import sys
 
 import pytest
+from required_tools import needs
 from tmsetup_render import REPO
 
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
@@ -19,7 +19,7 @@ from tm_control.core.auth import NodeRedToken  # noqa: E402  (needs tm-control/b
 SETTINGS = REPO / "container/node-red-tm/data/settings.js"
 KEY = "placeholder-token-key"
 NOW = 1_800_000_000
-needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
+needs_node = needs("node")
 
 
 def mint(username, role, now=NOW, key=KEY):

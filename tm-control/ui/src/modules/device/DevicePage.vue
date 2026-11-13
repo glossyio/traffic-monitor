@@ -3,6 +3,7 @@
   (GET /secrets, one EnteredSecret form each but the Frigate+ key's, which is on the Detection page, in a section that
   opens when tapped or when the link names it), the diagnostics file (GET /system/diagnostics), and the power buttons
   (POST /system/reboot and /system/power-off, each after a confirmation). Viewers see the card and the versions only.
+  The card also sums up the network (GET /network), when that can be read.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
@@ -15,11 +16,13 @@ import { saveBlob } from '../../components/download'
 import EnteredSecret from '../../components/EnteredSecret.vue'
 import { duration } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
+import { summaryFacts } from '../network/summary'
 import { useSession } from '../../stores/session'
 
 type SystemInfo = components['schemas']['SystemInfo']
 type Throttled = components['schemas']['Throttled']
 type SecretState = components['schemas']['SecretState']
+type NetworkState = components['schemas']['NetworkState']
 
 const GIB = 2 ** 30
 
@@ -35,6 +38,18 @@ async function load() {
     info.value = data as SystemInfo
   } catch (error) {
     loadError.value = messageOf(error)
+  }
+}
+
+// The network summary on the card. It is an addition: if the state can't be read, the card is as it was.
+const network = ref<NetworkState | null>(null)
+
+async function loadNetwork() {
+  try {
+    const { data } = await api.GET('/api/v1/network')
+    network.value = data as NetworkState
+  } catch {
+    network.value = null
   }
 }
 
@@ -60,6 +75,7 @@ async function loadSecrets() {
 
 onMounted(async () => {
   if (session.isAdmin) void loadSecrets()
+  void loadNetwork()
   await load()
   if (linkedToSecrets && info.value) {
     await nextTick() // the section is on the page now
@@ -124,6 +140,7 @@ const facts = computed(() => {
     ...storage,
     { label: 'Temperature', value: soc_temperature_c === null ? 'Unknown' : `${Math.round(soc_temperature_c)} °C` },
     { label: 'Power', value: power(throttled) },
+    ...(network.value ? summaryFacts(network.value) : []),
   ]
 })
 
@@ -260,7 +277,9 @@ async function powerAction() {
     <v-progress-linear v-else-if="!info" indeterminate color="primary" />
 
     <template v-if="info">
-      <StatusCard :title="info.hostname" :subtitle="subtitle" :items="facts" />
+      <StatusCard :title="info.hostname" :subtitle="subtitle" :items="facts">
+        <router-link to="/network" class="text-primary text-body-1 d-inline-block mt-4">Network details</router-link>
+      </StatusCard>
 
       <section class="mt-10">
         <h2 class="text-h6 mb-4">Software</h2>

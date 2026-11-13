@@ -237,5 +237,6 @@
       This device isn't claimed yet. Open http://{{ ansible_facts['hostname'] }}.local/ (or its IP address)
       and enter the setup code {{ tmsetup_tm_control_setup_code_register.content | b64decode | trim }}
       to create the administrator account. The code works once.
+      For the device's hotspot name and password, run sudo tm-control card on it.
 
 ...

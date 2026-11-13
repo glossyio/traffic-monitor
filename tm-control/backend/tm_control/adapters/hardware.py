@@ -12,8 +12,8 @@ from pathlib import Path
 from tm_control.adapters.command import run
 
 UNIT_DIR = Path("/etc/containers/systemd")
-# Not lsusb: tm-control.service's RestrictAddressFamilies blocks the netlink socket libusb needs, so lsusb fails
-# there ("unable to initialize libusb: -99"). sysfs has the same ids.
+# Not lsusb: tm-control.service first lacked the netlink socket libusb needs, so lsusb failed there ("unable to
+# initialize libusb: -99"). sysfs has the same ids.
 USB_DEVICES = Path("/sys/bus/usb/devices")
 PROC_MODULES = Path("/proc/modules")
 MEDIA_DEVICES = Path("/sys/bus/media/devices")  # mediaN/model names each media device; /dev/mediaN is its node

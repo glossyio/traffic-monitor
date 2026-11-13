@@ -1,0 +1,25 @@
+# /etc/systemd/system/tm-job-network-join.service, installed by tmsetup.sh (tm-control tag)
+# A static root job, never enabled: tm-control starts it through polkit
+# (/etc/polkit-1/rules.d/50-traffic-monitor.rules) after writing the request /run/tm-control/jobs/network-join.json.
+# The script tests the chosen network under a NetworkManager checkpoint, rolls back to where the radio was, counts
+# down, and then switches to the network. A run killed mid-test (a stop that outlasts TimeoutStopSec, a power cut) is undone
+# by NetworkManager's checkpoint, which rolls back by itself when its timeout ends. It takes the lock in
+# /run/traffic-monitor that tm-network-retry takes too, and RuntimeDirectoryPreserve keeps that directory between runs,
+# as in the retry unit.
+
+[Unit]
+Description=Traffic Monitor job: join a Wi-Fi network
+After=NetworkManager.service
+# A start refused by the start limit would leave the job queued in tm-control
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+Environment=TM_CONTROL_MANIFEST={{ tmsetup_etc_dir }}/manifest.json
+RuntimeDirectory=traffic-monitor
+RuntimeDirectoryPreserve=yes
+# A oneshot has no limit unless it is given one. A run is 10 + 60 + 90 + 45 + 300 + 75 + 45 s at its longest.
+TimeoutStartSec=900
+# A stop sends SIGTERM, and the job then rolls back, which takes up to about 45 s more
+TimeoutStopSec=120
+ExecStart={{ tmsetup_tm_control_dir }}/venv/bin/python -EP {{ tmsetup_libexec_dir }}/tm-job-network-join

@@ -1,0 +1,20 @@
+# /etc/systemd/system/tm-job-network.service, installed by tmsetup.sh (tm-control tag)
+# A static root job, never enabled: tm-control starts it through polkit
+# (/etc/polkit-1/rules.d/50-traffic-monitor.rules) after writing the request /run/tm-control/jobs/network.json.
+# The script checks the request, writes the hotspot's password file in the secrets directory and its NetworkManager
+# profile, and deletes the request. It takes the lock in /run/traffic-monitor that tm-network-retry takes too, and
+# RuntimeDirectoryPreserve keeps that directory between runs, as in the retry unit.
+
+[Unit]
+Description=Traffic Monitor job: change the Wi-Fi hotspot
+After=NetworkManager.service
+# A start refused by the start limit would leave the job queued in tm-control
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+Environment=TM_CONTROL_MANIFEST={{ tmsetup_etc_dir }}/manifest.json
+Environment=TM_CONTROL_SECRETS_DIR={{ tmsetup_secrets_dir }}
+RuntimeDirectory=traffic-monitor
+RuntimeDirectoryPreserve=yes
+ExecStart={{ tmsetup_tm_control_dir }}/venv/bin/python -EP {{ tmsetup_libexec_dir }}/tm-job-network

@@ -1,10 +1,12 @@
 """The HEVC decoder reaches Frigate by a stable udev symlink, whatever /dev/media number it has (#231)."""
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from required_tools import missing_tool
 from tmsetup_render import load_role_yaml, render
 
 REPO = Path(__file__).resolve().parents[2]
@@ -37,7 +39,7 @@ def test_rule_matches_the_decoder_model_and_tags_it_for_systemd():
 
 def test_rule_passes_udevadm_verify(tmp_path):
     if udevadm_version() < 254:
-        pytest.skip("udevadm verify needs systemd 254 or newer")
+        missing_tool("udevadm verify needs systemd 254 or newer")
     rule = tmp_path / "60-traffic-monitor-hevc-dec.rules"
     rule.write_text("\n".join(rule_lines()) + "\n")
     assert subprocess.run(["udevadm", "verify", str(rule)], capture_output=True, text=True).returncode == 0
@@ -85,15 +87,16 @@ def test_frigate_waits_for_the_decoder_device_unit():
     lines = frigate_unit()
     assert f"Wants={DEVICE_UNIT}" in lines
     assert f"After={DEVICE_UNIT}" in lines
-    if shutil.which("systemd-escape"):
-        escaped = subprocess.run(["systemd-escape", "-p", "--suffix=device", SYMLINK], capture_output=True, text=True)
-        assert escaped.stdout.strip() == DEVICE_UNIT
+    if not shutil.which("systemd-escape"):
+        missing_tool("needs systemd-escape")
+    escaped = subprocess.run(["systemd-escape", "-p", "--suffix=device", SYMLINK], capture_output=True, text=True)
+    assert escaped.stdout.strip() == DEVICE_UNIT
 
 
 def test_quadlet_turns_the_symlink_into_a_device_flag(tmp_path):
     """A Quadlet dry run, with the image and pod references dropped since those units aren't rendered here."""
     if QUADLET is None:
-        pytest.skip("no Quadlet generator on this machine (install podman)")
+        missing_tool("no Quadlet generator on this machine (install podman)")
     unit = "\n".join(line for line in frigate_unit() if not line.startswith("Pod="))
     unit = unit.replace("Image=frigate-tm.build", "Image=localhost/frigate-tm:test")
     units = tmp_path / "units"
@@ -102,6 +105,7 @@ def test_quadlet_turns_the_symlink_into_a_device_flag(tmp_path):
     result = subprocess.run([QUADLET, "-dryrun"], env={"QUADLET_UNIT_DIRS": str(units), "PATH": "/usr/bin:/bin"},
                             capture_output=True, text=True)
     exec_start = next(line for line in result.stdout.splitlines() if line.startswith("ExecStart="))
-    assert f" --device {SYMLINK} " in exec_start
+    # Podman 5 writes "--device /dev/x"; Podman 4 (Ubuntu 24.04, the CI runner) writes "--device=/dev/x".
+    assert re.search(rf" --device[= ]{re.escape(SYMLINK)} ", exec_start), exec_start
     assert f"After={DEVICE_UNIT}" in result.stdout.splitlines()
     assert "error" not in result.stderr.lower(), result.stderr

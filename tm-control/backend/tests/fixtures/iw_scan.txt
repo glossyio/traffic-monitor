@@ -1,0 +1,82 @@
+# Anonymised `iw dev wlan0 scan` output, in iw's layout, for the tests of tm-job-network's scan.
+# Lines that start with `#` are ahead of the first `BSS` line, which the scan's parser ignores.
+# Recorded on a Pi (names and addresses replaced by placeholders): the first block (placeholder-1, WPA2 `PSK`, except that
+# its `signal:` line was edited from -65.00 to -52.00 dBm so that it is the strongest), the second (placeholder-2, mixed
+# `PSK SAE`) and the third (a hidden network: this iw leaves out the `SSID:` line altogether).
+# Written by hand in the same layout: the fourth (placeholder-4, enterprise `IEEE 802.1X`) and the fifth (placeholder-5,
+# open: no `RSN:` or `WPA:` and no `Privacy` in `capability:`).
+BSS 02:00:00:00:00:01(on wlan0)
+	last seen: 260.593s [boottime]
+	TSF: 0 usec (0d, 00:00:00)
+	freq: 2412.0
+	beacon interval: 100 TUs
+	capability: ESS Privacy ShortPreamble RadioMeasure (0x1031)
+	signal: -52.00 dBm
+	last seen: 100 ms ago
+	SSID: placeholder-1
+	RSN:	 * Version: 1
+		 * Group cipher: CCMP
+		 * Pairwise ciphers: CCMP
+		 * Authentication suites: PSK
+		 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC (0x0000)
+	AP Channel Report:
+		 * operating class: 12
+		 * channel(s): 1 2 3 4 5 6 7 8 9 10 11
+BSS 02:00:00:00:00:02(on wlan0)
+	last seen: 260.593s [boottime]
+	TSF: 0 usec (0d, 00:00:00)
+	freq: 2412.0
+	beacon interval: 100 TUs
+	capability: ESS Privacy ShortPreamble ShortSlotTime RadioMeasure (0x1431)
+	signal: -66.00 dBm
+	last seen: 100 ms ago
+	SSID: placeholder-2
+	RSN:	 * Version: 1
+		 * Group cipher: CCMP
+		 * Pairwise ciphers: CCMP
+		 * Authentication suites: PSK SAE
+		 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC MFP-capable (0x0080)
+	AP Channel Report:
+		 * operating class: 12
+		 * channel(s): 1 2 3 4 5 6 7 8 9 10 11
+BSS 02:00:00:00:00:03(on wlan0)
+	last seen: 256.540s [boottime]
+	TSF: 0 usec (0d, 00:00:00)
+	freq: 2462.0
+	beacon interval: 100 TUs
+	capability: ESS Privacy ShortSlotTime RadioMeasure (0x1411)
+	signal: -66.00 dBm
+	last seen: 100 ms ago
+	RSN:	 * Version: 1
+		 * Group cipher: CCMP
+		 * Pairwise ciphers: CCMP
+		 * Authentication suites: PSK
+		 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC (0x0000)
+BSS 02:00:00:00:00:04(on wlan0)
+	last seen: 258.100s [boottime]
+	TSF: 0 usec (0d, 00:00:00)
+	freq: 5180.0
+	beacon interval: 100 TUs
+	capability: ESS Privacy SpectrumMgmt RadioMeasure (0x1111)
+	signal: -70.00 dBm
+	last seen: 100 ms ago
+	SSID: placeholder-4
+	RSN:	 * Version: 1
+		 * Group cipher: CCMP
+		 * Pairwise ciphers: CCMP
+		 * Authentication suites: IEEE 802.1X
+		 * Capabilities: 1-PTKSA-RC 1-GTKSA-RC (0x0000)
+	AP Channel Report:
+		 * operating class: 115
+		 * channel(s): 36 40 44 48
+BSS 02:00:00:00:00:05(on wlan0)
+	last seen: 257.200s [boottime]
+	TSF: 0 usec (0d, 00:00:00)
+	freq: 2437.0
+	beacon interval: 100 TUs
+	capability: ESS ShortPreamble ShortSlotTime (0x0421)
+	signal: -80.00 dBm
+	last seen: 100 ms ago
+	SSID: placeholder-5
+	Supported rates: 1.0* 2.0* 5.5* 11.0* 6.0 9.0 12.0 18.0
+	DS Parameter set: channel 6

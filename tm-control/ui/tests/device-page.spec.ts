@@ -1,7 +1,7 @@
 // The Device page: the device card, software, and for admins the tokens and keys, the diagnostics, and the power buttons.
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ADMIN, SYSTEM_INFO, VIEWER, apiError, json, signedIn } from './fake-api'
+import { ADMIN, NETWORK_STATE, SYSTEM_INFO, VIEWER, apiError, json, signedIn } from './fake-api'
 import { button, click, clickInDialog, dialogText, field, mountApp } from './mount'
 
 const INFO = 'GET /api/v1/system/info'
@@ -47,6 +47,25 @@ describe('the Device page', () => {
     const bar = wrapper.find('[role="progressbar"][aria-label="Storage: 87% used"]')
     expect(bar.attributes('aria-valuenow')).toBe('87')
     expect(wrapper.text()).toContain('53 °C')
+  })
+
+  it('adds a line per connected link and a link to the Network page', async () => {
+    signedIn(VIEWER, { [INFO]: SYSTEM_INFO, 'GET /api/v1/network': NETWORK_STATE })
+    const { wrapper } = await mountApp('/device')
+    const text = wrapper.text()
+    expect(text).toContain('192.168.1.57 · 2C:CF:67:00:AB:11')
+    expect(text).toContain('Its hotspot TM-AB12 · 10.42.0.1 · 2C:CF:67:00:AB:12')
+    const link = wrapper.findAll('a').find((a) => a.text().trim() === 'Network details')!
+    expect(link.attributes('href')).toBe('/network')
+  })
+
+  it("still shows the card when the network state can't be read", async () => {
+    signedIn(VIEWER, { [INFO]: SYSTEM_INFO, 'GET /api/v1/network': apiError(500, 'error', 'The device answered with an error.') })
+    const { wrapper } = await mountApp('/device')
+    expect(headings(wrapper)[0]).toBe('tm-fake')
+    expect(wrapper.text()).toContain('7.5 GB free of 58 GB')
+    expect(wrapper.text()).not.toContain('The device answered with an error.')
+    expect(wrapper.text()).not.toContain('Ethernet')
   })
 
   it('lists the software versions and the commit', async () => {

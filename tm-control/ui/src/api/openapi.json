@@ -21,13 +21,55 @@
         }
       }
     },
+    "/api/v1/auth/download-link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Download Link",
+        "description": "A link to /storefiles?files=<files> that passes the login check once without the cookie.\n\nFor browsers that hand a download to a helper without the cookie (Android's sign-in window). It works once, for\n600 seconds, from this browser's address, for these files only.",
+        "operationId": "download_link_api_v1_auth_download_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLink"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/verify": {
       "get": {
         "tags": [
           "auth"
         ],
         "summary": "Verify",
-        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.",
+        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.\nWithout a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,\nno other secret and no cookie. A login redirect's next= leaves the link's token out.",
         "operationId": "verify_api_v1_auth_verify_get",
         "responses": {
           "200": {
@@ -135,7 +177,7 @@
           "setup"
         ],
         "summary": "Status",
-        "description": "Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in.",
+        "description": "Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when\nthe page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.",
         "operationId": "status_api_v1_setup_status_get",
         "responses": {
           "200": {
@@ -1507,6 +1549,332 @@
         }
       }
     },
+    "/api/v1/network": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Network",
+        "operationId": "get_network_api_v1_network_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/hotspot/password": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Hotspot Password",
+        "operationId": "get_hotspot_password_api_v1_network_hotspot_password_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotspotPassword"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/hotspot": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Change Hotspot",
+        "description": "Start the job that applies the change to the hotspot. A value that breaks its rule is refused before any job.",
+        "operationId": "change_hotspot_api_v1_network_hotspot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotspotChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/join": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Join",
+        "description": "The join to show, from the job's state file and its unit; runs no nmcli.",
+        "operationId": "get_join_api_v1_network_join_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/JoinState"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Join Api V1 Network Join Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi": {
+      "get": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Get Wifi",
+        "operationId": "get_wifi_api_v1_network_wifi_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WifiNetworks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/scan": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Scan Wifi",
+        "description": "Start a scan (Refresh). A radio known to be missing or off is refused before any job; one that can't be read\nis left to the job.",
+        "operationId": "scan_wifi_api_v1_network_wifi_scan_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/forget": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Forget Wifi",
+        "operationId": "forget_wifi_api_v1_network_wifi_forget_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/order": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Order Wifi",
+        "description": "Set the order the unit tries its saved networks in. It must name exactly the ones that join by themselves.",
+        "operationId": "order_wifi_api_v1_network_wifi_order_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Join Wifi",
+        "description": "Start the join job: test the network, then count down to the switch. Everything that can be known now is\nchecked first, in this order, so a refusal starts no job. The password goes to the job and nowhere else.",
+        "operationId": "join_wifi_api_v1_network_wifi_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join/switch": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Switch Join",
+        "description": "End the countdown early: the join switches at once.",
+        "operationId": "switch_join_api_v1_network_wifi_join_switch_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/network/wifi/join/cancel": {
+      "post": {
+        "tags": [
+          "network"
+        ],
+        "summary": "Cancel Join",
+        "description": "Cancel a test or a countdown, or dismiss what a finished or interrupted join left. Not while it switches.",
+        "operationId": "cancel_join_api_v1_network_wifi_join_cancel_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStarted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/device": {
       "get": {
         "tags": [
@@ -2057,6 +2425,34 @@
         ],
         "title": "Disk"
       },
+      "DownloadLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "DownloadLink"
+      },
+      "DownloadLinkRequest": {
+        "properties": {
+          "files": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "DownloadLinkRequest"
+      },
       "EulaAcceptance": {
         "properties": {
           "version": {
@@ -2155,6 +2551,20 @@
         "title": "Fix",
         "description": "What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read."
       },
+      "ForgetRequest": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Uuid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid"
+        ],
+        "title": "ForgetRequest"
+      },
       "Group": {
         "properties": {
           "id": {
@@ -2193,6 +2603,121 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HotspotChange": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "hidden": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hidden"
+          }
+        },
+        "type": "object",
+        "title": "HotspotChange"
+      },
+      "HotspotPassword": {
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "HotspotPassword"
+      },
+      "HotspotState": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "security": {
+            "type": "string",
+            "enum": [
+              "wpa2",
+              "none",
+              "other"
+            ],
+            "title": "Security"
+          },
+          "address": {
+            "type": "string",
+            "title": "Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "active",
+          "name",
+          "hidden",
+          "security",
+          "address"
+        ],
+        "title": "HotspotState"
       },
       "ImportIn": {
         "properties": {
@@ -2374,6 +2899,174 @@
         ],
         "title": "Job"
       },
+      "JobStarted": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "JobStarted"
+      },
+      "JoinRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Name"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "JoinRequest"
+      },
+      "JoinState": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "testing",
+              "countdown",
+              "switching",
+              "joined",
+              "failed",
+              "cancelled",
+              "switch_failed",
+              "interrupted"
+            ],
+            "title": "Stage"
+          },
+          "network": {
+            "type": "string",
+            "title": "Network"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "joined": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joined"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_in_range",
+                  "not_joined",
+                  "no_address",
+                  "busy",
+                  "error"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "internet": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "reachable",
+                  "not_reachable",
+                  "sign_in_page"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Internet"
+          },
+          "seconds_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Left"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "network",
+          "saved",
+          "before",
+          "joined",
+          "reason",
+          "address",
+          "internet",
+          "seconds_left",
+          "finished_at"
+        ],
+        "title": "JoinState"
+      },
       "LabelsOut": {
         "properties": {
           "recognised": {
@@ -2421,6 +3114,59 @@
           "tracked"
         ],
         "title": "LabelsOut"
+      },
+      "Link": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "addresses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Addresses"
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway"
+          },
+          "dns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connected",
+          "mac",
+          "addresses",
+          "gateway",
+          "dns"
+        ],
+        "title": "Link"
       },
       "LocationCorrection": {
         "properties": {
@@ -2709,6 +3455,113 @@
         ],
         "title": "ModelsState"
       },
+      "Nearby": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "signal": {
+            "type": "integer",
+            "title": "Signal"
+          },
+          "security": {
+            "type": "string",
+            "enum": [
+              "password",
+              "wpa3",
+              "enterprise",
+              "open",
+              "other"
+            ],
+            "title": "Security"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "signal",
+          "security",
+          "saved",
+          "in_use"
+        ],
+        "title": "Nearby"
+      },
+      "NetworkState": {
+        "properties": {
+          "hostname": {
+            "type": "string",
+            "title": "Hostname"
+          },
+          "local_name": {
+            "type": "string",
+            "title": "Local Name"
+          },
+          "readable": {
+            "type": "boolean",
+            "title": "Readable"
+          },
+          "ethernet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Link"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wifi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Wifi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "internet": {
+            "type": "string",
+            "enum": [
+              "reachable",
+              "not_reachable",
+              "sign_in_page",
+              "unknown"
+            ],
+            "title": "Internet"
+          },
+          "hotspot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotspotState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "hostname",
+          "local_name",
+          "readable",
+          "ethernet",
+          "wifi",
+          "internet",
+          "hotspot"
+        ],
+        "title": "NetworkState"
+      },
       "NewPassword": {
         "properties": {
           "new_password": {
@@ -2765,6 +3618,23 @@
           "available"
         ],
         "title": "Ntp"
+      },
+      "OrderRequest": {
+        "properties": {
+          "uuids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 64,
+            "title": "Uuids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuids"
+        ],
+        "title": "OrderRequest"
       },
       "PasswordChange": {
         "properties": {
@@ -3010,6 +3880,56 @@
           "source"
         ],
         "title": "RunningOut"
+      },
+      "Saved": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "title": "Uuid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "in_use": {
+            "type": "boolean",
+            "title": "In Use"
+          },
+          "automatic": {
+            "type": "boolean",
+            "title": "Automatic"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "in_range": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Range"
+          },
+          "could_not_join": {
+            "type": "boolean",
+            "title": "Could Not Join"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "name",
+          "in_use",
+          "automatic",
+          "hidden",
+          "in_range",
+          "could_not_join"
+        ],
+        "title": "Saved"
       },
       "SecretState": {
         "properties": {
@@ -3851,6 +4771,157 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "Wifi": {
+        "properties": {
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "mac": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac"
+          },
+          "addresses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Addresses"
+          },
+          "gateway": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gateway"
+          },
+          "dns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dns"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "network",
+              "hotspot",
+              "joining",
+              "idle",
+              "off"
+            ],
+            "title": "Mode"
+          },
+          "network": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Network"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "connected",
+          "mac",
+          "addresses",
+          "gateway",
+          "dns",
+          "mode",
+          "network",
+          "signal"
+        ],
+        "title": "Wifi"
+      },
+      "WifiNetworks": {
+        "properties": {
+          "readable": {
+            "type": "boolean",
+            "title": "Readable"
+          },
+          "radio": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off",
+              "none"
+            ],
+            "title": "Radio"
+          },
+          "saved": {
+            "items": {
+              "$ref": "#/components/schemas/Saved"
+            },
+            "type": "array",
+            "title": "Saved"
+          },
+          "nearby": {
+            "items": {
+              "$ref": "#/components/schemas/Nearby"
+            },
+            "type": "array",
+            "title": "Nearby"
+          },
+          "scanned_seconds_ago": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scanned Seconds Ago"
+          },
+          "join": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JoinState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "readable",
+          "radio",
+          "saved",
+          "nearby",
+          "scanned_seconds_ago",
+          "join"
+        ],
+        "title": "WifiNetworks"
       }
     }
   }

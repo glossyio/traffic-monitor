@@ -2,16 +2,17 @@
 
 import json
 import re
-import shutil
 import subprocess
+import textwrap
 from pathlib import Path
 
 import pytest
 import yaml
+from required_tools import needs
 from tmsetup_render import load_role_yaml, render
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
-needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
+needs_node = needs("node")
 
 
 def test_http_errors_set_msg_status_code():
@@ -1491,3 +1492,83 @@ def test_survey_usage_counts_rows_without_a_survey():
     assert sql.endswith("GROUP BY survey_id")
     answer = named(json.loads(FLOWS.read_text()), "tm-internal: answer survey usage")
     assert "no survey" in answer["func"]
+
+
+# Data downloads from Android's sign-in window: it hands a download to a helper that sends no login cookie, so both
+# download templates ask tm-control for a one-time link first, and fall back to the plain address.
+
+LINK_PAGES = {"26223a9168dd0050": "async downloadUrl(files) {", "70073189458c7166": "async function downloadUrl(files) {"}
+
+
+def download_url_body(node):
+    """The body of the template's downloadUrl: from its opening line in LINK_PAGES to the matching brace, dedented."""
+    text = node["format"]
+    start = text.index(LINK_PAGES[node["id"]]) + len(LINK_PAGES[node["id"]])
+    depth = 1
+    for end in range(start, len(text)):
+        depth += {"{": 1, "}": -1}.get(text[end], 0)
+        if depth == 0:
+            return textwrap.dedent(text[start:end].strip("\n").rstrip() + "\n")
+    raise AssertionError(f"{node['id']}: downloadUrl has no closing brace")
+
+
+def test_both_download_pages_ask_the_control_app_for_a_link():
+    _, by_id = _download_nodes()
+    bodies = {download_url_body(by_id[node]) for node in LINK_PAGES}
+    assert len(bodies) == 1
+    [body] = bodies
+    assert "'/api/v1/auth/download-link'" in body and "JSON.stringify({ files })" in body
+    for node in LINK_PAGES:
+        assert ":href" not in by_id[node]["format"]
+        assert "window.location.href = await" in by_id[node]["format"]
+
+
+# Runs downloadUrl's body as an async function of (files, fetch), with a fetch that answers ANSWER (or throws for null)
+DOWNLOAD_URL_HARNESS = r"""
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+const calls = [];
+const fetch = async (url, options) => {
+    calls.push({ url, method: options.method, headers: options.headers, body: options.body,
+                 signal: options.signal instanceof AbortSignal });
+    const answer = ANSWER;
+    if (answer === null) throw new TypeError("Failed to fetch");
+    return answer;
+};
+new AsyncFunction("files", "fetch", BODY)("a.json", fetch).then((url) => console.log(JSON.stringify({ url, calls })));
+"""
+
+
+@needs_node
+@pytest.mark.parametrize(
+    "answer, expected",
+    [
+        (
+            '{"ok": true, "json": async () => ({"url": "/storefiles?files=a.json&tm_token=T"})}',
+            "/storefiles?files=a.json&tm_token=T",
+        ),
+        ('{"ok": false}', "/storefiles?files=a.json"),  # a viewer's 403
+        ("null", "/storefiles?files=a.json"),  # fetch throws: the control app doesn't answer
+    ],
+    ids=["link", "refused", "no-answer"],
+)
+def test_a_download_falls_back_to_the_plain_address(answer, expected):
+    _, by_id = _download_nodes()
+    body = download_url_body(by_id["26223a9168dd0050"])
+    script = DOWNLOAD_URL_HARNESS.replace("ANSWER", answer).replace("BODY", json.dumps(body))
+    result = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    out = json.loads(result.stdout)
+    assert out["url"] == expected
+    assert out["calls"] == [{
+        "url": "/api/v1/auth/download-link",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "body": '{"files":"a.json"}',
+        "signal": True,
+    }]
+
+
+def test_a_download_says_it_is_gzip():
+    _, by_id = _download_nodes()
+    assert "'Content-Type', 'application/gzip'" in by_id["857384c653c6a46c"]["func"]
+    assert "octet-stream" not in by_id["857384c653c6a46c"]["func"]

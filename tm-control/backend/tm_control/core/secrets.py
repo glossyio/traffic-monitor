@@ -18,6 +18,9 @@ PLATE_RECOGNIZER_TOKEN = "plate_recognizer_token"
 PLATE_RECOGNIZER_LICENSE_KEY = "plate_recognizer_license_key"
 THINGSBOARD_ACCESS_TOKEN = "thingsboard_access_token"
 FRIGATE_PLUS_API_KEY = "frigate_plus_api_key"
+# The hotspot's Wi-Fi password: written by tmsetup and the network job, not a generated or entered secret. Mode 0640,
+# root and the code group, so tm-control reads it. An empty file means the hotspot has no password.
+HOTSPOT_PASSWORD = "hotspot_password"
 # Every secret tmsetup generates (tmsetup_secret_names), whether tm-control uses it or not: diagnostics strips them all.
 GENERATED_SECRETS = (
     "go2rtc_rtsp_password", SESSION_KEY, FRIGATE_PROXY_SECRET, NODE_RED_TOKEN_KEY, NODE_RED_INTERNAL_TOKEN,
@@ -49,6 +52,15 @@ VALUE_RULES = {
 def is_valid_value(name: str, value: str) -> bool:
     """Whether value meets the entered secret's pattern, as a whole."""
     return re.fullmatch(VALUE_PATTERNS[name], value) is not None
+
+
+def read_hotspot_password(directory: Path) -> str | None:
+    """The hotspot password file's text without its line end; "" for a hotspot with no password; None when the file
+    can't be read."""
+    try:
+        return (Path(directory) / HOTSPOT_PASSWORD).read_text(encoding="utf-8").strip("\r\n")
+    except (OSError, UnicodeDecodeError):
+        return None
 
 
 class MissingSecret(RuntimeError):
