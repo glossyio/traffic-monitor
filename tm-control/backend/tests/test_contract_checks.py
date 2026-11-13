@@ -59,14 +59,69 @@ def test_cameras_match(apps):
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
 
-def test_disabled_camera_is_an_error(apps):
+NEUTRAL = "camera_1_3fa9c2"
+
+
+def point_at(apps, key, frigate_camera, **fields):
+    """Make config.yml's only camera entry `key`, pointing at `frigate_camera` (the key itself when None)."""
+
+    def rename(data):
+        entry = data["sensors"]["cameras"].pop("picam_h265")
+        if frigate_camera:
+            entry["frigate_camera"] = frigate_camera
+        data["sensors"]["cameras"][key] = entry | fields
+
+    apps.edit_config_yml(rename)
+
+
+def test_cameras_match_through_frigate_camera(apps):
+    point_at(apps, NEUTRAL, "picam_h265")
+    check = config_group(apps)["config.cameras"]
+    assert (check.status, check.fix) == ("ok", None)
+    assert check.detail == f"{NEUTRAL} (picam_h265) is in Frigate and enabled in config.yml."
+    assert config_group(apps)["config.zones"].status == "ok"
+
+
+def test_record_off_is_a_warning_not_an_error(apps):
     apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(enabled=False))
     check = config_group(apps)["config.cameras"]
-    assert check.status == "error"
-    assert "events from picam_h265 are not recorded" in check.detail.lower()
+    assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
+    assert check.detail == (
+        "Events from picam_h265 are not recorded: Database capture is off for it in config.yml. Turn it on if you "
+        "want them."
+    )
 
 
-def test_a_renamed_camera_is_an_error(apps):
+def test_detection_off_in_frigate_is_a_warning_with_the_link(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["detect"].update(enabled=False))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
+    assert check.detail == (
+        "Events from picam_h265 are not recorded: Frigate's detection is off for it. Turn Frigate detection on if "
+        "you want them."
+    )
+
+
+def test_detection_off_doesnt_matter_while_database_capture_is_off(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["detect"].update(enabled=False))
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(enabled=False))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "ok"  # nothing is detected, so nothing is dropped
+    assert check.detail == (
+        "No camera is recorded, and no events are dropped: none has both Frigate detection and Database capture on."
+    )
+
+
+def test_a_frigate_with_no_camera_on_has_nothing_to_compare(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"].update(enabled=False))
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(enabled=False))
+    check = config_group(apps)["config.cameras"]
+    assert (check.status, check.detail) == ("ok", "Frigate has no enabled camera to compare.")
+
+
+def test_a_renamed_camera_is_an_error_with_the_link(apps):
     """#249: the camera was renamed in Frigate but not in config.yml."""
 
     def rename(config):
@@ -75,13 +130,64 @@ def test_a_renamed_camera_is_an_error(apps):
     apps.edit_json(FRIGATE_CONFIG, rename)
     check = config_group(apps)["config.cameras"]
     assert check.status == "error"
+    assert check.fix == contracts.CAMERAS_LINK
     assert "front_street" in check.detail and "not recorded" in check.detail
+
+
+def test_a_frigate_camera_that_is_off_is_not_an_error(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"].update(
+        oak_ave_tele=dict(config["cameras"]["picam_h265"], enabled=False)
+    ))
+    assert config_group(apps)["config.cameras"].status == "ok"
+
+
+def test_a_frigate_camera_no_entry_points_at_is_fine_while_its_detection_is_off(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"].update(
+        oak_ave_tele=dict(config["cameras"]["picam_h265"], detect={"enabled": False})
+    ))
+    check = config_group(apps)["config.cameras"]
+    assert (check.status, check.fix) == ("ok", None)
+    assert "oak_ave_tele" not in check.detail
+
+
+def test_a_duplicate_frigate_camera_is_an_error(apps):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(
+        {NEUTRAL: {"frigate_camera": "picam_h265", "enabled": True}}
+    ))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "error"
+    assert check.fix == contracts.CAMERAS_LINK
+    # The dump in edit_config_yml sorts keys, so the neutral name comes first in the file
+    assert f"{NEUTRAL} and picam_h265 both point at Frigate's camera picam_h265" in check.detail
+    assert "only camera_1_3fa9c2, the first, is used" in check.detail
+    assert config_group(apps)["config.zones"].status == "ok"  # the duplicate's zones aren't reported twice
+
+
+def test_an_entry_whose_camera_is_gone_is_a_warning_with_the_link(apps):
+    point_at(apps, NEUTRAL, "main_st")
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(picam_h265={"enabled": True}))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
+    assert f"{NEUTRAL} (main_st)" in check.detail
+    assert "doesn't have as an enabled camera" in check.detail
+
+
+def test_an_error_beats_a_warning(apps):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(side_street={"enabled": True}))
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"].update(
+        oak_ave_tele=dict(config["cameras"]["picam_h265"])
+    ))
+    check = config_group(apps)["config.cameras"]
+    assert check.status == "error" and check.fix == contracts.CAMERAS_LINK
+    assert "oak_ave_tele" in check.detail
 
 
 def test_a_config_camera_frigate_doesnt_have_is_a_warning(apps):
     apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(side_street={"enabled": True}))
     check = config_group(apps)["config.cameras"]
     assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
     assert "side_street" in check.detail
 
 
@@ -136,8 +242,70 @@ def test_missing_zones_name_the_direction_problem(apps):
     apps.edit_json(FRIGATE_CONFIG, drop)
     check = config_group(apps)["config.zones"]
     assert check.status == "warn"
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
     assert "zone_near" in check.detail and "zone_far" in check.detail and "picam_h265" in check.detail
     assert "without zone_near and zone_far, events get a direction only from the radar (#243)" in check.detail
+
+
+def test_a_zone_turned_off_in_frigate_is_a_warning(apps):
+    """Frigate 0.18 can turn a zone off, in its config or from the live view; an event then never enters it."""
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"]["zone_capture"].update(
+        enabled=False
+    ))
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn"
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
+    assert check.detail == "Camera picam_h265 has zone_capture turned off in Frigate. Turn it back on in Frigate."
+
+
+def test_zones_of_one_camera_link_to_its_zones_in_frigate(apps):
+    """Zones are drawn in Frigate: the link opens Frigate's masks and zones settings at that camera."""
+    point_at(apps, NEUTRAL, "picam_h265")
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].pop("zone_radar"))
+    check = config_group(apps)["config.zones"]
+    assert check.fix == Fix(
+        kind="link", href="/frigate/settings?page=masksAndZones&camera=picam_h265", text="Edit its zones in Frigate",
+        external=True,
+    )
+    assert check.fix.external is True  # another app's page, not one of tm-control's
+
+
+def test_zones_of_several_cameras_link_to_the_cameras_page(apps):
+    def edit(config):
+        config["cameras"]["oak_ave_tele"] = dict(config["cameras"]["picam_h265"], zones={})
+        config["cameras"]["picam_h265"]["zones"].pop("zone_radar")
+
+    apps.edit_json(FRIGATE_CONFIG, edit)
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(
+        {NEUTRAL: {"frigate_camera": "oak_ave_tele", "enabled": True}}
+    ))
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn" and check.fix == contracts.CAMERAS_LINK
+
+
+def test_missing_and_turned_off_zones_are_named_together(apps):
+    def edit(config):
+        zones = config["cameras"]["picam_h265"]["zones"]
+        del zones["zone_radar"]
+        zones["zone_near"]["enabled"] = False
+
+    apps.edit_json(FRIGATE_CONFIG, edit)
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn"
+    assert check.detail == (
+        "Camera picam_h265 has no zone_radar in Frigate, and has zone_near turned off there; without zone_near and "
+        "zone_far, events get a direction only from the radar (#243). Draw the missing zones in Frigate, named "
+        "exactly as listed, and turn the others back on."
+    )
+
+
+def test_zones_are_checked_through_frigate_camera(apps):
+    point_at(apps, NEUTRAL, "picam_h265")
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].pop("zone_radar"))
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn"
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
+    assert f"Camera {NEUTRAL} (picam_h265) has no zone_radar in Frigate" in check.detail
 
 
 def test_a_missing_capture_zone_is_a_warning_without_the_direction_note(apps):
@@ -170,23 +338,32 @@ def test_radar_names_outside_the_env_names_are_errors(apps, name):
     assert config_group(apps)["config.radars"].status == "error"
 
 
-def test_camera_radar_must_name_an_enabled_radar(apps):
-    """#255: a camera paired with a radar that isn't enabled has its events dropped."""
+def test_a_missing_or_disabled_radar_is_a_warning_with_the_link(apps):
+    point_at(apps, NEUTRAL, "picam_h265")
     apps.edit_config_yml(lambda data: data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"].update(enabled=False))
     check = config_group(apps)["config.radars"]
-    assert check.status == "error"
+    assert (check.status, check.fix) == ("warn", contracts.CAMERAS_LINK)
     assert (
-        "camera picam_h265 is paired with radar TM_RADAR_SERIAL_PORT_00, which isn't enabled; "
-        "its events are dropped (#255)"
-    ) in check.detail.replace("Camera", "camera")
+        f"Camera {NEUTRAL} (picam_h265) is paired with radar TM_RADAR_SERIAL_PORT_00, which isn't enabled; it gets no "
+        "speed or direction from a radar."
+    ) in check.detail
+    assert "dropped" not in check.detail and "#255" not in check.detail
 
 
-def test_camera_radar_naming_a_radar_not_in_config_yml_is_an_error(apps):
+def test_camera_radar_naming_a_radar_not_in_config_yml_is_a_warning(apps):
     apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(
         camera_radar="TM_RADAR_SERIAL_PORT_02"
     ))
     check = config_group(apps)["config.radars"]
-    assert check.status == "error" and "TM_RADAR_SERIAL_PORT_02" in check.detail
+    assert check.status == "warn" and "TM_RADAR_SERIAL_PORT_02" in check.detail
+    assert check.fix == contracts.CAMERAS_LINK
+
+
+def test_a_radar_name_error_beats_the_pairing_warning(apps):
+    apps.edit_config_yml(lambda data: data["sensors"]["radars"].update(front_radar={"enabled": True}))
+    apps.edit_config_yml(lambda data: data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"].update(enabled=False))
+    check = config_group(apps)["config.radars"]
+    assert check.status == "error" and "front_radar" in check.detail
 
 
 def test_a_camera_without_a_radar_is_fine(apps):

@@ -1,6 +1,7 @@
 """Strip secrets from text that leaves the device, such as the diagnostics download."""
 
 import re
+from collections.abc import Iterable
 
 REDACTED = "<redacted>"
 
@@ -47,3 +48,19 @@ def redact(text: str, values: list[str]) -> str:
     out.append(REDACTED)
     out.append(text[end:])
     return "".join(out)
+
+
+_WORD_EDGE = "A-Za-z0-9_"
+
+
+def redact_words(text: str, words: Iterable[str]) -> str:
+    """text with each of `words` replaced by REDACTED where it stands as a whole word: not directly after or before a
+    letter, digit, or underscore, so a short word doesn't eat the longer ones that contain it. The words are matched
+    literally, the longest first; empty ones are ignored."""
+    ordered = sorted({word for word in words if word}, key=len, reverse=True)
+    if not ordered:
+        return text
+    pattern = re.compile(
+        rf"(?<![{_WORD_EDGE}])(?:{'|'.join(re.escape(word) for word in ordered)})(?![{_WORD_EDGE}])"
+    )
+    return pattern.sub(REDACTED, text)

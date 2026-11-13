@@ -27,6 +27,7 @@ from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import require_admin
 from tm_control.modules.location import reconcile
+from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import DEFAULT_PRECISION, SENSOR_TYPES, ConfigError, NodeRedConfig
 from tm_control.modules.location.coordinates import (
     DEPLOYMENT_ID,
@@ -173,32 +174,8 @@ def _nodered_error(error: NodeRedError, message: str | None = None) -> ApiError:
     return ApiError(502, "nodered_error", f"{message} {text}" if message else text)
 
 
-def _config_error(error: ConfigError) -> ApiError:
-    if error.code == "changed":
-        return ApiError(409, "config_changed", "config.yml changed since it was read. Reload the page and try again.")
-    return ApiError(500, "config_error", f"Node-RED's config.yml couldn't be used ({error.code}).")
-
-
 def _invalid(message: str, field: str | None = None) -> ApiError:
     return ApiError(422, "validation", message, detail={"field": field} if field else None)
-
-
-def _load_config(app_state) -> NodeRedConfig:
-    try:
-        return NodeRedConfig(app_state.config_path)
-    except ConfigError as error:
-        raise _config_error(error) from None
-
-
-def _save(app_state, config: NodeRedConfig) -> bool:
-    """Save config.yml and, when it changed, tell Node-RED (a fake one applies it; the real one watches the file)."""
-    try:
-        written = config.save()
-    except ConfigError as error:
-        raise _config_error(error) from None
-    if written:
-        app_state.nodered.after_config_write()
-    return written
 
 
 # Reading
@@ -294,7 +271,7 @@ def _state(request: Request, admin: User) -> PlacesState:
     try:
         outcome = reconcile.ensure(app_state, admin.id)
     except ConfigError as error:
-        raise _config_error(error) from None
+        raise config_error(error) from None
     precision, sensors, sharing = DEFAULT_PRECISION, [], "none"
     try:
         config = NodeRedConfig(app_state.config_path)
@@ -392,9 +369,9 @@ def set_precision(body: PrecisionIn, request: Request, admin: User = Depends(req
     round_stored also lower every row already stored."""
     app_state = request.app.state
     with app_state.reconcile_lock:
-        config = _load_config(app_state)
+        config = load_config(app_state)
         config.set_precision(body.precision)
-        _save(app_state, config)
+        save_config(app_state, config)
         # Now, not at the next reconcile: on a file that lost its survey id, that run would put the old one back.
         Places(app_state.state).keep_precision(body.precision)
     Audit(app_state.state).record(admin.id, "survey.precision", body.precision)
@@ -413,7 +390,7 @@ def import_places(body: ImportIn, request: Request, admin: User = Depends(requir
     """Check a CSV of planned places (description,lat,lon, then a column per sensor holding its bearing) and, unless
     dry_run, create them all, or none when any line is refused (422 with the problems in detail)."""
     app_state = request.app.state
-    sensors = _load_config(app_state).sensors()
+    sensors = load_config(app_state).sensors()
     rows, errors = _parse_csv(body.csv, sensors)
     if body.dry_run:
         return ImportOut(rows=rows, errors=errors, created=[])
@@ -474,7 +451,7 @@ def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User =
     app_state = request.app.state
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
-        config = _load_config(app_state)
+        config = load_config(app_state)
         enabled = {(s.sensor_type, s.sensor_name): s.bearing for s in config.sensors()}
         named = {}
         for item in _bearings(body.bearings):
@@ -491,7 +468,7 @@ def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User =
         config.set_place(place.id, place.lat, place.lon)
         for (sensor_type, sensor_name), bearing in chosen.items():
             config.set_sensor_bearing(sensor_type, sensor_name, bearing)
-        _save(app_state, config)  # the file first: a refused save leaves the store as it was
+        save_config(app_state, config)  # the file first: a refused save leaves the store as it was
         places = Places(app_state.state)
         places.set_in_use(place.id)
         for (sensor_type, sensor_name), bearing in chosen.items():
@@ -573,9 +550,9 @@ def correct_location(survey_id: str, body: LocationCorrection, request: Request,
                 409, "no_location", "This place has no location to correct. Plan a new place with one and deploy it."
             )
         if place.status == "in_use":
-            config = _load_config(app_state)
+            config = load_config(app_state)
             config.set_place(place.id, lat, lon)
-            _save(app_state, config)  # first, so the follow step never sees the store ahead of the file
+            save_config(app_state, config)  # first, so the follow step never sees the store ahead of the file
         places = Places(app_state.state)
         if (place.lat, place.lon) != (lat, lon):
             places.set_point(place.id, lat, lon)
@@ -638,14 +615,14 @@ def correct_bearing(
 def _write_bearing(app_state, row: DeploymentOut, bearing: str) -> None:
     """The sensor's bearing into config.yml, read now so an edit made while Node-RED answered isn't a conflict. A sensor
     no longer in the file has nothing to change: only the row and the place do."""
-    config = _load_config(app_state)
+    config = load_config(app_state)
     try:
         config.set_sensor_bearing(row.sensor_type, row.sensor_name, bearing)
     except KeyError:
         return
     except ConfigError as error:
-        raise _config_error(error) from None
-    _save(app_state, config)
+        raise config_error(error) from None
+    save_config(app_state, config)
 
 
 def _put_row_back(nodered, row: DeploymentOut) -> None:

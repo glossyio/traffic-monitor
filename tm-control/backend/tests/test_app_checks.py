@@ -646,9 +646,12 @@ def test_anonymous_connect_to_nothing_is_none():
 class Handler(http.server.BaseHTTPRequestHandler):
     status = 200
     body = b"not json"
-    posted: list = []  # (path, Content-Type, body) of each POST
+    posted: list = []  # (path, Content-Type, body) of each POST or PUT
+    methods: list = []  # the method of each POST or PUT
+    bypass: list = []  # the X-Cache-Bypass header of each request, None when it had none
 
     def do_GET(self):
+        Handler.bypass.append(self.headers.get("X-Cache-Bypass"))
         self.send_response(self.status)
         self.end_headers()
         self.wfile.write(self.body)
@@ -656,7 +659,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         received = self.rfile.read(int(self.headers["Content-Length"]))
         Handler.posted.append((self.path, self.headers["Content-Type"], received))
+        Handler.methods.append(self.command)
         self.do_GET()
+
+    do_PUT = do_POST
 
     def log_message(self, *args):
         pass
@@ -769,6 +775,34 @@ def test_frigate_config_raw_and_save(http_app, monkeypatch):
     for body in (b"{not json", b'{"message": 3}', b"[]"):
         monkeypatch.setattr(Handler, "body", body)
         assert frigate.save_config("x") == (400, None)
+
+
+def test_frigate_set_detect_uses_the_live_switch(http_app, monkeypatch):
+    """Frigate's PUT /api/camera/<name>/set/detect, the live view's switch: no restart, and Frigate keeps it."""
+    monkeypatch.setattr(frigate, "BASE", f"{http_app}/api")
+    monkeypatch.setattr(Handler, "posted", [])
+    monkeypatch.setattr(Handler, "methods", [])
+    monkeypatch.setattr(Handler, "body", b'{"success": true}')
+    assert frigate.set_detect("oak ave", False) is True
+    assert frigate.set_detect("picam_h265", True) is True
+    assert Handler.posted == [
+        ("/api/camera/oak%20ave/set/detect", "application/json", b'{"value": "OFF"}'),
+        ("/api/camera/picam_h265/set/detect", "application/json", b'{"value": "ON"}'),
+    ]
+    assert Handler.methods == ["PUT", "PUT"]
+    for status, body in ((200, b'{"success": false}'), (200, b"not json"), (400, b'{"success": true}')):
+        monkeypatch.setattr(Handler, "status", status)
+        monkeypatch.setattr(Handler, "body", body)
+        assert frigate.set_detect("picam_h265", True) is False
+
+
+def test_frigate_config_skips_frigates_api_cache(http_app, monkeypatch):
+    """Frigate's nginx keeps a GET of /api/ for 5 seconds; a switch just set must show at once."""
+    monkeypatch.setattr(frigate, "BASE", f"{http_app}/api")
+    monkeypatch.setattr(Handler, "bypass", [])
+    monkeypatch.setattr(Handler, "body", b'{"cameras": {}}')
+    assert frigate.config() == {"cameras": {}}
+    assert Handler.bypass == ["1"]
 
 
 def test_a_body_over_the_cap_is_no_answer(http_app, monkeypatch):

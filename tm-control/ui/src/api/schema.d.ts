@@ -739,6 +739,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cameras */
+        get: operations["list_cameras_api_v1_cameras_get"];
+        put?: never;
+        /**
+         * Add Camera
+         * @description Add an entry under a new neutral name for a Frigate camera that no entry points at.
+         */
+        post: operations["add_camera_api_v1_cameras_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Camera
+         * @description Set an entry's record, radar, and plates settings. Frigate isn't asked: these don't depend on it.
+         */
+        put: operations["set_camera_api_v1_cameras__name__put"];
+        post?: never;
+        /**
+         * Remove Camera
+         * @description Remove an entry whose Frigate camera is gone, or that duplicates an earlier entry's.
+         */
+        delete: operations["remove_camera_api_v1_cameras__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/frigate-camera": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Point Camera
+         * @description Point an entry whose Frigate camera is gone at a Frigate camera no entry points at. Nothing else changes.
+         */
+        post: operations["point_camera_api_v1_cameras__name__frigate_camera_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/neutral-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Neutral Name
+         * @description Re-key an entry to a new neutral name, and move its bearings in every place to the new name.
+         */
+        post: operations["neutral_name_api_v1_cameras__name__neutral_name_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/frigate-detection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Detection
+         * @description Turn Frigate's object detection on or off for an entry's camera, with Frigate's live switch (no restart; Frigate
+         *     keeps it). config.yml isn't changed.
+         */
+        put: operations["set_detection_api_v1_cameras__name__frigate_detection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -1184,6 +1290,110 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** CameraAdd */
+        CameraAdd: {
+            /** Frigate Camera */
+            frigate_camera: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Camera Radar */
+            camera_radar?: string | null;
+            /** Plate Recognizer */
+            plate_recognizer?: boolean | null;
+        };
+        /** CameraDetection */
+        CameraDetection: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * CameraIssue
+         * @description Something the Status page's camera checks report about this row, as the check rates it. The page words it.
+         */
+        CameraIssue: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "error" | "warn";
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar";
+        };
+        /** CameraPoint */
+        CameraPoint: {
+            /** To */
+            to: string;
+        };
+        /** CameraRadar */
+        CameraRadar: {
+            /** Name */
+            name: string;
+            /** In Config */
+            in_config: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Port Open */
+            port_open: boolean | null;
+        };
+        /** CameraRow */
+        CameraRow: {
+            /** Name */
+            name: string | null;
+            /** Frigate Camera */
+            frigate_camera: string;
+            /**
+             * In Frigate
+             * @enum {string}
+             */
+            in_frigate: "on" | "off" | "absent" | "unknown";
+            /** Detect */
+            detect: boolean | null;
+            /** Neutral */
+            neutral: boolean | null;
+            /** Duplicate Of */
+            duplicate_of: string | null;
+            /** Enabled */
+            enabled: boolean | null;
+            /** Camera Radar */
+            camera_radar: string | null;
+            /** Plate Recognizer */
+            plate_recognizer: boolean | null;
+            /** Zones Missing */
+            zones_missing: string[] | null;
+            /** Zones Off */
+            zones_off: string[] | null;
+            /**
+             * Issues
+             * @default []
+             */
+            issues: components["schemas"]["CameraIssue"][];
+        };
+        /** CameraSettings */
+        CameraSettings: {
+            /** Enabled */
+            enabled: boolean;
+            /** Camera Radar */
+            camera_radar?: string | null;
+            /** Plate Recognizer */
+            plate_recognizer?: boolean | null;
+        };
+        /** CamerasState */
+        CamerasState: {
+            /**
+             * Frigate
+             * @enum {string}
+             */
+            frigate: "ok" | "down" | "safe_mode";
+            /** Plates */
+            plates: boolean;
+            /** Rows */
+            rows: components["schemas"]["CameraRow"][];
+            /** Radars */
+            radars: components["schemas"]["CameraRadar"][];
+        };
         /** Check */
         Check: {
             /** Id */
@@ -1308,6 +1518,11 @@ export interface components {
             unit?: string | null;
             /** Href */
             href?: string | null;
+            /**
+             * External
+             * @default false
+             */
+            external: boolean;
         };
         /** ForgetRequest */
         ForgetRequest: {
@@ -3122,6 +3337,226 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeploymentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cameras_api_v1_cameras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+        };
+    };
+    add_camera_api_v1_cameras_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_camera_api_v1_cameras__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_camera_api_v1_cameras__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    point_camera_api_v1_cameras__name__frigate_camera_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraPoint"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    neutral_name_api_v1_cameras__name__neutral_name_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_detection_api_v1_cameras__name__frigate_detection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CameraDetection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CamerasState"];
                 };
             };
             /** @description Validation Error */

@@ -18,7 +18,7 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Detection**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](../data-and-payloads/integrations.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](../data-and-payloads/integrations.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
 
 ![The Location page on a phone: the place in use with its stored and exact location, the list of places, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
 

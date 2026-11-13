@@ -38,7 +38,7 @@ const rows = computed(() =>
       check,
       mark: MARKS[check.status],
       hint: fix?.kind === 'hint' ? fix.text : null,
-      link: fix?.kind === 'link' && fix.href ? { to: fix.href, text: fix.text } : null,
+      link: fix?.kind === 'link' && fix.href ? { to: fix.href, text: fix.text, external: fix.external === true } : null,
       restart: props.admin && fix?.kind === 'restart' && fix.unit ? action(fix.unit, fix.text) : null,
     }
   }),
@@ -68,7 +68,8 @@ function press(key: string) {
             <div class="text-body-2 text-secondary">
               {{ row.check.detail }}
               <template v-if="row.hint">{{ row.hint }}</template>
-              <router-link v-if="row.link" :to="row.link.to" class="text-primary">{{ row.link.text }}</router-link>
+              <a v-if="row.link?.external" :href="row.link.to" class="text-primary">{{ row.link.text }}</a>
+              <router-link v-else-if="row.link" :to="row.link.to" class="text-primary">{{ row.link.text }}</router-link>
             </div>
             <div v-if="row.restart" class="d-flex flex-column align-end mt-2">
               <!-- the same button as the re-scan's below -->

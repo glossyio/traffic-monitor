@@ -118,6 +118,26 @@ describe('CheckList', () => {
     expect(link.attributes('href')).toBe('/time')
   })
 
+  it("shows a link fix to another app, such as Frigate's zones, as a plain link the browser follows", () => {
+    const href = '/frigate/settings?page=masksAndZones&camera=picam_h265'
+    const group = {
+      id: 'config',
+      title: 'Configuration',
+      checks: [
+        {
+          id: 'config.zones',
+          title: 'Zones',
+          status: 'warn',
+          detail: 'Camera picam_h265 has no zone_far in Frigate.',
+          fix: { kind: 'link', text: 'Edit its zones in Frigate', href, external: true },
+        },
+      ],
+    }
+    const wrapper = list(group, false)
+    expect(wrapper.find('a').attributes('href')).toBe(href)
+    expect(wrapper.findComponent({ name: 'RouterLink' }).exists()).toBe(false)
+  })
+
   it('makes the button of the action under way wait', () => {
     const wrapper = list(FOUR, true, { busy: 'frigate.service' })
     expect(wrapper.find('button').classes()).toContain('v-btn--loading')

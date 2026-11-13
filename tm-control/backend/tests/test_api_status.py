@@ -31,9 +31,9 @@ def audit_actions(settings):
         con.close()
 
 
-def test_status_module_comes_right_after_jobs_secrets_detection_and_location():
+def test_status_module_comes_right_after_jobs_secrets_detection_location_and_cameras():
     ids = [m.id for m in MODULES]
-    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 5] == ["secrets", "detection", "location", "status"]
+    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 6] == ["secrets", "detection", "location", "cameras", "status"]
 
 
 def test_status_needs_a_session(claimed_client):
@@ -62,18 +62,20 @@ def test_the_fake_report_shows_every_status_and_fix_kind(claimed_client, login):
     fixes = [c["fix"] for c in checks if c["fix"]]
     assert {f["kind"] for f in fixes} == {"restart", "rescan", "link", "hint"}
     assert all(f["unit"] for f in fixes if f["kind"] == "restart")
-    assert {f["href"] for f in fixes if f["kind"] == "link"} == {"/device", "/time"}
+    assert {f["href"] for f in fixes if f["kind"] == "link"} == {"/device", "/time", "/cameras"}
 
 
 def test_the_fake_report_has_the_real_groups_and_fixes():
     from tm_control.modules.apps.checks import DIAGNOSTICS
+    from tm_control.modules.apps.contracts import CAMERAS_LINK
     from tm_control.modules.hardware.checks import RESCAN
     from tm_control.modules.time.checks import SET_IT
 
     groups = fake_groups()
     assert [(g["id"], g["title"]) for g in groups] == [(g.id, g.title) for m in MODULES for g in m.check_groups]
     fixes = [c["fix"] for g in groups for c in g["checks"] if c["fix"] and c["fix"]["kind"] in ("rescan", "link")]
-    assert {tuple(f.items()) for f in fixes} == {tuple(f.model_dump().items()) for f in (DIAGNOSTICS, RESCAN, SET_IT)}
+    real = (CAMERAS_LINK, DIAGNOSTICS, RESCAN, SET_IT)
+    assert {tuple(f.items()) for f in fixes} == {tuple(f.model_dump().items()) for f in real}
     for group in groups:
         assert all(c["id"].startswith(f"{group['id']}.") for c in group["checks"])
 

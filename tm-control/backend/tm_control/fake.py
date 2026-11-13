@@ -29,6 +29,7 @@ from tm_control.core.settings import EULA_PATH, FAKE_FIXTURES, FAKE_MANIFEST, FA
 from tm_control.core.state import State
 
 FAKE_RUNNING_MODEL = "running-model"  # the file holding the name of the model the fake Frigate runs
+FAKE_DETECT = "frigate-detect.json"  # the fake Frigate's detection switches, {camera: bool}
 FAKE_PLUS_ID = "0123456789abcdef0123456789abcdef"  # the fixture sidecar's model id
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
 
@@ -50,6 +51,7 @@ def reset(settings: Settings) -> int:
     state = State(settings.state_dir / "state.sqlite")
     state.migrate()
     seed_model_cache(settings)
+    detect_file(settings).unlink(missing_ok=True)
     config = config_file_path(settings, None)
     for path in [config, *config.parent.glob(f"{config.name}.*.bak")]:
         path.unlink(missing_ok=True)
@@ -96,6 +98,28 @@ def seed_model_cache(settings: Settings) -> None:
     running_model_file(settings).write_text(FAKE_PLUS_ID)
 
 
+def detect_file(settings: Settings) -> Path:
+    return settings.state_dir.parent / FAKE_DETECT
+
+
+def _detect_switches(settings: Settings) -> dict:
+    try:
+        switches = json.loads(detect_file(settings).read_text())
+    except (OSError, ValueError):
+        return {}
+    return switches if isinstance(switches, dict) else {}
+
+
+def set_frigate_detect(settings: Settings, camera: str, on: bool) -> bool:
+    """Fake mode's stand-in for frigate.set_detect: the switch is kept beside the fake state and frigate_answer applies
+    it. Like Frigate, it takes a camera it has."""
+    if camera not in frigate_answer(settings)[0]["cameras"]:
+        return False
+    switches = _detect_switches(settings) | {camera: on}
+    detect_file(settings).write_text(json.dumps(switches))
+    return True
+
+
 def seed_config(settings: Settings) -> Path:
     """Give the fake device Node-RED's config.yml, the fixture's (a camera and a radar, at 45.0, -122.0, with no survey
     id), when it has none; a file already there is kept, with whatever the fake device wrote to it."""
@@ -120,8 +144,9 @@ def use_model(settings: Settings, name: str) -> None:
 
 
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
-    """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, and
-    a config.yml that is missing. Nothing outside the fake directory is read."""
+    """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, a
+    second camera (oak_ave_tele, a copy of the first), the detection switches set_frigate_detect keeps, and a config.yml
+    that is missing. Nothing outside the fake directory is read."""
     config = json.loads((FAKE_FIXTURES / "frigate_api_config.json").read_text())
     try:
         name = running_model_file(settings).read_text().strip()
@@ -133,6 +158,11 @@ def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
         model["path"] = f"/config/model_cache/{name}"
     else:
         model.pop("path", None)
+    first = next(iter(config["cameras"].values()))  # a camera that no config.yml entry points at, for the Cameras page
+    config["cameras"]["oak_ave_tele"] = copy.deepcopy(first) | {"name": "oak_ave_tele"}
+    for camera, on in _detect_switches(settings).items():
+        if camera in config["cameras"] and isinstance(on, bool):
+            config["cameras"][camera].setdefault("detect", {})["enabled"] = on
     return copy.deepcopy(config), ConfigRead(None, "missing")
 
 
@@ -437,9 +467,9 @@ class FakeNodeRed(NodeRed):
         except ConfigError:
             return  # as init-config: a file that doesn't load leaves the previous config in place
         self._deployment = config.deployment()
-        self._engine(self._deployment, config.sensors())
+        self._engine(self._deployment, config.sensors(), config.listed_sensors())
 
-    def _engine(self, place, sensors) -> None:
+    def _engine(self, place, sensors, listed) -> None:
         from tm_control.modules.location.coordinates import round_half_away
 
         places = {"none": None, "1": 1, "2": 2}[place.precision]
@@ -486,6 +516,11 @@ class FakeNodeRed(NodeRed):
                 insert(sensor, want_survey, want_bearing)
             elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
                 row.update(location(row["lat"], row["lon"], places))
+
+        if listed is not None:  # 7. a sensor the file no longer lists, on or off, ends its deployment
+            for row in self.rows:
+                if row["entryEndDateTime"] is None and (row["sensorType"], row["sensorName"]) not in listed:
+                    row["entryEndDateTime"] = now
 
     # the endpoints
 

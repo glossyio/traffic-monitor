@@ -737,6 +737,31 @@ def test_status_report_agrees_with_the_inventory(address, expect, admin_session)
     assert not problems, "status checks that don't match the inventory: " + "; ".join(problems)
 
 
+# The issue codes the config.cameras check reads from the rows (tm_control/modules/cameras/state.py); the zones and
+# radar codes belong to other checks
+CAMERAS_CHECK_CODES = {"not_paired", "duplicate", "gone", "camera_off", "capture_off", "detect_off"}
+
+
+def test_cameras_page_agrees_with_the_status_check(address, admin_session):
+    """The Cameras page and the config.cameras check come from the same comparison, so they agree in every state,
+    including the installer's, with Frigate's detection off: Frigate answers, and the check's status is the worst
+    level among the rows' issues that are the check's (error, else warn, else ok). A failure names keys and Frigate's
+    camera names, as the page does behind the login."""
+    answer = request_from_this_machine(address, f"{API}/cameras", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/cameras with the admin session answered HTTP {answer.status}"
+    assert state.get("frigate") == "ok", f"the Cameras page says Frigate is {state.get('frigate')}"
+    status, detail = status_checks(address, admin_session).get("config.cameras", ("missing", None))
+    marked = [(row["name"] or f"Frigate's {row['frigate_camera']}", issue["level"], issue["code"])
+              for row in state["rows"] for issue in row.get("issues", []) if issue["code"] in CAMERAS_CHECK_CODES]
+    levels = {level for _, level, _ in marked}
+    expected = "error" if "error" in levels else "warn" if "warn" in levels else "ok"
+    assert status == expected, (
+        f"config.cameras is {status} ({detail}), but the Cameras page's rows say {expected}: "
+        + ("; ".join(f"{name}: {level} {code}" for name, level, code in marked) or "no issue")
+    )
+
+
 NETWORK_CHECKS = ["network.hotspot", "network.wifi", "network.internet", "network.wifi_country"]
 
 
@@ -759,12 +784,23 @@ VIEWER_ACTIONS = [
     ("POST", f"{API}/system/power-off", 403),
     ("POST", f"{API}/time", 403),
     ("GET", f"{API}/system/diagnostics", 403),
+    ("GET", f"{API}/cameras", 403),
+    ("POST", f"{API}/cameras", 403),
+    ("PUT", f"{API}/cameras/picam_h265", 403),
+    ("POST", f"{API}/cameras/picam_h265/frigate-camera", 403),
+    ("POST", f"{API}/cameras/picam_h265/neutral-name", 403),
+    ("DELETE", f"{API}/cameras/picam_h265", 403),
+    ("PUT", f"{API}/cameras/picam_h265/frigate-detection", 403),
     ("GET", f"{API}/status", 200),
     ("GET", f"{API}/services", 200),
     ("GET", f"{API}/system/info", 200),
     ("GET", f"{API}/time", 200),
 ]
-POWER_ACTIONS = {f"{API}/system/reboot", f"{API}/system/power-off"}
+# Actions that would change the unit even with an empty body: sent only after the guard below
+GUARDED_ACTIONS = {
+    f"{API}/system/reboot", f"{API}/system/power-off", f"{API}/cameras/picam_h265/neutral-name",
+    f"{API}/cameras/picam_h265/frigate-detection",
+}
 
 
 def admin_refusal(answer):
@@ -778,17 +814,19 @@ def admin_refusal(answer):
                          ids=[f"{method} {path.removeprefix(API)}" for method, path, _ in VIEWER_ACTIONS])
 def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, expected):
     """A viewer reads the status, the services, the device's facts, and the time, and every action is refused before
-    anything runs. Each write sends an empty change, so POST /time would change nothing even if it were let through.
+    anything runs. Each write sends an empty change, so POST /time would change nothing even if it were let through,
+    and DELETE /cameras/picam_h265 is refused for a camera Frigate has.
 
-    A viewer's reboot or power-off is sent only after a harmless action, a re-scan, was refused as admin-only: if
-    require_admin ever let viewers through, the Pi would reboot, or power off until someone power-cycles it.
+    A viewer's reboot, power-off, neutral name, or Frigate detection switch is sent only after a harmless action, a
+    re-scan, was refused as admin-only: if require_admin ever let viewers through, the Pi would reboot, power off until
+    someone power-cycles it, re-key its camera, or switch Frigate's detection.
     """
-    if path in POWER_ACTIONS:
+    if path in GUARDED_ACTIONS:
         guard = admin_refusal(request_from_this_machine(address, f"{API}/status/rescan", "POST", viewer_session, {}))
         if guard != (403, ADMIN_ONLY):
             pytest.fail(f"a viewer's POST {API}/status/rescan answered {guard}, not require_admin's 403, so {path} "
-                        "wasn't sent: it would reboot or power off the Pi", pytrace=False)
-    answer = request_from_this_machine(address, path, method, viewer_session, {} if method == "POST" else None)
+                        "wasn't sent: it would change the unit", pytrace=False)
+    answer = request_from_this_machine(address, path, method, viewer_session, {} if method in ("POST", "PUT") else None)
     if expected == 200:
         assert answer.status == 200, f"{method} {path} with a viewer session answered {answer.status}"
         return

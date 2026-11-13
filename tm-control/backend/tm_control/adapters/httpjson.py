@@ -1,4 +1,4 @@
-"""HTTP requests to the apps on this device (Frigate, Node-RED, go2rtc): a GET or a POST to 127.0.0.1 with a short
+"""HTTP requests to the apps on this device (Frigate, Node-RED, go2rtc): a GET, POST, or PUT to 127.0.0.1 with a short
 timeout.
 
 None of these functions raises when the app doesn't answer, times out, or answers something unreadable; they return
@@ -54,15 +54,17 @@ def get(
 
 
 def post(
-    url: str, body: bytes, content_type: str, headers: dict[str, str] | None = None, timeout: float | None = None
+    url: str, body: bytes, content_type: str, headers: dict[str, str] | None = None, timeout: float | None = None,
+    method: str = "POST",
 ) -> tuple[int | None, bytes | None]:
-    """The HTTP status and body of a POST of body as content_type, as get returns them.
+    """The HTTP status and body of a POST (or another method that sends a body, such as PUT) of body as content_type,
+    as get returns them.
 
     Raises ValueError for a URL that isn't on 127.0.0.1.
     """
     _loopback(url)
     sent = dict(headers or {}) | {"Content-Type": content_type}
-    return _send(urllib.request.Request(url, data=body, headers=sent, method="POST"), timeout)
+    return _send(urllib.request.Request(url, data=body, headers=sent, method=method), timeout)
 
 
 def get_json(url: str, headers: dict[str, str] | None = None, timeout: float | None = None) -> tuple[int | None, Any]:

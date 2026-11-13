@@ -80,12 +80,28 @@ export function mountAlone(component: Component, props: Record<string, unknown>)
   return wrapper
 }
 
+// The input inside `root` whose <label for=...> reads `label`
+export function fieldIn(root: Element | null, label: string): HTMLInputElement {
+  const labels = [...(root?.querySelectorAll('label[for]') ?? [])].filter((l) => l.textContent?.trim() === label)
+  expect(labels.length, `one field labelled "${label}"`).toBe(1)
+  return document.getElementById(labels[0].getAttribute('for')!) as HTMLInputElement
+}
+
+// The buttons inside `root` that read `text`, and a click on the one such button
+export function buttonsIn(root: Element | null, text: string): HTMLButtonElement[] {
+  return [...(root?.querySelectorAll<HTMLButtonElement>('button') ?? [])].filter((b) => b.textContent?.trim() === text)
+}
+
+export async function clickIn(root: Element | null, text: string) {
+  const buttons = buttonsIn(root, text)
+  expect(buttons.length, `one button reading "${text}"`).toBe(1)
+  buttons[0].click()
+  await flushPromises()
+}
+
 // The input in the open dialog whose <label for=...> reads `label`
 export function dialogField(label: string): HTMLInputElement {
-  const dialog = document.querySelector('.v-overlay-container .v-dialog')
-  const labels = [...(dialog?.querySelectorAll('label[for]') ?? [])].filter((l) => l.textContent?.trim() === label)
-  expect(labels.length, `one dialog field labelled "${label}"`).toBe(1)
-  return document.getElementById(labels[0].getAttribute('for')!) as HTMLInputElement
+  return fieldIn(document.querySelector('.v-overlay-container .v-dialog'), label)
 }
 
 // Type into an input as a person would (or paste): the new value, then the input event Vue listens for

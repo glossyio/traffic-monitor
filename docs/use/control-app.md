@@ -4,7 +4,7 @@ description: Claim a Traffic Monitor with its setup code, log in, add viewer acc
 
 # Control app and login
 
-The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](system-admin.md#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](device-health.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](detection.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](location.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](system-admin.md#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](device-health.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](detection.md). Its Cameras page keeps each camera's settings in step with Frigate; see [Cameras](cameras.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](location.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 !!! info "What the login protects"
 
@@ -71,6 +71,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Users** page | Yes | No |
 | Status, Device, and Date and time pages | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
 | The **Detection** page | Yes | Read only; see [The Detection page](detection.md#the-detection-page) |
+| The **Cameras** page | Yes | No |
 | The **Location** page | Yes | No |
 
 Cockpit uses the Raspberry Pi user account, not these accounts.

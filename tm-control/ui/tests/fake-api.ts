@@ -94,8 +94,13 @@ export function counts(ok: number, warn: number, error: number, unknown: number)
   }
 }
 
-export const RESTART_FRIGATE: Fix = { kind: 'restart', text: 'Restart Frigate', unit: 'frigate.service' }
-export const RESCAN: Fix = { kind: 'rescan', text: 'Re-scan hardware' }
+export const RESTART_FRIGATE: Fix = {
+  kind: 'restart',
+  text: 'Restart Frigate',
+  unit: 'frigate.service',
+  external: false,
+}
+export const RESCAN: Fix = { kind: 'rescan', text: 'Re-scan hardware', external: false }
 
 export const SERVICES: Group = {
   id: 'services',
@@ -158,6 +163,52 @@ export function timeResult(changes: Partial<TimeResult>): TimeResult {
     ntp_took_over: false,
   }
   return { ...TIME_STATE, ...outcome, ...changes }
+}
+
+// GET /cameras: the Cameras page's state. The rows and radars use the API's own types (schema.d.ts).
+export type CameraRow = components['schemas']['CameraRow']
+export type CamerasState = components['schemas']['CamerasState']
+export type CameraRadar = components['schemas']['CameraRadar']
+
+// An entry that is in step with Frigate: neutral key, all four zones, recording, no radar
+export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
+  return {
+    name: 'camera_1_3fa9c2',
+    frigate_camera: 'oak_ave_wide',
+    in_frigate: 'on',
+    detect: true,
+    neutral: true,
+    duplicate_of: null,
+    enabled: true,
+    camera_radar: null,
+    plate_recognizer: null,
+    zones_missing: [],
+    zones_off: [],
+    issues: [],
+    ...changes,
+  }
+}
+
+// A Frigate camera that no entry points at
+export function newRow(frigate_camera = 'oak_ave_tele', changes: Partial<CameraRow> = {}): CameraRow {
+  return cameraRow({
+    name: null,
+    frigate_camera,
+    neutral: null,
+    enabled: null,
+    zones_missing: [],
+    issues: [{ level: 'error', code: 'not_paired' }],
+    ...changes,
+  })
+}
+
+export const RADARS: CameraRadar[] = [
+  { name: 'TM_RADAR_SERIAL_PORT_00', in_config: true, enabled: true, port_open: true },
+  { name: 'TM_RADAR_SERIAL_PORT_01', in_config: true, enabled: false, port_open: false },
+]
+
+export function camerasState(changes: Partial<CamerasState> = {}): CamerasState {
+  return { frigate: 'ok', plates: false, rows: [cameraRow()], radars: RADARS, ...changes }
 }
 
 // GET /network: Ethernet connected, and the Wi-Fi radio on the unit's own hotspot

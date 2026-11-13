@@ -47,6 +47,16 @@ describe('router', () => {
     expect(await landing('/time')).toBe('/time')
   })
 
+  it('keeps a viewer off the Cameras page', async () => {
+    device(true, VIEWER)
+    expect(await landing('/cameras')).toBe('/')
+  })
+
+  it('lets an admin open the Cameras page', async () => {
+    device(true, ADMIN)
+    expect(await landing('/cameras')).toBe('/cameras')
+  })
+
   it('lets a viewer open the Network page, and lists it in the menu after Device', async () => {
     device(true, VIEWER)
     expect(await landing('/network')).toBe('/network')

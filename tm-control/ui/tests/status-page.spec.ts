@@ -189,7 +189,7 @@ describe('the Status page', () => {
           title: 'Hotspot',
           status: 'error',
           detail: 'On as TM-AB12, with no password: anyone nearby can join it.',
-          fix: { kind: 'link', text: 'Set a password', href: '/network#hotspot' },
+          fix: { kind: 'link', text: 'Set a password', href: '/network#hotspot', external: false },
         },
       ],
     }

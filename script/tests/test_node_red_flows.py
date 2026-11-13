@@ -176,10 +176,15 @@ SERIAL_IN = {
 RADAR_NAMES = sorted(SERIAL_IN.values())
 TOKEN = "placeholder-internal-token"
 
-# Runs function nodes the way Node-RED does: each node's On Start code once, then its body with msg, env, global,
-# and node. Global context is one object for all the steps, read and written by dotted keys like Node-RED's memory
-# store, so a test can run several nodes in turn.
+# Runs function nodes the way Node-RED 5.0.8 does: each node's On Start code once, then its body with msg, env,
+# global, flow, and node. The code runs in a vm context that holds only the names the function node's sandbox has
+# (10-function.js: console, util, Buffer, URL, URLSearchParams, Date, RED, context, flow, global, env, the timer
+# functions, promisify), so a host-only global such as structuredClone or fetch is a ReferenceError here too, as it
+# is on the device. Global context is one object for all the steps, read and written by dotted keys like Node-RED's
+# memory store, so a test can run several nodes in turn. Flow context is a plain object read and written by key.
 HARNESS = r"""
+const vm = require("vm");
+const util = require("util");
 const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const store = input.global;
 const global = {
@@ -194,7 +199,17 @@ const global = {
         target[parts[parts.length - 1]] = value;
     },
 };
+const flowStore = input.flow;
+const flow = {
+    get: (key) => flowStore[key],
+    set: (key, value) => { flowStore[key] = value; },
+};
 const env = { get: (name) => input.env[name] };
+const sandbox = {
+    console, util, Buffer, URL, URLSearchParams, Date, RED: { util: {} }, context: {}, flow, global, env,
+    setTimeout, clearTimeout, setInterval, clearInterval, promisify: util.promisify,
+};
+const context = vm.createContext(sandbox);
 const started = new Set();
 const results = [];
 for (const step of input.steps) {
@@ -203,21 +218,22 @@ for (const step of input.steps) {
     const log = (level) => (text, msg) => logged.push([level, String(text), msg !== undefined]);
     const node = { error: log("error"), warn: log("warn"), log: log("log"), status: () => {} };
     if (step.initialize && !started.has(step.id)) {
-        new Function("env", "global", "node", step.initialize)(env, global, node);
+        new vm.Script("(function(node) {" + step.initialize + "\n})").runInContext(context)(node);
     }
     started.add(step.id);
-    const result = new Function("msg", "env", "global", "node", step.func)(step.msg, env, global, node);
+    const result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
     results.push({ result: result === undefined ? null : result, logged });
 }
-console.log(JSON.stringify({ results, global: store }));
+console.log(JSON.stringify({ results, global: store, flow: flowStore }));
 """
 
 
-def run_functions(steps, env=None, context=None):
+def run_functions(steps, env=None, context=None, flow=None):
     """Run (node, msg) steps under node; returns each step's return value and log, and the global context after."""
     payload = {
         "env": env or {},
         "global": context or {},
+        "flow": flow or {},
         "steps": [{"id": node["id"], "func": node["func"], "initialize": node.get("initialize", ""), "msg": msg}
                   for node, msg in steps],
     }
@@ -552,7 +568,8 @@ def test_each_config_load_resets_the_status_and_reads_the_schema_version():
     assert set(catch["scope"]) == {CONFIG_FILE_IN, CONFIG_YAML, INIT_DEFAULTS}
     assert catch["wires"] == [[named(flows, "tm-internal: record config error")["id"]]]
     loaded = named(flows, "tm-internal: config loaded")
-    assert by_id[SET_CONFIG]["wires"] == [["ac8b2de05ec27001", loaded["id"]]]
+    pickers = [node_id for node_id in by_id[SET_CONFIG]["wires"][0] if by_id[node_id]["type"] == "link out"]
+    assert by_id[SET_CONFIG]["wires"] == [["ac8b2de05ec27001", loaded["id"], *pickers]] and len(pickers) == 1
 
 
 def test_radar_status_follows_the_four_serial_nodes():
@@ -1040,6 +1057,34 @@ def test_engine_skips_disabled_sensors():
 
 
 @needs_node
+def test_engine_closes_the_row_of_a_sensor_that_left_the_file():
+    gone = open_row("cameras", "main_st", "n")
+    run = engine(engine_sensors(), [camera_row(), radar_row(), gone], ENGINE_PLACE)
+    assert [c["params"]["$id"] for c in run.close] == [gone["id"]] and run.insert == []
+    assert gone["id"] in {row["id"] for row in run.payload["updatedDeployment"]}
+    assert gone["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+@pytest.mark.parametrize("sensors", [None, "broken"])
+def test_engine_closes_nothing_without_a_sensors_object(sensors):
+    assert engine(sensors, [camera_row()], ENGINE_PLACE).written() == []
+
+
+@needs_node
+def test_engine_closes_an_empty_blocks_rows_and_keeps_an_empty_entrys_row():
+    """`cameras:` with nothing under it lists no camera; `main_st:` with nothing under it is a camera that is off."""
+    radars = engine_sensors()["radars"]
+    run = engine({"cameras": None, "radars": radars}, [camera_row(), radar_row()], ENGINE_PLACE)
+    assert [c["params"]["$id"] for c in run.close] == [camera_row()["id"]] and run.insert == []
+    off = open_row("cameras", "main_st", "n")
+    run = engine({"cameras": {"picam_h265": {"enabled": True, "deployment": {"bearing": "n"}}, "main_st": None},
+                  "radars": radars}, [camera_row(), radar_row(), off], ENGINE_PLACE)
+    assert run.written() == []
+    assert [text for level, text, _ in run.logged if level == "error"] == []
+
+
+@needs_node
 @pytest.mark.parametrize("row_bearing, sensor_bearing",
                          [(None, ""), ("", ""), ("N", "n"), ("n", "N"), ("null", ""), ("undefined", None),
                           (" NULL ", ""), ("Undefined", "null")],
@@ -1102,6 +1147,84 @@ def test_engine_wiring():
     group = by_id[engine_node["g"]]
     assert set(group["nodes"]) >= {target_id for output in engine_node["wires"] for target_id in output}
     assert not {"24efdc7f1231f7f0", "bc398ad5de3bd112"} & set(group["nodes"])
+
+
+# The camera pickers on the two dashboards: each tab's change node sets the options and the selection, and its
+# dropdown shows them. A start-up inject fills them once, and each config load fills them again.
+
+PICKERS = {  # tab: (start-up inject, change node, dropdown, the options property)
+    "ui-monitoring": ("e3b795e05d7650b2", "f50a7968e032532a", "bb08a223f0aaef0f", "options"),
+    "Dashboard 2 - Monitoring": ("22bc03eebc06aa57", "2e49ae46131b1b63", "3132d36d148e80d2", "ui_update.options"),
+}
+
+
+def test_the_pickers_refill_on_every_config_load():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    [link_out] = [by_id[node_id] for node_id in by_id[SET_CONFIG]["wires"][0] if by_id[node_id]["type"] == "link out"]
+    assert link_out["z"] == tab_id(flows, "init-config") and link_out["mode"] == "link"
+    assert link_out["id"] in by_id[link_out["g"]]["nodes"]
+    links_in = [by_id[node_id] for node_id in link_out["links"]]
+    assert sorted(link_in["z"] for link_in in links_in) == sorted(tab_id(flows, tab) for tab in PICKERS)
+    for tab, (inject, change, dropdown, _) in PICKERS.items():
+        [link_in] = [node for node in links_in if node["z"] == tab_id(flows, tab)]
+        assert link_in["type"] == "link in" and link_in["links"] == [link_out["id"]]
+        assert link_in["wires"] == [[change]]
+        assert link_in["id"] in by_id[by_id[change]["g"]]["nodes"]
+        assert change in by_id[inject]["wires"][0]  # the start-up fill stays
+        assert dropdown in by_id[change]["wires"][0]
+    for node_id in [link_out["id"], *link_out["links"]]:
+        assert re.fullmatch(r"[0-9a-f]{16}", node_id)
+
+
+def test_the_pickers_keep_a_selection_that_is_still_there_and_label_from_camera_labels():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for tab, (_, change, _, options_property) in PICKERS.items():
+        rules = {rule["p"]: rule for rule in by_id[change]["rules"]}
+        assert set(rules) == {"payload", options_property}
+        assert all(rule["t"] == "set" and rule["pt"] == "msg" and rule["tot"] == "jsonata" for rule in rules.values())
+        # the selection: the tab's own, while camera_labels still lists it; else the file's first camera
+        payload = rules["payload"]["to"]
+        assert '$flowContext("camera_selection")' in payload and '$keys($globalContext("camera_labels"))' in payload
+        assert '$keys($globalContext("config.sensors.cameras"))[0]' in payload
+        # the options: one per camera_labels entry, labelled from it, valued with the key, and always a list
+        options = " ".join(rules[options_property]["to"].split())
+        assert options.startswith("[") and options.endswith("]")
+        assert '$each($globalContext("camera_labels"), function($label, $key)' in options
+        assert "config.sensors.cameras" not in options
+
+    def options_of(tab):
+        _, change, _, options_property = PICKERS[tab]
+        [rule] = [rule for rule in by_id[change]["rules"] if rule["p"] == options_property]
+        return " ".join(rule["to"].split())
+
+    assert "{ $label: $key }" in options_of("ui-monitoring")  # ui_dropdown: {<label>: <value>}
+    assert '{ "label": $label, "value": $key }' in options_of("Dashboard 2 - Monitoring")  # ui-dropdown
+
+
+RADAR_PICKERS = {  # tab: (radar change node, radar dropdown)
+    "ui-monitoring": ("59d0c8b142295eee", "62c9240d45e9c8d6"),
+    "Dashboard 2 - Monitoring": ("f3ebd7067c32beb0", "95215b45c821d24a"),
+}
+
+
+def test_the_radar_pickers_keep_a_selection_that_is_still_there():
+    """Only the camera change node feeds a tab's radar change node (at start-up and on each config load; a viewer's
+    camera choice doesn't), so a radar the file still lists stays selected, else the camera's camera_radar."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for tab, (radar_change, radar_dropdown) in RADAR_PICKERS.items():
+        camera_change = PICKERS[tab][1]
+        feeds = {node["id"] for node in flows if any(radar_change in output for output in node.get("wires", []))}
+        assert feeds == {camera_change}
+        assert sorted(by_id[camera_change]["wires"][0]) == sorted([PICKERS[tab][2], radar_change])
+        assert radar_dropdown in by_id[radar_change]["wires"][0]
+        [payload] = [rule for rule in by_id[radar_change]["rules"] if rule["p"] == "payload"]
+        assert (payload["t"], payload["pt"], payload["tot"]) == ("set", "msg", "jsonata")
+        assert '$flowContext("radar_selection")' in payload["to"]
+        assert '$keys($globalContext("config.sensors.radars"))' in payload["to"]
+        assert '$globalContext("config.sensors.cameras." & payload & ".camera_radar")' in payload["to"]
 
 
 # The per-survey endpoints tm-control calls on loopback, each behind its own copy of the status endpoint's token check.
@@ -1492,6 +1615,327 @@ def test_survey_usage_counts_rows_without_a_survey():
     assert sql.endswith("GROUP BY survey_id")
     answer = named(json.loads(FLOWS.read_text()), "tm-internal: answer survey usage")
     assert "no survey" in answer["func"]
+
+
+# capture-events' "append config" maps Frigate's camera name to the sensors.cameras key, from the map "init config
+# defaults" builds on each load. Frigate's name stays on the device: it is never in a log line, and every node after
+# "append config" sees the key.
+
+APPEND_CONFIG = "8eaa1d06a29a5d2b"  # append config, deployment properties
+UNLISTED_WARNING = ("An event from a Frigate camera that config.yml doesn't list was dropped. "
+                    "Open the control app's Cameras page.")
+
+
+def node_by_id(node_id):
+    [node] = [node for node in json.loads(FLOWS.read_text()) if node["id"] == node_id]
+    return node
+
+
+def config_with_cameras(cameras):
+    config = new_device_config()
+    config["sensors"]["cameras"] = cameras
+    return config
+
+
+def load_config(config, context=None):
+    """Run init config defaults on config; returns its step and the global context with global.config set, as
+    "set global.config" does after a load."""
+    run = run_functions([(node_by_id(INIT_DEFAULTS), {"payload": config})], context=context)
+    [step] = run["results"]
+    return step, {**run["global"], "config": step["result"]["payload"]}
+
+
+def frigate_event(camera, payload=None):
+    return {"frigate_event": {"camera": camera, "id": "1.0-abc"}, "payload": {} if payload is None else payload}
+
+
+def frigate_payload(camera, **parts):
+    """msg.payload as Frigate sends an end message: the event's state before and after, each with the camera."""
+    return {"type": "end", "before": {"camera": camera, "id": "1.0-abc"}, "after": {"camera": camera, "id": "1.0-abc"},
+            **parts}
+
+
+def append_events(cameras, context, payload=None):
+    """Run append config on one event per camera, in one run; returns the steps and the global context after."""
+    append = node_by_id(APPEND_CONFIG)
+    run = run_functions([(append, frigate_event(camera, payload)) for camera in cameras], context=context)
+    return run["results"], run["global"]
+
+
+def append_config(config, camera, context=None, payload=None):
+    _, context = load_config(config, context)
+    [step], context = append_events([camera], context, payload)
+    return step, context
+
+
+@needs_node
+def test_init_defaults_maps_frigate_names_to_keys():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide"},
+        "picam_h265": {},
+        "main_st": {"frigate_camera": ""},
+    })
+    step, context = load_config(config)
+    assert context["frigate_cameras"] == {"oak_ave_wide": "camera_1_3fa9c2", "picam_h265": "picam_h265",
+                                          "main_st": "main_st"}
+    assert context["camera_labels"] == {"camera_1_3fa9c2": "camera_1_3fa9c2 (oak_ave_wide)",
+                                        "picam_h265": "picam_h265", "main_st": "main_st"}
+    assert context["tm_warned"] == {}
+    assert "frigate_cameras" not in step["result"]["payload"] and "camera_labels" not in step["result"]["payload"]
+    # The payload becomes global.config: Frigate's names live only in the two maps.
+    stored = json.dumps(step["result"]["payload"])
+    assert "oak_ave_wide" not in stored and "frigate_camera" not in stored
+    assert step["logged"] == []
+
+
+@needs_node
+def test_a_duplicate_frigate_camera_is_a_config_error_that_names_only_keys():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
+        "camera_2_b07e11": {"frigate_camera": "oak_ave_wide", "enabled": True},
+    })
+    step, context = load_config(config)
+    assert context["frigate_cameras"] == {"oak_ave_wide": "camera_1_3fa9c2"}
+    [(level, text, with_msg)] = [entry for entry in step["logged"] if "same Frigate camera" in entry[1]]
+    assert (level, with_msg) == ("error", True) and "oak_ave_wide" not in text
+    assert "camera_1_3fa9c2" in text and "camera_2_b07e11" in text
+    assert all("oak_ave_wide" not in text for _, text, _ in step["logged"])
+
+
+@needs_node
+def test_append_config_records_the_key_not_frigates_name():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_00"},
+    })
+    step, _ = append_config(config, "oak_ave_wide")
+    assert step["result"]["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert step["result"]["enabled"] is True and step["result"]["radarEnabled"] is True
+    assert step["result"]["frigate_event"]["radarName"] == "TM_RADAR_SERIAL_PORT_00"
+    assert "oak_ave_wide" not in json.dumps(step["result"])
+    assert step["logged"] == []
+
+
+@needs_node
+def test_append_config_puts_the_key_on_the_whole_frigate_message():
+    """msg.payload.before and .after carried Frigate's name on, and "match radar speed to event" keeps
+    the whole payload. In the live flow frigate_event is the same object as payload.after; here they are separate."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    step, _ = append_config(config, "oak_ave_wide", payload=frigate_payload("oak_ave_wide"))
+    result = step["result"]
+    assert "oak_ave_wide" not in json.dumps(result)
+    assert result["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["before"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["after"]["camera"] == "camera_1_3fa9c2"
+    assert result["payload"]["after"]["id"] == "1.0-abc" and set(result["payload"]) == {"type", "before", "after"}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    {}, {"type": "end", "before": None, "after": None}, {"type": "end", "before": None, "after": {"id": "1.0-abc"}},
+    {"type": "end", "before": "x", "after": []},
+], ids=["no-before-after", "null", "after-without-camera", "not-objects"])
+def test_append_config_survives_a_payload_without_before_and_after(payload):
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    step, _ = append_config(config, "oak_ave_wide", payload=payload)
+    assert step["result"]["frigate_event"]["camera"] == "camera_1_3fa9c2"
+    assert step["result"]["payload"] == payload  # nothing added, nothing removed
+    assert step["logged"] == []
+
+
+@needs_node
+def test_an_event_from_an_unlisted_camera_is_dropped_without_throwing():
+    """Issue #54."""
+    step, _ = append_config(new_device_config(), "oak_ave_tele")
+    assert step["result"] is None
+
+
+@needs_node
+def test_unknown_camera_warns_once_per_config_load():
+    """Review Focus 4: a busy road on an unlisted camera logs one warning per config load, and it names no camera."""
+    _, context = load_config(new_device_config())
+    steps, _ = append_events(["oak_ave_tele", "main_st", "oak_ave_tele"], context)
+    assert [step["result"] for step in steps] == [None, None, None]
+    all_logged = [entry for step in steps for entry in step["logged"]]
+    assert [text for level, text, _ in all_logged if level == "warn"] == [UNLISTED_WARNING]
+
+
+@needs_node
+def test_a_missing_radar_is_treated_like_a_disabled_one():
+    """Issue #255: the event is recorded, with no radar."""
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_03"},
+    })
+    step, _ = append_config(config, "oak_ave_wide")
+    assert step["result"]["enabled"] is True and step["result"]["radarEnabled"] is False
+    assert "radarName" not in step["result"]["frigate_event"]
+    assert [level for level, text, _ in step["logged"] if "TM_RADAR_SERIAL_PORT_03" in text] == ["warn"]
+    assert all("oak_ave_wide" not in text for _, text, _ in step["logged"])
+
+
+@needs_node
+def test_append_config_survives_an_empty_entry():
+    """Review Focus 2: an entry with nothing under it is a camera that is off; "camera enabled?" drops its events."""
+    step, _ = append_config(config_with_cameras({"main_st": None}), "main_st")
+    assert step["result"] is not None and step["result"].get("enabled") is not True
+    assert step["result"]["frigate_event"]["camera"] == "main_st"
+
+
+@needs_node
+@pytest.mark.parametrize("cameras", [None, {}], ids=["block-empty", "no-entries"])
+def test_init_defaults_survives_a_cameras_block_with_no_entries(cameras):
+    step, context = load_config(config_with_cameras(cameras))
+    assert step["logged"] == []
+    assert (context["frigate_cameras"], context["camera_labels"]) == ({}, {})
+
+
+@needs_node
+@pytest.mark.parametrize("camera, warning", [
+    ("oak_ave_tele", UNLISTED_WARNING),
+    ("oak_ave_wide", "Camera camera_1_3fa9c2 is paired with radar TM_RADAR_SERIAL_PORT_03, which isn't in config.yml; "
+                     "recording its events without a radar."),
+], ids=["unlisted", "missing-radar"])
+def test_a_new_config_load_warns_again(camera, warning):
+    """Each warning is logged once per name per config load: a second load resets tm_warned."""
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True,
+                            "camera_radar": "TM_RADAR_SERIAL_PORT_03"},
+    })
+    _, context = load_config(config)
+    first, context = append_events([camera, camera], context)
+    _, context = load_config(config, context)
+    second, _ = append_events([camera, camera], context)
+    for steps in (first, second):
+        assert [text for step in steps for level, text, _ in step["logged"] if level == "warn"] == [warning]
+    assert all(name not in text for step in second for _, text, _ in step["logged"]
+               for name in ("oak_ave_wide", "oak_ave_tele"))
+
+
+# What leaves the device and what the Frigate API is asked, by key. Plate Recognizer is sent the camera's name in
+# config.yml and the regions the admin set (issue #249), ThingsBoard's copy of the config has no Frigate names,
+# and the node that asks Frigate for its daily summary maps the key back to the name Frigate uses.
+
+PR_FORMAT = "ce5360091646c733"  # plate-recognizer: format http request
+PR_ROW = "f76c2b5b2b99096a"  # plate-recognizer: write params for plate_recognizer insert
+TB_CONFIG = "9941048ea93dc79c"  # thingsboard: format init-config client-side attributes
+SUMMARY = "eb140f61419c6a08"  # ui-monitoring: structure frigate api/summary
+DEFAULT_REGIONS = ["us", "us-or", "us-wa"]
+
+
+def plate_request(regions=MISSING, camera="camera_1_3fa9c2"):
+    plate_recognizer = {"url": "http://plate-recognizer:8080"}
+    if regions is not MISSING:
+        plate_recognizer["regions"] = regions
+    msg = {"frigate_event": {"frame_time": 1761800000.5, "camera": camera}, "frigate_event_api_thumbnail": "thumbnail"}
+    [step] = run_functions([(node_by_id(PR_FORMAT), msg)],
+                           env={"TM_PLATE_RECOGNIZER_TOKEN": "pr-placeholder-0002"},
+                           context={"config": {"addons": {"plate_recognizer": plate_recognizer}}})["results"]
+    return step["result"]["payload"]
+
+
+@needs_node
+def test_plate_recognizer_is_sent_the_cameras_key_and_the_configured_regions():
+    payload = plate_request(regions=["gb"])
+    assert payload["camera_id"] == {"value": "camera_1_3fa9c2"}
+    assert json.loads(payload["regions"]["value"]) == ["gb"]
+
+
+@needs_node
+@pytest.mark.parametrize("regions", [MISSING, None, [], "us", [1, 2]],
+                         ids=["missing", "null", "empty", "a-string", "not-strings"])
+def test_plate_recognizer_regions_default(regions):
+    assert json.loads(plate_request(regions=regions)["regions"]["value"]) == DEFAULT_REGIONS
+
+
+@needs_node
+def test_the_plate_row_stores_the_cameras_key():
+    msg = {"frigate_event": {"id": "1.0-abc", "camera": "camera_1_3fa9c2"},
+           "payload": {"filename": "x.jpg", "camera_id": "something-else", "results": []}}
+    [step] = run_functions([(node_by_id(PR_ROW), msg)])["results"]
+    assert step["result"]["payload"]["camera_id"] == "camera_1_3fa9c2"
+    assert step["result"]["params"]["$camera_id"] == "camera_1_3fa9c2"
+
+
+@needs_node
+def test_config_tm_has_no_frigate_camera_and_leaves_the_config_alone():
+    config = config_with_cameras({
+        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
+        "main_st": {"enabled": False},
+    })
+    # The node is given an object kept in the global context, so the context shows whether it was edited.
+    # global.config no longer holds frigate_camera; the node strips it anyway, as a second line.
+    node = {**node_by_id(TB_CONFIG), "func": 'msg.payload = global.get("given");\n' + node_by_id(TB_CONFIG)["func"]}
+    run = run_functions([(node, {})], context={"given": config})
+    [step] = run["results"]
+    sent = step["result"]["payload"]
+    assert "oak_ave_wide" not in json.dumps(sent) and "frigate_camera" not in json.dumps(sent)
+    assert sent["config_tm"]["sensors"]["cameras"]["camera_1_3fa9c2"]["enabled"] is True
+    assert sent["config_tm"]["sensors"]["cameras"]["main_st"] == {"enabled": False}
+    assert run["global"]["given"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+
+
+@needs_node
+def test_flow_tests_run_in_the_function_nodes_sandbox():
+    """Node-RED's function nodes don't have structuredClone (or fetch): the harness must not either."""
+    node = {"id": "sandbox", "func": "return { payload: typeof structuredClone + ' ' + typeof fetch + ' ' + typeof JSON };"}
+    [step] = run_functions([(node, {})])["results"]
+    assert step["result"]["payload"] == "undefined undefined object"
+
+
+def summary_rows():
+    today = "2026-11-10"
+    return [
+        {"camera": "oak_ave_wide", "day": today, "label": "car", "count": 4},
+        {"camera": "oak_ave_tele", "day": today, "label": "car", "count": 100},
+        {"camera": "oak_ave_wide", "day": today, "label": "bicycle", "count": 1},
+    ]
+
+
+@needs_node
+def test_the_frigate_summary_chart_follows_the_selected_cameras_key():
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})],
+                        context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2",
+                                                     "oak_ave_tele": "camera_2_b07e11"}},
+                        flow={"camera_selection": "camera_1_3fa9c2"})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == ["car", "bicycle"]
+    assert [[point["y"] for point in series] for series in chart["data"]] == [[4], [1]]
+
+
+@needs_node
+def test_the_frigate_summary_chart_is_empty_without_the_map():
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})], flow={"camera_selection": "camera_1_3fa9c2"})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == [] and chart["data"] == []
+
+
+@needs_node
+def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
+    """An unmapped camera's frigate_cameras lookup is undefined, as is an unset selection: they must not match."""
+    rows = [{**row, "day": "2099-01-01"} for row in summary_rows()]
+    run = run_functions([(node_by_id(SUMMARY), {"payload": rows})],
+                        context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}}, flow={})
+    [chart] = run["results"][0]["result"]["payload"]
+    assert chart["series"] == [] and chart["data"] == []
+
+
+def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
+    """Nodes that call Frigate's API (frigate:5000): config/raw, config/save, version, events/summary, and the
+    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
+    by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
+    (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
+    camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
+    frigate_cameras."""
+    flows = json.loads(FLOWS.read_text())
+    calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
+    assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
+    selects = [node["id"] for node in flows
+               if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
+    assert selects == [SUMMARY]
+    assert 'global.get("frigate_cameras")' in node_by_id(SUMMARY)["func"]
 
 
 # Data downloads from Android's sign-in window: it hands a download to a helper that sends no login cookie, so both

@@ -2,6 +2,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 import account from './account'
 import auth from './auth'
+import cameras from './cameras'
 import detection from './detection'
 import device from './device'
 import home from './home'
@@ -25,4 +26,4 @@ export interface Module {
 }
 
 // In menu order
-export const MODULES: Module[] = [home, status, device, network, detection, location, time, account, auth, setup]
+export const MODULES: Module[] = [home, status, device, network, detection, cameras, location, time, account, auth, setup]

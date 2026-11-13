@@ -1,6 +1,6 @@
 import pytest
 
-from tm_control.adapters.redact import REDACTED, redact
+from tm_control.adapters.redact import REDACTED, redact, redact_words
 
 
 def test_redact_replaces_each_value_and_prefers_the_longest():
@@ -73,6 +73,18 @@ def test_a_value_and_a_key_match_are_redacted_as_one_span(text, values, expected
 
 def test_redact_does_not_reach_the_next_line():
     assert redact("password:\nnext line stays", []) == "password:\nnext line stays"
+
+
+def test_camera_names_are_replaced_as_whole_words():
+    assert redact_words("front_door: frontage at front. a.b axb", ["front", "a.b"]) == (
+        "front_door: frontage at <redacted>. <redacted> axb"
+    )
+
+
+def test_redact_words_prefers_the_longest_and_ignores_empty_words():
+    assert redact_words("oak_ave and oak_ave_wide", ["oak_ave", "", "oak_ave_wide"]) == "<redacted> and <redacted>"
+    assert redact_words("nothing to hide", ["", "absent"]) == "nothing to hide"
+    assert redact_words("a-b is not a b", ["a-b"]) == "<redacted> is not a b"
 
 
 def test_a_download_links_token_in_nginxs_log_is_hidden():

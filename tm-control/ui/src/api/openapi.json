@@ -1440,6 +1440,310 @@
         }
       }
     },
+    "/api/v1/cameras": {
+      "get": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "List Cameras",
+        "operationId": "list_cameras_api_v1_cameras_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Add Camera",
+        "description": "Add an entry under a new neutral name for a Frigate camera that no entry points at.",
+        "operationId": "add_camera_api_v1_cameras_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraAdd"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}": {
+      "put": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Set Camera",
+        "description": "Set an entry's record, radar, and plates settings. Frigate isn't asked: these don't depend on it.",
+        "operationId": "set_camera_api_v1_cameras__name__put",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Remove Camera",
+        "description": "Remove an entry whose Frigate camera is gone, or that duplicates an earlier entry's.",
+        "operationId": "remove_camera_api_v1_cameras__name__delete",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/frigate-camera": {
+      "post": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Point Camera",
+        "description": "Point an entry whose Frigate camera is gone at a Frigate camera no entry points at. Nothing else changes.",
+        "operationId": "point_camera_api_v1_cameras__name__frigate_camera_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraPoint"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/neutral-name": {
+      "post": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Neutral Name",
+        "description": "Re-key an entry to a new neutral name, and move its bearings in every place to the new name.",
+        "operationId": "neutral_name_api_v1_cameras__name__neutral_name_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/frigate-detection": {
+      "put": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Set Detection",
+        "description": "Turn Frigate's object detection on or off for an entry's camera, with Frigate's live switch (no restart; Frigate\nkeeps it). config.yml isn't changed.",
+        "operationId": "set_detection_api_v1_cameras__name__frigate_detection_put",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CameraDetection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CamerasState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -2157,6 +2461,366 @@
         ],
         "title": "BearingCorrection"
       },
+      "CameraAdd": {
+        "properties": {
+          "frigate_camera": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Frigate Camera"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "camera_radar": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Radar"
+          },
+          "plate_recognizer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plate Recognizer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frigate_camera",
+          "enabled"
+        ],
+        "title": "CameraAdd"
+      },
+      "CameraDetection": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "CameraDetection"
+      },
+      "CameraIssue": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warn"
+            ],
+            "title": "Level"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "not_paired",
+              "duplicate",
+              "gone",
+              "camera_off",
+              "capture_off",
+              "detect_off",
+              "zones",
+              "radar"
+            ],
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "code"
+        ],
+        "title": "CameraIssue",
+        "description": "Something the Status page's camera checks report about this row, as the check rates it. The page words it."
+      },
+      "CameraPoint": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to"
+        ],
+        "title": "CameraPoint"
+      },
+      "CameraRadar": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "in_config": {
+            "type": "boolean",
+            "title": "In Config"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "port_open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "in_config",
+          "enabled",
+          "port_open"
+        ],
+        "title": "CameraRadar"
+      },
+      "CameraRow": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "frigate_camera": {
+            "type": "string",
+            "title": "Frigate Camera"
+          },
+          "in_frigate": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off",
+              "absent",
+              "unknown"
+            ],
+            "title": "In Frigate"
+          },
+          "detect": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detect"
+          },
+          "neutral": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neutral"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "camera_radar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Radar"
+          },
+          "plate_recognizer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plate Recognizer"
+          },
+          "zones_missing": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones Missing"
+          },
+          "zones_off": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones Off"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/CameraIssue"
+            },
+            "type": "array",
+            "title": "Issues",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "frigate_camera",
+          "in_frigate",
+          "detect",
+          "neutral",
+          "duplicate_of",
+          "enabled",
+          "camera_radar",
+          "plate_recognizer",
+          "zones_missing",
+          "zones_off"
+        ],
+        "title": "CameraRow"
+      },
+      "CameraSettings": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "camera_radar": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Radar"
+          },
+          "plate_recognizer": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plate Recognizer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "CameraSettings"
+      },
+      "CamerasState": {
+        "properties": {
+          "frigate": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "down",
+              "safe_mode"
+            ],
+            "title": "Frigate"
+          },
+          "plates": {
+            "type": "boolean",
+            "title": "Plates"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CameraRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "radars": {
+            "items": {
+              "$ref": "#/components/schemas/CameraRadar"
+            },
+            "type": "array",
+            "title": "Radars"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frigate",
+          "plates",
+          "rows",
+          "radars"
+        ],
+        "title": "CamerasState"
+      },
       "Check": {
         "properties": {
           "id": {
@@ -2541,6 +3205,11 @@
               }
             ],
             "title": "Href"
+          },
+          "external": {
+            "type": "boolean",
+            "title": "External",
+            "default": false
           }
         },
         "type": "object",

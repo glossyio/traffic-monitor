@@ -47,7 +47,7 @@ from an existing lockfile without trouble, so the image still builds and tests t
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
-  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users` and `/location` to admins only.
+  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
 - `src/stores/session.ts` is the only store: the setup status and the logged-in user.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
@@ -59,6 +59,35 @@ from an existing lockfile without trouble, so the image still builds and tests t
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
   form's check.
+- The `cameras` module is the Cameras page (`CamerasPage.vue`), a camera's settings form (`CameraEdit.vue`), and `rows.ts`,
+  which holds the rules the page asks of a row (`rowState`, `zonesText`, `radarChoices`, `pointChoices`) so the page and
+  its actions ask the same questions. Design notes: the page is a bordered `v-expansion-panels` accordion, one panel
+  per camera and one open at a time, in the Location page's conventions (load, error, and 409-reload; no custom CSS),
+  with the key in bold because it is the name saved with the data, and Frigate's name beside it in the secondary color
+  because it stays on the device. A panel's header is the camera's summary, with what it opens in words beside the
+  chevron (Settings, or Add as new for a Frigate camera no entry points at), so the boxes can say "in Settings"; the
+  settings form opens right under it, inside the row, and the row's boxes and buttons sit below the form, outside the
+  header, because a header is a button and can't hold links or buttons. A new Frigate camera's panel doesn't open while
+  Frigate can't be compared.
+  Each row's first words are its two switches, Frigate detection and Database capture, because an event is recorded
+  only when both are on; `CameraEdit` sets Frigate's with its own request after the settings' `PUT`, and only when it
+  changed. Only Off in Frigate is a chip. What the Status page's camera checks report about a row (the API's `issues`)
+  is a compact tonal `v-alert` in the row, in the check's color, worded by `issueBoxes` with what to do on this page
+  (a zones box links to Frigate's masks and zones settings at that camera), and one alert above the list counts the
+  rows that need attention. An entry in step has no box, nor has a new Frigate camera whose detection is off (it drops
+  nothing, so the API reports no issue for it; it keeps Point and Add as new), and while Frigate can't be compared a row
+  shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
+  neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
+  confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which
+  POSTs. A save that works closes the panel; one that fails keeps it open with the reason inside it. A refused
+  action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it again.
+  Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
+  each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
+  names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows
+  nothing for a `null` value, so the form holds "No radar" as an empty string and turns it back into `null` on Save.
+  The plates switch is there only when the add-on is installed; otherwise Save sends `null` and leaves the file's value
+  alone. A 422 for the radar shows under the field, every other failure inside the form.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
