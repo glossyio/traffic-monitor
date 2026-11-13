@@ -1,10 +1,11 @@
 <!--
   The Detection page (GET /models), in four sections, for every logged-in user: Object detection (the detector, the
   running model, and what is wrong with Frigate's answer), Model in use (one card, which holds the running model's two
-  object lists), Other models on this device, and Frigate+. The card in use always exists once the models have loaded:
-  a model with no entry in the list, or one that can't be read, gets a card the page makes. Admins also get the actions
-  (upload, use, download, delete) and the Frigate+ API key's form, the frigate_plus_api_key row of GET /secrets, which
-  the API refuses viewers.
+  object lists), Frigate+, and Other models on this device. The card in use always exists once the models have loaded:
+  a model with no entry in the list, or one that can't be read, gets a card the page makes. The Frigate+ section does
+  not wait for the models, so it shows when they can't load. Admins also get the actions (upload, use, download,
+  delete) and, in the Frigate+ section, the API key's panel, the frigate_plus_api_key row of GET /secrets, which the
+  API refuses viewers.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -49,12 +50,12 @@ const secretsError = ref('')
 const key = computed(() => secrets.value?.find((secret) => secret.name === 'frigate_plus_api_key'))
 const keyOpen = ref<string[]>(linkedToKey ? [FRIGATE_PLUS_ID] : [])
 
-// The key's state for the panel's title, which a closed panel still shows: nothing for a viewer or until the
-// secrets answer, and "in use" only while Frigate runs a Frigate+ model
+// The key's state beside the panel's title "API key", which a closed panel still shows: nothing for a viewer or until
+// the secrets answer, and "in use" only while Frigate runs a Frigate+ model
 const keyState = computed(() => {
   if (!key.value) return ''
-  if (!key.value.set) return 'API key not set'
-  const set = key.value.ends_with ? `API key set, ending in ${key.value.ends_with}` : 'API key set'
+  if (!key.value.set) return 'not set'
+  const set = key.value.ends_with ? `set, ending in ${key.value.ends_with}` : 'set'
   return state.value?.running.kind === 'frigate_plus' ? `${set}, in use` : set
 })
 
@@ -436,7 +437,43 @@ function openUpload() {
           @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
         />
       </section>
+    </template>
 
+    <!-- Frigate+ sits above the other models and doesn't wait for them. The admin's key is one panel, its title
+         "API key" with the key's state beside it -->
+    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
+      <h2 class="text-h6 mb-2">Frigate+</h2>
+      <p class="text-body-1 mb-2">
+        When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings, System,
+        Detectors and model, and Frigate downloads it.
+      </p>
+      <p class="text-body-1" :class="{ 'mb-4': session.isAdmin }">
+        When it's offline, an administrator can upload the model's two files on this page, as a package from whoever
+        trained the model or copied from another device's Frigate.
+      </p>
+      <v-expansion-panels v-if="session.isAdmin" v-model="keyOpen" multiple flat bg-color="background">
+        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
+          <v-expansion-panel-title class="text-h6">
+            <span class="d-flex flex-wrap align-baseline key-title">
+              <span>API key{{ ' ' }}</span>
+              <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
+            </span>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <v-alert v-if="secretsError" type="error">
+              {{ secretsError }}
+              <template #append>
+                <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+              </template>
+            </v-alert>
+            <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+            <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </section>
+
+    <template v-if="state">
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Other models on this device ({{ others.length }})</h2>
         <v-btn
@@ -463,42 +500,6 @@ function openUpload() {
         <p v-else class="text-body-2 text-secondary mt-4">No other models on this device.</p>
       </section>
     </template>
-
-    <!-- The last section is one panel, its title inside the h2, as the Device page's "Tokens and keys" is -->
-    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <v-expansion-panels v-model="keyOpen" multiple flat bg-color="background">
-        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
-          <h2 class="text-h6">
-            <v-expansion-panel-title class="text-h6">
-              <span class="d-flex flex-wrap align-baseline key-title">
-                <span>Frigate+</span>
-                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
-              </span>
-            </v-expansion-panel-title>
-          </h2>
-          <v-expansion-panel-text>
-            <p class="text-body-1 mb-2">
-              When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
-              System, Detectors and model, and Frigate downloads it.
-            </p>
-            <p class="text-body-1" :class="{ 'mb-6': session.isAdmin }">
-              When it's offline, an administrator can upload the model's two files on this page, as a package from
-              whoever trained the model or copied from another device's Frigate.
-            </p>
-            <template v-if="session.isAdmin">
-              <v-alert v-if="secretsError" type="error">
-                {{ secretsError }}
-                <template #append>
-                  <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
-                </template>
-              </v-alert>
-              <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
-              <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
-            </template>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </section>
 
     <v-dialog v-model="uploadOpen" max-width="560">
       <UploadModel :key="uploads" :detector="state?.detector ?? null" @uploaded="load" @close="uploadOpen = false" />

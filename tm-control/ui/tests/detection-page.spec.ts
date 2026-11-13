@@ -190,8 +190,8 @@ describe('the Detection page', () => {
     expect(headings(wrapper)).toEqual([
       'Object detection',
       'Model in use',
-      'Other models on this device (2)',
       'Frigate+',
+      'Other models on this device (2)',
     ])
     expect(wrapper.text()).toContain(
       'See which model Frigate detects objects with and what it recognises. Administrators can switch models and ' +
@@ -361,8 +361,8 @@ describe('the Detection page', () => {
     expect(headings(wrapper)).toEqual([
       'Object detection',
       'Model in use',
-      'Other models on this device (3)',
       'Frigate+',
+      'Other models on this device (3)',
     ])
   })
 
@@ -513,7 +513,7 @@ describe('the Detection page', () => {
       "When it's offline, an administrator can upload the model's two files on this page, as a package from whoever " +
         "trained the model or copied from another device's Frigate.",
     )
-    expect(panel(wrapper, 'Frigate+').text().trim()).toBe('Frigate+') // no state for a viewer
+    expect(wrapper.find('#frigate-plus .v-expansion-panel').exists()).toBe(false) // no key panel for a viewer
     expect(wrapper.findAll('form')).toEqual([])
     // The label lists' Copy buttons are the only buttons: nothing that changes the device
     expect([...new Set(actions(wrapper))]).toEqual(['Copy'])
@@ -523,9 +523,8 @@ describe('the Detection page', () => {
   it('shows an admin the Frigate+ key form from GET /secrets', async () => {
     signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
     const { wrapper } = await mountApp('/detection')
-    const toggle = panel(wrapper, 'Frigate+')
-    expect(toggle.text()).toContain('API key not set')
-    expect(toggle.element.parentElement?.tagName).toBe('H2')
+    const toggle = panel(wrapper, 'API key')
+    expect(toggle.text()).toBe('API key not set')
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(wrapper.find('#frigate-plus form').exists()).toBe(true)
     expect(wrapper.find('#frigate-plus h3').exists()).toBe(false) // the title says it already
@@ -540,20 +539,61 @@ describe('the Detection page', () => {
     )
     signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: set } })
     const plus = await mountApp('/detection')
-    expect(panel(plus.wrapper, 'Frigate+').text()).toContain('API key set, ending in ab12, in use')
+    expect(panel(plus.wrapper, 'API key').text()).toBe('API key set, ending in ab12, in use')
 
     signedIn(ADMIN, { [MODELS_PATH]: running('mine.tflite', 'local'), [SECRETS]: { secrets: set } })
     const local = await mountApp('/detection')
-    const title = panel(local.wrapper, 'Frigate+').text()
-    expect(title).toContain('API key set, ending in ab12')
-    expect(title).not.toContain('in use')
+    expect(panel(local.wrapper, 'API key').text()).toBe('API key set, ending in ab12')
 
     const bare = TWO_SECRETS.map((secret) =>
       secret.name === 'frigate_plus_api_key' ? { ...secret, set: true, ends_with: null } : secret,
     )
     signedIn(ADMIN, { [MODELS_PATH]: running('mine.tflite', 'local'), [SECRETS]: { secrets: bare } })
     const short = await mountApp('/detection')
-    expect(panel(short.wrapper, 'Frigate+').text().trim()).toBe('Frigate+API key set')
+    expect(panel(short.wrapper, 'API key').text()).toBe('API key set')
+  })
+
+  it('orders the sections: detection, model in use, Frigate+, other models', async () => {
+    signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
+    const { wrapper } = await mountApp('/detection')
+    expect(headings(wrapper)).toEqual([
+      'Object detection',
+      'Model in use',
+      'Frigate+',
+      expect.stringMatching(/^Other models on this device/),
+    ])
+  })
+
+  it('puts the Frigate+ heading outside the panel and the key state in the panel title', async () => {
+    const set = TWO_SECRETS.map((secret) =>
+      secret.name === 'frigate_plus_api_key' ? { ...secret, set: true, ends_with: '0001' } : secret,
+    )
+    signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: set } })
+    const { wrapper } = await mountApp('/detection')
+    const plus = wrapper.find('#frigate-plus')
+    expect(plus.find('h2').text()).toBe('Frigate+')
+    expect(plus.find('h2').element.closest('.v-expansion-panel')).toBeNull()
+    expect(panel(wrapper, 'API key').text()).toBe('API key set, ending in 0001, in use') // key set, Frigate+ model runs
+  })
+
+  it('shows a viewer the Frigate+ text and no panel', async () => {
+    signedIn(VIEWER, { [MODELS_PATH]: MODELS })
+    const { wrapper } = await mountApp('/detection')
+    const plus = wrapper.find('#frigate-plus')
+    expect(plus.findAll('p')).toHaveLength(2)
+    expect(plus.findAll('.v-expansion-panel')).toHaveLength(0)
+  })
+
+  it('keeps the Frigate+ section when the models cannot load', async () => {
+    signedIn(ADMIN, {
+      [MODELS_PATH]: apiError(500, 'error', 'The device answered with an error.'),
+      [SECRETS]: { secrets: TWO_SECRETS },
+    })
+    const { wrapper } = await mountApp('/detection')
+    expect(wrapper.text()).toContain('The device answered with an error.')
+    expect(wrapper.find('#frigate-plus h2').text()).toBe('Frigate+')
+    expect(wrapper.find('#frigate-plus form').exists()).toBe(true)
+    expect(panel(wrapper, 'API key').text()).toBe('API key not set') // no model is known to run, so no "in use"
   })
 
   it('copies the recognised labels as comma-separated text', async () => {
@@ -675,16 +715,18 @@ describe('the Detection page', () => {
     const scrolled = vi.fn()
     Element.prototype.scrollIntoView = scrolled
     const { wrapper } = await mountApp('/detection#frigate-plus')
-    expect(panel(wrapper, 'Frigate+').attributes('aria-expanded')).toBe('true')
+    expect(panel(wrapper, 'API key').attributes('aria-expanded')).toBe('true')
     expect(scrolled).toHaveBeenCalled()
     expect(usedFold(wrapper).find('.v-expansion-panel-title').attributes('aria-expanded')).toBe('false')
   })
 
-  it('opens the key panel for a viewer without asking for the secrets', async () => {
+  it('scrolls a viewer to the Frigate+ text without asking for the secrets', async () => {
     const api = signedIn(VIEWER, { [MODELS_PATH]: MODELS })
-    Element.prototype.scrollIntoView = vi.fn()
+    const scrolled = vi.fn()
+    Element.prototype.scrollIntoView = scrolled
     const { wrapper } = await mountApp('/detection#frigate-plus')
-    expect(panel(wrapper, 'Frigate+').attributes('aria-expanded')).toBe('true')
+    expect(scrolled).toHaveBeenCalled()
+    expect(wrapper.find('#frigate-plus .v-expansion-panel').exists()).toBe(false)
     expect(wrapper.find('#frigate-plus').text()).toContain('When the device is online and has a Frigate+ API key')
     expect(wrapper.findAll('form')).toEqual([])
     expect(api.sent.some((r) => r.path === '/api/v1/secrets')).toBe(false)
