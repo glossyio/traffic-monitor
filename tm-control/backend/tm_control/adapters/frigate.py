@@ -54,11 +54,12 @@ def config_raw() -> str | None:
     return body if status == 200 and isinstance(body, str) else None
 
 
-def save_config(text: str) -> tuple[int | None, str | None]:
+def save_config(text: str, timeout: float = SAVE_TIMEOUT) -> tuple[int | None, str | None]:
     """Have Frigate validate text as its whole config and, when it's valid, write it to config.yml without
-    restarting. Returns the status and the answer's message (a refusal's says why); None for each that's missing."""
+    restarting. Returns the status and the answer's message (a refusal's says why); None for each that's missing.
+    Waits up to timeout seconds: a config with a plus:// model path holds the answer until Frigate has downloaded it."""
     status, body = httpjson.post(
-        f"{BASE}/config/save?save_option=saveonly", text.encode("utf-8"), "text/plain", timeout=SAVE_TIMEOUT
+        f"{BASE}/config/save?save_option=saveonly", text.encode("utf-8"), "text/plain", timeout=timeout
     )
     try:
         answer = json.loads(body) if body is not None else None

@@ -250,7 +250,9 @@ def _set_model(doc, section: dict | None) -> None:
     replace_model_section(doc, section)
 
 
-def _edited(text: str, section: dict | None) -> str:
+def edited(text: str, section: dict | None) -> str:
+    """config.yml's text with its top-level `model:` set to section (None removes it), the rest as it was. Raises
+    UseError."""
     yaml = _round_trip_yaml(2)
     try:
         doc = yaml.load(text)
@@ -263,8 +265,8 @@ def _edited(text: str, section: dict | None) -> str:
 
 
 def _save_through_frigate(text: str, section: dict | None) -> None:
-    edited = _edited(text, section)
-    status, message = frigate.save_config(edited)
+    new_text = edited(text, section)
+    status, message = frigate.save_config(new_text)
     if status == 200:
         return
     if status == 400:
@@ -274,7 +276,7 @@ def _save_through_frigate(text: str, section: dict | None) -> None:
     if status is None:
         # Frigate validates, writes the file, then answers: a save that took too long may be on disk already. The file
         # then holds exactly the text that was sent, which is what counts as saved; otherwise nothing changed.
-        if frigate.config_raw() == edited:
+        if frigate.config_raw() == new_text:
             return
         raise UseError(502, "frigate_error",
                        "Frigate didn't answer the save; its config may or may not have changed. Try again.")
