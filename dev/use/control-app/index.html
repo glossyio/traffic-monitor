@@ -2335,7 +2335,7 @@
   
   <h1 id="control-app-and-login">Control app and login<a class="headerlink" href="#control-app-and-login" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Claim a Traffic Monitor with its setup code, log in, add viewer accounts, change passwords, and get back in when the login or the control app fails.</p>
-<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see <a href="../device-health/">Check and fix the device</a>. Its Detection page shows the object detection model and lets the administrator change it; see <a href="../detection/">Choose the detection model</a>. Its Location page records where the device is and how precisely the database stores it; see <a href="../location/">Places and location</a>. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
+<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. <a href="../system-admin/#cockpit">Cockpit</a> has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see <a href="../device-health/">Check and fix the device</a>. Its Detection page shows the object detection model and lets the administrator change it; see <a href="../detection/">Choose the detection model</a>. Its Location page records where the device is and how precisely the database stores it; see <a href="../location/">Places and location</a>. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
 <div class="admonition info">
 <p class="admonition-title">What the login protects</p>
 <p>The login keeps people on your network out of the apps. The device uses plain HTTP, so passwords and images cross your network unencrypted. Use the device on a network you trust.</p>
@@ -2373,6 +2373,7 @@ to create the administrator account. The code works once.
 </details>
 <h2 id="the-system-password">The system password<a class="headerlink" href="#the-system-password" title="Permanent link">&para;</a></h2>
 <p>The system password is the password of the Raspberry Pi user account: the one you log in to Cockpit and SSH with. Setup offers to change it, with a <strong>Use the same password as my account</strong> checkbox. Skip the step to keep the password the account has. To change it later, use Cockpit's <strong>Accounts</strong> page, or run <code>passwd</code> over SSH.</p>
+<p>If someone else installed the device, you may not know the account's name. Setup's system-password step and the home page's <strong>Cockpit</strong> tile show it to the administrator.</p>
 <h2 id="log-in">Log in<a class="headerlink" href="#log-in" title="Permanent link">&para;</a></h2>
 <p>Open the home page or any app. Without a session, the device shows its login page, then takes you to the page you asked for. You stay logged in for a week, and using the device keeps the session going. To log out, choose <strong>Log out</strong> in the menu. Frigate's own <strong>Logout</strong> also logs you out of the device.</p>
 <p>After five wrong passwords in a row, the device makes you wait before the next try: a few seconds at first, and twice as long after each further wrong password, up to 5 minutes. It counts wrong passwords for the account and for the address they come from, so a wait for an account applies on every phone and computer. Sessions that are already logged in keep working. The count clears 15 minutes after the last wrong password, or when the login succeeds.</p>
@@ -2408,7 +2409,7 @@ to create the administrator account. The code works once.
 <td>No</td>
 </tr>
 <tr>
-<td>Node-RED editor, Camera feeds, and Cockpit</td>
+<td>Node-RED editor and Camera feeds</td>
 <td>Yes</td>
 <td>No</td>
 </tr>
@@ -2434,6 +2435,7 @@ to create the administrator account. The code works once.
 </tr>
 </tbody>
 </table>
+<p>Cockpit uses the Raspberry Pi user account, not these accounts.</p>
 <h3 id="add-a-viewer">Add a viewer<a class="headerlink" href="#add-a-viewer" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Open <strong>Users</strong> from the menu.</li>

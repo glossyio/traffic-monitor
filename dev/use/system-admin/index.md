@@ -2,7 +2,20 @@
 
 ## Cockpit
 
-Log in to the device as the administrator, open **Cockpit** from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on `http://<device>:9090` with only the Raspberry Pi login, which works when the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md) doesn't. [Cockpit](https://cockpit-project.org/) shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.
+[Cockpit](https://cockpit-project.org/) is the device's system console in the browser. It shows the services and their logs, the Podman containers, system updates, and the user accounts, and it has a terminal, so most administration needs no SSH client.
+
+Open `http://<device>:9090/`, with the same name or address you use for the home page, and log in with your Raspberry Pi user account. Administrators also have a **Cockpit** tile on the home page, which opens the same address and names the account to log in with.
+
+Cockpit has its own port and its own login. It doesn't need the home page, the [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), or the apps, so it still opens when they don't. Use it when:
+
+- the home page doesn't load, or a page says the control app isn't answering
+- you want to restart a service, or read its log
+- you need a terminal and have no SSH client
+- you want to install system updates or change the system password
+
+Who can open Cockpit
+
+Anyone on your network can reach Cockpit's login page. Only the Raspberry Pi user account gets past it. The control app's accounts don't work there.
 
 ## Services
 

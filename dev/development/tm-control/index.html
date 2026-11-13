@@ -2602,15 +2602,15 @@
 <td><code>x-tm-nr-token</code>, a short-lived token that <code>settings.js</code> checks with <code>TM_NR_TOKEN_KEY</code> from <code>node-red-tm.env</code>. The editor has no users of its own.</td>
 </tr>
 <tr>
-<td>Dashboards, camera feeds, Cockpit, data downloads</td>
-<td>No identity: nginx's check is the whole gate. Cockpit then asks for its own Raspberry Pi login.</td>
+<td>Dashboards, camera feeds, data downloads</td>
+<td>No identity: nginx's check is the whole gate.</td>
 </tr>
 </tbody>
 </table>
 <p>A few rules keep the check sound:</p>
 <ul>
 <li>Only nginx's internal <code>/_auth</code> and <code>/_auth_admin</code> locations may call verify. A <code>location ^~ /api/v1/auth/verify</code> returns 404 to the network, the <code>/api/</code> location clears <code>X-TM-Required-Role</code>, and verify answers 404 without that header.</li>
-<li>The check is always a <code>GET</code> without a body, and without the <code>Authorization</code> header, so Cockpit's Basic login never reaches tm-control.</li>
+<li>The check is always a <code>GET</code> without a body, and without the <code>Authorization</code> header, so no credential a client sends there reaches tm-control.</li>
 <li>Sessions last 7 days and roll: verify and the API re-issue a cookie that's more than a day old, and the snippets pass verify's <code>Set-Cookie</code> on to the browser. An app location must not set an <code>add_header</code> of its own, or it would drop that cookie.</li>
 <li>Only the check's own failure, which <code>auth_request</code> turns into a 500, becomes the rescue page (<code>error_page 500 =503 /unavailable.html</code>). An app's own 502 or 504 stays as it is.</li>
 </ul>
@@ -3064,7 +3064,7 @@
 <li><strong>State:</strong> if it needs tables, add the next migration in <code>core/state.py</code>.</li>
 <li><strong>UI:</strong> add <code>ui/src/modules/&lt;name&gt;/</code> with its pages and an <code>index.ts</code> that lists its routes and menu entries, and add it to <code>ui/src/modules/index.ts</code>. Regenerate the typed client as the UI's README describes.</li>
 <li><strong>Root work:</strong> prefer a polkit action or unit verb on the list. Otherwise add the job's name to <code>JOB_NAMES</code> in <code>core/jobs.py</code>, its script to <code>tm-control/jobs/</code>, its unit to the role's <code>templates/tm-control/</code>, and the unit to the polkit list.</li>
-<li><strong>A new app behind the login:</strong> add its location file with an auth snippet to <code>container/revproxy/tm/locations/</code> and to <code>tmsetup_revproxy_locations</code>, and its tile to <code>APPS</code> in <code>modules/system/router.py</code> and to <code>ui/src/modules/home/apps.ts</code>.</li>
+<li><strong>A new app behind the login:</strong> add its location file with an auth snippet to <code>container/revproxy/tm/locations/</code> and to <code>tmsetup_revproxy_locations</code>, and its tile to <code>APPS</code> in <code>modules/system/router.py</code> and to <code>ui/src/modules/home/apps.ts</code>. An app on its own port, as Cockpit is on 9090, has no location file: its <code>APPS</code> row has <code>None</code> for the file and its port, and the tile links to that port on the name the browser used.</li>
 </ol>
   
 

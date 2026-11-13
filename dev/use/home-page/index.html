@@ -2193,12 +2193,13 @@
 </tr>
 <tr>
 <td>Cockpit</td>
-<td><code>/system/</code></td>
-<td>Services, logs, containers, and a terminal. See <a href="../system-admin/">System administration</a>.</td>
-<td>Administrators, who then log in with the Raspberry Pi user account</td>
+<td><code>http://&lt;device&gt;:9090/</code></td>
+<td>Services, logs, containers, and a terminal. See <a href="../system-admin/#cockpit">System administration</a>.</td>
+<td>Administrators see its link. Anyone with the Raspberry Pi user account can log in.</td>
 </tr>
 </tbody>
 </table>
+<p>Cockpit is the one app with its own port. It asks for the Raspberry Pi user account, not your control app login.</p>
 <details class="note">
 <summary>Finding the device's address</summary>
 <ul>
@@ -2209,7 +2210,7 @@
 </details>
 <details class="note">
 <summary>If the home page doesn't load</summary>
-<p>The apps accept connections only from the device, so they have no address of their own on your network. If the apps show a page saying the control app isn't answering, restart it as described in <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>. If nothing loads, open Cockpit at <code>http://&lt;device&gt;:9090</code>, log in with your Raspberry Pi user account, and check the services as described in <a href="../system-admin/">System administration</a>. <a href="../../reference/network/">Network ports</a> lists what the device opens. If the home page loads on a computer but times out on an Android phone, see <a href="../../help-and-faq/frequently-asked-questions/#troubleshooting">Troubleshooting</a>.</p>
+<p>Apart from Cockpit, the apps accept connections only from the device, so they have no address of their own on your network. If the apps show a page saying the control app isn't answering, restart it as described in <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>. If nothing loads, open Cockpit at <code>http://&lt;device&gt;:9090</code>, log in with your Raspberry Pi user account, and check the services as described in <a href="../system-admin/">System administration</a>. <a href="../../reference/network/">Network ports</a> lists what the device opens. If the home page loads on a computer but times out on an Android phone, see <a href="../../help-and-faq/frequently-asked-questions/#troubleshooting">Troubleshooting</a>.</p>
 </details>
   
 

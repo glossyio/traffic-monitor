@@ -2224,7 +2224,19 @@
   <h1 id="system-administration">System administration<a class="headerlink" href="#system-administration" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Restart services, read logs, and find the files on a Traffic Monitor, in the browser with Cockpit or over SSH.</p>
 <h2 id="cockpit">Cockpit<a class="headerlink" href="#cockpit" title="Permanent link">&para;</a></h2>
-<p>Log in to the device as the administrator, open <strong>Cockpit</strong> from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on <code>http://&lt;device&gt;:9090</code> with only the Raspberry Pi login, which works when the <a href="../control-app/">control app</a> doesn't. <a href="https://cockpit-project.org/">Cockpit</a> shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.</p>
+<p><a href="https://cockpit-project.org/">Cockpit</a> is the device's system console in the browser. It shows the services and their logs, the Podman containers, system updates, and the user accounts, and it has a terminal, so most administration needs no SSH client.</p>
+<p>Open <code>http://&lt;device&gt;:9090/</code>, with the same name or address you use for the home page, and log in with your Raspberry Pi user account. Administrators also have a <strong>Cockpit</strong> tile on the home page, which opens the same address and names the account to log in with.</p>
+<p>Cockpit has its own port and its own login. It doesn't need the home page, the <a href="../control-app/">control app</a>, or the apps, so it still opens when they don't. Use it when:</p>
+<ul>
+<li>the home page doesn't load, or a page says the control app isn't answering</li>
+<li>you want to restart a service, or read its log</li>
+<li>you need a terminal and have no SSH client</li>
+<li>you want to install system updates or change the system password</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Who can open Cockpit</p>
+<p>Anyone on your network can reach Cockpit's login page. Only the Raspberry Pi user account gets past it. The control app's accounts don't work there.</p>
+</div>
 <h2 id="services">Services<a class="headerlink" href="#services" title="Permanent link">&para;</a></h2>
 <p>The Traffic Monitor runs as systemd services. The app containers run inside one Podman pod. nginx and the control app run on the host, outside the pod, so the home page and the login stay up when the pod is down.</p>
 <p>Start with the control app's <a href="../device-health/#the-status-page">Status page</a>: it shows each service's state, and when one has stopped or keeps failing, its check has a <strong>Restart</strong> button. Use Cockpit or SSH for the rest, such as restarting the control app itself, or a service that looks running but misbehaves.</p>
