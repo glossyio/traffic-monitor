@@ -2,9 +2,15 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tm_control.adapters.yamlfile import read_config
-from tm_control.modules.location.config import ConfigError, NodeRedConfig, read_deployment
+from tm_control.modules.location.config import (
+    ConfigError,
+    NodeRedConfig,
+    SharingBlock,
+    read_deployment,
+)
 from tm_control.modules.location.places import Bearing
 
 FIXTURE = Path(__file__).parent / "fixtures" / "node_red_config_ok.yml"
@@ -356,3 +362,266 @@ def test_set_survey_id_creates_a_missing_deployment_block(path):
 def test_coordinates_invalid_flags_a_pair_that_isnt_one(path, block, invalid):
     path.write_text(f"deployment:\n    {block}")
     assert NodeRedConfig(path).deployment().coordinates_invalid is invalid
+
+
+# the thingsboard: and sharing: blocks
+
+HOST = "tb.example.invalid"
+OTHER_HOST = "other.example.invalid"
+CHOSEN = SharingBlock(
+    target="own", host=HOST, exact_location=True, public_map="rounded_point", notice_version="own-server"
+)
+
+
+def between(text, first, second):
+    """The text from the line `first` up to (not including) the line `second`."""
+    start = text.index(first)
+    return text[start:text.index(second, start)]
+
+
+@pytest.mark.parametrize("block, expected", [
+    ("enabled: 'true'\nhost: tb.example.invalid", {"enabled": False}),
+    ("enabled: true\nhost: tb.example.invalid", {"enabled": True, "protocol": "https", "port": None}),
+    ("enabled: true\nhost: '  tb.example.invalid  '\nprotocol: http\nport: 8080",
+     {"host": HOST, "protocol": "http", "port": 8080}),
+    ("enabled: true\nhost: https://tb.example.invalid", {"host": "https://" + HOST, "host_has_scheme": True}),
+    ("enabled: true\nhost: HTTP://tb.example.invalid", {"host_has_scheme": True}),
+    ("enabled: true\nhost: tb.example.invalid", {"host_has_scheme": False}),
+    ("enabled: true\nhost: '   '", {"host": None, "host_has_scheme": False}),
+    ("enabled: true\nhost: 42", {"host": None}),
+    ("enabled: true\nhost: tb.example.invalid\nprotocol: ftp", {"protocol": "https"}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '8080'", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: 70000", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: true", {"port": None}),
+    ("", {"enabled": False, "host": None, "protocol": "https", "port": None}),
+], ids=["enabled-string", "defaults", "trimmed", "scheme-in-host", "scheme-in-any-case", "no-scheme", "blank-host",
+        "number-host", "unknown-protocol", "string-port", "port-out-of-range", "boolean-port", "no-values"])
+def test_upload_reads_the_block_leniently(tmp_path, block, expected):
+    indented = "".join("    " + line + "\n" for line in block.splitlines())
+    target = tmp_path / "config.yml"
+    target.write_text("thingsboard:\n" + indented if block else "thingsboard:\n")
+    upload = NodeRedConfig(target).upload()
+    for name, value in expected.items():
+        assert getattr(upload, name) == value, name
+
+
+def test_upload_without_a_block_is_off(tmp_path):
+    target = tmp_path / "config.yml"
+    target.write_text("deployment:\n    lat: 45.0\n")
+    upload = NodeRedConfig(target).upload()
+    assert upload.enabled is False and upload.host is None and upload.port is None
+
+
+def test_set_upload_keeps_comments_and_writes_the_port_only_when_given(path):
+    config = NodeRedConfig(path)
+    config.set_upload(True, OTHER_HOST, "https", None)
+    assert config.save() is True
+    text = path.read_text()
+    assert text.startswith(
+        f"thingsboard:\n    enabled: true\n    host: {OTHER_HOST}\n    protocol: https\n    # port: 8080\n\ndeployment:"
+    )
+    assert "port" not in read_config(path).data["thingsboard"]
+
+    config = NodeRedConfig(path)
+    config.set_upload(True, OTHER_HOST, "http", 8080)
+    config.save()
+    text = path.read_text()
+    assert f"    protocol: http\n    # port: 8080\n    port: 8080\n\ndeployment:" in text
+    upload = NodeRedConfig(path).upload()
+    assert (upload.host, upload.protocol, upload.port) == (OTHER_HOST, "http", 8080)
+
+    config = NodeRedConfig(path)
+    config.set_upload(False, OTHER_HOST, "http", None)
+    config.save()
+    text = path.read_text()
+    assert "    enabled: false\n    host: other.example.invalid\n    protocol: http\n    # port: 8080\n\ndeployment:" in text
+    assert len(backups(path)) >= 1
+
+
+def test_set_upload_keeps_the_quoting_of_a_value_it_changes(path):
+    path.write_text("thingsboard:\n    enabled: true\n    host: 'tb.example.invalid'  # the server\n    protocol: http\n")
+    config = NodeRedConfig(path)
+    config.set_upload(True, OTHER_HOST, "http", None)
+    config.save()
+    assert "    host: 'other.example.invalid' # the server\n" in path.read_text()  # ruamel keeps one space
+
+
+def test_set_upload_creates_the_block_first_when_it_is_missing(path):
+    path.write_text("deployment:\n    lat: 45.0\n    lon: -122.0\n")
+    config = NodeRedConfig(path)
+    config.set_upload(True, HOST, "https", 443)
+    config.save()
+    assert path.read_text().startswith("thingsboard:\n    enabled: true\n    host: tb.example.invalid\n")
+    upload = NodeRedConfig(path).upload()
+    assert (upload.enabled, upload.host, upload.protocol, upload.port) == (True, HOST, "https", 443)
+    assert read_config(path).data["deployment"]["lat"] == 45.0
+
+
+@pytest.mark.parametrize("protocol, port", [("ftp", None), ("http", 0), ("http", 65536), ("http", True)])
+def test_set_upload_refuses_a_value_that_is_not_one(path, protocol, port):
+    with pytest.raises(ValueError):
+        NodeRedConfig(path).set_upload(True, HOST, protocol, port)
+
+
+def test_sharing_block_is_none_without_the_key_and_all_off_for_a_non_mapping(path):
+    assert NodeRedConfig(path).sharing_block() is None
+    for text in ("sharing:\n", "sharing: []\n", "sharing: 3\n", "sharing: [maintainer]\n"):
+        path.write_text(text)
+        assert NodeRedConfig(path).sharing_block() == SharingBlock()
+
+
+@pytest.mark.parametrize("block, expected", [
+    ({"exact_location": "true"}, SharingBlock()),
+    ({"exact_location": True}, SharingBlock(exact_location=True)),
+    ({"public_map": "block"}, SharingBlock()),
+    ({"public_map": "rounded_point"}, SharingBlock(public_map="rounded_point")),
+    ({"target": "everyone"}, SharingBlock()),
+    ({"target": "maintainer"}, SharingBlock(target="maintainer")),
+    ({"notice_version": 3}, SharingBlock()),
+    ({"notice_version": ""}, SharingBlock()),
+    ({"notice_version": "2026-11"}, SharingBlock(notice_version="2026-11")),
+    ({"host": "HTTPS://TB.Example.invalid/"}, SharingBlock(host=HOST)),
+    ({"host": 42}, SharingBlock()),
+    ({"host": "   "}, SharingBlock()),
+])
+def test_sharing_block_reads_as_node_red_does(path, block, expected):
+    path.write_text(yaml.safe_dump({"sharing": block}))
+    assert NodeRedConfig(path).sharing_block() == expected
+
+
+def test_set_sharing_creates_the_block_after_thingsboard_and_keeps_the_blank_lines(path):
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    assert config.save() is True
+    text = path.read_text()
+    assert between(text, "thingsboard:", "deployment:") == (
+        "thingsboard:\n    enabled: false\n    host: tb.example.invalid\n    protocol: http\n    # port: 8080\n"
+        "\n"
+        "sharing:\n"
+        "    # Written by the control app's Sharing page. A choice made here isn't recorded: use the page.\n"
+        "    target: own\n"
+        "    host: tb.example.invalid\n"
+        "    exact_location: true\n"
+        "    public_map: rounded_point\n"
+        "    notice_version: 'own-server'\n"
+        "\n"
+    )
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+
+
+def test_set_sharing_writes_none_as_empty_keys(path):
+    config = NodeRedConfig(path)
+    config.set_sharing(SharingBlock())
+    config.save()
+    text = path.read_text()
+    assert "    target:\n    host:\n    exact_location: false\n    public_map: none\n    notice_version:\n\ndeployment:" in text
+    assert read_config(path).data["sharing"] == {
+        "target": None, "host": None, "exact_location": False, "public_map": "none", "notice_version": None
+    }
+    assert NodeRedConfig(path).sharing_block() == SharingBlock()
+
+
+def test_set_sharing_at_the_end_of_a_file_without_thingsboard(path):
+    path.write_text("deployment:\n    lat: 45.0\n    lon: -122.0\n\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    config.save()
+    data = read_config(path).data
+    assert list(data) == ["deployment", "sensors", "sharing"]
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+
+
+def test_set_sharing_after_a_last_thingsboard_block_leaves_a_blank_line(path):
+    path.write_text("deployment:\n    lat: 45.0\n\nthingsboard:\n    enabled: false\n")
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    config.save()
+    assert "thingsboard:\n    enabled: false\n\nsharing:\n" in path.read_text()
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+    path.write_text("thingsboard:\n    enabled: false\n")
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    config.save()
+    assert path.read_text().startswith("thingsboard:\n    enabled: false\n\nsharing:\n")
+
+
+def test_set_sharing_fills_a_sharing_key_with_nothing_under_it(path):
+    path.write_text(path.read_text().replace("deployment:", "sharing:\n\ndeployment:", 1))
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    config.save()
+    assert list(read_config(path).data)[:3] == ["thingsboard", "sharing", "deployment"]
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+    assert "notice_version: 'own-server'\n\ndeployment:" in path.read_text()
+
+
+def test_set_sharing_twice_changes_only_values(path):
+    first = NodeRedConfig(path)
+    first.set_sharing(CHOSEN)
+    first.save()
+    written = path.read_text()
+
+    again = NodeRedConfig(path)
+    again.set_sharing(CHOSEN)
+    assert again.save() is False
+    assert path.read_text() == written
+
+    change = NodeRedConfig(path)
+    change.set_sharing(CHOSEN.model_copy(update={"exact_location": False, "public_map": "none"}))
+    assert change.save() is True
+    assert path.read_text() == written.replace("exact_location: true", "exact_location: false").replace(
+        "public_map: rounded_point", "public_map: none"
+    )
+
+
+def test_set_sharing_keeps_a_comment_a_person_added(path):
+    first = NodeRedConfig(path)
+    first.set_sharing(CHOSEN)
+    first.save()
+    path.write_text(path.read_text().replace("public_map: rounded_point", "public_map: rounded_point  # on"))
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN.model_copy(update={"host": OTHER_HOST}))
+    config.save()
+    text = path.read_text()
+    assert "    public_map: rounded_point  # on\n" in text
+    assert f"    host: {OTHER_HOST}\n" in text
+
+
+def test_sharing_is_exact_only_for_the_host_the_choice_was_made_for(path):
+    def make(enabled, upload_host, block):
+        config = NodeRedConfig(path)
+        config.set_upload(enabled, upload_host, "https", None)
+        config.set_sharing(block)
+        config.save()
+        return NodeRedConfig(path).sharing()
+
+    assert make(False, HOST, CHOSEN) == "none"
+    assert make(True, HOST, CHOSEN) == "exact"
+    assert make(True, "HTTPS://TB.Example.invalid/", CHOSEN) == "exact"
+    assert make(True, OTHER_HOST, CHOSEN) == "data"
+    assert make(True, HOST, CHOSEN.model_copy(update={"exact_location": False})) == "data"
+    assert make(True, HOST, CHOSEN.model_copy(update={"host": None})) == "data"
+
+
+def test_sharing_is_data_when_the_file_has_no_sharing_block(path):
+    config = NodeRedConfig(path)
+    config.set_upload(True, HOST, "https", None)
+    config.save()
+    assert NodeRedConfig(path).sharing() == "data"
+
+
+def test_the_saved_file_loads_as_node_red_would(path):
+    config = NodeRedConfig(path)
+    config.set_upload(True, HOST, "https", None)
+    config.set_sharing(CHOSEN)
+    config.save()
+    loaded = yaml.safe_load(path.read_text())
+    assert loaded["sharing"] == {
+        "target": "own",
+        "host": HOST,
+        "exact_location": True,
+        "public_map": "rounded_point",
+        "notice_version": "own-server",
+    }
+    assert loaded["thingsboard"]["enabled"] is True
+    assert loaded["deployment"]["lat"] == 45.0

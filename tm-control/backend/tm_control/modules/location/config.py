@@ -27,6 +27,7 @@ from tm_control.modules.location.coordinates import (
     normalize_survey_id,
 )
 from tm_control.modules.location.places import Bearing
+from tm_control.modules.sharing.consents import normalize_host
 
 SENSOR_TYPES = ("cameras", "radars", "airquality_monitors")
 DEFAULT_PRECISION = "2"  # what the engine uses when database_precision is missing or invalid
@@ -117,6 +118,58 @@ def read_deployment(read: ConfigRead) -> Deployment | None:
 
 def _mapping(value) -> Mapping:
     return value if isinstance(value, Mapping) else {}
+
+
+class Upload(BaseModel):
+    """The thingsboard: block, read as Node-RED reads it (see init config defaults)."""
+
+    enabled: bool  # true only for the boolean true
+    host: str | None  # as written, trimmed; None when blank
+    protocol: Literal["http", "https"]  # https when missing or anything else
+    port: int | None  # an integer in 1..65535, else None
+    host_has_scheme: bool  # the host starts with http:// or https:// (Node-RED then ignores protocol)
+
+
+class SharingBlock(BaseModel):
+    """The sharing: block. Parsed as leniently as Node-RED parses it: a value that is not one of a key's own is that
+    key's off value."""
+
+    target: Literal["maintainer", "own"] | None = None
+    host: str | None = None  # normalised: see consents.normalize_host
+    exact_location: bool = False
+    public_map: Literal["none", "rounded_point"] = "none"
+    notice_version: str | None = None
+
+
+def _parse_upload(data: Mapping) -> Upload:
+    block = _mapping(data.get("thingsboard"))
+    raw_host = block.get("host")
+    host = raw_host.strip() if isinstance(raw_host, str) else ""
+    protocol = block.get("protocol")
+    protocol = protocol.strip().lower() if isinstance(protocol, str) else ""
+    port = block.get("port")
+    return Upload(
+        enabled=block.get("enabled") is True,
+        host=host or None,
+        protocol="http" if protocol == "http" else "https",
+        port=port if isinstance(port, int) and not isinstance(port, bool) and 0 < port < 65536 else None,
+        host_has_scheme=host.lower().startswith(("http://", "https://")),
+    )
+
+
+def _parse_sharing(block) -> SharingBlock:
+    block = _mapping(block)
+    target, public_map, notice = block.get("target"), block.get("public_map"), block.get("notice_version")
+    return SharingBlock(
+        target=target if target in ("maintainer", "own") else None,
+        host=normalize_host(block.get("host")),
+        exact_location=block.get("exact_location") is True,
+        public_map="rounded_point" if public_map == "rounded_point" else "none",
+        notice_version=notice if isinstance(notice, str) and notice != "" else None,
+    )
+
+
+SHARING_COMMENT = "Written by the control app's Sharing page. A choice made here isn't recorded: use the page."
 
 
 @dataclass(frozen=True)
@@ -240,6 +293,14 @@ def _remove(entry: CommentedMap, key: str) -> None:
         entry.ca.items.pop(key, None)
 
 
+def _write(block: CommentedMap, key: str, value, after: str | None) -> None:
+    """Set key in place (its comment and a string's quoting stay) or add it after `after`."""
+    old = block.get(key)
+    if isinstance(old, ScalarString) and isinstance(value, str) and not isinstance(value, ScalarString):
+        value = type(old)(value)
+    put_after(block, key, value, after=after)
+
+
 def _append(owner: CommentedMap, key, value, holder=None) -> None:
     """Add key at the end of owner. It takes the text that ended owner (the blank line before the next block, and
     any comment above it), and when owner's last two keys have a blank line between them, its new last two do too.
@@ -339,9 +400,26 @@ class NodeRedConfig:
                     found.append((sensor_type, str(name)))
         return found
 
-    def sharing(self) -> Literal["data", "none"]:
-        """"data" when ThingsBoard uploads are enabled."""
-        return "data" if _mapping(self._file.data.get("thingsboard")).get("enabled") is True else "none"
+    def upload(self) -> Upload:
+        """The thingsboard: block, leniently: see _parse_upload."""
+        return _parse_upload(self._file.data)
+
+    def sharing_block(self) -> SharingBlock | None:
+        """The sharing: block, leniently; None when the file has no `sharing:` key at all."""
+        data = self._file.data
+        return _parse_sharing(data["sharing"]) if "sharing" in data else None
+
+    def sharing(self) -> Literal["none", "data", "exact"]:
+        """"none" with the upload off; "exact" when the sharing: block asks for the exact location for the very server
+        the upload goes to; else "data"."""
+        upload = self.upload()
+        if not upload.enabled:
+            return "none"
+        block = self.sharing_block()
+        if block is not None and block.exact_location and block.host is not None:
+            if block.host == normalize_host(upload.host):
+                return "exact"
+        return "data"
 
     # editing
 
@@ -417,6 +495,81 @@ class NodeRedConfig:
         elif not isinstance(block, CommentedMap):
             raise ConfigError("invalid")
         block["bearing"] = SingleQuotedScalarString(bearing)
+
+    def set_upload(self, enabled: bool, host: str, protocol: str, port: int | None) -> None:
+        """Write thingsboard.enabled, host (trimmed), protocol and port, in that order, creating the block (first in
+        the file) when it is missing. port None removes the key; a commented `# port:` line stays a comment.
+
+        Raises ValueError for a protocol that isn't http or https and a port that isn't 1 to 65535."""
+        if protocol not in ("http", "https"):
+            raise ValueError("protocol must be http or https")
+        if port is not None and (isinstance(port, bool) or not isinstance(port, int) or not 0 < port < 65536):
+            raise ValueError("port must be a number from 1 to 65535")
+        data = self._file.data
+        block = data.get("thingsboard")
+        if not isinstance(block, CommentedMap) or not block:
+            if block is not None and not isinstance(block, CommentedMap):
+                raise ConfigError("invalid")
+            after = _take_after(data, "thingsboard") if "thingsboard" in data else None
+            block = CommentedMap()
+            if "thingsboard" in data:
+                data["thingsboard"] = block
+            else:
+                data.insert(0, "thingsboard", block)
+            block.fa.set_block_style()
+            created_after = "\n" if after is None else after  # the text below the block, put there once it has keys
+        else:
+            created_after = None
+        _write(block, "enabled", enabled, None)
+        _write(block, "host", host.strip(), "enabled")
+        _write(block, "protocol", protocol, "host")
+        if port is not None:
+            _write(block, "port", port, "protocol")
+        elif "port" in block:
+            after = _take_after(data, "thingsboard")
+            _remove(block, "port")
+            _put_after(data, "thingsboard", after)
+        if created_after is not None:
+            _put_after(data, "thingsboard", created_after)
+
+    def set_sharing(self, block: SharingBlock) -> None:
+        """Write the five sharing: keys in order. A block the file has keeps its comments and each key's place; a
+        missing (or empty) one is created after thingsboard: (at the end of the file without it), with the comment
+        SHARING_COMMENT above its first key. None is written as an empty key, notice_version single-quoted."""
+        values = {
+            "target": block.target,
+            "host": block.host,
+            "exact_location": block.exact_location,
+            "public_map": block.public_map,
+            "notice_version": None if block.notice_version is None else SingleQuotedScalarString(block.notice_version),
+        }
+        data = self._file.data
+        current = data.get("sharing")
+        if isinstance(current, CommentedMap) and current:
+            before = None
+            for key, value in values.items():
+                _write(current, key, value, before)
+                before = key
+            return
+        if current is not None and not (isinstance(current, CommentedMap) and not current):
+            raise ConfigError("invalid")
+        created = CommentedMap(values)
+        created.yaml_set_comment_before_after_key("target", before=SHARING_COMMENT, indent=4)
+        if "sharing" in data:
+            after = _take_after(data, "sharing")
+            data["sharing"] = created
+            _put_after(data, "sharing", after)
+        elif "thingsboard" in data and list(data.keys())[-1] != "thingsboard":
+            data.insert(list(data.keys()).index("thingsboard") + 1, "sharing", created)
+            above = data["thingsboard"]
+            if isinstance(above, CommentedMap) and above:
+                blank_line_after(above, list(above.keys())[-1], created, "notice_version", move=False)
+        else:
+            _append(data, "sharing", created)
+            if "thingsboard" in data and list(data.keys())[-2] == "thingsboard" and not _text_after(
+                data, "thingsboard"
+            ).startswith("\n"):
+                _put_after(data, "thingsboard", "\n")  # a blank line between the two blocks, as elsewhere
 
     def _camera(self, name: str) -> tuple[CommentedMap, object]:
         """sensors.cameras and the key that reads as name. Raises KeyError for a camera that isn't in the file."""
