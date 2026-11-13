@@ -429,6 +429,19 @@ class NodeRedConfig:
         raise KeyError(name)
 
     @staticmethod
+    def _unshared(cameras: CommentedMap, key) -> None:
+        """Refuse an entry that carries an anchor (`main_st: &cam`) or is the same object as another entry (through an
+        alias, `picam_h265: *cam`): an edit to it would change every entry that shares it."""
+        entry = cameras[key]
+        if entry is None:
+            return
+        anchor = getattr(entry, "anchor", None)
+        if getattr(anchor, "value", None) is not None:
+            raise ConfigError("invalid")
+        if any(other is entry for name, other in cameras.items() if name != key):
+            raise ConfigError("invalid")
+
+    @staticmethod
     def _entry(cameras: CommentedMap, key) -> CommentedMap:
         """An entry to edit; one with nothing under it (`main_st:`) becomes an empty mapping."""
         entry = cameras[key]
@@ -477,8 +490,10 @@ class NodeRedConfig:
         """Set a camera's enabled, camera_radar (None removes the key), and plate_recognizer (None leaves the key as it
         is). A key the entry doesn't have yet is added in the order add_camera writes them.
 
-        Raises KeyError for a camera that isn't in the file."""
+        Raises KeyError for a camera that isn't in the file, ConfigError("invalid") for an entry shared through an
+        alias (see _unshared)."""
         cameras, key = self._camera(name)
+        self._unshared(cameras, key)
         entry = self._entry(cameras, key)
         after = _take_after(cameras, key)
         _set(entry, "enabled", enabled, ("frigate_camera",))
@@ -493,8 +508,10 @@ class NodeRedConfig:
     def point_camera(self, name: str, frigate_camera: str) -> None:
         """Set a camera's frigate_camera, as the entry's first key when it has none.
 
-        Raises KeyError for a camera that isn't in the file."""
+        Raises KeyError for a camera that isn't in the file, ConfigError("invalid") for an entry shared through an
+        alias (see _unshared)."""
         cameras, key = self._camera(name)
+        self._unshared(cameras, key)
         self._point(cameras, key, frigate_camera)
 
     def _point(self, cameras: CommentedMap, key, frigate_camera: str) -> None:
@@ -508,10 +525,12 @@ class NodeRedConfig:
         the entry has no frigate_camera (or one that names no camera: empty, or not a string), it gets frigate_camera:
         <old> as its first key, so that it still names the Frigate camera it named.
 
-        Raises KeyError for a camera that isn't in the file, ValueError when new is already a camera."""
+        Raises KeyError for a camera that isn't in the file, ConfigError("invalid") for an entry shared through an
+        alias (see _unshared), ValueError when new is already a camera."""
         cameras, key = self._camera(old)
         if any(str(other) == new for other in cameras):
             raise ValueError("a camera already has that name")
+        self._unshared(cameras, key)
         if cameras[key] is not None and not isinstance(cameras[key], CommentedMap):
             raise ConfigError("invalid")
         position = list(cameras.keys()).index(key)

@@ -424,6 +424,18 @@ def test_a_changed_file_is_a_409_and_nothing_is_written(admin, monkeypatch):
     assert audit_rows(admin) == []
 
 
+def test_an_entry_shared_through_an_alias_is_a_500_config_error(admin):
+    path = admin.app.state.config_path
+    text = path.read_text()
+    assert "        picam_h265:\n" in text and "    radars:\n" in text
+    text = text.replace("        picam_h265:\n", "        picam_h265: &cam\n").replace(
+        "    radars:\n", "        main_st: *cam\n\n    radars:\n", 1)
+    path.write_text(text)
+    r = admin.put("/api/v1/cameras/picam_h265", json={"enabled": False}, headers=ORIGIN)
+    assert r.status_code == 500 and error_code(r) == "config_error"
+    assert path.read_text() == text and backups(admin) == [] and audit_rows(admin) == []
+
+
 def test_every_write_is_audited_with_the_key_only(admin, token, monkeypatch):
     assert add(admin).status_code == 200
     assert admin.put("/api/v1/cameras/picam_h265", json={"enabled": False}, headers=ORIGIN).status_code == 200

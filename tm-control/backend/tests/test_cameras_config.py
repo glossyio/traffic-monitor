@@ -565,3 +565,52 @@ def test_an_entry_that_isnt_a_mapping_is_not_edited(path):
         with pytest.raises(ConfigError):
             edit()
     assert config.save() is False
+
+
+# One object for two entries: main_st: &cam with picam_h265: *cam loads as one mapping, so an edit to either would
+# change both. An entry with an anchor is refused too, since an alias anywhere else in the file may share it.
+SHARED = """\
+    cameras:
+        main_st: &cam
+            enabled: true
+        picam_h265: *cam
+
+"""
+ANCHORED = """\
+    cameras:
+        main_st: &cam
+            enabled: true
+        picam_h265:
+            enabled: true
+
+"""
+
+
+def shared_edits(config, name):
+    return (
+        lambda: config.set_camera(name, False, None, None),
+        lambda: config.point_camera(name, "oak_ave_wide"),
+        lambda: config.rename_camera(name, "camera_1_3fa9c2"),
+    )
+
+
+@pytest.mark.parametrize(("block", "names"), [(SHARED, ["main_st", "picam_h265"]), (ANCHORED, ["main_st"])],
+                         ids=["alias", "anchor"])
+def test_an_entry_shared_through_an_alias_is_not_edited(path, block, names):
+    write(path, lambda text: text.replace(ONE_CAMERA, block))
+    config = NodeRedConfig(path)
+    entries = config.cameras()
+    for name in names:
+        for edit in shared_edits(config, name):
+            with pytest.raises(ConfigError) as raised:
+                edit()
+            assert raised.value.code == "invalid"
+    assert config.cameras() == entries  # nothing was changed before the refusal
+
+
+def test_an_entry_beside_an_anchored_one_is_still_edited(path):
+    write(path, lambda text: text.replace(ONE_CAMERA, ANCHORED))
+    edited(path, lambda config: config.set_camera("picam_h265", False, None, None))
+    assert [(entry.name, entry.enabled) for entry in NodeRedConfig(path).cameras()] == [
+        ("main_st", True), ("picam_h265", False),
+    ]
