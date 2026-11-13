@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -961,6 +963,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../use/location/" class="md-nav__link">
         
   
@@ -1007,10 +1037,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1028,8 +1058,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2233,7 +2263,7 @@
 <h2 id="how-an-event-is-made">How an event is made<a class="headerlink" href="#how-an-event-is-made" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Frigate publishes a message on the device's MQTT topic <code>frigate/events</code> for each tracked object. When the object leaves the frame, the message has <code>type: "end"</code> and holds everything Frigate knows about it.</li>
-<li>The Traffic Monitor keeps the <code>end</code> message if the camera is enabled in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> and the object moved.</li>
+<li>The Traffic Monitor keeps the <code>end</code> message if the camera has an enabled entry in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> and the object moved. From here on, the camera goes by its entry's name.</li>
 <li>If the object entered any zone and the camera has an enabled radar, it works out the direction and the speed, as described below, and adds <code>radar</code> to <code>provenance</code> when a speed was found.</li>
 <li>It writes the row, publishes today's counts on <code>tm/events</code>, and uploads the event to ThingsBoard if that is on. See <a href="../integrations/">MQTT and ThingsBoard</a>.</li>
 </ol>
@@ -2310,8 +2340,8 @@
 <tr>
 <td><code>camera</code></td>
 <td>TEXT</td>
-<td><em>Frigate.</em> The camera's name</td>
-<td>As named in Frigate, <code>picam_h265</code> by default</td>
+<td>The camera's name in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a>, which can differ from its name in Frigate</td>
+<td>The name of the camera's entry under <code>sensors.cameras</code>, <code>picam_h265</code> by default</td>
 </tr>
 <tr>
 <td><code>label</code></td>

@@ -14,7 +14,7 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Detection**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
 
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 

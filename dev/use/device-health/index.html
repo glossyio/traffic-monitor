@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -1000,6 +1002,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#the-camera-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The camera checks
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1121,6 +1134,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../location/" class="md-nav__link">
         
   
@@ -1167,10 +1208,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1188,8 +1229,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2226,6 +2267,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#the-camera-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The camera checks
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2391,7 +2443,7 @@
 </tr>
 <tr>
 <td>Configuration</td>
-<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera is enabled in <code>config.yml</code>, it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, and each camera's radar is enabled. The Location check is a problem when a <code>deployment</code> value in <code>config.yml</code> is one Node-RED won't accept, such as a coordinate out of range or a bearing with spaces around it, and names the key. It warns when a sensor still has its own <code>lat</code> or <code>lon</code>, when the device's places haven't been set up since an update, which the control app does by itself once Node-RED answers, and when <code>survey_id</code> names a place the device doesn't have, and links to the <a href="../location/">Location page</a>. In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see <a href="../../configuration/frigate-config/#the-frigate-check">The Frigate+ check</a>. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
+<td>Frigate and <code>config.yml</code> agree on the names that link them: each Frigate camera has an entry under <code>sensors.cameras</code> that is enabled (see <a href="#the-camera-checks">The camera checks</a>), it has the zones <code>zone_capture</code>, <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code>, each radar under <code>sensors.radars</code> is named after one of the <code>TM_RADAR_SERIAL_PORT_</code> variables in <code>node-red-tm.env</code>, and each camera's radar is enabled. The Location check is a problem when a <code>deployment</code> value in <code>config.yml</code> is one Node-RED won't accept, such as a coordinate out of range or a bearing with spaces around it, and names the key. It warns when a sensor still has its own <code>lat</code> or <code>lon</code>, when the device's places haven't been set up since an update, which the control app does by itself once Node-RED answers, and when <code>survey_id</code> names a place the device doesn't have, and links to the <a href="../location/">Location page</a>. In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see <a href="../../configuration/frigate-config/#the-frigate-check">The Frigate+ check</a>. See <a href="../../configuration/node-red-config/">config.yml settings</a> and <a href="../../setup-guide/">First-time setup</a>.</td>
 </tr>
 <tr>
 <td>Hardware</td>
@@ -2444,9 +2496,38 @@
 <ul>
 <li><strong>A Restart button</strong>, such as <strong>Restart Frigate</strong>, for a service that stopped or keeps failing. The Hotspot check's <strong>Restart the hotspot</strong> has the device look at its Wi-Fi radio and start the hotspot if it should be on. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.</li>
 <li><strong>Re-scan hardware</strong>, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.</li>
-<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>, or <strong>Set the key</strong> for Frigate+, which opens the Frigate+ API key section of the <a href="../detection/#frigate-plus">Detection page</a>, or <strong>Open the Location page</strong> for the Location check.</li>
+<li><strong>A link</strong> to the page that fixes it, such as <strong>Set the date and time</strong>, <strong>Diagnostics</strong> on the Device page, or <strong>Set the token</strong> for the ThingsBoard upload, which opens <a href="#tokens-and-keys">Tokens and keys</a>, or <strong>Set the key</strong> for Frigate+, which opens the Frigate+ API key section of the <a href="../detection/#frigate-plus">Detection page</a>, or <strong>Open the Location page</strong> for the Location check, or <strong>Open the Cameras page</strong> (see <a href="../cameras/">Cameras</a>) for the camera, zone, and radar-pairing checks.</li>
 <li><strong>A sentence</strong> with the next step, such as rerunning the installer for Node-RED (<code>tmsetup.sh -t node-red-tm</code>; see <a href="../../reference/tmsetup/">Installer options</a>).</li>
 </ul>
+<h3 id="the-camera-checks">The camera checks<a class="headerlink" href="#the-camera-checks" title="Permanent link">&para;</a></h3>
+<p>The <strong>Cameras in config.yml</strong> check compares Frigate's cameras with the entries under <code>sensors.cameras</code> in <code>config.yml</code>. An entry points at the Frigate camera named by its <code>frigate_camera</code> setting, or, when it has none, at the camera with the same name as the entry. The control app's <a href="../cameras/">Cameras page</a> keeps the two in step; each problem below links to it, and the page marks the camera each one is about.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Problem</td>
+<td>A camera that is on in Frigate, with Frigate's detection on, has no entry pointing at it, so its events aren't recorded. Or two entries point at the same Frigate camera, and only the first is used.</td>
+</tr>
+<tr>
+<td>Warning</td>
+<td>An entry is enabled, but Frigate doesn't have that camera, or has it turned off. Or a camera's events are dropped on one side: its <strong>Database capture</strong> is off while Frigate detects objects on it, or Frigate's detection is off while its <strong>Database capture</strong> is on. Either is fine if you turned it off on purpose.</td>
+</tr>
+<tr>
+<td>Passed</td>
+<td>Every camera that is on in Frigate has an entry, and each one's <strong>Frigate detection</strong> and <strong>Database capture</strong> are both on, so its events are recorded, or both off, so nothing is detected and nothing is dropped. A camera with no entry passes when its Frigate detection is off.</td>
+</tr>
+<tr>
+<td>Couldn't run</td>
+<td>Frigate isn't answering or is in safe mode, so it has no cameras to compare, or <code>config.yml</code> can't be read.</td>
+</tr>
+</tbody>
+</table>
+<p>The check names an entry by its name in <code>config.yml</code> and, when that differs, Frigate's name for the camera in brackets. The <strong>Zones</strong> check looks at the same pairs: it warns when a camera that is on in Frigate and enabled in <code>config.yml</code> lacks one of the zones the flows expect, or has one turned off in Frigate (in its configuration or from its live view), because an object never enters a zone that is off. Zones are drawn in Frigate, so when one camera has the problem, its link, <strong>Edit its zones in Frigate</strong>, opens Frigate's masks and zones settings at that camera; with several, it opens the Cameras page, which links each one. The <strong>Radar names</strong> check warns when a camera is paired with a radar that is missing from <code>sensors.radars</code> or turned off. The camera is still recorded, but it gets no speed or direction from a radar. A radar named differently from the <code>node-red-tm.env</code> variables is a problem, and has no link, because you fix that name in <code>config.yml</code>.</p>
 <p>The control app can't restart itself. If it stops, see <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</p>
 <h2 id="the-device-page">The Device page<a class="headerlink" href="#the-device-page" title="Permanent link">&para;</a></h2>
 <p>The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. It also lists each connected link, Ethernet or Wi-Fi, with its IP address and MAC address, and <strong>Network details</strong> opens the <a href="../wifi-hotspot/#the-network-page">Network page</a>. If the device can't read its network state, the card leaves the list out. <strong>Software</strong> lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.</p>
@@ -2460,10 +2541,17 @@
 </ul>
 <p>An older device may have kept a token in <code>config.yml</code> or in the add-on's env file, or a Frigate+ key in <code>frigate.env</code>. The installer moves it to the device's secrets, so uploads, plate reads, and Frigate+ keep working, and the Device page and the Detection page show it as set. A warning on the Status page's ThingsBoard upload check says when <code>config.yml</code> still holds a token key, which nothing reads, or when the upload is on without a token.</p>
 <h3 id="download-diagnostics">Download diagnostics<a class="headerlink" href="#download-diagnostics" title="Permanent link">&para;</a></h3>
-<p>When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with <code>&lt;redacted&gt;</code>. The file names the device and holds its serial number.</p>
+<p>When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with <code>&lt;redacted&gt;</code>. So are the names Frigate uses for cameras whenever they differ from the camera's name in <code>config.yml</code>, because the name in <code>config.yml</code> is the one the device records and shares, and Frigate's own name stays on the device. The file names the device and holds its serial number.</p>
 <ul>
 <li><strong>Download diagnostics</strong> saves the file.</li>
 <li><strong>Copy</strong> puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.</li>
+</ul>
+<p>The camera names replaced are Frigate's cameras that have a different name in <code>config.yml</code>, Frigate's cameras that no entry in <code>config.yml</code> points at (read from Frigate and from Frigate's own configuration file, so they are covered while Frigate isn't running), and the names found in the copies of <code>config.yml</code> that the control app saves beside it. It saves one each time it changes <code>config.yml</code>, from the <a href="../cameras/">Cameras page</a> or the <a href="../location/">Location page</a>, and keeps the last ten. A short name is replaced only when it stands alone as a word, so <code>front</code> is replaced in "front camera" but not in "frontage". Four limits:</p>
+<ul>
+<li>If you renamed a camera by editing <code>config.yml</code> by hand, there is no saved copy with the old name. The old name can then appear in log lines from before the change, until they scroll out of the logs.</li>
+<li>A short, everyday name such as <code>front</code> is replaced wherever that word appears in the file. That errs on the side of hiding too much.</li>
+<li>On a device whose <code>config.yml</code> still names a camera by the name you gave it in Frigate, that name is the one the device records, so it isn't replaced. <a href="../cameras/#use-a-neutral-name">Switch the camera to a neutral name</a> first.</li>
+<li>When Frigate isn't answering and its configuration file can't be read (a YAML mistake in it, for example), a camera that has no entry in <code>config.yml</code> yet can't be recognized, so its name can appear in the log lines.</li>
 </ul>
 <h3 id="reboot-or-shut-down">Reboot or shut down<a class="headerlink" href="#reboot-or-shut-down" title="Permanent link">&para;</a></h3>
 <p><strong>Reboot the device</strong> and <strong>Shut down the device</strong> each ask before they act. A reboot takes about two minutes, during which no page answers. If something such as a system update is holding the device up, or the control app isn't allowed to, the device says it can't reboot or shut down right now. Try again in a few minutes, and if it keeps happening, download the diagnostics.</p>

@@ -8,7 +8,7 @@ Open `http://<device>/dashboard/monitoring`, or open **Dashboard** from the home
 
 The Monitoring page, numbered as in the list below
 
-1. **Sensor selection.** A radar and a camera picker, listing every sensor in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras), enabled or not. The counts and statistics on this page follow the camera and radar selected on the legacy dashboard at `http://<device>/ui/`, not the selection here. On a device with one camera and one radar, they're the same.
+1. **Sensor selection.** A radar and a camera picker, listing every sensor in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras), enabled or not. They follow `config.yml`: each time it changes, each picker keeps its sensor if the file still lists it. Otherwise the camera picker selects the first camera, and the radar picker selects the radar set for the selected camera. When a camera's name in Frigate differs from its entry's name, the camera picker shows Frigate's name in brackets after it. The counts and statistics on this page follow the camera and radar selected on the legacy dashboard at `http://<device>/ui/`, not the selection here. On a device with one camera and one radar, they're the same.
 
 1. **Car speed statistics** for the current day, which starts at 04:00 local time. They cover `car` events that passed through both `zone_capture` and `zone_radar` and got a speed from the radar. Speeds are absolute values, so inbound and outbound are pooled, and every value is rounded to a whole number.
 

@@ -873,6 +873,8 @@
       
         
       
+        
+      
     
     
     
@@ -1065,6 +1067,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../use/location/" class="md-nav__link">
         
   
@@ -1111,10 +1141,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1132,8 +1162,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2296,10 +2326,10 @@
 <li>Open the new place in the list, choose <strong>Deploy here</strong>, check the review, and choose <strong>Deploy</strong>.</li>
 </ol>
 <p>To record only the way the sensors face, choose <strong>Modify deployment</strong> on the place in use, <strong>First location</strong>, and change the bearings there. <a href="../use/location/">Places and location</a> explains each step, and how precisely the database stores the location.</p>
-<p>Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. A device without a radar needs <code>enabled: false</code> under <code>TM_RADAR_SERIAL_PORT_00</code>. Connect over SSH and open the settings file:</p>
+<p>Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open <strong>Cameras</strong> in the control app, open the camera's <strong>Settings</strong>, and set <strong>Radar</strong> to <strong>No radar</strong>. The camera's other settings are there too, and <a href="../use/cameras/">Cameras</a> explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>nano<span class="w"> </span>/opt/traffic-monitor/node-red-tm/config/config.yml
 </code></pre></div>
-<p>The camera and radar, as installed:</p>
+<p>The camera and radar, as installed. A device without a radar needs <code>enabled: false</code> under <code>TM_RADAR_SERIAL_PORT_00</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">sensors</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">cameras</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">picam_h265</span><span class="p">:</span>
@@ -2318,7 +2348,7 @@
 <p>Work down the list:</p>
 <ol>
 <li><strong>Frigate shows no boxes around moving objects.</strong> Detection is off (step 2), or the camera is off: in the configuration editor, <code>cameras: picam_h265:</code> needs <code>enabled: true</code>. If the live view is black, open <strong>Camera feeds</strong> from the home page to check that the camera itself streams.</li>
-<li><strong>Frigate detects objects, but the dashboard stays at zero.</strong> The objects aren't passing through <code>zone_capture</code> (step 3), or the camera is off in the Traffic Monitor's settings: <code>sensors: cameras: picam_h265:</code> needs <code>enabled: true</code>, and the name must match Frigate's camera name. If your edits don't take effect, check the file for a YAML error.</li>
+<li><strong>Frigate detects objects, but the dashboard stays at zero.</strong> The objects aren't passing through <code>zone_capture</code> (step 3), or the camera isn't recorded: on the control app's <a href="../use/cameras/">Cameras page</a>, the camera needs <strong>Frigate detection</strong> and <strong>Database capture</strong> on, and Frigate's camera must have an entry, or the page shows it as new in Frigate. If your edits in the settings file don't take effect, check it for a YAML error.</li>
 <li><strong>Counts but no speeds.</strong> The radar must be <code>enabled: true</code> and named in the camera's <code>camera_radar</code>, <code>zone_radar</code> must cover the road, and the radar must have been plugged in when the software was installed. If you added it later, rerun <code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>.</li>
 <li><strong>Still nothing.</strong> Look at the logs in <a href="../use/system-admin/">System administration</a>, then ask in the <a href="../help-and-faq/where-can-i-get-support/">chat</a>.</li>
 </ol>

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/use/location/">
       
       
-        <link rel="prev" href="../detection/">
+        <link rel="prev" href="../cameras/">
       
       
         <link rel="next" href="../../ui/monitoring/">
@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -943,6 +945,34 @@
     
   
     Choose the detection model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
   
 
     
@@ -1155,10 +1185,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1176,8 +1206,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2318,7 +2348,7 @@
 <p>Each sensor at a place, facing one way, for one stretch of time, is a <em>deployment</em>. Every count and reading is stored with its deployment, so you can tell where it was taken after the device moves. Moving to another place, or turning a sensor, starts a new deployment, and the earlier ones keep what they recorded.</p>
 <p>The exact location is kept in the control app and in Node-RED's settings file, <a href="../../configuration/node-red-config/#deployment"><code>config.yml</code></a>. The database stores the place's id and the location rounded to the <a href="#choose-the-precision">precision</a> you choose.</p>
 <h2 id="the-location-page">The Location page<a class="headerlink" href="#the-location-page" title="Permanent link">&para;</a></h2>
-<p><strong>Location</strong> is in the control app's menu, after <strong>Detection</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a <a href="../../data-and-payloads/integrations/">ThingsBoard</a> server, and the way each sensor faces. Then come the list of places and, last, the <a href="#choose-the-precision">precision</a>.</p>
+<p><strong>Location</strong> is in the control app's menu, after <strong>Cameras</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a <a href="../../data-and-payloads/integrations/">ThingsBoard</a> server, and the way each sensor faces. Then come the list of places and, last, the <a href="#choose-the-precision">precision</a>.</p>
 <p><img alt="The Location page on a phone: the place in use with its stored and exact location, the list of places, and the Precision section at the end, with its choices closed" src="../../assets/images/location-page.png" width="300" /></p>
 <p>Each place in the list shows its description, or <strong>No description</strong>, its mark (<strong>In use</strong>, <strong>Planned</strong>, or <strong>Used</strong>), its id, and its location as the database stores it. Select a place to open it. An open place shows:</p>
 <ul>

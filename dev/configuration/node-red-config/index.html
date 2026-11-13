@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -961,6 +963,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../use/location/" class="md-nav__link">
         
   
@@ -1007,10 +1037,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1028,8 +1058,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2284,9 +2314,10 @@
 <p>Keep the three top-level sections (<code>thingsboard</code>, <code>deployment</code>, <code>sensors</code>) in the file. The file has no time settings: the installer's <code>-z</code> option sets the device's time zone, and you change it later on the <a href="../../use/device-health/#the-date-and-time-page">Date and time</a> page. A <code>time</code> section left from an older install is ignored. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:</p>
 <ul>
 <li>A camera or radar without <code>enabled</code> is off.</li>
+<li>A camera without <code>frigate_camera</code> is the Frigate camera with the same name as its entry.</li>
 <li>A radar without <code>opt_api_commands_array</code> gets no extra commands.</li>
 <li>ThingsBoard without <code>host</code> stays off.</li>
-<li>A camera whose <code>camera_radar</code> names a radar that isn't in the file records no events. On a device without a radar, remove <code>camera_radar</code> or keep the radar's entry with <code>enabled: false</code>.</li>
+<li>A camera whose <code>camera_radar</code> names a radar that isn't in the file records its events without a radar, and Node-RED logs a warning. On a device without a radar, remove <code>camera_radar</code> or keep the radar's entry with <code>enabled: false</code>.</li>
 </ul>
 <h2 id="thingsboard">thingsboard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
 <p>Uploads events, readings, and device telemetry to a <a href="https://thingsboard.io/">ThingsBoard</a> server. See <a href="../../data-and-payloads/integrations/">MQTT and ThingsBoard</a>.</p>
@@ -2386,8 +2417,8 @@
 </ul>
 <p>On a device upgraded from a release that recorded coordinates, the update leaves <code>survey_id</code> empty, and the control app fills it in the first time it's opened after Node-RED has started; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Places after an update</a>.</p>
 <h2 id="sensorscameras">sensors.cameras<a class="headerlink" href="#sensorscameras" title="Permanent link">&para;</a></h2>
-<p>One entry per camera, named exactly as the camera is named in Frigate. The default camera is <code>picam_h265</code>. Events from a camera that isn't listed here, or is disabled, are ignored.</p>
-<p>To rename a camera, rename it in Frigate's config and choose <strong>Save &amp; Restart</strong>. Frigate uses a new camera name only after it restarts, so <strong>Save</strong> alone changes nothing yet. Then rename its entry here to match. Until both names agree, that camera's events aren't recorded, and the Status page's <strong>Cameras in config.yml</strong> check shows an error.</p>
+<p>One entry per camera. The control app's <a href="../../use/cameras/">Cameras page</a> edits them. The entry's name is the camera's name in the database and in everything the device shares. <code>frigate_camera</code> says which Frigate camera the entry is; without it, the entry's name is also the camera's name in Frigate. The default camera is <code>picam_h265</code>. Events from a Frigate camera that no entry points at, or from a disabled camera, aren't recorded. If two entries point at the same Frigate camera, the first one in the file is used and the other is logged as an error.</p>
+<p>To rename a camera in Frigate, rename it in Frigate's config and choose <strong>Save &amp; Restart</strong>. Frigate uses a new camera name only after it restarts, so <strong>Save</strong> alone changes nothing yet. Then open the control app's <a href="../../use/cameras/#after-renaming-a-camera-in-frigate">Cameras page</a> and point the camera's entry at the new name. The entry keeps its name, so the camera's data carries on under the same name. Until the entry points at the new name, that camera's events aren't recorded, and the Status page's <strong>Cameras in config.yml</strong> check shows an error.</p>
 <table>
 <thead>
 <tr>
@@ -2398,6 +2429,12 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>frigate_camera</code></td>
+<td>a camera name from Frigate's config</td>
+<td>none</td>
+<td>Frigate's name for this camera, when it differs from the entry's name. It stays on the device.</td>
+</tr>
 <tr>
 <td><code>enabled</code></td>
 <td><code>true</code> or <code>false</code></td>
@@ -2499,6 +2536,12 @@
 <td>URL</td>
 <td>none</td>
 <td>The add-on's address inside the device, <code>http://plate-recognizer:8080</code>.</td>
+</tr>
+<tr>
+<td><code>regions</code></td>
+<td>list of text</td>
+<td><code>us</code>, <code>us-or</code>, <code>us-wa</code></td>
+<td>The region codes Plate Recognizer may match plates to, for example <code>[gb]</code>. A value that isn't a list of text, or an empty list, means the default.</td>
 </tr>
 </tbody>
 </table>

@@ -769,6 +769,8 @@
       
         
       
+        
+      
     
     
     
@@ -961,6 +963,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../use/location/" class="md-nav__link">
         
   
@@ -1007,10 +1037,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1028,8 +1058,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2154,6 +2184,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-cameras-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Cameras module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-network-module-and-the-hotspot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2433,6 +2474,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-cameras-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Cameras module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-network-module-and-the-hotspot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2527,7 +2579,7 @@
   <hr />
 <h2 id="description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check">description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, the status checks, root jobs and polkit, fake mode, and how to add a module or a check.<a class="headerlink" href="#description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check" title="Permanent link">&para;</a></h2>
 <h1 id="tm-control">tm-control<a class="headerlink" href="#tm-control" title="Permanent link">&para;</a></h1>
-<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
+<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, <a href="../../use/cameras/">Cameras</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
 <p>It has three parts, all in the repository's <a href="https://github.com/glossyio/traffic-monitor/tree/main/tm-control"><code>tm-control/</code></a> folder:</p>
 <table>
 <thead>
@@ -2637,7 +2689,7 @@
                  nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, network, secrets, system, time, detection, location
+                 hardware, network, secrets, system, time, detection, cameras, location
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
@@ -2865,6 +2917,55 @@
 </tbody>
 </table>
 <p><code>tm-control migrate --node-red-config</code>, run by the installer, also brings <code>deployment:</code> up to date: it adds <code>database_precision: '2'</code> where it's missing, and removes <code>lat</code> and <code>lon</code> from a sensor's own <code>deployment:</code> block. The Location check (<code>location</code> in <code>modules/apps/contracts.py</code>) checks the same keys at run time.</p>
+<h3 id="the-cameras-module">The Cameras module<a class="headerlink" href="#the-cameras-module" title="Permanent link">&para;</a></h3>
+<p>The <code>cameras</code> module serves the <a href="../../use/cameras/">Cameras page</a>. It's for admins only, like the Location page, because it's a settings page: every route under <code>/api/v1/cameras</code> takes <code>require_admin</code>. It owns the <code>sensors.cameras</code> entries in Node-RED's <code>config.yml</code> and writes no other config file, so never Frigate's. The other things it changes are the places' bearings (<code>survey_bearings</code> in <code>state.sqlite</code>) when an entry is re-keyed, and Frigate's detection switch for a camera, through Frigate's API, which changes no file of Frigate's that tm-control writes. It never opens <code>tmdb.sqlite</code>.</p>
+<p>An entry's key is the camera's neutral name, the one the flows record and share. Its optional <code>frigate_camera</code> is Frigate's name for it, and without one the key is Frigate's name too, so installs that never used the page need no migration. <code>names.py</code> makes the keys, <code>camera_&lt;N&gt;_&lt;6 hex&gt;</code>, from <code>secrets.token_hex(3)</code> and redraws a token a neutral name in the file already ends with. The module never logs, audits, or puts in an error message Frigate's name: audit rows carry the neutral name.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /cameras</code></td>
+<td>Whether Frigate answers or is in safe mode, the rows, the unit's radars with their state, and whether the Plate Recognizer add-on is installed</td>
+</tr>
+<tr>
+<td><code>POST /cameras</code></td>
+<td>Adds an entry under a new neutral name for a Frigate camera that no entry points at</td>
+</tr>
+<tr>
+<td><code>PUT /cameras/{name}</code></td>
+<td>Sets <code>enabled</code>, <code>camera_radar</code> (a radar of the unit that has an entry under <code>sensors.radars</code>, or null), and <code>plate_recognizer</code></td>
+</tr>
+<tr>
+<td><code>POST /cameras/{name}/frigate-camera</code></td>
+<td>Points the entry at another Frigate camera: the rename</td>
+</tr>
+<tr>
+<td><code>POST /cameras/{name}/neutral-name</code></td>
+<td>Re-keys an entry to a new neutral name, keeping its position, comments, and sub-keys, and renames its <code>survey_bearings</code> rows in every place, the file first</td>
+</tr>
+<tr>
+<td><code>PUT /cameras/{name}/frigate-detection</code></td>
+<td>Turns Frigate's object detection on or off for the entry's camera with Frigate's <code>PUT /api/camera/&lt;name&gt;/set/detect</code>, the live view's switch: no restart, and Frigate keeps it in <code>.runtime_state.json</code> beside its config. 409 <code>camera_off</code> when the camera is off in Frigate, 502 <code>frigate_error</code> when Frigate doesn't take it. <code>config.yml</code> isn't changed</td>
+</tr>
+<tr>
+<td><code>DELETE /cameras/{name}</code></td>
+<td>Removes an entry whose Frigate camera is gone, or that repeats another entry's</td>
+</tr>
+</tbody>
+</table>
+<p>The rules:</p>
+<ul>
+<li><code>state.py::compare</code> is the one comparison of Frigate's cameras, read from its running config (<code>enabled: false</code> is Off; the running config carries the live view's switches as they are now, and <code>adapters.frigate.config</code> reads it with <code>X-Cache-Bypass</code>, past the 5 seconds Frigate's nginx keeps an <code>/api/</code> answer), with the file's entries. It gives a row for each entry in file order, then one for each Frigate camera that is on and that no entry points at, and it's what the page and the <code>config.cameras</code> and <code>config.zones</code> checks use, so they can't disagree. When Frigate doesn't answer or is in safe mode, every entry is <code>unknown</code>, never <code>absent</code>. A row's <code>detect</code> is whether Frigate detects objects on the camera now: false for a camera that is Off, and null when it can't be read. <code>zones_missing</code> lists the four zones the flows read that Frigate lacks for the camera, and <code>zones_off</code> those it has with <code>enabled: false</code> (Frigate 0.18's zone switch). A row's <code>issues</code> (<code>level</code> and <code>code</code>) are the per-camera judgements of the <code>config.cameras</code>, <code>config.zones</code>, and <code>config.radars</code> checks, made once in <code>state.py::_issues</code> (<code>compare</code> takes <code>sensors.radars</code> for the radar one); a Frigate camera no entry points at is <code>not_paired</code> only while its <code>detect</code> isn't false, because with Frigate's detection off nothing is dropped; the checks word them, and the page marks each row with them. The zones check's fix opens Frigate's masks and zones settings for a single camera (<code>/frigate/settings?page=masksAndZones&amp;camera=&lt;name&gt;</code>, a <code>Fix</code> with <code>external: true</code>, which the Status page renders as a plain link instead of a route), and the Cameras page for several. The page, the checks, and the diagnostics all read the entries through <code>camera_entries()</code> in <code>modules/location/config.py</code>.</li>
+<li>Every write holds <code>app.state.reconcile_lock</code>, loads <code>config.yml</code> through <code>NodeRedConfig</code>, compares against Frigate again, and refuses with 409 <code>cameras_changed</code> when the rows no longer match what the admin confirmed, or <code>config_changed</code> when the file changed. Except <code>PUT /cameras/{name}</code>, they need Frigate to answer, and refuse with 409 <code>frigate_unavailable</code> otherwise.</li>
+<li><code>NodeRedConfig</code>'s camera methods (<code>add_camera</code>, <code>set_camera</code>, <code>point_camera</code>, <code>rename_camera</code>, <code>remove_camera</code>) edit through <code>RoundTripFile</code>, as the deployment edits do, so comments, order, and quoting stay. <code>set_camera</code>, <code>point_camera</code>, and <code>rename_camera</code> refuse an entry that carries a YAML anchor or is shared with another entry through an alias (<code>main_st: &amp;cam</code>, then <code>oak_ave_wide: *cam</code>), because the edit would change both; the API answers 500 <code>config_error</code>, as for any file it can't edit.</li>
+<li>Copy diagnostics replaces every Frigate camera name that differs from its entry's key, and every Frigate camera no entry points at, Off ones included (it doesn't use <code>compare</code>'s rows, which leave those out), with <code>redact_words</code> (whole words, longest first), the way it replaces a secret. It reads the names from the file, Frigate's running config, Frigate's config file (<code>adapters.frigate.config_file</code>, which still names a camera while Frigate is down or in safe mode; a file that can't be read is skipped), and the <code>config.yml</code> backups beside the file. <code>check_groups</code> text may name Frigate's cameras, because the Status page is behind the login.</li>
+</ul>
+<p>Node-RED gets the mapping from "init config defaults" (the <code>init-config</code> tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: <code>frigate_cameras</code>, a map from Frigate's name to the key; <code>camera_labels</code>, each key's label for the dashboard pickers, <code>&lt;key&gt; (&lt;Frigate's name&gt;)</code> when the two differ; and <code>tm_warned</code>, which is reset on every load so a warning is logged once per config load: one for events from cameras no entry points at, which names none of them, and one for each radar name a camera is paired with that <code>config.yml</code> lacks. They're their own globals, not part of <code>global.config</code>, because <code>config_tm</code> uploads the config, and "init config defaults" takes <code>frigate_camera</code> out of each entry before the config is stored: in Node-RED, Frigate's name lives only in <code>frigate_cameras</code> and <code>camera_labels</code>. "append config" looks each event's camera up in <code>frigate_cameras</code> and sets it to the key before anything reads it, so the <code>events</code> row, <code>tm/event</code> and <code>tm/events</code>, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a <code>camera_radar</code> that names no radar records the event without one.</p>
 <h3 id="the-network-module-and-the-hotspot">The Network module and the hotspot<a class="headerlink" href="#the-network-module-and-the-hotspot" title="Permanent link">&para;</a></h3>
 <p>The <code>network</code> module adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>) and the Network page's routes. Both read the unit's network through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
 <p>The routes are in <code>modules/network/router.py</code>:</p>
@@ -3044,7 +3145,7 @@
 <li>tm-control never writes the secrets directory; the <code>set-secret</code> and <code>network</code> jobs do. It reads the hotspot's password file (mode 0640, the secrets directory's group) for the one admin-only route.</li>
 </ul>
 <h2 id="run-it-on-a-laptop">Run it on a laptop<a class="headerlink" href="#run-it-on-a-laptop" title="Permanent link">&para;</a></h2>
-<p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix, and a fake Node-RED for the Location page. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>
+<p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix, a fake Node-RED for the Location page, and a fake Frigate with a second camera, <code>oak_ave_tele</code>, that no entry in the seeded <code>config.yml</code> points at, so the Cameras page's actions work. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>fake-reset<span class="w">   </span><span class="c1"># an unclaimed device; prints its setup code</span>
 <span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>serve<span class="w">        </span><span class="c1"># the backend on 127.0.0.1:8090</span>
 <span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                                         </span><span class="c1"># the UI on http://localhost:5173</span>

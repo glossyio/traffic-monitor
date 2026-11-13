@@ -7,9 +7,10 @@ The Traffic Monitor reads the file again whenever you save it, so changes take e
 Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in the file. The file has no time settings: the installer's `-z` option sets the device's time zone, and you change it later on the [Date and time](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page) page. A `time` section left from an older install is ignored. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:
 
 - A camera or radar without `enabled` is off.
+- A camera without `frigate_camera` is the Frigate camera with the same name as its entry.
 - A radar without `opt_api_commands_array` gets no extra commands.
 - ThingsBoard without `host` stays off.
-- A camera whose `camera_radar` names a radar that isn't in the file records no events. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
+- A camera whose `camera_radar` names a radar that isn't in the file records its events without a radar, and Node-RED logs a warning. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
 ## thingsboard
 
@@ -57,16 +58,17 @@ On a device upgraded from a release that recorded coordinates, the update leaves
 
 ## sensors.cameras
 
-One entry per camera, named exactly as the camera is named in Frigate. The default camera is `picam_h265`. Events from a camera that isn't listed here, or is disabled, are ignored.
+One entry per camera. The control app's [Cameras page](https://docs.trafficmonitor.ai/dev/use/cameras/index.md) edits them. The entry's name is the camera's name in the database and in everything the device shares. `frigate_camera` says which Frigate camera the entry is; without it, the entry's name is also the camera's name in Frigate. The default camera is `picam_h265`. Events from a Frigate camera that no entry points at, or from a disabled camera, aren't recorded. If two entries point at the same Frigate camera, the first one in the file is used and the other is logged as an error.
 
-To rename a camera, rename it in Frigate's config and choose **Save & Restart**. Frigate uses a new camera name only after it restarts, so **Save** alone changes nothing yet. Then rename its entry here to match. Until both names agree, that camera's events aren't recorded, and the Status page's **Cameras in config.yml** check shows an error.
+To rename a camera in Frigate, rename it in Frigate's config and choose **Save & Restart**. Frigate uses a new camera name only after it restarts, so **Save** alone changes nothing yet. Then open the control app's [Cameras page](https://docs.trafficmonitor.ai/dev/use/cameras/#after-renaming-a-camera-in-frigate) and point the camera's entry at the new name. The entry keeps its name, so the camera's data carries on under the same name. Until the entry points at the new name, that camera's events aren't recorded, and the Status page's **Cameras in config.yml** check shows an error.
 
-| Setting            | Type                               | Default                   | Meaning                                                                                                                           |
-| ------------------ | ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`          | `true` or `false`                  | `true` for `picam_h265`   | Record this camera's events. Frigate keeps running either way.                                                                    |
-| `camera_radar`     | a radar name from `sensors.radars` | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.    |
-| `plate_recognizer` | `true` or `false`                  | `false`                   | Send this camera's events to the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. |
-| `deployment`       | block                              | inherited                 | Per-camera `bearing`.                                                                                                             |
+| Setting            | Type                                | Default                   | Meaning                                                                                                                           |
+| ------------------ | ----------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `frigate_camera`   | a camera name from Frigate's config | none                      | Frigate's name for this camera, when it differs from the entry's name. It stays on the device.                                    |
+| `enabled`          | `true` or `false`                   | `true` for `picam_h265`   | Record this camera's events. Frigate keeps running either way.                                                                    |
+| `camera_radar`     | a radar name from `sensors.radars`  | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.    |
+| `plate_recognizer` | `true` or `false`                   | `false`                   | Send this camera's events to the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. |
+| `deployment`       | block                               | inherited                 | Per-camera `bearing`.                                                                                                             |
 
 ## sensors.radars
 
@@ -91,8 +93,9 @@ One entry per [air quality sensor](https://docs.trafficmonitor.ai/dev/add-ons/ai
 
 Only needed with the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. The section isn't in the template; add it.
 
-| Setting | Type | Default | Meaning                                                                 |
-| ------- | ---- | ------- | ----------------------------------------------------------------------- |
-| `url`   | URL  | none    | The add-on's address inside the device, `http://plate-recognizer:8080`. |
+| Setting   | Type         | Default                | Meaning                                                                                                                                            |
+| --------- | ------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`     | URL          | none                   | The add-on's address inside the device, `http://plate-recognizer:8080`.                                                                            |
+| `regions` | list of text | `us`, `us-or`, `us-wa` | The region codes Plate Recognizer may match plates to, for example `[gb]`. A value that isn't a list of text, or an empty list, means the default. |
 
 The API token and license key aren't in this file. Set them on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys); plates aren't read until they're set.

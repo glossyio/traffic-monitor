@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -963,6 +965,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../use/location/" class="md-nav__link">
         
   
@@ -1011,10 +1041,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" checked>
         
           
-          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -1032,8 +1062,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2158,7 +2188,7 @@
 <figcaption>The Monitoring page, numbered as in the list below</figcaption>
 </figure>
 <ol>
-<li><strong>Sensor selection.</strong> A radar and a camera picker, listing every sensor in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a>, enabled or not. The counts and statistics on this page follow the camera and radar selected on the legacy dashboard at <code>http://&lt;device&gt;/ui/</code>, not the selection here. On a device with one camera and one radar, they're the same.</li>
+<li><strong>Sensor selection.</strong> A radar and a camera picker, listing every sensor in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a>, enabled or not. They follow <code>config.yml</code>: each time it changes, each picker keeps its sensor if the file still lists it. Otherwise the camera picker selects the first camera, and the radar picker selects the radar set for the selected camera. When a camera's name in Frigate differs from its entry's name, the camera picker shows Frigate's name in brackets after it. The counts and statistics on this page follow the camera and radar selected on the legacy dashboard at <code>http://&lt;device&gt;/ui/</code>, not the selection here. On a device with one camera and one radar, they're the same.</li>
 <li>
 <p><strong>Car speed statistics</strong> for the current day, which starts at 04:00 local time. They cover <code>car</code> events that passed through both <code>zone_capture</code> and <code>zone_radar</code> and got a speed from the radar. Speeds are absolute values, so inbound and outbound are pooled, and every value is rounded to a whole number.</p>
 <p>The percentiles come from sorting the day's cars by speed and splitting them into 20 groups of equal size, so they're approximate. With few cars, some stay empty: the 25th percentile needs 5 cars, the median 10, the 75th percentile and <code>iqr_upper</code> 15, and the 85th percentile 17.</p>
