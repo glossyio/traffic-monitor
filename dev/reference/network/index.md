@@ -13,7 +13,7 @@ Other computers reach the Traffic Monitor's apps through the [home page](https:/
 
 ## The hotspot
 
-When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) on the built-in radio (`wlan0`).
+When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) on the built-in radio (`wlan0`). The control app's [Network page](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#the-network-page) shows the device's own addresses.
 
 |         |                                                                                                                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

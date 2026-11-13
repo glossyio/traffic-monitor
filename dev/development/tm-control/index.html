@@ -2505,7 +2505,7 @@
   <hr />
 <h2 id="description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check">description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, the status checks, root jobs and polkit, fake mode, and how to add a module or a check.<a class="headerlink" href="#description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check" title="Permanent link">&para;</a></h2>
 <h1 id="tm-control">tm-control<a class="headerlink" href="#tm-control" title="Permanent link">&para;</a></h1>
-<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Detection, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/detection/">Choose the detection model</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
+<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
 <p>It has three parts, all in the repository's <a href="https://github.com/glossyio/traffic-monitor/tree/main/tm-control"><code>tm-control/</code></a> folder:</p>
 <table>
 <thead>
@@ -2537,7 +2537,7 @@
 <p><code>tm-control.service</code> runs on the host, not in the pod, so the login keeps working when Podman doesn't. It runs as the code owner (default <code>tmadmin</code>), never as root, in a systemd sandbox, and listens on <code>127.0.0.1:8090</code> only. nginx is the only way in from the network.</p>
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
-<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job.</li>
+<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret, and the hotspot's password. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job. The hotspot's password, <code>hotspot_password</code>, is in neither list: <code>tm-hotspot-setup</code> creates it, and writes it again when it adopts a hand-made profile; otherwise only the <code>network</code> job changes it. tm-control reads it (<code>read_hotspot_password</code> in <code>core/secrets.py</code>) for one route, <code>GET /network/hotspot/password</code>, which answers admins only.</li>
 <li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read.</li>
 <li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
@@ -2621,10 +2621,10 @@
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
 <p>tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in <code>tmsetup_tm_control_polkit</code> in the role's <code>vars/main.yml</code>, and nothing else:</p>
 <ul>
-<li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. <code>tm-network-retry.service</code> is on it for the Hotspot check's fix, and <code>FIX_UNITS</code> in <code>modules/services/units.py</code> lists the units like it, which a check's fix may start but the Services list doesn't show; <code>POST /services/{unit}/restart</code> accepts them.</li>
+<li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. <code>tm-job-network.service</code> is on it for the Network page's changes, <code>tm-network-retry.service</code> is on it for the Hotspot check's fix, and <code>FIX_UNITS</code> in <code>modules/services/units.py</code> lists the units like it, which a check's fix may start but the Services list doesn't show; <code>POST /services/{unit}/restart</code> accepts them.</li>
 <li>Seven actions: <code>org.freedesktop.timedate1.set-time</code>, <code>set-timezone</code>, and <code>set-ntp</code> for the Date and time page, and <code>org.freedesktop.login1.reboot</code>, <code>reboot-multiple-sessions</code>, <code>power-off</code>, and <code>power-off-multiple-sessions</code> for the Device page. The <code>-ignore-inhibit</code> variants aren't granted, so tm-control asks logind (<code>CanReboot</code>, <code>CanPowerOff</code>) first and answers 409 while an inhibitor, such as an update, holds the device up.</li>
 </ul>
-<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are two jobs:</p>
+<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are three jobs:</p>
 <table>
 <thead>
 <tr>
@@ -2640,6 +2640,10 @@
 <tr>
 <td><code>set-secret</code></td>
 <td>Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the four names in its own table (<code>thingsboard_access_token</code>, <code>frigate_plus_api_key</code>, <code>plate_recognizer_token</code>, and <code>plate_recognizer_license_key</code>), and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's <code>KEY=</code> lines in <code>node-red-tm.env</code>, <code>frigate.env</code>, or <code>plate-recognizer.env</code>, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again.</td>
+</tr>
+<tr>
+<td><code>network</code></td>
+<td>Changes the Wi-Fi hotspot: on or off, its name, its password, and whether its name is hidden. See <a href="#the-network-module-and-the-hotspot">The Network module and the hotspot</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -2836,7 +2840,42 @@
 </table>
 <p><code>tm-control migrate --node-red-config</code>, run by the installer, also brings <code>deployment:</code> up to date: it adds <code>database_precision: '2'</code> where it's missing, and removes <code>lat</code> and <code>lon</code> from a sensor's own <code>deployment:</code> block. The Location check (<code>location</code> in <code>modules/apps/contracts.py</code>) checks the same keys at run time.</p>
 <h3 id="the-network-module-and-the-hotspot">The Network module and the hotspot<a class="headerlink" href="#the-network-module-and-the-hotspot" title="Permanent link">&para;</a></h3>
-<p>The <code>network</code> module has no routes yet. It adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>), read-only through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
+<p>The <code>network</code> module adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>) and the Network page's routes. Both read the unit's network through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
+<p>The routes are in <code>modules/network/router.py</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Who</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /network</code></td>
+<td>Any signed-in user</td>
+<td>The unit's names, its Ethernet and Wi-Fi links (MAC and IP addresses, gateway, DNS servers), the internet, and the hotspot's state, as <code>NetworkState</code> from <code>state.py</code>. A value NetworkManager doesn't give is missing, not an error, and <code>readable: false</code> says it didn't answer at all. It never holds a password.</td>
+</tr>
+<tr>
+<td><code>GET /network/hotspot/password</code></td>
+<td>Admins</td>
+<td>The password file's text, <code>""</code> for a hotspot with no password, and <code>null</code> when the file can't be read. The answer carries <code>Cache-Control: no-store</code>, and each call records a <code>network.hotspot_password_shown</code> audit row. It is the only place a password leaves the device.</td>
+</tr>
+<tr>
+<td><code>POST /network/hotspot</code></td>
+<td>Admins</td>
+<td>Takes any of <code>enabled</code>, <code>name</code>, <code>password</code>, and <code>hidden</code>, checks them, and answers 202 with the job's id. A name takes 1 to 32 bytes of UTF-8 and a password 8 to 63 printable ASCII characters, each with no space at either end; a value that breaks its rule, or a request with nothing to change, is a 422 with a sentence and no job. A unit with no hotspot profile is a 409 (<code>no_hotspot</code>). The audit row <code>network.hotspot</code> lists the fields sent, never their values.</td>
+</tr>
+</tbody>
+</table>
+<p>The page follows the job with <code>GET /jobs/{id}</code>. In fake mode, <code>fake_network</code> stands in for NetworkManager and the password file.</p>
+<p><code>jobs/tm-job-network</code> is the root script behind <code>POST /network/hotspot</code>, run by <code>tm-job-network.service</code>. Its docstring lists every check and the order of its steps. The request is <code>{"action": "hotspot"}</code> plus the fields that were sent. The script repeats the name and password rules from <code>router.py</code>, because it imports nothing from tm-control, and a test keeps the two the same. In short, it:</p>
+<ol>
+<li>Checks the request, then takes the lock, <code>/run/traffic-monitor/network.lock</code>. <code>tm-network-retry</code> takes the same lock, so the timer never moves the radio in the middle of a change. The job waits for it up to 10 seconds, and the retry run, which never waits, prints <code>locked</code> and stops.</li>
+<li>Writes a new password to the password file first, and then changes the profile with one <code>nmcli connection modify</code>. The file is the source of truth, so a failed change puts the old file back.</li>
+<li>Restarts the hotspot only when it is up and its name, password, or hidden setting changed (<code>connection up</code> applies them). Turning the hotspot off takes it down. Turning it on, on the built-in radio only, switches the radio on if it is off and starts the hotspot if the radio is idle. Nothing here restarts NetworkManager.</li>
+</ol>
+<p>It prints one line per step, never a password, and exits 1 with <code>refused: &lt;sentence&gt;</code> or <code>failed: &lt;step&gt;</code>; a line ending <code>the settings are saved</code> means the profile changed and only the restart failed.</p>
 <p>Two scripts in <code>jobs/</code> run as root, and neither is a <code>tm-job</code> unit. Both are standard-library Python with no <code>tm_control</code> imports, run as <code>/usr/bin/python3 -EP</code> from the root-owned <code>/usr/local/libexec/traffic-monitor/</code>, and read no password into their output:</p>
 <table>
 <thead>
@@ -2870,7 +2909,7 @@
 <li><code>vcgencmd get_throttled</code> needs the <code>video</code> group to open <code>/dev/vcio_gencmd</code>. Without it, the power check says to rerun the installer.</li>
 <li>The HEVC decoder check compares <code>/dev/rpi-hevc-dec</code> with the media device whose <code>/sys/bus/media/devices/mediaN/model</code> names the decoder.</li>
 <li><code>timedatectl show</code> prints its times as local strings; tm-control reads the clock itself.</li>
-<li>tm-control never writes the secrets directory; the <code>set-secret</code> job does.</li>
+<li>tm-control never writes the secrets directory; the <code>set-secret</code> and <code>network</code> jobs do. It reads the hotspot's password file (mode 0640, the secrets directory's group) for the one admin-only route.</li>
 </ul>
 <h2 id="run-it-on-a-laptop">Run it on a laptop<a class="headerlink" href="#run-it-on-a-laptop" title="Permanent link">&para;</a></h2>
 <p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix, and a fake Node-RED for the Location page. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>

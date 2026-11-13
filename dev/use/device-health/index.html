@@ -2335,11 +2335,12 @@
   
   <h1 id="check-and-fix-the-device">Check and fix the device<a class="headerlink" href="#check-and-fix-the-device" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Use the control app&#39;s Status, Device, and Date and time pages to see whether a Traffic Monitor works, restart what stopped, download diagnostics, reboot, and set the clock.</p>
-<p>Three pages in the <a href="../control-app/">control app</a>'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, <a href="../detection/">Detection</a>, shows the object detection model and changes it:</p>
+<p>Four pages in the <a href="../control-app/">control app</a>'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fifth, <a href="../detection/">Detection</a>, shows the object detection model and changes it:</p>
 <ul>
 <li><strong>Status</strong> checks the services, apps, settings, hardware, network, and clock, and offers a fix for what's wrong.</li>
 <li><strong>Device</strong> shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.</li>
 <li><strong>Date and time</strong> compares the device's clock with your phone's or computer's and sets it.</li>
+<li><strong>Network</strong> shows the device's names and addresses, and lets the administrator change the hotspot. See <a href="../wifi-hotspot/#the-network-page">The Network page</a>.</li>
 </ul>
 <p>The <a href="../home-page/">home page</a> shows the Status page's summary under the device's name, such as <strong>Everything is working</strong>. Tap it to open the Status page.</p>
 <h2 id="the-status-page">The Status page<a class="headerlink" href="#the-status-page" title="Permanent link">&para;</a></h2>
@@ -2421,7 +2422,7 @@
 <tbody>
 <tr>
 <td>Hotspot</td>
-<td><strong>On as <code>TM-4F2A</code>, at <code>http://10.42.0.1/</code></strong> while the hotspot is up. <strong>Standing by</strong> while the device is on a saved network; the hotspot starts when that network is out of reach. <strong>Off by choice</strong> when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with <code>-t wifi</code>), the Wi-Fi radio is switched off, the hotspot should be on and isn't (<strong>Restart the hotspot</strong>), the hotspot has no password (see <a href="../wifi-hotspot/#a-hotspot-you-set-up-by-hand">A hotspot you set up by hand</a>), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2.</td>
+<td><strong>On as <code>TM-4F2A</code>, at <code>http://10.42.0.1/</code></strong> while the hotspot is up. <strong>Standing by</strong> while the device is on a saved network; the hotspot starts when that network is out of reach. <strong>Off by choice</strong> when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with <code>-t wifi</code>), the Wi-Fi radio is switched off, the hotspot should be on and isn't (<strong>Restart the hotspot</strong>), the hotspot has no password (<strong>Set a password</strong> opens the <a href="../wifi-hotspot/#change-the-password">Network page</a>; see also <a href="../wifi-hotspot/#a-hotspot-you-set-up-by-hand">A hotspot you set up by hand</a>), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2.</td>
 </tr>
 <tr>
 <td>Wi-Fi network</td>
@@ -2448,7 +2449,7 @@
 </ul>
 <p>The control app can't restart itself. If it stops, see <a href="../control-app/#if-the-control-app-is-down">If the control app is down</a>.</p>
 <h2 id="the-device-page">The Device page<a class="headerlink" href="#the-device-page" title="Permanent link">&para;</a></h2>
-<p>The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. <strong>Software</strong> lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.</p>
+<p>The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. It also lists each connected link, Ethernet or Wi-Fi, with its IP address and MAC address, and <strong>Network details</strong> opens the <a href="../wifi-hotspot/#the-network-page">Network page</a>. If the device can't read its network state, the card leaves the list out. <strong>Software</strong> lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.</p>
 <h3 id="tokens-and-keys">Tokens and keys<a class="headerlink" href="#tokens-and-keys" title="Permanent link">&para;</a></h3>
 <p>Administrators set the credentials the device uses for outside services in <strong>Tokens and keys</strong>. The section is closed when the page opens; select its heading to open it. The Status page's <strong>Set the token</strong> link opens it for you. It lists the ThingsBoard access token, and the Plate Recognizer API token and license key when the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on is installed. Each is kept with the device's other secrets, not in <code>config.yml</code>. The <a href="../../configuration/frigate-config/#better-models">Frigate+</a> API key is on the <a href="../detection/#frigate-plus">Detection page</a>, next to the models it fetches.</p>
 <ul>
@@ -2484,12 +2485,13 @@
 <p>A Raspberry Pi keeps no time while it's off, unless it has a clock battery. A device without internet then starts with a clock that may be wrong. The Status page's <strong>Clock</strong> check shows a warning that no time source is reachable, or a problem if the date is before 2026. Open <strong>Date and time</strong> on your phone or computer and choose <strong>Set from this browser</strong>. The clock is usually behind after a power-off, so this moves it ahead and restarts Frigate; the camera is back in about a minute. Internet time stays on, so the device corrects its clock by itself once it's online; until then the warning stays. If the device's clock was ahead, turning internet time back on puts that wrong time back, so the device sets your time again, leaves internet time off, and the page says so. Turn on <strong>Keep time from the internet</strong> once the device is online. If that puts the wrong time back for a moment, the device restarts Frigate; the camera is back in about a minute. If a later correction stops the camera, the Status page offers <strong>Restart Frigate</strong>. A device that is never online keeps time from its own clock, which drifts; set it again now and then.</p>
 </div>
 <h2 id="what-viewers-see">What viewers see<a class="headerlink" href="#what-viewers-see" title="Permanent link">&para;</a></h2>
-<p>Viewers see all four pages, but can't change anything:</p>
+<p>Viewers see all five pages, but can't change anything:</p>
 <ul>
 <li><strong>Status</strong>: the same checks, without the Restart and Re-scan buttons.</li>
 <li><strong>Device</strong>: the card and the software versions, without <strong>Tokens and keys</strong>, <strong>Diagnostics</strong>, and <strong>Power</strong>.</li>
 <li><strong>Detection</strong>: the models and the label lists, without the action buttons and the Frigate+ key form; see <a href="../detection/#the-detection-page">Choose the detection model</a>.</li>
 <li><strong>Date and time</strong>: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.</li>
+<li><strong>Network</strong>: the addresses and the hotspot's state, without the hotspot's password or any control.</li>
 </ul>
   
 
