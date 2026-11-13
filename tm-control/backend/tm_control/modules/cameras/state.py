@@ -31,6 +31,7 @@ class CameraRow(BaseModel):
     camera_radar: str | None
     plate_recognizer: bool | None
     zones_missing: list[str] | None  # of ZONES; None when the camera isn't in Frigate
+    zones_off: list[str] | None  # of ZONES, there but turned off (Frigate 0.18's zone enabled); None as zones_missing
 
 
 class CameraRadar(BaseModel):
@@ -50,6 +51,12 @@ class CamerasState(BaseModel):
 def _zones_missing(camera: dict) -> list[str]:
     zones = probes.mapping(camera.get("zones"))
     return [zone for zone in ZONES if zone not in zones]
+
+
+def _zones_off(camera: dict) -> list[str]:
+    """The zones Frigate has but has turned off, in its config or from the live view: an event never enters one."""
+    zones = probes.mapping(camera.get("zones"))
+    return [zone for zone in ZONES if zone in zones and probes.mapping(zones[zone]).get("enabled") is False]
 
 
 def _in_frigate(camera: dict | None) -> Literal["on", "off", "absent"]:
@@ -87,6 +94,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
             camera_radar=entry.camera_radar,
             plate_recognizer=entry.plate_recognizer,
             zones_missing=_zones_missing(camera) if camera is not None else None,
+            zones_off=_zones_off(camera) if camera is not None else None,
         ))
         first_for.setdefault(entry.frigate_camera, entry.name)
     for name, camera in cameras.items():
@@ -102,6 +110,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
                 camera_radar=None,
                 plate_recognizer=None,
                 zones_missing=_zones_missing(camera),
+                zones_off=_zones_off(camera),
             ))
     return rows
 

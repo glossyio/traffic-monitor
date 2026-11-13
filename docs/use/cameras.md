@@ -30,7 +30,7 @@ An entry's row shows its name in bold, and Frigate's name beside it when the two
 * **Frigate detection**: whether Frigate detects objects on the camera now. A camera turned off in Frigate detects nothing, so it reads off.
 * **Database capture**: whether the Traffic Monitor saves the camera's events in its database and sends them on. An event is recorded only when both are on.
 * **Radar**, and, when the Plate Recognizer add-on is installed, **Plates**.
-* **Zones: all four**, or **Missing in Frigate** and the zones the [flows expect](../setup-guide.md#3-adjust-the-zones) that the camera lacks.
+* **Zones: all four**, or **Missing in Frigate** and the zones the [flows expect](../setup-guide.md#3-adjust-the-zones) that the camera lacks, or **Turned off in Frigate** and the ones that are there but switched off. Frigate can turn a zone off in its configuration or from its live view, and an object never enters a zone that is off, so it counts as missing for the Traffic Monitor.
 * **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
 A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**. A row that's out of step says why: **Frigate no longer has** a camera, a camera **is new in Frigate and isn't recorded**, or another entry **already records this Frigate camera**. When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.

@@ -17,7 +17,18 @@ def test_an_entry_in_step_with_frigate():
     assert (row.name, row.frigate_camera, row.in_frigate) == ("camera_1_3fa9c2", "oak_ave_wide", "on")
     assert row.neutral is True and row.duplicate_of is None
     assert (row.enabled, row.camera_radar, row.plate_recognizer) == (True, "TM_RADAR_SERIAL_PORT_00", False)
-    assert row.zones_missing == []
+    assert row.zones_missing == [] and row.zones_off == []
+
+
+def test_zones_off_lists_the_zones_frigate_has_turned_off():
+    zones = ZONES | {"zone_near": {"enabled": False}, "zone_far": {"enabled": True}, "zone_radar": {"enabled": False}}
+    [row] = compare([entry("main_st")], {"main_st": {"zones": zones}})
+    assert row.zones_missing == [] and row.zones_off == ["zone_near", "zone_radar"]
+
+
+def test_a_missing_zone_isnt_also_off():
+    [row] = compare([entry("main_st")], {"main_st": {"zones": {"zone_capture": {"enabled": False}}}})
+    assert row.zones_missing == ["zone_near", "zone_far", "zone_radar"] and row.zones_off == ["zone_capture"]
 
 
 def test_a_camera_that_is_off_in_frigate_is_off_not_absent():
@@ -27,7 +38,7 @@ def test_a_camera_that_is_off_in_frigate_is_off_not_absent():
 
 def test_an_entry_whose_camera_is_gone_is_absent():
     [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_tele": {}})[:1]
-    assert row.in_frigate == "absent" and row.zones_missing is None
+    assert row.in_frigate == "absent" and row.zones_missing is None and row.zones_off is None
 
 
 def test_a_frigate_camera_no_entry_points_at_is_a_row_without_a_name():

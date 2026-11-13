@@ -178,6 +178,7 @@ export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
     camera_radar: null,
     plate_recognizer: null,
     zones_missing: [],
+    zones_off: [],
     ...changes,
   }
 }

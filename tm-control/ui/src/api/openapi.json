@@ -2305,6 +2305,20 @@
               }
             ],
             "title": "Zones Missing"
+          },
+          "zones_off": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zones Off"
           }
         },
         "type": "object",
@@ -2318,7 +2332,8 @@
           "enabled",
           "camera_radar",
           "plate_recognizer",
-          "zones_missing"
+          "zones_missing",
+          "zones_off"
         ],
         "title": "CameraRow"
       },

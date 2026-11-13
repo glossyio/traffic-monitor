@@ -42,8 +42,15 @@ describe('zonesText', () => {
     )
   })
 
+  it('lists the zones Frigate has turned off, and both kinds together', () => {
+    expect(zonesText(cameraRow({ zones_off: ['zone_capture'] }))).toBe('Turned off in Frigate: zone_capture')
+    expect(zonesText(cameraRow({ zones_missing: ['zone_radar'], zones_off: ['zone_near'] }))).toBe(
+      'Missing in Frigate: zone_radar; turned off in Frigate: zone_near',
+    )
+  })
+
   it("says nothing for a camera that isn't in Frigate", () => {
-    expect(zonesText(cameraRow({ in_frigate: 'absent', zones_missing: null }))).toBe('')
+    expect(zonesText(cameraRow({ in_frigate: 'absent', zones_missing: null, zones_off: null }))).toBe('')
   })
 })
 

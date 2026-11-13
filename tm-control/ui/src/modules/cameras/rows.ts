@@ -18,11 +18,16 @@ export function rowState(row: CameraRow): RowState {
   return 'in-step'
 }
 
-// Which of the four zones the flows read Frigate lacks for this camera; nothing for a camera Frigate doesn't have
+// Which of the four zones the flows read Frigate lacks or has turned off for this camera (an event never enters a zone
+// that is off); nothing for a camera Frigate doesn't have
 export function zonesText(row: CameraRow): string {
   if (row.zones_missing === null) return ''
-  if (row.zones_missing.length === 0) return 'Zones: all four'
-  return `Missing in Frigate: ${row.zones_missing.join(', ')}`
+  const off = row.zones_off ?? []
+  if (row.zones_missing.length === 0 && off.length === 0) return 'Zones: all four'
+  const parts = []
+  if (row.zones_missing.length) parts.push(`Missing in Frigate: ${row.zones_missing.join(', ')}`)
+  if (off.length) parts.push(`${parts.length ? 'turned' : 'Turned'} off in Frigate: ${off.join(', ')}`)
+  return parts.join('; ')
 }
 
 // For a new row: the entries whose Frigate camera is gone, which it could be a rename of. The API allows pointing any

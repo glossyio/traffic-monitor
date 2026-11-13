@@ -1111,6 +1111,8 @@ export interface components {
             plate_recognizer: boolean | null;
             /** Zones Missing */
             zones_missing: string[] | null;
+            /** Zones Off */
+            zones_off: string[] | null;
         };
         /** CameraSettings */
         CameraSettings: {

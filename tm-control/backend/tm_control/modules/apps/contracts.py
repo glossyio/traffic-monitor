@@ -113,7 +113,7 @@ def cameras_in_config(context: Context) -> list[Check]:
 
 
 def zones(context: Context) -> list[Check]:
-    """Each camera enabled in both has the zones the flows expect in Frigate."""
+    """Each camera enabled in both has the zones the flows expect in Frigate, turned on."""
 
     def check(status, detail, fix=None):
         return [Check(id="config.zones", title="Zones", status=status, detail=detail, fix=fix)]
@@ -127,20 +127,33 @@ def zones(context: Context) -> list[Check]:
     if probes.frigate_safe_mode(frigate):
         return check("unknown", "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see "
                                 "the Frigate check under Apps.")
-    problems = []
+    problems, any_missing, off_count = [], False, 0
     for row in _compared(read, frigate):
         # A duplicate's Frigate camera is its first entry's, which is checked there
-        if row.name is None or not row.enabled or row.in_frigate != "on" or row.duplicate_of or not row.zones_missing:
+        if row.name is None or not row.enabled or row.in_frigate != "on" or row.duplicate_of:
             continue
-        missing = row.zones_missing
-        problem = f"Camera {_label(row.name, row.frigate_camera)} has no {listed(missing, 'or')} in Frigate"
-        if any(zone in missing for zone in DIRECTION_ZONES):
+        missing, off = row.zones_missing or [], row.zones_off or []
+        if not missing and not off:
+            continue
+        any_missing, off_count = any_missing or bool(missing), off_count + len(off)
+        parts = []
+        if missing:
+            parts.append(f"has no {listed(missing, 'or')} in Frigate")
+        if off:
+            parts.append(f"has {listed(off)} turned off {'there' if missing else 'in Frigate'}")
+        problem = f"Camera {_label(row.name, row.frigate_camera)} {', and '.join(parts)}"
+        if any(zone in missing + off for zone in DIRECTION_ZONES):
             problem += "; without zone_near and zone_far, events get a direction only from the radar (#243)"
         problems.append(f"{problem}.")
     if problems:
-        return check("warn", " ".join(problems) + " Draw the missing zones in Frigate, named exactly as listed.",
-                     CAMERAS_LINK)
-    return check("ok", f"Each enabled camera has {listed(ZONES)}.")
+        if any_missing and off_count:
+            fix = "Draw the missing zones in Frigate, named exactly as listed, and turn the others back on."
+        elif any_missing:
+            fix = "Draw the missing zones in Frigate, named exactly as listed."
+        else:
+            fix = f"Turn {'it' if off_count == 1 else 'them'} back on in Frigate."
+        return check("warn", " ".join(problems) + " " + fix, CAMERAS_LINK)
+    return check("ok", f"Each enabled camera has {listed(ZONES)}, turned on.")
 
 
 def radar_names(context: Context) -> list[Check]:

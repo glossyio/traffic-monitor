@@ -227,6 +227,33 @@ def test_missing_zones_name_the_direction_problem(apps):
     assert "without zone_near and zone_far, events get a direction only from the radar (#243)" in check.detail
 
 
+def test_a_zone_turned_off_in_frigate_is_a_warning(apps):
+    """Frigate 0.18 can turn a zone off, in its config or from the live view; an event then never enters it."""
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"]["zone_capture"].update(
+        enabled=False
+    ))
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn"
+    assert check.fix == contracts.CAMERAS_LINK
+    assert check.detail == "Camera picam_h265 has zone_capture turned off in Frigate. Turn it back on in Frigate."
+
+
+def test_missing_and_turned_off_zones_are_named_together(apps):
+    def edit(config):
+        zones = config["cameras"]["picam_h265"]["zones"]
+        del zones["zone_radar"]
+        zones["zone_near"]["enabled"] = False
+
+    apps.edit_json(FRIGATE_CONFIG, edit)
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn"
+    assert check.detail == (
+        "Camera picam_h265 has no zone_radar in Frigate, and has zone_near turned off there; without zone_near and "
+        "zone_far, events get a direction only from the radar (#243). Draw the missing zones in Frigate, named "
+        "exactly as listed, and turn the others back on."
+    )
+
+
 def test_zones_are_checked_through_frigate_camera(apps):
     point_at(apps, NEUTRAL, "picam_h265")
     apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].pop("zone_radar"))
