@@ -161,6 +161,31 @@ def pi_now(host):
     return float(host.check_output("date +%s"))
 
 
+PODMAN_EVENT_FIELDS = ("_CMDLINE", "_SYSTEMD_UNIT", "_PID")
+
+
+def journal_text(value):
+    """A journal JSON field as text: the journal gives a byte array for a value that isn't valid UTF-8, and null
+    for one it left out, such as a value over 4096 bytes."""
+    if isinstance(value, list):
+        return bytes(value).decode(errors="replace")
+    return value if isinstance(value, str) else ""
+
+
+def podman_events(host, event):
+    """This boot's journal entries for one of root's Podman events, such as refresh or remove, oldest first. Each is
+    a dict with the Podman command (_CMDLINE), the unit it ran in (_SYSTEMD_UNIT), and its process id (_PID), each a
+    string, empty when the entry doesn't have it. No entries gives []; a journalctl that fails fails the test."""
+    command = (f"journalctl -b -q --no-pager -o json --output-fields={','.join(PODMAN_EVENT_FIELDS)} "
+               f"_UID=0 PODMAN_EVENT={shlex.quote(event)}")
+    with host.sudo():
+        result = host.run(command)
+    if result.rc != 0 and result.stderr.strip():
+        pytest.fail(f"journalctl couldn't read Podman's {event} events: {result.stderr.strip()}", pytrace=False)
+    entries = [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+    return [{field: journal_text(entry.get(field)) for field in PODMAN_EVENT_FIELDS} for entry in entries]
+
+
 def db_query(host, codedir, sql):
     """Run one read-only query on the Pi's tmdb.sqlite and return the rows.
 
