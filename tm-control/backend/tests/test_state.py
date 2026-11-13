@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version() == 3
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 4
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -105,4 +105,17 @@ def test_migration_3_creates_the_survey_tables(tmp_path):
                 "INSERT INTO surveys (id, status, source, created_at, updated_at) "
                 "VALUES ('0123abcd-si', 'elsewhere', 'ui', ?, ?)",
                 (NOW, NOW),
+            )
+
+
+def test_migration_four_creates_the_consents_table(tmp_path):
+    con = _migrated(tmp_path).connect()
+    columns = [row["name"] for row in con.execute("PRAGMA table_info(sharing_consents)")]
+    assert columns == ["id", "target", "consent", "granted", "notice_version", "at", "user_id", "note"]
+    with pytest.raises(sqlite3.IntegrityError):
+        with con:
+            con.execute(
+                "INSERT INTO sharing_consents (target, consent, granted, notice_version, at) "
+                "VALUES ('maintainer', 'other', 1, 'v1', ?)",
+                (NOW,),
             )
