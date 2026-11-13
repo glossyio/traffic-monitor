@@ -34,6 +34,8 @@ export interface DeviceApp {
   path: string
   title: string
   admin_only: boolean
+  // An app on its own port (Cockpit's 9090), not behind nginx; null for every app nginx serves
+  port: number | null
 }
 
 // GET /system/device

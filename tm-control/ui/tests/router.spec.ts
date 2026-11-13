@@ -46,12 +46,6 @@ describe('router', () => {
     expect(await landing('/time')).toBe('/time')
   })
 
-  it('has no page under /system, which nginx sends to Cockpit', () => {
-    device(true, ADMIN)
-    const paths = createAppRouter(createMemoryHistory()).getRoutes().map((route) => route.path)
-    expect(paths.filter((path) => path === '/system' || path.startsWith('/system/'))).toEqual([])
-  })
-
   it('lets an admin open the users page', async () => {
     device(true, ADMIN)
     expect(await landing('/users')).toBe('/users')

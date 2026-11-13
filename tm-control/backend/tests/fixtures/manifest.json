@@ -28,7 +28,6 @@
         }
     },
     "revproxy_locations": [
-        "cockpit.conf",
         "dashboard.conf",
         "frigate.conf",
         "go2rtc.conf",
