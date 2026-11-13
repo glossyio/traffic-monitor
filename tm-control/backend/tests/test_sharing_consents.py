@@ -72,6 +72,16 @@ def test_two_rows_in_the_same_second_resolve_to_the_later_insert(consents):
     assert consents.granted(MAINTAINER, "share_data") is True
 
 
+def test_a_clock_that_steps_back_does_not_reorder_the_rows(consents):
+    consents.record(MAINTAINER, "share_data", True, "v1", None, now=5000)
+    consents.record(MAINTAINER, "share_data", False, "v1", None, now=1000)  # the clock stepped back
+    assert consents.latest(MAINTAINER)["share_data"].granted is False
+    assert consents.granted(MAINTAINER, "share_data") is False
+    consents.record(MAINTAINER, "share_data", True, "v1", None, now=2000)
+    consents.withdraw_all(MAINTAINER, None, "stepped back", now=500)
+    assert consents.granted(MAINTAINER, "share_data") is False
+
+
 def test_record_without_a_time_uses_the_current_time(consents):
     consents.record(MAINTAINER, "share_data", True, PRE_CONSENT, None)
     assert consents.latest(MAINTAINER)["share_data"].at.startswith("20")

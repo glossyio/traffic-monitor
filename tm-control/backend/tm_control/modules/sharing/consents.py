@@ -56,12 +56,12 @@ class Consents:
         self.state = state
 
     def latest(self, target: str) -> dict[str, Consent]:
-        """The newest row per consent for `target`; a consent never recorded is absent. Rows in the same second
-        resolve to the later insert."""
+        """The newest row per consent for `target`; a consent never recorded is absent. Rows are ordered by id
+        (insertion order), not by time: a unit's clock can step back, and rows are never deleted."""
         with _reading(self.state) as con:
             rows = con.execute(
                 "SELECT consent, granted, notice_version, at, user_id, note FROM sharing_consents "
-                "WHERE target = ? ORDER BY at, id",
+                "WHERE target = ? ORDER BY id",
                 (target,),
             ).fetchall()
         latest: dict[str, Consent] = {}
@@ -95,7 +95,7 @@ class Consents:
         at = _timestamp(now)
         with _writing(self.state) as con:
             rows = con.execute(
-                "SELECT consent, granted, notice_version FROM sharing_consents WHERE target = ? ORDER BY at, id",
+                "SELECT consent, granted, notice_version FROM sharing_consents WHERE target = ? ORDER BY id",
                 (target,),
             ).fetchall()
             latest = {row["consent"]: row for row in rows}
