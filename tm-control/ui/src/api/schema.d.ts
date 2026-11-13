@@ -541,6 +541,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/plus/{model_id}/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Plus Model
+         * @description Make Frigate run a Frigate+ model by its ID. A model whose pair is on the device is used as POST
+         *     /models/{name}/use does. Otherwise Frigate is sent its config with `path: plus://<id>` and downloads the model while
+         *     it validates; the answer comes before that ends, and GET /models's `fetch` follows it. Frigate restarts only once it
+         *     has saved.
+         */
+        post: operations["use_plus_model_api_v1_models_plus__model_id__use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/surveys": {
         parameters: {
             query?: never;
@@ -1502,6 +1525,18 @@ export interface components {
             /** Last Event */
             last_event: number | null;
         };
+        /** FetchOut */
+        FetchOut: {
+            /** Model Id */
+            model_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "downloading" | "saved" | "refused" | "failed";
+            /** Message */
+            message: string | null;
+        };
         /**
          * Fix
          * @description What the UI offers for a check that isn't ok: restart a unit, check again, open a page, or a hint to read.
@@ -1769,6 +1804,7 @@ export interface components {
             /** Models */
             models: components["schemas"]["ModelOut"][];
             labels: components["schemas"]["LabelsOut"];
+            fetch: components["schemas"]["FetchOut"] | null;
         };
         /** Nearby */
         Nearby: {
@@ -1862,6 +1898,18 @@ export interface components {
             reconcile: "done" | "waiting_nodered" | "config_unreadable";
             /** Nodered */
             nodered: boolean;
+        };
+        /** PlusUseQueued */
+        PlusUseQueued: {
+            /** Name */
+            name: string;
+            /**
+             * Started
+             * @enum {string}
+             */
+            started: "restart" | "download";
+            /** Restarts */
+            restarts: string[];
         };
         /** PowerQueued */
         PowerQueued: {
@@ -2986,6 +3034,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UseQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    use_plus_model_api_v1_models_plus__model_id__use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlusUseQueued"];
                 };
             };
             /** @description Validation Error */

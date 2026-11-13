@@ -1183,6 +1183,30 @@ def test_models_answers_no_verified_counts(address, admin_session, viewer_sessio
         f"GET {API}/models has verifiedCounts, by role: {found}")
 
 
+def test_models_fetch_record_is_for_admins_only(address, admin_session, viewer_session):
+    """GET /models carries the last Frigate+ download for an admin, as `fetch` (null when there is none), and a viewer's
+    `fetch` is null whatever an admin started. Nothing here starts a download."""
+    admin = models_answer(address, admin_session)[1]
+    viewer = models_answer(address, viewer_session)[1]
+    assert admin is not None and "fetch" in admin, f"GET {API}/models as admin has no fetch key"
+    assert viewer is not None and "fetch" in viewer, f"GET {API}/models as viewer has no fetch key"
+    assert viewer["fetch"] is None, "GET /models as viewer: fetch isn't null"
+
+
+def test_using_a_plus_model_by_id_checks_the_id_and_the_role_first(address, admin_session, viewer_session):
+    """POST /models/plus/<id>/use refuses a viewer (403, require_admin's) and, for an admin, an ID that isn't 32
+    lowercase hex characters (422 bad_id). Both come before the gate, the Frigate+ key, and any call to Frigate or to
+    Frigate+, so nothing changes on the unit."""
+    path = f"{API}/models/plus/not-an-id/use"
+    refusal = admin_refusal(request_from_this_machine(address, path, "POST", viewer_session, {}))
+    assert refusal == (403, ADMIN_ONLY), f"POST {path} with a viewer session (status, message)"
+    answer = request_from_this_machine(address, path, "POST", admin_session, {})
+    found = answer.json() if answer.status == 422 else None
+    error = found.get("error") if isinstance(found, dict) else None
+    code = error.get("code") if isinstance(error, dict) else None
+    assert (answer.status, code) == (422, "bad_id"), f"POST {path} with an admin session (status, code)"
+
+
 def test_time_state_matches_timedatectl(host, address, admin_session):
     """The Date and time page's time zone and NTP switch are the device's, as timedatectl reports them."""
     answer = request_from_this_machine(address, f"{API}/time", cookie=admin_session)

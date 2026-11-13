@@ -31,6 +31,9 @@ from tm_control.core.state import State
 FAKE_RUNNING_MODEL = "running-model"  # the file holding the name of the model the fake Frigate runs
 FAKE_DETECT = "frigate-detect.json"  # the fake Frigate's detection switches, {camera: bool}
 FAKE_PLUS_ID = "0123456789abcdef0123456789abcdef"  # the fixture sidecar's model id
+FAKE_FETCHABLE_ID = "fedcba9876543210fedcba9876543210"  # the one Frigate+ model ID the fake Frigate can download
+FAKE_FETCH_SECONDS = 5  # how long the fake Frigate takes to download it, or to refuse another ID
+FAKE_FETCH_REFUSED = "Frigate refused the model: Exception: Model not found"
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
 
 # Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
@@ -141,6 +144,21 @@ def use_model(settings: Settings, name: str) -> None:
     """Fake mode's stand-in for using a model, which a device does by saving Frigate's config and restarting it: the
     fake Frigate runs `name` from now on (an empty name: Frigate's own default)."""
     running_model_file(settings).write_text(name)
+
+
+def fetch_model(settings: Settings, model_id: str) -> str | None:
+    """Fake mode's stand-in for Frigate downloading a Frigate+ model by its ID: FAKE_FETCHABLE_ID's pair (the fixture
+    sidecar under that id and another name) lands in the fake model_cache, and None is returned; any other ID is
+    refused with the message a device would show. Nothing is sent anywhere."""
+    if model_id != FAKE_FETCHABLE_ID:
+        return FAKE_FETCH_REFUSED
+    record = json.loads((FAKE_FIXTURES / "model_sidecar.json").read_text()) | {
+        "id": model_id, "name": "Downloaded yolov9"}
+    cache = model_cache(settings)
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / model_id).write_bytes(bytes(4096))
+    (cache / f"{model_id}.json").write_text(json.dumps(record, indent=2) + "\n")
+    return None
 
 
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
