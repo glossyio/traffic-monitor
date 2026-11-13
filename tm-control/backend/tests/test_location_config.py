@@ -574,6 +574,57 @@ def test_set_sharing_twice_changes_only_values(path):
     )
 
 
+SHARING_KEYS = ["target", "host", "exact_location", "public_map", "notice_version"]
+
+
+@pytest.mark.parametrize("text", [
+    "    exact_location: true\n",
+    "    notice_version: old\n    target: maintainer\n",
+    "    public_map: none\n    notice_version: old\n    exact_location: false\n    host: x.example.invalid\n"
+    "    target: own\n",
+    "    notice_version: old\n    public_map: rounded_point  # kept\n    unknown: 1\n",
+], ids=["partial", "shuffled-two", "reversed", "with-extra-key"])
+def test_set_sharing_puts_the_keys_in_order_whatever_the_block_had(path, text):
+    path.write_text("thingsboard:\n    enabled: false\n\nsharing:\n    # my note\n" + text + "\ndeployment:\n    lat: 45.0\n")
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    assert config.save() is True
+    loaded = read_config(path).data
+    assert list(loaded["sharing"])[:5] == SHARING_KEYS
+    assert loaded["deployment"] == {"lat": 45.0}
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+    written = path.read_text()
+    assert "    # my note\n    target:" in written
+    assert "\n\ndeployment:\n" in written
+    if "# kept" in text:
+        assert any(line.startswith("    public_map: rounded_point") and "# kept" in line for line in written.splitlines())
+    again = NodeRedConfig(path)
+    again.set_sharing(CHOSEN)
+    assert again.save() is False
+    assert path.read_text() == written
+
+
+@pytest.mark.parametrize("value", ["[]", "3", "[maintainer]", "{}", "yes"])
+def test_set_sharing_replaces_a_value_that_is_not_a_mapping(path, value):
+    path.write_text(f"thingsboard:\n    enabled: false\n\nsharing: {value}\n\ndeployment:\n    lat: 45.0\n")
+    config = NodeRedConfig(path)
+    config.set_sharing(CHOSEN)
+    assert config.save() is True
+    loaded = read_config(path).data
+    assert list(loaded) == ["thingsboard", "sharing", "deployment"]
+    assert list(loaded["sharing"]) == SHARING_KEYS
+    assert NodeRedConfig(path).sharing_block() == CHOSEN
+    assert "notice_version: 'own-server'\n\ndeployment:\n" in path.read_text()
+
+
+@pytest.mark.parametrize("value", ["[]", "3", "[a]", "yes"])
+def test_set_upload_refuses_a_thingsboard_that_is_not_a_mapping(path, value):
+    path.write_text(f"thingsboard: {value}\n")
+    with pytest.raises(ConfigError) as wrong:
+        NodeRedConfig(path).set_upload(True, HOST, "https", None)
+    assert wrong.value.code == "invalid"
+
+
 def test_set_sharing_keeps_a_comment_a_person_added(path):
     first = NodeRedConfig(path)
     first.set_sharing(CHOSEN)

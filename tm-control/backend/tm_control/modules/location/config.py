@@ -125,7 +125,8 @@ class Upload(BaseModel):
 
     enabled: bool  # true only for the boolean true
     host: str | None  # as written, trimmed; None when blank
-    protocol: Literal["http", "https"]  # https when missing or anything else
+    # the value trimmed and lower-cased (so HTTP reads as http); https when missing or anything else
+    protocol: Literal["http", "https"]
     port: int | None  # an integer in 1..65535, else None
     host_has_scheme: bool  # the host starts with http:// or https:// (Node-RED then ignores protocol)
 
@@ -533,8 +534,10 @@ class NodeRedConfig:
             _put_after(data, "thingsboard", created_after)
 
     def set_sharing(self, block: SharingBlock) -> None:
-        """Write the five sharing: keys in order. A block the file has keeps its comments and each key's place; a
-        missing (or empty) one is created after thingsboard: (at the end of the file without it), with the comment
+        """Write the five sharing: keys in order (target, host, exact_location, public_map, notice_version). A block the
+        file has keeps its comments and quoting, a missing key is added and a misplaced one moved, so the five come
+        first in that order; a missing, empty or non-mapping value is replaced by a new block (the block belongs to
+        the Sharing page), created after thingsboard: (at the end of the file without it), with the comment
         SHARING_COMMENT above its first key. None is written as an empty key, notice_version single-quoted."""
         values = {
             "target": block.target,
@@ -546,13 +549,21 @@ class NodeRedConfig:
         data = self._file.data
         current = data.get("sharing")
         if isinstance(current, CommentedMap) and current:
-            before = None
-            for key, value in values.items():
-                _write(current, key, value, before)
-                before = key
+            # The text after the block (a blank line, the comment above the next key) follows whichever key is last.
+            after = _take_after(data, "sharing")
+            for position, (key, value) in enumerate(values.items()):
+                if key in current:
+                    _write(current, key, value, None)
+                    if list(current.keys()).index(key) != position:
+                        kept, comments = current[key], current.ca.items.pop(key, None)
+                        del current[key]
+                        current.insert(position, key, kept)
+                        if comments is not None:
+                            current.ca.items[key] = comments
+                else:
+                    current.insert(position, key, value)
+            _put_after(data, "sharing", after)
             return
-        if current is not None and not (isinstance(current, CommentedMap) and not current):
-            raise ConfigError("invalid")
         created = CommentedMap(values)
         created.yaml_set_comment_before_after_key("target", before=SHARING_COMMENT, indent=4)
         if "sharing" in data:
