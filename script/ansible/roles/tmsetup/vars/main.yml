@@ -161,4 +161,9 @@ tmsetup_wifi_packages:
   - nftables
   - dnsmasq-base
 
+# The Sharing page (tm-control's manifest records both): the maintainer's ThingsBoard server, which is the default
+# upload host, and whether the public map choice is live yet. Turn the second on in the release that opens the map.
+tmsetup_sharing_maintainer_host: 'tb.roadwaybiome.com'
+tmsetup_sharing_public_map_live: false
+
 ...

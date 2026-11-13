@@ -108,6 +108,9 @@
         wifi_device: '{{ tmsetup_wifi_device }}'
         hotspot_profile: '{{ tmsetup_hotspot_profile }}'
         hotspot_address: '{{ tmsetup_hotspot_address }}'
+      sharing:
+        maintainer_host: '{{ tmsetup_sharing_maintainer_host }}'
+        public_map_live: '{{ tmsetup_sharing_public_map_live | bool }}'
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results
