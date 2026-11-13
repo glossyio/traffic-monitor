@@ -1681,6 +1681,9 @@ def test_init_defaults_maps_frigate_names_to_keys():
                                         "picam_h265": "picam_h265", "main_st": "main_st"}
     assert context["tm_warned"] == {}
     assert "frigate_cameras" not in step["result"]["payload"] and "camera_labels" not in step["result"]["payload"]
+    # The payload becomes global.config: Frigate's names live only in the two maps.
+    stored = json.dumps(step["result"]["payload"])
+    assert "oak_ave_wide" not in stored and "frigate_camera" not in stored
     assert step["logged"] == []
 
 
@@ -1859,15 +1862,16 @@ def test_config_tm_has_no_frigate_camera_and_leaves_the_config_alone():
         "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
         "main_st": {"enabled": False},
     })
-    # The node is given the object that is global.config, so the global context shows whether it was edited.
-    node = {**node_by_id(TB_CONFIG), "func": 'msg.payload = global.get("config");\n' + node_by_id(TB_CONFIG)["func"]}
-    run = run_functions([(node, {})], context={"config": config})
+    # The node is given an object kept in the global context, so the context shows whether it was edited.
+    # global.config no longer holds frigate_camera; the node strips it anyway, as a second line.
+    node = {**node_by_id(TB_CONFIG), "func": 'msg.payload = global.get("given");\n' + node_by_id(TB_CONFIG)["func"]}
+    run = run_functions([(node, {})], context={"given": config})
     [step] = run["results"]
     sent = step["result"]["payload"]
     assert "oak_ave_wide" not in json.dumps(sent) and "frigate_camera" not in json.dumps(sent)
     assert sent["config_tm"]["sensors"]["cameras"]["camera_1_3fa9c2"]["enabled"] is True
     assert sent["config_tm"]["sensors"]["cameras"]["main_st"] == {"enabled": False}
-    assert run["global"]["config"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+    assert run["global"]["given"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
 
 
 @needs_node
