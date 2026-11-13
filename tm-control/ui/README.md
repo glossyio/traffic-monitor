@@ -434,6 +434,16 @@ Date and time (below 600 px the clocks stack, the device's first):
 - A viewer sees the clocks, the sentence, the time zone, and whether the device keeps time from the internet, with
   no button, picker, or switch, and the page ends with "An administrator can set the time and time zone here."
 
+#### Using a model by its ID, 2026-11-13
+
+A Frigate+ model could only be used once it was on the device, which meant Frigate's own settings page or an upload,
+and a person with a phone and the model's ID on the Frigate+ website had to leave the control app for the first.
+The Frigate+ section now has a second panel, beside the key's: paste the ID, and Frigate downloads the model. It sits
+with the key because the key is what it needs, and it is a panel because it's for the one time a model is chosen, so
+it needn't take room on a page most people read. The download takes minutes, so the panel opens when one runs and the
+page follows it instead of holding a request, and the Status page's Frigate+ warning (a key, no Frigate+ model) now
+links to it.
+
 #### What the screenshot review changed
 
 The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer.
@@ -471,7 +481,7 @@ The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and 
 ### Detection
 
 The same people, the same rules. The page answers "what does this device look for, and with which model", and is
-where the Frigate+ API key lives, because the key is how Frigate gets a Frigate+ model. Everyone who can log in sees
+where the Frigate+ API key lives, and where a Frigate+ model is used by its ID, because the key is how Frigate gets a Frigate+ model. Everyone who can log in sees
 it all; admins also get the key's form and the actions that change the model (upload, use, download, delete), which
 sit in this layout without moving anything.
 
@@ -524,9 +534,8 @@ Object detection, Model in use, Frigate+, Other models on this device.
 | a Frigate+ API key, pick ...       |
 | When it's offline, an              |  <- both paragraphs: everyone
 | administrator can upload ...       |
-| > API key  set, ending in 0001     |  <- admins: one panel, closed (h3
-|                                    |     holds its title); a viewer sees
-|                                    |     no panel
+| > API key  set, ending in 0001     |  <- admins: two panels, closed;
+| > Use a model by its ID            |     a viewer sees no panels
 |                                    |
 | Other models on this device (2)(h2)|
 | [Upload a model]                   |
@@ -556,8 +565,8 @@ Object detection, Model in use, Frigate+, Other models on this device.
 +------------------------------------+
 ```
 
-A viewer sees the same page without Upload, the card buttons, and the key's panel, and keeps the Copy buttons and the
-Frigate+ text.
+A viewer sees the same page without Upload, the card buttons, and the two Frigate+ panels, and keeps the Copy buttons
+and the Frigate+ text.
 
 - A line under the title says what the page is for, in two sentences so a viewer isn't told the page lets them
   switch models.
@@ -612,18 +621,30 @@ Frigate+ text.
   they're the one thing here that means counts are missing and it shouldn't take an open fold to see them. The tracked
   list's title counts them ("(6, 2 not recognised)"). An other-model card's fold names what a switch would lose the
   same way.
-- Frigate+ is its own section, between the model in use and the other models, because the key and the two ways to
-  get a Frigate+ model come before a list of models already on the device. Its heading is an h2 outside any panel, and
-  its two paragraphs show for everyone. An admin gets one panel under them, titled "API key", closed when the page
-  opens, on the page's background rather than Vuetify's `surface`, so the card in use stays the only tinted thing. The
-  key's state is grey text beside the title: "not set", "set", or "set, ending in ab12", with ", in use" while Frigate
-  runs a Frigate+ model, and nothing until the secrets answer. A viewer gets the text and no panel. The section does
-  not wait for `GET /models`, so it shows, and the key's form works, when the models can't load. The Status page's
-  "Set the key" links to `/detection#frigate-plus`, which opens the panel and scrolls to the section. The panel's
-  content is rendered while closed (`eager`), so the page's height is known when the link scrolls. Its title, a
-  button, sits inside an h3 (`text-body-1`, like the Location page's panels), with "API key" in `text-subtitle-1
-  font-weight-medium`, the size of `EnteredSecret`'s own h3 on the Device page. At `text-h6` it read as large as the
-  section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and state line.
+- Frigate+ is its own section, between the model in use and the other models, because the key and the ways to get a
+  Frigate+ model come before a list of models already on the device. Its heading is an h2 outside any panel, and its
+  two paragraphs show for everyone. An admin gets two panels under them, "API key" and "Use a model by its ID", both
+  closed when the page opens, on the page's background rather than Vuetify's `surface`, so the card in use stays the
+  only tinted thing. The key's state is grey text beside the first title: "not set", "set", or "set, ending in ab12",
+  with ", in use" while Frigate runs a Frigate+ model, and nothing until the secrets answer. A viewer gets the text and
+  no panels. The section does not wait for `GET /models`, so it shows, and the key's form works, when the models can't
+  load. The Status page's "Set the key" links to `/detection#frigate-plus`, which opens the key's panel and scrolls to
+  the section, and its "Choose a model" to `/detection#frigate-plus-model`, which opens the ID panel the same way. The
+  panels' content is rendered while closed (`eager`), so the page's height is known when the link scrolls. The key
+  panel's title, a button, sits inside an h3 (`text-body-1`, like the Location page's panels), with "API key" in
+  `text-subtitle-1 font-weight-medium`, the size of `EnteredSecret`'s own h3 on the Device page. At `text-h6` it read as
+  large as the section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and
+  state line.
+- The ID panel (`PlusModelById.vue`) is a short paragraph on where the ID is, one field, "Model ID", and one 44 px button,
+  "Download and use". The field takes a pasted `plus://` address and surrounding spaces, and says "A model ID is 32
+  characters, each 0-9 or a-f." under itself for anything else, with the button off, so nothing wrong is sent. The
+  confirmation says the download can take a few minutes and the restart about one. The page's `working` flag also
+  covers a running download, so every action is off meanwhile, and the panel shows an info alert, "Frigate is
+  downloading the model. This can take a few minutes. You can leave this page.", under the button. The page asks `GET
+  /models` every 3 seconds while the record says `downloading`, with no limit of its own, because the server ends the
+  record; a download begun elsewhere opens the panel and is followed the same way. A `saved` record is a Use's
+  restart: the page waits for Frigate as after a Use. A `refused` or `failed` one shows its message under the button,
+  Frigate's own words included, also when it's found on opening the page.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
   Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
   be). "Upload a model" sits under the "Other models" heading, above the cards it adds to, visible with nothing to
