@@ -403,6 +403,23 @@ def test_refusal_lines_drop_the_header_and_redact():
     assert refusal_lines(traceback) == "ValueError: bad <key>"
 
 
+def test_refusal_lines_show_frigates_html_entities_as_text():
+    # Frigate escapes its 400 messages for HTML; the page shows text
+    traceback = ("Traceback (most recent call last):\n"
+                 "Exception: Unable to refresh API token: {&#34;message&#34;:&#34;User not found&#34;}\n")
+    assert refusal_lines(traceback) == 'Exception: Unable to refresh API token: {"message":"User not found"}'
+    validation = f"{FRIGATE_HEADER}\nSee the docs.\n\nLine 4: model -> path - Value error, &lt;none&gt; &amp; &#x27;x&#x27;\n"
+    assert refusal_lines(validation) == "Line 4: model -> path - Value error, <none> & 'x'"
+
+
+def test_refusal_lines_redact_a_key_written_as_entities():
+    hidden = PLACEHOLDER_KEY.replace(":", "&#58;", 1)
+    assert hidden != PLACEHOLDER_KEY
+    lines = refusal_lines(f"Traceback (most recent call last):\nException: bad key {hidden}\n")
+    assert lines == "Exception: bad key <key>"
+    assert PLACEHOLDER_KEY[:20] not in lines and "&#58;" not in lines
+
+
 class FakeFrigateApi:
     """httpjson.get and httpjson.post as Frigate's /config/raw and /config/save answer them."""
 
