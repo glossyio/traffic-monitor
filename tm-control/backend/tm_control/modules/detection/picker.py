@@ -7,6 +7,7 @@ the rest of the file, its comments included, stays as it was, and the caller res
 """
 
 import copy
+import html
 import io
 from dataclasses import dataclass
 from pathlib import Path
@@ -224,8 +225,9 @@ def replace_model_section(doc, section: dict | None) -> None:
 
 def refusal_lines(message: str) -> str:
     """What Frigate said is wrong, fit to show: its validation errors without the two header lines, or a traceback's
-    last line for its other refusals; each line redacted, joined with "; ", and cut to REFUSAL_MAX characters."""
-    lines = [line.strip() for line in str(message).splitlines()]
+    last line for its other refusals; each line unescaped (Frigate sends its 400s HTML-escaped) and then redacted, joined
+    with "; ", and cut to REFUSAL_MAX characters."""
+    lines = [html.unescape(line).strip() for line in str(message).splitlines()]
     if lines and lines[0].startswith(FRIGATE_HEADER):
         lines = lines[2:]
     else:  # a traceback: its last line names the exception

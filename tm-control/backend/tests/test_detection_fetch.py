@@ -169,7 +169,7 @@ def test_a_traceback_refusal_keeps_its_last_line_and_no_key(monkeypatch):
         "Traceback (most recent call last):\n"
         '  File "/opt/frigate/frigate/plus.py", line 1, in _get_valid_token\n'
         "    raise Exception(\n"
-        f"Exception: Unable to refresh API token: {PLACEHOLDER_KEY}\n"
+        f"Exception: Unable to refresh API token: {PLACEHOLDER_KEY} {{&#34;message&#34;:&#34;User not found&#34;}}\n"
     )
     answers(monkeypatch, (400, refusal))
     fetches = downloading()
@@ -177,6 +177,7 @@ def test_a_traceback_refusal_keeps_its_last_line_and_no_key(monkeypatch):
     record = fetches.current()
     assert record.state == "refused"
     assert record.message.startswith("Frigate refused the model: Exception: Unable to refresh API token")
+    assert record.message.endswith('{"message":"User not found"}')  # Frigate's HTML entities, shown as text
     assert "Traceback" not in record.message
     assert PLACEHOLDER_KEY not in record.message
     assert PLACEHOLDER_KEY[:20] not in record.message
