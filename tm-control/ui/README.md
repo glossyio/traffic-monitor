@@ -475,6 +475,9 @@ where the Frigate+ API key lives, because the key is how Frigate gets a Frigate+
 it all; admins also get the key's form and the actions that change the model (upload, use, download, delete), which
 sit in this layout without moving anything.
 
+The page keeps the running model in one place, its card under "Model in use", and has four sections in this order:
+Object detection, Model in use, Frigate+, Other models on this device.
+
 ```text
 +------------------------------------+
 | Detection                     (h1) |
@@ -485,31 +488,45 @@ sit in this layout without moving anything.
 | Detector        Running model      |
 | edgetpu         My model, a local  |
 |                 model              |
-| (Frigate reports a different list  |
-|  than this model's .json.)         |
-| Frigate tracks only the objects    |
-| that are in both lists.            |
-| > Objects the running model        |  <- h3 panel, closed
-|   recognises (3)                   |
-|     As Frigate reports them.       |
-|     [Copy] [person] [bicycle] (car)|  <- [filled] = tracked
-|     Filled: tracked on this device.|
-| > Objects tracked on this device   |  <- h3 panel, closed
-|   (6, 2 not recognised)            |
-|     [Copy] (person) (car) !dog!    |  <- !amber! = not recognised
-|     Amber: the running model       |
-|     doesn't recognise it.          |
-| Tracked but not recognised by the  |  <- visible while the panels are closed
-| running model: !dog! !cat!         |
 |                                    |
 | Model in use                  (h2) |
 | +--------------------------------+ |
 | | My model  (In use)        (h3) | |  <- tinted
 | | Local model, trained 2026-10.. | |
+| | Tracked but not recognised by  | |  <- outside the fold: visible
+| | the running model: !dog! !cat! | |     while it is closed
 | | [Download]                     | |
 | | (Frigate runs My model.)       | |
-| | > Files and objects            | |  <- closed
+| | v Files and objects            | |  <- open here; "Objects" with no files
+| |   Frigate tracks only the      | |
+| |   objects in both lists.       | |
+| |   (Frigate reports a different | |  <- only when the lists differ
+| |    list than this model's      | |
+| |    .json.)                     | |
+| |   Objects the running model    | |
+| |   recognises (3) (h4)  [Copy]  | |
+| |   As Frigate reports them.     | |
+| |   [person] [bicycle] (car)     | |  <- [filled] = tracked
+| |   Filled: tracked on this      | |
+| |   device.                      | |
+| |   Objects tracked on this      | |
+| |   device (6, 2 not recognised) | |
+| |   (h4)                 [Copy]  | |
+| |   (person) (car) !dog! !cat!   | |  <- !amber! = not recognised
+| |   Amber: the running model     | |
+| |   doesn't recognise it.        | |
+| |   mine.tflite, 2.0 KB, SHA-256 | |
+| |   mine.tflite.json, 433 bytes  | |
 | +--------------------------------+ |
+|                                    |
+| Frigate+                      (h2) |  <- outside the panel
+| When the device is online and has  |
+| a Frigate+ API key, pick ...       |
+| When it's offline, an              |  <- both paragraphs: everyone
+| administrator can upload ...       |
+| > API key  set, ending in 0001     |  <- admins: one panel, closed (h3
+|                                    |     holds its title); a viewer sees
+|                                    |     no panel
 |                                    |
 | Other models on this device (2)(h2)|
 | [Upload a model]                   |
@@ -518,7 +535,7 @@ sit in this layout without moving anything.
 | | The installer's model     (h3) | |
 | | yolov9-s-...edgetpu.tflite     | |
 | | [Use] [Download]               | |  <- filled, outlined
-| | > Files and objects            | |
+| | > Files                        | |
 | +--------------------------------+ |
 | +--------------------------------+ |
 | | Test site yolov9          (h3) | |
@@ -536,13 +553,11 @@ sit in this layout without moving anything.
 | |   !dog! !cat!                  | |
 | +--------------------------------+ |
 | (No other models on this device.)  |  <- when there are none
-|                                    |
-| > Frigate+      API key not set    |  <- h2 panel, closed
 +------------------------------------+
 ```
 
-A viewer sees the same page without Upload, the card buttons, the key's state, and the key's form, and keeps the Copy
-buttons.
+A viewer sees the same page without Upload, the card buttons, and the key's panel, and keeps the Copy buttons and the
+Frigate+ text.
 
 - A line under the title says what the page is for, in two sentences so a viewer isn't told the page lets them
   switch models.
@@ -564,43 +579,51 @@ buttons.
   two, "SHA-256" and its hash staying together. A file name may break anywhere (`word-break: break-all`, scoped in
   `ModelBlock.vue`): the names that are long are IDs, and otherwise a 32-character Frigate+ name that fills a card's
   line leaves its comma to start the next one.
-- A default with no file on the device (Frigate's built-in model on a device without a Coral, which the API can't
-  list) still gets a card, made by the page, with "Built into Frigate." as its facts line and no fold. Without it, a CPU
-  device's one choice would be a button with no card.
+- The card in use is always there once the models have loaded, so the running model's lists have a home whether
+  Frigate answers or not. The page makes the card when the list has none. A default with no file on the device
+  (Frigate's built-in model on a device without a Coral, which the API can't list) gets one with "Built into
+  Frigate." as its facts line ("Set up by the installer." for the installer's model) and no files; a running model
+  with no entry in the list gets one titled with its name, or "Unknown model" when Frigate gave none, with no buttons
+  and no file lines. Without the first, a CPU device's one choice would be a button with no
+  card. The other cards are as the API lists them.
 - One chip per model at most, in words: "In use" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
   line under the facts.
-- Three panels of the page's own: the two label lists and Frigate+, on the page's background rather than Vuetify's
-  `surface`, so the card in use stays the only tinted thing. They're closed when the page opens. Each title says what's
-  inside and counts it, or for Frigate+ says the key's state, so a closed row still says something. They open
-  independently (both label lists can be open at once, to compare them), and their content is rendered while closed
-  (`eager`), so the page's height is known when a link scrolls to the key. Each title, a button, sits inside its h3
-  (the key's inside its h2), as the Device page's "Tokens and keys" does, so the outline stays the same for screen
-  readers. The cards aren't in a panel: "Upload a model" and each model's buttons are one glance away, and a fold never
-  sits inside a fold.
-- The running model's list appears in two places on purpose. The list at the top is what Frigate reports, and it's the
-  only list a model with no `.json` can have, such as Frigate's built-in model. The card's list is read from the
-  model's `.json` or the installer's labels file, so the card in use looks like every other card. A caption in the top
-  list says where it came from (`labels.source`). When it's Frigate's and the objects differ from the card's, as sets,
-  one plain line under the facts says so. It has no alert color: it's rare, and
-  usually a deliberate label-map edit.
-- The label lists are chips because they are many short words that wrap well on a phone. A sentence above the two
-  panels says how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second
-  list and not the first is never tracked. The second is "Objects tracked on this device", not "by this model",
-  because it's Frigate's `objects: track` config, not the model's; the wording sends someone to the right place to
-  change it. Each list's Copy puts it on the clipboard comma-separated, ready to paste elsewhere, and says "Copied."
-  beside the button for two seconds; a refused copy says so and stays.
+- The card in use's fold holds the running model's lists, in this order: the sentence "Frigate tracks only the objects
+  that are in both lists.", the "different list" line when it applies, "Objects the running model recognises" with its
+  source line, "Objects tracked on this device", then the file lines. The sentence says how the two lists relate, so
+  "dog" in the second list and not the first is never tracked. The second is "Objects tracked on this device", not "by
+  this model", because it's Frigate's `objects: track` config, not the model's; the wording sends someone to the right
+  place to change it. The fold is titled "Files and objects", or "Objects" on a card with no files. The lists
+  (`RunningLists.vue`) are plain h4-headed lists, always shown inside the fold: the page's earlier two closed panels
+  were rows to open inside a card that is itself a row to open, and a fold never sits inside a fold.
+- The running model's list is Frigate's, as `labels.recognised` says, with `labels.source` naming where it came from
+  in a caption; for a model with no `.json`, such as Frigate's built-in model, it's the only list there is. When it's
+  Frigate's and the objects differ from the model's `.json`, as sets, one plain line says so. It has no alert color:
+  it's rare, and usually a deliberate label-map edit. The `.json`'s own list isn't shown a second time on the card in
+  use, so the card has one list of what the model recognises. The other models' cards keep theirs.
+- The label lists are chips because they are many short words that wrap well on a phone. Each list's Copy puts it on
+  the clipboard comma-separated, ready to paste elsewhere, and says "Copied." beside the button for two seconds; a
+  refused copy says so and stays.
 - A chip can carry one of two marks, each with a legend in words that shows only when a chip has it, so color is never
   the only cue. Filled (`variant="tonal"`, the heading blue) is a recognised object the device tracks. Amber
   (`variant="outlined" color="warning"`) is a tracked object the running model doesn't recognise, and wins over filled.
-  The amber objects also show under the closed panels, and the tracked list's title counts them ("(6, 2 not
-  recognised)"), because they're the one thing here that means counts are missing. An other-model card's fold names
-  what a switch would lose the same way. The card in use has no such line, since the top of the page says it already.
-- The last panel is titled "Frigate+", because it covers getting a model as well as the key. Its state says "API key
-  not set", "API key set", or "API key set, ending in ab12", with ", in use" while Frigate runs a Frigate+ model, and
-  nothing for a viewer or until the secrets answer. The Status page's "Set the key" links to
-  `/detection#frigate-plus`, which opens the panel and scrolls to it once the models have loaded. The key's form is
-  the Device page's (`EnteredSecret.vue`) without its own heading and state line, which the title has.
+  The amber objects also sit on the card in use outside its fold, under its facts and above its buttons, because
+  they're the one thing here that means counts are missing and it shouldn't take an open fold to see them. The tracked
+  list's title counts them ("(6, 2 not recognised)"). An other-model card's fold names what a switch would lose the
+  same way.
+- Frigate+ is its own section, between the model in use and the other models, because the key and the two ways to
+  get a Frigate+ model come before a list of models already on the device. Its heading is an h2 outside any panel, and
+  its two paragraphs show for everyone. An admin gets one panel under them, titled "API key", closed when the page
+  opens, on the page's background rather than Vuetify's `surface`, so the card in use stays the only tinted thing. The
+  key's state is grey text beside the title: "not set", "set", or "set, ending in ab12", with ", in use" while Frigate
+  runs a Frigate+ model, and nothing until the secrets answer. A viewer gets the text and no panel. The section does
+  not wait for `GET /models`, so it shows, and the key's form works, when the models can't load. The Status page's
+  "Set the key" links to `/detection#frigate-plus`, which opens the panel and scrolls to the section. The panel's
+  content is rendered while closed (`eager`), so the page's height is known when the link scrolls. Its title, a
+  button, sits inside an h3 (`text-body-1`, like the Location page's panels), with "API key" in `text-subtitle-1
+  font-weight-medium`, the size of `EnteredSecret`'s own h3 on the Device page. At `text-h6` it read as large as the
+  section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and state line.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
   Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
   be). "Upload a model" sits under the "Other models" heading, above the cards it adds to, visible with nothing to
@@ -624,6 +647,22 @@ buttons.
   shows where its action was: on the model's card (it moves to "Model in use" with the card when Frigate runs it),
   or, for a deleted model, above the other models' cards. An API refusal shows its message there, Frigate's
   own words included.
+
+#### What changed on 2026-11-13
+
+The running model's lists lived in a section of their own at the top, apart from the card for the same model, so
+"what is this device running" was answered in two places, and the Frigate+ key sat after the long list of other
+models. The page now keeps the running model in one place:
+
+- The two label lists, the sentence about them, and the "different list" line moved from the top section into the card
+  in use's fold. The amber "not recognised" chips moved onto the card, outside the fold. The top section is now the
+  detector, the running model, and Frigate's alerts.
+- The card in use is always there, so the lists show when the running model has no entry or can't be read.
+- Frigate+ moved above the other models and lost its panel around the text. Its heading and two paragraphs are
+  plain, and the key is the one panel, "API key".
+
+The two closed label panels, the three-panel layout, and the placement of Frigate+ last, described in the notes below,
+are the layout before this change.
 
 #### What the screenshot review changed
 
@@ -651,6 +690,10 @@ through the `#frigate-plus` link, and through a Use and a Delete:
 - A closed card looked bottom-heavy, with the card's padding under the title's own. The fold takes back 8 px of it.
 - On a Coral unit running the installer's model, Frigate's list had 91 entries, 74 of them `unknown`, so the top list
   read "(91)" over rows of `unknown` chips while the card said 17. The API now leaves `unknown` out of every list.
+- Looked at and kept: at 375 px each list title in the fold wraps and its Copy sits on its own row. Nothing overlaps,
+  and Copy sat on its own row inside the old panels too.
+- The panel title "API key" was at `text-h6`, as large as the "Frigate+" h2 above it, and had no heading around it.
+  It now sits in an h3 at the size of the Device page's key titles.
 
 #### Defaults rejected
 

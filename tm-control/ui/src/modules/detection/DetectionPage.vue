@@ -1,8 +1,11 @@
 <!--
   The Detection page (GET /models), in four sections, for every logged-in user: Object detection (the detector, the
-  running model, and the two label lists), Model in use, Other models on this device, and Frigate+. Admins also get the
-  actions (upload, use, download, delete) and the Frigate+ API key's form, the frigate_plus_api_key row of GET /secrets,
-  which the API refuses viewers.
+  running model, and what is wrong with Frigate's answer), Model in use (one card, which holds the running model's two
+  object lists), Frigate+, and Other models on this device. The card in use always exists once the models have loaded:
+  a model with no entry in the list, or one that can't be read, gets a card the page makes. The Frigate+ section does
+  not wait for the models, so it shows when they can't load. Admins also get the actions (upload, use, download,
+  delete) and, in the Frigate+ section, the API key's panel, the frigate_plus_api_key row of GET /secrets, which the
+  API refuses viewers.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -14,7 +17,6 @@ import { saveBlob } from '../../components/download'
 import EnteredSecret from '../../components/EnteredSecret.vue'
 import { useSession } from '../../stores/session'
 import ActionResult, { type Result } from './ActionResult.vue'
-import LabelChips from './LabelChips.vue'
 import ModelBlock, { type Block } from './ModelBlock.vue'
 import UploadModel from './UploadModel.vue'
 
@@ -39,8 +41,8 @@ async function load() {
 }
 
 // The Frigate+ key (admins only), loaded again after each save or remove. The Status page's "Set the key" links to
-// the section, which opens, and the page scrolls to it once the models have answered and the sections above it have
-// their height.
+// the section, which is always there, and opens the key's panel; the page scrolls to the section once the models
+// have answered and the sections above it have their height.
 const FRIGATE_PLUS_ID = 'frigate-plus'
 const linkedToKey = route.hash === `#${FRIGATE_PLUS_ID}`
 const secrets = ref<SecretState[] | null>(null)
@@ -48,12 +50,12 @@ const secretsError = ref('')
 const key = computed(() => secrets.value?.find((secret) => secret.name === 'frigate_plus_api_key'))
 const keyOpen = ref<string[]>(linkedToKey ? [FRIGATE_PLUS_ID] : [])
 
-// The key's state for the panel's title, which a closed panel still shows: nothing for a viewer or until the
-// secrets answer, and "in use" only while Frigate runs a Frigate+ model
+// The key's state beside the panel's title "API key", which a closed panel still shows: nothing for a viewer or until
+// the secrets answer, and "in use" only while Frigate runs a Frigate+ model
 const keyState = computed(() => {
   if (!key.value) return ''
-  if (!key.value.set) return 'API key not set'
-  const set = key.value.ends_with ? `API key set, ending in ${key.value.ends_with}` : 'API key set'
+  if (!key.value.set) return 'not set'
+  const set = key.value.ends_with ? `set, ending in ${key.value.ends_with}` : 'set'
   return state.value?.running.kind === 'frigate_plus' ? `${set}, in use` : set
 })
 
@@ -128,7 +130,9 @@ function facts(model: ModelOut) {
 }
 
 // One card per model: the one Frigate runs under "Model in use", the rest under "Other models". A default with no file
-// on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be.
+// on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be. So does a
+// running model with no entry in the list, keyed RUNNING.
+const RUNNING = '#running'
 function listed(model: ModelOut): Block {
   return { key: model.name, title: titleOf(model), facts: facts(model), model, kind: model.kind, inUse: model.running }
 }
@@ -136,12 +140,24 @@ function made(kind: DefaultKind, inUse: boolean): Block {
   return { key: `#${kind}`, title: DEFAULT_TITLES[kind], facts: MADE_FACTS[kind], model: null, kind, inUse }
 }
 
+// The card in use: the running model's entry, else a default's block, else a block for what Frigate's config names, or
+// for a model that can't be read
 const inUse = computed<Block | null>(() => {
   if (!state.value) return null
   const { running, models } = state.value
   const model = models.find((m) => m.running)
   if (model) return listed(model)
-  return isDefaultKind(running.kind) ? made(running.kind, true) : null
+  if (isDefaultKind(running.kind)) return made(running.kind, true)
+  return {
+    key: RUNNING,
+    title: running.name ?? 'Unknown model',
+    facts: running.name
+      ? "Named in Frigate's config; its files aren't on this device."
+      : "Frigate's model couldn't be read.",
+    model: null,
+    kind: running.kind,
+    inUse: true,
+  }
 })
 
 const others = computed<Block[]>(() => {
@@ -154,19 +170,6 @@ const others = computed<Block[]>(() => {
   return blocks
 })
 
-// Where the running model's list came from, as the recognised panel says
-const SOURCES = {
-  frigate: 'As Frigate reports them.',
-  sidecar: "From the model's .json, because Frigate didn't say.",
-  labels_file: "From the installer's labels file, because Frigate didn't say.",
-}
-
-// The tracked objects the running model doesn't recognise; none when what it recognises isn't known
-const unrecognised = computed(() => {
-  const { recognised, tracked } = state.value?.labels ?? {}
-  return recognised && tracked ? tracked.filter((label) => !recognised.includes(label)) : []
-})
-
 // Frigate's list against the .json of the model in use, as sets
 const listsDiffer = computed(() => {
   const { recognised, source } = state.value?.labels ?? {}
@@ -175,10 +178,6 @@ const listsDiffer = computed(() => {
   const [reported, ours] = [new Set(recognised), new Set(own)]
   return reported.size !== ours.size || [...reported].some((label) => !ours.has(label))
 })
-
-// The panels that are open, by value: one list per group, because a group of panels writes back only its own
-// values and would close the others' if they shared one
-const labelsOpen = ref<string[]>([])
 
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
 // page waits for Frigate after a use. Each result shows where its action was: under the model, under the default's
@@ -215,11 +214,14 @@ function missingFrom(block: Block) {
 // block of the default this device would get, so the result follows the block when it moves under "Model in use".
 // Any other result is at its block's key.
 function blockProps(block: Block) {
-  const at = block.kind === state.value?.default ? DEFAULT : block.key
+  const at = block.kind && block.kind === state.value?.default ? DEFAULT : block.key
   const on = (action: string) => busy.value === `${action} ${action === 'use' ? at : block.key}`
   const here = result.value?.at === at || result.value?.at === block.key
   return {
     block,
+    lists: block.inUse
+      ? { labels: state.value!.labels, listsDiffer: listsDiffer.value, frigateAnswers: state.value!.frigate_answers }
+      : null,
     admin: session.isAdmin,
     busy: on('use') ? 'use' : on('download') ? 'download' : on('delete') ? 'delete' : null,
     working: working.value,
@@ -424,62 +426,6 @@ function openUpload() {
             <div class="text-body-1 text-break">{{ runningValue }}</div>
           </v-col>
         </v-row>
-        <p v-if="listsDiffer" class="text-body-2 mb-4">Frigate reports a different list than this model's .json.</p>
-        <p class="text-body-1 mb-4">Frigate tracks only the objects that are in both lists.</p>
-        <!-- Each list in a panel, closed until tapped. Its title, a button, goes inside the h3, so the heading stays a
-             heading for screen readers, as on the Device page. Eager: its content is on the page while it's closed, so
-             the page's height is known when a link scrolls to the key panel. The panels take the page's background, so
-             the card in use is the only tinted thing on the page. -->
-        <v-expansion-panels v-model="labelsOpen" multiple flat bg-color="background" class="ga-3">
-          <v-expansion-panel value="recognised" class="border" eager>
-            <h3 class="text-subtitle-1 font-weight-medium">
-              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Objects the running model recognises{{ state.labels.recognised ? ` (${state.labels.recognised.length})` : '' }}
-              </v-expansion-panel-title>
-            </h3>
-            <v-expansion-panel-text>
-              <template v-if="state.labels.recognised">
-                <p v-if="state.labels.source" class="text-body-2 text-secondary mb-2">{{ SOURCES[state.labels.source] }}</p>
-                <LabelChips
-                  :labels="state.labels.recognised"
-                  :marked="state.labels.tracked"
-                  marked-legend="Filled: tracked on this device."
-                />
-              </template>
-              <p v-else class="text-body-2 text-secondary">
-                {{
-                  state.frigate_answers
-                    ? "The running model's labels aren't known."
-                    : "Frigate isn't answering, and the running model has no sidecar on the device."
-                }}
-              </p>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-          <v-expansion-panel value="tracked" class="border" eager>
-            <h3 class="text-subtitle-1 font-weight-medium">
-              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Objects tracked on this device ({{ state.labels.tracked.length
-                }}{{ unrecognised.length ? `, ${unrecognised.length} not recognised` : '' }})
-              </v-expansion-panel-title>
-            </h3>
-            <v-expansion-panel-text>
-              <LabelChips
-                :labels="state.labels.tracked"
-                :flagged="unrecognised"
-                flagged-legend="Amber: the running model doesn't recognise it."
-              />
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-        <!-- Visible while the panels are closed -->
-        <div v-if="unrecognised.length" class="not-recognised mt-4">
-          <p class="text-body-2 mb-2">Tracked but not recognised by the running model:</p>
-          <div class="d-flex flex-wrap ga-2">
-            <v-chip v-for="label in unrecognised" :key="label" size="small" variant="outlined" color="warning">
-              {{ label }}
-            </v-chip>
-          </div>
-        </div>
       </section>
 
       <section v-if="inUse" class="mt-10">
@@ -491,7 +437,45 @@ function openUpload() {
           @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
         />
       </section>
+    </template>
 
+    <!-- Frigate+ sits above the other models and doesn't wait for them. The admin's key is one panel, its title
+         "API key" with the key's state beside it -->
+    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
+      <h2 class="text-h6 mb-2">Frigate+</h2>
+      <p class="text-body-1 mb-2">
+        When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings, System,
+        Detectors and model, and Frigate downloads it.
+      </p>
+      <p class="text-body-1" :class="{ 'mb-4': session.isAdmin }">
+        When it's offline, an administrator can upload the model's two files on this page, as a package from whoever
+        trained the model or copied from another device's Frigate.
+      </p>
+      <v-expansion-panels v-if="session.isAdmin" v-model="keyOpen" multiple flat bg-color="background">
+        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
+          <h3 class="text-body-1">
+            <v-expansion-panel-title>
+              <span class="d-flex flex-wrap align-baseline key-title">
+                <span class="text-subtitle-1 font-weight-medium">API key{{ ' ' }}</span>
+                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
+              </span>
+            </v-expansion-panel-title>
+          </h3>
+          <v-expansion-panel-text>
+            <v-alert v-if="secretsError" type="error">
+              {{ secretsError }}
+              <template #append>
+                <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+              </template>
+            </v-alert>
+            <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+            <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </section>
+
+    <template v-if="state">
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Other models on this device ({{ others.length }})</h2>
         <v-btn
@@ -518,42 +502,6 @@ function openUpload() {
         <p v-else class="text-body-2 text-secondary mt-4">No other models on this device.</p>
       </section>
     </template>
-
-    <!-- The last section is one panel, its title inside the h2, as the Device page's "Tokens and keys" is -->
-    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <v-expansion-panels v-model="keyOpen" multiple flat bg-color="background">
-        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
-          <h2 class="text-h6">
-            <v-expansion-panel-title class="text-h6">
-              <span class="d-flex flex-wrap align-baseline key-title">
-                <span>Frigate+</span>
-                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
-              </span>
-            </v-expansion-panel-title>
-          </h2>
-          <v-expansion-panel-text>
-            <p class="text-body-1 mb-2">
-              When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
-              System, Detectors and model, and Frigate downloads it.
-            </p>
-            <p class="text-body-1" :class="{ 'mb-6': session.isAdmin }">
-              When it's offline, an administrator can upload the model's two files on this page, as a package from
-              whoever trained the model or copied from another device's Frigate.
-            </p>
-            <template v-if="session.isAdmin">
-              <v-alert v-if="secretsError" type="error">
-                {{ secretsError }}
-                <template #append>
-                  <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
-                </template>
-              </v-alert>
-              <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
-              <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
-            </template>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </section>
 
     <v-dialog v-model="uploadOpen" max-width="560">
       <UploadModel :key="uploads" :detector="state?.detector ?? null" @uploaded="load" @close="uploadOpen = false" />
