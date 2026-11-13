@@ -53,7 +53,7 @@ def cameras_state(request: Request) -> CamerasState:
     return CamerasState(
         frigate=state,
         plates=app_state.manifest.options.get("plate_recognizer") is True,
-        rows=compare(config.cameras(), cameras),
+        rows=compare(config.cameras(), cameras, in_config),
         radars=radars,
     )
 
@@ -109,7 +109,7 @@ def _compared(app_state, config: NodeRedConfig) -> list[CameraRow]:
     cameras = frigate_now(app_state)[1]
     if cameras is None:
         raise _unavailable()
-    return compare(config.cameras(), cameras)
+    return compare(config.cameras(), cameras, config.radars())
 
 
 def _exists(config: NodeRedConfig, name: str) -> None:

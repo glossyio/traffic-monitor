@@ -308,7 +308,9 @@ def test_service_check_states(device_client, login, systemctl):
     assert (pod["status"], pod["detail"], pod["fix"]) == ("ok", "Running since 09:12.", None)
     stopped = checks["services.frigate.service"]
     assert stopped["status"] == "error" and stopped["detail"] == "Stopped."
-    assert stopped["fix"] == {"kind": "restart", "text": "Restart Frigate", "unit": "frigate.service", "href": None}
+    assert stopped["fix"] == {
+        "kind": "restart", "text": "Restart Frigate", "unit": "frigate.service", "href": None, "external": False,
+    }
     starting = checks["services.node-red-tm.service"]
     assert starting["status"] == "warn" and starting["detail"] == "Starting." and starting["fix"] is None
     assert checks["services.go2rtc_server.service"]["status"] == "warn"

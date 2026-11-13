@@ -2149,6 +2149,39 @@
         ],
         "title": "CameraDetection"
       },
+      "CameraIssue": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warn"
+            ],
+            "title": "Level"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "not_paired",
+              "duplicate",
+              "gone",
+              "camera_off",
+              "capture_off",
+              "detect_off",
+              "zones",
+              "radar"
+            ],
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "code"
+        ],
+        "title": "CameraIssue",
+        "description": "Something the Status page's camera checks report about this row, as the check rates it. The page words it."
+      },
       "CameraPoint": {
         "properties": {
           "to": {
@@ -2319,6 +2352,14 @@
               }
             ],
             "title": "Zones Off"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/CameraIssue"
+            },
+            "type": "array",
+            "title": "Issues",
+            "default": []
           }
         },
         "type": "object",
@@ -2768,6 +2809,11 @@
               }
             ],
             "title": "Href"
+          },
+          "external": {
+            "type": "boolean",
+            "title": "External",
+            "default": false
           }
         },
         "type": "object",

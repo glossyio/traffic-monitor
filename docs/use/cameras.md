@@ -23,7 +23,7 @@ A device that has only `picam_h265`, as the installer sets it up, keeps working 
 
 **Cameras** is in the control app's menu, after **Detection**. At the top, the page says that Frigate owns each camera's name, streams, and zones, and links to Frigate for adding a camera or changing them. Then comes one row for each entry in `config.yml`, followed by one for each Frigate camera that no entry is paired with. A Frigate camera that is turned off there and that no entry is paired with isn't listed: it sends no events. Turn it on in Frigate, and it appears.
 
-![The Cameras page on a phone: a camera whose Frigate camera is gone, with Edit and Remove; a camera that is in step, with Edit and Use a neutral name; and a new Frigate camera, with Point and Add as new](../assets/images/cameras-page.png){ width="300" }
+![The Cameras page on a phone: a red line saying 2 cameras need attention; a camera whose Frigate camera is gone, with an amber box and Edit and Remove; a camera that is in step, with no box, Edit, and Use a neutral name; and a new Frigate camera, with a red box, Point, and Add as new](../assets/images/cameras-page.png){ width="300" }
 
 An entry's row shows its name in bold, and Frigate's name beside it when the two differ. Under them are its settings and what Frigate has:
 
@@ -33,9 +33,18 @@ An entry's row shows its name in bold, and Frigate's name beside it when the two
 * **Zones: all four**, or **Missing in Frigate** and the zones the [flows expect](../setup-guide.md#3-adjust-the-zones) that the camera lacks, or **Turned off in Frigate** and the ones that are there but switched off. Frigate can turn a zone off in its configuration or from its live view, and an object never enters a zone that is off, so it counts as missing for the Traffic Monitor.
 * **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
-A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**. A row that's out of step says why: **Frigate no longer has** a camera, a camera **is new in Frigate and isn't recorded**, or another entry **already records this Frigate camera**. When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.
+A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**.
 
-The Status page's [camera checks](device-health.md#the-camera-checks) report the same problems and link here.
+### What needs attention
+
+The page marks each problem the Status page's [camera checks](device-health.md#the-camera-checks) report, on the camera it's about, in the same colors: red for a problem, amber for a warning. Above the list, a line says how many cameras need attention. Each marked row has a box for each problem that says what's wrong and what to do on this page:
+
+* Red: a camera **is new in Frigate and isn't recorded** (point an entry at it, or add it), or another entry **already records this Frigate camera** (remove this one).
+* Amber: **Frigate no longer has** the camera (point the entry at its new name, or remove it); the camera is turned off in Frigate, Frigate's detection is off, or **Database capture** is off, so its events **aren't recorded**; zones are missing or turned off, with a link, **Edit its zones in Frigate**, that opens Frigate's masks and zones settings at that camera; or the camera's radar isn't turned on in `config.yml`.
+
+A row with no box is in step. The page and the checks come from the same comparison, so they always agree.
+
+When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.
 
 ## Change a camera's settings
 

@@ -3,6 +3,7 @@
 import type { components } from '../../api/schema'
 
 export type CameraRow = components['schemas']['CameraRow']
+export type CameraIssue = components['schemas']['CameraIssue']
 export type CameraRadar = components['schemas']['CameraRadar']
 
 // 'unknown' is a row while Frigate can't be compared (down or in safe mode): the page shows its settings and
@@ -67,4 +68,63 @@ export function radarChoices(row: CameraRow, radars: CameraRadar[]): RadarChoice
     choices.push({ title: `${current} (missing)`, value: current })
   }
   return choices
+}
+
+// Frigate's masks and zones settings, opened at this camera, as Frigate's own UI links there
+export function frigateZonesHref(row: CameraRow): string {
+  return `/frigate/settings?page=masksAndZones&camera=${encodeURIComponent(row.frigate_camera)}`
+}
+
+export interface IssueBox {
+  level: 'error' | 'warning' // Vuetify's alert types, for the check's error and warn
+  text: string
+  link?: { href: string; text: string } // a page outside this app, such as Frigate's zones
+}
+
+const DIRECTION_ZONES = ['zone_near', 'zone_far']
+
+// What the Status page's camera checks report about a row (the API's issues), worded for this page: what is wrong,
+// and what to do here. One box per issue, none for a row in step.
+export function issueBoxes(row: CameraRow): IssueBox[] {
+  const words: Record<CameraIssue['code'], () => Omit<IssueBox, 'level'>> = {
+    not_paired: () => ({
+      text: `${row.frigate_camera} is new in Frigate and isn't recorded. Point an entry at it, or choose Add as new.`,
+    }),
+    duplicate: () => ({
+      text: `${row.duplicate_of} already records this Frigate camera. This entry is unused: Remove it.`,
+    }),
+    gone: () => ({
+      text:
+        `Frigate no longer has ${row.frigate_camera}. If you renamed it there, choose Point on its new row; ` +
+        'if not, Remove this entry.',
+    }),
+    camera_off: () => ({
+      text:
+        `Not recorded: ${row.frigate_camera} is turned off in Frigate. Turn it on in Frigate, or turn Database ` +
+        'capture off in Edit.',
+    }),
+    capture_off: () => ({
+      text: 'Not recorded: Database capture is off. Turn it on in Edit if you want these events.',
+    }),
+    detect_off: () => ({ text: "Not recorded: Frigate's detection is off. Turn it on in Edit." }),
+    zones: () => {
+      const involved = [...(row.zones_missing ?? []), ...(row.zones_off ?? [])]
+      const direction = involved.some((zone) => DIRECTION_ZONES.includes(zone))
+        ? ' Without zone_near and zone_far, the direction comes only from the radar.'
+        : ''
+      return {
+        text: `${zonesText(row)}.${direction}`,
+        link: { href: frigateZonesHref(row), text: 'Edit its zones in Frigate' },
+      }
+    },
+    radar: () => ({
+      text:
+        `Radar ${row.camera_radar} isn't turned on in config.yml, so this camera gets no speed or direction. ` +
+        'Choose another radar in Edit.',
+    }),
+  }
+  return row.issues.map((issue) => ({
+    level: issue.level === 'error' ? 'error' : 'warning',
+    ...words[issue.code](),
+  }))
 }

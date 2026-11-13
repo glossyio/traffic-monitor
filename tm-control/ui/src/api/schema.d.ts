@@ -1070,6 +1070,22 @@ export interface components {
             /** Enabled */
             enabled: boolean;
         };
+        /**
+         * CameraIssue
+         * @description Something the Status page's camera checks report about this row, as the check rates it. The page words it.
+         */
+        CameraIssue: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "error" | "warn";
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar";
+        };
         /** CameraPoint */
         CameraPoint: {
             /** To */
@@ -1113,6 +1129,11 @@ export interface components {
             zones_missing: string[] | null;
             /** Zones Off */
             zones_off: string[] | null;
+            /**
+             * Issues
+             * @default []
+             */
+            issues: components["schemas"]["CameraIssue"][];
         };
         /** CameraSettings */
         CameraSettings: {
@@ -1251,6 +1272,11 @@ export interface components {
             unit?: string | null;
             /** Href */
             href?: string | null;
+            /**
+             * External
+             * @default false
+             */
+            external: boolean;
         };
         /** Group */
         Group: {

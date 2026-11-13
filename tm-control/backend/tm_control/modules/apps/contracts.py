@@ -11,6 +11,7 @@ import os
 import re
 import stat
 from pathlib import Path
+from urllib.parse import quote
 
 from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
@@ -51,12 +52,25 @@ def _label(name: str, frigate_camera: str) -> str:
     return name if name == frigate_camera else f"{name} ({frigate_camera})"
 
 
-def _compared(read, frigate: dict):
-    """The Cameras page's rows for config.yml's entries and Frigate's cameras (every one, enabled or not)."""
+def _compared(read, frigate: dict | None):
+    """The Cameras page's rows, with their issues, for config.yml's entries and sensors.radars and Frigate's cameras
+    (None when they aren't needed: the radar issues don't depend on Frigate)."""
     # Imported here: the cameras package imports this module (its router needs env_radar_names).
     from tm_control.modules.cameras.state import compare
 
-    return compare(camera_entries(read.data), probes.mapping(frigate.get("cameras")))
+    radars = {name: _enabled(radar) for name, radar in _sensors(read.data, "radars").items()}
+    cameras = probes.mapping(frigate.get("cameras")) if frigate is not None else None
+    return compare(camera_entries(read.data), cameras, radars)
+
+
+def _codes(row) -> set[str]:
+    return {issue.code for issue in row.issues}
+
+
+def frigate_zones_link(frigate_camera: str) -> Fix:
+    """Frigate's masks and zones settings, opened at this camera, as Frigate's own UI links there."""
+    return Fix(kind="link", href=f"/frigate/settings?page=masksAndZones&camera={quote(frigate_camera, safe='')}",
+               text="Edit its zones in Frigate", external=True)
 
 
 def cameras_in_config(context: Context) -> list[Check]:
@@ -78,27 +92,27 @@ def cameras_in_config(context: Context) -> list[Check]:
     rows = _compared(read, frigate)
     errors, warnings, gone, recorded = [], [], [], []
     for row in rows:
+        codes = _codes(row)
         if row.name is None:
-            if row.in_frigate == "on":
+            if "not_paired" in codes:
                 errors.append(f"Events from Frigate's camera {row.frigate_camera} are not recorded: no entry under "
                               "sensors.cameras points at it. Add it, or point an entry at it.")
             continue
         label = _label(row.name, row.frigate_camera)
-        if row.duplicate_of is not None:
+        if "duplicate" in codes:
             errors.append(f"{row.duplicate_of} and {row.name} both point at Frigate's camera {row.frigate_camera}; "
                           f"only {row.duplicate_of}, the first, is used. Remove {row.name} or point it at another "
                           "camera.")
-        elif row.in_frigate == "on" and not row.enabled:
-            if row.detect is not False:  # with detection off too, nothing is detected, so nothing is dropped
-                warnings.append(f"Events from {label} are not recorded: Database capture is off for it in config.yml. "
-                                "Turn it on if you want them.")
-        elif row.in_frigate == "on" and row.detect is False:
+        elif "capture_off" in codes:
+            warnings.append(f"Events from {label} are not recorded: Database capture is off for it in config.yml. "
+                            "Turn it on if you want them.")
+        elif "detect_off" in codes:
             warnings.append(f"Events from {label} are not recorded: Frigate's detection is off for it. Turn Frigate "
                             "detection on if you want them.")
-        elif row.in_frigate == "on":
-            recorded.append(label)
-        elif row.enabled:
+        elif "gone" in codes or "camera_off" in codes:
             gone.append(label)
+        elif row.in_frigate == "on" and row.enabled:
+            recorded.append(label)
     if gone:
         warnings.append(f"config.yml enables {listed(gone)}, which Frigate doesn't have as an enabled camera. Point "
                         f"{'it' if len(gone) == 1 else 'each'} at the right Frigate camera, remove it, or turn it off.")
@@ -127,14 +141,13 @@ def zones(context: Context) -> list[Check]:
     if probes.frigate_safe_mode(frigate):
         return check("unknown", "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see "
                                 "the Frigate check under Apps.")
-    problems, any_missing, off_count = [], False, 0
+    problems, cameras, any_missing, off_count = [], [], False, 0
     for row in _compared(read, frigate):
         # A duplicate's Frigate camera is its first entry's, which is checked there
-        if row.name is None or not row.enabled or row.in_frigate != "on" or row.duplicate_of:
+        if "zones" not in _codes(row):
             continue
+        cameras.append(row.frigate_camera)
         missing, off = row.zones_missing or [], row.zones_off or []
-        if not missing and not off:
-            continue
         any_missing, off_count = any_missing or bool(missing), off_count + len(off)
         parts = []
         if missing:
@@ -152,7 +165,9 @@ def zones(context: Context) -> list[Check]:
             fix = "Draw the missing zones in Frigate, named exactly as listed."
         else:
             fix = f"Turn {'it' if off_count == 1 else 'them'} back on in Frigate."
-        return check("warn", " ".join(problems) + " " + fix, CAMERAS_LINK)
+        # Zones are drawn in Frigate: one camera's link opens its zones there; the Cameras page marks each of several
+        link = frigate_zones_link(cameras[0]) if len(cameras) == 1 else CAMERAS_LINK
+        return check("warn", " ".join(problems) + " " + fix, link)
     return check("ok", f"Each enabled camera has {listed(ZONES)}, turned on.")
 
 
@@ -178,12 +193,11 @@ def radar_names(context: Context) -> list[Check]:
             errors.append(f"{listed(unknown)} under sensors.radars aren't radars' names, so Node-RED doesn't read "
                           "them.")
         errors.append(f"Name each radar {listed(names, 'or')}, as in node-red-tm.env.")
-    enabled = {name for name, radar in configured.items() if _enabled(radar)}
     unpaired = [
-        f"Camera {_label(entry.name, entry.frigate_camera)} is paired with radar {entry.camera_radar}, which isn't "
+        f"Camera {_label(row.name, row.frigate_camera)} is paired with radar {row.camera_radar}, which isn't "
         "enabled; it gets no speed or direction from a radar."
-        for entry in camera_entries(read.data)
-        if entry.enabled and entry.camera_radar and entry.camera_radar not in enabled
+        for row in _compared(read, None)
+        if "radar" in _codes(row)
     ]
     if unpaired:
         unpaired.append("Enable that radar under sensors.radars, or pair the camera with an enabled one.")

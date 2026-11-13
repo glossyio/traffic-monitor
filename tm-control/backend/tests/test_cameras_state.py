@@ -109,3 +109,75 @@ def test_detect_is_whether_frigate_detects_objects_on_the_camera_now():
 def test_detect_is_unknown_while_frigate_gives_no_cameras():
     [row] = compare([entry("main_st")], None)
     assert row.detect is None
+
+
+# Each row's issues: the per-camera judgements of the config.cameras, config.zones, and config.radars checks
+
+
+def issues(row):
+    return [(issue.level, issue.code) for issue in row.issues]
+
+
+ON = {"enabled": True, "detect": {"enabled": True}, "zones": ZONES}
+
+
+def test_a_row_in_step_has_no_issues():
+    [row] = compare([entry("main_st", radar="R0")], {"main_st": ON}, {"R0": True})
+    assert issues(row) == []
+
+
+def test_a_frigate_camera_no_entry_points_at_is_an_error():
+    rows = compare([entry("main_st")], {"main_st": ON, "oak_ave_tele": ON})
+    assert issues(rows[1]) == [("error", "not_paired")]
+
+
+def test_a_duplicate_is_an_error_and_nothing_else():
+    rows = compare([entry("a_1", "main_st"), entry("b_2", "main_st")], {"main_st": ON | {"zones": {}}})
+    assert issues(rows[1]) == [("error", "duplicate")]
+    assert issues(rows[0]) == [("warn", "zones")]
+
+
+def test_capture_off_is_a_warning_unless_detection_is_off_too():
+    [row] = compare([entry("main_st", enabled=False)], {"main_st": ON})
+    assert issues(row) == [("warn", "capture_off")]
+    [row] = compare([entry("main_st", enabled=False)], {"main_st": ON | {"detect": {"enabled": False}}})
+    assert issues(row) == []
+
+
+def test_detection_off_while_capturing_is_a_warning():
+    [row] = compare([entry("main_st")], {"main_st": ON | {"detect": {"enabled": False}}})
+    assert issues(row) == [("warn", "detect_off")]
+
+
+def test_an_enabled_entry_whose_camera_is_gone_or_off_is_a_warning():
+    [row] = compare([entry("main_st")], {})
+    assert issues(row) == [("warn", "gone")]
+    [row] = compare([entry("main_st")], {"main_st": ON | {"enabled": False}})
+    assert issues(row) == [("warn", "camera_off")]
+    [row] = compare([entry("main_st", enabled=False)], {})
+    assert issues(row) == []  # an entry that is off and gone records nothing either way
+
+
+def test_zones_missing_or_off_are_one_warning_for_a_captured_camera():
+    zones = {"zone_capture": {}, "zone_near": {"enabled": False}, "zone_far": {}}
+    [row] = compare([entry("main_st")], {"main_st": ON | {"zones": zones}})
+    assert issues(row) == [("warn", "zones")]
+    [row] = compare([entry("main_st", enabled=False)], {"main_st": ON | {"zones": zones}})
+    assert issues(row) == [("warn", "capture_off")]  # zones of a camera that isn't captured don't matter
+
+
+def test_a_radar_that_isnt_enabled_is_a_warning_even_while_frigate_is_down():
+    entries = [entry("a_1", radar="R0"), entry("b_2", radar="R1"), entry("c_3", radar="R9"), entry("d_4", enabled=False,
+                                                                                                    radar="R1")]
+    rows = compare(entries, None, {"R0": True, "R1": False})
+    assert [issues(row) for row in rows] == [[], [("warn", "radar")], [("warn", "radar")], []]
+
+
+def test_radars_unknown_means_no_radar_issue():
+    [row] = compare([entry("main_st", radar="R9")], {"main_st": ON})
+    assert issues(row) == []
+
+
+def test_frigate_down_gives_no_frigate_issue():
+    [row] = compare([entry("main_st")], None)
+    assert issues(row) == []

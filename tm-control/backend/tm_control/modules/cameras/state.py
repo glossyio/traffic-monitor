@@ -20,6 +20,22 @@ from tm_control.modules.cameras.names import is_neutral
 from tm_control.modules.location.config import CameraEntry
 
 
+class CameraIssue(BaseModel):
+    """Something the Status page's camera checks report about this row, as the check rates it. The page words it."""
+
+    level: Literal["error", "warn"]
+    code: Literal[
+        "not_paired",  # a Frigate camera that is on and that no entry points at: its events are dropped
+        "duplicate",  # an entry pointing at the same Frigate camera as an earlier one: it is unused
+        "gone",  # an enabled entry whose Frigate camera Frigate doesn't have
+        "camera_off",  # an enabled entry whose Frigate camera is turned off there
+        "capture_off",  # Frigate detects objects on the camera, and the entry's Database capture is off
+        "detect_off",  # the entry captures, and Frigate's detection is off for the camera
+        "zones",  # a captured camera lacks one of ZONES in Frigate, or has it turned off (zones_missing, zones_off)
+        "radar",  # a captured camera's camera_radar isn't an enabled radar under sensors.radars
+    ]
+
+
 class CameraRow(BaseModel):
     name: str | None  # the sensors.cameras key; None for a Frigate camera no entry points at
     frigate_camera: str
@@ -32,6 +48,7 @@ class CameraRow(BaseModel):
     plate_recognizer: bool | None
     zones_missing: list[str] | None  # of ZONES; None when the camera isn't in Frigate
     zones_off: list[str] | None  # of ZONES, there but turned off (Frigate 0.18's zone enabled); None as zones_missing
+    issues: list[CameraIssue] = []  # what the camera checks report about this row; none while it is in step
 
 
 class CameraRadar(BaseModel):
@@ -74,10 +91,38 @@ def _detect(camera: dict | None) -> bool | None:
     return enabled if isinstance(enabled, bool) else None
 
 
-def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None) -> list[CameraRow]:
+def _issues(row: CameraRow, radars: dict[str, bool] | None) -> list[CameraIssue]:
+    """The row's problems, by the rules of the config.cameras, config.zones, and config.radars checks, which read them
+    from here so that the page and the Status page can't disagree."""
+
+    def issue(level, code):
+        return CameraIssue(level=level, code=code)
+
+    if row.name is None:
+        return [issue("error", "not_paired")] if row.in_frigate == "on" else []
+    found = []
+    if row.duplicate_of is not None:
+        found.append(issue("error", "duplicate"))
+    elif row.in_frigate == "on" and not row.enabled:
+        if row.detect is not False:  # with detection off too, nothing is detected, so nothing is dropped
+            found.append(issue("warn", "capture_off"))
+    elif row.in_frigate == "on" and row.detect is False:
+        found.append(issue("warn", "detect_off"))
+    elif row.enabled and row.in_frigate in ("absent", "off"):
+        found.append(issue("warn", "gone" if row.in_frigate == "absent" else "camera_off"))
+    if row.enabled and row.in_frigate == "on" and row.duplicate_of is None and (row.zones_missing or row.zones_off):
+        found.append(issue("warn", "zones"))
+    if row.enabled and row.camera_radar and radars is not None and radars.get(row.camera_radar) is not True:
+        found.append(issue("warn", "radar"))
+    return found
+
+
+def compare(
+    entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None, radars: dict[str, bool] | None = None
+) -> list[CameraRow]:
     """A row for each entry in file order, then one for each Frigate camera that is on and that no entry points at, in
     Frigate's order. frigate_cameras is Frigate's config `cameras` by name, or None when Frigate gave none to
-    compare."""
+    compare. radars is sensors.radars' enabled by name; None leaves out the radar issue."""
     known = frigate_cameras is not None
     cameras = {str(name): probes.mapping(camera) for name, camera in (frigate_cameras or {}).items()}
     rows, first_for = [], {}
@@ -97,6 +142,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
             zones_off=_zones_off(camera) if camera is not None else None,
         ))
         first_for.setdefault(entry.frigate_camera, entry.name)
+        rows[-1].issues = _issues(rows[-1], radars)
     for name, camera in cameras.items():
         if name not in first_for and _in_frigate(camera) == "on":
             rows.append(CameraRow(
@@ -112,6 +158,7 @@ def compare(entries: list[CameraEntry], frigate_cameras: dict[str, dict] | None)
                 zones_missing=_zones_missing(camera),
                 zones_off=_zones_off(camera),
             ))
+            rows[-1].issues = _issues(rows[-1], radars)
     return rows
 
 

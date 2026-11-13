@@ -31,7 +31,8 @@ class Fix(BaseModel):
     kind: Literal["restart", "rescan", "link", "hint"]
     text: str
     unit: str | None = None  # restart: the systemd unit
-    href: str | None = None  # link: a path in tm-control's UI, such as /time
+    href: str | None = None  # link: a path in tm-control's UI, such as /time, or another app's (external)
+    external: bool = False  # link: href is another app's page behind the proxy, such as Frigate's, not tm-control's
 
 
 class Check(BaseModel):

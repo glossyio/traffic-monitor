@@ -222,7 +222,7 @@ def test_missing_zones_name_the_direction_problem(apps):
     apps.edit_json(FRIGATE_CONFIG, drop)
     check = config_group(apps)["config.zones"]
     assert check.status == "warn"
-    assert check.fix == contracts.CAMERAS_LINK
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
     assert "zone_near" in check.detail and "zone_far" in check.detail and "picam_h265" in check.detail
     assert "without zone_near and zone_far, events get a direction only from the radar (#243)" in check.detail
 
@@ -234,8 +234,33 @@ def test_a_zone_turned_off_in_frigate_is_a_warning(apps):
     ))
     check = config_group(apps)["config.zones"]
     assert check.status == "warn"
-    assert check.fix == contracts.CAMERAS_LINK
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
     assert check.detail == "Camera picam_h265 has zone_capture turned off in Frigate. Turn it back on in Frigate."
+
+
+def test_zones_of_one_camera_link_to_its_zones_in_frigate(apps):
+    """Zones are drawn in Frigate: the link opens Frigate's masks and zones settings at that camera."""
+    point_at(apps, NEUTRAL, "picam_h265")
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].pop("zone_radar"))
+    check = config_group(apps)["config.zones"]
+    assert check.fix == Fix(
+        kind="link", href="/frigate/settings?page=masksAndZones&camera=picam_h265", text="Edit its zones in Frigate",
+        external=True,
+    )
+    assert check.fix.external is True  # another app's page, not one of tm-control's
+
+
+def test_zones_of_several_cameras_link_to_the_cameras_page(apps):
+    def edit(config):
+        config["cameras"]["oak_ave_tele"] = dict(config["cameras"]["picam_h265"], zones={})
+        config["cameras"]["picam_h265"]["zones"].pop("zone_radar")
+
+    apps.edit_json(FRIGATE_CONFIG, edit)
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(
+        {NEUTRAL: {"frigate_camera": "oak_ave_tele", "enabled": True}}
+    ))
+    check = config_group(apps)["config.zones"]
+    assert check.status == "warn" and check.fix == contracts.CAMERAS_LINK
 
 
 def test_missing_and_turned_off_zones_are_named_together(apps):
@@ -259,7 +284,7 @@ def test_zones_are_checked_through_frigate_camera(apps):
     apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].pop("zone_radar"))
     check = config_group(apps)["config.zones"]
     assert check.status == "warn"
-    assert check.fix == contracts.CAMERAS_LINK
+    assert check.fix == contracts.frigate_zones_link("picam_h265")
     assert f"Camera {NEUTRAL} (picam_h265) has no zone_radar in Frigate" in check.detail
 
 

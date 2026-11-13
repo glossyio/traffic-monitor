@@ -14,7 +14,7 @@ import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import CameraEdit, { type CameraSettings } from './CameraEdit.vue'
-import { pointChoices, rowState, zonesText, type CameraRow } from './rows'
+import { issueBoxes, pointChoices, rowState, zonesText, type CameraRow } from './rows'
 
 type CamerasState = components['schemas']['CamerasState']
 
@@ -56,19 +56,17 @@ function chipOf(row: CameraRow) {
   return rowState(row) === 'off' ? OFF_CHIP : undefined
 }
 
-// What is out of step on a row, in words; empty for a row that is in step
-function sentence(row: CameraRow) {
-  switch (rowState(row)) {
-    case 'new':
-      return `${row.frigate_camera} is new in Frigate and isn't recorded.`
-    case 'gone':
-      return `Frigate no longer has ${row.frigate_camera}.`
-    case 'duplicate':
-      return `${row.duplicate_of} already records this Frigate camera.`
-    default:
-      return ''
-  }
-}
+// The cameras the Status page's checks report, counted above the list; each row's boxes say why
+const attention = computed(() => {
+  const rows = (state.value?.rows ?? []).filter((row) => row.issues.length > 0)
+  if (rows.length === 0) return null
+  const error = rows.some((row) => row.issues.some((issue) => issue.level === 'error'))
+  const text =
+    rows.length === 1
+      ? '1 camera needs attention. Each marked row says why.'
+      : `${rows.length} cameras need attention. Each marked row says why.`
+  return { type: error ? ('error' as const) : ('warning' as const), text }
+})
 
 // A row's two switches in words, Frigate's and the database's, then an entry's radar and plates. Frigate's is left out
 // while it can't be read (Frigate down, or the camera gone); a Frigate camera with no entry isn't captured.
@@ -82,9 +80,10 @@ function settings(row: CameraRow) {
   return words
 }
 
-// Whether the row says anything about Frigate's side
+// The row's zones, unless Frigate can't be compared or a box already says what is wrong with them
 function frigateLine(row: CameraRow) {
-  return rowState(row) === 'unknown' ? '' : zonesText(row)
+  if (rowState(row) === 'unknown' || row.issues.some((issue) => issue.code === 'zones')) return ''
+  return zonesText(row)
 }
 
 // An action that sends a request needs Frigate's cameras to compare, so it is offered only while Frigate answers
@@ -251,6 +250,9 @@ async function save(settings: CameraSettings, detect: boolean | null) {
       </p>
 
       <v-alert v-if="UNAVAILABLE[state.frigate]" type="warning" class="mb-4">{{ UNAVAILABLE[state.frigate] }}</v-alert>
+      <v-alert v-if="attention" :type="attention.type" variant="tonal" class="mb-4" data-summary>{{
+        attention.text
+      }}</v-alert>
       <v-alert v-if="notice" type="warning" closable class="mb-4" @click:close="notice = ''">{{ notice }}</v-alert>
 
       <v-list class="border rounded py-0" bg-color="background">
@@ -267,7 +269,18 @@ async function save(settings: CameraSettings, detect: boolean | null) {
             <div class="d-flex flex-wrap text-body-2 mt-1">
               <span v-for="words in settings(row)" :key="words" class="me-4">{{ words }}</span>
             </div>
-            <div v-if="sentence(row)" class="text-body-2 mt-1">{{ sentence(row) }}</div>
+            <v-alert
+              v-for="box in issueBoxes(row)"
+              :key="box.text"
+              :type="box.level"
+              variant="tonal"
+              density="compact"
+              class="mt-2 text-body-2"
+              data-issue
+            >
+              {{ box.text }}
+              <a v-if="box.link" :href="box.link.href" class="d-inline-block">{{ box.link.text }}</a>
+            </v-alert>
             <div v-if="frigateLine(row)" class="text-body-2 text-secondary mt-1">{{ frigateLine(row) }}</div>
             <div class="d-flex flex-wrap ga-2 mt-2">
               <v-btn v-if="row.name !== null" variant="outlined" color="primary" min-height="44" @click="openEdit(row)">

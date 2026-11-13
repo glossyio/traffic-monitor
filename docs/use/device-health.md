@@ -47,7 +47,7 @@ A check that isn't passing offers one of these:
 
 ### The camera checks
 
-The **Cameras in config.yml** check compares Frigate's cameras with the entries under `sensors.cameras` in `config.yml`. An entry points at the Frigate camera named by its `frigate_camera` setting, or, when it has none, at the camera with the same name as the entry. The control app's [Cameras page](cameras.md) keeps the two in step; each problem below links to it.
+The **Cameras in config.yml** check compares Frigate's cameras with the entries under `sensors.cameras` in `config.yml`. An entry points at the Frigate camera named by its `frigate_camera` setting, or, when it has none, at the camera with the same name as the entry. The control app's [Cameras page](cameras.md) keeps the two in step; each problem below links to it, and the page marks the camera each one is about.
 
 | Result | Meaning |
 |---|---|
@@ -56,7 +56,7 @@ The **Cameras in config.yml** check compares Frigate's cameras with the entries 
 | Passed | Every camera that is on in Frigate has an enabled entry. |
 | Couldn't run | Frigate isn't answering or is in safe mode, so it has no cameras to compare, or `config.yml` can't be read. |
 
-The check names an entry by its name in `config.yml` and, when that differs, Frigate's name for the camera in brackets. The **Zones** check looks at the same pairs: it warns when a camera that is on in Frigate and enabled in `config.yml` lacks one of the zones the flows expect, or has one turned off in Frigate (in its configuration or from its live view), because an object never enters a zone that is off. The **Radar names** check warns when a camera is paired with a radar that is missing from `sensors.radars` or turned off. The camera is still recorded, but it gets no speed or direction from a radar. A radar named differently from the `node-red-tm.env` variables is a problem, and has no link, because you fix that name in `config.yml`.
+The check names an entry by its name in `config.yml` and, when that differs, Frigate's name for the camera in brackets. The **Zones** check looks at the same pairs: it warns when a camera that is on in Frigate and enabled in `config.yml` lacks one of the zones the flows expect, or has one turned off in Frigate (in its configuration or from its live view), because an object never enters a zone that is off. Zones are drawn in Frigate, so when one camera has the problem, its link, **Edit its zones in Frigate**, opens Frigate's masks and zones settings at that camera; with several, it opens the Cameras page, which links each one. The **Radar names** check warns when a camera is paired with a radar that is missing from `sensors.radars` or turned off. The camera is still recorded, but it gets no speed or direction from a radar. A radar named differently from the `node-red-tm.env` variables is a problem, and has no link, because you fix that name in `config.yml`.
 
 The control app can't restart itself. If it stops, see [If the control app is down](control-app.md#if-the-control-app-is-down).
 

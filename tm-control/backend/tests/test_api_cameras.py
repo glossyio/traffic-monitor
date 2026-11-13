@@ -68,6 +68,25 @@ def test_get_lists_the_seeded_camera_and_the_fake_frigates_new_one(admin):
     assert second["neutral"] is None and second["enabled"] is None
 
 
+def test_rows_carry_the_checks_issues(admin):
+    """The page marks what the Status page reports: the fake Frigate's oak_ave_tele has no entry (an error), and a
+    camera paired with a radar that config.yml turns off gets no speed (a warning)."""
+    path = admin.app.state.config_path
+    text = path.read_text()
+    assert text.count("enabled: true") >= 2
+    data = YAML(typ="safe", pure=True).load(text)
+    assert data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
+    first, second = cameras(admin)["rows"]
+    assert first["issues"] == [] and second["issues"] == [{"level": "error", "code": "not_paired"}]
+    # Turn the radar off by hand, as an operator would
+    lines = text.splitlines(keepends=True)
+    at = next(i for i, line in enumerate(lines) if line.strip() == "TM_RADAR_SERIAL_PORT_00:")
+    lines[at + 1] = lines[at + 1].replace("enabled: true", "enabled: false")
+    path.write_text("".join(lines))
+    first = cameras(admin)["rows"][0]
+    assert first["issues"] == [{"level": "warn", "code": "radar"}]
+
+
 def test_radars_carry_config_and_port_state(admin, monkeypatch):
     nodered = admin.app.state.nodered
     monkeypatch.setattr(nodered, "report", lambda: {"radars": {"TM_RADAR_SERIAL_PORT_00": {"port_open": True},

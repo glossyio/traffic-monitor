@@ -70,6 +70,37 @@ describe('Cameras page', () => {
     expect(lines[1]).toContain('Database capture: off')
   })
 
+  it('marks each row the Status page reports in its color, and says how many above the list', async () => {
+    const detectOff = cameraRow({ detect: false, issues: [{ level: 'warn', code: 'detect_off' }] })
+    const { wrapper } = await openPage(camerasState({ rows: [detectOff, TELE, newRow('main_st')] }))
+    const summary = wrapper.find('[data-summary]')
+    expect(summary.text()).toBe('2 cameras need attention. Each marked row says why.')
+    expect(summary.classes()).toContain('text-error')
+    const rows = rowItems(wrapper)
+    expect(rows[0].find('[data-issue]').classes()).toContain('text-warning')
+    expect(rows[0].find('[data-issue]').text()).toBe("Not recorded: Frigate's detection is off. Turn it on in Edit.")
+    expect(rows[1].find('[data-issue]').exists()).toBe(false)
+    expect(rows[2].find('[data-issue]').classes()).toContain('text-error')
+  })
+
+  it("says one camera in the summary, in the warning color, and links a zones box to Frigate's zones", async () => {
+    const zones = cameraRow({ zones_missing: ['zone_far'], issues: [{ level: 'warn', code: 'zones' }] })
+    const { wrapper } = await openPage(camerasState({ rows: [zones] }))
+    const summary = wrapper.find('[data-summary]')
+    expect(summary.text()).toBe('1 camera needs attention. Each marked row says why.')
+    expect(summary.classes()).toContain('text-warning')
+    const link = wrapper.find('[data-issue] a')
+    expect(link.text()).toBe('Edit its zones in Frigate')
+    expect(link.attributes('href')).toBe('/frigate/settings?page=masksAndZones&camera=oak_ave_wide')
+    expect(wrapper.text().split('Missing in Frigate: zone_far').length - 1).toBe(1) // said once, in the box
+  })
+
+  it('has no summary when nothing needs attention', async () => {
+    const { wrapper } = await openPage()
+    expect(wrapper.find('[data-summary]').exists()).toBe(false)
+    expect(wrapper.find('[data-issue]').exists()).toBe(false)
+  })
+
   it('shows the plates setting only when the add-on is installed', async () => {
     const without = await openPage()
     expect(without.wrapper.text()).not.toContain('Plates')
@@ -86,8 +117,12 @@ describe('Cameras page', () => {
     const { wrapper } = await openPage(
       camerasState({
         rows: [
-          cameraRow({ in_frigate: 'absent', zones_missing: null }),
-          cameraRow({ name: 'camera_2_9d41e0', duplicate_of: 'camera_1_3fa9c2' }),
+          cameraRow({ in_frigate: 'absent', zones_missing: null, issues: [{ level: 'warn', code: 'gone' }] }),
+          cameraRow({
+            name: 'camera_2_9d41e0',
+            duplicate_of: 'camera_1_3fa9c2',
+            issues: [{ level: 'error', code: 'duplicate' }],
+          }),
         ],
       }),
     )
@@ -217,7 +252,7 @@ describe('Cameras page', () => {
   })
 
   describe('actions', () => {
-    const GONE = cameraRow({ in_frigate: 'absent', zones_missing: null })
+    const GONE = cameraRow({ in_frigate: 'absent', zones_missing: null, issues: [{ level: 'warn', code: 'gone' }] })
     const FRESH = newRow()
     const POINT = 'POST /api/v1/cameras/camera_1_3fa9c2/frigate-camera'
     const NEUTRAL = 'POST /api/v1/cameras/main_st/neutral-name'
@@ -323,7 +358,11 @@ describe('Cameras page', () => {
       ['gone', GONE, 'Frigate no longer has oak_ave_wide.'],
       [
         'duplicate',
-        cameraRow({ name: 'camera_2_9d41e0', duplicate_of: 'camera_1_3fa9c2' }),
+        cameraRow({
+          name: 'camera_2_9d41e0',
+          duplicate_of: 'camera_1_3fa9c2',
+          issues: [{ level: 'error', code: 'duplicate' }],
+        }),
         'camera_1_3fa9c2 already records this Frigate camera.',
       ],
     ])('removes a %s entry after a confirm, in the error color', async (_kind, row, words) => {
