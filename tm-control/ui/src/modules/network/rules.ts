@@ -15,3 +15,13 @@ export function nameRule(value: string): true | string {
 export function passwordRule(value: string): true | string {
   return PASSWORD_PATTERN.test(value) ? true : PASSWORD_MESSAGE
 }
+
+// A Wi-Fi network's password is what the network says it is, so a space is allowed anywhere (the hotspot's is not).
+// The same rule as the API's (NETWORK_PASSWORD_PATTERN in modules/network/router.py), and its message.
+export const WIFI_PASSWORD_MESSAGE = 'A Wi-Fi password is 8 to 63 letters, digits, and symbols.'
+
+const WIFI_PASSWORD_PATTERN = /^[\x20-\x7e]{8,63}$/
+
+export function wifiPasswordRule(value: string): true | string {
+  return WIFI_PASSWORD_PATTERN.test(value) ? true : WIFI_PASSWORD_MESSAGE
+}

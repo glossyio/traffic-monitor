@@ -1,11 +1,13 @@
 <!--
-  The home page: the device card, with the Status page's verdict as a link to it, then a tile for each app the device
-  has. Viewers get only the apps everyone may use; the API leaves the admin-only ones out for them.
+  The home page: a line about a Wi-Fi join in progress, for an admin, then the device card, with the Status page's
+  verdict as a link to it, then a tile for each app the device has. Viewers get only the apps everyone may use; the
+  API leaves the admin-only ones out for them.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { Device, DeviceApp } from '../../api/types'
+import JoinBanner from '../../components/JoinBanner.vue'
 import StatusCard from '../../components/StatusCard.vue'
 import { MARKS, verdict } from '../../components/status'
 import { appDetails } from './apps'
@@ -83,6 +85,7 @@ onMounted(() => {
     <v-progress-linear v-else-if="!device" indeterminate color="primary" />
 
     <template v-if="device">
+      <JoinBanner />
       <StatusCard :title="device.hostname" :subtitle="`Traffic Monitor ${device.tm_version}`" :items="facts">
         <div v-if="health" class="d-flex align-center ga-2 mt-4">
           <v-icon :icon="MARKS[health.status].icon" :color="MARKS[health.status].color" />

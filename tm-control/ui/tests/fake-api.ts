@@ -190,3 +190,48 @@ export const NETWORK_STATE: NetworkState = {
 export function networkState(changes: Partial<NetworkState>): NetworkState {
   return { ...NETWORK_STATE, ...changes }
 }
+
+// GET /network/wifi: two saved networks (Home in range, Depot not) and five nearby, strongest first, scanned a minute
+// ago. The password-only rule of Join is the Join dialog's; this table only has what the section lists.
+type WifiNetworks = components['schemas']['WifiNetworks']
+export const WIFI_NETWORKS: WifiNetworks = {
+  readable: true,
+  radio: 'on',
+  saved: [
+    { uuid: 'u-home', name: 'HomeNet', in_use: false, automatic: true, hidden: false, in_range: true, could_not_join: false },
+    { uuid: 'u-depot', name: 'Depot', in_use: false, automatic: true, hidden: false, in_range: false, could_not_join: false },
+  ],
+  nearby: [
+    { name: 'HomeNet', signal: 82, security: 'password', saved: true, in_use: false },
+    { name: 'CafeGuest', signal: 64, security: 'open', saved: false, in_use: false },
+    { name: 'OfficeCorp', signal: 55, security: 'enterprise', saved: false, in_use: false },
+    { name: 'Neighbour', signal: 41, security: 'password', saved: false, in_use: false },
+    { name: 'NewerRouter', signal: 30, security: 'wpa3', saved: false, in_use: false },
+  ],
+  scanned_seconds_ago: 90,
+  join: null,
+}
+
+export function wifiNetworks(changes: Partial<WifiNetworks>): WifiNetworks {
+  return { ...WIFI_NETWORKS, ...changes }
+}
+
+// GET /network/join: a join whose test passed, 3 minutes 12 seconds before the unit switches. The unit was on its
+// hotspot (profile tm-hotspot) when it started.
+type JoinState = components['schemas']['JoinState']
+export const JOIN_COUNTDOWN: JoinState = {
+  stage: 'countdown',
+  network: 'Neighbour',
+  saved: false,
+  before: 'tm-hotspot',
+  joined: true,
+  reason: null,
+  address: '192.168.1.80',
+  internet: 'reachable',
+  seconds_left: 192,
+  finished_at: null,
+}
+
+export function joinState(changes: Partial<JoinState>): JoinState {
+  return { ...JOIN_COUNTDOWN, ...changes }
+}

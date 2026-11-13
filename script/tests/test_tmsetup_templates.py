@@ -851,7 +851,7 @@ def test_tm_control_runtime_directory_is_removed_when_it_stops():
     assert not any(line.startswith("RuntimeDirectoryPreserve=") for line in tm_control_unit())
 
 
-JOBS = ["system-password", "set-secret", "network"]
+JOBS = ["system-password", "set-secret", "network", "network-join"]
 
 
 def tm_job_unit(job):
@@ -886,12 +886,36 @@ def test_network_unit_names_the_secrets_dir_and_waits_for_networkmanager():
     assert "After=NetworkManager.service" in lines[lines.index("[Unit]"):lines.index("[Service]")]
 
 
-def test_the_network_job_shares_the_retry_units_runtime_directory():
-    """The job and tm-network-retry take one lock in /run/traffic-monitor; systemd must keep the directory between runs."""
+def test_the_network_jobs_share_the_retry_units_runtime_directory():
+    """The jobs and tm-network-retry take one lock in /run/traffic-monitor and keep their files there; systemd must
+    keep the directory between runs."""
     retry = retry_unit("tm-network-retry.service.j2")
-    for lines in (tm_job_unit("network").splitlines(), retry):
+    for lines in (tm_job_unit("network").splitlines(), tm_job_unit("network-join").splitlines(), retry):
         assert "RuntimeDirectory=traffic-monitor" in lines
         assert "RuntimeDirectoryPreserve=yes" in lines
+
+
+def test_the_join_job_waits_for_networkmanager():
+    lines = tm_job_unit("network-join").splitlines()
+    assert "After=NetworkManager.service" in lines[lines.index("[Unit]"):lines.index("[Service]")]
+
+
+def test_the_join_job_has_a_time_limit_longer_than_its_countdown():
+    """A oneshot has no limit unless it is given one. A run is 10 + 60 + 90 + 45 + 300 + 75 + 45 s at its longest."""
+    lines = tm_job_unit("network-join").splitlines()
+    limit = next(line for line in lines if line.startswith("TimeoutStartSec="))
+    assert int(limit.split("=", 1)[1]) >= 700
+
+
+def test_the_join_job_gets_time_to_roll_back_when_stopped():
+    """A stop sends SIGTERM and the job then rolls back, which takes up to about 45 s more; if systemd still kills it,
+    NetworkManager's checkpoint rolls back by itself."""
+    lines = tm_job_unit("network-join").splitlines()
+    assert "TimeoutStopSec=120" in lines
+
+
+def test_the_join_unit_says_a_killed_run_is_undone_by_the_checkpoint():
+    assert "checkpoint" in tm_job_unit("network-join").split("[Unit]")[0]
 
 
 def test_set_secret_unit_names_the_secrets_dir():
@@ -926,6 +950,7 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert '"tm-job-system-password.service"' in rules
     assert '"tm-job-set-secret.service"' in rules
     assert '"tm-job-network.service"' in rules
+    assert '"tm-job-network-join.service"' in rules
     assert '["start", "stop", "restart"]' in rules
     assert rules.count("polkit.Result.YES") == 2
     # The code-owner test comes first, so neither YES is reached for anyone else
@@ -947,7 +972,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
         "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
-        "tm-job-network.service", "tm-network-retry.service",
+        "tm-job-network.service", "tm-job-network-join.service", "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS

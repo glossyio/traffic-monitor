@@ -129,6 +129,7 @@ tmsetup_tm_control_polkit:
     - tm-job-system-password.service
     - tm-job-set-secret.service
     - tm-job-network.service
+    - tm-job-network-join.service
     - tm-network-retry.service
   unit_verbs:
     - start

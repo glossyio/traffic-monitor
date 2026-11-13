@@ -3,8 +3,9 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
-import { ADMIN, NETWORK_STATE, json, networkState, signedIn, status } from './fake-api'
-import { clickInDialog, dialogButtons, dialogField, dialogText, field, mountApp, typeInto } from './mount'
+import HotspotSettings from '../src/modules/network/HotspotSettings.vue'
+import { ADMIN, NETWORK_STATE, WIFI_NETWORKS, json, networkState, signedIn, status } from './fake-api'
+import { clickInDialog, dialogButtons, dialogField, dialogText, field, mountAlone, mountApp, typeInto } from './mount'
 
 type Job = components['schemas']['Job']
 type HotspotState = components['schemas']['HotspotState']
@@ -40,6 +41,7 @@ function job(status: Job['status'], log: string[] = []): Job {
 async function open(state = NETWORK_STATE, answers: Record<string, unknown> = {}, onHotspot = false) {
   const api = signedIn(ADMIN, {
     [NETWORK]: state,
+    'GET /api/v1/network/wifi': WIFI_NETWORKS,
     [CHANGE]: json(202, { id: 'job1' }),
     [JOB]: json(200, job('succeeded')),
     ...(onHotspot ? { 'GET /api/v1/setup/status': status(true, true, { local_name: 'tm-ab12.local' }) } : {}),
@@ -406,5 +408,33 @@ describe('the hotspot settings', () => {
     const { wrapper } = await open(networkState({ hotspot: null }))
     expect(wrapper.text()).toContain("The hotspot isn't set up on this unit.")
     expect(wrapper.findAll('input')).toEqual([])
+  })
+
+  it('disables its controls and says why while locked', () => {
+    const props = { hotspot: NETWORK_STATE.hotspot, localName: 'tm-ab12.local', onHotspot: false }
+    const wrapper = mountAlone(HotspotSettings, { ...props, locked: true })
+    expect(wrapper.text()).toContain('Finish or cancel the Wi-Fi join first.')
+    const controls = [...wrapper.findAll('button'), ...wrapper.findAll('input')].filter(
+      (control) => !control.attributes('aria-label')?.startsWith('Copy '),
+    )
+    expect(controls.length).toBeGreaterThan(4)
+    for (const control of controls) expect(control.attributes('disabled'), control.html()).toBeDefined()
+
+    document.body.replaceChildren()
+    const free = mountAlone(HotspotSettings, { ...props, locked: false })
+    expect(free.text()).not.toContain('Finish or cancel the Wi-Fi join first.')
+    expect(free.find('button[aria-label="Change the hotspot name"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('says to wait when only another section is working', () => {
+    const wrapper = mountAlone(HotspotSettings, {
+      hotspot: NETWORK_STATE.hotspot,
+      localName: 'tm-ab12.local',
+      onHotspot: false,
+      locked: true,
+      lockedByJob: true,
+    })
+    expect(wrapper.text()).toContain('Wait for the Wi-Fi change to finish.')
+    expect(wrapper.text()).not.toContain('Finish or cancel the Wi-Fi join first.')
   })
 })

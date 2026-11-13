@@ -5,7 +5,9 @@
   every warning says so before the change, and a request that fails while the job runs is not an error here: it is
   the page losing the unit, and the page says how to get back. One change at a time: every control is disabled while
   a job runs. The password is fetched from the device each time Show is tapped and dropped on Hide, never kept.
-  Emits `changed` once a job has finished, so the page can load the state again.
+  While `locked` (a Wi-Fi join is pending, or the Wi-Fi networks section runs a job) every control is disabled and
+  the page says why. Emits `busy` when a job it started begins and ends, and `changed` once a job has finished, so the
+  page can load the state again.
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -21,8 +23,14 @@ import { nameRule, passwordRule } from './rules'
 type HotspotState = components['schemas']['HotspotState']
 type HotspotChange = components['schemas']['HotspotChange']
 
-const props = defineProps<{ hotspot: HotspotState; localName: string; onHotspot: boolean }>()
-const emit = defineEmits<{ changed: [] }>()
+const props = defineProps<{
+  hotspot: HotspotState
+  localName: string
+  onHotspot: boolean
+  locked: boolean // a join is pending or another section runs a job: nothing here may change
+  lockedByJob?: boolean // ...and it is only another section's job, not the join
+}>()
+const emit = defineEmits<{ changed: []; busy: [running: boolean]; notice: [notice: Notice | null] }>()
 
 // The words for the warnings. The turn-off and hiding sentences are the design's.
 const RESTART = 'The hotspot restarts, and phones on it are disconnected. Each phone must rejoin by hand.'
@@ -46,13 +54,16 @@ const passwordWarning = computed(() => (restart.value ? `${WRITE_DOWN}\n${restar
 type Kind = 'name' | 'password' | 'hidden' | 'on' | 'off'
 const running = ref<Kind | null>(null)
 const busy = computed(() => running.value !== null)
+const disabled = computed(() => busy.value || props.locked)
+watch(busy, (running) => emit('busy', running))
 
-interface Notice {
+export interface Notice {
   type: 'success' | 'info' | 'warning' | 'error'
   text: string
   log?: string[]
 }
 const notice = ref<Notice | null>(null)
+watch(notice, (now) => emit('notice', now)) // so the page can open this section when there is something to read
 
 // The password, only while it is shown: undefined while hidden, '' when the device has none
 const revealed = ref<string | undefined>(undefined)
@@ -218,7 +229,7 @@ function confirmed() {
       color="primary"
       hide-details
       v-model="enabledSwitch"
-      :disabled="busy"
+      :disabled="disabled"
       class="mb-2"
       @update:model-value="toggleEnabled"
     />
@@ -230,7 +241,7 @@ function confirmed() {
           color="primary"
           size="large"
           aria-label="Change the hotspot name"
-          :disabled="busy"
+          :disabled="disabled"
           @click="nameOpen = true"
         >
           Change
@@ -253,7 +264,7 @@ function confirmed() {
             size="large"
             aria-label="Show the hotspot password"
             :loading="asking"
-            :disabled="busy || asking"
+            :disabled="disabled || asking"
             @click="show"
           >
             Show
@@ -273,7 +284,7 @@ function confirmed() {
             color="primary"
             size="large"
             aria-label="Change the hotspot password"
-            :disabled="busy"
+            :disabled="disabled"
             @click="passwordOpen = true"
           >
             Change
@@ -285,7 +296,7 @@ function confirmed() {
           color="primary"
           size="large"
           aria-label="Set a password for the hotspot"
-          :disabled="busy"
+          :disabled="disabled"
           @click="passwordOpen = true"
         >
           Set a password
@@ -298,7 +309,7 @@ function confirmed() {
       color="primary"
       hide-details
       v-model="hiddenSwitch"
-      :disabled="busy"
+      :disabled="disabled"
       class="mb-4"
       @update:model-value="toggleHidden"
     />
@@ -313,6 +324,10 @@ function confirmed() {
     <v-alert v-else-if="notice" :type="notice.type" class="mb-4">
       {{ notice.text }}
       <pre v-if="notice.log?.length" class="text-body-2 mt-2 text-wrap">{{ notice.log.join('\n') }}</pre>
+    </v-alert>
+
+    <v-alert v-if="locked && !busy" type="info" class="mb-4">
+      {{ lockedByJob ? 'Wait for the Wi-Fi change to finish.' : 'Finish or cancel the Wi-Fi join first.' }}
     </v-alert>
 
     <p class="text-body-2 text-secondary">

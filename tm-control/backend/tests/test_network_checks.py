@@ -22,7 +22,7 @@ from tm_control.modules.network.checks import FIREWALL_UNIT, GROUP, RESTART_HOTS
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 ON = Device(100, "tm-hotspot")
 PROFILE = Hotspot(True, "TM-AB12", "wpa-psk", False)
-SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network")
+SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network#hotspot")
 SET_THE_COUNTRY = Fix(kind="hint", text="Run the installer again (tmsetup.sh -t wifi); it asks for the country.")
 
 
@@ -85,7 +85,19 @@ def test_the_network_module_comes_after_hardware_and_serves_the_state():
     assert ids[ids.index("hardware") + 1] == "network"
     (module,) = [m for m in MODULES if m.id == "network"]
     assert [g.id for g in module.check_groups] == ["network"]
-    assert [r.path for r in module.router.routes] == ["/network", "/network/hotspot/password", "/network/hotspot"]
+    assert [r.path for r in module.router.routes] == [
+        "/network",
+        "/network/hotspot/password",
+        "/network/hotspot",
+        "/network/join",
+        "/network/wifi",
+        "/network/wifi/scan",
+        "/network/wifi/forget",
+        "/network/wifi/order",
+        "/network/wifi/join",
+        "/network/wifi/join/switch",
+        "/network/wifi/join/cancel",
+    ]
 
 
 def test_the_group_has_the_four_checks_in_order(net):
@@ -424,10 +436,11 @@ def test_no_signal_when_no_network_is_in_use(commands):
 def test_saved_networks_counts_infrastructure_profiles_only(commands):
     commands("nmcli", """
         case "$*" in
-          *"UUID,TYPE"*) printf 'u1:802-11-wireless\\nu2:802-11-wireless\\nu3:802-3-ethernet\\nu4:802-11-wireless\\n' ;;
-          *"uuid u1") echo infrastructure ;;
-          *"uuid u2") echo ap ;;
-          *"uuid u4") echo infrastructure ;;
+          *"NAME,UUID,TYPE"*)
+            printf 'A:u1:802-11-wireless:yes:1\\nH:u2:802-11-wireless:yes:2\\nWired:u3:802-3-ethernet:yes:3\\nB:u4:802-11-wireless:yes:4\\n' ;;
+          *"uuid u1") printf 'infrastructure\\nno\\n0\\nA\\n' ;;
+          *"uuid u2") printf 'ap\\nno\\n0\\nH\\n' ;;
+          *"uuid u4") printf 'infrastructure\\nno\\n0\\nB\\n' ;;
           *) exit 2 ;;
         esac
         """)

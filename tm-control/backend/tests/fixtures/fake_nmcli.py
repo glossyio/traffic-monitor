@@ -15,18 +15,33 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
                                                  nmcli, it leaves out a property whose setting (the part before the
                                                  first ".") the profile doesn't have: connection, ipv4, ipv6, the
                                                  profile's type, and any setting with a stored property are present
-  connection add type wifi PROP VALUE ...        connection.id names the new profile
+  connection add type wifi PROP VALUE ...        connection.id names the new profile; a connection.uuid it is given is
+                                                 kept; `save no` lists the profile under the state's "unsaved" (a
+                                                 `modify` takes it off that list)
+  connection delete REF                          removes the profile, and from "active" and "unsaved"; a name listed
+                                                 under the state's "linger" stays active, its uuid kept for `device
+                                                 show` (the device still reads connected on the deleted profile)
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
   connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
                                                  state makes it exit 4 and leave nothing active (an idle radio), and
                                                  "up": {"<name>": "fail-started"} makes it exit 4 with the profile the
                                                  only active one (NetworkManager started it by itself meanwhile);
                                                  "fail-once" is "fail" for this call only (the entry is removed);
-                                                 "up_delay": {"<name>": SECONDS} makes it sleep first
+                                                 "timeout" exits 3 (nmcli's wait ran out) with the profile the only
+                                                 active one; "up_delay": {"<name>": SECONDS} makes it sleep first;
+                                                 "up_then_fail": {"<name>": N} lets `up` on that profile work N times
+                                                 and then fail as its "up" entry says, or else like "fail"
   connection down REF                            removes the profile from "active"
-  device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION)   state 100 and the first active profile, else 30 and "--";
-                                                 "device_state": N in the state overrides the number
-  radio wifi                                     the state's "radio", "enabled" unless set
+  device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.CON-UUID)   state 100 and the first active profile
+                                                 (and its uuid), else 30, "--" and ""; "device_states": {"<name>": N}
+                                                 gives the number while that profile is the first active one, and
+                                                 "device_state": N in the state overrides both
+  device show DEV  (-t -f IP4.ADDRESS,IP4.DNS)   IP4.ADDRESS[1] and IP4.DNS[1..n] of the first active profile, from
+                                                 the state's "ip4": {"<name>": {"address": "192.168.1.57/24",
+                                                 "dns": ["192.168.1.1"]}}; no lines for a profile not listed there
+                                                 Either form exits 4 when it asks for a field listed in the state's
+                                                 "fail_fields"
+  radio wifi                                    the state's "radio", "enabled" unless set
   radio wifi on|off                              sets the state's "radio" to "enabled" or "disabled"
 Any -f field that isn't listed above is read as a profile property. REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
 """
@@ -122,11 +137,23 @@ def main(argv):
             print(state.get("radio", "enabled"))
         return
     if group == "device" and verb == "show":
+        if set(fields[1].split(",")) & set(state.get("fail_fields", [])):
+            die(4, "Error: simulated failure of: " + " ".join(argv))
         active = state.get("active", [])
-        number = state.get("device_state", 100 if active else 30)
-        values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--"}
+        number = state.get("device_state", state.get("device_states", {}).get(active[0], 100) if active else 30)
+        values = {"GENERAL.STATE": f"{number} (fake)", "GENERAL.CONNECTION": active[0] if active else "--",
+                  "GENERAL.CON-UUID": (state["profiles"].get(active[0], {}).get("connection.uuid")
+                                       or state.get("lingering", {}).get(active[0], "")) if active else ""}
+        ip4 = state.get("ip4", {}).get(active[0], {}) if active else {}
         for key in fields[1].split(","):
-            print(f"{key}:{escape(values[key])}")
+            if key == "IP4.ADDRESS":
+                if ip4.get("address"):
+                    print(f"IP4.ADDRESS[1]:{escape(ip4['address'])}")
+            elif key == "IP4.DNS":
+                for index, server in enumerate(ip4.get("dns", []), start=1):
+                    print(f"IP4.DNS[{index}]:{escape(server)}")
+            else:
+                print(f"{key}:{escape(values[key])}")
         return
     if group != "connection":
         die(2, f"Error: `{group} {verb}` is not faked.")
@@ -157,20 +184,35 @@ def main(argv):
         new_name = changes.pop("connection.id", name)
         props.update(changes)
         state["profiles"][new_name] = props
+        state["unsaved"] = [n for n in state.get("unsaved", []) if n != name]
         state["active"] = [new_name if n == name else n for n in state.get("active", [])]
     elif verb == "up":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         time.sleep(state.get("up_delay", {}).get(name, 0))
         outcome = state.get("up", {}).get(name)
+        works = state.get("up_then_fail", {}).get(name)
+        if works is not None:
+            state["up_then_fail"][name] = max(works - 1, 0)
+            outcome = None if works > 0 else outcome or "fail"
         if outcome == "fail-once":
             del state["up"][name]
         state["active"] = [] if outcome in ("fail", "fail-once") else [name]
         save(state)
         if outcome in ("fail", "fail-once", "fail-started"):
             die(4, f"Error: Connection activation failed for '{name}'.")
+        if outcome == "timeout":
+            die(3, f"Error: Timeout expired while activating '{name}'.")
     elif verb == "down":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         state["active"] = [n for n in state.get("active", []) if n != name]
+    elif verb == "delete":
+        name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
+        gone = state["profiles"].pop(name)
+        if name in state.get("linger", []):
+            state.setdefault("lingering", {})[name] = gone["connection.uuid"]
+        else:
+            state["active"] = [n for n in state.get("active", []) if n != name]
+        state["unsaved"] = [n for n in state.get("unsaved", []) if n != name]
     elif verb == "add":
         changes = pairs(rest)
         if changes.pop("type", None) != "wifi" or "connection.id" not in changes:
@@ -178,7 +220,9 @@ def main(argv):
         name = changes.pop("connection.id")
         if name in state["profiles"]:
             die(1, f"Error: the connection '{name}' exists.")
-        state["profiles"][name] = {**changes, "connection.uuid": str(uuid.uuid4())}
+        if changes.pop("save", "yes") == "no":
+            state.setdefault("unsaved", []).append(name)
+        state["profiles"][name] = {**changes, "connection.uuid": changes.get("connection.uuid") or str(uuid.uuid4())}
     else:
         die(2, f"Error: `connection {verb}` is not faked.")
     save(state)

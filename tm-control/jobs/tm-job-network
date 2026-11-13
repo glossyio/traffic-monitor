@@ -1,22 +1,33 @@
 #!/usr/bin/python3
-"""Change the Wi-Fi hotspot's settings: on or off, its name, its password, and whether its name is hidden.
+"""Change the Wi-Fi hotspot's settings, scan for networks, forget a saved one, set the order of the saved ones, and
+end or cancel the countdown of a Wi-Fi join.
 
 tm-job-network.service runs this as root (`python -EP`), after tm-control writes the request
-/run/tm-control/jobs/network.json: {"action": "hotspot"} plus any of "enabled", "name", "password", and "hidden",
-only the ones the admin sent. tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so
-the request is treated as hostile:
+/run/tm-control/jobs/network.json, a JSON object of one of these forms:
+- {"action": "hotspot"} plus any of "enabled", "name", "password", and "hidden", only the ones the admin sent: turn the
+  hotspot on or off and change its name, its password, and whether its name is hidden;
+- {"action": "scan"}: scan with `iw` and write the networks heard to SCAN_FILE in the run directory;
+- {"action": "forget", "uuid": "<uuid>"}: delete one saved Wi-Fi network (a Wi-Fi client profile);
+- {"action": "order", "uuids": ["<uuid>", ...]}: set the order the unit tries the saved networks in, first to last;
+- {"action": "switch-now"} and {"action": "cancel"}: control tm-job-network-join, the job that tests a network and
+  switches to it after a countdown.
+tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so the request is treated as
+hostile:
 - the jobs directory is opened without following a symlink and must belong to the code owner and be writable by no
   one else; the request is opened and deleted relative to it, so its path can't be swapped mid-way;
-- the request must be a small regular file of the code owner's with one link, holding a JSON object whose action is
-  hotspot and whose other keys are one or more of enabled, name, password, and hidden. enabled and hidden must be
-  booleans; the name and the password must match NAME_PATTERN and PASSWORD_PATTERN below as a whole (tm-control's
-  own rules, which a test keeps the same), and the name must be at most NAME_MAX_BYTES bytes in UTF-8;
+- the request must be a small regular file of the code owner's with one link, holding a JSON object of exactly one of
+  the forms above and nothing else. For hotspot, enabled and hidden must be booleans; the name and the password must
+  match NAME_PATTERN and PASSWORD_PATTERN below as a whole (tm-control's own rules, which a test keeps the same), and
+  the name must be at most NAME_MAX_BYTES bytes in UTF-8. A uuid must be a lowercase UUID as UUID_PATTERN says; order
+  takes 1 to MAX_ORDER of them, none twice;
 - every value goes to nmcli as one argument of an argv list, never through a shell;
 - the secrets directory is opened without following a symlink and must belong to root and be writable by no one
   else. The password file is written to a new file in it (O_EXCL, 0640, root and the directory's group) and renamed
   over hotspot_password.
 Trusted: the install manifest and the secrets directory (root's), the profile NetworkManager holds, and the lock file
-in /run/traffic-monitor (root's).
+and run directory in /run/traffic-monitor (root's). Not trusted: what `iw` prints. It is the names and settings of
+other people's networks, heard from the air, so it is parsed as text (parse_scan), a name is data and never a path or a
+command, nothing from it is printed, and it reaches nmcli only when tm-control sends it back in a later request.
 
 One run, in order:
 1. Read the manifest (the code owner, the Wi-Fi device, and the hotspot profile's name), then the request.
@@ -40,6 +51,37 @@ It prints one line per thing done and exits 0, or exits 1 with `refused: <senten
 `failed: <step> (<error type>)`, such as `(nmcli exit status 4)`, ending `; the settings are saved` once the profile
 was changed.
 
+The other three actions take the same lock, then:
+- scan: refused unless the radio is built in (not a USB adapter) and switched on. Runs `iw dev <device> scan flush`,
+  which empties the kernel's cache first (a plain scan keeps listing a network for about 30 s after it left the air).
+  A non-zero exit (`iw` exits 240 while NetworkManager scans, as it does in the background on a network, and for 10 to
+  14 s after the hotspot restarts) is tried again every SCAN_RETRY_WAIT seconds while SCAN_TIMEOUT seconds, all tries
+  together, last; a try that hangs until the time is up is not tried again. A failure is `failed: scan (iw exit
+  status N)` or `(iw timed out)` and leaves the old file. Otherwise SCAN_FILE is written under a temporary name and
+  renamed, 0644: {"at": <ISO time, UTC>, "monotonic": <time.monotonic()>, "networks":
+  [{"ssid", "signal" (0 to 100), "security" (open, password, wpa3, enterprise, or other)}]}, strongest first, at most
+  MAX_NETWORKS. A network with no name is left out. Prints `heard N networks`.
+- forget: the profile must be a Wi-Fi client (type 802-11-wireless, mode infrastructure), else refused, and it must
+  exist. Deletes it by uuid. When the device was on it and the hotspot starts by itself, waits RETURN_WAIT seconds for
+  the device to reach a connected state on another profile (right after the delete it can still read connected on the
+  deleted one) and starts the hotspot if it didn't.
+- order: the uuids must be exactly the Wi-Fi client profiles that start by themselves. The first gets
+  connection.autoconnect-priority N (N is how many), the last 1; only profiles whose value differs are changed.
+
+The join's two controls never wait for the lock, which the join job holds through its whole run. They read its state
+file, JOIN_STATE_FILE in the run directory, and write a word to CONTROL_FILE beside it (under a temporary name and
+renamed, 0644), which the join job reads every second:
+- switch-now: when the stage is `countdown`, writes `switch` (`asked the join to switch now`); otherwise refused.
+- cancel: no state file is refused. Otherwise the lock is tried once, without waiting, and the first that applies:
+  the lock is held and the stage isn't final, so a join is running: writes `cancel` (`asked the join to cancel`). The
+  stage is final: removes the state file and any control file (`cleared the result`). The lock is free and the stage
+  isn't final, so the join died: holding the lock, rolls back any checkpoint NetworkManager still holds (busctl; the
+  Checkpoints property, then CheckpointRollback on each), waits up to RETURN_WAIT seconds for the device to be
+  connected, deletes the profile under test unless it is a saved network, then removes the state file and any
+  control file (`cleared the result`). A rollback that fails is printed and the clean-up goes on.
+  When the retry timer happens to hold the lock while a dead join's state is cancelled, the first case applies and
+  nobody reads the control file; the next cancel, or the next join, clears it.
+
 No password is ever printed: nmcli's error text is never quoted (it can carry the command line), an unexpected error
 prints only its kind, and every password the job learns (the request's, the file's, the profile's) is still scrubbed
 from each line it prints. The request is deleted
@@ -50,10 +92,12 @@ where it is, and tm-control clears a request no job is waiting for.
 Standard library only, and no tm_control imports: this runs from the root-owned copy in
 /usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST and TM_CONTROL_SECRETS_DIR name the manifest and the
 secrets directory, as for tm-job-set-secret: its root-owned unit sets both. Tests pass the request path as argv[1], set
-those two, and set NMCLI, TM_SYS_NET, TM_NETWORK_LOCK, and TM_NETWORK_LOCK_WAIT, which are ignored when running as
+those two, and set NMCLI, IW, BUSCTL, TM_SYS_NET, TM_NETWORK_LOCK, TM_NETWORK_LOCK_WAIT, TM_NETWORK_RUN_DIR,
+TM_NETWORK_RETURN_WAIT, TM_NETWORK_SCAN_RETRY_WAIT, and TM_NETWORK_SCAN_TIMEOUT, which are ignored when running as
 root. Run as anyone but root (tests only), the secrets directory may be that user's instead of root's.
 """
 
+import datetime
 import fcntl
 import json
 import os
@@ -68,14 +112,28 @@ REQUEST = "/run/tm-control/jobs/network.json"
 MANIFEST = "/etc/traffic-monitor/manifest.json"
 SECRETS_DIR = "/etc/traffic-monitor/secrets"
 NMCLI = "/usr/bin/nmcli"
+IW = "/usr/sbin/iw"
+BUSCTL = "/usr/bin/busctl"
 SYS_NET = "/sys/class/net"
+RUN_DIR = "/run/traffic-monitor"
 LOCK = "/run/traffic-monitor/network.lock"
 LOCK_WAIT = 10  # seconds
+SCAN_FILE = "network-scan.json"
+JOIN_STATE_FILE = "network-join.json"  # the join job's state
+CONTROL_FILE = "network-join.control"  # a word for the join job: switch or cancel
+SCAN_TIMEOUT = 60  # seconds for a scan, all its tries together
+SCAN_RETRY_WAIT = 5  # seconds between the tries of a scan that failed (iw is busy for about 15 s after a hotspot change)
+RETURN_WAIT = 15  # seconds for NetworkManager to bring the Wi-Fi back by itself after a network is forgotten
+MAX_NETWORKS = 100  # networks kept from a scan
+MAX_ORDER = 64  # networks in one order
 UP_WAIT = 30  # seconds: nmcli --wait for a start, and how long a failed start may take to come up by itself
 PASSWORD_FILE = "hotspot_password"
 MAX_REQUEST = 4096  # bytes
 MAX_PASSWORD_FILE = 1024  # bytes
 FIELDS = ("enabled", "name", "password", "hidden")
+ACTIONS = ("hotspot", "scan", "forget", "order", "switch-now", "cancel")
+FINAL = ("joined", "failed", "cancelled", "switch_failed")  # the join's stages that end it
+UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
 # tm-control's rules (modules/network/router.py); a test keeps the two the same.
 NAME_MAX_BYTES = 32
@@ -86,6 +144,8 @@ WIFI = "802-11-wireless"
 SECURITY = "802-11-wireless-security"
 WPA2 = [(f"{SECURITY}.key-mgmt", "wpa-psk"), (f"{SECURITY}.proto", "rsn"), (f"{SECURITY}.pairwise", "ccmp"),
         (f"{SECURITY}.group", "ccmp")]
+NM = ("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager", "org.freedesktop.NetworkManager")
+NM_PATH = r"/org/freedesktop/NetworkManager/[A-Za-z0-9_/]+"
 CONNECTED = 100  # NetworkManager's device states
 JOINING = range(40, 100)
 
@@ -98,9 +158,29 @@ class NmcliFailed(Exception):
     """nmcli failed or timed out. The message has a fixed form (exit status, timeout); nmcli's output is never quoted."""
 
 
+class BusctlFailed(NmcliFailed):
+    """busctl failed or timed out. The message has a fixed form; busctl's output is never quoted."""
+
+
+class IwFailed(NmcliFailed):
+    """iw failed or timed out. The message has a fixed form; iw's output is never quoted."""
+
+    def __init__(self, message, timed_out=False):
+        super().__init__(message)
+        self.timed_out = timed_out
+
+
 def trusted(name, default):
     """The setting `name` from the environment, but only when not root: root always uses the installed values."""
     return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def trusted_seconds(name, default):
+    """The number of seconds in the environment variable `name` (not root only), else `default`."""
+    try:
+        return float(trusted(name, str(default)))
+    except ValueError:
+        return float(default)
 
 
 def manifest_path():
@@ -183,11 +263,35 @@ def valid_name(name):
         return False
 
 
+def valid_uuid(value):
+    return isinstance(value, str) and re.fullmatch(UUID_PATTERN, value) is not None
+
+
 def check(request):
-    """The change a request asks for, as {field: value}, once it passes every rule. No value is quoted in a refusal."""
-    if request.get("action") != "hotspot":
-        raise Refused("the action must be hotspot")
-    change = {key: value for key, value in request.items() if key != "action"}
+    """(the action, its values) once the request passes every rule: for hotspot the change as {field: value}, for scan
+    {}, for forget {"uuid"}, for order {"uuids"}. No value is quoted in a refusal."""
+    action = request.get("action")
+    if action not in ACTIONS:
+        raise Refused(f"the action must be {', '.join(ACTIONS[:-1])}, or {ACTIONS[-1]}")
+    values = {key: value for key, value in request.items() if key != "action"}
+    if action in ("scan", "switch-now", "cancel"):
+        if values:
+            raise Refused(f"a {action} request has the action and nothing else")
+    elif action == "forget":
+        if set(values) != {"uuid"} or not valid_uuid(values["uuid"]):
+            raise Refused("a forget request has the action and a uuid, and nothing else")
+    elif action == "order":
+        uuids = values.get("uuids")
+        if (set(values) != {"uuids"} or not isinstance(uuids, list) or not 1 <= len(uuids) <= MAX_ORDER
+                or not all(valid_uuid(item) for item in uuids) or len(set(uuids)) != len(uuids)):
+            raise Refused(f"an order request has the action and 1 to {MAX_ORDER} different uuids, and nothing else")
+    else:
+        check_hotspot(values)
+    return action, values
+
+
+def check_hotspot(change):
+    """Refuse a hotspot change that is empty, has other fields, or holds a value outside its rule."""
     if not change or not set(change) <= set(FIELDS):
         raise Refused(f"the request must have the action and one or more of {', '.join(FIELDS)}, and nothing else")
     for key in ("enabled", "hidden"):
@@ -199,7 +303,6 @@ def check(request):
     if "password" in change and (not isinstance(change["password"], str)
                                  or re.fullmatch(PASSWORD_PATTERN, change["password"]) is None):
         raise Refused("the password must be 8 to 63 printable ASCII characters, with no space at either end")
-    return change
 
 
 def take_lock(path, wait):
@@ -308,6 +411,25 @@ class Nmcli:
             raise NmcliFailed("nmcli answered with an unexpected number of lines")
         return unescape(lines[0]) if lines else ""
 
+    def get_uuid(self, uuid, prop):
+        """One property of the profile with that uuid, unescaped; None when there is no such profile."""
+        status, out = self.call("-g", prop, "connection", "show", "uuid", uuid)
+        if status == 10:  # nmcli: the connection doesn't exist
+            return None
+        if status != 0:
+            raise NmcliFailed(self.last_error)
+        lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
+        if len(lines) > 1:
+            raise NmcliFailed("nmcli answered with an unexpected number of lines")
+        return unescape(lines[0]) if lines else ""
+
+    def device_uuid(self, device):
+        """The uuid of the profile the device is on, or None."""
+        out = self.run("-t", "-f", "GENERAL.CON-UUID", "device", "show", device)
+        fields = split_terse(out.splitlines()[0]) if out.strip() else [""]
+        value = fields[-1] if len(fields) > 1 else ""
+        return value if re.fullmatch(UUID_PATTERN, value) else None
+
     def device(self, device):
         """(state number, the name of its profile or None) for the device."""
         values = {}
@@ -325,6 +447,160 @@ def builtin_radio(device):
     if not os.path.isdir(os.path.join(base, "wireless")):
         return False
     return not os.path.realpath(os.path.join(base, "device", "subsystem")).endswith("/usb")
+
+
+def parse_scan(text):
+    """The networks in the text `iw dev <device> scan` prints, strongest first: [{"ssid", "signal", "security"}].
+
+    A network starts at a line that begins `BSS `. Its name is the first `SSID: ` line, with the bytes iw can't print
+    (`\\xNN`) decoded as tm-network-retry does; a network with no such line (iw prints none for a hidden one), an empty
+    name, or a name of only NUL bytes is left out. The signal, `-52.00 dBm`, becomes 0 to 100 (2 * (dBm + 100)), or 0
+    when the block has none. The security is `password` when an `Authentication suites:` line under `RSN:` or `WPA:`
+    names a suite containing PSK, else `wpa3` for SAE, else `enterprise` for 802.1X, else `other` when the capabilities
+    include Privacy or any suite is listed, else `open`. Several access points with one name count once, with the
+    strongest signal, and as `password` when any of them is. At most MAX_NETWORKS are returned."""
+    blocks, current = [], None
+    for line in text.splitlines():
+        if line.startswith("BSS "):
+            current = []
+            blocks.append(current)
+        elif current is not None:
+            current.append(line)
+    found = {}
+    for lines in blocks:
+        name = signal = None
+        indents = [len(line) - len(line.lstrip()) for line in lines if line.strip()]
+        top = min(indents) if indents else 0
+        section, suites, privacy = "", [], False
+        for line in lines:
+            content = line.lstrip()
+            if not content:
+                continue
+            if len(line) - len(content) <= top:  # a line of the block itself, which may open a section
+                section = content.split(":", 1)[0]
+                if name is None and content.startswith("SSID: "):
+                    name = decode_name(content[len("SSID: "):])
+                elif signal is None and (match := re.match(r"signal:\s*(-?\d+(?:\.\d+)?)\s*dBm", content)):
+                    signal = max(0, min(100, 2 * (round(float(match.group(1))) + 100)))
+                elif content.startswith("capability:"):
+                    privacy = "Privacy" in content.split()
+            if section in ("RSN", "WPA") and "Authentication suites:" in content:
+                suites.append(content.split("Authentication suites:", 1)[1])
+        if not name or not name.strip("\x00"):
+            continue
+        listed = " ".join(suites)
+        if "PSK" in listed:
+            security = "password"
+        elif "SAE" in listed:
+            security = "wpa3"
+        elif "802.1X" in listed:
+            security = "enterprise"
+        elif privacy or listed.strip():
+            security = "other"
+        else:
+            security = "open"
+        signal = signal or 0
+        seen = found.setdefault(name, {"ssid": name, "signal": signal, "security": security})
+        was_password = seen["security"] == "password"
+        if signal > seen["signal"]:
+            seen.update(signal=signal, security=security)
+        if was_password or security == "password":
+            seen["security"] = "password"
+    networks = sorted(found.values(), key=lambda network: -network["signal"])  # stable: ties keep the order heard
+    return networks[:MAX_NETWORKS]
+
+
+def decode_name(raw):
+    """A name as iw prints it: `\\xNN` for a byte it can't print, decoded as UTF-8 when the bytes are valid."""
+    raw = re.sub(r"\\x([0-9a-fA-F]{2})", lambda match: chr(int(match.group(1), 16)), raw)
+    try:
+        return raw.encode("latin-1").decode("utf-8")
+    except UnicodeError:
+        return raw
+
+
+def run_iw(iw, device, timeout):
+    """iw's scan output for the device, after a flush of the kernel's cache. A non-zero exit or a timeout is
+    IwFailed, with a fixed message."""
+    try:
+        result = subprocess.run([iw, "dev", device, "scan", "flush"], capture_output=True, stdin=subprocess.DEVNULL,
+                                env={**os.environ, "LC_ALL": "C.UTF-8"}, timeout=timeout, check=False)
+    except subprocess.TimeoutExpired:
+        raise IwFailed("iw timed out", timed_out=True) from None
+    if result.returncode != 0:  # its stderr is never quoted
+        raise IwFailed(f"iw exit status {result.returncode}")
+    return result.stdout.decode("utf-8", errors="replace")
+
+
+def write_scan(directory, networks):
+    """SCAN_FILE in the run directory."""
+    document = {"at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+                "monotonic": time.monotonic(), "networks": networks}
+    write_run_file(directory, SCAN_FILE, json.dumps(document))
+
+
+def write_run_file(directory, name, text):
+    """A file in the run directory, written under a temporary name and renamed, 0644."""
+    os.makedirs(directory, mode=0o755, exist_ok=True)
+    final = os.path.join(directory, name)
+    temporary = os.path.join(directory, f".{name}.{os.getpid()}.tmp")
+    try:
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            os.fchmod(file.fileno(), 0o644)
+            file.write(text)
+        os.rename(temporary, final)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
+
+
+def read_join_state(directory):
+    """The join job's state, a JSON object, or None when there is none or it is not one."""
+    try:
+        with open(os.path.join(directory, JOIN_STATE_FILE), encoding="utf-8") as file:
+            state = json.load(file)
+    except (OSError, ValueError):
+        return None
+    return state if isinstance(state, dict) else None
+
+
+def remove_run_file(directory, name):
+    try:
+        os.unlink(os.path.join(directory, name))
+    except FileNotFoundError:
+        pass
+
+
+def busctl(*args):
+    """The `data` of busctl's `--json=short` answer. A failure is BusctlFailed; busctl's stderr is never read."""
+    try:
+        result = subprocess.run([trusted("BUSCTL", BUSCTL), "--system", "--json=short", *args], stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                                env={**os.environ, "LC_ALL": "C.UTF-8"}, timeout=30, check=False)
+    except subprocess.TimeoutExpired:
+        raise BusctlFailed("busctl timed out") from None
+    if result.returncode != 0:
+        raise BusctlFailed(f"busctl exit status {result.returncode}")
+    try:
+        return json.loads(result.stdout)["data"]
+    except (ValueError, KeyError, TypeError):
+        raise BusctlFailed("busctl answered in a form this script doesn't know") from None
+
+
+def checkpoints():
+    """The checkpoints NetworkManager holds now."""
+    data = busctl("get-property", *NM, "Checkpoints")
+    if not isinstance(data, list) or not all(isinstance(path, str) and re.fullmatch(NM_PATH, path) for path in data):
+        raise BusctlFailed("busctl answered in a form this script doesn't know")
+    return data
+
+
+def plural(count, word):
+    return f"{count} {word}" if count == 1 else f"{count} {word}s"
 
 
 def read_profile(nm, profile, with_password):
@@ -468,9 +744,10 @@ class Run:
         self.nm, self.device, self.profile = nm, device, profile
         self.step = "read the profile"
         self.saved = False
+        self.saved_note = "; the settings are saved"
         self.secrets_fd = None
 
-    def apply(self, change):
+    def hotspot(self, change):
         nm = self.nm
         current = read_profile(nm, self.profile, "password" in change)
         old = stored = None
@@ -519,6 +796,149 @@ class Run:
         else:
             print("saved; the change applies when the hotspot next starts")
 
+    def scan(self):
+        """Scan, and write what was heard. The old file stays when the scan fails."""
+        self.step = "check the radio"
+        if not builtin_radio(self.device):
+            raise Refused("the unit has no built-in Wi-Fi radio")
+        if self.nm.run("radio", "wifi").strip() != "enabled":
+            raise Refused("the Wi-Fi radio is switched off")
+        self.step = "scan"
+        iw, limit = trusted("IW", IW), trusted_seconds("TM_NETWORK_SCAN_TIMEOUT", SCAN_TIMEOUT)
+        wait = trusted_seconds("TM_NETWORK_SCAN_RETRY_WAIT", SCAN_RETRY_WAIT)
+        started = time.monotonic()
+        while True:
+            try:
+                text = run_iw(iw, self.device, limit - (time.monotonic() - started))
+                break
+            except IwFailed as error:
+                # a try that hung used up the time; a busy iw is tried again while the time lasts
+                if error.timed_out or limit - (time.monotonic() - started) - wait <= 0:
+                    raise
+                time.sleep(wait)
+        networks = parse_scan(text)
+        write_scan(trusted("TM_NETWORK_RUN_DIR", RUN_DIR), networks)
+        print(f"heard {plural(len(networks), 'network')}")
+
+    def forget(self, uuid):
+        """Delete one saved Wi-Fi network, and see that the radio isn't left on nothing when it was on that one."""
+        nm = self.nm
+        self.step = "read the network"
+        kind = nm.get_uuid(uuid, "connection.type")
+        if kind is None:
+            raise Refused("that network isn't saved any more")
+        if kind != WIFI or nm.get_uuid(uuid, f"{WIFI}.mode") != "infrastructure":
+            raise Refused("only a saved Wi-Fi network can be forgotten")
+        in_use = nm.device_uuid(self.device) == uuid
+        starts = in_use and nm.get(self.profile, "connection.autoconnect") == "yes"
+        self.step = "forget the network"
+        nm.run("connection", "delete", "uuid", uuid)
+        self.saved, self.saved_note = True, "; the network is forgotten"
+        print("forgot the network")
+        if not in_use:
+            return
+        if not starts:
+            print("the hotspot is off, so the Wi-Fi is idle")
+            return
+        self.step = "start the hotspot"
+        wait = trusted_seconds("TM_NETWORK_RETURN_WAIT", RETURN_WAIT)
+        deadline = time.monotonic() + wait
+        # NetworkManager brings the hotspot up by itself, mostly. Right after the delete the device can still read
+        # connected on the deleted profile, so the wait ends only on another one.
+        while nm.device(self.device)[0] != CONNECTED or nm.device_uuid(self.device) == uuid:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                nm.run("--wait", str(UP_WAIT), "connection", "up", "id", self.profile, timeout=UP_WAIT + 30)
+                break
+            time.sleep(min(0.5, remaining))
+        print("started the hotspot" if nm.device(self.device)[1] == self.profile
+              else "the unit moved to another saved network")
+
+    def order(self, uuids):
+        """Give the saved networks priorities from the count down to 1, in the order sent."""
+        nm = self.nm
+        self.step = "read the saved networks"
+        current = {}
+        for line in nm.run("-t", "-f", "UUID,TYPE,AUTOCONNECT", "connection", "show").splitlines():
+            fields = split_terse(line)
+            if len(fields) == 3 and fields[1] == WIFI and fields[2] == "yes":
+                lines = nm.run("-g", f"{WIFI}.mode,connection.autoconnect-priority", "connection", "show", "uuid",
+                               fields[0]).split("\n")
+                if lines[0] == "infrastructure":
+                    priority = lines[1] if len(lines) > 1 else ""
+                    current[fields[0]] = int(priority) if re.fullmatch(r"-?\d+", priority) else 0
+        if set(current) != set(uuids):
+            raise Refused("the saved networks changed; reload the page")
+        self.step = "set the order"
+        changed = 0
+        for index, uuid in enumerate(uuids):
+            wanted = len(uuids) - index
+            if current[uuid] != wanted:
+                nm.run("connection", "modify", "uuid", uuid, "connection.autoconnect-priority", str(wanted))
+                self.saved, self.saved_note = True, "; the order is partly set"
+                changed += 1
+        print(f"ordered {plural(len(uuids), 'network')}" if changed else "nothing to change")
+
+    def switch_now(self):
+        """Ask the join job to end its countdown now."""
+        self.step = "switch now"
+        run_dir = trusted("TM_NETWORK_RUN_DIR", RUN_DIR)
+        state = read_join_state(run_dir)
+        if state is None or state.get("stage") != "countdown":
+            raise Refused("there is no countdown to end")
+        write_run_file(run_dir, CONTROL_FILE, "switch")
+        print("asked the join to switch now")
+
+    def cancel(self):
+        """Ask a running join to cancel, or clear what a finished or dead one left. The lock is tried once."""
+        self.step = "cancel"
+        run_dir = trusted("TM_NETWORK_RUN_DIR", RUN_DIR)
+        try:
+            lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), 0)
+        except Refused:
+            lock_fd = None
+        try:
+            state = read_join_state(run_dir)
+            if state is None:
+                raise Refused("there is nothing to cancel")
+            final = state.get("stage") in FINAL
+            if lock_fd is None and not final:
+                write_run_file(run_dir, CONTROL_FILE, "cancel")
+                print("asked the join to cancel")
+                return
+            if not final:
+                self.clear_dead_join(state)
+            remove_run_file(run_dir, JOIN_STATE_FILE)
+            remove_run_file(run_dir, CONTROL_FILE)
+            print("cleared the result")
+        finally:
+            if lock_fd is not None:
+                os.close(lock_fd)
+
+    def clear_dead_join(self, state):
+        """A join that died: roll back a checkpoint it left, wait for the radio, and delete its profile unless saved."""
+        try:
+            pending = checkpoints()
+        except BusctlFailed as error:
+            print(f"the checkpoints could not be read ({error})")
+            pending = []
+        rolled = False
+        for path in pending:
+            try:
+                busctl("call", *NM, "CheckpointRollback", "o", path)
+                rolled = True
+            except BusctlFailed as error:
+                print(f"the rollback failed ({error})")
+        if rolled:
+            print("rolled back what the join left")
+            deadline = time.monotonic() + trusted_seconds("TM_NETWORK_RETURN_WAIT", RETURN_WAIT)
+            while self.nm.device(self.device)[0] != CONNECTED and time.monotonic() < deadline:
+                time.sleep(0.5)
+        if state.get("saved") is False and valid_uuid(state.get("uuid")):
+            status, _ = self.nm.call("connection", "delete", "uuid", state["uuid"])
+            if status not in (0, 10):
+                raise NmcliFailed(self.nm.last_error)
+
     def restart(self):
         """`connection up` on the active profile, tried once more when it fails, so the radio isn't left on nothing.
         The second failure still counts when the device ends up on the hotspot."""
@@ -560,6 +980,11 @@ class Run:
         print("turned the hotspot on")
 
 
+def saved_note(run):
+    """What a refusal or failure adds once the run has changed something."""
+    return run.saved_note if run is not None and run.saved else ""
+
+
 def main(argv):
     directory, request_name = os.path.split(argv[1] if len(argv) > 1 else REQUEST)
     jobs_fd = lock_fd = None
@@ -569,28 +994,34 @@ def main(argv):
     try:
         owner_uid, device, profile = read_manifest(manifest_path())
         jobs_fd = open_jobs_dir(directory or ".", owner_uid)
-        change = check(read_request(jobs_fd, request_name, owner_uid))
-        nm.hide(change.get("password"))
+        action, values = check(read_request(jobs_fd, request_name, owner_uid))
+        nm.hide(values.get("password"))
+        if action in ("switch-now", "cancel"):  # never wait for the lock, which a join holds through its run
+            run = Run(nm, device, profile)
+            if action == "switch-now":
+                run.switch_now()
+            else:
+                run.cancel()
+            return 0
         step = "take the lock"
-        try:
-            wait = float(trusted("TM_NETWORK_LOCK_WAIT", str(LOCK_WAIT)))
-        except ValueError:
-            wait = LOCK_WAIT
-        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), wait)
+        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), trusted_seconds("TM_NETWORK_LOCK_WAIT", LOCK_WAIT))
         run = Run(nm, device, profile)
-        run.apply(change)
+        if action == "hotspot":
+            run.hotspot(values)
+        elif action == "scan":
+            run.scan()
+        elif action == "forget":
+            run.forget(values["uuid"])
+        else:
+            run.order(values["uuids"])
     except Refused as error:
-        saved = run is not None and run.saved
-        print(nm.scrub(f"refused: {error}" + ("; the settings are saved" if saved else "")))
+        print(nm.scrub(f"refused: {error}{saved_note(run)}"))
         return 1
     except NmcliFailed as error:
-        saved = run is not None and run.saved
-        print(nm.scrub(f"failed: {run.step if run else step} ({error})" + ("; the settings are saved" if saved else "")))
+        print(nm.scrub(f"failed: {run.step if run else step} ({error}){saved_note(run)}"))
         return 1
     except Exception as error:  # a message could quote the request, so print only the kind of error
-        saved = run is not None and run.saved
-        print(f"failed: {run.step if run else step} ({type(error).__name__})"
-              + ("; the settings are saved" if saved else ""))
+        print(f"failed: {run.step if run else step} ({type(error).__name__}){saved_note(run)}")
         return 1
     finally:
         if run is not None and run.secrets_fd is not None:

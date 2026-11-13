@@ -41,7 +41,7 @@ from tm_control.core.state import State
 
 log = logging.getLogger(__name__)
 
-JOB_NAMES = {"system-password", "set-secret", "network"}
+JOB_NAMES = {"system-password", "set-secret", "network", "network-join"}
 LOG_LIMIT = 200  # journal lines per job
 
 Status = Literal["queued", "running", "succeeded", "failed"]
@@ -312,11 +312,12 @@ class JobRunner:
 
 class FakeJobRunner(JobRunner):
     """Fake mode, with no systemd: writes the request as the real runner does, removes it as the real job would, and
-    succeeds at once. The last request is kept in memory (last_request) for tests."""
+    succeeds at once. The last request and its job's name are kept in memory (last_request, last_name) for tests."""
 
     def __init__(self, settings: Settings, state: State):
         super().__init__(settings, state, systemd=None)
         self.last_request: dict | None = None
+        self.last_name: str | None = None
 
     def _request_is_stale(self, name: str) -> bool:
         return False  # the fake removes its own requests; one left over is another start's, still in progress
@@ -326,6 +327,7 @@ class FakeJobRunner(JobRunner):
         path = self._create_request(name, request)
         try:
             self.last_request = json.loads(path.read_bytes())
+            self.last_name = name
         finally:
             _remove(path)
         return self.get(self._insert(name, user_id, "succeeded", None, finished=True))

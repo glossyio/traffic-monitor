@@ -12,7 +12,7 @@ RETRY_UNIT = "tm-network-retry.service"
 FIREWALL_UNIT = "tm-hotspot-firewall.service"
 RESTART_HOTSPOT = Fix(kind="restart", text="Restart the hotspot", unit=RETRY_UNIT)
 RUN_INSTALLER = Fix(kind="hint", text="Run the installer again (tmsetup.sh -t wifi).")
-SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network")
+SET_A_PASSWORD = Fix(kind="link", text="Set a password", href="/network#hotspot")  # opens the Hotspot panel
 SET_THE_COUNTRY = Fix(kind="hint", text="Run the installer again (tmsetup.sh -t wifi); it asks for the country.")
 
 UNREADABLE = "The Wi-Fi state couldn't be read."

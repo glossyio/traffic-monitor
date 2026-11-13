@@ -391,3 +391,14 @@ def test_fake_mode_shows_the_change(claimed_client, login):
     body = claimed_client.get(URL).json()
     assert (body["hotspot"]["name"], body["hotspot"]["hidden"]) == ("TM-ROAD", True)
     assert claimed_client.get(PASSWORD_URL).json() == {"password": PASSWORD}
+
+
+def test_the_fake_wifi_is_on_the_joined_network_once_the_hotspot_is_down(claimed_client):
+    fake = claimed_client.app.state.fake_network
+    fake.start_join("Cafe", "placeholder-pass-1", saved=False)
+    fake.apply({"action": "switch-now"})
+    assert fake.hotspot["active"] is False
+    from tm_control.modules.network.state import read_state
+
+    shown = read_state(claimed_client.app.state, "tm-test").wifi
+    assert (shown.mode, shown.network, shown.connected) == ("network", "Cafe", True)

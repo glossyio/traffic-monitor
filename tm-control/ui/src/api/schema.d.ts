@@ -861,6 +861,162 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/network/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Join
+         * @description The join to show, from the job's state file and its unit; runs no nmcli.
+         */
+        get: operations["get_join_api_v1_network_join_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Wifi */
+        get: operations["get_wifi_api_v1_network_wifi_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scan Wifi
+         * @description Start a scan (Refresh). A radio known to be missing or off is refused before any job; one that can't be read
+         *     is left to the job.
+         */
+        post: operations["scan_wifi_api_v1_network_wifi_scan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/forget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Forget Wifi */
+        post: operations["forget_wifi_api_v1_network_wifi_forget_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Order Wifi
+         * @description Set the order the unit tries its saved networks in. It must name exactly the ones that join by themselves.
+         */
+        post: operations["order_wifi_api_v1_network_wifi_order_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Wifi
+         * @description Start the join job: test the network, then count down to the switch. Everything that can be known now is
+         *     checked first, in this order, so a refusal starts no job. The password goes to the job and nowhere else.
+         */
+        post: operations["join_wifi_api_v1_network_wifi_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/join/switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch Join
+         * @description End the countdown early: the join switches at once.
+         */
+        post: operations["switch_join_api_v1_network_wifi_join_switch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/wifi/join/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Join
+         * @description Cancel a test or a countdown, or dismiss what a finished or interrupted join left. Not while it switches.
+         */
+        post: operations["cancel_join_api_v1_network_wifi_join_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/device": {
         parameters: {
             query?: never;
@@ -1153,6 +1309,11 @@ export interface components {
             /** Href */
             href?: string | null;
         };
+        /** ForgetRequest */
+        ForgetRequest: {
+            /** Uuid */
+            uuid: string;
+        };
         /** Group */
         Group: {
             /** Id */
@@ -1263,6 +1424,39 @@ export interface components {
             /** Id */
             id: string;
         };
+        /** JoinRequest */
+        JoinRequest: {
+            /** Name */
+            name: string;
+            /** Password */
+            password?: string | null;
+        };
+        /** JoinState */
+        JoinState: {
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "testing" | "countdown" | "switching" | "joined" | "failed" | "cancelled" | "switch_failed" | "interrupted";
+            /** Network */
+            network: string;
+            /** Saved */
+            saved: boolean;
+            /** Before */
+            before: string | null;
+            /** Joined */
+            joined: boolean | null;
+            /** Reason */
+            reason: ("not_in_range" | "not_joined" | "no_address" | "busy" | "error") | null;
+            /** Address */
+            address: string | null;
+            /** Internet */
+            internet: ("reachable" | "not_reachable" | "sign_in_page") | null;
+            /** Seconds Left */
+            seconds_left: number | null;
+            /** Finished At */
+            finished_at: string | null;
+        };
         /** LabelsOut */
         LabelsOut: {
             /** Recognised */
@@ -1361,6 +1555,22 @@ export interface components {
             models: components["schemas"]["ModelOut"][];
             labels: components["schemas"]["LabelsOut"];
         };
+        /** Nearby */
+        Nearby: {
+            /** Name */
+            name: string;
+            /** Signal */
+            signal: number;
+            /**
+             * Security
+             * @enum {string}
+             */
+            security: "password" | "wpa3" | "enterprise" | "open" | "other";
+            /** Saved */
+            saved: boolean;
+            /** In Use */
+            in_use: boolean;
+        };
         /** NetworkState */
         NetworkState: {
             /** Hostname */
@@ -1398,6 +1608,11 @@ export interface components {
             synchronized: boolean;
             /** Available */
             available: boolean;
+        };
+        /** OrderRequest */
+        OrderRequest: {
+            /** Uuids */
+            uuids: string[];
         };
         /** PasswordChange */
         PasswordChange: {
@@ -1478,6 +1693,23 @@ export interface components {
             kind: ("frigate_plus" | "local" | "installer_default" | "frigate_default") | null;
             /** Source */
             source: ("frigate" | "config_file") | null;
+        };
+        /** Saved */
+        Saved: {
+            /** Uuid */
+            uuid: string;
+            /** Name */
+            name: string;
+            /** In Use */
+            in_use: boolean;
+            /** Automatic */
+            automatic: boolean;
+            /** Hidden */
+            hidden: boolean;
+            /** In Range */
+            in_range: boolean | null;
+            /** Could Not Join */
+            could_not_join: boolean;
         };
         /** SecretState */
         SecretState: {
@@ -1744,6 +1976,23 @@ export interface components {
             network: string | null;
             /** Signal */
             signal: number | null;
+        };
+        /** WifiNetworks */
+        WifiNetworks: {
+            /** Readable */
+            readable: boolean;
+            /**
+             * Radio
+             * @enum {string}
+             */
+            radio: "on" | "off" | "none";
+            /** Saved */
+            saved: components["schemas"]["Saved"][];
+            /** Nearby */
+            nearby: components["schemas"]["Nearby"][];
+            /** Scanned Seconds Ago */
+            scanned_seconds_ago: number | null;
+            join: components["schemas"]["JoinState"] | null;
         };
     };
     responses: never;
@@ -3046,6 +3295,205 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_join_api_v1_network_join_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JoinState"] | null;
+                };
+            };
+        };
+    };
+    get_wifi_api_v1_network_wifi_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WifiNetworks"];
+                };
+            };
+        };
+    };
+    scan_wifi_api_v1_network_wifi_scan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+        };
+    };
+    forget_wifi_api_v1_network_wifi_forget_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    order_wifi_api_v1_network_wifi_order_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    join_wifi_api_v1_network_wifi_join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JoinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    switch_join_api_v1_network_wifi_join_switch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
+                };
+            };
+        };
+    };
+    cancel_join_api_v1_network_wifi_join_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
                 };
             };
         };

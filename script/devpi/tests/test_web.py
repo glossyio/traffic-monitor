@@ -772,6 +772,82 @@ def test_the_network_page_reports_the_radios_own_address(host, address, admin_se
         f"GET {API}/network has a key that names a password: {sorted(set(json_keys(state)))}")
 
 
+def nmcli_values(host, keys, uuid):
+    """The values of these nmcli settings for one profile, as `sudo nmcli -g` prints them (one per line, with ':' and
+    '\\' escaped), or None when nmcli can't show it."""
+    result = host.run(f"sudo nmcli -g {','.join(keys)} connection show uuid {shlex.quote(uuid)}")
+    if result.rc != 0:
+        return None
+    lines = result.stdout.split("\n")
+    return [re.sub(r"\\(.)", r"\1", lines[i]) if i < len(lines) else "" for i in range(len(keys))]
+
+
+def wifi_client_profiles(host):
+    """{uuid: the network's name} of the Wi-Fi client (infrastructure) profiles `sudo nmcli` lists, or None when it
+    can't list them. The hotspot (access point mode) is left out, as the page leaves it out."""
+    listing = host.run("sudo nmcli -t -f UUID,TYPE connection show")
+    if listing.rc != 0:
+        return None
+    found = {}
+    for line in listing.stdout.splitlines():
+        uuid, _, kind = line.partition(":")
+        if kind != "802-11-wireless":
+            continue
+        values = nmcli_values(host, ["802-11-wireless.mode", "802-11-wireless.ssid", "connection.id"], uuid)
+        if values is None:
+            return None
+        mode, ssid, profile_name = values
+        if mode == "infrastructure":
+            found[uuid] = ssid or profile_name
+    return found
+
+
+def test_the_wifi_networks_answer_matches_networkmanager(host, address, admin_session):
+    """GET /network/wifi lists the saved networks NetworkManager has as Wi-Fi client profiles, by uuid with the
+    network's name, and its body has no password or key. Skips on a unit with no built-in Wi-Fi radio."""
+    device = role_vars()["tmsetup_wifi_device"]
+    if host.run(f"cat /sys/class/net/{device}/address").rc != 0:
+        pytest.skip(f"the unit has no {device}")
+    expected = wifi_client_profiles(host)
+    assert expected is not None, "sudo nmcli couldn't list the Wi-Fi client profiles"
+    answer = request_from_this_machine(address, f"{API}/network/wifi", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/network/wifi answered HTTP {answer.status}"
+    saved = state.get("saved")
+    assert isinstance(saved, list), f"GET {API}/network/wifi has no saved list (readable: {state.get('readable')})"
+    assert {entry.get("uuid"): entry.get("name") for entry in saved} == expected, (
+        f"GET {API}/network/wifi's saved networks (uuid: name) differ from nmcli's Wi-Fi client profiles")
+    secret_keys = sorted({key for key in json_keys(state) if "password" in key.lower() or "psk" in key.lower()})
+    assert not secret_keys, f"GET {API}/network/wifi has keys that name a password: {secret_keys}"
+
+
+# Each one would change the Wi-Fi if a viewer were let through; none can, because require_admin answers first. The scan
+# is sent first and alone: only when it was refused as admin-only is anything else sent. The bodies are valid and use a
+# placeholder name, so a refusal can't come from validation.
+WIFI_ADMIN_ACTIONS = [
+    ("/network/wifi/scan", {}),
+    ("/network/wifi/join", {"name": "placeholder-network"}),
+    ("/network/wifi/join/switch", {}),
+    ("/network/wifi/join/cancel", {}),
+    ("/network/wifi/forget", {"uuid": "00000000-0000-0000-0000-000000000000"}),
+    ("/network/wifi/order", {"uuids": []}),
+]
+
+
+@pytest.mark.parametrize("path, body", WIFI_ADMIN_ACTIONS,
+                         ids=[path.removeprefix("/network/") for path, _ in WIFI_ADMIN_ACTIONS])
+def test_a_viewer_cannot_start_a_scan_or_a_join(address, viewer_session, path, body):
+    """A viewer's scan, join, Switch now, Cancel, Forget, or reorder of the Wi-Fi networks gets require_admin's 403."""
+    if path != WIFI_ADMIN_ACTIONS[0][0]:
+        guard = admin_refusal(request_from_this_machine(address, f"{API}{WIFI_ADMIN_ACTIONS[0][0]}", "POST",
+                                                        viewer_session, {}))
+        if guard != (403, ADMIN_ONLY):
+            pytest.fail(f"a viewer's POST {API}{WIFI_ADMIN_ACTIONS[0][0]} answered {guard}, not require_admin's 403, "
+                        f"so POST {API}{path} wasn't sent: it could change the unit's Wi-Fi", pytrace=False)
+    answer = request_from_this_machine(address, f"{API}{path}", "POST", viewer_session, body)
+    assert admin_refusal(answer) == (403, ADMIN_ONLY), f"POST {API}{path} with a viewer session (status, message)"
+
+
 def json_keys(value):
     """Every object key anywhere in parsed JSON."""
     if isinstance(value, dict):

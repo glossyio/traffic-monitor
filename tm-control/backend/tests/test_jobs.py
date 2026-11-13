@@ -208,7 +208,7 @@ def test_a_failed_start_removes_the_request_and_records_the_job(settings, state,
 
 
 def test_unknown_job_name_is_refused(settings, runner):
-    assert JOB_NAMES == {"system-password", "set-secret", "network"}
+    assert JOB_NAMES == {"system-password", "set-secret", "network", "network-join"}
     with pytest.raises(ValueError):
         runner.start("reboot", {}, user_id=None)
     assert not (settings.runtime_dir / "jobs" / "reboot.json").exists()

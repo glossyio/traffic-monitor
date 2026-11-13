@@ -43,7 +43,7 @@ The checks come in groups:
 | Check | What it says |
 |---|---|
 | Hotspot | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (**Set a password** opens the [Network page](wifi-hotspot.md#change-the-password); see also [A hotspot you set up by hand](wifi-hotspot.md#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
-| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach. |
+| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach. The [Network page](wifi-hotspot.md#saved-networks) lists the saved networks and lets an administrator join a network, reorder them, and forget them. |
 | Internet | **Reachable**, or **Not reachable. That's normal for an offline unit.** It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem. |
 | Wi-Fi country | The country, or a warning that none is set. Rerun the installer with `-t wifi` and it asks; see [The Wi-Fi country](wifi-hotspot.md#the-wi-fi-country). |
 

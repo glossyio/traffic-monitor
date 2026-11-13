@@ -75,6 +75,18 @@ def test_network_job_unit_is_static(host):
     check_job_unit_is_static(host, NETWORK_UNIT, "tm-job-network")
 
 
+JOIN_UNIT = "tm-job-network-join.service"
+
+
+def test_network_join_job_unit_is_static(host):
+    """The join job's unit, which tests a Wi-Fi network and switches the radio to it, is static like the network job's
+    and runs the job's root-owned copy; and it has the time limits a run needs (a oneshot has none unless given)."""
+    check_job_unit_is_static(host, JOIN_UNIT, "tm-job-network-join")
+    limits = host.check_output(f"systemctl show -p TimeoutStartUSec -p TimeoutStopUSec {JOIN_UNIT}")
+    found = dict(line.split("=", 1) for line in limits.splitlines() if "=" in line)
+    assert found == {"TimeoutStartUSec": "15min", "TimeoutStopUSec": "2min"}, f"{JOIN_UNIT}'s time limits: {found}"
+
+
 def test_ui_build_unit_finished(host):
     """The revproxy image, which builds tm-control's UI, was built by its Quadlet build unit. The unit doesn't remain
     active after it exits, so this checks its last run: it ran, exited 0, and systemd counted it a success."""

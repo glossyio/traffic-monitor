@@ -43,9 +43,10 @@ def saved(uuid=UUID, **props):
 
 def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=(), scan=("Home",), radio="enabled",
           join=None, device_state=None, sys_net="wifi", hotspot=HOTSPOT, state_text=None, ap_fails=False,
-          iw_fail=(), join_delay=0, hold_lock=False):
+          iw_fail=(), join_delay=0, hold_lock=False, lock_path=None):
     """Run the job once. join="fail" makes every saved network refuse to connect, after join_delay seconds; sys_net is
-    wifi, usb or none. hold_lock=True has the test hold the network lock for the whole run, as a network job would."""
+    wifi, usb or none. hold_lock=True has the test hold the network lock for the whole run, as a network job would;
+    lock_path names the lock when another job's test shares it."""
     profiles = {"Home": saved()} if profiles is None else dict(profiles)
     if hotspot is not None:
         profiles["tm-hotspot"] = dict(hotspot)
@@ -70,16 +71,16 @@ def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=()
     for log in ("nmcli.log", "iw.log"):
         (tmp_path / log).unlink(missing_ok=True)
     retry_state = tmp_path / "retry.json"
+    lock_path = lock_path or tmp_path / "lock" / "network.lock"
     if state_text is not None:
         retry_state.write_text(state_text)
     env = {
         "PATH": os.environ["PATH"], "NMCLI": str(NMCLI), "IW": str(IW), "TM_SYS_NET": str(sys_dir / "class" / "net"),
-        "TM_NETWORK_STATE": str(retry_state), "TM_NETWORK_LOCK": str(tmp_path / "lock" / "network.lock"), "TM_NOW": str(now), "TM_HOTSPOT_WAIT": "0",
+        "TM_NETWORK_STATE": str(retry_state), "TM_NETWORK_LOCK": str(lock_path), "TM_NOW": str(now), "TM_HOTSPOT_WAIT": "0",
         "TM_WIFI_DEVICE": "wlan0", "TM_HOTSPOT_PROFILE": "tm-hotspot",
         "FAKE_NMCLI_STATE": str(tmp_path / "nmcli.json"), "FAKE_NMCLI_LOG": str(tmp_path / "nmcli.log"),
         "FAKE_IW_STATE": str(tmp_path / "iw.json"), "FAKE_IW_LOG": str(tmp_path / "iw.log"),
     }
-    lock_path = tmp_path / "lock" / "network.lock"
     held = None
     if hold_lock:
         lock_path.parent.mkdir(exist_ok=True)
@@ -360,3 +361,29 @@ def test_the_wait_follows_the_failure_count():
 def test_a_clock_that_went_backwards_does_not_freeze_a_network(tmp_path):
     job = load_job()
     assert job.due({"name": "Home", "failures": 3, "last_failure": 5000.0}, 100)
+
+
+def test_a_failure_the_join_job_recorded_makes_the_retry_wait(tmp_path):
+    from test_job_network_join import NEW, World as JoinWorld
+
+    unit = tmp_path / "join"
+    unit.mkdir()
+    join = JoinWorld(unit)
+    join.up_fails("HomeNet", after=1)  # the test joins; the switch fails
+    job = join.counting(NEW)
+    try:
+        held = world(tmp_path, scan=("HomeNet",), lock_path=join.lock)
+        assert (held.code, held.outcome) == (0, "locked") and held.log == [] and held.state is None
+    finally:
+        join.control("switch")
+        assert join.finish(job).returncode == 0
+    assert join.state()["stage"] == "switch_failed"
+    home = join.uuid("HomeNet")
+    recorded = join.retry_path().read_text()
+    stamp = json.loads(recorded)["networks"][home]["last_failure"]
+    profiles = {"HomeNet": saved(home)}
+    waiting = world(tmp_path, now=stamp + 299, profiles=profiles, scan=("HomeNet",), state_text=recorded)
+    assert waiting.outcome == "nothing-to-try" and ups(waiting) == []
+    assert waiting.state["networks"][home]["failures"] == 1
+    later = world(tmp_path, now=stamp + 300 + EDGE, profiles=profiles, scan=("HomeNet",))
+    assert later.outcome == "joined" and ups(later) == [home]
