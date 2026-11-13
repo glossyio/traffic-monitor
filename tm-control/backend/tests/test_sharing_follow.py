@@ -100,7 +100,9 @@ def test_an_upload_already_on_is_recorded_and_flagged(unit):
     assert len(rows(unit)) == 1
 
 
-def test_an_untouched_unit_gets_no_block_and_no_row(unit):
+@pytest.mark.parametrize("host", [HOST, "tb.server.com"])  # the default, and the template's old placeholder
+def test_an_untouched_unit_gets_no_block_and_no_row(unit, host):
+    edit(unit, "host: tb.example.invalid", f"host: {host}")
     before = unit.path.read_bytes()
     assert follow.run(unit.app_state) is False
     assert rows(unit) == []
@@ -155,6 +157,58 @@ def test_a_changed_host_withdraws_the_other_choices(unit):
     assert len(unit.writes) == writes + 1
 
     assert follow.run(unit.app_state) is False  # nothing left to change
+
+
+def test_editing_both_hosts_still_withdraws_the_old_server(unit):
+    turn_on(unit)
+    grant(unit, "share_data", "exact_location")
+    assert follow.run(unit.app_state) is True
+    assert block(unit).exact_location is True
+
+    text = unit.path.read_text()
+    assert text.count("host: tb.example.invalid") == 2  # thingsboard: and sharing:
+    unit.path.write_text(text.replace("host: tb.example.invalid", "host: other.example.invalid"))
+    assert follow.run(unit.app_state) is True
+    old = unit.consents.latest(MAINTAINER)
+    assert not old["share_data"].granted and not old["exact_location"].granted
+    assert old["exact_location"].note == CHANGED_NOTE
+    assert block(unit) == SharingBlock(
+        target="own", host=OTHER, exact_location=False, public_map="none", notice_version=PRE_CONSENT
+    )
+
+    text = unit.path.read_text()
+    unit.path.write_text(text.replace("host: other.example.invalid", "host: tb.example.invalid"))
+    follow.run(unit.app_state)
+    back = unit.consents.latest(MAINTAINER)
+    assert (back["share_data"].granted, back["share_data"].notice_version) == (True, PRE_CONSENT)
+    assert not back["exact_location"].granted
+    assert not unit.consents.granted("own:" + OTHER, "share_data")
+    assert block(unit).exact_location is False
+
+
+def test_a_granted_exact_location_for_the_same_host_is_left_alone(unit):
+    turn_on(unit)
+    grant(unit, "share_data", "exact_location")
+    assert follow.run(unit.app_state) is True
+    assert unit.writes == [True]
+    before = unit.path.read_bytes()
+    assert follow.run(unit.app_state) is False
+    assert unit.writes == [True] and unit.path.read_bytes() == before
+    assert unit.consents.granted(MAINTAINER, "exact_location")
+
+
+def test_removing_the_host_withdraws_and_clears_the_block(unit):
+    turn_on(unit)
+    grant(unit, "share_data", "exact_location")
+    assert follow.run(unit.app_state) is True
+
+    edit(unit, "    host: tb.example.invalid\n    protocol:", "    host:\n    protocol:")
+    assert follow.run(unit.app_state) is True
+    latest = unit.consents.latest(MAINTAINER)
+    assert not latest["share_data"].granted and not latest["exact_location"].granted
+    assert latest["share_data"].note == CHANGED_NOTE
+    assert block(unit) == SharingBlock()
+    assert follow.run(unit.app_state) is False
 
 
 def test_a_hand_set_exact_location_is_written_back(unit):

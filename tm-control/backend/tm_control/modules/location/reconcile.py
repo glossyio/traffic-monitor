@@ -90,7 +90,9 @@ def ensure(app_state, user_id: int | None = None) -> Outcome:
 
     app_state carries state, manifest, nodered, config_path, and reconcile_lock. user_id becomes created_by on the
     places this creates. A ConfigError from saving config.yml (changed since it was read, or not writable) is raised.
-    The sharing follow step (modules/sharing/follow.py) runs next, under the same lock, whatever the places' state.
+    The sharing follow step (modules/sharing/follow.py) runs next, under the same lock, whatever state the places
+    part returned. When the places part raises, the follow step is skipped for that call (the next run catches up);
+    a ConfigError from the follow step's own save is raised in place of the places' outcome.
     """
     with app_state.reconcile_lock:
         outcome = _ensure(app_state, user_id)

@@ -90,6 +90,12 @@ class Consents:
                 (target, consent, int(granted), notice_version, _timestamp(now), user_id, note),
             )
 
+    def targets(self) -> list[str]:
+        """Every target with any row, granted or not, in the order its first row was recorded."""
+        with _reading(self.state) as con:
+            rows = con.execute("SELECT target FROM sharing_consents GROUP BY target ORDER BY MIN(id)").fetchall()
+        return [row["target"] for row in rows]
+
     def withdraw_all(self, target: str, user_id: int | None, note: str | None, now: float | None = None) -> list[str]:
         """Withdraw every consent whose latest row is granted, in one transaction; return their names."""
         at = _timestamp(now)

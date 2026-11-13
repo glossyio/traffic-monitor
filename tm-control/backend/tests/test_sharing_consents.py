@@ -135,6 +135,15 @@ def test_target_key(host, maintainer_host, expected):
     assert target_key(host, maintainer_host) == expected
 
 
+def test_targets_lists_every_target_with_a_row_in_the_order_first_recorded(consents):
+    assert consents.targets() == []
+    consents.record("own:" + HOST, "share_data", True, OWN_SERVER, None, now=3000)
+    consents.record(MAINTAINER, "share_data", True, "v1", None, now=1000)  # an earlier clock, a later row
+    consents.record("own:" + HOST, "share_data", False, OWN_SERVER, None, now=4000)
+    consents.withdraw_all(MAINTAINER, None, None)
+    assert consents.targets() == ["own:" + HOST, MAINTAINER]  # withdrawn ones too
+
+
 def test_review_flag_round_trips(consents, state):
     assert consents.review_needed() is False
     consents.set_review_needed(True)

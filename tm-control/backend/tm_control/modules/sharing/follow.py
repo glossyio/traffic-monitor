@@ -7,8 +7,9 @@ it never grants anything. Each run, for the target the upload goes to (the thing
 2. The upload is on and sharing data isn't granted for the target (a unit upgraded with the upload on, or one turned
    on by hand): it is recorded as granted before consent was recorded (pre-consent, no user), and an admin is asked to
    review it. Nothing else is granted.
-3. The block names another server than the upload's (the host was changed in the file): every choice granted for the
-   server it names is withdrawn.
+3. Every choice granted for any other target is withdrawn: the server changed in the file (whether or not the block
+   changed with it), and choices are kept for one target at a time, so switching back never revives old ones. With no
+   host in the upload, that is every target.
 4. The block is rewritten to what the store asks for (wanted_block) when it means something else, or when the file has
    none and the store grants the exact location or the public map; then Node-RED is told.
 
@@ -68,10 +69,12 @@ def run(app_state) -> bool:
             consents.record(target, "share_data", True, PRE_CONSENT, None, note=FOUND_NOTE)
             consents.set_review_needed(True)
             log.info("sharing: an upload found on was recorded for review")
-    if current is not None and current.host is not None and current.host != host:
-        withdrawn = consents.withdraw_all(target_key(current.host, maintainer_host), None, CHANGED_NOTE)
-        if withdrawn:
-            log.info("sharing: %d choices withdrawn, as the server changed", len(withdrawn))
+    changed = 0
+    for other in consents.targets():
+        if other != target:  # the current target's rows were handled above, so no row is withdrawn twice
+            changed += len(consents.withdraw_all(other, None, CHANGED_NOTE))
+    if changed:
+        log.info("sharing: %d choices withdrawn, as the server changed", changed)
 
     latest = consents.latest(target) if target is not None else {}
     share_data = latest.get("share_data")
