@@ -97,6 +97,31 @@ def test_clear_drops_a_finished_record_but_not_a_running_one():
     assert fetches.current() is None
 
 
+def test_begin_use_refuses_while_a_download_runs_or_another_use_is_in_flight():
+    assert downloading().begin_use() == "downloading"
+    fetches = Fetches()
+    assert fetches.begin_use() is None
+    assert fetches.begin_use() == "changing"
+    fetches.end_use()
+    assert fetches.begin_use() is None
+
+
+def test_start_refuses_while_a_use_is_in_flight_unless_its_caller_holds_it():
+    fetches = Fetches()
+    assert fetches.begin_use() is None
+    assert not fetches.start(MODEL_A)
+    assert fetches.current() is None
+    assert fetches.start(MODEL_A, holding_use=True)
+    fetches.end_use()
+    assert fetches.begin_use() == "downloading"
+
+
+def test_a_finished_download_lets_a_use_begin():
+    fetches = downloading()
+    fetches.finish("saved")
+    assert fetches.begin_use() is None
+
+
 def test_a_200_calls_on_saved_then_records_saved(monkeypatch):
     sent = answers(monkeypatch, (200, "Config successfully saved."))
     fetches = downloading()
