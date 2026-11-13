@@ -668,26 +668,29 @@ def test_status_report_agrees_with_the_inventory(address, expect, admin_session)
     assert not problems, "status checks that don't match the inventory: " + "; ".join(problems)
 
 
+# The issue codes the config.cameras check reads from the rows (tm_control/modules/cameras/state.py); the zones and
+# radar codes belong to other checks
+CAMERAS_CHECK_CODES = {"not_paired", "duplicate", "gone", "camera_off", "capture_off", "detect_off"}
+
+
 def test_cameras_page_agrees_with_the_status_check(address, admin_session):
-    """The Cameras page and the config.cameras check come from the same comparison, so they agree: Frigate answers, and
-    while the check is ok, no enabled Frigate camera lacks an entry, no entry is a duplicate, and no enabled entry
-    points at a camera Frigate doesn't have enabled or doesn't detect objects on. A failure names keys and Frigate's
+    """The Cameras page and the config.cameras check come from the same comparison, so they agree in every state,
+    including the installer's, with Frigate's detection off: Frigate answers, and the check's status is the worst
+    level among the rows' issues that are the check's (error, else warn, else ok). A failure names keys and Frigate's
     camera names, as the page does behind the login."""
     answer = request_from_this_machine(address, f"{API}/cameras", cookie=admin_session)
     state = answer.json() if answer.status == 200 else None
     assert isinstance(state, dict), f"GET {API}/cameras with the admin session answered HTTP {answer.status}"
     assert state.get("frigate") == "ok", f"the Cameras page says Frigate is {state.get('frigate')}"
     status, detail = status_checks(address, admin_session).get("config.cameras", ("missing", None))
-    if status != "ok":
-        pytest.skip(f"config.cameras is {status}, so the page has something to show ({detail})")
-    problems = [f"Frigate's {row['frigate_camera']} has no entry" for row in state["rows"]
-                if row["name"] is None and row["in_frigate"] == "on"]
-    problems += [f"{row['name']} duplicates {row['duplicate_of']}" for row in state["rows"] if row["duplicate_of"]]
-    problems += [f"{row['name']} is enabled but {row['in_frigate']} in Frigate" for row in state["rows"]
-                 if row["name"] is not None and row["enabled"] and row["in_frigate"] != "on"]
-    problems += [f"{row['name']} is enabled but Frigate's detection is off" for row in state["rows"]
-                 if row["name"] is not None and row["enabled"] and row.get("detect") is False]
-    assert not problems, "config.cameras is ok, but the Cameras page shows: " + "; ".join(problems)
+    marked = [(row["name"] or f"Frigate's {row['frigate_camera']}", issue["level"], issue["code"])
+              for row in state["rows"] for issue in row.get("issues", []) if issue["code"] in CAMERAS_CHECK_CODES]
+    levels = {level for _, level, _ in marked}
+    expected = "error" if "error" in levels else "warn" if "warn" in levels else "ok"
+    assert status == expected, (
+        f"config.cameras is {status} ({detail}), but the Cameras page's rows say {expected}: "
+        + ("; ".join(f"{name}: {level} {code}" for name, level, code in marked) or "no issue")
+    )
 
 
 # require_admin's refusal (tm_control/modules/auth/deps.py), which the cross-site check's 403 doesn't say
