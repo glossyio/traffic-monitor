@@ -529,8 +529,14 @@ describe('the Detection page', () => {
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(wrapper.find('#frigate-plus form').exists()).toBe(true)
     expect(wrapper.find('#frigate-plus h3').text()).toBe('API key not set') // the panel's title sits inside a heading
-    expect(wrapper.findAll('#frigate-plus h3')).toHaveLength(1) // the form's own title is hidden: this one says it
+    // the key form's own title is hidden: the panel titles are the only h3s, one each
+    expect(wrapper.findAll('#frigate-plus h3').map((h) => h.text())).toEqual(['API key not set', 'Use a model by its ID'])
     expect(toggle.element.closest('h3')).not.toBeNull()
+    expect(panel(wrapper, 'Use a model by its ID').element.closest('h3')).not.toBeNull()
+    for (const h of wrapper.findAll('#frigate-plus h3')) {
+      expect(h.classes()).toContain('text-body-1') // smaller than the section's h2, which is text-h6
+      expect(h.find('.text-subtitle-1').exists()).toBe(true)
+    }
     await toggle.trigger('click')
     expect(toggle.attributes('aria-expanded')).toBe('true')
     expect(wrapper.text()).not.toContain('ThingsBoard access token')
