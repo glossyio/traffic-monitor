@@ -121,7 +121,10 @@ def cameras_in_config(context: Context) -> list[Check]:
     if warnings:
         return check("warn", " ".join(warnings), CAMERAS_LINK)
     if not recorded:
-        return check("ok", "Frigate has no enabled camera to compare.")
+        if not any(row.in_frigate == "on" for row in rows):
+            return check("ok", "Frigate has no enabled camera to compare.")
+        return check("ok", "No camera is recorded, and no events are dropped: none has both Frigate detection and "
+                           "Database capture on.")
     return check("ok", f"{listed(recorded)} {'is' if len(recorded) == 1 else 'are'} in Frigate and enabled in "
                        "config.yml.")
 
