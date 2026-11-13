@@ -234,7 +234,7 @@ def test_the_models_answer_is_json_with_no_sidecar_fields_beyond_the_listed(seed
     login(seeded, *ADMIN)
     document = json.loads(seeded.get(URL).text)
     assert set(document) == {"detector", "frigate_answers", "frigate_safe_mode", "default", "running", "models",
-                             "labels"}
+                             "labels", "fetch"}
     assert set(document["running"]) == {"name", "kind", "source"}
     assert set(document["labels"]) == {"recognised", "source", "tracked"}
 
@@ -961,6 +961,7 @@ class DeviceFrigate:
         self.save = save
         self.config = config  # /api/config's answer in place of the fixture's
         self.posts = []
+        self.timeouts = []  # each post's timeout, in the order of posts
 
     def get(self, url, headers=None, timeout=None):
         if self.raw is None:
@@ -975,6 +976,7 @@ class DeviceFrigate:
 
     def post(self, url, body, content_type, headers=None, timeout=None):
         self.posts.append((url, body.decode(), content_type))
+        self.timeouts.append(timeout)
         if self.raw is None:
             return None, None
         status, answer = self.save
@@ -1219,6 +1221,214 @@ def test_a_use_is_refused_on_a_device_whose_detector_sets_a_model(
                               "editor first.")
         assert api.posts == []
     assert config.read_text() == detector_model and backups_of(config) == [] and systemctl.restarts() == []
+
+
+# Use by ID: a Frigate+ model the device has is used as Use does; one it hasn't is saved through Frigate, which
+# downloads it while it validates the config, on a thread whose record GET /models carries for admins.
+
+NEW_ID = "f" * 32
+DOWNLOADING = "Frigate is downloading a model; wait for it to finish."
+
+
+def plus_use(client, model_id):
+    return client.post(f"{URL}/plus/{model_id}/use", json={}, headers=WRITE_HEADERS)
+
+
+def set_key(client, value):
+    """The Frigate+ API key as a device keeps it: a file in the secrets directory, empty when it isn't set."""
+    from tm_control.core.secrets import FRIGATE_PLUS_API_KEY
+
+    (client.app.state.settings.secrets_dir / FRIGATE_PLUS_API_KEY).write_text(value + "\n" if value else "")
+
+
+@pytest.fixture
+def plus_device(device_client, tmp_path, monkeypatch):
+    """device_client with PLUS_CONFIG and the fixture pair, the Frigate+ key set, and the download's wait run inline;
+    returns Frigate's config.yml."""
+    from placeholders import PLACEHOLDER_KEY
+    from tm_control.modules.detection import fetch
+
+    monkeypatch.setattr(fetch, "spawn", lambda target: target())
+    set_key(device_client, PLACEHOLDER_KEY)
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    return codedir / "frigate" / "config" / "config.yml"
+
+
+@pytest.mark.parametrize("bad", ["abc", "F" * 32, "g" * 32, "f" * 33, "plus"])
+def test_a_bad_id_is_422_and_reaches_nothing(device_client, login, plus_device, systemctl, frigate_api, bad):
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, bad)
+    assert (r.status_code, r.json()["error"]["code"]) == (422, "bad_id")
+    assert message(r) == "A Frigate+ model ID is 32 characters, each 0-9 or a-f."
+    assert api.posts == [] and systemctl.restarts() == []
+
+
+def test_an_id_on_the_device_is_an_ordinary_use(device_client, login, plus_device, systemctl, frigate_api):
+    write_pair(plus_device.parent / "model_cache", PLUS_ID, id=PLUS_ID)
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, PLUS_ID)
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": PLUS_ID, "started": "restart", "restarts": ["frigate.service"]}
+    ((_, body, _),) = api.posts
+    assert yaml_of(body)["model"] == {"path": f"plus://{PLUS_ID}"}
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+    assert use_rows(device_client.app.state.settings) == [PLUS_ID]
+    assert models_of(device_client)["fetch"] is None
+
+
+def test_an_id_on_the_device_is_used_from_the_file_when_frigate_is_down(
+        device_client, login, plus_device, systemctl, frigate_api):
+    config = plus_device
+    config.write_text("detectors:\n  coral:\n    type: edgetpu\n    device: usb\n")
+    write_pair(config.parent / "model_cache", PLUS_ID, id=PLUS_ID)
+    api = frigate_api(None)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, PLUS_ID)
+    assert r.status_code == 202, r.text
+    assert r.json()["started"] == "restart"
+    assert api.posts == []
+    assert yaml_of(config.read_text())["model"] == {"path": f"plus://{PLUS_ID}"}
+    assert len(backups_of(config)) == 1 and systemctl.restarts() == [FRIGATE_RESTART]
+
+
+def test_fetching_needs_the_key(device_client, login, plus_device, systemctl, frigate_api):
+    set_key(device_client, "")
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, NEW_ID)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "no_key")
+    assert message(r) == "Set the Frigate+ API key first."
+    assert api.posts == [] and models_of(device_client)["fetch"] is None
+
+
+def test_fetching_needs_frigate_and_writes_no_file(device_client, login, plus_device, systemctl, frigate_api):
+    config = plus_device
+    api = frigate_api(None)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, NEW_ID)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "frigate_down")
+    assert message(r) == "Frigate isn't answering, and it has to be running to download a model."
+    assert api.posts == [] and config.read_text() == PLUS_CONFIG and backups_of(config) == []
+    assert systemctl.restarts() == [] and models_of(device_client)["fetch"] is None
+
+
+def test_a_fetch_saves_through_frigate_then_restarts_it(device_client, login, plus_device, systemctl, frigate_api):
+    config = plus_device
+    api = frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, NEW_ID)
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": NEW_ID, "started": "download", "restarts": []}
+    ((url, body, _),) = api.posts
+    assert url == "http://127.0.0.1:5000/api/config/save?save_option=saveonly" and api.timeouts == [600]
+    assert yaml_of(body)["model"] == {"path": f"plus://{NEW_ID}"}
+    assert yaml_of(body)["detectors"] == yaml_of(PLUS_CONFIG)["detectors"]
+    assert config.read_text() == PLUS_CONFIG and backups_of(config) == []  # Frigate writes its own file
+    assert systemctl.restarts() == [FRIGATE_RESTART]
+    assert use_rows(device_client.app.state.settings) == [NEW_ID]
+    assert models_of(device_client)["fetch"] == {"model_id": NEW_ID, "state": "saved", "message": None}
+
+
+def test_a_refused_fetch_restarts_nothing_and_says_why(device_client, login, plus_device, systemctl, frigate_api):
+    from placeholders import PLACEHOLDER_KEY
+
+    traceback = ("Traceback (most recent call last):\n  File \"/opt/frigate/frigate/plus.py\", line 1, in x\n"
+                 f"Exception: Unable to refresh API token: {PLACEHOLDER_KEY}\n")
+    frigate_api(PLUS_CONFIG, save=(400, {"success": False, "message": traceback}))
+    login(device_client, *ADMIN)
+    assert plus_use(device_client, NEW_ID).status_code == 202
+    r = device_client.get(URL)
+    fetch = r.json()["fetch"]
+    assert (fetch["model_id"], fetch["state"]) == (NEW_ID, "refused")
+    assert fetch["message"].startswith("Frigate refused the model: Exception: Unable to refresh API token")
+    assert PLACEHOLDER_KEY not in r.text
+    assert systemctl.restarts() == [] and use_rows(device_client.app.state.settings) == []
+
+
+def test_a_fetch_is_refused_when_a_detector_sets_its_own_model(
+        device_client, login, plus_device, systemctl, frigate_api):
+    detector_model = "detectors:\n  coral:\n    type: edgetpu\n    model:\n      path: /config/model_cache/a\n"
+    plus_device.write_text(detector_model)
+    api = frigate_api(detector_model)
+    login(device_client, *ADMIN)
+    r = plus_use(device_client, NEW_ID)
+    assert (r.status_code, r.json()["error"]["code"]) == (409, "detector_model")
+    assert api.posts == [] and models_of(device_client)["fetch"] is None
+
+
+def test_every_use_is_409_while_a_download_runs(device_client, login, plus_device, systemctl, frigate_api):
+    write_pair(plus_device.parent / "model_cache", "mine.tflite")
+    (plus_device.parent / "model_cache" / INSTALLER_FILE).write_bytes(bytes(1024))
+    api = frigate_api(PLUS_CONFIG)
+    device_client.app.state.fetches.start(NEW_ID)
+    login(device_client, *ADMIN)
+    for r in (use(device_client, "mine.tflite"), use(device_client, "default"), use(device_client, INSTALLER_FILE),
+              plus_use(device_client, PLUS_ID), plus_use(device_client, "e" * 32)):
+        assert (r.status_code, r.json()["error"]["code"], message(r)) == (409, "downloading", DOWNLOADING)
+    assert api.posts == [] and systemctl.restarts() == [] and use_rows(device_client.app.state.settings) == []
+    assert models_of(device_client)["fetch"] == {"model_id": NEW_ID, "state": "downloading", "message": None}
+
+
+def test_uploads_and_deletes_stay_open_while_a_download_runs(seeded, settings, login):
+    seeded.app.state.fetches.start(NEW_ID)
+    login(seeded, *ADMIN)
+    assert put(seeded, "new.tflite", b"\x01").status_code == 201
+    assert delete(seeded, "mine.tflite").status_code == 204
+    assert models_of(seeded)["fetch"]["state"] == "downloading"
+
+
+def test_a_use_clears_a_finished_fetch(seeded, settings, login):
+    fetches = seeded.app.state.fetches
+    fetches.start(NEW_ID)
+    fetches.finish("refused", "x")
+    login(seeded, *ADMIN)
+    assert models_of(seeded)["fetch"] == {"model_id": NEW_ID, "state": "refused", "message": "x"}
+    assert use(seeded, "mine.tflite").status_code == 202
+    assert models_of(seeded)["fetch"] is None
+
+
+def test_fetch_is_null_for_a_viewer(seeded, login):
+    seeded.app.state.fetches.start(NEW_ID)
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert models_of(seeded)["fetch"] is None
+
+
+def test_use_by_id_is_admin_only(seeded, settings, login):
+    assert plus_use(seeded, NEW_ID).status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert plus_use(seeded, NEW_ID).status_code == 403
+    assert seeded.app.state.fetches.current() is None
+
+
+def test_fake_mode_fetches_its_one_id_and_refuses_others(seeded, settings, login, monkeypatch):
+    from placeholders import PLACEHOLDER_KEY
+    from tm_control.core.secrets import FRIGATE_PLUS_API_KEY
+    from tm_control.modules.detection import fetch
+
+    monkeypatch.setattr(fake, "FAKE_FETCH_SECONDS", 0)
+    monkeypatch.setattr(fetch, "spawn", lambda target: target())
+    login(seeded, *ADMIN)
+    assert plus_use(seeded, fake.FAKE_FETCHABLE_ID).json()["error"]["code"] == "no_key"
+    seeded.app.state.secrets.entered[FRIGATE_PLUS_API_KEY] = PLACEHOLDER_KEY
+    r = plus_use(seeded, fake.FAKE_FETCHABLE_ID)
+    assert r.status_code == 202, r.text
+    assert r.json() == {"name": fake.FAKE_FETCHABLE_ID, "started": "download", "restarts": []}
+    state = models_of(seeded)
+    assert state["fetch"] == {"model_id": fake.FAKE_FETCHABLE_ID, "state": "saved", "message": None}
+    assert state["running"] == {"name": fake.FAKE_FETCHABLE_ID, "kind": "frigate_plus", "source": "frigate"}
+    names = cache_names(settings)
+    assert fake.FAKE_FETCHABLE_ID in names and f"{fake.FAKE_FETCHABLE_ID}.json" in names
+    assert use_rows(settings) == [fake.FAKE_FETCHABLE_ID]
+    r = plus_use(seeded, "a" * 32)
+    assert r.status_code == 202, r.text
+    assert models_of(seeded)["fetch"] == {
+        "model_id": "a" * 32, "state": "refused", "message": "Frigate refused the model: Exception: Model not found"}
+    assert fake.running_model_file(settings).read_text() == fake.FAKE_FETCHABLE_ID
+    assert "a" * 32 not in cache_names(settings)
 
 
 # Frigate's own default model file: a Hailo detector with no model path makes Frigate download yolov6n.hef into
