@@ -41,8 +41,8 @@ async function load() {
 }
 
 // The Frigate+ key (admins only), loaded again after each save or remove. The Status page's "Set the key" links to
-// the section, which opens, and the page scrolls to it once the models have answered and the sections above it have
-// their height.
+// the section, which is always there, and opens the key's panel; the page scrolls to the section once the models
+// have answered and the sections above it have their height.
 const FRIGATE_PLUS_ID = 'frigate-plus'
 const linkedToKey = route.hash === `#${FRIGATE_PLUS_ID}`
 const secrets = ref<SecretState[] | null>(null)
@@ -453,12 +453,14 @@ function openUpload() {
       </p>
       <v-expansion-panels v-if="session.isAdmin" v-model="keyOpen" multiple flat bg-color="background">
         <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
-          <v-expansion-panel-title class="text-h6">
-            <span class="d-flex flex-wrap align-baseline key-title">
-              <span>API key{{ ' ' }}</span>
-              <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
-            </span>
-          </v-expansion-panel-title>
+          <h3 class="text-body-1">
+            <v-expansion-panel-title>
+              <span class="d-flex flex-wrap align-baseline key-title">
+                <span class="text-subtitle-1 font-weight-medium">API key{{ ' ' }}</span>
+                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
+              </span>
+            </v-expansion-panel-title>
+          </h3>
           <v-expansion-panel-text>
             <v-alert v-if="secretsError" type="error">
               {{ secretsError }}

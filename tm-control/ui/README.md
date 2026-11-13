@@ -515,8 +515,8 @@ Object detection, Model in use, Frigate+, Other models on this device.
 | |   (person) (car) !dog! !cat!   | |  <- !amber! = not recognised
 | |   Amber: the running model     | |
 | |   doesn't recognise it.        | |
-| |   0123...cdef, 4.0 KB, SHA-256 | |
-| |   0123...cdef.json, 433 bytes  | |
+| |   mine.tflite, 2.0 KB, SHA-256 | |
+| |   mine.tflite.json, 433 bytes  | |
 | +--------------------------------+ |
 |                                    |
 | Frigate+                      (h2) |  <- outside the panel
@@ -524,8 +524,9 @@ Object detection, Model in use, Frigate+, Other models on this device.
 | a Frigate+ API key, pick ...       |
 | When it's offline, an              |  <- both paragraphs: everyone
 | administrator can upload ...       |
-| > API key  set, ending in 0001,    |  <- admins: one panel, closed;
-|   in use                           |     a viewer sees no panel
+| > API key  set, ending in 0001     |  <- admins: one panel, closed (h3
+|                                    |     holds its title); a viewer sees
+|                                    |     no panel
 |                                    |
 | Other models on this device (2)(h2)|
 | [Upload a model]                   |
@@ -581,8 +582,9 @@ Frigate+ text.
 - The card in use is always there once the models have loaded, so the running model's lists have a home whether
   Frigate answers or not. The page makes the card when the list has none. A default with no file on the device
   (Frigate's built-in model on a device without a Coral, which the API can't list) gets one with "Built into
-  Frigate." as its facts line ("Set up by the installer." for the installer's model) and no files; a running model with no entry in the list gets one titled with its name,
-  or "Unknown model" when Frigate gave none. Without the first, a CPU device's one choice would be a button with no
+  Frigate." as its facts line ("Set up by the installer." for the installer's model) and no files; a running model
+  with no entry in the list gets one titled with its name, or "Unknown model" when Frigate gave none, with no buttons
+  and no file lines. Without the first, a CPU device's one choice would be a button with no
   card. The other cards are as the API lists them.
 - One chip per model at most, in words: "In use" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
@@ -618,8 +620,10 @@ Frigate+ text.
   runs a Frigate+ model, and nothing until the secrets answer. A viewer gets the text and no panel. The section does
   not wait for `GET /models`, so it shows, and the key's form works, when the models can't load. The Status page's
   "Set the key" links to `/detection#frigate-plus`, which opens the panel and scrolls to the section. The panel's
-  content is rendered while closed (`eager`), so the page's height is known when the link scrolls. Its title
-  is a plain button at heading size, not a heading, because the section's h2 above it is the heading. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and state line.
+  content is rendered while closed (`eager`), so the page's height is known when the link scrolls. Its title, a
+  button, sits inside an h3 (`text-body-1`, like the Location page's panels), with "API key" in `text-subtitle-1
+  font-weight-medium`, the size of `EnteredSecret`'s own h3 on the Device page. At `text-h6` it read as large as the
+  section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and state line.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
   Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
   be). "Upload a model" sits under the "Other models" heading, above the cards it adds to, visible with nothing to
@@ -686,6 +690,10 @@ through the `#frigate-plus` link, and through a Use and a Delete:
 - A closed card looked bottom-heavy, with the card's padding under the title's own. The fold takes back 8 px of it.
 - On a Coral unit running the installer's model, Frigate's list had 91 entries, 74 of them `unknown`, so the top list
   read "(91)" over rows of `unknown` chips while the card said 17. The API now leaves `unknown` out of every list.
+- Looked at and kept: at 375 px each list title in the fold wraps and its Copy sits on its own row. Nothing overlaps,
+  and Copy sat on its own row inside the old panels too.
+- The panel title "API key" was at `text-h6`, as large as the "Frigate+" h2 above it, and had no heading around it.
+  It now sits in an h3 at the size of the Device page's key titles.
 
 #### Defaults rejected
 

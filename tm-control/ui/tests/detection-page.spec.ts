@@ -527,7 +527,9 @@ describe('the Detection page', () => {
     expect(toggle.text()).toBe('API key not set')
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(wrapper.find('#frigate-plus form').exists()).toBe(true)
-    expect(wrapper.find('#frigate-plus h3').exists()).toBe(false) // the title says it already
+    expect(wrapper.find('#frigate-plus h3').text()).toBe('API key not set') // the panel's title sits inside a heading
+    expect(wrapper.findAll('#frigate-plus h3')).toHaveLength(1) // the form's own title is hidden: this one says it
+    expect(toggle.element.closest('h3')).not.toBeNull()
     await toggle.trigger('click')
     expect(toggle.attributes('aria-expanded')).toBe('true')
     expect(wrapper.text()).not.toContain('ThingsBoard access token')
@@ -647,6 +649,10 @@ describe('the Detection page', () => {
     expect(wrapper.text()).not.toContain("Frigate isn't answering")
     expect(fact(wrapper, 'Detector')).toBe('edgetpu')
     expect(wrapper.find('.model.in-use').text()).toContain('Test site yolov9') // what the config file names
+    expect(usedFold(wrapper).findAll('h4').map((h) => h.text())).toEqual([
+      `Objects the running model recognises (${MODELS.labels.recognised!.length})`,
+      expect.stringMatching(/^Objects tracked on this device \(6/),
+    ])
   })
 
   it("says the running model's labels aren't known when Frigate answers without them", async () => {
