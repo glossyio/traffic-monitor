@@ -1,26 +1,30 @@
 <!--
   One model on the Detection page, in a bordered card: its title and chip, its facts, the API's problem, and for admins
   its buttons, the reason a Use can't work, and the result of its last action. Download is on every card whose model
-  file is on the device. Below those, a closed fold holds one line
-  per file and, when the model's labels are known, its objects and any tracked objects it doesn't recognise. The card
-  for the model Frigate runs is tinted. A block the page makes for a default with no file on the device has no fold.
-  The page keeps the state and the actions; the buttons only emit.
+  file is on the device. Below those, a closed fold holds one line per file and, when the model's labels are known, its
+  objects and any tracked objects it doesn't recognise. The card for the model Frigate runs is tinted and is the one
+  place for the running model's two lists (`lists`): they open the fold, ahead of the file lines, in place of the
+  model's own list, and the tracked objects the model doesn't recognise show on the card, between the facts and the
+  buttons. A block the page makes (model null) has a fold only when it holds the lists, and has no buttons, since it
+  has no model file. The page keeps the state and the actions; the buttons only emit.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { components } from '../../api/schema'
 import ActionResult, { type Result } from './ActionResult.vue'
 import LabelChips from './LabelChips.vue'
+import RunningLists, { notRecognised } from './RunningLists.vue'
 
 type ModelOut = components['schemas']['ModelOut']
 type ModelFile = components['schemas']['ModelFileOut']
+type LabelsOut = components['schemas']['LabelsOut']
 
 export interface Block {
-  key: string // the model's name, or "#frigate_default" / "#installer_default" for a block the page makes
+  key: string // the model's name, or "#frigate_default" / "#installer_default" / "#running" for a block the page makes
   title: string
   facts: string
   model: ModelOut | null // null for a block the page makes
-  kind: ModelOut['kind']
+  kind: ModelOut['kind'] | null // null when Frigate's model can't be read
   inUse: boolean
 }
 
@@ -34,6 +38,7 @@ const props = defineProps<{
   canUse: boolean
   tracked: string[] // what the device tracks, filled in the model's own list
   missing: string[] // tracked objects this model doesn't recognise
+  lists: { labels: LabelsOut; listsDiffer: boolean; frigateAnswers: boolean } | null // only for the card in use
 }>()
 defineEmits<{ use: []; download: []; remove: [] }>()
 
@@ -52,7 +57,13 @@ const mark = computed(() => {
   return null
 })
 
-const foldTitle = computed(() => (props.block.model?.labels ? 'Files and objects' : 'Files'))
+const foldTitle = computed(() => {
+  const { model } = props.block
+  if (!props.lists) return model?.labels ? 'Files and objects' : 'Files'
+  return model ? 'Files and objects' : 'Objects'
+})
+// The card in use shows these on the card, where the fold can't hide them
+const unrecognised = computed(() => (props.lists ? notRecognised(props.lists.labels) : []))
 const missingLine = computed(() => {
   const count = props.missing.length
   return `Doesn't recognise ${count} ${count === 1 ? 'object' : 'objects'} tracked on this device:`
@@ -79,6 +90,15 @@ const named = (model: ModelOut, file: ModelFile) => file.name !== model.title
     </div>
     <div v-if="block.facts" class="text-body-2 text-secondary">{{ block.facts }}</div>
     <div v-if="block.model?.problem" class="text-body-2">{{ block.model.problem }}</div>
+    <!-- Visible while the fold is closed -->
+    <div v-if="unrecognised.length" class="not-recognised mt-2">
+      <p class="text-body-2 mb-2">Tracked but not recognised by the running model:</p>
+      <div class="d-flex flex-wrap ga-2">
+        <v-chip v-for="label in unrecognised" :key="label" size="small" variant="outlined" color="warning">
+          {{ label }}
+        </v-chip>
+      </div>
+    </div>
     <!-- The defaults can't be deleted; their Use puts back the device's default -->
     <template v-if="admin">
       <div v-if="canUse || canDownload || canDelete" class="d-flex flex-wrap ga-2 mt-2">
@@ -121,18 +141,21 @@ const named = (model: ModelOut, file: ModelFile) => file.name !== model.title
     <ActionResult v-if="result" :result="result" />
     <!-- Transparent, so the card in use keeps its tint. Static, so the title doesn't grow when it opens. Eager, so the
          page's height is known when a link scrolls to the key panel. -->
-    <v-expansion-panels v-if="block.model" flat static bg-color="transparent" class="fold mt-1">
+    <v-expansion-panels v-if="block.model || lists" flat static bg-color="transparent" class="fold mt-1">
       <v-expansion-panel eager>
         <v-expansion-panel-title class="text-body-2">{{ foldTitle }}</v-expansion-panel-title>
         <v-expansion-panel-text>
+          <RunningLists v-if="lists" v-bind="lists" />
           <!-- A file's name, its size, and the start of its hash, with the whole hash as the span's title. On one line,
                so no space comes before a comma. The name may break anywhere, so a long one (a Frigate+ model's 32
                characters) never leaves its comma to start the next line; the hash's start doesn't wrap away from
                "SHA-256". -->
-          <div v-for="file in block.model.files" :key="file.name" class="text-body-2 text-secondary text-break">
-            <template v-if="named(block.model, file)"><span class="file-name">{{ file.name }}</span>, </template>{{ size(file.size) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
+          <div v-if="block.model" :class="{ 'mt-3': lists }">
+            <div v-for="file in block.model.files" :key="file.name" class="text-body-2 text-secondary text-break">
+              <template v-if="named(block.model, file)"><span class="file-name">{{ file.name }}</span>, </template>{{ size(file.size) }}<template v-if="file.sha256">, <span class="text-no-wrap" :title="file.sha256">SHA-256 {{ file.sha256.slice(0, 12) }}</span></template>
+            </div>
           </div>
-          <template v-if="block.model.labels">
+          <template v-if="!lists && block.model?.labels">
             <LabelChips
               class="mt-3"
               :title="`Objects it recognises (${block.model.labels.length})`"
