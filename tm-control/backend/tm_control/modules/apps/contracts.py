@@ -372,6 +372,7 @@ FRIGATE_CONFIG_PROBLEM = {
     "invalid": "Frigate's config.yml has a YAML error",
 }
 SET_THE_KEY = Fix(kind="link", text="Set the key", href="/detection#frigate-plus")
+CHOOSE_A_MODEL = Fix(kind="link", text="Choose a model", href="/detection#frigate-plus-model")
 # How to get out of a Frigate that stops while it fetches a Frigate+ model it can't have
 WAYS_OUT = (
     "enter the right key on the Detection page, upload the model's two files there, or choose Use the installer's "
@@ -455,9 +456,10 @@ def frigate_plus(context: Context) -> list[Check]:
         else:
             which = "a local model"
         return check("warn", "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but "
-                             f"Frigate runs {which} rather than a Frigate+ model. Once a model is trained, pick it "
-                             "under Settings, System, Detectors and model in Frigate, or upload it on the Detection "
-                             "page and choose Use.")
+                             f"Frigate runs {which} rather than a Frigate+ model. Once a model is trained, use it "
+                             "by its ID on the Detection page, under Frigate+, pick it under Settings, System, "
+                             "Detectors and model in Frigate, or upload it on the Detection page and choose Use.",
+                     CHOOSE_A_MODEL)
     model_id = plus_model_id(path)
     if model_id is None:
         return check("error", "model.path in Frigate's config names a Frigate+ model id with characters a model id "
