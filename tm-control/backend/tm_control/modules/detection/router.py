@@ -12,12 +12,23 @@ wrote, sent, or removed, never a file's content.
 Using a model (POST /models/{name}/use) or the installer's default (POST /models/default/use) sets the `model:` section
 of Frigate's config.yml, through Frigate's config API or, when Frigate doesn't answer, in the file, then restarts
 frigate.service through systemd. Fake mode only changes which model the fake Frigate runs.
+
+Using a Frigate+ model by its ID (POST /models/plus/{id}/use) is Use when the device has the model's pair. Otherwise it
+needs the Frigate+ API key and a Frigate that answers: config.yml goes to Frigate's config API with `path: plus://<id>`,
+and Frigate downloads the model while it validates, which takes minutes. The route answers at once and a thread follows
+the save (fetch.py); once Frigate has saved, the use is audited and frigate.service restarted. Nothing is written to
+config.yml on disk for a model the device hasn't. While the download runs, every use is refused, and GET /models
+carries its record for admins: downloading, then saved, refused, or failed, until the next use. Fake mode downloads
+one ID (fake.FAKE_FETCHABLE_ID) after a few seconds and refuses any other; nothing is sent anywhere.
 """
 
 import json
+import logging
 import os
 import stat
+import time
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import Annotated, BinaryIO, Literal
 
@@ -34,12 +45,15 @@ from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.core.manifest import Manifest
+from tm_control.core.secrets import FRIGATE_PLUS_API_KEY
 from tm_control.core.settings import Settings
 from tm_control.modules.apps import probes
 from tm_control.modules.auth.deps import current_user, require_admin
-from tm_control.modules.detection import archives, package, picker, upload
+from tm_control.modules.detection import archives, fetch, package, picker, upload
+from tm_control.modules.detection.fetch import Fetches
 from tm_control.modules.detection.inventory import (
     MODEL_FILE_MAX,
+    PLUS_ID,
     SIDECAR,
     SIDECAR_MAX,
     InstallerDefault,
@@ -59,6 +73,8 @@ from tm_control.modules.detection.labels import of_model, recognised, tracked
 from tm_control.modules.detection.picker import Running, UseError, detector_type, running_model
 from tm_control.modules.detection.upload import UploadError
 from tm_control.modules.services.units import restart_or_log
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -99,6 +115,12 @@ class LabelsOut(BaseModel):
     tracked: list[str]
 
 
+class FetchOut(BaseModel):
+    model_id: str
+    state: Literal["downloading", "saved", "refused", "failed"]
+    message: str | None  # why it was refused or failed
+
+
 class ModelsState(BaseModel):
     detector: str | None
     frigate_answers: bool
@@ -107,6 +129,7 @@ class ModelsState(BaseModel):
     running: RunningOut
     models: list[ModelOut]
     labels: LabelsOut
+    fetch: FetchOut | None  # the last Frigate+ download, for admins; None for a viewer and when there is none
 
 
 def _state(request: Request) -> tuple[Settings, Manifest, Path]:
@@ -172,6 +195,7 @@ def get_models(request: Request, user: User = Depends(current_user)):
         default = None
     else:
         default = "installer_default" if detector == "edgetpu" and installer is not None else "frigate_default"
+    current = request.app.state.fetches.current() if user.role == "admin" else None
     return ModelsState(
         detector=detector,
         frigate_answers=answer is not None,
@@ -180,6 +204,8 @@ def get_models(request: Request, user: User = Depends(current_user)):
         running=RunningOut(name=running.name, kind=running.kind, source=running.source),
         models=[_model_out(model, running, detector, installer) for model in models],
         labels=LabelsOut(recognised=labels, source=source, tracked=tracked(frigate_config)),
+        fetch=None if current is None else FetchOut(
+            model_id=current.model_id, state=current.state, message=current.message),
     )
 
 
@@ -509,6 +535,10 @@ FRIGATE_UNIT = "frigate.service"
 RESTARTING = "Frigate is restarting; try again in a minute."
 DEFAULT_UNKNOWN = "Frigate's detector type can't be determined, so its default model can't be chosen."
 INSTALLER_MISSING = "The installer's model file isn't on the device."
+DOWNLOADING = "Frigate is downloading a model; wait for it to finish."
+BAD_ID = "A Frigate+ model ID is 32 characters, each 0-9 or a-f."
+NO_KEY = "Set the Frigate+ API key first."
+FRIGATE_DOWN = "Frigate isn't answering, and it has to be running to download a model."
 
 
 class UseQueued(BaseModel):
@@ -519,6 +549,12 @@ class UseQueued(BaseModel):
 
 def _use_refusal(error: UseError) -> ApiError:
     return ApiError(error.status, error.code, error.message)
+
+
+def _not_downloading(request: Request) -> None:
+    """Refuse while Frigate downloads a Frigate+ model: its save is still running, and another would race it."""
+    if request.app.state.fetches.downloading():
+        raise ApiError(409, "downloading", DOWNLOADING)
 
 
 def _not_restarting(settings: Settings) -> None:
@@ -547,6 +583,7 @@ def _use(request: Request, background: BackgroundTasks, admin: User, section: di
             applied = picker.apply(section, codedir)
         except UseError as error:
             raise _use_refusal(error) from None
+    request.app.state.fetches.clear()  # a finished download's record is about the model this use replaced
     Audit(request.app.state.state).record(admin.id, "models.use", detail=name)
     if not settings.fake:
         background.add_task(restart_or_log, FRIGATE_UNIT)
@@ -565,6 +602,7 @@ def _installer_file_there(cache: Path, name: str) -> bool:
 
 
 def _use_default(request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
+    _not_downloading(request)
     settings, manifest, codedir = _state(request)
     _not_restarting(settings)
     detector = detector_type(*_frigate(request))
@@ -589,8 +627,14 @@ def use_model(name: str, request: Request, background: BackgroundTasks, admin: U
     """Make Frigate run a model in model_cache that has its file and sidecar and is built for the device's detector.
     A default's file (the installer's, or Frigate's own) is the default, as POST /models/default/use puts it back. The
     running model may be used again: Frigate just restarts."""
+    _not_downloading(request)
     if not valid_name(name):
         raise _refusal(UploadError(422, upload.BAD_NAME))
+    return _use_named(name, request, background, admin)
+
+
+def _use_named(name: str, request: Request, background: BackgroundTasks, admin: User) -> UseQueued:
+    """Use's work for a valid name: the default for a default's file, or the model in model_cache, checked first."""
     settings, manifest, codedir = _state(request)
     installer = installer_default(manifest, codedir)
     detector = detector_type(*_frigate(request))
@@ -606,3 +650,73 @@ def use_model(name: str, request: Request, background: BackgroundTasks, admin: U
     except UseError as error:
         raise _use_refusal(error) from None
     return _use(request, background, admin, picker.model_section(model), name, name)
+
+
+class PlusUseQueued(BaseModel):
+    name: str  # the model id
+    started: Literal["restart", "download"]  # the model was on the device, or Frigate is fetching it
+    restarts: list[str]  # ["frigate.service"] for a restart, [] for a download
+
+
+def _fake_wait(fetches: Fetches, settings: Settings, model_id: str, on_saved: Callable[[], None]) -> None:
+    """Fake mode's download, on its own thread like a device's: after FAKE_FETCH_SECONDS the fake Frigate has the
+    model and runs it, or has refused it. Always ends the record."""
+    state, message = "failed", "The download couldn't be followed."
+    try:
+        time.sleep(fake.FAKE_FETCH_SECONDS)
+        refusal = fake.fetch_model(settings, model_id)
+        if refusal is None:
+            fake.use_model(settings, model_id)
+            on_saved()
+            state, message = "saved", None
+        else:
+            state, message = "refused", refusal
+    except Exception as error:
+        log.warning("Fake mode's download couldn't be followed: %s", type(error).__name__)
+    finally:
+        fetches.finish(state, message)
+
+
+@router.post("/plus/{model_id}/use", status_code=202, response_model=PlusUseQueued)
+def use_plus_model(
+    model_id: str, request: Request, background: BackgroundTasks, admin: User = Depends(require_admin)
+):
+    """Make Frigate run a Frigate+ model by its ID. A model whose pair is on the device is used as POST
+    /models/{name}/use does. Otherwise Frigate is sent its config with `path: plus://<id>` and downloads the model while
+    it validates; the answer comes before that ends, and GET /models's `fetch` follows it. Frigate restarts only once it
+    has saved."""
+    if not PLUS_ID.fullmatch(model_id):
+        raise ApiError(422, "bad_id", BAD_ID)
+    _not_downloading(request)
+    settings, manifest, codedir = _state(request)
+    _not_restarting(settings)
+    installer = installer_default(manifest, codedir)
+    models = inventory(model_cache_dir(settings, manifest), installer, detector_type(*_frigate(request)))
+    if any(model.name == model_id and model.complete for model in models):
+        queued = _use_named(model_id, request, background, admin)
+        return PlusUseQueued(name=model_id, started="restart", restarts=queued.restarts)
+    if not request.app.state.secrets.is_set(FRIGATE_PLUS_API_KEY):
+        raise ApiError(409, "no_key", NO_KEY)
+    fetches: Fetches = request.app.state.fetches
+    state = request.app.state.state
+
+    def on_saved() -> None:  # on the download's thread: Audit opens a connection of its own
+        Audit(state).record(admin.id, "models.use", detail=model_id)
+        if not settings.fake:
+            restart_or_log(FRIGATE_UNIT)
+
+    if settings.fake:
+        follow = partial(_fake_wait, fetches, settings, model_id, on_saved)
+    else:
+        text = frigate.config_raw()
+        if text is None:
+            raise ApiError(409, "frigate_down", FRIGATE_DOWN)
+        try:
+            new_text = picker.edited(text, {"path": f"plus://{model_id}"})
+        except UseError as error:
+            raise _use_refusal(error) from None
+        follow = partial(fetch.wait, fetches, new_text, on_saved)
+    if not fetches.start(model_id):
+        raise ApiError(409, "downloading", DOWNLOADING)
+    fetch.spawn(follow)
+    return PlusUseQueued(name=model_id, started="download", restarts=[])

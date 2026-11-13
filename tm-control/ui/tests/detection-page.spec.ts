@@ -99,6 +99,7 @@ const MODELS: ModelsState = {
     source: 'sidecar',
     tracked: ['bicycle', 'person', 'car', 'bus', 'motorcycle', 'dog'],
   },
+  fetch: null,
 }
 
 const TWO_SECRETS = [
