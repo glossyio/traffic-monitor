@@ -269,7 +269,7 @@ const CONFIRM = {
   use: { verb: 'Use', text: "Frigate restarts, which takes about a minute. Traffic isn't counted while it does." },
   delete: { verb: 'Delete', text: "Both of its files are removed from the device. This can't be undone." },
   // The ID form's: its title is the ID, which the confirmation names. An ID of a model the device has, with both its
-  // files, is confirmed as a use instead (`asked` in `askToUsePlus`; the request is the same)
+  // files, is confirmed as a use instead (`shown` below; the request is the same)
   plus: {
     verb: 'Download and use',
     text:
@@ -549,8 +549,8 @@ function openUpload() {
       </section>
     </template>
 
-    <!-- Frigate+ sits above the other models and doesn't wait for them. The admin's key is one panel, its title
-         "API key" with the key's state beside it -->
+    <!-- Frigate+ sits above the other models and doesn't wait for them. The admin has two panels: "API key",
+         with the key's state beside its title, and "Use a model by its ID" -->
     <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
       <h2 class="text-h6 mb-2">Frigate+</h2>
       <p class="text-body-1 mb-2">
