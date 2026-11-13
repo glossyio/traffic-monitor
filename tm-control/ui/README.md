@@ -639,7 +639,9 @@ and the Frigate+ text.
 - The ID panel (`PlusModelById.vue`) is a short paragraph on where the ID is, one field, "Model ID", and one 44 px button,
   "Download and use". The field takes a pasted `plus://` address and surrounding spaces, and says "A model ID is 32
   characters, each 0-9 or a-f." under itself for anything else, with the button off, so nothing wrong is sent. The
-  confirmation says the download can take a few minutes and the restart about one. The page's `working` flag also
+  confirmation says the download can take a few minutes and the restart about one. An ID of a model the device
+  already has, with both its files, is confirmed as a Use ("Use <title>?", Use's own text and button), since the server
+  takes the short path; the request is the same. The page's `working` flag also
   covers a running download, so every action is off meanwhile, and the panel shows an info alert, "Frigate is
   downloading the model. This can take a few minutes. You can leave this page.", under the button. The page asks `GET
   /models` every 3 seconds while the record says `downloading`, with no limit of its own, because the server ends the
