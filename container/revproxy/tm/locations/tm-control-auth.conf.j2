@@ -6,7 +6,7 @@ location = /_auth {
     proxy_method GET;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
-    # The session cookie passes; Cockpit's login sends the Pi account's password as Basic auth
+    # The session cookie passes; no credential a client sends in Authorization reaches tm-control
     proxy_set_header Authorization "";
     proxy_set_header X-Original-URI $request_uri;
     # The browser's address, which a download link is checked against. $remote_addr only: nothing the client sent
@@ -20,7 +20,7 @@ location = /_auth_admin {
     proxy_method GET;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
-    # The session cookie passes; Cockpit's login sends the Pi account's password as Basic auth
+    # The session cookie passes; no credential a client sends in Authorization reaches tm-control
     proxy_set_header Authorization "";
     proxy_set_header X-Original-URI $request_uri;
     # The browser's address, which a download link is checked against. $remote_addr only: nothing the client sent

@@ -121,6 +121,53 @@ describe('setup', () => {
     expect(field(wrapper, 'Confirm system password').element.value).toBe(PASSWORD)
   })
 
+  function systemPasswordJob(id: string) {
+    let polls = 0
+    return {
+      'POST /api/v1/system/password': json(202, { id }),
+      [`GET /api/v1/jobs/${id}`]: () => {
+        polls += 1
+        const done = polls > 1
+        return json(200, {
+          id, name: 'system-password', status: done ? 'succeeded' : 'running',
+          requested_at: '2026-10-27T12:00:00+00:00', finished_at: done ? '2026-10-27T12:00:02+00:00' : null, log: [],
+        })
+      },
+    }
+  }
+
+  async function setSystemPasswordUntilDone(wrapper: VueWrapper) {
+    vi.useFakeTimers()
+    await field(wrapper, 'Use the same password as my account').setValue(true)
+    await click(wrapper, 'Set system password')
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+  }
+
+  it('names the system account on the system-password step and in its result', async () => {
+    unclaimedDevice({ 'GET /api/v1/system/device': { system_user: 'pi' }, ...systemPasswordJob('job4') })
+    const { wrapper } = await mountApp('/setup')
+    await fillClaimForm(wrapper)
+    await click(wrapper, 'Claim this device')
+    await flushPromises()
+    expect(wrapper.text()).toContain('a system account, pi, for Cockpit')
+    await setSystemPasswordUntilDone(wrapper)
+    expect(wrapper.find('.v-alert').text()).toContain('as pi')
+  })
+
+  it("leaves the account's name out when the device card can't be read, and still sets the password", async () => {
+    const api = unclaimedDevice(systemPasswordJob('job5'))
+    const { wrapper } = await mountApp('/setup')
+    await fillClaimForm(wrapper)
+    await click(wrapper, 'Claim this device')
+    await flushPromises()
+    expect(wrapper.text()).toContain('a system account, for Cockpit')
+    await setSystemPasswordUntilDone(wrapper)
+    expect(api.sent.find((r) => r.path === '/api/v1/system/password')?.body).toEqual({ password: PASSWORD })
+    expect(wrapper.text()).toContain('System password set.')
+    expect(wrapper.text()).not.toMatch(/null|undefined|, ,/)
+  })
+
   it('goes home when the system password is skipped', async () => {
     const api = unclaimedDevice()
     const { wrapper, router } = await mountApp('/setup')
@@ -182,9 +229,10 @@ describe('setup', () => {
     expect(button(wrapper, 'Skip for now').attributes('disabled')).toBeUndefined()
   })
 
-  function jobThatNeverFinishes() {
+  function jobThatNeverFinishes(answers: Record<string, unknown> = {}) {
     const job = { polls: 0 }
     const api = unclaimedDevice({
+      ...answers,
       'POST /api/v1/system/password': json(202, { id: 'job2' }),
       'GET /api/v1/jobs/job2': () => {
         job.polls += 1
@@ -220,6 +268,15 @@ describe('setup', () => {
 
     await click(wrapper, 'Go to the home page')
     expect(router.currentRoute.value.fullPath).toBe('/')
+  })
+
+  it('names the system account when the job never reports a result', async () => {
+    jobThatNeverFinishes({ 'GET /api/v1/system/device': { system_user: 'pi' } })
+    const { wrapper } = await mountApp('/setup')
+    await startSystemPassword(wrapper)
+    await vi.advanceTimersByTimeAsync(121_000)
+    await flushPromises()
+    expect(wrapper.text()).toContain('log in to Cockpit as pi with the new password')
   })
 
   it('stops asking about the job once the page is left', async () => {

@@ -29,15 +29,17 @@ SERIAL_PATH = Path("/sys/firmware/devicetree/base/serial-number")
 FAKE_SERIAL = "0000000012345678"
 FAKE_HOSTNAME = "tm-fake"  # fake mode runs on a laptop, whose own name shouldn't end up in screenshots
 
-# The home page's app tiles, in order: (revproxy location file, id, path, title, admin_only). A tile shows only when
-# tmsetup installed its location (the manifest's revproxy_locations); viewers don't see admin_only tiles.
+# The home page's app tiles, in order: (revproxy location file or None, id, path, title, admin_only, port or None). A
+# tile with a location file shows only when tmsetup installed that location (the manifest's revproxy_locations); one
+# with no location file is an app on its own port, not behind nginx, and always shows. Viewers don't see admin_only
+# tiles.
 APPS = [
-    ("dashboard.conf", "dashboard", "/dashboard/", "Dashboard", False),
-    ("frigate.conf", "frigate", "/frigate/", "Frigate", False),
-    ("legacy-ui.conf", "legacy-ui", "/ui/", "Legacy Dashboard", False),
-    ("nodered.conf", "nodered", "/nr/", "Node-RED editor", True),
-    ("go2rtc.conf", "feeds", "/feeds/", "Camera feeds", True),
-    ("cockpit.conf", "cockpit", "/system/", "Cockpit", True),
+    ("dashboard.conf", "dashboard", "/dashboard/", "Dashboard", False, None),
+    ("frigate.conf", "frigate", "/frigate/", "Frigate", False, None),
+    ("legacy-ui.conf", "legacy-ui", "/ui/", "Legacy Dashboard", False, None),
+    ("nodered.conf", "nodered", "/nr/", "Node-RED editor", True, None),
+    ("go2rtc.conf", "feeds", "/feeds/", "Camera feeds", True, None),
+    (None, "cockpit", "/", "Cockpit", True, 9090),
 ]
 
 
@@ -69,14 +71,16 @@ def device(request: Request, user: User = Depends(current_user)):
     manifest = app_state.manifest
     installed = set(manifest.revproxy_locations)
     apps = [
-        {"id": app_id, "path": path, "title": title, "admin_only": admin_only}
-        for location, app_id, path, title, admin_only in APPS
-        if location in installed and (user.role == "admin" or not admin_only)
+        {"id": app_id, "path": path, "title": title, "admin_only": admin_only, "port": port}
+        for location, app_id, path, title, admin_only, port in APPS
+        if (location is None or location in installed) and (user.role == "admin" or not admin_only)
     ]
     return {
         "hostname": hostname(app_state),
         "serial": serial(app_state),
         "tm_version": manifest.tm_version,
+        # The system account for Cockpit and SSH, which the Cockpit tile names; administrators only (#265)
+        "system_user": manifest.installing_user if user.role == "admin" else None,
         "time": timedate.device_time(),
         "apps": apps,
         "theme": {"font": manifest.homepage.font, "colors": manifest.homepage.colors},
@@ -86,7 +90,10 @@ def device(request: Request, user: User = Depends(current_user)):
 @router.get("/info", response_model=SystemInfo)
 def info(request: Request, user: User = Depends(current_user)):
     app_state = request.app.state
-    return system_info(app_state, hostname(app_state), serial(app_state))
+    answer = system_info(app_state, hostname(app_state), serial(app_state))
+    if user.role != "admin":
+        answer.tm.installing_user = None  # the system account's name is for administrators only (#265)
+    return answer
 
 
 @router.get("/diagnostics", response_class=PlainTextResponse)

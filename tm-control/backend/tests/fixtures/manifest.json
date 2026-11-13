@@ -33,7 +33,6 @@
         "hotspot_address": "10.42.0.1"
     },
     "revproxy_locations": [
-        "cockpit.conf",
         "dashboard.conf",
         "frigate.conf",
         "go2rtc.conf",

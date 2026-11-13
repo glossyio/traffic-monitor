@@ -164,7 +164,7 @@ def test_system_info_for_a_viewer(device_client, login, host):
             "version": "0.7.1-test",
             "commit": "0000000000000000000000000000000000000000",
             "branch": "test",
-            "installing_user": "pi",
+            "installing_user": None,  # the system account's name is for administrators only (#265)
         },
         "components": {
             "frigate": "0.18.1",
@@ -176,6 +176,13 @@ def test_system_info_for_a_viewer(device_client, login, host):
         "soc_temperature_c": 52.5,
         "throttled": {"raw": "0x0", "now": [], "since_boot": []},
     }
+
+
+def test_system_info_names_the_installing_user_for_an_admin(device_client, login, host):
+    login(device_client, *ADMIN)
+    r = device_client.get("/api/v1/system/info")
+    assert r.status_code == 200, r.text
+    assert r.json()["tm"]["installing_user"] == "pi"
 
 
 def test_system_info_in_fake_mode(claimed_client, login, monkeypatch):

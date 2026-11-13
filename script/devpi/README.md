@@ -111,10 +111,10 @@ A check turns a PR's "On a Raspberry Pi" test plan into a logged checklist:
 
 ```bash
 T=".venv/bin/python script/devpi/tmdev.py"
-$T check start --host tm-dev-01 --pr 212 --title "Cockpit at /system/"
-$T run tm-dev-01 -- 'curl -sS -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost/system/'   # cmd-001
-$T check item "/system/ shows the Cockpit login without an HTTPS redirect" pass --evidence cmd-001
-$T check item "Logging in and the Terminal page work through the proxy" manual --note "needs the Pi user's password"
+$T check start --host tm-dev-01 --title "Cockpit on port 9090"
+$T run tm-dev-01 -- 'curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:9090/'   # cmd-001
+$T check item ":9090/ shows the Cockpit login" pass --evidence cmd-001
+$T check item "Logging in and the Terminal page work" manual --note "needs the Pi user's password"
 $T check status        # the checklist so far
 $T check end           # closes the check and adds its row to the log
 ```

@@ -7,7 +7,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
-import type { Eula, Job } from '../../api/types'
+import type { Device, Eula, Job } from '../../api/types'
 import EulaText from '../../components/EulaText.vue'
 import HotspotNote from '../../components/HotspotNote.vue'
 import { followJob } from '../../components/jobs'
@@ -119,6 +119,19 @@ const jobRunning = ref(false)
 const jobTimedOut = ref(false) // the job never reported a result within JOB_DEADLINE_MS (jobs.ts): setup goes on
 
 const systemPasswordsMatch = (value: string) => value === systemPassword.value || "The passwords don't match."
+
+// The system account's name, read once when this step opens. Until it arrives, or if it can't be read, the texts
+// leave the name out.
+const systemUser = ref<string | null>(null)
+watch(step, async (now) => {
+  if (now !== 4) return
+  try {
+    const { data } = await api.GET('/api/v1/system/device')
+    systemUser.value = (data as Device).system_user ?? null
+  } catch {
+    // The name is a convenience: the step works without it
+  }
+})
 
 watch(samePassword, (same) => {
   systemPassword.value = same ? password.value : ''
@@ -269,22 +282,33 @@ function finish() {
       <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Set the system password</h1>
       <template v-if="job?.status === 'succeeded'">
         <v-alert type="success" class="mb-6">
-          System password set. Use it from now on to log in to Cockpit (the device's system tools) and over SSH.
+          <template v-if="systemUser">
+            System password set. From now on, log in to Cockpit (the device's system tools) and over SSH as
+            <strong>{{ systemUser }}</strong> with this password.
+          </template>
+          <template v-else>
+            System password set. Use it from now on to log in to Cockpit (the device's system tools) and over SSH.
+          </template>
         </v-alert>
         <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
       </template>
       <template v-else-if="jobTimedOut">
         <v-alert type="warning" class="mb-6">
           The device hasn't reported whether the system password changed. It may still change in a moment, and you
-          can go on with setup. Later, log in to Cockpit with the new password. If it doesn't work, use the old one,
-          and change it on Cockpit's Accounts page.
+          can go on with setup.
+          <template v-if="systemUser">
+            Later, log in to Cockpit as <strong>{{ systemUser }}</strong> with the new password.
+          </template>
+          <template v-else>Later, log in to Cockpit with the new password.</template>
+          If it doesn't work, use the old one, and change it on Cockpit's Accounts page.
         </v-alert>
         <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
       </template>
       <template v-else>
         <p class="text-body-1 mb-6">
-          The device also has a system account, for Cockpit (the device's system tools) and SSH. Give it a new
-          password now, or skip this and keep the password it has.
+          The device also has a system account,
+          <template v-if="systemUser"><strong>{{ systemUser }}</strong>, </template>for Cockpit (the device's system
+          tools) and SSH. Give it a new password now, or skip this and keep the password it has.
         </p>
         <v-form ref="systemForm" :disabled="jobRunning" @submit.prevent="setSystemPassword">
           <v-checkbox

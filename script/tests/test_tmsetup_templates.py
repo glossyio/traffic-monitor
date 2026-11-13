@@ -1,6 +1,7 @@
 """Render tmsetup templates and check what the device gets. Off-device; no Ansible run needed."""
 
 import ast
+import configparser
 import re
 
 import pytest
@@ -92,9 +93,8 @@ def test_no_location_goes_through_host_containers_internal(name):
 
 
 # Which login check each app's location includes. Viewers may open the dashboards and Frigate; the Node-RED editor,
-# the camera feeds, the database downloads, and Cockpit are for administrators.
+# the camera feeds, and the database downloads are for administrators.
 APP_LOCATIONS = {
-    "cockpit.conf": "auth-admin",
     "dashboard.conf": "auth-viewer",
     "frigate.conf": "auth-viewer",
     "go2rtc.conf": "auth-admin",
@@ -257,7 +257,7 @@ def test_auth_locations_are_internal_and_name_the_role(path, role):
     assert "proxy_method GET;" in block
     assert "proxy_pass_request_body off;" in block
     assert 'proxy_set_header Content-Length "";' in block
-    # Cockpit's login sends the Pi account's password as Basic auth; the check gets the cookie, not that
+    # The check gets the session cookie, never a credential the client sent as Authorization
     assert 'proxy_set_header Authorization "";' in block
     assert "proxy_set_header Cookie" not in block and "proxy_pass_request_headers" not in block
 
@@ -355,9 +355,22 @@ def test_no_location_carries_a_secret_value(name):
     assert "tmsetup_secrets" not in (REPO / f"container/revproxy/tm/locations/{name}.j2").read_text()
 
 
-def test_host_apps_are_proxied_on_loopback():
+def test_cockpit_serves_its_own_port_at_the_root():
+    """A UrlRoot makes Cockpit answer 404 at :9090/, and a root named for one of Cockpit's own packages (as /system
+    was) breaks that package's links."""
+    conf = configparser.ConfigParser()
+    conf.read(REPO / "script/ansible/roles/tmsetup/files/cockpit.conf")
+    assert dict(conf["WebService"]) == {"allowunencrypted": "true", "loginto": "false"}
+
+
+def test_nginx_does_not_proxy_cockpit():
+    assert "cockpit.conf" not in LOCATIONS
+    assert not (REPO / "container/revproxy/tm/locations/cockpit.conf.j2").exists()
+    assert all("9090" not in location(name) for name in LOCATIONS)
+
+
+def test_go2rtc_is_proxied_on_loopback():
     assert "proxy_pass http://127.0.0.1:1984/;" in location("go2rtc.conf")
-    assert "proxy_pass http://127.0.0.1:9090;" in location("cockpit.conf")
 
 
 def test_feeds_accepts_only_get_and_plain_stream_names():

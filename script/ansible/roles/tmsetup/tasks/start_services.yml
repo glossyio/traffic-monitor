@@ -29,7 +29,7 @@
     name: sysstat.service
     state: started
 
-# cockpit.socket starts Cockpit on demand for /system/; cockpit-podman's page needs podman.socket
+# cockpit.socket starts Cockpit on demand on port 9090; cockpit-podman's page needs podman.socket
 - name: TMSetup - Start Services - Start and enable Cockpit sockets
   become: true
   loop:

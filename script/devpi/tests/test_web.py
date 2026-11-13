@@ -436,7 +436,7 @@ def test_frigate_logs_in_to_the_mqtt_broker(host):
 # --- The login in front of the apps (tm-control M2) ------------------------------------------------------------------
 # Every app path asks tm-control through nginx's auth_request (container/revproxy/tm/snippets/auth-*.conf).
 
-APP_PATHS = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/storefiles", "/system/"]
+APP_PATHS = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/storefiles"]
 
 
 @pytest.mark.parametrize("path", APP_PATHS)
@@ -485,9 +485,9 @@ def test_unavailable_page_is_served_for_errors(address):
     assert status == 404, f"/unavailable.html answered {status}"
 
 
-# What an admin gets. Without files, /storefiles is Node-RED's own 400; Cockpit shows its login page or redirects to it.
+# What an admin gets. Without files, /storefiles is Node-RED's own 400.
 ADMIN_OPENS = [("/dashboard/", {200}), ("/frigate/", {200}), ("/ui/", {200}), ("/nr/", {200}), ("/feeds/", {200}),
-               ("/storefiles", {400}), ("/system/", {200, 303})]
+               ("/storefiles", {400})]
 
 
 @pytest.mark.parametrize("path, expected", ADMIN_OPENS, ids=[path for path, _ in ADMIN_OPENS])
@@ -496,8 +496,8 @@ def test_admin_session_opens_every_app(address, admin_session, path, expected):
     assert status in expected, f"{path} with the admin session answered {status}"
 
 
-VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403), ("/system/", 403),
-                   (f"{API}/users", 403), ("/dashboard/", 200), ("/ui/", 200), ("/frigate/", 200)]
+VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403), (f"{API}/users", 403),
+                   ("/dashboard/", 200), ("/ui/", 200), ("/frigate/", 200)]
 
 
 @pytest.mark.parametrize("path, expected", VIEWER_STATUSES, ids=[path for path, _ in VIEWER_STATUSES])
@@ -505,6 +505,46 @@ def test_viewer_gets_403_on_admin_paths(address, viewer_session, path, expected)
     """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list."""
     status = status_from_this_machine(address, path, cookie=viewer_session)
     assert status == expected, f"{path} with a viewer session answered {status}"
+
+
+COCKPIT_PORT = 9090
+
+
+def test_cockpit_answers_at_the_root_of_its_own_port(address):
+    """Cockpit is the rescue console: its login page loads at http://<device>:9090/, with no path, and without
+    nginx or the control app's login."""
+    answer = request_from_this_machine(f"{address}:{COCKPIT_PORT}", "/")
+    html = answer.headers.get("Content-Type", "").startswith("text/html")
+    assert (answer.status, html) == (200, True), "Cockpit on port 9090: (status, an HTML page)"
+
+
+def test_nginx_does_not_proxy_cockpit(address):
+    """/system/ is no app's path any more: nginx serves the control app's page for it and asks for no login."""
+    answer = request_from_this_machine(address, "/system/")
+    assert (answer.status, answer.headers.get("Location")) == (200, None), "/system/ without a session"
+
+
+def system_account_fields(address, cookie):
+    """{field: whether it names an account, or None if it's null} for the two answers that carry the system
+    account's name. Only that comes back, so no local holds the name for pytest -l to print."""
+    device = request_from_this_machine(address, f"{API}/system/device", cookie=cookie).json()
+    info = request_from_this_machine(address, f"{API}/system/info", cookie=cookie).json()
+    tm = info.get("tm") if isinstance(info, dict) else None
+    values = {
+        "GET /system/device's system_user": device.get("system_user", "") if isinstance(device, dict) else "",
+        "GET /system/info's tm.installing_user": tm.get("installing_user", "") if isinstance(tm, dict) else "",
+    }
+    return {field: None if value is None else isinstance(value, str) and value != "" for field, value in values.items()}
+
+
+def test_only_administrators_get_the_system_accounts_name(address, admin_session, viewer_session):
+    """The Cockpit tile and setup name the system account for administrators; a viewer gets null in both answers that
+    carry the name (#265). No value goes in the message, only which field of whose answer was wrong."""
+    wrong = [f"the admin's {field}" for field, named in system_account_fields(address, admin_session).items()
+             if named is not True]
+    wrong += [f"the viewer's {field}" for field, named in system_account_fields(address, viewer_session).items()
+              if named is not None]
+    assert not wrong, "wrong: " + "; ".join(wrong)
 
 
 # Headers a client could send to pass as an admin: Frigate reads the user's role from X-Forwarded-Groups (and would

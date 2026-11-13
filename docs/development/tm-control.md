@@ -56,12 +56,12 @@ A 200 carries `X-TM-User`, `X-TM-Role`, `X-TM-Frigate-Secret`, and, for administ
 |---|---|
 | Frigate (`127.0.0.1:8971`) | `X-Forwarded-User` and `X-Forwarded-Groups` (the role), and `X-Proxy-Secret`, which Frigate checks against `FRIGATE_PROXY_AUTH_SECRET` in `frigate.env`. nginx always sends both forwarded headers, because Frigate serves a request with only the secret as its default role, and it blanks `Remote-User`, `Remote-Groups`, and `Remote-Role`, which Frigate would also trust. Frigate's own login is off (`auth: enabled: false`). |
 | Node-RED editor (`/nr/`) | `x-tm-nr-token`, a short-lived token that `settings.js` checks with `TM_NR_TOKEN_KEY` from `node-red-tm.env`. The editor has no users of its own. |
-| Dashboards, camera feeds, Cockpit, data downloads | No identity: nginx's check is the whole gate. Cockpit then asks for its own Raspberry Pi login. |
+| Dashboards, camera feeds, data downloads | No identity: nginx's check is the whole gate. |
 
 A few rules keep the check sound:
 
 * Only nginx's internal `/_auth` and `/_auth_admin` locations may call verify. A `location ^~ /api/v1/auth/verify` returns 404 to the network, the `/api/` location clears `X-TM-Required-Role`, and verify answers 404 without that header.
-* The check is always a `GET` without a body, and without the `Authorization` header, so Cockpit's Basic login never reaches tm-control.
+* The check is always a `GET` without a body, and without the `Authorization` header, so no credential a client sends there reaches tm-control.
 * Sessions last 7 days and roll: verify and the API re-issue a cookie that's more than a day old, and the snippets pass verify's `Set-Cookie` on to the browser. An app location must not set an `add_header` of its own, or it would drop that cookie.
 * Only the check's own failure, which `auth_request` turns into a 500, becomes the rescue page (`error_page 500 =503 /unavailable.html`). An app's own 502 or 504 stays as it is.
 
@@ -339,4 +339,4 @@ A feature is one backend module and, if it has pages, one UI module.
 2. **State:** if it needs tables, add the next migration in `core/state.py`.
 3. **UI:** add `ui/src/modules/<name>/` with its pages and an `index.ts` that lists its routes and menu entries, and add it to `ui/src/modules/index.ts`. Regenerate the typed client as the UI's README describes.
 4. **Root work:** prefer a polkit action or unit verb on the list. Otherwise add the job's name to `JOB_NAMES` in `core/jobs.py`, its script to `tm-control/jobs/`, its unit to the role's `templates/tm-control/`, and the unit to the polkit list.
-5. **A new app behind the login:** add its location file with an auth snippet to `container/revproxy/tm/locations/` and to `tmsetup_revproxy_locations`, and its tile to `APPS` in `modules/system/router.py` and to `ui/src/modules/home/apps.ts`.
+5. **A new app behind the login:** add its location file with an auth snippet to `container/revproxy/tm/locations/` and to `tmsetup_revproxy_locations`, and its tile to `APPS` in `modules/system/router.py` and to `ui/src/modules/home/apps.ts`. An app on its own port, as Cockpit is on 9090, has no location file: its `APPS` row has `None` for the file and its port, and the tile links to that port on the name the browser used.

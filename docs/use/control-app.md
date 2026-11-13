@@ -4,7 +4,7 @@ description: Claim a Traffic Monitor with its setup code, log in, add viewer acc
 
 # Control app and login
 
-The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, the camera feeds, and Cockpit. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](device-health.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](detection.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](location.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](home-page.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](system-admin.md#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](device-health.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](detection.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](location.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 !!! info "What the login protects"
 
@@ -49,6 +49,8 @@ The code works once. After several wrong codes, setup makes you wait before the 
 
 The system password is the password of the Raspberry Pi user account: the one you log in to Cockpit and SSH with. Setup offers to change it, with a **Use the same password as my account** checkbox. Skip the step to keep the password the account has. To change it later, use Cockpit's **Accounts** page, or run `passwd` over SSH.
 
+If someone else installed the device, you may not know the account's name. Setup's system-password step and the home page's **Cockpit** tile show it to the administrator.
+
 ## Log in
 
 Open the home page or any app. Without a session, the device shows its login page, then takes you to the page you asked for. You stay logged in for a week, and using the device keeps the session going. To log out, choose **Log out** in the menu. Frigate's own **Logout** also logs you out of the device.
@@ -65,11 +67,13 @@ Each device has one administrator, the account created when it was claimed, and 
 | Downloads on the [Data export](../ui/database.md) page | Yes | No |
 | Frigate: live view, review, and explore | Yes | Yes |
 | Frigate: settings and the configuration editor | Yes | No |
-| Node-RED editor, Camera feeds, and Cockpit | Yes | No |
+| Node-RED editor and Camera feeds | Yes | No |
 | The **Users** page | Yes | No |
 | Status, Device, and Date and time pages | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
 | The **Detection** page | Yes | Read only; see [The Detection page](detection.md#the-detection-page) |
 | The **Location** page | Yes | No |
+
+Cockpit uses the Raspberry Pi user account, not these accounts.
 
 ### Add a viewer
 

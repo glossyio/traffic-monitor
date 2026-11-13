@@ -79,7 +79,6 @@ tmsetup_revproxy_config_mounts:
 # Each app's file includes auth-viewer.conf or auth-admin.conf.
 # Deployed location files not listed here are removed from the device.
 tmsetup_revproxy_locations:
-  - cockpit.conf
   - dashboard.conf
   - frigate.conf
   - go2rtc.conf
