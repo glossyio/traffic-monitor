@@ -61,7 +61,7 @@ The location is optional. If the device stays in one place and you never share i
 
 To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the bearings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
 
-Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open **Cameras** in the control app, choose **Edit** on the camera, and set **Radar** to **No radar**. The camera's other settings are there too, and [Cameras](use/cameras.md) explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:
+Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open **Cameras** in the control app, open the camera's **Settings**, and set **Radar** to **No radar**. The camera's other settings are there too, and [Cameras](use/cameras.md) explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:
 
 ```bash
 sudo nano /opt/traffic-monitor/node-red-tm/config/config.yml

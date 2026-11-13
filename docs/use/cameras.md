@@ -21,9 +21,9 @@ A device that has only `picam_h265`, as the installer sets it up, keeps working 
 
 ## The Cameras page
 
-**Cameras** is in the control app's menu, after **Detection**. At the top, the page says that Frigate owns each camera's name, streams, and zones, and links to Frigate for adding a camera or changing them. Then comes one row for each entry in `config.yml`, followed by one for each Frigate camera that no entry is paired with. A Frigate camera that is turned off there and that no entry is paired with isn't listed: it sends no events. Turn it on in Frigate, and it appears.
+**Cameras** is in the control app's menu, after **Detection**. At the top, the page says that Frigate owns each camera's name, streams, and zones, and links to Frigate for adding a camera or changing them. Then comes one row for each entry in `config.yml`, followed by one for each Frigate camera that no entry is paired with. Each row opens, one at a time, to show the camera's settings inside it. A Frigate camera that is turned off there and that no entry is paired with isn't listed: it sends no events. Turn it on in Frigate, and it appears.
 
-![The Cameras page on a phone: a red line saying 2 cameras need attention; a camera whose Frigate camera is gone, with an amber box and Edit and Remove; a camera that is in step, with no box, Edit, and Use a neutral name; and a new Frigate camera, with a red box, Point, and Add as new](../assets/images/cameras-page.png){ width="300" }
+![The Cameras page on a phone: a red line saying 2 cameras need attention; a camera whose Frigate camera is gone, with Settings, an amber box, and Remove; a camera that is in step, with Settings, no box, and Use a neutral name; and a new Frigate camera, with Add as new, a red box, and Point](../assets/images/cameras-page.png){ width="300" }
 
 An entry's row shows its name in bold, and Frigate's name beside it when the two differ. Under them are its settings and what Frigate has:
 
@@ -48,9 +48,9 @@ When Frigate isn't answering, or has stopped itself in safe mode with no cameras
 
 ## Change a camera's settings
 
-Choose **Edit** on a camera, and **Save**.
+Choose **Settings** on a camera's row. The row opens to its settings. Change them, and choose **Save**; **Cancel** closes the row without changing anything.
 
-![The settings dialog on a phone, with switches for Frigate detection and Database capture, and a Radar drop-down](../assets/images/cameras-settings.png){ width="300" }
+![A camera's row opened on a phone, with switches for Frigate detection and Database capture, a Radar drop-down, and Cancel and Save](../assets/images/cameras-settings.png){ width="300" }
 
 | Setting | What it does |
 |---|---|
@@ -84,7 +84,7 @@ Until you point the entry at the new name, the Status page's **Cameras in config
 
 ## Add a camera
 
-A Frigate camera that no entry is paired with isn't recorded. On its row, choose **Add as new**. The page gives it a name, and opens its settings with **Database capture** on, **No radar**, and plates off. Choose the radar, and **Add**.
+A Frigate camera that no entry is paired with isn't recorded. On its row, choose **Add as new**. The row opens to the new entry's settings, with **Database capture** on, **No radar**, and plates off. Choose the radar, and **Add**. The page gives the entry its name.
 
 ## Use a neutral name
 

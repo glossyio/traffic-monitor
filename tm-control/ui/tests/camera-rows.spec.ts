@@ -164,23 +164,23 @@ describe('issueBoxes', () => {
         cameraRow({ in_frigate: 'off', issues: [warn('camera_off')] }),
         'warning',
         'Not recorded: oak_ave_wide is turned off in Frigate. Turn it on in Frigate, or turn Database capture off ' +
-          'in Edit.',
+          'in Settings.',
       ],
       [
         cameraRow({ enabled: false, issues: [warn('capture_off')] }),
         'warning',
-        'Not recorded: Database capture is off. Turn it on in Edit if you want these events.',
+        'Not recorded: Database capture is off. Turn it on in Settings if you want these events.',
       ],
       [
         cameraRow({ detect: false, issues: [warn('detect_off')] }),
         'warning',
-        "Not recorded: Frigate's detection is off. Turn it on in Edit.",
+        "Not recorded: Frigate's detection is off. Turn it on in Settings.",
       ],
       [
         cameraRow({ camera_radar: 'TM_RADAR_SERIAL_PORT_01', issues: [warn('radar')] }),
         'warning',
         "Radar TM_RADAR_SERIAL_PORT_01 isn't turned on in config.yml, so this camera gets no speed or direction. " +
-          'Choose another radar in Edit.',
+          'Choose another radar in Settings.',
       ],
     ]
     for (const [row, level, text] of cases) {

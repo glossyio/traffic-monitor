@@ -1,10 +1,11 @@
 <!--
-  The dialog for one camera's settings (PUT /cameras/{name}): whether its events are saved in the database (Database
-  capture), which radar it is paired with, and, when the Plate Recognizer add-on is installed, whether its events go
-  there. Above them, for an entry whose camera Frigate runs, Frigate's own detection switch (PUT
-  /cameras/{name}/frigate-detection). The page does the saving: the dialog emits `save` with the settings and the
-  detection to set, null when it didn't change, and shows the `error` and `radarError` the page passes back. The form
-  starts over from the row each time it opens; a camera being `adding` starts with capture on, no radar, and no plates.
+  One camera's settings form, shown inside its row on the Cameras page when the row is opened (PUT /cameras/{name}):
+  whether its events are saved in the database (Database capture), which radar it is paired with, and, when the Plate
+  Recognizer add-on is installed, whether its events go there. Above them, for an entry whose camera Frigate runs,
+  Frigate's own detection switch (PUT /cameras/{name}/frigate-detection). The page does the saving: the form emits
+  `save` with the settings and the detection to set, null when it didn't change, and shows the `error` and `radarError`
+  the page passes back. `open` is whether the row is open; the form starts over from the row each time it opens, and
+  Cancel closes it. A camera being `adding` starts with capture on, no radar, and no plates.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
@@ -75,53 +76,40 @@ function cancel() {
   open.value = false
 }
 
-const title = computed(() =>
+// The form's accessible name; the row's header already shows the camera
+const label = computed(() =>
   props.adding ? `Add ${props.row.frigate_camera}` : `Settings for ${props.row.name ?? props.row.frigate_camera}`,
 )
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="520" :aria-label="title">
-    <v-card color="surface" rounded="lg">
-      <v-card-title class="text-h6 text-wrap pt-4">{{ title }}</v-card-title>
-      <v-form @submit.prevent="save">
-        <v-card-text>
-          <v-switch
-            v-if="showDetect"
-            v-model="detect"
-            label="Frigate detection"
-            color="primary"
-            hint="Changes Frigate's own switch for this camera, at once."
-            persistent-hint
-            class="mb-2"
-          />
-          <v-switch v-model="enabled" label="Database capture" color="primary" hide-details />
-          <v-select
-            v-model="radar"
-            label="Radar"
-            :items="items"
-            item-props
-            :error-messages="radarError ? [radarError] : []"
-            variant="outlined"
-            class="mt-4"
-          />
-          <v-switch
-            v-if="plates"
-            v-model="sendPlates"
-            label="Send plates to Plate Recognizer"
-            color="primary"
-            hide-details
-          />
-          <v-alert v-if="error" type="error" class="mt-4">{{ error }}</v-alert>
-        </v-card-text>
-        <v-card-actions class="px-4 pb-4">
-          <v-spacer />
-          <v-btn variant="text" min-height="44" :disabled="saving" @click="cancel">Cancel</v-btn>
-          <v-btn type="submit" color="primary" variant="flat" min-height="44" :loading="saving">{{
-            adding ? 'Add' : 'Save'
-          }}</v-btn>
-        </v-card-actions>
-      </v-form>
-    </v-card>
-  </v-dialog>
+  <v-form :aria-label="label" @submit.prevent="save">
+    <v-switch
+      v-if="showDetect"
+      v-model="detect"
+      label="Frigate detection"
+      color="primary"
+      hint="Changes Frigate's own switch for this camera when you save."
+      persistent-hint
+      class="mb-2"
+    />
+    <v-switch v-model="enabled" label="Database capture" color="primary" hide-details />
+    <v-select
+      v-model="radar"
+      label="Radar"
+      :items="items"
+      item-props
+      :error-messages="radarError ? [radarError] : []"
+      variant="outlined"
+      class="mt-4"
+    />
+    <v-switch v-if="plates" v-model="sendPlates" label="Send plates to Plate Recognizer" color="primary" hide-details />
+    <v-alert v-if="error" type="error" class="mt-4">{{ error }}</v-alert>
+    <div class="d-flex justify-end ga-2 mt-4">
+      <v-btn variant="text" min-height="44" :disabled="saving" @click="cancel">Cancel</v-btn>
+      <v-btn type="submit" color="primary" variant="flat" min-height="44" :loading="saving">{{
+        adding ? 'Add' : 'Save'
+      }}</v-btn>
+    </div>
+  </v-form>
 </template>

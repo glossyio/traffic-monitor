@@ -101,12 +101,12 @@ export function issueBoxes(row: CameraRow): IssueBox[] {
     camera_off: () => ({
       text:
         `Not recorded: ${row.frigate_camera} is turned off in Frigate. Turn it on in Frigate, or turn Database ` +
-        'capture off in Edit.',
+        'capture off in Settings.',
     }),
     capture_off: () => ({
-      text: 'Not recorded: Database capture is off. Turn it on in Edit if you want these events.',
+      text: 'Not recorded: Database capture is off. Turn it on in Settings if you want these events.',
     }),
-    detect_off: () => ({ text: "Not recorded: Frigate's detection is off. Turn it on in Edit." }),
+    detect_off: () => ({ text: "Not recorded: Frigate's detection is off. Turn it on in Settings." }),
     zones: () => {
       const involved = [...(row.zones_missing ?? []), ...(row.zones_off ?? [])]
       const direction = involved.some((zone) => DIRECTION_ZONES.includes(zone))
@@ -120,7 +120,7 @@ export function issueBoxes(row: CameraRow): IssueBox[] {
     radar: () => ({
       text:
         `Radar ${row.camera_radar} isn't turned on in config.yml, so this camera gets no speed or direction. ` +
-        'Choose another radar in Edit.',
+        'Choose another radar in Settings.',
     }),
   }
   return row.issues.map((issue) => ({
