@@ -11,7 +11,7 @@ The control app's **Detection** page shows what the device looks for and which A
 **Detection** is in the control app's menu, after **Device**. The page opens with a line on what it's for, then four sections:
 
 * **Object detection** gives the **Detector**, such as `edgetpu` for a Coral, and the **Running model**. It also tells you when Frigate isn't answering.
-* **Model in use** is the model Frigate runs, as one card. The card holds everything about the running model, including [the objects it recognises and the objects the device tracks](#what-the-model-recognises). The section is left out only when the page can't tell which model that is.
+* **Model in use** is the model Frigate runs, as one card. The card holds everything about the running model, including [the objects it recognises and the objects the device tracks](#what-the-model-recognises). The card is always there once the page has loaded the models, even when Frigate isn't answering or doesn't name its model. The section is left out only when the page can't load the models.
 * **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key.
 * **Other models on this device** lists the rest, and its title counts them.
 
