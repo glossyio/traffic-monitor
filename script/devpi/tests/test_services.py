@@ -5,8 +5,8 @@ import re
 import shlex
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, request_from_this_machine, require_pii_free, role_vars, session,
-                          tm_login_or_none)
+from devpi_checks import (API, RESTARTING_UNITS, podman_events, request_from_this_machine, require_pii_free,
+                          role_vars, session, tm_login_or_none)
 
 CORE_UNITS = [
     "go2rtc_server.service",
@@ -35,6 +35,28 @@ def test_image_builds_succeeded(host):
     assert not failed, f"image builds that didn't succeed: {failed}"
 
 
+def test_build_units_run_the_throwaway_podman_command_first(host):
+    listing = host.check_output("systemctl list-units --all --plain --no-legend '*-build.service'")
+    units = [line.split()[0] for line in listing.splitlines() if line.strip()]
+    assert units, "no *-build.service units found"
+    command = role_vars()["tmsetup_podman_refresh_command"]
+    shown = {unit: host.check_output(f"systemctl show -p ExecStartPre {unit}") for unit in units}
+    missing = [unit for unit, line in shown.items() if f"argv[]={command} ; ignore_errors=yes" not in line]
+    assert not missing, f"build units without 'ExecStartPre=-{command}': {missing}"
+
+
+def test_no_image_build_did_the_boots_podman_refresh(host):
+    """Only the Podman command that does a boot's state refresh can crash as in #268, so it must never be a build."""
+    refreshes = podman_events(host, "refresh")
+    if not refreshes:
+        pytest.skip("this boot's Podman refresh is no longer in the journal")
+    builds = [entry["_SYSTEMD_UNIT"] for entry in refreshes if " build " in f"{entry['_CMDLINE']} "]
+    assert not builds, (f"this boot's Podman refresh ran in an image build: {builds}. If this boot started before "
+                        "the build units got their ExecStartPre line, reboot once and run the test again.")
+    if not all(entry["_CMDLINE"] for entry in refreshes):
+        pytest.skip(f"the journal doesn't say which command did this boot's Podman refresh: {refreshes}")
+
+
 @pytest.mark.parametrize("unit", RESTARTING_UNITS)
 def test_no_crash_restarts(host, unit):
     restarts = int(host.check_output(f"systemctl show -p NRestarts --value {unit}"))
@@ -50,17 +72,41 @@ def test_plate_recognizer_absent_on_pii_free_unit(host, expect):
 SET_SECRET_UNIT = "tm-job-set-secret.service"
 
 
+def check_job_unit_is_static(host, unit, job):
+    state = host.check_output(f"systemctl show -p UnitFileState --value {unit}")
+    assert state == "static", f"{unit}'s UnitFileState is {state!r}"
+    script = f"{role_vars()['tmsetup_libexec_dir']}/{job}"
+    assert script in host.check_output(f"systemctl show -p ExecStart --value {unit}"), f"{unit} doesn't run {script}"
+    found = host.file(script)
+    mode = (found.is_file, found.user, found.group, oct(found.mode)) if found.exists else "missing"
+    assert mode == (True, "root", "root", "0o755"), f"{script} (regular file, owner, group, mode): {mode}"
+
+
 def test_set_secret_job_unit_is_static(host):
     """The set-secret job's unit is static (never enabled, so it runs only when tm-control starts it through polkit),
     and runs the job's root-owned copy, which only root can change."""
-    state = host.check_output(f"systemctl show -p UnitFileState --value {SET_SECRET_UNIT}")
-    assert state == "static", f"{SET_SECRET_UNIT}'s UnitFileState is {state!r}"
-    script = f"{role_vars()['tmsetup_libexec_dir']}/tm-job-set-secret"
-    assert script in host.check_output(f"systemctl show -p ExecStart --value {SET_SECRET_UNIT}"), (
-        f"{SET_SECRET_UNIT} doesn't run {script}")
-    job = host.file(script)
-    found = (job.is_file, job.user, job.group, oct(job.mode)) if job.exists else "missing"
-    assert found == (True, "root", "root", "0o755"), f"{script} (regular file, owner, group, mode): {found}"
+    check_job_unit_is_static(host, SET_SECRET_UNIT, "tm-job-set-secret")
+
+
+NETWORK_UNIT = "tm-job-network.service"
+
+
+def test_network_job_unit_is_static(host):
+    """The network job's unit, which changes the Wi-Fi hotspot, is static like the set-secret job's and runs the job's
+    root-owned copy."""
+    check_job_unit_is_static(host, NETWORK_UNIT, "tm-job-network")
+
+
+JOIN_UNIT = "tm-job-network-join.service"
+
+
+def test_network_join_job_unit_is_static(host):
+    """The join job's unit, which tests a Wi-Fi network and switches the radio to it, is static like the network job's
+    and runs the job's root-owned copy; and it has the time limits a run needs (a oneshot has none unless given)."""
+    check_job_unit_is_static(host, JOIN_UNIT, "tm-job-network-join")
+    limits = host.check_output(f"systemctl show -p TimeoutStartUSec -p TimeoutStopUSec {JOIN_UNIT}")
+    found = dict(line.split("=", 1) for line in limits.splitlines() if "=" in line)
+    assert found == {"TimeoutStartUSec": "15min", "TimeoutStopUSec": "2min"}, f"{JOIN_UNIT}'s time limits: {found}"
 
 
 def test_ui_build_unit_finished(host):
@@ -125,6 +171,26 @@ def test_polkit_allows_only_the_listed_actions(host, codeowner):
     result = as_code_owner(host, codeowner, f"timedatectl --no-ask-password set-ntp {ntp}")
     assert result.rc == 0, (
         f"as {codeowner}, timedatectl set-ntp {ntp} exited {result.rc}: {result.stderr.strip()[:200]}")
+
+
+def test_polkit_lets_tm_control_start_the_wifi_retry(host, codeowner):
+    """The rules file lets the code owner start tm-network-retry.service, which the Network checks' fix starts. Not
+    tried here: a start would run the retry, which can move the radio. The unit is in the role's list, and the
+    installed rules name it."""
+    unit = "tm-network-retry.service"
+    assert unit in role_vars()["tmsetup_tm_control_polkit"]["units"]
+    if codeowner == "root":
+        pytest.skip("the code owner is root, which polkit doesn't limit")
+    with host.sudo():
+        rules = host.file("/etc/polkit-1/rules.d/50-traffic-monitor.rules").content_string
+    assert f'"{unit}"' in rules, f"/etc/polkit-1/rules.d/50-traffic-monitor.rules doesn't name {unit}"
+
+
+def test_tm_control_can_read_the_wifi_country(host):
+    """tm-control.service may open a netlink socket (AF_NETLINK), which iw needs to read the Wi-Fi country for the
+    Network checks."""
+    families = host.check_output("systemctl show -p RestrictAddressFamilies --value tm-control.service").split()
+    assert "AF_NETLINK" in families, f"tm-control.service's RestrictAddressFamilies are {families}"
 
 
 def test_tm_control_has_the_video_group(request, host, address):

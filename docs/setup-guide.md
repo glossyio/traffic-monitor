@@ -4,7 +4,7 @@ description: Turn on detection, adjust the zones to your roadway, and record the
 
 # First-time setup
 
-Do these steps once the device is [mounted](deployment-and-mounting-guide.md) and powered on, and again whenever you move it. You need a computer or phone on the same network, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.
+Do these steps once the device is [mounted](deployment-and-mounting-guide.md) and powered on, and again whenever you move it. You need a computer or phone on the same network or on the device's own hotspot, and the device's setup code or administrator login. A device without a radar also needs an SSH client for step 4.
 
 As installed, the camera and the first radar are turned on in the Traffic Monitor's settings, but Frigate's object detection is off. Nothing is counted until you turn it on in step 2.
 
@@ -12,10 +12,14 @@ As installed, the camera and the first radar are turned on in the Traffic Monito
 
 Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](use/home-page.md) explains each link and how to find the address.
 
+A device at the roadside has no network to join. If its Wi-Fi isn't on a network it knows, it runs its own hotspot, named `TM-` and four characters. Join it with the password from the device's card; your phone's sign-in window then opens the setup page by itself, or you can open `http://10.42.0.1/`. [Wi-Fi and the hotspot](use/wifi-hotspot.md) has the details, including what to do on an iPhone or an Android 17 phone.
+
+A device you didn't give a Wi-Fi network when imaging the card is reached through its hotspot. Join it, finish setup below, and then put the device on the network it will use: as the administrator, open **Network**, choose **Refresh**, pick the network, and type its password. The device tests the network and switches to it after a five-minute countdown; [Put the unit on a Wi-Fi network](use/wifi-hotspot.md#put-the-unit-on-a-wi-fi-network) walks through it. A Wi-Fi network you set in Imager works too, and shows up on that page as a saved network.
+
 A device that hasn't been claimed opens its setup page:
 
 1. Choose **Start setup**, and read and accept the license agreement.
-2. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit.
+2. Enter the setup code from the end of the installer's output, or from the card that came with a pre-built unit. `sudo tm-control card` on the device shows it again.
 3. Create the administrator account with a username and password, and choose **Claim this device**.
 4. Optionally, set a new system password for Cockpit and SSH.
 

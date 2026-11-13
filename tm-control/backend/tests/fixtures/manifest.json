@@ -27,8 +27,12 @@
             "labelmap_path": "/config/labels-coco17.txt"
         }
     },
+    "network": {
+        "wifi_device": "wlan0",
+        "hotspot_profile": "tm-hotspot",
+        "hotspot_address": "10.42.0.1"
+    },
     "revproxy_locations": [
-        "cockpit.conf",
         "dashboard.conf",
         "frigate.conf",
         "go2rtc.conf",

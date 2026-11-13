@@ -106,6 +106,19 @@ def main(argv=None):
         "or TM_CONTROL_SETUP_CODE_FILE)",
     )
 
+    card_parser = commands.add_parser(
+        "card",
+        help="print the device's card: its hotspot name and password and its setup code (run with sudo)",
+        description="Print the device's hostname and addresses, its hotspot's name and password, and its setup code "
+        "(or that it is already claimed). Must run as root.",
+    )
+    card_parser.add_argument("--json", action="store_true", help="print the same values as JSON")
+    card_parser.add_argument(
+        "--unclaimed-only",
+        action="store_true",
+        help="print nothing and exit 3 when the device is already claimed",
+    )
+
     commands.add_parser(
         "fake-reset",
         help="start the fake device over, unclaimed, and print its setup code (fake mode only)",
@@ -148,4 +161,8 @@ def main(argv=None):
         return claim_cli.run(claim_cli.set_setup_code, settings)
     if args.command == "reset-admin":
         return claim_cli.run(claim_cli.reset_admin, settings, setup_code_file=args.setup_code_file)
+    if args.command == "card":
+        from tm_control.core import card
+
+        return claim_cli.run(card.card, settings, as_json=args.json, unclaimed_only=args.unclaimed_only)
     return 2

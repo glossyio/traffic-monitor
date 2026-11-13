@@ -207,6 +207,36 @@
             ]
         },
         {
+            "id": "network",
+            "title": "Network",
+            "checks": [
+                {
+                    "id": "network.hotspot",
+                    "title": "Hotspot",
+                    "status": "ok",
+                    "detail": "On as TM-AB12, at http://10.42.0.1/."
+                },
+                {
+                    "id": "network.wifi",
+                    "title": "Wi-Fi network",
+                    "status": "ok",
+                    "detail": "None of the 2 saved networks is in reach."
+                },
+                {
+                    "id": "network.internet",
+                    "title": "Internet",
+                    "status": "ok",
+                    "detail": "Not reachable. That's normal for an offline unit."
+                },
+                {
+                    "id": "network.wifi_country",
+                    "title": "Wi-Fi country",
+                    "status": "ok",
+                    "detail": "US."
+                }
+            ]
+        },
+        {
             "id": "device",
             "title": "Device",
             "checks": [

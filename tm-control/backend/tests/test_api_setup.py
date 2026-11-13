@@ -5,6 +5,7 @@ import pytest
 
 from tm_control.core.auth import COOKIE_NAME, Device, SetupCode, Users
 from tm_control.modules import MODULES
+from tm_control.modules.system.router import FAKE_HOSTNAME
 
 ORIGIN = {"Origin": "http://tm-test.local"}
 CLAIM = "/api/v1/setup/claim"
@@ -39,7 +40,12 @@ def test_setup_and_account_modules_are_registered():
 def test_status_and_eula_are_open(client):
     r = client.get("/api/v1/setup/status")
     assert r.status_code == 200
-    assert r.json() == {"claimed": False, "eula": {"version": "1", "accepted": False}, "theme": THEME}
+    assert r.json() == {
+        "claimed": False,
+        "eula": {"version": "1", "accepted": False},
+        "theme": THEME,
+        "hotspot": None,
+    }
     r = client.get("/api/v1/setup/eula")
     assert r.status_code == 200 and r.json()["version"] == "1" and "placeholder" in r.json()["markdown"]
 
@@ -48,6 +54,15 @@ def test_status_gives_the_theme_before_anyone_logs_in(client):
     """The setup and login pages use the device's colors, so the open status carries the manifest's theme."""
     assert COOKIE_NAME not in client.cookies
     assert client.get("/api/v1/setup/status").json()["theme"] == THEME
+
+
+def test_status_says_when_the_page_came_over_the_hotspot(client):
+    """nginx sends X-TM-Hotspot: 1 for requests that arrived on the hotspot address; anything else is not the hotspot."""
+    on = client.get("/api/v1/setup/status", headers={"X-TM-Hotspot": "1"})
+    assert on.json()["hotspot"] == {"local_name": f"{FAKE_HOSTNAME}.local"}
+    assert client.get("/api/v1/setup/status").json()["hotspot"] is None
+    for value in ("0", "true", ""):
+        assert client.get("/api/v1/setup/status", headers={"X-TM-Hotspot": value}).json()["hotspot"] is None
 
 
 def test_claim_with_the_right_code_creates_the_admin_and_logs_in(client, setup_code):

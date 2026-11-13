@@ -3,12 +3,15 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ADMIN,
+  NETWORK_STATE,
+  WIFI_NETWORKS,
   HARDWARE_RESCAN,
   RESCAN,
   SERVICES,
   VIEWER,
   apiError,
   type Check,
+  type Group,
   counts,
   json,
   report,
@@ -174,5 +177,34 @@ describe('the Status page', () => {
     const { wrapper } = await mountApp('/status')
     expect(wrapper.text()).toContain('Stopped after a failure.')
     expect(wrapper.findAll('button').map((b) => b.text().trim())).toEqual(['Refresh'])
+  })
+
+  it("follows the hotspot check's Set a password link to the Network page's open Hotspot panel", async () => {
+    const group: Group = {
+      id: 'network',
+      title: 'Network',
+      checks: [
+        {
+          id: 'network.hotspot',
+          title: 'Hotspot',
+          status: 'error',
+          detail: 'On as TM-AB12, with no password: anyone nearby can join it.',
+          fix: { kind: 'link', text: 'Set a password', href: '/network#hotspot', external: false },
+        },
+      ],
+    }
+    signedIn(ADMIN, {
+      [`GET ${STATUS}`]: report([group]),
+      'GET /api/v1/network': NETWORK_STATE,
+      'GET /api/v1/network/wifi': WIFI_NETWORKS,
+      'GET /api/v1/network/join': json(200, null),
+    })
+    const { wrapper, router } = await mountApp('/status')
+    await wrapper.find('a[href="/network#hotspot"]').trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/network'))
+    await flushPromises()
+    expect(router.currentRoute.value.hash).toBe('#hotspot')
+    expect(wrapper.find('#hotspot button[aria-expanded]').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('#this-device button[aria-expanded]').attributes('aria-expanded')).toBe('false')
   })
 })

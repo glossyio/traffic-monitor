@@ -51,8 +51,8 @@ export const THEME = {
   colors: { background: '#0C1120', header_text: '#3a82ff', body_text: '#f8fafc', link_hover_text: '#8895a7' },
 }
 
-export function status(claimed: boolean, accepted = claimed) {
-  return { claimed, eula: { version: '1', accepted }, theme: THEME }
+export function status(claimed: boolean, accepted = claimed, hotspot: { local_name: string } | null = null) {
+  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot }
 }
 
 export const ADMIN = { id: 1, username: 'owner', role: 'admin', created_at: '2026-10-27T12:00:00+00:00' }
@@ -209,4 +209,80 @@ export const RADARS: CameraRadar[] = [
 
 export function camerasState(changes: Partial<CamerasState> = {}): CamerasState {
   return { frigate: 'ok', plates: false, rows: [cameraRow()], radars: RADARS, ...changes }
+}
+
+// GET /network: Ethernet connected, and the Wi-Fi radio on the unit's own hotspot
+type NetworkState = components['schemas']['NetworkState']
+export const NETWORK_STATE: NetworkState = {
+  hostname: 'tm-ab12',
+  local_name: 'tm-ab12.local',
+  readable: true,
+  ethernet: {
+    connected: true,
+    mac: '2C:CF:67:00:AB:11',
+    addresses: ['192.168.1.57'],
+    gateway: '192.168.1.1',
+    dns: ['192.168.1.1', '1.1.1.1'],
+  },
+  wifi: {
+    connected: true,
+    mac: '2C:CF:67:00:AB:12',
+    addresses: ['10.42.0.1'],
+    gateway: null,
+    dns: [],
+    mode: 'hotspot',
+    network: null,
+    signal: null,
+  },
+  internet: 'reachable',
+  hotspot: { enabled: true, active: true, name: 'TM-AB12', hidden: false, security: 'wpa2', address: '10.42.0.1' },
+}
+
+export function networkState(changes: Partial<NetworkState>): NetworkState {
+  return { ...NETWORK_STATE, ...changes }
+}
+
+// GET /network/wifi: two saved networks (Home in range, Depot not) and five nearby, strongest first, scanned a minute
+// ago. The password-only rule of Join is the Join dialog's; this table only has what the section lists.
+type WifiNetworks = components['schemas']['WifiNetworks']
+export const WIFI_NETWORKS: WifiNetworks = {
+  readable: true,
+  radio: 'on',
+  saved: [
+    { uuid: 'u-home', name: 'HomeNet', in_use: false, automatic: true, hidden: false, in_range: true, could_not_join: false },
+    { uuid: 'u-depot', name: 'Depot', in_use: false, automatic: true, hidden: false, in_range: false, could_not_join: false },
+  ],
+  nearby: [
+    { name: 'HomeNet', signal: 82, security: 'password', saved: true, in_use: false },
+    { name: 'CafeGuest', signal: 64, security: 'open', saved: false, in_use: false },
+    { name: 'OfficeCorp', signal: 55, security: 'enterprise', saved: false, in_use: false },
+    { name: 'Neighbour', signal: 41, security: 'password', saved: false, in_use: false },
+    { name: 'NewerRouter', signal: 30, security: 'wpa3', saved: false, in_use: false },
+  ],
+  scanned_seconds_ago: 90,
+  join: null,
+}
+
+export function wifiNetworks(changes: Partial<WifiNetworks>): WifiNetworks {
+  return { ...WIFI_NETWORKS, ...changes }
+}
+
+// GET /network/join: a join whose test passed, 3 minutes 12 seconds before the unit switches. The unit was on its
+// hotspot (profile tm-hotspot) when it started.
+type JoinState = components['schemas']['JoinState']
+export const JOIN_COUNTDOWN: JoinState = {
+  stage: 'countdown',
+  network: 'Neighbour',
+  saved: false,
+  before: 'tm-hotspot',
+  joined: true,
+  reason: null,
+  address: '192.168.1.80',
+  internet: 'reachable',
+  seconds_left: 192,
+  finished_at: null,
+}
+
+export function joinState(changes: Partial<JoinState>): JoinState {
+  return { ...JOIN_COUNTDOWN, ...changes }
 }

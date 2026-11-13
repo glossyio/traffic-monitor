@@ -6,7 +6,20 @@ description: Restart services, read logs, and find the files on a Traffic Monito
 
 ## Cockpit
 
-Log in to the device as the administrator, open **Cockpit** from the home page, and log in again with your Raspberry Pi user account. Cockpit also answers on `http://<device>:9090` with only the Raspberry Pi login, which works when the [control app](control-app.md) doesn't. [Cockpit](https://cockpit-project.org/) shows the services and their logs, the Podman containers, system updates, and a terminal, so most administration needs no SSH client.
+[Cockpit](https://cockpit-project.org/) is the device's system console in the browser. It shows the services and their logs, the Podman containers, system updates, and the user accounts, and it has a terminal, so most administration needs no SSH client.
+
+Open `http://<device>:9090/`, with the same name or address you use for the home page, and log in with your Raspberry Pi user account. Administrators also have a **Cockpit** tile on the home page, which opens the same address and names the account to log in with.
+
+Cockpit has its own port and its own login. It doesn't need the home page, the [control app](control-app.md), or the apps, so it still opens when they don't. Use it when:
+
+* the home page doesn't load, or a page says the control app isn't answering
+* you want to restart a service, or read its log
+* you need a terminal and have no SSH client
+* you want to install system updates or change the system password
+
+!!! info "Who can open Cockpit"
+
+    Anyone on your network can reach Cockpit's login page. Only the Raspberry Pi user account gets past it. The control app's accounts don't work there.
 
 ## Services
 
@@ -48,6 +61,10 @@ sudo podman ps                                  # running containers
 | See a page saying the control app isn't answering | `sudo systemctl restart tm-control.service`, or restart it in Cockpit on port 9090. See [If the control app is down](control-app.md#if-the-control-app-is-down). |
 | Move the device to a new site | Choose **Deploy here** on the new place on the [Location page](location.md#move-or-turn-the-device), then adjust the zones as in [First-time setup](../setup-guide.md#3-adjust-the-zones). |
 
+## The device's card
+
+`sudo tm-control card` prints the device's address, the name and password of its [hotspot](wifi-hotspot.md), and its setup code while it's unclaimed. It needs `sudo` because the code is in a file only root can read, and the password in a file only root and the installing user's group can. `sudo tm-control card --json` prints the same values as JSON. If you lose the administrator's password, `sudo tm-control reset-admin` starts the accounts over; see [If the administrator's password is lost](control-app.md#if-the-administrators-password-is-lost).
+
 ## Where things are
 
 The settings and data live under `/opt/traffic-monitor/`.
@@ -69,5 +86,5 @@ The control app and the installer keep a few files elsewhere. Read them, but don
 |---|---|
 | `/var/lib/tm-control/state.sqlite` | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
 | `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads |
-| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
+| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, including the hotspot's password, which administrators can show on the [Network page](wifi-hotspot.md#show-the-password), and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
 | `/etc/traffic-monitor/setup-code` | The setup code, until the device is claimed |

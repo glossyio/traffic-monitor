@@ -4,11 +4,12 @@ description: Use the control app's Status, Device, and Date and time pages to se
 
 # Check and fix the device
 
-Three pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fourth, [Detection](detection.md), shows the object detection model and changes it:
+Four pages in the [control app](control-app.md)'s menu tell you whether the device works and let the administrator fix the common problems from a phone, without SSH. A fifth, [Detection](detection.md), shows the object detection model and changes it:
 
-* **Status** checks the services, apps, settings, hardware, and clock, and offers a fix for what's wrong.
+* **Status** checks the services, apps, settings, hardware, network, and clock, and offers a fix for what's wrong.
 * **Device** shows the device's facts and software versions, and has the diagnostics download, reboot, and shut down.
 * **Date and time** compares the device's clock with your phone's or computer's and sets it.
+* **Network** shows the device's names and addresses, and lets the administrator change the hotspot. See [The Network page](wifi-hotspot.md#the-network-page).
 
 The [home page](home-page.md) shows the Status page's summary under the device's name, such as **Everything is working**. Tap it to open the Status page.
 
@@ -33,14 +34,26 @@ The checks come in groups:
 | Apps | Frigate answers, isn't in safe mode (with no cameras because of a config error), and gets frames from each camera. When Frigate stopped on an error, the Frigate check quotes it. When Frigate isn't answering because it keeps stopping itself, the check says so and points at the Hardware group and the diagnostics. Node-RED answers, loaded `config.yml` without errors, and has its database at the version this install expects. The camera streams run, and Frigate reads them. The MQTT broker requires its login while port 1883 is open to the network. |
 | Configuration | Frigate and `config.yml` agree on the names that link them: each Frigate camera has an entry under `sensors.cameras` that is enabled (see [The camera checks](#the-camera-checks)), it has the zones `zone_capture`, `zone_near`, `zone_far`, and `zone_radar`, each radar under `sensors.radars` is named after one of the `TM_RADAR_SERIAL_PORT_` variables in `node-red-tm.env`, and each camera's radar is enabled. The Location check is a problem when a `deployment` value in `config.yml` is one Node-RED won't accept, such as a coordinate out of range or a bearing with spaces around it, and names the key. It warns when a sensor still has its own `lat` or `lon`, when the device's places haven't been set up since an update, which the control app does by itself once Node-RED answers, and when `survey_id` names a place the device doesn't have, and links to the [Location page](location.md). In safe mode Frigate has no cameras, so the checks that read them, here and in the Apps group, report that they couldn't run and point at the Frigate check. It also checks the ThingsBoard upload: its settings, and that a token is set when the upload is on. The Frigate+ check says whether a Frigate+ key and a Frigate+ model are set together, and whether Frigate can use the model; see [The Frigate+ check](../configuration/frigate-config.md#the-frigate-check). See [config.yml settings](../configuration/node-red-config.md) and [First-time setup](../setup-guide.md). |
 | Hardware | Each AI accelerator, from plugged in to passed to Frigate and listed in its config, or a warning when there's none and Frigate detects on the CPU. Whether detection works is Frigate's to report: when its detector keeps failing, Frigate restarts itself, and the Services and Apps rows say so. The video decoder Frigate uses for the camera. Each radar, from plugged in to read by Node-RED. |
+| Network | The device's [Wi-Fi](wifi-hotspot.md), in four checks. An offline device is normal, so none of them is a problem for lack of internet. See [The Network group](#the-network-group). |
 | Device | Free storage (a warning under 2 GB, a problem under 512 MB), free memory (a warning under 200 MB), the processor's temperature (a warning from 80 °C, a problem from 85 °C), and the power supply: whether the Pi ran short of power or slowed itself down since it started. |
 | Date and time | Whether the clock was ever set, and whether it keeps time from the internet. |
+
+### The Network group
+
+| Check | What it says |
+|---|---|
+| Hotspot | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (**Set a password** opens the [Network page](wifi-hotspot.md#change-the-password); see also [A hotspot you set up by hand](wifi-hotspot.md#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
+| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach. The [Network page](wifi-hotspot.md#saved-networks) lists the saved networks and lets an administrator join a network, reorder them, and forget them. |
+| Internet | **Reachable**, or **Not reachable. That's normal for an offline unit.** It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem. |
+| Wi-Fi country | The country, or a warning that none is set. Rerun the installer with `-t wifi` and it asks; see [The Wi-Fi country](wifi-hotspot.md#the-wi-fi-country). |
+
+A check that can't read the Wi-Fi state shows a question mark.
 
 ### Fix a problem
 
 A check that isn't passing offers one of these:
 
-* **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
+* **A Restart button**, such as **Restart Frigate**, for a service that stopped or keeps failing. The Hotspot check's **Restart the hotspot** has the device look at its Wi-Fi radio and start the hotspot if it should be on. The device asks first and says what you'll notice, for example that traffic isn't counted while Frigate restarts. A note under the button says when the restart is under way.
 * **Re-scan hardware**, at the end of the Hardware group while one of its checks isn't passing. It runs every check again at once, so you don't wait for the next check after you plug a device back in or follow the check's advice.
 * **A link** to the page that fixes it, such as **Set the date and time**, **Diagnostics** on the Device page, or **Set the token** for the ThingsBoard upload, which opens [Tokens and keys](#tokens-and-keys), or **Set the key** for Frigate+, which opens the Frigate+ API key section of the [Detection page](detection.md#frigate-plus), or **Open the Location page** for the Location check, or **Open the Cameras page** (see [Cameras](cameras.md)) for the camera, zone, and radar-pairing checks.
 * **A sentence** with the next step, such as rerunning the installer for Node-RED (`tmsetup.sh -t node-red-tm`; see [Installer options](../reference/tmsetup.md)).
@@ -62,7 +75,7 @@ The control app can't restart itself. If it stops, see [If the control app is do
 
 ## The Device page
 
-The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
+The card at the top shows the device's name, its Raspberry Pi model and memory, the Traffic Monitor version, the serial number, how long it has been running, its free storage, the processor's temperature, and the power supply's state. It also lists each connected link, Ethernet or Wi-Fi, with its IP address and MAC address, and **Network details** opens the [Network page](wifi-hotspot.md#the-network-page). If the device can't read its network state, the card leaves the list out. **Software** lists the versions of Frigate, Node-RED, go2rtc, nginx, and the Hailo driver if installed, the Traffic Monitor commit, the operating system, and the kernel.
 
 ### Tokens and keys
 
@@ -115,9 +128,10 @@ Moving the clock ahead by more than about 20 seconds stops Frigate's camera feed
 
 ## What viewers see
 
-Viewers see all four pages, but can't change anything:
+Viewers see all five pages, but can't change anything:
 
 * **Status**: the same checks, without the Restart and Re-scan buttons.
 * **Device**: the card and the software versions, without **Tokens and keys**, **Diagnostics**, and **Power**.
 * **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](detection.md#the-detection-page).
 * **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
+* **Network**: the addresses and the hotspot's state, without the hotspot's password or any control.

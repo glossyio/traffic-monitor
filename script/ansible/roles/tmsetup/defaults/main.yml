@@ -71,4 +71,7 @@ tmsetup_homepage_colors:
   header_text: '#3a82ff'
   body_text: '#f8fafc'
   link_hover_text: '#8895a7'
+
+# Two-letter Wi-Fi country (tmsetup.sh -w). Empty: keep the device's, or set US when it has none.
+tmsetup_wifi_country: ''
 ...

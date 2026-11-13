@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from tm_control import fake, modules
 from tm_control.adapters import systemd
 from tm_control.adapters.nodered import NodeRed, config_file_path
-from tm_control.core.auth import Backoff, NodeRedToken, Sessions
+from tm_control.core.auth import Backoff, DownloadGrants, NodeRedToken, Sessions
 from tm_control.core.checks import Context, StatusCache
 from tm_control.core.csrf import CsrfMiddleware
 from tm_control.core.drain import DrainMiddleware
@@ -57,7 +57,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.nr_token = NodeRedToken(secrets.node_red_token_key)
     app.state.login_backoff = Backoff()
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
+    app.state.download_grants = DownloadGrants()  # one-time /storefiles links for a browser that drops the cookie
     app.state.fake_clock = fake.FakeClock() if settings.fake else None
+    app.state.fake_network = fake.FakeNetwork() if settings.fake else None
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
     # The Location module's: Node-RED's config.yml, its /tm-internal/ endpoints, and the lock reconcile runs under.
     # The internal token was read above on a device (a missing one fails startup); FakeSecrets always has one.

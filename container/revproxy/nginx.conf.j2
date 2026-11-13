@@ -32,7 +32,23 @@ http {
         ''      close;
     }
 
+    # The sign-in window. On its hotspot the unit answers every name (dnsmasq), so a phone's connection test arrives
+    # here with a foreign Host; the redirect is what makes the phone open its sign-in window on the control app.
+    # Only for requests that arrived on the hotspot address. Never answer such a test with success: an Android 17
+    # phone has no other way in.
+    map "$server_addr $host" $tm_sign_in {
+        default 0;
+        "~^{{ tmsetup_hotspot_address | regex_escape }} (?!({{ tmsetup_hotspot_address | regex_escape }}|{{ ansible_facts['hostname'] | lower | regex_escape }}(\.local)?)$)" 1;
+    }
+    # Tells tm-control's API that the request came over the hotspot (empty: no header is sent)
+    map $server_addr $tm_on_hotspot {
+        default "";
+        {{ tmsetup_hotspot_address }} 1;
+    }
+
     server {
+        if ($tm_sign_in) { return 302 http://{{ tmsetup_hotspot_address }}/; }
+
         listen 80 default_server;
         server_name _;  # This will match any hostname
         # Relative Location headers (login and trailing-slash redirects), so they keep the host and

@@ -28,6 +28,10 @@ tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 # udev symlink to the Pi 5 HEVC decoder (model rpi-hevc-dec); its /dev/media number changes between boots (#231).
 # Must match the SYMLINK in templates/60-traffic-monitor-hevc-dec.rules.j2 and the device unit in frigate.container.j2.
 tmsetup_hevc_device: /dev/rpi-hevc-dec
+# A harmless Podman command the image build units run first (ExecStartPre=-). After an unclean shutdown the boot's
+# first Podman command clears the lost boot's containers, and Podman 5.4.2 can crash while it does (#268; fixed in
+# Podman 5.6.0). This command takes that crash instead of the build.
+tmsetup_podman_refresh_command: /usr/bin/podman network exists podman
 tmsetup_restart_required: false
 
 tmsetup_remove_packages:
@@ -75,7 +79,6 @@ tmsetup_revproxy_config_mounts:
 # Each app's file includes auth-viewer.conf or auth-admin.conf.
 # Deployed location files not listed here are removed from the device.
 tmsetup_revproxy_locations:
-  - cockpit.conf
   - dashboard.conf
   - frigate.conf
   - go2rtc.conf
@@ -128,6 +131,9 @@ tmsetup_tm_control_polkit:
     - go2rtc_server.service
     - tm-job-system-password.service
     - tm-job-set-secret.service
+    - tm-job-network.service
+    - tm-job-network-join.service
+    - tm-network-retry.service
   unit_verbs:
     - start
     - stop
@@ -143,5 +149,16 @@ tmsetup_tm_control_polkit:
 
 # go2rtc RTSP user that Frigate logs in as; the password is tmsetup_secrets['go2rtc_rtsp_password']
 tmsetup_go2rtc_rtsp_user: frigate
+
+# The hotspot (tasks/wifi_setup.yml): the built-in radio it runs on, its NetworkManager profile, and its fixed
+# address. nginx's sign-in rule, the firewall table, and tm-control's manifest read the same values.
+tmsetup_wifi_device: wlan0
+tmsetup_hotspot_profile: tm-hotspot
+tmsetup_hotspot_address: 10.42.0.1
+tmsetup_hotspot_subnet: 10.42.0.0/24
+tmsetup_wifi_packages:
+  - iw
+  - nftables
+  - dnsmasq-base
 
 ...

@@ -218,6 +218,35 @@ def test_data_export_errors_from_this_machine(address, admin_session, query, exp
     assert status == expected, f"/storefiles{query} returned {status}"
 
 
+def download_link(address, admin_session):
+    """A one-time /storefiles link for a file that doesn't exist (Redacted, so no failure prints it), or a failure."""
+    answer = request_from_this_machine(address, f"{API}/auth/download-link", "POST", admin_session,
+                                       {"files": "tmdev-missing.json"})
+    url = answer.json().get("url") if answer.status == 200 and isinstance(answer.json(), dict) else None
+    assert isinstance(url, str) and url.startswith("/storefiles?"), f"download-link answered HTTP {answer.status}"
+    return Redacted(url, "download link")
+
+
+def test_a_download_link_works_once_without_the_cookie(host, address, admin_session):
+    """Android's sign-in window hands a download to a helper that sends no cookie; a link lets it in once.
+
+    No file is downloaded: the link names a missing file, so Node-RED's 404 shows the login check passed.
+    """
+    url = download_link(address, admin_session)
+    assert request_from_this_machine(address, url).status == 404, "the link's first use without a cookie"
+    again = request_from_this_machine(address, url)
+    # Redacted: if the token ever leaked into the redirect, pytest -l mustn't print it
+    location = Redacted(again.headers.get("Location") or "", "login redirect")
+    to_login, holds_token = location.startswith("/login?next="), "tm_token" in urllib.parse.unquote(location)
+    expected = (302, True, False)
+    assert (again.status, to_login, holds_token) == expected, "the link's second use: (status, to login, holds token)"
+
+    # From the Pi itself to its own address: another client address than this machine's
+    other = Redacted(shlex.quote(f"http://{address}{download_link(address, admin_session)}"), "download link")
+    status = host.run(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 {other}").stdout.strip()
+    assert status == "302", "a link used from another address"
+
+
 def curl_outcome(result):
     """curl's exit code, the HTTP status it printed last, and whether the headers offered a file to save.
 
@@ -407,7 +436,7 @@ def test_frigate_logs_in_to_the_mqtt_broker(host):
 # --- The login in front of the apps (tm-control M2) ------------------------------------------------------------------
 # Every app path asks tm-control through nginx's auth_request (container/revproxy/tm/snippets/auth-*.conf).
 
-APP_PATHS = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/storefiles", "/system/"]
+APP_PATHS = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/storefiles"]
 
 
 @pytest.mark.parametrize("path", APP_PATHS)
@@ -456,9 +485,9 @@ def test_unavailable_page_is_served_for_errors(address):
     assert status == 404, f"/unavailable.html answered {status}"
 
 
-# What an admin gets. Without files, /storefiles is Node-RED's own 400; Cockpit shows its login page or redirects to it.
+# What an admin gets. Without files, /storefiles is Node-RED's own 400.
 ADMIN_OPENS = [("/dashboard/", {200}), ("/frigate/", {200}), ("/ui/", {200}), ("/nr/", {200}), ("/feeds/", {200}),
-               ("/storefiles", {400}), ("/system/", {200, 303})]
+               ("/storefiles", {400})]
 
 
 @pytest.mark.parametrize("path, expected", ADMIN_OPENS, ids=[path for path, _ in ADMIN_OPENS])
@@ -467,8 +496,8 @@ def test_admin_session_opens_every_app(address, admin_session, path, expected):
     assert status in expected, f"{path} with the admin session answered {status}"
 
 
-VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403), ("/system/", 403),
-                   (f"{API}/users", 403), ("/dashboard/", 200), ("/ui/", 200), ("/frigate/", 200)]
+VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403), (f"{API}/users", 403),
+                   ("/dashboard/", 200), ("/ui/", 200), ("/frigate/", 200)]
 
 
 @pytest.mark.parametrize("path, expected", VIEWER_STATUSES, ids=[path for path, _ in VIEWER_STATUSES])
@@ -476,6 +505,46 @@ def test_viewer_gets_403_on_admin_paths(address, viewer_session, path, expected)
     """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list."""
     status = status_from_this_machine(address, path, cookie=viewer_session)
     assert status == expected, f"{path} with a viewer session answered {status}"
+
+
+COCKPIT_PORT = 9090
+
+
+def test_cockpit_answers_at_the_root_of_its_own_port(address):
+    """Cockpit is the rescue console: its login page loads at http://<device>:9090/, with no path, and without
+    nginx or the control app's login."""
+    answer = request_from_this_machine(f"{address}:{COCKPIT_PORT}", "/")
+    html = answer.headers.get("Content-Type", "").startswith("text/html")
+    assert (answer.status, html) == (200, True), "Cockpit on port 9090: (status, an HTML page)"
+
+
+def test_nginx_does_not_proxy_cockpit(address):
+    """/system/ is no app's path any more: nginx serves the control app's page for it and asks for no login."""
+    answer = request_from_this_machine(address, "/system/")
+    assert (answer.status, answer.headers.get("Location")) == (200, None), "/system/ without a session"
+
+
+def system_account_fields(address, cookie):
+    """{field: whether it names an account, or None if it's null} for the two answers that carry the system
+    account's name. Only that comes back, so no local holds the name for pytest -l to print."""
+    device = request_from_this_machine(address, f"{API}/system/device", cookie=cookie).json()
+    info = request_from_this_machine(address, f"{API}/system/info", cookie=cookie).json()
+    tm = info.get("tm") if isinstance(info, dict) else None
+    values = {
+        "GET /system/device's system_user": device.get("system_user", "") if isinstance(device, dict) else "",
+        "GET /system/info's tm.installing_user": tm.get("installing_user", "") if isinstance(tm, dict) else "",
+    }
+    return {field: None if value is None else isinstance(value, str) and value != "" for field, value in values.items()}
+
+
+def test_only_administrators_get_the_system_accounts_name(address, admin_session, viewer_session):
+    """The Cockpit tile and setup name the system account for administrators; a viewer gets null in both answers that
+    carry the name (#265). No value goes in the message, only which field of whose answer was wrong."""
+    wrong = [f"the admin's {field}" for field, named in system_account_fields(address, admin_session).items()
+             if named is not True]
+    wrong += [f"the viewer's {field}" for field, named in system_account_fields(address, viewer_session).items()
+              if named is not None]
+    assert not wrong, "wrong: " + "; ".join(wrong)
 
 
 # Headers a client could send to pass as an admin: Frigate reads the user's role from X-Forwarded-Groups (and would
@@ -693,6 +762,19 @@ def test_cameras_page_agrees_with_the_status_check(address, admin_session):
     )
 
 
+NETWORK_CHECKS = ["network.hotspot", "network.wifi", "network.internet", "network.wifi_country"]
+
+
+def test_the_status_report_has_the_network_checks(address, admin_session):
+    """The Network group has exactly its four checks. None is unknown on a healthy unit: a check that can't read its
+    source (NetworkManager, iw) says unknown, so this catches a sandbox or permission that stops it."""
+    checks = status_checks(address, admin_session)
+    network = {check_id: status for check_id, (status, _) in checks.items() if check_id.startswith("network.")}
+    assert sorted(network) == sorted(NETWORK_CHECKS), f"the network checks are {sorted(network)}"
+    unknown = {check_id: checks[check_id][1] for check_id, status in network.items() if status == "unknown"}
+    assert not unknown, f"network checks that are unknown: {unknown}"
+
+
 # require_admin's refusal (tm_control/modules/auth/deps.py), which the cross-site check's 403 doesn't say
 ADMIN_ONLY = "Only an admin can do this."
 VIEWER_ACTIONS = [
@@ -750,6 +832,116 @@ def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, 
         return
     refusal = admin_refusal(answer)
     assert refusal == (403, ADMIN_ONLY), f"{method} {path} with a viewer session (status, message)"
+
+
+def test_the_network_page_reports_the_radios_own_address(host, address, admin_session):
+    """GET /network gives the Wi-Fi radio's hardware address as the device has it (upper case, colons), and its body
+    holds no password: only GET /network/hotspot/password does. Skips on a unit with no built-in Wi-Fi radio."""
+    device = role_vars()["tmsetup_wifi_device"]
+    radio = host.run(f"cat /sys/class/net/{device}/address")
+    if radio.rc != 0:
+        pytest.skip(f"the unit has no {device}")
+    answer = request_from_this_machine(address, f"{API}/network", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/network answered HTTP {answer.status}"
+    wifi = state.get("wifi") or {}
+    assert wifi.get("mac") == radio.stdout.strip().upper(), f"GET {API}/network: wifi.mac isn't {device}'s address"
+    assert not any("password" in key.lower() for key in json_keys(state)), (
+        f"GET {API}/network has a key that names a password: {sorted(set(json_keys(state)))}")
+
+
+def nmcli_values(host, keys, uuid):
+    """The values of these nmcli settings for one profile, as `sudo nmcli -g` prints them (one per line, with ':' and
+    '\\' escaped), or None when nmcli can't show it."""
+    result = host.run(f"sudo nmcli -g {','.join(keys)} connection show uuid {shlex.quote(uuid)}")
+    if result.rc != 0:
+        return None
+    lines = result.stdout.split("\n")
+    return [re.sub(r"\\(.)", r"\1", lines[i]) if i < len(lines) else "" for i in range(len(keys))]
+
+
+def wifi_client_profiles(host):
+    """{uuid: the network's name} of the Wi-Fi client (infrastructure) profiles `sudo nmcli` lists, or None when it
+    can't list them. The hotspot (access point mode) is left out, as the page leaves it out."""
+    listing = host.run("sudo nmcli -t -f UUID,TYPE connection show")
+    if listing.rc != 0:
+        return None
+    found = {}
+    for line in listing.stdout.splitlines():
+        uuid, _, kind = line.partition(":")
+        if kind != "802-11-wireless":
+            continue
+        values = nmcli_values(host, ["802-11-wireless.mode", "802-11-wireless.ssid", "connection.id"], uuid)
+        if values is None:
+            return None
+        mode, ssid, profile_name = values
+        if mode == "infrastructure":
+            found[uuid] = ssid or profile_name
+    return found
+
+
+def test_the_wifi_networks_answer_matches_networkmanager(host, address, admin_session):
+    """GET /network/wifi lists the saved networks NetworkManager has as Wi-Fi client profiles, by uuid with the
+    network's name, and its body has no password or key. Skips on a unit with no built-in Wi-Fi radio."""
+    device = role_vars()["tmsetup_wifi_device"]
+    if host.run(f"cat /sys/class/net/{device}/address").rc != 0:
+        pytest.skip(f"the unit has no {device}")
+    expected = wifi_client_profiles(host)
+    assert expected is not None, "sudo nmcli couldn't list the Wi-Fi client profiles"
+    answer = request_from_this_machine(address, f"{API}/network/wifi", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/network/wifi answered HTTP {answer.status}"
+    saved = state.get("saved")
+    assert isinstance(saved, list), f"GET {API}/network/wifi has no saved list (readable: {state.get('readable')})"
+    assert {entry.get("uuid"): entry.get("name") for entry in saved} == expected, (
+        f"GET {API}/network/wifi's saved networks (uuid: name) differ from nmcli's Wi-Fi client profiles")
+    secret_keys = sorted({key for key in json_keys(state) if "password" in key.lower() or "psk" in key.lower()})
+    assert not secret_keys, f"GET {API}/network/wifi has keys that name a password: {secret_keys}"
+
+
+# Each one would change the Wi-Fi if a viewer were let through; none can, because require_admin answers first. The scan
+# is sent first and alone: only when it was refused as admin-only is anything else sent. The bodies are valid and use a
+# placeholder name, so a refusal can't come from validation.
+WIFI_ADMIN_ACTIONS = [
+    ("/network/wifi/scan", {}),
+    ("/network/wifi/join", {"name": "placeholder-network"}),
+    ("/network/wifi/join/switch", {}),
+    ("/network/wifi/join/cancel", {}),
+    ("/network/wifi/forget", {"uuid": "00000000-0000-0000-0000-000000000000"}),
+    ("/network/wifi/order", {"uuids": []}),
+]
+
+
+@pytest.mark.parametrize("path, body", WIFI_ADMIN_ACTIONS,
+                         ids=[path.removeprefix("/network/") for path, _ in WIFI_ADMIN_ACTIONS])
+def test_a_viewer_cannot_start_a_scan_or_a_join(address, viewer_session, path, body):
+    """A viewer's scan, join, Switch now, Cancel, Forget, or reorder of the Wi-Fi networks gets require_admin's 403."""
+    if path != WIFI_ADMIN_ACTIONS[0][0]:
+        guard = admin_refusal(request_from_this_machine(address, f"{API}{WIFI_ADMIN_ACTIONS[0][0]}", "POST",
+                                                        viewer_session, {}))
+        if guard != (403, ADMIN_ONLY):
+            pytest.fail(f"a viewer's POST {API}{WIFI_ADMIN_ACTIONS[0][0]} answered {guard}, not require_admin's 403, "
+                        f"so POST {API}{path} wasn't sent: it could change the unit's Wi-Fi", pytrace=False)
+    answer = request_from_this_machine(address, f"{API}{path}", "POST", viewer_session, body)
+    assert admin_refusal(answer) == (403, ADMIN_ONLY), f"POST {API}{path} with a viewer session (status, message)"
+
+
+def json_keys(value):
+    """Every object key anywhere in parsed JSON."""
+    if isinstance(value, dict):
+        for key, inner in value.items():
+            yield str(key)
+            yield from json_keys(inner)
+    elif isinstance(value, list):
+        for inner in value:
+            yield from json_keys(inner)
+
+
+def test_a_viewer_cannot_read_the_hotspot_password(address, viewer_session):
+    """The hotspot's password is for admins: a viewer gets require_admin's 403, and the answer holds no password."""
+    answer = request_from_this_machine(address, f"{API}/network/hotspot/password", cookie=viewer_session)
+    assert admin_refusal(answer) == (403, ADMIN_ONLY), f"GET {API}/network/hotspot/password with a viewer session"
+    assert "password" not in (answer.json() or {}), "a viewer's refusal has a password key"
 
 
 @pytest.mark.parametrize("path", ["/nr/tm-internal/status", "/nr/tm-internal", "/nr/TM-Internal/status"])

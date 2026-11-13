@@ -14,6 +14,7 @@ export interface SetupStatus {
   claimed: boolean
   eula: { version: string; accepted: boolean }
   theme: { font: string; colors: Record<string, string> }
+  hotspot: { local_name: string } | null // set when the page came over the unit's hotspot
 }
 
 // GET /auth/session
@@ -34,6 +35,8 @@ export interface DeviceApp {
   path: string
   title: string
   admin_only: boolean
+  // An app on its own port (Cockpit's 9090), not behind nginx; null for every app nginx serves
+  port: number | null
 }
 
 // GET /system/device
@@ -41,6 +44,8 @@ export interface Device {
   hostname: string
   serial: string
   tm_version: string
+  // The system account for Cockpit and SSH; null for a viewer
+  system_user: string | null
   time: string
   apps: DeviceApp[]
 }

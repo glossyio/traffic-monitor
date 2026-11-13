@@ -21,7 +21,7 @@ from tm_control.adapters import frigate, sysinfo, systemd
 from tm_control.adapters.redact import redact, redact_words
 from tm_control.adapters.yamlfile import read_config
 from tm_control.core.checks import Report
-from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret
+from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret, read_hotspot_password
 from tm_control.modules.apps import probes
 from tm_control.modules.cameras.names import is_neutral
 from tm_control.modules.cameras.state import frigate_now
@@ -65,6 +65,11 @@ def secret_values(app_state) -> list[str]:
             values.append(app_state.secrets.read(name))
         except (MissingSecret, ValueError):
             continue
+    password = read_hotspot_password(app_state.settings.secrets_dir)
+    if app_state.fake_network is not None:
+        password = app_state.fake_network.password
+    if password:  # an empty file means no password: nothing to redact
+        values.append(password)
     if not app_state.settings.fake:
         values += env_secret_values(Path(app_state.manifest.codedir))
     return values

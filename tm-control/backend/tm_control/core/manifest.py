@@ -4,6 +4,7 @@ tmsetup writes it (templates/tm-control/manifest.json.j2); tm-control only reads
 newer tmsetup can add fields.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
@@ -29,6 +30,15 @@ class FrigateInfo(BaseModel):
     coral_model: dict | None = None  # the model section the installer gives Frigate on a device with a Coral
 
 
+@dataclass(frozen=True)
+class NetworkInfo:
+    """The hotspot's fixed values (tmsetup_wifi_device, tmsetup_hotspot_profile, tmsetup_hotspot_address)."""
+
+    wifi_device: str = "wlan0"
+    hotspot_profile: str = "tm-hotspot"
+    hotspot_address: str = "10.42.0.1"
+
+
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -39,6 +49,7 @@ class Manifest(BaseModel):
     components: dict[str, str]
     options: dict[str, bool]
     frigate: FrigateInfo = FrigateInfo()
+    network: NetworkInfo = NetworkInfo()
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage

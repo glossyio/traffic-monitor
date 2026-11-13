@@ -2,6 +2,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
+import { MODULES } from '../src/modules'
 import { createAppRouter } from '../src/router'
 import { useSession } from '../src/stores/session'
 import { ADMIN, VIEWER, fakeApi, session, status } from './fake-api'
@@ -56,10 +57,11 @@ describe('router', () => {
     expect(await landing('/cameras')).toBe('/cameras')
   })
 
-  it('has no page under /system, which nginx sends to Cockpit', () => {
-    device(true, ADMIN)
-    const paths = createAppRouter(createMemoryHistory()).getRoutes().map((route) => route.path)
-    expect(paths.filter((path) => path === '/system' || path.startsWith('/system/'))).toEqual([])
+  it('lets a viewer open the Network page, and lists it in the menu after Device', async () => {
+    device(true, VIEWER)
+    expect(await landing('/network')).toBe('/network')
+    const titles = MODULES.flatMap((module) => module.nav).map((item) => item.title)
+    expect(titles.indexOf('Network')).toBe(titles.indexOf('Device') + 1)
   })
 
   it('lets an admin open the users page', async () => {

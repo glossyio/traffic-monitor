@@ -85,3 +85,12 @@ def test_redact_words_prefers_the_longest_and_ignores_empty_words():
     assert redact_words("oak_ave and oak_ave_wide", ["oak_ave", "", "oak_ave_wide"]) == "<redacted> and <redacted>"
     assert redact_words("nothing to hide", ["", "absent"]) == "nothing to hide"
     assert redact_words("a-b is not a b", ["a-b"]) == "<redacted> is not a b"
+
+
+def test_a_download_links_token_in_nginxs_log_is_hidden():
+    line = (
+        '10.42.0.23 - - [10/Nov/2026:08:11:15 +0000] '
+        '"GET /storefiles?files=/db/tmdb.sqlite&tm_token=PLACEHOLDER HTTP/1.1" 200 394000'
+    )
+    out = redact(line, [])
+    assert "PLACEHOLDER" not in out and "files=/db/tmdb.sqlite&tm_token=" in out and ' HTTP/1.1" 200' in out

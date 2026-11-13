@@ -138,8 +138,8 @@ onMounted(load)
   <div>
     <h1 class="text-h5 text-primary mb-4">Users</h1>
     <p class="text-body-1 mb-10">
-      Viewers can open the dashboards and Frigate. They can't open the Node-RED editor, the camera feeds, or Cockpit,
-      and can't change settings.
+      Viewers can open the dashboards and Frigate. They can't open the Node-RED editor or the camera feeds, and can't
+      change settings.
     </p>
 
     <section class="mb-10">

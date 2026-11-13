@@ -1,23 +1,27 @@
-"""Login, logout, the session the UI routes on, and nginx's auth_request check (/api/v1/auth/verify).
+"""Login, logout, the session the UI routes on, nginx's auth_request check (/api/v1/auth/verify), and the one-time
+download links verify also accepts.
 
-verify's status codes and X-TM-* headers are a contract with the auth snippets in revproxy's tm/snippets/.
+verify's status codes and X-TM-* headers are a contract with the auth snippets in revproxy's tm/snippets/, and its
+answer to a download link with the /_auth locations in tm-control-auth.conf (X-Forwarded-For) and the two Dashboard
+templates that ask for a link.
 """
 
 import logging
 import time
-from urllib.parse import quote, urlsplit
+from urllib.parse import parse_qsl, quote, unquote_plus, urlsplit
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from tm_control.core.auth import ROLES, Device, Users
+from tm_control.core.auth import DOWNLOAD_PATH, DOWNLOAD_TOKEN, ROLES, Device, User, Users
 from tm_control.core.errors import ApiError
 from tm_control.modules.auth.deps import (
     clear_session_cookie,
     client_ip,
     rate_limited,
     refresh_if_old,
+    require_admin,
     session_user,
     set_session_cookie,
 )
@@ -41,6 +45,64 @@ def safe_next(uri: str) -> str:
     return parts.path + (f"?{parts.query}" if parts.query else "")
 
 
+def without_download_token(uri: str) -> str:
+    """uri with every tm_token pair cut from its query, the rest as sent, so a login redirect never holds a link."""
+    path, mark, rest = uri.partition("?")
+    if not mark:
+        return uri
+    query, hash_mark, fragment = rest.partition("#")
+    kept = [pair for pair in query.split("&") if unquote_plus(pair.partition("=")[0]) != DOWNLOAD_TOKEN]
+    return path + (f"?{'&'.join(kept)}" if kept else "") + hash_mark + fragment
+
+
+def _download_link_user(request: Request, required: str, uri: str) -> User | None:
+    """The admin a request without a session may pass as, because its URI is a good download link; else None.
+
+    The link must be exactly /storefiles?files=...&tm_token=... on an admin location, from the address it was made
+    for. It is spent once it is presented here, whether or not the rest matched. A link is checked like a session:
+    the user still exists, is an admin, and has the same session epoch, and the current license agreement is accepted.
+    """
+    if required != "admin":
+        return None
+    parts = urlsplit(uri)
+    pairs = parse_qsl(parts.query, keep_blank_values=True)
+    if parts.path != DOWNLOAD_PATH or sorted(name for name, _ in pairs) != ["files", DOWNLOAD_TOKEN]:
+        return None
+    values = dict(pairs)
+    app_state = request.app.state
+    token, files = values[DOWNLOAD_TOKEN], values["files"]
+    grant = app_state.download_grants.redeem(token, client_ip(request), files, time.monotonic())
+    if grant is None:
+        return None
+    user = Users(app_state.state).get(grant.uid)
+    if user is None or user.session_epoch != grant.epoch or user.role != "admin":
+        return None
+    if not Device(app_state.state).eula_accepted(app_state.eula.version):
+        return None
+    return user
+
+
+class DownloadLinkRequest(BaseModel):
+    files: str = Field(min_length=1, max_length=2048)
+
+
+class DownloadLink(BaseModel):
+    url: str
+
+
+@router.post("/download-link", response_model=DownloadLink)
+def download_link(body: DownloadLinkRequest, request: Request, admin: User = Depends(require_admin)):
+    """A link to /storefiles?files=<files> that passes the login check once without the cookie.
+
+    For browsers that hand a download to a helper without the cookie (Android's sign-in window). It works once, for
+    600 seconds, from this browser's address, for these files only.
+    """
+    address = client_ip(request)
+    token = request.app.state.download_grants.issue(admin, address, body.files, time.monotonic())
+    log.info("download link made for %s from %s", admin.username, address)
+    return {"url": f"{DOWNLOAD_PATH}?files={quote(body.files, safe='/,')}&{DOWNLOAD_TOKEN}={token}"}
+
+
 VERIFY_PATH = "/api/v1/auth/verify"
 
 
@@ -53,6 +115,8 @@ def verify(request: Request):
     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
+    Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
+    no other secret and no cookie. A login redirect's next= leaves the link's token out.
     """
     required = request.headers.get("x-tm-required-role")
     # The exact path too: Starlette's route pattern ends in $, which also matches before a trailing newline (%0A)
@@ -64,9 +128,14 @@ def verify(request: Request):
     if not device.is_claimed():
         raise ApiError(401, "not_claimed", "Set up this device first.", headers={"X-TM-Redirect": "/setup"})
 
+    uri = request.headers.get("x-original-uri", "/")
     found = session_user(request)
     if found is None:
-        target = quote(safe_next(request.headers.get("x-original-uri", "/")), safe="/")
+        link_user = _download_link_user(request, required, uri)
+        if link_user is not None:
+            log.info("download link used by %s from %s", link_user.username, client_ip(request))
+            return Response(status_code=200, headers={"X-TM-User": link_user.username, "X-TM-Role": link_user.role})
+        target = quote(safe_next(without_download_token(uri)), safe="/")
         redirect = {"X-TM-Redirect": f"/login?next={target}"}
         raise ApiError(401, "unauthenticated", "Log in to continue.", headers=redirect)
     user, claims = found

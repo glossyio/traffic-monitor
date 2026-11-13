@@ -49,7 +49,7 @@ def test_status_report_for_a_viewer_and_an_admin(claimed_client, login):
         assert r.status_code == 200, r.text
         body = r.json()
         assert body["groups"] == fake_groups()
-        assert [g["id"] for g in body["groups"]] == ["services", "apps", "config", "hardware", "device", "time"]
+        assert [g["id"] for g in body["groups"]] == ["services", "apps", "config", "hardware", "network", "device", "time"]
         assert datetime.fromisoformat(body["generated_at"]).utcoffset() is not None
         assert set(body["summary"]) == {"ok", "warn", "error", "unknown"}
         assert sum(body["summary"].values()) == sum(len(g["checks"]) for g in body["groups"])

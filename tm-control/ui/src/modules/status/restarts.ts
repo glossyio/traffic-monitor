@@ -1,5 +1,5 @@
 // What a person notices when a unit restarts, for the confirmation, and the result written under the button. Keyed
-// by the units the API can restart (UNITS in tm-control/backend/tm_control/modules/services/units.py).
+// by the units the API can restart (UNITS and FIX_UNITS in tm-control/backend/tm_control/modules/services/units.py).
 
 interface Restart {
   notice: string // the confirmation's text
@@ -31,6 +31,10 @@ const RESTARTS: Record<string, Restart> = {
   'revproxy.service': {
     notice: 'This page stops answering for a few seconds while the web proxy restarts.',
     result: 'The web proxy is restarting. If this page stops answering, reload it in a few seconds.',
+  },
+  'tm-network-retry.service': {
+    notice: 'The unit checks its Wi-Fi radio and starts the hotspot if it should be on.',
+    result: 'Starting the hotspot. Check again in a minute.',
   },
 }
 

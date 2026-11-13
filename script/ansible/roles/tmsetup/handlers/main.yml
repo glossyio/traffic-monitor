@@ -19,6 +19,13 @@
     state: restarted
   notify: Pause for 10 seconds
 
+- name: Reload the hotspot firewall
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: tm-hotspot-firewall.service
+    state: reloaded
+
 - name: Restart sysstat service
   become: true
   ansible.builtin.systemd_service:

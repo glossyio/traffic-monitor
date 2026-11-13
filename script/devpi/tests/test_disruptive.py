@@ -1,25 +1,27 @@
-"""Recovery: the stack comes back after a restart and after a reboot; the login fails closed and can be reset; the
-control app's restart, time, and reboot actions work.
+"""Recovery: the stack comes back after a restart, a reboot, and a reset with no shutdown; the login fails closed and
+can be reset; the control app's restart, time, and reboot actions work.
 
-These stop services, reboot the Pi, change its clock or time zone, or reset the unit's tm-control accounts, so they
-run only with tmdev.py test --disruptive. Ask the person first. Two of them reboot the Pi: test_reboot_recovers and
-test_reboot_from_the_control_app.
+These stop services, reboot or reset the Pi, change its clock or time zone, or reset the unit's tm-control accounts, so
+they run only with tmdev.py test --disruptive. Ask the person first. Two of them reboot the Pi, test_reboot_recovers
+and test_reboot_from_the_control_app, and test_stack_recovers_after_an_unclean_reset resets it without shutting down.
 """
 
 import hashlib
 import io
 import json
 import re
+import secrets
 import shlex
 import time
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
 from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, detector_name, entered_secret_states,
-                          find_hevc_decoder, frigate_host_devices, pi_now, request_from_this_machine,
+                          find_hevc_decoder, frigate_host_devices, pi_now, podman_events, request_from_this_machine,
                           require_pii_free, role_vars, session, status_checks, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
@@ -66,6 +68,39 @@ def test_restart_recovers(host):
 def test_reboot_recovers(host):
     host.ansible("reboot", f"reboot_timeout={REBOOT_TIMEOUT_SECONDS}", become=True, check=False)
     wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
+
+
+# Through PID 1, 2 seconds later, so the SSH command returns before the Pi goes down without closing the connection.
+# A transient timer may fire up to a minute late unless its accuracy is set.
+UNCLEAN_RESET = ("systemd-run --on-active=2 --timer-property=AccuracySec=100ms "
+                 "/bin/sh -c 'sync; echo b > /proc/sysrq-trigger'")
+
+
+def unclean_reset(host):
+    """Reset the Pi with no shutdown, as a power loss does, and wait until it boots again."""
+    before = boot_id(host)
+    assert before, "couldn't read the Pi's boot id"
+    with host.sudo():
+        host.check_output(UNCLEAN_RESET)
+    deadline = time.monotonic() + REBOOT_TIMEOUT_SECONDS
+    while boot_id(host) in (before, None):
+        assert time.monotonic() < deadline, (
+            f"the Pi didn't reset and come back within {REBOOT_TIMEOUT_SECONDS // 60} minutes")
+        time.sleep(10)
+
+
+def test_stack_recovers_after_an_unclean_reset(host):
+    """A reset with no shutdown leaves the pod's containers in Podman's state, as a power loss does. The next boot's
+    refresh removes them, which is where Podman 5.4.2 can crash (#268). The sync keeps the test about Podman's
+    leftovers, not about what the SD card loses."""
+    unclean_reset(host)
+    wait_until_ready(host, REBOOT_TIMEOUT_SECONDS)
+    refreshes = podman_events(host, "refresh")
+    assert len(refreshes) == 1, refreshes
+    removed = [entry for entry in podman_events(host, "remove") if entry["_PID"] == refreshes[0]["_PID"]]
+    assert removed, "the refresh removed no containers, so the reset wasn't unclean"
+    assert refreshes[0]["_CMDLINE"], f"the journal doesn't say which command did the refresh: {refreshes[0]}"
+    assert " build " not in f"{refreshes[0]['_CMDLINE']} ", refreshes[0]
 
 
 # Media numbers are handed out lowest-free, so unbinding the decoder and the ISP back end (which holds two)
@@ -184,7 +219,8 @@ printf '%s\\n' "$page" | grep -c 9090"""
 
 def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     """With tm-control stopped, nginx can't check the login, so app paths answer 503 with the rescue page, which
-    says to use Cockpit on port 9090, instead of letting anyone in. The home page still loads."""
+    says to use Cockpit on port 9090, instead of letting anyone in. The home page still loads, and so does Cockpit at
+    the rescue page's link."""
     host_header = shlex.quote(f"Host: {address}")
     try:
         with host.sudo():
@@ -193,6 +229,7 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
         pages = {path: host.run(RESCUE_PAGE.format(host_header=host_header, path=path)).stdout.split()
                  for path in ("/frigate/", "/nr/")}
         home = proxy_status(host, address, "/")
+        cockpit = host.run("curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:9090/").stdout
     finally:
         with host.sudo():
             host.check_output("systemctl start tm-control.service")
@@ -201,6 +238,7 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
              if len(found) != 2 or found[0] != "503" or found[1] == "0"}
     assert not wrong, f"with tm-control stopped, (status, lines naming 9090) per path: {wrong}"
     assert home == "200", f"with tm-control stopped, / answered {home}"
+    assert cockpit == "200", f"with tm-control stopped, Cockpit at :9090/ answered {cockpit}"
 
 
 CODE = r"[A-Z2-9]{4}-[A-Z2-9]{4}"
@@ -888,3 +926,157 @@ def test_reboot_from_the_control_app(host, address, tm_login):
     restarts = {unit: host.check_output(f"systemctl show -p NRestarts --value {unit}")
                 for unit in ("tm-control.service", "revproxy.service")}
     assert restarts == dict.fromkeys(restarts, "0"), f"restarts after failures since the reboot: {restarts}"
+
+
+HOTSPOT_PROFILE = role_vars()["tmsetup_hotspot_profile"]
+# A test value, never a real name; the job's rules allow it (1 to 32 bytes, no space at either end)
+HOTSPOT_NAME_PLACEHOLDER = "TM-PLACEHOLDER"
+HOTSPOT_JOB_SECONDS = 90
+
+
+def hotspot_name(address, cookie):
+    """GET /network's hotspot name, or None when the unit has no hotspot or the answer isn't a network state."""
+    answer = request_from_this_machine(address, f"{API}/network", cookie=cookie)
+    state = answer.json() if answer.status == 200 else None
+    hotspot = state.get("hotspot") if isinstance(state, dict) else None
+    return hotspot.get("name") if isinstance(hotspot, dict) else None
+
+
+def change_hotspot_name(address, cookie, name):
+    """POST /network/hotspot with only the name and wait for the network job. Fails with what went wrong; the
+    request has no password, and neither has the job's log."""
+    answer = request_from_this_machine(address, f"{API}/network/hotspot", "POST", cookie, {"name": name})
+    started = answer.json() if answer.status == 202 else None
+    job_id = started.get("id") if isinstance(started, dict) else None
+    assert job_id, f"POST {API}/network/hotspot answered {answer.status}"
+    status, log = wait_for_job(address, cookie, job_id, HOTSPOT_JOB_SECONDS)
+    assert status == "succeeded", f"the hotspot job is {status} after {HOTSPOT_JOB_SECONDS} s; its log ends {log}"
+
+
+def test_the_hotspot_name_changes_through_the_job_and_back(host, address, tm_login):
+    """An admin's change of the hotspot's name runs the network job, and NetworkManager's profile then holds the new
+    name; the old name is posted back at the end. Uses a placeholder name. Run it over Ethernet or from a network
+    other than the hotspot: a hotspot that is up restarts when its name changes, and would drop a phone or laptop
+    connected to it. Skips on a unit with no hotspot."""
+    cookie = session(address, *tm_login)
+    original = hotspot_name(address, cookie)
+    if original is None:
+        pytest.skip(f"the unit has no {HOTSPOT_PROFILE} hotspot")
+    wanted = HOTSPOT_NAME_PLACEHOLDER if original != HOTSPOT_NAME_PLACEHOLDER else HOTSPOT_NAME_PLACEHOLDER + "-2"
+    read_ssid = f"nmcli -g 802-11-wireless.ssid connection show {shlex.quote(HOTSPOT_PROFILE)}"
+    try:
+        change_hotspot_name(address, cookie, wanted)
+        with host.sudo():
+            found = host.check_output(read_ssid)
+        assert found == wanted, f"after the change, {HOTSPOT_PROFILE}'s ssid isn't the placeholder: {found!r}"
+        assert hotspot_name(address, cookie) == wanted, f"GET {API}/network after the change doesn't show the new name"
+    finally:  # put the name back, even when the change failed partway; a failure here chains
+        try:
+            change_hotspot_name(address, cookie, original)
+        except AssertionError as error:
+            raise AssertionError(f"the hotspot's name may still be the placeholder; set it on the Network page ({error})")
+    with host.sudo():
+        restored = host.check_output(read_ssid)
+    assert restored == original, f"after putting the name back, {HOTSPOT_PROFILE}'s ssid isn't the original: {restored!r}"
+
+
+WIFI_DEVICE = role_vars()["tmsetup_wifi_device"]
+SCAN_JOB_SECONDS = 120
+ORDER_JOB_SECONDS = 60
+SCAN_FRESH_SECONDS = 30
+
+
+def wifi_networks(address, cookie):
+    """GET /network/wifi parsed, or None when it doesn't answer 200 with an object."""
+    answer = request_from_this_machine(address, f"{API}/network/wifi", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    return found if isinstance(found, dict) else None
+
+
+def start_wifi_job(address, cookie, path, body, seconds):
+    """POST a /network/wifi change and wait for the network job. Fails with what went wrong. None of the bodies this
+    module sends has a password."""
+    answer = request_from_this_machine(address, f"{API}/network/wifi/{path}", "POST", cookie, body)
+    started = answer.json() if answer.status == 202 else None
+    job_id = started.get("id") if isinstance(started, dict) else None
+    assert job_id, f"POST {API}/network/wifi/{path} answered {answer.status}"
+    status, log = wait_for_job(address, cookie, job_id, seconds)
+    assert status == "succeeded", f"the {path} job is {status} after {seconds} s; its log ends {log}"
+
+
+def test_a_scan_lists_nearby_networks(host, address, tm_login):
+    """An admin's Refresh runs the network job, and the page then shows a scan from the last 30 seconds. What the scan
+    hears depends on where the bench is, so only its age and the lists' shape are checked. Skips on a unit with no
+    built-in Wi-Fi radio, or with it switched off."""
+    if host.run(f"cat /sys/class/net/{WIFI_DEVICE}/address").rc != 0:
+        pytest.skip(f"the unit has no {WIFI_DEVICE}")
+    cookie = session(address, *tm_login)
+    before = wifi_networks(address, cookie)
+    assert before is not None, f"GET {API}/network/wifi didn't answer 200 with an object"
+    if before.get("radio") != "on":
+        pytest.skip(f"the Wi-Fi radio is {before.get('radio')}")
+    start_wifi_job(address, cookie, "scan", {}, SCAN_JOB_SECONDS)
+    after = wifi_networks(address, cookie)
+    assert after is not None, f"GET {API}/network/wifi after the scan didn't answer 200 with an object"
+    age = after.get("scanned_seconds_ago")
+    assert isinstance(age, int) and age < SCAN_FRESH_SECONDS, f"scanned_seconds_ago after a scan is {age!r}"
+    assert isinstance(after.get("nearby"), list), "GET /network/wifi has no nearby list after a scan"
+
+
+def profile_priority(host, uuid):
+    """connection.autoconnect-priority of a profile as nmcli prints it, or None when it can't be read."""
+    result = host.run(f"sudo nmcli -g connection.autoconnect-priority connection show uuid {shlex.quote(uuid)}")
+    return result.stdout.strip() if result.rc == 0 else None
+
+
+def add_throwaway_profile(host, uuid, name):
+    """Add a client profile with this uuid, kept only in NetworkManager's memory (save no), and fail on a bad exit
+    status. The test makes the uuid and the placeholder name. The profile has no password: its key management is
+    WPA-PSK with the secret flag "not saved", so the command line (which sudo writes to the journal) holds none. The
+    test never joins it."""
+    result = host.run(
+        f"sudo nmcli connection add save no type wifi ifname {WIFI_DEVICE} "
+        f"con-name {shlex.quote(name)} ssid {shlex.quote(name)} connection.uuid {uuid} "
+        "wifi-sec.key-mgmt wpa-psk 802-11-wireless-security.psk-flags 2 connection.autoconnect yes")
+    code = result.rc
+    del result
+    assert code == 0, f"adding the throwaway profile exited {code}"
+
+
+def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, address, tm_login):
+    """A client profile made over SSH with a placeholder name and no password is put first in the order through the
+    network job, which gives it the highest priority; Forget then removes it. The profile starts in NetworkManager's
+    memory only, but the order step makes NetworkManager save it to disk until the test deletes it, and a run killed
+    between the order and the delete leaves a placeholder-named profile behind. The other saved networks' priorities
+    are put back as they were, and the profile is deleted at the end even when a check fails. The radio is never asked
+    to join. Skips on a unit with no built-in Wi-Fi radio."""
+    if host.run(f"cat /sys/class/net/{WIFI_DEVICE}/address").rc != 0:
+        pytest.skip(f"the unit has no {WIFI_DEVICE}")
+    cookie = session(address, *tm_login)
+    name = f"tmdev-placeholder-{secrets.token_hex(3)}"
+    state = wifi_networks(address, cookie)
+    assert state is not None and state.get("readable"), f"GET {API}/network/wifi isn't readable before the test"
+    others = [(entry["uuid"], entry["name"]) for entry in state["saved"] if entry["automatic"]]
+    original = {uuid: profile_priority(host, uuid) for uuid, _ in others}
+    assert None not in original.values(), "couldn't read a saved network's priority before the test"
+    uuid = str(uuid4())  # set before the add, so the cleanup deletes it even after a failed add
+    try:
+        add_throwaway_profile(host, uuid, name)
+        listed = wifi_networks(address, cookie)
+        assert listed is not None and uuid in [entry["uuid"] for entry in listed["saved"]], (
+            f"GET {API}/network/wifi doesn't list the throwaway profile")
+        order = [uuid, *[other for other, _ in others]]
+        start_wifi_job(address, cookie, "order", {"uuids": order}, ORDER_JOB_SECONDS)
+        assert profile_priority(host, uuid) == str(len(order)), (
+            f"after the order, the throwaway profile's priority isn't {len(order)} (the first of {len(order)})")
+        start_wifi_job(address, cookie, "forget", {"uuid": uuid}, ORDER_JOB_SECONDS)
+        gone = host.run(f"sudo nmcli -g connection.uuid connection show uuid {uuid}")
+        assert gone.rc != 0, "after Forget, NetworkManager still has the throwaway profile"
+        after = wifi_networks(address, cookie)
+        assert after is not None and uuid not in [entry["uuid"] for entry in after["saved"]], (
+            f"GET {API}/network/wifi still lists the throwaway profile after Forget")
+    finally:
+        host.run(f"sudo nmcli connection delete uuid {uuid}")
+        for other, priority in original.items():
+            host.run(f"sudo nmcli connection modify uuid {shlex.quote(other)} "
+                     f"connection.autoconnect-priority {shlex.quote(priority)}")

@@ -15,14 +15,16 @@ The home page is the device's [control app](control-app.md). A new device first 
 | Legacy Dashboard | `/ui/` | The older dashboard, with the same counts and speed statistics as Monitoring. It's the only dashboard that shows [air quality](../add-ons/air-quality.md) readings, and the Monitoring dashboard's counts follow its camera and radar selection. Its System Settings tab shows the device's name, time zone, and software versions, and holds the ThingsBoard Backup & Restore section. | Any user |
 | Node-RED editor | `/nr/` | The flow editor, for developers. See [Dev environment](../development/dev-environment.md). | Administrators |
 | Camera feeds | `/feeds/` | The camera streams the Pi camera produces, for checking that the camera works. It's for watching only: go2rtc's settings, stream editor, and log pages aren't available here. | Administrators |
-| Cockpit | `/system/` | Services, logs, containers, and a terminal. See [System administration](system-admin.md). | Administrators, who then log in with the Raspberry Pi user account |
+| Cockpit | `http://<device>:9090/` | Services, logs, containers, and a terminal. See [System administration](system-admin.md#cockpit). | Administrators see its link. Anyone with the Raspberry Pi user account can log in. |
+
+Cockpit is the one app with its own port. It asks for the Raspberry Pi user account, not your control app login.
 
 ??? note "Finding the device's address"
 
     * If you set a hostname in Raspberry Pi Imager, `http://<hostname>.local/` works from most computers and phones on the same network.
     * Otherwise, look the device up in your router's list of connected devices, or see [Find the IP address of your Raspberry Pi](https://www.raspberrypi.com/documentation/computers/remote-access.html#ip-address).
-    * A pre-built unit may host its own Wi-Fi network. Connect to it and use the hostname or the gateway address. Your provider's instructions take precedence.
+    * A device whose Wi-Fi isn't on a network it knows runs its own hotspot. Join it, and your phone's sign-in window opens the home page; or open `http://10.42.0.1/`. See [Wi-Fi and the hotspot](wifi-hotspot.md).
 
 ??? note "If the home page doesn't load"
 
-    The apps accept connections only from the device, so they have no address of their own on your network. If the apps show a page saying the control app isn't answering, restart it as described in [If the control app is down](control-app.md#if-the-control-app-is-down). If nothing loads, open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](system-admin.md). [Network ports](../reference/network.md) lists what the device opens. If the home page loads on a computer but times out on an Android phone, see [Troubleshooting](../help-and-faq/frequently-asked-questions.md#troubleshooting).
+    Apart from Cockpit, the apps accept connections only from the device, so they have no address of their own on your network. If the apps show a page saying the control app isn't answering, restart it as described in [If the control app is down](control-app.md#if-the-control-app-is-down). If nothing loads, open Cockpit at `http://<device>:9090`, log in with your Raspberry Pi user account, and check the services as described in [System administration](system-admin.md). [Network ports](../reference/network.md) lists what the device opens. If the home page loads on a computer but times out on an Android phone, see [Troubleshooting](../help-and-faq/frequently-asked-questions.md#troubleshooting).

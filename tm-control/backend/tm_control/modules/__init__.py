@@ -17,7 +17,8 @@ class Module:
 
 # The modules import Module from here, so they come after it.
 from tm_control.modules import (  # noqa: E402
-    account, apps, auth, cameras, detection, hardware, jobs, location, secrets, services, setup, status, system, time,
+    account, apps, auth, cameras, detection, hardware, jobs, location, network, secrets, services, setup, status,
+    system, time,
 )
 
 MODULES: list[Module] = [
@@ -33,6 +34,7 @@ MODULES: list[Module] = [
     services.module,
     apps.module,
     hardware.module,
+    network.module,
     system.module,
     time.module,
 ]

@@ -1,14 +1,16 @@
 <!--
-  The home page: the device card, with the Status page's verdict as a link to it, then a tile for each app the device
-  has. Viewers get only the apps everyone may use; the API leaves the admin-only ones out for them.
+  The home page: a line about a Wi-Fi join in progress, for an admin, then the device card, with the Status page's
+  verdict as a link to it, then a tile for each app the device has. Viewers get only the apps everyone may use; the
+  API leaves the admin-only ones out for them.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { Device, DeviceApp } from '../../api/types'
+import JoinBanner from '../../components/JoinBanner.vue'
 import StatusCard from '../../components/StatusCard.vue'
 import { MARKS, verdict } from '../../components/status'
-import { appDetails } from './apps'
+import { appDetails, appHref } from './apps'
 
 const device = ref<Device | null>(null)
 const error = ref('')
@@ -52,7 +54,7 @@ const groups = computed(() => {
 })
 
 function tile(app: DeviceApp) {
-  return { ...app, ...appDetails(app.id) }
+  return { ...app, ...appDetails(app.id, device.value?.system_user ?? null), href: appHref(app) }
 }
 
 async function load() {
@@ -83,6 +85,7 @@ onMounted(() => {
     <v-progress-linear v-else-if="!device" indeterminate color="primary" />
 
     <template v-if="device">
+      <JoinBanner />
       <StatusCard :title="device.hostname" :subtitle="`Traffic Monitor ${device.tm_version}`" :items="facts">
         <div v-if="health" class="d-flex align-center ga-2 mt-4">
           <v-icon :icon="MARKS[health.status].icon" :color="MARKS[health.status].color" />
@@ -94,7 +97,7 @@ onMounted(() => {
         <h2 class="text-h6 mb-4">{{ group.title }}</h2>
         <v-row>
           <v-col v-for="app in group.apps.map(tile)" :key="app.id" cols="12" sm="6">
-            <v-card :href="app.path" variant="outlined" rounded="lg" height="100%">
+            <v-card :href="app.href" variant="outlined" rounded="lg" height="100%">
               <v-card-item>
                 <template #prepend>
                   <v-icon :icon="app.icon" color="primary" size="28" />

@@ -40,14 +40,15 @@ def test_device_card_and_apps_for_an_admin(claimed_client, login):
     assert body["hostname"] == "tm-fake" != socket.gethostname()
     assert body["serial"] == "0000000012345678"
     assert body["tm_version"] == "0.7.1-test"
+    assert body["system_user"] == "pi"
     assert datetime.fromisoformat(body["time"]).utcoffset() is not None
     assert body["apps"] == [
-        {"id": "dashboard", "path": "/dashboard/", "title": "Dashboard", "admin_only": False},
-        {"id": "frigate", "path": "/frigate/", "title": "Frigate", "admin_only": False},
-        {"id": "legacy-ui", "path": "/ui/", "title": "Legacy Dashboard", "admin_only": False},
-        {"id": "nodered", "path": "/nr/", "title": "Node-RED editor", "admin_only": True},
-        {"id": "feeds", "path": "/feeds/", "title": "Camera feeds", "admin_only": True},
-        {"id": "cockpit", "path": "/system/", "title": "Cockpit", "admin_only": True},
+        {"id": "dashboard", "path": "/dashboard/", "title": "Dashboard", "admin_only": False, "port": None},
+        {"id": "frigate", "path": "/frigate/", "title": "Frigate", "admin_only": False, "port": None},
+        {"id": "legacy-ui", "path": "/ui/", "title": "Legacy Dashboard", "admin_only": False, "port": None},
+        {"id": "nodered", "path": "/nr/", "title": "Node-RED editor", "admin_only": True, "port": None},
+        {"id": "feeds", "path": "/feeds/", "title": "Camera feeds", "admin_only": True, "port": None},
+        {"id": "cockpit", "path": "/", "title": "Cockpit", "admin_only": True, "port": 9090},
     ]
     assert body["theme"] == {
         "font": "Helvetica",
@@ -68,6 +69,7 @@ def test_viewers_see_no_admin_tiles(claimed_client, login):
     apps = r.json()["apps"]
     assert [app["id"] for app in apps] == ["dashboard", "frigate", "legacy-ui"]
     assert not any(app["admin_only"] for app in apps)
+    assert r.json()["system_user"] is None
 
 
 def test_the_device_card_needs_a_login(claimed_client):
@@ -77,14 +79,14 @@ def test_the_device_card_needs_a_login(claimed_client):
 
 def test_apps_follow_the_manifest_locations(settings, tmp_path, login):
     manifest = json.loads(settings.manifest_path.read_text())
-    manifest["revproxy_locations"].remove("cockpit.conf")
+    manifest["revproxy_locations"].remove("go2rtc.conf")
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(manifest))
     client = TestClient(create_app(dataclasses.replace(settings, manifest_path=path)), base_url=BASE)
     Device(client.app.state.state).claim(*ADMIN, load_eula(settings.eula_path).version)
     login(client, *ADMIN)
     ids = [app["id"] for app in client.get("/api/v1/system/device").json()["apps"]]
-    assert ids == ["dashboard", "frigate", "legacy-ui", "nodered", "feeds"]
+    assert ids == ["dashboard", "frigate", "legacy-ui", "nodered", "cockpit"]
 
 
 def test_read_serial_strips_the_devicetree_padding(tmp_path):
