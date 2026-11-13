@@ -43,6 +43,8 @@ export interface Device {
   hostname: string
   serial: string
   tm_version: string
+  // The system account for Cockpit and SSH; null for a viewer
+  system_user: string | null
   time: string
   apps: DeviceApp[]
 }

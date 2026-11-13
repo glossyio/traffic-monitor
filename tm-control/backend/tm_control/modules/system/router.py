@@ -79,6 +79,8 @@ def device(request: Request, user: User = Depends(current_user)):
         "hostname": hostname(app_state),
         "serial": serial(app_state),
         "tm_version": manifest.tm_version,
+        # The system account for Cockpit and SSH, which the Cockpit tile names; administrators only (#265)
+        "system_user": manifest.installing_user if user.role == "admin" else None,
         "time": timedate.device_time(),
         "apps": apps,
         "theme": {"font": manifest.homepage.font, "colors": manifest.homepage.colors},
@@ -88,7 +90,10 @@ def device(request: Request, user: User = Depends(current_user)):
 @router.get("/info", response_model=SystemInfo)
 def info(request: Request, user: User = Depends(current_user)):
     app_state = request.app.state
-    return system_info(app_state, hostname(app_state), serial(app_state))
+    answer = system_info(app_state, hostname(app_state), serial(app_state))
+    if user.role != "admin":
+        answer.tm.installing_user = None  # the system account's name is for administrators only (#265)
+    return answer
 
 
 @router.get("/diagnostics", response_class=PlainTextResponse)

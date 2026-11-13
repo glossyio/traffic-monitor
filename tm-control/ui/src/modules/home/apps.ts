@@ -28,7 +28,15 @@ const DETAILS: Record<string, AppDetails> = {
   },
 }
 
-export function appDetails(id: string): AppDetails {
+// systemUser is the system account's name (GET /system/device's system_user), which Cockpit's tile names when known
+export function appDetails(id: string, systemUser: string | null = null): AppDetails {
+  if (id === 'cockpit' && systemUser) {
+    return {
+      icon: DETAILS.cockpit.icon,
+      description:
+        `Services, logs, updates, and a terminal, on port 9090. Log in as ${systemUser} with the system password.`,
+    }
+  }
   return DETAILS[id] ?? { icon: mdiApplicationOutline, description: '' }
 }
 

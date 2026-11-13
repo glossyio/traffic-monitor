@@ -40,4 +40,20 @@ describe('the home page', () => {
     expect(appHref({ path: '/', port: 9090 }, '192.0.2.10')).toBe('http://192.0.2.10:9090/')
     expect(appHref({ path: '/', port: 9090 }, '[2001:db8::1]')).toBe('http://[2001:db8::1]:9090/')
   })
+
+  const COCKPIT = { id: 'cockpit', path: '/', title: 'Cockpit', admin_only: true, port: 9090 }
+
+  it('names the system account on the Cockpit tile', async () => {
+    signedIn(ADMIN, { 'GET /api/v1/system/device': { ...DEVICE, system_user: 'pi', apps: [COCKPIT] } })
+    const { wrapper } = await mountApp('/')
+    expect(wrapper.find('main a[href$=":9090/"]').text()).toContain('Log in as pi with the system password.')
+  })
+
+  it("leaves the account's name out of the Cockpit tile when the answer has none", async () => {
+    signedIn(ADMIN, { 'GET /api/v1/system/device': { ...DEVICE, system_user: null, apps: [COCKPIT] } })
+    const { wrapper } = await mountApp('/')
+    const tile = wrapper.find('main a[href$=":9090/"]').text()
+    expect(tile).toContain('Log in with the system password.')
+    expect(tile).not.toContain('Log in as')
+  })
 })

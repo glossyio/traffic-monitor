@@ -52,7 +52,7 @@ const groups = computed(() => {
 })
 
 function tile(app: DeviceApp) {
-  return { ...app, ...appDetails(app.id), href: appHref(app) }
+  return { ...app, ...appDetails(app.id, device.value?.system_user ?? null), href: appHref(app) }
 }
 
 async function load() {

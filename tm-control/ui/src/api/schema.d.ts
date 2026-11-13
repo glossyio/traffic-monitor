@@ -1525,7 +1525,7 @@ export interface components {
             /** Branch */
             branch: string;
             /** Installing User */
-            installing_user: string;
+            installing_user: string | null;
         };
         /**
          * Unassigned

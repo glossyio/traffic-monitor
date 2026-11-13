@@ -40,6 +40,7 @@ def test_device_card_and_apps_for_an_admin(claimed_client, login):
     assert body["hostname"] == "tm-fake" != socket.gethostname()
     assert body["serial"] == "0000000012345678"
     assert body["tm_version"] == "0.7.1-test"
+    assert body["system_user"] == "pi"
     assert datetime.fromisoformat(body["time"]).utcoffset() is not None
     assert body["apps"] == [
         {"id": "dashboard", "path": "/dashboard/", "title": "Dashboard", "admin_only": False, "port": None},
@@ -68,6 +69,7 @@ def test_viewers_see_no_admin_tiles(claimed_client, login):
     apps = r.json()["apps"]
     assert [app["id"] for app in apps] == ["dashboard", "frigate", "legacy-ui"]
     assert not any(app["admin_only"] for app in apps)
+    assert r.json()["system_user"] is None
 
 
 def test_the_device_card_needs_a_login(claimed_client):

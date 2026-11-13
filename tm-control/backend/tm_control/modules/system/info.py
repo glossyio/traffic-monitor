@@ -26,7 +26,7 @@ class TmInstall(BaseModel):
     version: str
     commit: str
     branch: str
-    installing_user: str
+    installing_user: str | None  # the system account, for Cockpit and SSH; None in the answer to a viewer
 
 
 class Throttled(BaseModel):

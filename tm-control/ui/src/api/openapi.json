@@ -3731,7 +3731,14 @@
             "title": "Branch"
           },
           "installing_user": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Installing User"
           }
         },
