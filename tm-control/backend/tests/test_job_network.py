@@ -1,0 +1,481 @@
+"""The network root job, run as a script against the fake nmcli (fixtures/fake_nmcli.py).
+
+fixtures/run_job.py runs it with a non-root euid, so the stand-ins (NMCLI, TM_SYS_NET, the test's manifest, secrets
+directory, and lock) are used even when the suite runs as root. The `world` fixture builds a unit: a manifest naming
+the test's own user, a 0700 jobs directory, a 0750 secrets directory holding the hotspot password file, a fake
+/sys/class/net with a built-in radio, and the fake nmcli's hotspot profile, up. All names and passwords are
+placeholders.
+"""
+
+import fcntl
+import importlib.machinery
+import importlib.util
+import json
+import os
+import pwd
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from tm_control.modules.network.router import NAME_MAX_BYTES, NAME_PATTERN, PASSWORD_PATTERN
+
+JOB = Path(__file__).resolve().parents[2] / "jobs" / "tm-job-network"
+RUNNER = Path(__file__).resolve().parent / "fixtures" / "run_job.py"
+NMCLI = Path(__file__).resolve().parent / "fixtures" / "fake_nmcli.py"
+FIXTURE_MANIFEST = Path(__file__).resolve().parent / "fixtures" / "manifest.json"
+OLD_PASSWORD = "placeholder-pass-1"
+NEW_PASSWORD = "placeholder-pass-2"
+HOTSPOT = {
+    "802-11-wireless.mode": "ap",
+    "802-11-wireless.ssid": "TM-AB12",
+    "802-11-wireless.hidden": "no",
+    "802-11-wireless-security.key-mgmt": "wpa-psk",
+    "802-11-wireless-security.psk": OLD_PASSWORD,
+    "connection.autoconnect": "yes",
+}
+WPA2 = {
+    "802-11-wireless-security.key-mgmt": "wpa-psk",
+    "802-11-wireless-security.proto": "rsn",
+    "802-11-wireless-security.pairwise": "ccmp",
+    "802-11-wireless-security.group": "ccmp",
+}
+
+
+class World:
+    def __init__(self, tmp_path):
+        self.tmp = tmp_path
+        self.jobs = tmp_path / "jobs"
+        self.jobs.mkdir()
+        self.jobs.chmod(0o700)
+        self.secrets = tmp_path / "secrets"
+        self.secrets.mkdir()
+        self.secrets.chmod(0o750)
+        (self.secrets / "hotspot_password").write_text(OLD_PASSWORD)
+        (self.secrets / "hotspot_password").chmod(0o640)
+        self.manifest = tmp_path / "manifest.json"
+        me = pwd.getpwuid(os.getuid()).pw_name
+        self.manifest.write_text(json.dumps({**json.loads(FIXTURE_MANIFEST.read_text()), "codeowner": me}))
+        self.lock = tmp_path / "run" / "network.lock"
+        self.nmcli = NMCLI
+        self.lock_wait = "10"
+        self.state = {"profiles": {"tm-hotspot": dict(HOTSPOT)}, "active": ["tm-hotspot"], "radio": "enabled",
+                      "fail": []}
+        self.radio("built-in")
+
+    def radio(self, kind):
+        """A fake /sys/class/net/wlan0: a built-in (SDIO) radio, or a USB adapter."""
+        net = self.tmp / "sys" / "class" / "net"
+        subprocess.run(["rm", "-rf", str(self.tmp / "sys")], check=True)
+        (net / "wlan0" / "device").mkdir(parents=True)
+        (net / "wlan0" / "wireless").mkdir()
+        bus = self.tmp / "sys" / "bus" / ("usb" if kind == "usb" else "sdio")
+        bus.mkdir(parents=True)
+        (net / "wlan0" / "device" / "subsystem").symlink_to(bus)
+        self.sys_net = net
+
+    def fail(self, verb):
+        self.state["fail"].append(verb)
+
+    def write_request(self, body):
+        path = self.jobs / "network.json"
+        path.write_text(body if isinstance(body, str) else json.dumps(body))
+        path.chmod(0o600)
+        return path
+
+    def run(self, body=None, request=None):
+        if request is None:
+            request = self.write_request(body)
+        (self.tmp / "nmcli.json").write_text(json.dumps(self.state))
+        (self.tmp / "nmcli.log").unlink(missing_ok=True)
+        env = {
+            "PATH": os.environ["PATH"],
+            "NMCLI": str(self.nmcli),
+            "TM_CONTROL_MANIFEST": str(self.manifest),
+            "TM_CONTROL_SECRETS_DIR": str(self.secrets),
+            "TM_SYS_NET": str(self.sys_net),
+            "TM_NETWORK_LOCK": str(self.lock),
+            "TM_NETWORK_LOCK_WAIT": self.lock_wait,
+            "FAKE_NMCLI_STATE": str(self.tmp / "nmcli.json"),
+            "FAKE_NMCLI_LOG": str(self.tmp / "nmcli.log"),
+        }
+        self.request = request
+        return subprocess.run([sys.executable, "-I", str(RUNNER), str(JOB), str(request)], env=env,
+                              capture_output=True, text=True, timeout=60)
+
+    def log(self):
+        path = self.tmp / "nmcli.log"
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def calls(self, verb):
+        return sum(1 for call in self.log() if verb in call)
+
+    def modifies(self):
+        return [call for call in self.log() if "modify" in call]
+
+    def nm(self):
+        return json.loads((self.tmp / "nmcli.json").read_text())
+
+    def profile(self):
+        return self.nm()["profiles"]["tm-hotspot"]
+
+    def password_file(self):
+        return (self.secrets / "hotspot_password").read_text()
+
+
+@pytest.fixture
+def world(tmp_path):
+    return World(tmp_path)
+
+
+def test_the_job_is_executable():
+    assert os.access(JOB, os.X_OK)
+
+
+def test_a_new_name_is_set_and_a_hotspot_that_is_up_restarts(world):
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0 and "restarted the hotspot" in result.stdout, result.stdout + result.stderr
+    assert world.profile()["802-11-wireless.ssid"] == "TM-ROAD"
+    assert world.calls("modify") == 1 and world.calls("up") == 1
+    assert world.log()[-1] == ["--wait", "30", "connection", "up", "id", "tm-hotspot"]
+    assert world.calls("down") == 0  # the restart is `connection up` alone
+    assert world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_a_change_while_the_hotspot_is_down_waits_for_its_next_start(world):
+    world.state["active"] = []
+    result = world.run({"action": "hotspot", "hidden": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "saved; the change applies when the hotspot next starts"
+    assert world.profile()["802-11-wireless.hidden"] == "yes"
+    assert world.calls("up") == 0 and world.nm()["active"] == []
+
+
+def test_the_password_goes_to_the_file_first_then_the_profile(world):
+    """A wrapper around the fake records, at the moment of `modify`, whether the file already held the new password."""
+    seen = world.tmp / "seen-at-modify.json"
+    wrapper = world.tmp / "nmcli-wrapper"
+    wrapper.write_text(
+        f"#!{sys.executable}\n"
+        "import json, os, sys\n"
+        "if 'modify' in sys.argv:\n"
+        f"    path = {str(world.secrets / 'hotspot_password')!r}\n"
+        f"    with open({str(seen)!r}, 'w') as file:\n"
+        f"        json.dump({{'new': open(path).read() == {NEW_PASSWORD!r}, 'mtime': os.stat(path).st_mtime_ns}}, file)\n"
+        f"os.execv({sys.executable!r}, [{sys.executable!r}, {str(NMCLI)!r}, *sys.argv[1:]])\n"
+    )
+    wrapper.chmod(0o755)
+    world.nmcli = wrapper
+    before = (world.secrets / "hotspot_password").stat().st_mtime_ns
+    result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
+    assert result.returncode == 0, result.stdout + result.stderr
+    at_modify = json.loads(seen.read_text())
+    assert at_modify["new"] is True and at_modify["mtime"] != before
+    assert world.password_file() == NEW_PASSWORD
+    assert (world.secrets / "hotspot_password").stat().st_mode & 0o777 == 0o640
+    assert world.profile()["802-11-wireless-security.psk"] == NEW_PASSWORD
+    assert "restarted the hotspot" in result.stdout
+    assert NEW_PASSWORD not in result.stdout + result.stderr
+    assert OLD_PASSWORD not in result.stdout + result.stderr
+    assert sorted(path.name for path in world.secrets.iterdir()) == ["hotspot_password"]  # no temporary file left
+
+
+def test_a_password_on_an_open_hotspot_makes_it_wpa2(world):
+    open_profile = {key: value for key, value in HOTSPOT.items() if not key.startswith("802-11-wireless-security")}
+    world.state["profiles"]["tm-hotspot"] = open_profile
+    (world.secrets / "hotspot_password").write_text("")
+    result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.calls("modify") == 1
+    profile = world.profile()
+    assert {key: profile[key] for key in WPA2} == WPA2
+    assert profile["802-11-wireless-security.psk"] == NEW_PASSWORD
+    modify = world.modifies()[0]
+    for key in [*WPA2, "802-11-wireless-security.psk"]:
+        assert key in modify
+    assert world.password_file() == NEW_PASSWORD
+
+
+def test_a_password_the_profile_already_has_on_another_security_still_makes_it_wpa2(world):
+    world.state["profiles"]["tm-hotspot"]["802-11-wireless-security.key-mgmt"] = "sae"
+    result = world.run({"action": "hotspot", "password": OLD_PASSWORD})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.profile()["802-11-wireless-security.key-mgmt"] == "wpa-psk"
+
+
+def test_a_profile_that_will_not_change_puts_the_old_password_back(world):
+    world.fail("modify")
+    result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
+    assert result.returncode == 1 and world.password_file() == OLD_PASSWORD
+    assert "placeholder-pass" not in result.stdout + result.stderr  # the fake's error quotes the argv
+    assert result.stdout.strip().splitlines()[-1] == "failed: change the profile (nmcli exit status 4)"
+    assert "the settings are saved" not in result.stdout
+    assert world.profile()["802-11-wireless-security.psk"] == OLD_PASSWORD
+    assert world.calls("up") == 0
+    assert sorted(path.name for path in world.secrets.iterdir()) == ["hotspot_password"]
+
+
+def test_a_restart_that_fails_says_the_settings_are_saved(world):
+    world.state["up"] = {"tm-hotspot": "fail"}
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1] == (
+        "failed: restart the hotspot (nmcli exit status 4); the settings are saved")
+    assert "TM-ROAD" not in result.stdout + result.stderr  # nmcli's error text, which quotes the name, isn't printed
+    assert world.profile()["802-11-wireless.ssid"] == "TM-ROAD"
+    assert world.calls("up") == 2
+
+
+def test_a_restart_that_fails_once_is_tried_again(world):
+    world.state["up"] = {"tm-hotspot": "fail-once"}
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.calls("up") == 2 and world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_a_restart_that_fails_twice_still_counts_when_the_hotspot_is_up(world):
+    world.state["up"] = {"tm-hotspot": "fail-started"}
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.calls("up") == 2
+
+
+def test_a_hidden_only_change_restarts_a_hotspot_that_is_up(world):
+    result = world.run({"action": "hotspot", "hidden": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "restarted the hotspot"
+    assert world.profile()["802-11-wireless.hidden"] == "yes"
+    assert world.calls("modify") == 1 and world.calls("up") == 1
+
+
+def test_a_password_the_profile_has_but_the_file_lacks_is_written_to_the_file(world):
+    """The file is the source of truth: it gets the password, and the profile, which already has it, isn't restarted."""
+    world.state["profiles"]["tm-hotspot"]["802-11-wireless-security.psk"] = NEW_PASSWORD
+    result = world.run({"action": "hotspot", "password": NEW_PASSWORD})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.password_file() == NEW_PASSWORD
+    assert world.calls("modify") == 1 and world.calls("up") == 0
+    assert world.profile()["802-11-wireless-security.psk"] == NEW_PASSWORD
+    assert "placeholder-pass" not in result.stdout + result.stderr
+
+
+def test_turning_it_off_stops_it_starting_and_takes_it_down(world):
+    result = world.run({"action": "hotspot", "enabled": False})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "turned the hotspot off" in result.stdout
+    assert world.profile()["connection.autoconnect"] == "no"
+    assert world.calls("down") == 1 and world.calls("up") == 0
+    assert world.nm()["active"] == []
+
+
+def test_turning_it_off_while_it_is_down_takes_nothing_down(world):
+    world.state["active"] = []
+    result = world.run({"action": "hotspot", "enabled": False, "name": "TM-ROAD"})
+    assert result.returncode == 0 and "turned the hotspot off" in result.stdout
+    assert world.calls("down") == 0 and world.calls("up") == 0
+
+
+def test_turning_it_on_switches_the_radio_on_and_starts_it_when_idle(world):
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    world.state["active"] = []
+    world.state["radio"] = "disabled"
+    result = world.run({"action": "hotspot", "enabled": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "turned the hotspot on" in result.stdout
+    assert world.profile()["connection.autoconnect"] == "yes"
+    assert ["radio", "wifi", "on"] in world.log()
+    assert world.nm()["radio"] == "enabled"
+    assert world.calls("up") == 1 and world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_turning_it_on_counts_the_hotspot_that_networkmanager_started_itself(world):
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    world.state["active"] = []
+    world.state["up"] = {"tm-hotspot": "fail-started"}
+    result = world.run({"action": "hotspot", "enabled": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "turned the hotspot on" in result.stdout and "failed" not in result.stdout
+    assert world.calls("up") == 1 and world.nm()["active"] == ["tm-hotspot"]
+
+
+def test_turning_it_on_leaves_a_joined_network_alone(world):
+    world.state["profiles"]["Home"] = {"802-11-wireless.ssid": "Home"}
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    world.state["active"] = ["Home"]
+    result = world.run({"action": "hotspot", "enabled": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "turned the hotspot on" in result.stdout
+    assert world.profile()["connection.autoconnect"] == "yes"
+    assert world.calls("up") == 0 and world.nm()["active"] == ["Home"]
+
+
+def test_turning_it_on_leaves_a_radio_that_is_joining_alone(world):
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    world.state["active"] = []
+    world.state["device_state"] = 50
+    result = world.run({"action": "hotspot", "enabled": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.calls("up") == 0
+
+
+def test_a_usb_adapter_never_gets_the_hotspot_started(world):
+    world.radio("usb")
+    world.state["profiles"]["tm-hotspot"]["connection.autoconnect"] = "no"
+    world.state["active"] = []
+    world.state["radio"] = "disabled"
+    result = world.run({"action": "hotspot", "enabled": True})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.profile()["connection.autoconnect"] == "yes"
+    assert world.calls("modify") == 1 and world.calls("up") == 0 and world.calls("radio") == 0
+    assert "saved; the change applies when the hotspot next starts" in result.stdout
+
+
+def test_values_already_set_change_nothing_and_restart_nothing(world):
+    result = world.run({"action": "hotspot", "enabled": True, "name": "TM-AB12", "password": OLD_PASSWORD,
+                        "hidden": False})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "nothing to change"
+    assert world.calls("modify") == 0 and world.calls("up") == 0 and world.calls("down") == 0
+    assert world.password_file() == OLD_PASSWORD
+    assert OLD_PASSWORD not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("request_", [
+    {"action": "forget"}, {"action": "hotspot"}, {"action": "hotspot", "name": "x", "extra": 1},
+    {"action": "hotspot", "enabled": "yes"}, {"action": "hotspot", "name": "a" * 33},
+    {"action": "hotspot", "name": "TM\n1"}, {"action": "hotspot", "password": "short12"},
+    {"action": "hotspot", "password": "x" * 64}, {"name": "TM-ROAD"},
+    {"action": "hotspot", "hidden": None}, {"action": "hotspot", "name": "é" * 17},
+    {"action": "hotspot", "name": " TM"}, {"action": "hotspot", "password": " placeholder-pass-3"}])
+def test_a_request_is_refused_unless_it_is_exactly_a_hotspot_change(world, request_):
+    result = world.run(request_)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert len(result.stdout.strip().splitlines()) == 1
+    assert world.log() == [] and not world.request.exists()
+    assert world.password_file() == OLD_PASSWORD
+    for value in request_.values():
+        if isinstance(value, str) and value not in ("hotspot", "forget") and len(value.strip()) >= 4:
+            assert value.strip() not in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("body", ["not json", "[1, 2]", json.dumps({"action": "hotspot", "name": "x" * 5000})])
+def test_a_request_that_is_not_a_small_json_object_is_refused(world, body):
+    result = world.run(body)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert world.log() == [] and not world.request.exists()
+
+
+def test_the_request_must_be_tm_controls_own_plain_file(world):
+    target = world.tmp / "elsewhere.json"
+    target.write_text(json.dumps({"action": "hotspot", "name": "TM-ROAD"}))
+    link = world.jobs / "network.json"
+    link.symlink_to(target)
+    result = world.run(request=link)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert world.log() == [] and target.exists() and not link.is_symlink()
+
+    request = world.write_request({"action": "hotspot", "name": "TM-ROAD"})
+    second = world.tmp / "second-link.json"
+    os.link(request, second)
+    result = world.run(request=request)
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert world.log() == [] and second.exists() and not request.exists()
+    assert world.profile()["802-11-wireless.ssid"] == "TM-AB12"
+
+
+def test_a_jobs_directory_others_can_write_is_not_trusted(world):
+    world.jobs.chmod(0o777)
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 1 and result.stdout.startswith("refused: ")
+    assert world.log() == []
+
+
+def test_a_missing_profile_is_refused(world):
+    del world.state["profiles"]["tm-hotspot"]
+    world.state["active"] = []
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 1
+    assert result.stdout.strip() == "refused: there is no hotspot profile; run the installer"
+    assert world.calls("modify") == 0 and not world.request.exists()
+
+
+@pytest.mark.parametrize("case", ["done", "nothing", "refused", "no-profile", "modify-fails", "restart-fails"])
+def test_the_request_is_deleted_whatever_happens(world, case):
+    body = {"action": "hotspot", "name": "TM-ROAD"}
+    if case == "nothing":
+        body = {"action": "hotspot", "name": "TM-AB12"}
+    elif case == "refused":
+        body = {"action": "hotspot", "name": ""}
+    elif case == "no-profile":
+        del world.state["profiles"]["tm-hotspot"]
+    elif case == "modify-fails":
+        world.fail("modify")
+    elif case == "restart-fails":
+        world.state["up"] = {"tm-hotspot": "fail"}
+    result = world.run(body)
+    assert result.returncode == (0 if case in ("done", "nothing") else 1), result.stdout + result.stderr
+    assert not world.request.exists()
+    assert list(world.jobs.iterdir()) == []
+
+
+def test_a_held_lock_refuses_after_the_wait(world):
+    world.lock.parent.mkdir()
+    world.lock_wait = "0.2"
+    with open(world.lock, "w") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        result = world.run({"action": "hotspot", "enabled": False})
+    assert result.returncode == 1
+    assert result.stdout.strip() == "refused: the unit is trying a saved network right now; try again in a minute"
+    assert world.log() == [] and not world.request.exists()
+    assert world.profile()["connection.autoconnect"] == "yes"
+
+
+def test_the_lock_is_made_when_missing_and_free_after_a_run(world):
+    result = world.run({"action": "hotspot", "name": "TM-ROAD"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.lock.parent.stat().st_mode & 0o777 == 0o755
+    with open(world.lock) as file:
+        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def load_job():
+    loader = importlib.machinery.SourceFileLoader("tm_job_network", str(JOB))
+    spec = importlib.util.spec_from_loader("tm_job_network", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
+def test_as_root_the_unit_names_the_manifest_and_secrets_but_not_the_test_settings(monkeypatch):
+    job = load_job()
+    monkeypatch.setattr(os, "geteuid", lambda: 0)
+    for name in ("TM_CONTROL_MANIFEST", "TM_CONTROL_SECRETS_DIR", "NMCLI", "TM_SYS_NET", "TM_NETWORK_LOCK",
+                 "TM_NETWORK_LOCK_WAIT"):
+        monkeypatch.setenv(name, "/elsewhere")
+    assert job.manifest_path() == "/elsewhere" and job.secrets_dir_path() == "/elsewhere"
+    assert job.trusted("NMCLI", job.NMCLI) == "/usr/bin/nmcli"
+    assert job.trusted("TM_SYS_NET", job.SYS_NET) == "/sys/class/net"
+    assert job.trusted("TM_NETWORK_LOCK", job.LOCK) == "/run/traffic-monitor/network.lock"
+    assert job.trusted("TM_NETWORK_LOCK_WAIT", str(job.LOCK_WAIT)) == "10"
+    monkeypatch.delenv("TM_CONTROL_MANIFEST")
+    monkeypatch.delenv("TM_CONTROL_SECRETS_DIR")
+    assert job.manifest_path() == "/etc/traffic-monitor/manifest.json"
+    assert job.secrets_dir_path() == "/etc/traffic-monitor/secrets"
+
+
+def test_the_rules_are_the_same_as_tm_controls():
+    job = load_job()
+    assert job.NAME_MAX_BYTES == NAME_MAX_BYTES
+    assert job.NAME_PATTERN == NAME_PATTERN
+    assert job.PASSWORD_PATTERN == PASSWORD_PATTERN
+
+
+def test_the_scrubber_hides_the_longer_password_first_and_escaped_forms():
+    job = load_job()
+    nm = job.Nmcli("nmcli")
+    nm.hide("abc12345", "abc12345678", "pa:ss\\word")
+    text = nm.scrub("abc12345678 then pa\\:ss\\\\word then pa:ss\\word")
+    assert "abc" not in text and "678" not in text and "ss" not in text

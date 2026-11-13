@@ -888,3 +888,55 @@ def test_reboot_from_the_control_app(host, address, tm_login):
     restarts = {unit: host.check_output(f"systemctl show -p NRestarts --value {unit}")
                 for unit in ("tm-control.service", "revproxy.service")}
     assert restarts == dict.fromkeys(restarts, "0"), f"restarts after failures since the reboot: {restarts}"
+
+
+HOTSPOT_PROFILE = role_vars()["tmsetup_hotspot_profile"]
+# A test value, never a real name; the job's rules allow it (1 to 32 bytes, no space at either end)
+HOTSPOT_NAME_PLACEHOLDER = "TM-PLACEHOLDER"
+HOTSPOT_JOB_SECONDS = 90
+
+
+def hotspot_name(address, cookie):
+    """GET /network's hotspot name, or None when the unit has no hotspot or the answer isn't a network state."""
+    answer = request_from_this_machine(address, f"{API}/network", cookie=cookie)
+    state = answer.json() if answer.status == 200 else None
+    hotspot = state.get("hotspot") if isinstance(state, dict) else None
+    return hotspot.get("name") if isinstance(hotspot, dict) else None
+
+
+def change_hotspot_name(address, cookie, name):
+    """POST /network/hotspot with only the name and wait for the network job. Fails with what went wrong; the
+    request has no password, and neither has the job's log."""
+    answer = request_from_this_machine(address, f"{API}/network/hotspot", "POST", cookie, {"name": name})
+    started = answer.json() if answer.status == 202 else None
+    job_id = started.get("id") if isinstance(started, dict) else None
+    assert job_id, f"POST {API}/network/hotspot answered {answer.status}"
+    status, log = wait_for_job(address, cookie, job_id, HOTSPOT_JOB_SECONDS)
+    assert status == "succeeded", f"the hotspot job is {status} after {HOTSPOT_JOB_SECONDS} s; its log ends {log}"
+
+
+def test_the_hotspot_name_changes_through_the_job_and_back(host, address, tm_login):
+    """An admin's change of the hotspot's name runs the network job, and NetworkManager's profile then holds the new
+    name; the old name is posted back at the end. Uses a placeholder name. Run it over Ethernet or from a network
+    other than the hotspot: a hotspot that is up restarts when its name changes, and would drop a phone or laptop
+    connected to it. Skips on a unit with no hotspot."""
+    cookie = session(address, *tm_login)
+    original = hotspot_name(address, cookie)
+    if original is None:
+        pytest.skip(f"the unit has no {HOTSPOT_PROFILE} hotspot")
+    wanted = HOTSPOT_NAME_PLACEHOLDER if original != HOTSPOT_NAME_PLACEHOLDER else HOTSPOT_NAME_PLACEHOLDER + "-2"
+    read_ssid = f"nmcli -g 802-11-wireless.ssid connection show {shlex.quote(HOTSPOT_PROFILE)}"
+    try:
+        change_hotspot_name(address, cookie, wanted)
+        with host.sudo():
+            found = host.check_output(read_ssid)
+        assert found == wanted, f"after the change, {HOTSPOT_PROFILE}'s ssid isn't the placeholder: {found!r}"
+        assert hotspot_name(address, cookie) == wanted, f"GET {API}/network after the change doesn't show the new name"
+    finally:  # put the name back, even when the change failed partway; a failure here chains
+        try:
+            change_hotspot_name(address, cookie, original)
+        except AssertionError as error:
+            raise AssertionError(f"the hotspot's name may still be the placeholder; set it on the Network page ({error})")
+    with host.sudo():
+        restored = host.check_output(read_ssid)
+    assert restored == original, f"after putting the name back, {HOTSPOT_PROFILE}'s ssid isn't the original: {restored!r}"

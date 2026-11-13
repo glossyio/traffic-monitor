@@ -50,17 +50,29 @@ def test_plate_recognizer_absent_on_pii_free_unit(host, expect):
 SET_SECRET_UNIT = "tm-job-set-secret.service"
 
 
+def check_job_unit_is_static(host, unit, job):
+    state = host.check_output(f"systemctl show -p UnitFileState --value {unit}")
+    assert state == "static", f"{unit}'s UnitFileState is {state!r}"
+    script = f"{role_vars()['tmsetup_libexec_dir']}/{job}"
+    assert script in host.check_output(f"systemctl show -p ExecStart --value {unit}"), f"{unit} doesn't run {script}"
+    found = host.file(script)
+    mode = (found.is_file, found.user, found.group, oct(found.mode)) if found.exists else "missing"
+    assert mode == (True, "root", "root", "0o755"), f"{script} (regular file, owner, group, mode): {mode}"
+
+
 def test_set_secret_job_unit_is_static(host):
     """The set-secret job's unit is static (never enabled, so it runs only when tm-control starts it through polkit),
     and runs the job's root-owned copy, which only root can change."""
-    state = host.check_output(f"systemctl show -p UnitFileState --value {SET_SECRET_UNIT}")
-    assert state == "static", f"{SET_SECRET_UNIT}'s UnitFileState is {state!r}"
-    script = f"{role_vars()['tmsetup_libexec_dir']}/tm-job-set-secret"
-    assert script in host.check_output(f"systemctl show -p ExecStart --value {SET_SECRET_UNIT}"), (
-        f"{SET_SECRET_UNIT} doesn't run {script}")
-    job = host.file(script)
-    found = (job.is_file, job.user, job.group, oct(job.mode)) if job.exists else "missing"
-    assert found == (True, "root", "root", "0o755"), f"{script} (regular file, owner, group, mode): {found}"
+    check_job_unit_is_static(host, SET_SECRET_UNIT, "tm-job-set-secret")
+
+
+NETWORK_UNIT = "tm-job-network.service"
+
+
+def test_network_job_unit_is_static(host):
+    """The network job's unit, which changes the Wi-Fi hotspot, is static like the set-secret job's and runs the job's
+    root-owned copy."""
+    check_job_unit_is_static(host, NETWORK_UNIT, "tm-job-network")
 
 
 def test_ui_build_unit_finished(host):

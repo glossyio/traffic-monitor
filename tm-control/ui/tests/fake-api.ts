@@ -159,3 +159,34 @@ export function timeResult(changes: Partial<TimeResult>): TimeResult {
   }
   return { ...TIME_STATE, ...outcome, ...changes }
 }
+
+// GET /network: Ethernet connected, and the Wi-Fi radio on the unit's own hotspot
+type NetworkState = components['schemas']['NetworkState']
+export const NETWORK_STATE: NetworkState = {
+  hostname: 'tm-ab12',
+  local_name: 'tm-ab12.local',
+  readable: true,
+  ethernet: {
+    connected: true,
+    mac: '2C:CF:67:00:AB:11',
+    addresses: ['192.168.1.57'],
+    gateway: '192.168.1.1',
+    dns: ['192.168.1.1', '1.1.1.1'],
+  },
+  wifi: {
+    connected: true,
+    mac: '2C:CF:67:00:AB:12',
+    addresses: ['10.42.0.1'],
+    gateway: null,
+    dns: [],
+    mode: 'hotspot',
+    network: null,
+    signal: null,
+  },
+  internet: 'reachable',
+  hotspot: { enabled: true, active: true, name: 'TM-AB12', hidden: false, security: 'wpa2', address: '10.42.0.1' },
+}
+
+export function networkState(changes: Partial<NetworkState>): NetworkState {
+  return { ...NETWORK_STATE, ...changes }
+}

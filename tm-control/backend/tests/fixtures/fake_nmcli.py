@@ -7,7 +7,7 @@ A profile's connection.uuid is made up on first use. Missing connection.type, .a
 802-11-wireless, yes and 0. Verbs listed under "fail" exit 4 with a message that quotes the whole command line,
 secrets included, as nmcli's own errors may, so a test can check that the caller keeps them out of what it prints.
 Each call's argv is appended to the file named by FAKE_NMCLI_LOG as one JSON list; the value after an argument ending
-in "psk" is replaced by "***" when the call is `add` or `modify`.
+in ".psk" is replaced by "***" when the call is `add` or `modify`.
 
 Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t and -g):
   [-t] -f FIELDS connection show [--active]      one line per profile; FIELDS from NAME UUID TYPE AUTOCONNECT TIMESTAMP
@@ -18,11 +18,16 @@ Answers, like nmcli's, with ":" and "\\" in values escaped by a backslash (-t an
   connection add type wifi PROP VALUE ...        connection.id names the new profile
   connection modify REF PROP VALUE ...           connection.id renames; activity follows the name
   connection up [--wait N] REF                   makes the profile the only active one; "up": {"<name>": "fail"} in the
-                                                 state makes it exit 4 and leave nothing active (an idle radio);
+                                                 state makes it exit 4 and leave nothing active (an idle radio), and
+                                                 "up": {"<name>": "fail-started"} makes it exit 4 with the profile the
+                                                 only active one (NetworkManager started it by itself meanwhile);
+                                                 "fail-once" is "fail" for this call only (the entry is removed);
                                                  "up_delay": {"<name>": SECONDS} makes it sleep first
+  connection down REF                            removes the profile from "active"
   device show DEV  (-t -f GENERAL.STATE,GENERAL.CONNECTION)   state 100 and the first active profile, else 30 and "--";
                                                  "device_state": N in the state overrides the number
   radio wifi                                     the state's "radio", "enabled" unless set
+  radio wifi on|off                              sets the state's "radio" to "enabled" or "disabled"
 Any -f field that isn't listed above is read as a profile property. REF is `NAME`, `id NAME` or `uuid UUID`. A profile that doesn't exist is exit 10, as in nmcli.
 """
 
@@ -99,7 +104,7 @@ def main(argv):
     log, hide = [], False
     for arg in argv:
         log.append("***" if hide else arg)
-        hide = verb in ("add", "modify") and arg.endswith("psk")
+        hide = verb in ("add", "modify") and arg.endswith(".psk")  # not wpa-psk
     if LOG:
         with open(LOG, "a") as file:
             file.write(json.dumps(log) + "\n")
@@ -108,7 +113,13 @@ def main(argv):
         die(4, "Error: simulated failure of: " + " ".join(argv))
 
     if group == "radio" and verb == "wifi":
-        print(state.get("radio", "enabled"))
+        if rest:
+            if rest != ["on"] and rest != ["off"]:
+                die(2, "Error: only `radio wifi on|off` is faked.")
+            state["radio"] = "enabled" if rest == ["on"] else "disabled"
+            save(state)
+        else:
+            print(state.get("radio", "enabled"))
         return
     if group == "device" and verb == "show":
         active = state.get("active", [])
@@ -150,11 +161,16 @@ def main(argv):
     elif verb == "up":
         name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
         time.sleep(state.get("up_delay", {}).get(name, 0))
-        failed = state.get("up", {}).get(name) == "fail"
-        state["active"] = [] if failed else [name]
+        outcome = state.get("up", {}).get(name)
+        if outcome == "fail-once":
+            del state["up"][name]
+        state["active"] = [] if outcome in ("fail", "fail-once") else [name]
         save(state)
-        if failed:
+        if outcome in ("fail", "fail-once", "fail-started"):
             die(4, f"Error: Connection activation failed for '{name}'.")
+    elif verb == "down":
+        name = find(state, rest[:2] if rest[0] in ("id", "uuid") else rest[:1])
+        state["active"] = [n for n in state.get("active", []) if n != name]
     elif verb == "add":
         changes = pairs(rest)
         if changes.pop("type", None) != "wifi" or "connection.id" not in changes:

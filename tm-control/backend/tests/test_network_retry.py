@@ -6,6 +6,7 @@ stations and scan), runs the job once, and returns what it did. Calls to world()
 file, so a test can run the timer more than once; the device is built again each time. All names here are placeholders.
 """
 
+import fcntl
 import importlib.machinery
 import importlib.util
 import json
@@ -42,9 +43,9 @@ def saved(uuid=UUID, **props):
 
 def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=(), scan=("Home",), radio="enabled",
           join=None, device_state=None, sys_net="wifi", hotspot=HOTSPOT, state_text=None, ap_fails=False,
-          iw_fail=(), join_delay=0):
+          iw_fail=(), join_delay=0, hold_lock=False):
     """Run the job once. join="fail" makes every saved network refuse to connect, after join_delay seconds; sys_net is
-    wifi, usb or none."""
+    wifi, usb or none. hold_lock=True has the test hold the network lock for the whole run, as a network job would."""
     profiles = {"Home": saved()} if profiles is None else dict(profiles)
     if hotspot is not None:
         profiles["tm-hotspot"] = dict(hotspot)
@@ -73,13 +74,23 @@ def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=()
         retry_state.write_text(state_text)
     env = {
         "PATH": os.environ["PATH"], "NMCLI": str(NMCLI), "IW": str(IW), "TM_SYS_NET": str(sys_dir / "class" / "net"),
-        "TM_NETWORK_STATE": str(retry_state), "TM_NOW": str(now), "TM_HOTSPOT_WAIT": "0",
+        "TM_NETWORK_STATE": str(retry_state), "TM_NETWORK_LOCK": str(tmp_path / "lock" / "network.lock"), "TM_NOW": str(now), "TM_HOTSPOT_WAIT": "0",
         "TM_WIFI_DEVICE": "wlan0", "TM_HOTSPOT_PROFILE": "tm-hotspot",
         "FAKE_NMCLI_STATE": str(tmp_path / "nmcli.json"), "FAKE_NMCLI_LOG": str(tmp_path / "nmcli.log"),
         "FAKE_IW_STATE": str(tmp_path / "iw.json"), "FAKE_IW_LOG": str(tmp_path / "iw.log"),
     }
-    result = subprocess.run([sys.executable, "-I", str(RUNNER), str(JOB)], env=env, capture_output=True, text=True,
-                            timeout=30)
+    lock_path = tmp_path / "lock" / "network.lock"
+    held = None
+    if hold_lock:
+        lock_path.parent.mkdir(exist_ok=True)
+        held = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+        fcntl.flock(held, fcntl.LOCK_EX)
+    try:
+        result = subprocess.run([sys.executable, "-I", str(RUNNER), str(JOB)], env=env, capture_output=True, text=True,
+                                timeout=30)
+    finally:
+        if held is not None:
+            os.close(held)
 
     def calls(name):
         path = tmp_path / name
@@ -89,13 +100,30 @@ def world(tmp_path, now=1000, profiles=None, active=("tm-hotspot",), stations=()
         code=result.returncode, stdout=result.stdout, stderr=result.stderr, outcome=result.stdout.strip(),
         log=calls("nmcli.log"), iw=calls("iw.log"),
         state=json.loads(retry_state.read_text()) if retry_state.exists() else None, state_path=retry_state,
-        active=json.loads((tmp_path / "nmcli.json").read_text())["active"],
+        active=json.loads((tmp_path / "nmcli.json").read_text())["active"], lock_path=lock_path,
     )
 
 
 def ups(result):
     """The profile each `connection up` asked for, as written on the command line."""
     return [call[call.index("up") + 1:][-1] for call in result.log if "up" in call]
+
+
+def test_a_run_while_a_network_job_holds_the_lock_does_nothing(tmp_path):
+    result = world(tmp_path, active=(), hold_lock=True)
+    assert (result.code, result.outcome) == (0, "locked")
+    assert result.log == [] and result.iw == []
+    assert result.state is None
+
+
+def test_the_lock_is_free_again_after_a_run(tmp_path):
+    result = world(tmp_path, active=())
+    assert (result.code, result.outcome) == (0, "hotspot-started")
+    fd = os.open(result.lock_path, os.O_RDWR)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        os.close(fd)
 
 
 def test_an_idle_radio_gets_the_hotspot(tmp_path):

@@ -17,7 +17,7 @@ Other computers reach the Traffic Monitor's apps through the [home page](../use/
 
 ## The hotspot
 
-When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](../use/wifi-hotspot.md) on the built-in radio (`wlan0`).
+When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](../use/wifi-hotspot.md) on the built-in radio (`wlan0`). The control app's [Network page](../use/wifi-hotspot.md#the-network-page) shows the device's own addresses.
 
 | | |
 |---|---|

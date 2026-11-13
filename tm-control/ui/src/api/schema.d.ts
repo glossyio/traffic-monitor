@@ -807,6 +807,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/network": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Network */
+        get: operations["get_network_api_v1_network_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/hotspot/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hotspot Password */
+        get: operations["get_hotspot_password_api_v1_network_hotspot_password_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/network/hotspot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Hotspot
+         * @description Start the job that applies the change to the hotspot. A value that breaks its rule is refused before any job.
+         */
+        post: operations["change_hotspot_api_v1_network_hotspot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/device": {
         parameters: {
             query?: never;
@@ -1113,6 +1167,40 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HotspotChange */
+        HotspotChange: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Password */
+            password?: string | null;
+            /** Hidden */
+            hidden?: boolean | null;
+        };
+        /** HotspotPassword */
+        HotspotPassword: {
+            /** Password */
+            password: string | null;
+        };
+        /** HotspotState */
+        HotspotState: {
+            /** Enabled */
+            enabled: boolean;
+            /** Active */
+            active: boolean;
+            /** Name */
+            name: string;
+            /** Hidden */
+            hidden: boolean;
+            /**
+             * Security
+             * @enum {string}
+             */
+            security: "wpa2" | "none" | "other";
+            /** Address */
+            address: string;
+        };
         /** ImportIn */
         ImportIn: {
             /** Csv */
@@ -1170,6 +1258,11 @@ export interface components {
             /** Log */
             log: string[];
         };
+        /** JobStarted */
+        JobStarted: {
+            /** Id */
+            id: string;
+        };
         /** LabelsOut */
         LabelsOut: {
             /** Recognised */
@@ -1178,6 +1271,19 @@ export interface components {
             source: ("frigate" | "sidecar" | "labels_file") | null;
             /** Tracked */
             tracked: string[];
+        };
+        /** Link */
+        Link: {
+            /** Connected */
+            connected: boolean;
+            /** Mac */
+            mac: string | null;
+            /** Addresses */
+            addresses: string[];
+            /** Gateway */
+            gateway: string | null;
+            /** Dns */
+            dns: string[];
         };
         /** LocationCorrection */
         LocationCorrection: {
@@ -1254,6 +1360,23 @@ export interface components {
             /** Models */
             models: components["schemas"]["ModelOut"][];
             labels: components["schemas"]["LabelsOut"];
+        };
+        /** NetworkState */
+        NetworkState: {
+            /** Hostname */
+            hostname: string;
+            /** Local Name */
+            local_name: string;
+            /** Readable */
+            readable: boolean;
+            ethernet: components["schemas"]["Link"] | null;
+            wifi: components["schemas"]["Wifi"] | null;
+            /**
+             * Internet
+             * @enum {string}
+             */
+            internet: "reachable" | "not_reachable" | "sign_in_page" | "unknown";
+            hotspot: components["schemas"]["HotspotState"] | null;
         };
         /** NewPassword */
         NewPassword: {
@@ -1599,6 +1722,28 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** Wifi */
+        Wifi: {
+            /** Connected */
+            connected: boolean;
+            /** Mac */
+            mac: string | null;
+            /** Addresses */
+            addresses: string[];
+            /** Gateway */
+            gateway: string | null;
+            /** Dns */
+            dns: string[];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "network" | "hotspot" | "joining" | "idle" | "off";
+            /** Network */
+            network: string | null;
+            /** Signal */
+            signal: number | null;
         };
     };
     responses: never;
@@ -2819,6 +2964,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RestartQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_network_api_v1_network_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetworkState"];
+                };
+            };
+        };
+    };
+    get_hotspot_password_api_v1_network_hotspot_password_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotspotPassword"];
+                };
+            };
+        };
+    };
+    change_hotspot_api_v1_network_hotspot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotspotChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStarted"];
                 };
             };
             /** @description Validation Error */

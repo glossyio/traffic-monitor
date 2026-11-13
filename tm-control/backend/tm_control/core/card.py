@@ -1,6 +1,7 @@
 """The device's card: `sudo tm-control card` prints its addresses, its hotspot's name and password, and its setup code.
 
-The hotspot password (mode 0640, root and the code group) and the setup code (root-only) are files tm-control's code never reads, so this is the one place a person can read them back.
+The setup code is root-only and the service never reads it, so this is the one place a person can read it back; the
+hotspot password (mode 0640) is also shown to an admin on the Network page.
 Run as root it reads the manifest, the hotspot's name, the password file and the setup-code file first, and only then
 opens the state database for the claim state, which drops to the state directory's owner (see claim_cli.open_state).
 The card goes to stdout and nowhere else: nothing here logs, stores, or returns it to a caller that writes it down.
@@ -15,6 +16,7 @@ from tm_control.adapters.network import hotspot
 from tm_control.core.auth import Device
 from tm_control.core.claim_cli import CommandError, open_state
 from tm_control.core.manifest import ManifestError, load_manifest
+from tm_control.core.secrets import read_hotspot_password
 from tm_control.core.settings import Settings
 
 ALREADY_CLAIMED_STATUS = 3  # the status set-setup-code already uses for "claimed"
@@ -34,7 +36,7 @@ class Card:
 
 
 def _read(path) -> str | None:
-    """A file's text, read as root, without its trailing newline, or None when it can't be read."""
+    """The setup code file's text, read as root, without its trailing newline, or None when it can't be read."""
     try:
         return path.read_text().strip("\r\n")
     except OSError:
@@ -48,7 +50,7 @@ def read_card(settings: Settings) -> Card:
     except ManifestError as error:
         raise CommandError(str(error)) from None
     profile = hotspot(manifest.network.hotspot_profile)
-    password = _read(settings.secrets_dir / "hotspot_password") if profile is not False else None
+    password = read_hotspot_password(settings.secrets_dir) if profile is not False else None
     code = (_read(settings.setup_code_file) or "").strip() or None
     claimed = Device(open_state(settings)).is_claimed()
     hostname = socket.gethostname()

@@ -727,9 +727,10 @@ def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():
     assert "polkitd" in load_role_yaml("vars/main.yml")["tmsetup_packages"]
 
 
-def test_both_job_units_are_installed():
+def test_the_job_units_are_installed():
     units = tm_control_service_tasks()["TMSetup - tm-control Service - Install the unit files"]
-    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service", "tm-job-set-secret.service"]
+    assert units["loop"] == ["tm-control.service", "tm-job-system-password.service",
+                             "tm-job-set-secret.service", "tm-job-network.service"]
 
 
 def test_configuration_directory_is_root_and_the_code_group_only():

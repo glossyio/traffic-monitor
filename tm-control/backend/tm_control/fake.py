@@ -228,6 +228,34 @@ class FakeClock:
         return CommandResult(0, "", "", False)
 
 
+class FakeNetwork:
+    """Fake mode's hotspot, kept in memory so the Network page sees its own changes. `hotspot` is what GET /network
+    shows (it starts on and secured); the password is kept apart and never part of that answer."""
+
+    def __init__(self):
+        self.hotspot = {
+            "enabled": True,
+            "active": True,
+            "name": "TM-AB12",
+            "hidden": False,
+            "security": "wpa2",
+            "address": "10.42.0.1",
+        }
+        self.password: str | None = "ABCD-EFGH-JKLM"
+
+    def apply(self, change: dict) -> None:
+        """Set what a hotspot job request names: enabled, name, hidden, and password."""
+        if "enabled" in change:
+            self.hotspot["enabled"] = self.hotspot["active"] = change["enabled"]
+        if "name" in change:
+            self.hotspot["name"] = change["name"]
+        if "hidden" in change:
+            self.hotspot["hidden"] = change["hidden"]
+        if "password" in change:
+            self.password = change["password"]
+            self.hotspot["security"] = "wpa2"
+
+
 def journal_tail(unit: str, lines: int) -> list[str]:
     """Fake mode's stand-in for systemd.journal_tail: a few ordinary lines."""
     stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(time.time() - 2 * 3600))

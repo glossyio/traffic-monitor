@@ -59,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
     app.state.download_grants = DownloadGrants()  # one-time /storefiles links for a browser that drops the cookie
     app.state.fake_clock = fake.FakeClock() if settings.fake else None
+    app.state.fake_network = fake.FakeNetwork() if settings.fake else None
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
     # The Location module's: Node-RED's config.yml, its /tm-internal/ endpoints, and the lock reconcile runs under.
     # The internal token was read above on a device (a missing one fails startup); FakeSecrets always has one.

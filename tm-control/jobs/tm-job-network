@@ -1,0 +1,607 @@
+#!/usr/bin/python3
+"""Change the Wi-Fi hotspot's settings: on or off, its name, its password, and whether its name is hidden.
+
+tm-job-network.service runs this as root (`python -EP`), after tm-control writes the request
+/run/tm-control/jobs/network.json: {"action": "hotspot"} plus any of "enabled", "name", "password", and "hidden",
+only the ones the admin sent. tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so
+the request is treated as hostile:
+- the jobs directory is opened without following a symlink and must belong to the code owner and be writable by no
+  one else; the request is opened and deleted relative to it, so its path can't be swapped mid-way;
+- the request must be a small regular file of the code owner's with one link, holding a JSON object whose action is
+  hotspot and whose other keys are one or more of enabled, name, password, and hidden. enabled and hidden must be
+  booleans; the name and the password must match NAME_PATTERN and PASSWORD_PATTERN below as a whole (tm-control's
+  own rules, which a test keeps the same), and the name must be at most NAME_MAX_BYTES bytes in UTF-8;
+- every value goes to nmcli as one argument of an argv list, never through a shell;
+- the secrets directory is opened without following a symlink and must belong to root and be writable by no one
+  else. The password file is written to a new file in it (O_EXCL, 0640, root and the directory's group) and renamed
+  over hotspot_password.
+Trusted: the install manifest and the secrets directory (root's), the profile NetworkManager holds, and the lock file
+in /run/traffic-monitor (root's).
+
+One run, in order:
+1. Read the manifest (the code owner, the Wi-Fi device, and the hotspot profile's name), then the request.
+2. Check the request. A refusal names the rule, never a value.
+3. Take the lock that tm-network-retry takes too (flock on LOCK, tried every half second for LOCK_WAIT seconds), so
+   the timer never moves the radio in the middle of a change. Still held: refused.
+4. Read the profile: autoconnect, name, hidden, key management, and, when the request has a password, the
+   profile's (nmcli -s). No profile: refused.
+5. Work out what differs. A password differs when it isn't the password file's, or isn't the profile's, or the
+   profile isn't WPA2 personal (wpa-psk); it then sets the five WPA2 properties. Nothing differs: `nothing to change`.
+6. A new password goes to the password file first, the old content kept in memory: the file is the source of truth.
+7. One `nmcli connection modify` with every change. If it fails, the old password file is put back.
+8. Then the first of these that applies: turned off, the hotspot is taken down if it is up; the name, password, or
+   hidden setting changed on the profile and the hotspot is up, it restarts (`connection up` on the active profile
+   applies them; a failed restart is tried once more, and counts when the device ends up on the hotspot);
+   turned on, on the built-in radio only (never a USB adapter), the radio is switched on if it is off and the
+   hotspot started if the radio is idle; a failed start still counts when NetworkManager brought the hotspot up by
+   itself within UP_WAIT seconds, as it does when autoconnect is switched on while the radio is idle. Otherwise the
+   change waits for the hotspot's next start.
+It prints one line per thing done and exits 0, or exits 1 with `refused: <sentence>` or
+`failed: <step> (<error type>)`, such as `(nmcli exit status 4)`, ending `; the settings are saved` once the profile
+was changed.
+
+No password is ever printed: nmcli's error text is never quoted (it can carry the command line), an unexpected error
+prints only its kind, and every password the job learns (the request's, the file's, the profile's) is still scrubbed
+from each line it prints. The request is deleted
+whatever happens, unless the jobs directory itself can't be trusted: when the manifest can't be read (so the code
+owner who must own the directory is unknown), or the directory fails its owner and mode checks, the request is left
+where it is, and tm-control clears a request no job is waiting for.
+
+Standard library only, and no tm_control imports: this runs from the root-owned copy in
+/usr/local/libexec/traffic-monitor/. TM_CONTROL_MANIFEST and TM_CONTROL_SECRETS_DIR name the manifest and the
+secrets directory, as for tm-job-set-secret: its root-owned unit sets both. Tests pass the request path as argv[1], set
+those two, and set NMCLI, TM_SYS_NET, TM_NETWORK_LOCK, and TM_NETWORK_LOCK_WAIT, which are ignored when running as
+root. Run as anyone but root (tests only), the secrets directory may be that user's instead of root's.
+"""
+
+import fcntl
+import json
+import os
+import pwd
+import re
+import stat
+import subprocess
+import sys
+import time
+
+REQUEST = "/run/tm-control/jobs/network.json"
+MANIFEST = "/etc/traffic-monitor/manifest.json"
+SECRETS_DIR = "/etc/traffic-monitor/secrets"
+NMCLI = "/usr/bin/nmcli"
+SYS_NET = "/sys/class/net"
+LOCK = "/run/traffic-monitor/network.lock"
+LOCK_WAIT = 10  # seconds
+UP_WAIT = 30  # seconds: nmcli --wait for a start, and how long a failed start may take to come up by itself
+PASSWORD_FILE = "hotspot_password"
+MAX_REQUEST = 4096  # bytes
+MAX_PASSWORD_FILE = 1024  # bytes
+FIELDS = ("enabled", "name", "password", "hidden")
+
+# tm-control's rules (modules/network/router.py); a test keeps the two the same.
+NAME_MAX_BYTES = 32
+NAME_PATTERN = r"[^\x00-\x20\x7f](?:[^\x00-\x1f\x7f]*[^\x00-\x20\x7f])?"  # no control characters or edge spaces
+PASSWORD_PATTERN = r"[\x21-\x7e][\x20-\x7e]{6,61}[\x21-\x7e]"  # 8 to 63 printable ASCII
+
+WIFI = "802-11-wireless"
+SECURITY = "802-11-wireless-security"
+WPA2 = [(f"{SECURITY}.key-mgmt", "wpa-psk"), (f"{SECURITY}.proto", "rsn"), (f"{SECURITY}.pairwise", "ccmp"),
+        (f"{SECURITY}.group", "ccmp")]
+CONNECTED = 100  # NetworkManager's device states
+JOINING = range(40, 100)
+
+
+class Refused(Exception):
+    """The request can't be carried out. The message says why and never holds a value from the request."""
+
+
+class NmcliFailed(Exception):
+    """nmcli failed or timed out. The message has a fixed form (exit status, timeout); nmcli's output is never quoted."""
+
+
+def trusted(name, default):
+    """The setting `name` from the environment, but only when not root: root always uses the installed values."""
+    return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def manifest_path():
+    """The manifest, from TM_CONTROL_MANIFEST (which the unit sets) or MANIFEST."""
+    return os.environ.get("TM_CONTROL_MANIFEST") or MANIFEST
+
+
+def secrets_dir_path():
+    """The secrets directory, from TM_CONTROL_SECRETS_DIR (which the unit sets) or SECRETS_DIR."""
+    return os.environ.get("TM_CONTROL_SECRETS_DIR") or SECRETS_DIR
+
+
+def read_manifest(path):
+    """The code owner's uid, the Wi-Fi device, and the hotspot profile's name, from the install manifest."""
+    try:
+        with open(path, "rb") as file:
+            manifest = json.load(file)
+    except (OSError, ValueError):
+        raise Refused(f"the manifest {path} can't be read") from None
+    if not isinstance(manifest, dict):
+        raise Refused(f"the manifest {path} is not a JSON object")
+    try:
+        owner_uid = pwd.getpwnam(manifest.get("codeowner")).pw_uid
+    except (KeyError, TypeError):
+        raise Refused(f"the manifest {path} names no code owner that exists here") from None
+    network = manifest.get("network", {})
+    if not isinstance(network, dict):
+        raise Refused(f"the manifest {path} has a network entry that is not a JSON object")
+    device, profile = network.get("wifi_device", "wlan0"), network.get("hotspot_profile", "tm-hotspot")
+    if not isinstance(device, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}", device):
+        raise Refused(f"the manifest {path} names no usable Wi-Fi device")
+    if not isinstance(profile, str) or not profile or profile.startswith("-") or "\x00" in profile:
+        raise Refused(f"the manifest {path} names no usable hotspot profile")
+    return owner_uid, device, profile
+
+
+def open_jobs_dir(path, owner_uid):
+    """A descriptor for the jobs directory, which must be the code owner's and writable by no one else."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError as error:
+        raise Refused(f"the jobs directory can't be opened ({error.strerror})") from None
+    info = os.fstat(fd)
+    if info.st_uid != owner_uid or info.st_mode & 0o022:
+        os.close(fd)
+        raise Refused("the jobs directory is not tm-control's own")
+    return fd
+
+
+def read_request(dir_fd, name, owner_uid):
+    """The request's JSON object, read without following a symlink and only from a small regular file."""
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=dir_fd)
+    except FileNotFoundError:
+        raise Refused("there is no request") from None
+    except OSError as error:
+        raise Refused(f"the request can't be opened ({error.strerror})") from None
+    with os.fdopen(fd, "rb") as file:
+        info = os.fstat(file.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != owner_uid:
+            raise Refused("the request is not a plain file of tm-control's")
+        data = file.read(MAX_REQUEST + 1)
+    if len(data) > MAX_REQUEST:
+        raise Refused(f"the request is larger than {MAX_REQUEST} bytes")
+    try:
+        request = json.loads(data)
+    except ValueError:
+        raise Refused("the request is not JSON") from None
+    if not isinstance(request, dict):
+        raise Refused("the request is not a JSON object")
+    return request
+
+
+def valid_name(name):
+    if not isinstance(name, str) or re.fullmatch(NAME_PATTERN, name) is None:
+        return False
+    try:
+        return len(name.encode("utf-8")) <= NAME_MAX_BYTES
+    except UnicodeEncodeError:  # a lone surrogate, which JSON can carry
+        return False
+
+
+def check(request):
+    """The change a request asks for, as {field: value}, once it passes every rule. No value is quoted in a refusal."""
+    if request.get("action") != "hotspot":
+        raise Refused("the action must be hotspot")
+    change = {key: value for key, value in request.items() if key != "action"}
+    if not change or not set(change) <= set(FIELDS):
+        raise Refused(f"the request must have the action and one or more of {', '.join(FIELDS)}, and nothing else")
+    for key in ("enabled", "hidden"):
+        if key in change and not isinstance(change[key], bool):
+            raise Refused("enabled and hidden must be true or false")
+    if "name" in change and not valid_name(change["name"]):
+        raise Refused(f"the name must be 1 to {NAME_MAX_BYTES} bytes, with no control characters and no space at "
+                      "either end")
+    if "password" in change and (not isinstance(change["password"], str)
+                                 or re.fullmatch(PASSWORD_PATTERN, change["password"]) is None):
+        raise Refused("the password must be 8 to 63 printable ASCII characters, with no space at either end")
+    return change
+
+
+def take_lock(path, wait):
+    """A descriptor holding flock(LOCK_EX) on path, or Refused after trying every half second for `wait` seconds.
+
+    The lock's directory is made when missing (0755). Closing the descriptor, or the end of the process, frees it."""
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, mode=0o755, exist_ok=True)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
+    deadline = time.monotonic() + wait
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                os.close(fd)
+                raise Refused("the unit is trying a saved network right now; try again in a minute") from None
+            time.sleep(min(0.5, remaining))
+
+
+def unescape(value):
+    """A value as nmcli -t and -g print it: a backslash escapes the character after it (`:` and `\\`)."""
+    out, escaped = [], False
+    for char in value:
+        if char == "\\" and not escaped:
+            escaped = True
+        else:
+            out.append(char)
+            escaped = False
+    return "".join(out)
+
+
+def split_terse(line):
+    """The unescaped fields of one nmcli -t line, split at the colons that aren't escaped."""
+    fields, current, escaped = [], [], False
+    for char in line:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    fields.append("".join(current))
+    return fields
+
+
+class Nmcli:
+    """Runs nmcli. Every password it was told about is scrubbed from what this script prints."""
+
+    def __init__(self, binary):
+        self.binary = binary
+        self.hidden = set()
+        self.last_error = ""
+
+    def hide(self, *values):
+        """Hide each value, and the form nmcli's terse output escapes it to."""
+        for value in values:
+            if value:
+                self.hidden.add(value)
+                self.hidden.add(value.replace("\\", "\\\\").replace(":", "\\:"))
+
+    def scrub(self, text):
+        for value in sorted(self.hidden, key=len, reverse=True):  # the longest first, so no part of one is left
+            text = text.replace(value, "[hidden]")
+        return text
+
+    def call(self, *args, timeout=60):
+        """(exit status, stdout). A command that outlives timeout is NmcliFailed."""
+        try:
+            result = subprocess.run(
+                [self.binary, *args],
+                capture_output=True,
+                stdin=subprocess.DEVNULL,
+                env={**os.environ, "LC_ALL": "C.UTF-8"},  # yes and no, not a translation
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise NmcliFailed(f"nmcli timed out after {timeout} s") from None
+        if result.returncode != 0:  # its stderr is never quoted: it can carry the command line
+            self.last_error = f"nmcli exit status {result.returncode}"
+        return result.returncode, result.stdout.decode("utf-8", errors="replace")
+
+    def run(self, *args, timeout=60):
+        status, out = self.call(*args, timeout=timeout)
+        if status != 0:
+            raise NmcliFailed(self.last_error)
+        return out
+
+    def get(self, profile, prop, reveal=False):
+        """One property of the profile, unescaped; "" when nmcli leaves its line out (a setting the profile lacks)."""
+        status, out = self.call(*(["-s"] if reveal else []), "-g", prop, "connection", "show", "id", profile)
+        if status == 10:  # nmcli: the connection doesn't exist
+            raise Refused("there is no hotspot profile; run the installer")
+        if status != 0:
+            raise NmcliFailed(self.last_error)
+        lines = out.split("\n")[:-1] if out.endswith("\n") else out.split("\n")
+        if len(lines) > 1:
+            raise NmcliFailed("nmcli answered with an unexpected number of lines")
+        return unescape(lines[0]) if lines else ""
+
+    def device(self, device):
+        """(state number, the name of its profile or None) for the device."""
+        values = {}
+        for line in self.run("-t", "-f", "GENERAL.STATE,GENERAL.CONNECTION", "device", "show", device).splitlines():
+            key, value = split_terse(line)[:2] if ":" in line else (line, "")
+            values[key] = value
+        state = re.match(r"\d+", values.get("GENERAL.STATE", ""))
+        connection = values.get("GENERAL.CONNECTION", "")
+        return int(state.group()) if state else 0, None if connection in ("", "--") else connection
+
+
+def builtin_radio(device):
+    """Whether the device is a Wi-Fi radio that is part of the unit, not a USB adapter (nor no radio at all)."""
+    base = os.path.join(trusted("TM_SYS_NET", SYS_NET), device)
+    if not os.path.isdir(os.path.join(base, "wireless")):
+        return False
+    return not os.path.realpath(os.path.join(base, "device", "subsystem")).endswith("/usb")
+
+
+def read_profile(nm, profile, with_password):
+    """The profile's settings this job may change; the password (hidden from then on) only when `with_password`."""
+    current = {
+        "enabled": nm.get(profile, "connection.autoconnect") == "yes",
+        "name": nm.get(profile, f"{WIFI}.ssid"),
+        "hidden": nm.get(profile, f"{WIFI}.hidden") == "yes",
+        "key_mgmt": nm.get(profile, f"{SECURITY}.key-mgmt"),
+        "password": None,
+    }
+    if with_password:
+        current["password"] = nm.get(profile, f"{SECURITY}.psk", reveal=True)
+        nm.hide(current["password"])
+    return current
+
+
+def differences(change, current, stored):
+    """(the (property, value) pairs that make the profile what the change asks for, the fields that differ, whether
+    the name, password, or hidden setting changes on the profile). `stored` is the password file's text or None.
+
+    A password the profile already has but the file doesn't is written to the file and set again on the profile,
+    which changes nothing there, so it alone restarts nothing."""
+    pairs, fields, on_air = [], [], False
+    if "enabled" in change and change["enabled"] != current["enabled"]:
+        pairs.append(("connection.autoconnect", "yes" if change["enabled"] else "no"))
+        fields.append("enabled")
+    if "name" in change and change["name"] != current["name"]:
+        pairs.append((f"{WIFI}.ssid", change["name"]))
+        fields.append("name")
+        on_air = True
+    if "hidden" in change and change["hidden"] != current["hidden"]:
+        pairs.append((f"{WIFI}.hidden", "yes" if change["hidden"] else "no"))
+        fields.append("hidden")
+        on_air = True
+    if "password" in change:
+        profile_differs = change["password"] != current["password"] or current["key_mgmt"] != "wpa-psk"
+        if profile_differs or change["password"] != stored:
+            pairs += [*WPA2, (f"{SECURITY}.psk", change["password"])]
+            fields.append("password")
+            on_air = on_air or profile_differs
+    return pairs, fields, on_air
+
+
+def open_secrets_dir(path):
+    """A descriptor for the secrets directory: root's (as root) and writable by no one else."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError as error:
+        raise Refused(f"the secrets directory can't be opened ({error.strerror})") from None
+    info = os.fstat(fd)
+    owner = 0 if os.geteuid() == 0 else os.getuid()  # tests run as themselves; on a device this is always root
+    if info.st_uid != owner or info.st_mode & 0o022:
+        os.close(fd)
+        raise Refused("the secrets directory is not root's alone")
+    return fd
+
+
+def read_password_file(dir_fd):
+    """The password file's bytes, or None when there is none."""
+    try:
+        fd = os.open(PASSWORD_FILE, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=dir_fd)
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise Refused(f"the password file can't be read ({error.strerror})") from None
+    with os.fdopen(fd, "rb") as file:
+        if not stat.S_ISREG(os.fstat(file.fileno()).st_mode):
+            raise Refused("the password file is not a plain file")
+        data = file.read(MAX_PASSWORD_FILE + 1)
+    if len(data) > MAX_PASSWORD_FILE:
+        raise Refused("the password file is too large")
+    return data
+
+
+def _temporary(dir_fd, name, mode):
+    """A new file beside name in dir_fd, created O_EXCL so nothing that was there is ever opened."""
+    for attempt in range(100):
+        temporary = f".{name}.{os.getpid()}.{attempt}.tmp"
+        try:
+            fd = os.open(
+                temporary,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                mode,
+                dir_fd=dir_fd,
+            )
+        except FileExistsError:
+            continue
+        return temporary, fd
+    raise FileExistsError("no free temporary name")
+
+
+def _replace(dir_fd, name, data, mode, uid, gid):
+    """Write data to a temporary file in dir_fd with mode, uid, and gid, then rename it over name."""
+    temporary, fd = _temporary(dir_fd, name, 0o600)
+    try:
+        with os.fdopen(fd, "wb") as file:
+            file.write(data)
+            file.flush()
+            os.fchmod(file.fileno(), mode)
+            if uid is not None:
+                os.fchown(file.fileno(), uid, gid)
+            os.fsync(file.fileno())
+        os.replace(temporary, name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+    except BaseException:
+        try:
+            os.unlink(temporary, dir_fd=dir_fd)
+        except OSError:
+            pass
+        raise
+    os.fsync(dir_fd)
+
+
+def write_password_file(dir_fd, data):
+    """The password file holds data (no line end, as tm-hotspot-setup writes it); 0640, root and the directory's
+    group. None removes the file, which is how a file that wasn't there before is put back."""
+    if data is None:
+        try:
+            os.unlink(PASSWORD_FILE, dir_fd=dir_fd)
+        except FileNotFoundError:
+            pass
+        os.fsync(dir_fd)
+        return
+    owner = (0, os.fstat(dir_fd).st_gid) if os.geteuid() == 0 else (None, None)
+    _replace(dir_fd, PASSWORD_FILE, data, 0o640, *owner)
+
+
+def delete_request(dir_fd, name):
+    try:
+        os.unlink(name, dir_fd=dir_fd)
+    except FileNotFoundError:
+        pass
+    except OSError as error:
+        print(f"the request could not be deleted ({error.strerror})")
+
+
+class Run:
+    """One run's steps after the request passed its checks. `step` names what is under way, for a failure line."""
+
+    def __init__(self, nm, device, profile):
+        self.nm, self.device, self.profile = nm, device, profile
+        self.step = "read the profile"
+        self.saved = False
+        self.secrets_fd = None
+
+    def apply(self, change):
+        nm = self.nm
+        current = read_profile(nm, self.profile, "password" in change)
+        old = stored = None
+        if "password" in change:
+            self.step = "read the password file"
+            self.secrets_fd = open_secrets_dir(secrets_dir_path())
+            old = read_password_file(self.secrets_fd)
+            stored = old.decode("utf-8", errors="replace").rstrip("\r\n") if old is not None else None
+            nm.hide(stored)
+        pairs, fields, on_air = differences(change, current, stored)
+        if not pairs:
+            print("nothing to change")
+            return
+
+        if "password" in fields:
+            self.step = "write the password file"
+            write_password_file(self.secrets_fd, change["password"].encode())
+            print("wrote the password file")
+
+        self.step = "change the profile"
+        try:
+            nm.run("connection", "modify", "id", self.profile, *(word for pair in pairs for word in pair))
+        except Exception:
+            if "password" in fields:
+                try:
+                    write_password_file(self.secrets_fd, old)
+                    print("put the password file back")
+                except Exception as error:
+                    print(f"failed: put the password file back ({type(error).__name__})")
+            raise
+        self.saved = True
+        print(f"changed the profile ({', '.join(fields)})")
+
+        self.step = "read the Wi-Fi device"
+        _, connection = nm.device(self.device)
+        up = connection == self.profile
+        if change.get("enabled") is False and "enabled" in fields:
+            if up:
+                self.step = "take the hotspot down"
+                nm.run("connection", "down", "id", self.profile, timeout=UP_WAIT + 30)
+            print("turned the hotspot off")
+        elif up and on_air:
+            self.restart()
+        elif change.get("enabled") is True and "enabled" in fields and builtin_radio(self.device):
+            self.turn_on()
+        else:
+            print("saved; the change applies when the hotspot next starts")
+
+    def restart(self):
+        """`connection up` on the active profile, tried once more when it fails, so the radio isn't left on nothing.
+        The second failure still counts when the device ends up on the hotspot."""
+        nm = self.nm
+        self.step = "restart the hotspot"
+        up = ("--wait", str(UP_WAIT), "connection", "up", "id", self.profile)
+        status, _ = nm.call(*up, timeout=UP_WAIT + 30)
+        if status != 0:
+            print("the restart failed; trying once more")
+            status, _ = nm.call(*up, timeout=UP_WAIT + 30)
+            if status != 0:
+                error = nm.last_error
+                if nm.device(self.device) != (CONNECTED, self.profile):
+                    raise NmcliFailed(error)
+        print("restarted the hotspot")
+
+    def turn_on(self):
+        """Switch the radio on if it is off, and start the hotspot if the radio is idle."""
+        nm = self.nm
+        self.step = "switch the radio on"
+        if nm.run("radio", "wifi").strip() != "enabled":
+            nm.run("radio", "wifi", "on")
+            print("switched the radio on")
+        state, connection = nm.device(self.device)
+        if connection is not None or state in JOINING:
+            print("turned the hotspot on" if connection == self.profile
+                  else "turned the hotspot on; it starts when the Wi-Fi leaves its network")
+            return
+        self.step = "start the hotspot"
+        status, _ = nm.call("--wait", str(UP_WAIT), "connection", "up", "id", self.profile, timeout=UP_WAIT + 30)
+        if status != 0:
+            # NetworkManager may have started the hotspot by itself when autoconnect went on, and failed this start
+            error = nm.last_error
+            deadline = time.monotonic() + UP_WAIT
+            while nm.device(self.device) != (CONNECTED, self.profile):
+                if time.monotonic() >= deadline:
+                    raise NmcliFailed(error)
+                time.sleep(0.5)
+        print("turned the hotspot on")
+
+
+def main(argv):
+    directory, request_name = os.path.split(argv[1] if len(argv) > 1 else REQUEST)
+    jobs_fd = lock_fd = None
+    nm = Nmcli(trusted("NMCLI", NMCLI))
+    run = None
+    step = "check the request"
+    try:
+        owner_uid, device, profile = read_manifest(manifest_path())
+        jobs_fd = open_jobs_dir(directory or ".", owner_uid)
+        change = check(read_request(jobs_fd, request_name, owner_uid))
+        nm.hide(change.get("password"))
+        step = "take the lock"
+        try:
+            wait = float(trusted("TM_NETWORK_LOCK_WAIT", str(LOCK_WAIT)))
+        except ValueError:
+            wait = LOCK_WAIT
+        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK), wait)
+        run = Run(nm, device, profile)
+        run.apply(change)
+    except Refused as error:
+        saved = run is not None and run.saved
+        print(nm.scrub(f"refused: {error}" + ("; the settings are saved" if saved else "")))
+        return 1
+    except NmcliFailed as error:
+        saved = run is not None and run.saved
+        print(nm.scrub(f"failed: {run.step if run else step} ({error})" + ("; the settings are saved" if saved else "")))
+        return 1
+    except Exception as error:  # a message could quote the request, so print only the kind of error
+        saved = run is not None and run.saved
+        print(f"failed: {run.step if run else step} ({type(error).__name__})"
+              + ("; the settings are saved" if saved else ""))
+        return 1
+    finally:
+        if run is not None and run.secrets_fd is not None:
+            os.close(run.secrets_fd)
+        if lock_fd is not None:
+            os.close(lock_fd)
+        if jobs_fd is not None:
+            delete_request(jobs_fd, request_name)
+            os.close(jobs_fd)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

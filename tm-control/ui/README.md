@@ -63,8 +63,12 @@ from an existing lockfile without trouble, so the image still builds and tests t
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
   (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
-  (`clipboard.ts`, the diagnostics and the label lists), and saving a file (`download.ts`, the diagnostics and the
-  model packages and files).
+  (`clipboard.ts`, the diagnostics and the label lists; `CopyButton.vue`, an icon button that copies one value), and
+  saving a file (`download.ts`, the diagnostics and the model packages and files).
+- The `network` module is the Network page (`NetworkPage.vue`), the hotspot's settings for admins
+  (`HotspotSettings.vue`, its name-or-password dialog `HotspotField.vue`, and `rules.ts`, the name and password rules),
+  `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
+  internet that the Device page's card reuses.
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -865,3 +869,160 @@ on one place, the precision panel open, and No location stored chosen:
   as the deployments are.
 - One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
   before anything is created.
+
+### Network
+
+For everyone who is signed in. The page answers "how do I reach this unit, and what is it connected to", which a
+person at the roadside needs when the phone has to join the unit's hotspot or someone has to find it on a router's
+client list. It shows names, hardware (MAC) addresses, and IP addresses, which are exactly the things typed into
+another device, so every one has a Copy button. The Device page carries a short summary of the same facts.
+
+```text
++----------------------------------+
+| Network                     (h5) |
+| (!) The network state couldn't   |  only when NetworkManager did
+|     be read ...      [Try again] |  not answer; then only the names
+| This device                 (h6) |
+| Name                             |
+| tm-ab12                   [copy] |
+| Local name                       |
+| tm-ab12.local             [copy] |
+| Ethernet                         |
+| Connected                        |
+| MAC address                      |
+| 2C:CF:67:00:AB:11         [copy] |
+| IP address                       |
+| 192.168.1.57              [copy] |
+| Gateway                          |
+| 192.168.1.1               [copy] |
+| DNS server                       |
+| 192.168.1.1               [copy] |
+| Wi-Fi                            |
+| On its hotspot (TM-AB12)         |
+| MAC address ...                  |
+| Internet                         |
+| Not reachable                    |
+| Hotspot                     (h6) |
+| State                            |
+| On                               |
+| Name                             |
+| TM-AB12                   [copy] |
+| Name hidden                      |
+| No                               |
+| Address                          |
+| http://10.42.0.1/                |
+| http://tm-ab12.local/            |
++----------------------------------+
+```
+
+- Label above value, as on the other pages. A link's details (MAC, IP, gateway, DNS) sit under the link's own line
+  as the same label-above-value pairs, indented by a left border so they read as belonging to it. One column at every
+  width: a MAC address and an IPv6 address are too long for two columns at 375 px, and the value wraps (`text-break`)
+  rather than push the Copy button off the screen.
+- Copy sits right after the value, on the same line, so the tap target is next to what it copies. Its label says what it
+  copies and where it belongs ("Copy Ethernet MAC address", "Copy hotspot name"), because a screen reader hears the
+  button without the text beside it. A check replaces the icon for two seconds. When the browser refuses, "Select the text to copy
+  it." appears beside the button, as the Device page's diagnostics do when they show the text in a box.
+- The lines are plain words from `summary.ts`: "HomeNet, signal 72%", "On its hotspot (TM-AB12)", "Joining a
+  network", "Not connected", "Switched off". The internet line is "Reachable", "Not reachable", "Needs a sign-in
+  page", or "Not checked yet". The words live in one place, so the Device page's summary and this page can't differ.
+- A unit without Ethernet shows no Ethernet row. A unit without a built-in radio says "No built-in Wi-Fi radio".
+  When NetworkManager didn't answer, both would be wrong (they only mean "none found"), so the page shows the names
+  and the warning, and nothing else.
+- A viewer sees the hotspot read-only (state, name, whether the name is hidden, the addresses) with "An administrator
+  can change the hotspot here.", and never a password or a control. An admin sees the settings below instead.
+- The Device page appends one line per connected link ("Ethernet", "Wi-Fi") to its card and a "Network details" link
+  to this page. If the network state can't be read, the card is the same as before: the summary is an addition, never
+  something the page waits for or fails on.
+
+#### The hotspot's settings (admins)
+
+```text
+| Hotspot                     (h6) |
+| (o-) Hotspot on                  |  switch; off asks first
+| Name                             |
+| TM-AB12 [copy]          [Change] |
+| Password                         |
+| ••••••••          [Show] [Change]|  Show asks the device, Hide forgets
+| (-o) Hide the name               |  switch; asks first
+| Address                          |
+| http://10.42.0.1/                |
+| http://tm-ab12.local/            |
+| (i) Saved. The hotspot restarted.|  the job's result, kept after it
+| A hotspot on a pole is visible ...|
++----------------------------------+
+```
+
+- Every change is `POST /network/hotspot`, which starts a root job that restarts the hotspot, and the page follows
+  the job. One change at a time: every control is disabled while a job runs, and an alert says what is happening.
+- The password is fetched from the device (`GET /network/hotspot/password`) each time Show is tapped, and dropped on
+  Hide or when anything changes. The row shows dots otherwise. A hotspot without a password says "None. Anyone nearby
+  can join." and offers "Set a password" in place of Show and Change.
+- The new name and password are typed into a dialog (`HotspotField.vue`). The field shows what is typed, and there is
+  no second field to type it again: a hidden field typed twice protects against a typo the person can't see, but on
+  a phone at the roadside the person is about to write the password down and give it to every phone, so seeing it
+  once is the better check. The dialog itself is the confirmation: it says to write the password down and that every
+  phone must rejoin, and its button names the action ("Change name", "Change password", "Set password"). The button
+  stays disabled until the rules pass, and the rule's message appears under the field.
+- The rules are the API's, repeated in `rules.ts` so a bad value is refused before the device is asked, with the
+  API's words: a name is 1 to 32 bytes of UTF-8 (counted with `TextEncoder`, so accents and emoji count more than
+  one) with no control character and no space at either end, and a password is 8 to 63 printable ASCII characters
+  with no space at either end. The API checks again and its 422 message would show in the page's alert.
+- The warnings come before the change, in the dialog the change goes through. A name or password change warns only
+  while the hotspot is up ("The hotspot restarts, and phones on it are disconnected. Each phone must rejoin by
+  hand."). Turning off, hiding, and showing the name again ask in a confirm dialog; turning on does not ask. Turning
+  off says the unit has no wireless way in without its Wi-Fi network and needs an Ethernet cable. Hiding says the
+  hotspot can still be found by scanning and that Android needs the network added by hand with Hidden network ticked.
+  When the page was opened over the hotspot (`session.status.hotspot`), every warning that applies ends "You're on
+  the hotspot now, so this page stops answering when you save." A long warning is split into paragraphs
+  (`ConfirmDialog` and `HotspotField` start a paragraph at each line break).
+- Losing the unit is expected. The restart often disconnects the phone the admin is using, so once the device has
+  accepted the change, a request that fails to reach it while the job runs is not an error: the page says "This page
+  lost the unit, which is expected when your phone is on the hotspot. Join <name> again, then reload this page." (with
+  the new name), or after turning off, "The hotspot is off. Reach the unit on its Wi-Fi network or by Ethernet." Any
+  other failure (the device refusing the change, a failed job) is an error with the device's words.
+- A failed job shows its log lines, as the Device page's secrets do. A line ending "the settings are saved" adds "The
+  settings were saved, but the hotspot didn't restart." above it, because the change is then in place and only the
+  restart failed; the page loads the state again either way.
+- Under the settings, one paragraph says why: a hotspot on a pole is visible to anyone passing and public Wi-Fi maps
+  record where names are seen; hiding the name reduces that and only turning the hotspot off prevents it.
+
+#### What the screenshot review changed
+
+The page was checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer, and at 375 px with a joined
+network (a long name, an IPv6 address, two DNS servers, "Needs a sign-in page"), with the network unreadable, and
+after a tap on Copy that worked and one the browser refused.
+
+- On the Device card the "Network details" link was in the small default type, a hard target on a phone. It is
+  body-sized now.
+- Looked at and kept: the page is the same for admins and viewers, so the two sets of screenshots match.
+- Looked at and kept: when the browser refuses a copy, the line "Select the text to copy it." wraps under the value at
+  375 px and the button drops to its own line beside it. It is short-lived and says what to do, and a wider layout for
+  one rare state would cost every other row.
+- Looked at and kept: an IPv6 address and a long network name fit at 375 px without pushing Copy off the screen.
+- Looked at and kept: the Wi-Fi value on the Device card breaks after a "·" at 375 px, so the MAC address sits on its
+  own line. It is one address per line, not a cut in the middle of one.
+
+The hotspot's settings were checked at 375 px: the page, Show, each dialog (name, a name over 32 bytes, password,
+hide, turn off), the same dialogs with the page opened over the hotspot, the lost-unit message, and after turning off.
+
+- The hide dialog was one block of six lines. `ConfirmDialog` now starts a paragraph at each line break, so the
+  restart warning, the hiding sentences, and the "you're on the hotspot" sentence read apart.
+- Change, Show, and Hide were the small default text buttons, a hard target on a phone; they are large (44 px) now.
+- Looked at and kept: the lost-unit message is an info alert, not an error, and the name above it is still the old one
+  because the page can't ask the device any more.
+- Looked at and kept: a rule's message wraps and hyphenates under the field at 375 px; it stays readable.
+
+#### Defaults rejected
+
+- A table of links and addresses: its columns don't fit 375 px, and there are at most two links.
+- A chip or colored dot for connected or not: the words say it, and "Not connected" isn't an error on a unit that has
+  a cable or a hotspot but not both.
+- Showing the hotspot's address as links: inside a phone's sign-in window a link opens in that window, so the address
+  is plain text (as `HotspotNote` does).
+- A second "type it again" field for the password: see above; the dialog shows the value and asks the person to write
+  it down instead.
+- Dots with a reveal toggle inside the dialog's field, as the entered secrets use: those are values the device keeps and
+  never shows back, but this password is one the person must read and hand to every phone.
+- A refresh timer: an address changes when the unit changes network, and the person has just done that; the page loads
+  when opened, and "Try again" reloads it.

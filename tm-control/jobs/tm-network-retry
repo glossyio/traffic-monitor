@@ -4,8 +4,11 @@
 A systemd timer runs this as root (`python -EP`) every five minutes. It prints one line, the outcome, and exits 0. It
 exits 1, with one sentence on stderr, when the hotspot profile is missing or nmcli can't be run. It reads
 TM_WIFI_DEVICE (default wlan0), TM_HOTSPOT_PROFILE (default tm-hotspot), and TM_NETWORK_STATE (default
-/run/traffic-monitor/network-retry.json). No password is read or printed: nothing here asks nmcli for secrets.
+/run/traffic-monitor/network-retry.json) and TM_NETWORK_LOCK (default /run/traffic-monitor/network.lock). No password
+is read or printed: nothing here asks nmcli for secrets.
 One run, in order; the first step that applies ends it, with that outcome:
+0. tm-job-network holds the lock while it changes the hotspot (flock, never waited for): `locked`. Nothing else is run
+   and the state file is left as it was. A run that gets the lock holds it until it ends.
 1. The device has no wireless directory under /sys/class/net: `no-radio`. It is a USB adapter: `usb-radio`.
 2. The radio is switched off: `radio-off`.
 3. The device is on a profile other than the hotspot, connected: `on-network` (and that profile's failures are
@@ -29,11 +32,12 @@ The state file holds each failing network's name, failures, and time of the last
 under a temporary name and renamed, mode 0644; one that can't be read or makes no sense is treated as empty.
 
 Standard library only, and no tm_control imports: this runs from the root-owned copy in
-/usr/local/libexec/traffic-monitor/. Tests set NMCLI, IW, TM_SYS_NET, TM_NOW (the time), and TM_HOTSPOT_WAIT, which
-are ignored when running as root.
+/usr/local/libexec/traffic-monitor/. Tests set NMCLI, IW, TM_SYS_NET, TM_NOW (the time), TM_NETWORK_LOCK, and
+TM_HOTSPOT_WAIT, which are ignored when running as root.
 """
 
 import datetime
+import fcntl
 import json
 import os
 import re
@@ -45,6 +49,7 @@ NMCLI = "/usr/bin/nmcli"
 IW = "/usr/sbin/iw"
 SYS_NET = "/sys/class/net"
 STATE_FILE = "/run/traffic-monitor/network-retry.json"
+LOCK = "/run/traffic-monitor/network.lock"  # the lock tm-job-network holds while it changes the hotspot
 BACKOFF = (300, 900, 3600)  # seconds to wait after the first, the second, and every later failure of a network
 JOIN_WAIT = 45  # nmcli --wait for a join; a wrong password takes about 25 s to fail
 HOTSPOT_WAIT = 30  # nmcli --wait for the hotspot
@@ -329,8 +334,32 @@ def run(now):
     return outcome, why[0] if why else ""
 
 
-def main():
+def take_lock(path):
+    """A descriptor holding flock(LOCK_EX) on path, or None when another process holds it (never waited for).
+
+    The lock's directory is made when missing (0755). Closing the descriptor, or the end of the process, frees it."""
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, mode=0o755, exist_ok=True)
+    fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o644)
     try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        return None
+    except BaseException:
+        os.close(fd)
+        raise
+    return fd
+
+
+def main():
+    lock_fd = None
+    try:
+        lock_fd = take_lock(trusted("TM_NETWORK_LOCK", LOCK))
+        if lock_fd is None:
+            print("locked")
+            return 0
         stated = trusted("TM_NOW", "")
         outcome, why = run(float(stated) if stated else time.time())
         print(f"{outcome} ({why})" if why else outcome)
@@ -340,6 +369,9 @@ def main():
     except Exception as error:  # print only the kind of error, as the other root scripts do
         print(f"failed: {type(error).__name__}", file=sys.stderr)
         return 1
+    finally:
+        if lock_fd is not None:
+            os.close(lock_fd)
     return 0
 
 

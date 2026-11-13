@@ -72,5 +72,5 @@ The control app and the installer keep a few files elsewhere. Read them, but don
 |---|---|
 | `/var/lib/tm-control/state.sqlite` | The control app's accounts, the license acceptance, and a log of account changes. Only the control app writes it. |
 | `/etc/traffic-monitor/manifest.json` | What the installer installed and found, which the control app reads |
-| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, including the hotspot's password, and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
+| `/etc/traffic-monitor/secrets/` | Passwords and keys the installer generated on the device, including the hotspot's password, which administrators can show on the [Network page](wifi-hotspot.md#show-the-password), and the tokens and keys you enter on the [Device page](device-health.md#tokens-and-keys) and the [Detection page](detection.md#frigate-plus) |
 | `/etc/traffic-monitor/setup-code` | The setup code, until the device is claimed |
