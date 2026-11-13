@@ -2,16 +2,16 @@
 
 import json
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
 import yaml
+from required_tools import needs
 from tmsetup_render import load_role_yaml, render
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
-needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
+needs_node = needs("node")
 
 
 def test_http_errors_set_msg_status_code():

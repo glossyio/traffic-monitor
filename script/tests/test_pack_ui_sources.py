@@ -10,11 +10,16 @@ import subprocess
 import tarfile
 
 import pytest
+from required_tools import missing_tool
 from tmsetup_render import ROLE
 
 SCRIPT = ROLE / "files" / "pack-ui-sources.sh"
 
-pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="needs git")
+
+@pytest.fixture(autouse=True)
+def needs_git():
+    if shutil.which("git") is None:
+        missing_tool("needs git")
 
 
 def write(path, text="x\n"):
