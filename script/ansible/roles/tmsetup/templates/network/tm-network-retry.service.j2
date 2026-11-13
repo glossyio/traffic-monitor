@@ -1,0 +1,15 @@
+# /etc/systemd/system/tm-network-retry.service
+# Keeps the Wi-Fi radio on a known network or on the hotspot. The timer runs it; see tm-network-retry for the rules.
+# RuntimeDirectoryPreserve keeps its memory of failed networks (/run/traffic-monitor/network-retry.json) between runs.
+
+[Unit]
+Description=Traffic Monitor Wi-Fi retry
+After=NetworkManager.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+Environment=TM_WIFI_DEVICE={{ tmsetup_wifi_device }} TM_HOTSPOT_PROFILE={{ tmsetup_hotspot_profile }}
+RuntimeDirectory=traffic-monitor
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/bin/python3 -EP {{ tmsetup_libexec_dir }}/tm-network-retry

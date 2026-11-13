@@ -1,0 +1,13 @@
+# /etc/systemd/system/tm-network-retry.timer
+# Runs tm-network-retry.service 90 seconds after boot and then five minutes after each run ends.
+
+[Unit]
+Description=Traffic Monitor Wi-Fi retry timer
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=5min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

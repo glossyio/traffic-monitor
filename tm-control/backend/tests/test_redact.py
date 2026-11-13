@@ -73,3 +73,12 @@ def test_a_value_and_a_key_match_are_redacted_as_one_span(text, values, expected
 
 def test_redact_does_not_reach_the_next_line():
     assert redact("password:\nnext line stays", []) == "password:\nnext line stays"
+
+
+def test_a_download_links_token_in_nginxs_log_is_hidden():
+    line = (
+        '10.42.0.23 - - [10/Nov/2026:08:11:15 +0000] '
+        '"GET /storefiles?files=/db/tmdb.sqlite&tm_token=PLACEHOLDER HTTP/1.1" 200 394000'
+    )
+    out = redact(line, [])
+    assert "PLACEHOLDER" not in out and "files=/db/tmdb.sqlite&tm_token=" in out and ' HTTP/1.1" 200' in out

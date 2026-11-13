@@ -102,6 +102,10 @@
              or tmsetup_tm_control_plate_recognizer_stat_register.stat.exists }}
       frigate:
         coral_model: '{{ tmsetup_frigate_coral_model }}'
+      network:
+        wifi_device: '{{ tmsetup_wifi_device }}'
+        hotspot_profile: '{{ tmsetup_hotspot_profile }}'
+        hotspot_address: '{{ tmsetup_hotspot_address }}'
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results

@@ -96,6 +96,15 @@ def test_an_older_manifest_without_frigate_loads_with_no_coral_model(tmp_path):
     assert load_manifest(path).frigate.coral_model is None
 
 
+def test_an_older_manifest_without_network_loads_the_defaults(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["network"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    network = load_manifest(path).network
+    assert (network.wifi_device, network.hotspot_profile, network.hotspot_address) == ("wlan0", "tm-hotspot", "10.42.0.1")
+
+
 def test_the_fixture_manifest_names_the_coral_model():
     manifest = load_manifest(FIXTURES / "manifest.json")
     assert list(manifest.frigate.coral_model) == ["model_type", "width", "height", "path", "labelmap_path"]

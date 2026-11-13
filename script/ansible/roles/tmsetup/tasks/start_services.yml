@@ -8,6 +8,19 @@
     name: NetworkManager.service
     state: started
 
+# Not held back by a pending reboot: the table must be in place before the hotspot can start, and the timer is what
+# brings the hotspot back after a saved network goes away
+- name: TMSetup - Start Services - Start and enable the hotspot firewall and the Wi-Fi retry timer
+  become: true
+  loop:
+    - tm-hotspot-firewall.service
+    - tm-network-retry.timer
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: "{{ item }}"
+    state: started
+
 - name: TMSetup - Start Services - Start and enable sysstat.service
   become: true
   ansible.builtin.systemd_service:

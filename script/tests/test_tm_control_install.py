@@ -105,6 +105,19 @@ def test_manifest_records_only_the_static_detector_probes():
         assert set(probe) == {"dev_path", "check_exists", "frigate_type", "frigate_device"}, name
 
 
+def test_the_manifest_carries_the_hotspot_values():
+    role_vars = load_role_yaml("vars/main.yml")
+    network = collected_manifest()["network"]
+    assert network == {
+        "wifi_device": role_vars["tmsetup_wifi_device"],
+        "hotspot_profile": role_vars["tmsetup_hotspot_profile"],
+        "hotspot_address": role_vars["tmsetup_hotspot_address"],
+    }
+    assert json.loads(rendered_manifest())["network"] == network
+    parsed = Manifest.model_validate(json.loads(rendered_manifest())).network
+    assert (parsed.wifi_device, parsed.hotspot_profile, parsed.hotspot_address) == ("wlan0", "tm-hotspot", "10.42.0.1")
+
+
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
 

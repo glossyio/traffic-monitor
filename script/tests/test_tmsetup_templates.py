@@ -110,6 +110,12 @@ def snippet(name):
     return render(f"container/revproxy/tm/snippets/{name}.j2")
 
 
+def nginx_main_conf(hostname="tm-ab12"):
+    """nginx.conf as the role renders it: with the role's variables and the host's hostname fact."""
+    variables = {**load_role_yaml("defaults/main.yml"), **load_role_yaml("vars/main.yml")}
+    return render("container/revproxy/nginx.conf.j2", ansible_facts={"hostname": hostname}, **variables)
+
+
 def location_block(conf, header):
     """One location block's text, from its header to the first closing brace at the start of a line."""
     start = conf.index(header)
@@ -195,7 +201,7 @@ def test_no_app_location_adds_its_own_headers(name):
 
 
 def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
-    nginx_conf = render("container/revproxy/nginx.conf.j2")
+    nginx_conf = nginx_main_conf()
     assert TM_CONTROL_LOCATIONS <= set(LOCATIONS)
     assert "location / " not in nginx_conf
     assert "include /etc/nginx/tm/locations/*.conf;" in nginx_conf
@@ -204,7 +210,7 @@ def test_tm_control_locations_are_listed_and_the_home_page_is_gone():
 
 def test_redirects_keep_the_port_the_browser_used():
     """Relative Location headers, so the login redirect works behind a port-forward or an SSH tunnel."""
-    (server,) = [body for header, body in top_level_blocks(render("container/revproxy/nginx.conf.j2")) if header == "http"]
+    (server,) = [body for header, body in top_level_blocks(nginx_main_conf()) if header == "http"]
     assert "absolute_redirect off;" in dict(top_level_blocks(server))["server"]
 
 
@@ -254,6 +260,14 @@ def test_auth_locations_are_internal_and_name_the_role(path, role):
     # Cockpit's login sends the Pi account's password as Basic auth; the check gets the cookie, not that
     assert 'proxy_set_header Authorization "";' in block
     assert "proxy_set_header Cookie" not in block and "proxy_pass_request_headers" not in block
+
+
+@pytest.mark.parametrize("name", ["/_auth", "/_auth_admin"])
+def test_verify_is_told_the_browsers_address_and_nothing_the_client_sent(name):
+    """A download link is checked against the browser's address, so the check must get nginx's own $remote_addr."""
+    block = location_block(location("tm-control-auth.conf"), f"location = {name} {{")
+    assert "proxy_set_header X-Forwarded-For $remote_addr;" in block
+    assert "$proxy_add_x_forwarded_for" not in block and "$http_x_forwarded_for" not in block
 
 
 def test_failed_logins_redirect_and_the_rescue_page_is_internal():
@@ -793,8 +807,14 @@ def test_tm_control_runs_as_the_code_owner_in_a_sandbox():
     unit = tm_control_unit()
     for line in ["User=tmadmin", "Group=tmadmin", "NoNewPrivileges=yes", "ProtectSystem=strict", "ProtectHome=yes",
                  "PrivateTmp=yes", "StateDirectory=tm-control", "StateDirectoryMode=0700", "RuntimeDirectory=tm-control",
-                 "RuntimeDirectoryMode=0700", "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6"]:
+                 "RuntimeDirectoryMode=0700", "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK"]:
         assert line in unit
+
+
+def test_tm_control_service_explains_why_it_may_open_netlink_sockets():
+    """iw reads the Wi-Fi country through generic netlink; without AF_NETLINK it fails and the check is unknown."""
+    header = [line for line in tm_control_unit() if line.startswith("#")]
+    assert any("AF_NETLINK: iw reads the Wi-Fi country for the Network checks" in line for line in header)
 
 
 def test_tm_control_service_has_the_video_group():
@@ -912,6 +932,7 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
     assert polkit["units"] == [
         "traffic-monitor.service", "frigate.service", "node-red-tm.service", "plate-recognizer.service",
         "revproxy.service", "go2rtc_server.service", "tm-job-system-password.service", "tm-job-set-secret.service",
+        "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS
@@ -982,3 +1003,141 @@ def test_revproxy_image_puts_the_ui_where_its_location_serves_it():
 def test_revproxy_build_context_leaves_out_the_mounted_config_and_node_modules():
     ignored = (REPO / "container/revproxy/.containerignore").read_text().split()
     assert {"html", "tm", "nginx.conf", "ui/node_modules", "ui/dist"} <= set(ignored)
+
+
+NETWORK = "script/ansible/roles/tmsetup/templates/network/"
+ETC_DIR = "/etc/traffic-monitor"
+
+
+def hotspot_vars():
+    role = load_role_yaml("vars/main.yml")
+    return {name: role[name] for name in ("tmsetup_wifi_device", "tmsetup_hotspot_subnet", "tmsetup_hotspot_address")}
+
+
+def firewall_file():
+    return render(NETWORK + "tm-hotspot-firewall.nft.j2", **hotspot_vars())
+
+
+def test_the_firewall_drops_only_the_hotspot_subnet():
+    lines = [line.strip() for line in firewall_file().splitlines()]
+    rules = [line for line in lines if line.endswith(" drop")]
+    assert rules == [
+        'iifname "wlan0" ip saddr 10.42.0.0/24 drop',
+        'oifname "wlan0" ip daddr 10.42.0.0/24 drop',
+    ]
+    assert not [line for line in lines if line.startswith(("iifname", "oifname")) and " ip s" not in line and " ip d" not in line]
+    assert "policy accept" in firewall_file()
+
+
+def test_the_firewall_file_can_be_loaded_twice():
+    lines = [line.strip() for line in firewall_file().splitlines()]
+    assert lines.index("table inet tm_hotspot") < lines.index("delete table inet tm_hotspot")
+
+
+def test_the_firewall_unit_loads_before_networkmanager():
+    text = render(NETWORK + "tm-hotspot-firewall.service.j2", tmsetup_etc_dir=ETC_DIR)
+    lines = text.splitlines()
+    before = next(line for line in lines if line.startswith("Before="))
+    assert "NetworkManager.service" in before.split("=", 1)[1].split()
+    assert "RemainAfterExit=yes" in lines
+    assert f"ExecStart=/usr/sbin/nft -f {ETC_DIR}/hotspot-firewall.nft" in lines
+    assert f"ExecReload=/usr/sbin/nft -f {ETC_DIR}/hotspot-firewall.nft" in lines
+
+
+def test_every_name_on_the_hotspot_resolves_to_the_unit():
+    text = render(NETWORK + "tm-hotspot-dns.conf.j2", **hotspot_vars())
+    assert "address=/#/10.42.0.1" in text.splitlines()
+
+
+def retry_unit(name, **extra):
+    variables = {**hotspot_vars(), "tmsetup_hotspot_profile": "tm-hotspot", "tmsetup_libexec_dir": "/usr/local/libexec/x"}
+    return render(NETWORK + name, **variables, **extra).splitlines()
+
+
+def test_the_retry_runs_after_boot_and_every_five_minutes():
+    lines = retry_unit("tm-network-retry.timer.j2")
+    assert "OnBootSec=90s" in lines
+    assert "OnUnitActiveSec=5min" in lines
+    assert "AccuracySec=10s" in lines
+    assert "WantedBy=timers.target" in lines
+
+
+def test_the_retry_keeps_its_state_between_runs():
+    lines = retry_unit("tm-network-retry.service.j2")
+    assert "RuntimeDirectory=traffic-monitor" in lines
+    assert "RuntimeDirectoryPreserve=yes" in lines
+    assert "Type=oneshot" in lines
+    assert "StartLimitIntervalSec=0" in lines
+
+
+def test_the_retry_runs_the_root_owned_copy_with_the_system_python():
+    lines = retry_unit("tm-network-retry.service.j2")
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/x/tm-network-retry" in lines
+    assert "Environment=TM_WIFI_DEVICE=wlan0 TM_HOTSPOT_PROFILE=tm-hotspot" in lines
+    assert "After=NetworkManager.service" in lines
+
+
+def sign_in(server_addr, host, hostname="tm-ab12"):
+    """Whether the sign-in map flags a request that arrived on server_addr with this Host: the first map's pattern
+    from the rendered file, applied with Python's re to the value nginx builds ("$server_addr $host")."""
+    conf = nginx_main_conf(hostname)
+    match = re.search(r'map "\$server_addr \$host" \$tm_sign_in \{(.*?)\n    \}', conf, re.DOTALL)
+    assert match
+    (pattern,) = re.findall(r'^\s*"~(.*)" 1;$', match.group(1), re.MULTILINE)
+    return re.search(pattern, f"{server_addr} {host}") is not None
+
+
+@pytest.mark.parametrize("host", ["connectivitycheck.gstatic.com", "captive.apple.com", "example.com", "_",
+                                  "10.42.0.10", "tm-ab12.local.example.com", "xtm-ab12", "10.42.0.1.example.com"])
+def test_a_foreign_host_is_redirected_only_on_the_hotspot_address(host):
+    assert sign_in("10.42.0.1", host)
+    assert not sign_in("192.168.1.57", host)
+    assert not sign_in("127.0.0.1", host)
+
+
+@pytest.mark.parametrize("host", ["10.42.0.1", "tm-ab12", "tm-ab12.local"])
+def test_the_units_own_names_are_served_on_the_hotspot(host):
+    assert not sign_in("10.42.0.1", host)
+
+
+def test_the_hotspot_address_in_the_pattern_is_escaped():
+    """The dots are literal: another server address that differs only where a dot is must not match."""
+    assert not sign_in("10X42X0X1", "example.com")
+
+
+def test_the_redirect_goes_to_the_hotspot_address_before_any_location():
+    (http,) = [body for header, body in top_level_blocks(nginx_main_conf()) if header == "http"]
+    server = dict(top_level_blocks(http))["server"]
+    lines = [line.strip() for line in server.splitlines() if line.strip() and not line.strip().startswith("#")]
+    redirect = "if ($tm_sign_in) { return 302 http://10.42.0.1/; }"
+    # First in the server block, ahead of the locations; absolute, so the phone leaves the foreign name
+    assert lines[0] == redirect
+    assert lines.count(redirect) == 1
+    assert lines.index(redirect) < lines.index("include /etc/nginx/tm/locations/*.conf;")
+
+
+def test_a_hostname_with_regex_characters_is_escaped():
+    assert not sign_in("10.42.0.1", "tm.ab12", hostname="tm.ab12")
+    assert sign_in("10.42.0.1", "tmxab12", hostname="tm.ab12")
+
+
+def test_the_hotspot_map_names_the_hotspot_address_only():
+    conf = nginx_main_conf()
+    match = re.search(r"map \$server_addr \$tm_on_hotspot \{(.*?)\}", conf, re.DOTALL)
+    assert match
+    entries = [line.strip() for line in match.group(1).splitlines() if line.strip()]
+    assert entries == ['default "";', "10.42.0.1 1;"]
+
+
+def test_the_api_learns_from_nginx_whether_the_request_came_over_the_hotspot():
+    """location /api/ sets X-TM-Hotspot from $tm_on_hotspot (an empty value sends no header, and a client's own is
+    replaced either way); no other location sets it. The shared snippet is included in the same location, so the
+    location's other proxy_set_header lines are not dropped."""
+    wanted = "proxy_set_header X-TM-Hotspot $tm_on_hotspot;"
+    api = location("tm-control-api.conf")
+    assert wanted in location_block(api, "location /api/ {")
+    assert "include /etc/nginx/tm/snippets/proxy-common.conf;" in location_block(api, "location /api/ {")
+    assert api.count("proxy_set_header X-TM-Hotspot") == 1
+    for name in LOCATIONS:
+        if name != "tm-control-api.conf":
+            assert "X-TM-Hotspot" not in location(name), name

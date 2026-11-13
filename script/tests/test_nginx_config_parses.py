@@ -21,7 +21,7 @@ def render_config(root):
     for name in files:
         path = root / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render(f"container/revproxy/{name}.j2", **ROLE_VARS))
+        path.write_text(render(f"container/revproxy/{name}.j2", ansible_facts={"hostname": "tm-ab12"}, **ROLE_VARS))
 
 
 def have_image(image):

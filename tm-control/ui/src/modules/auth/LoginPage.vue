@@ -3,6 +3,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
+import HotspotNote from '../../components/HotspotNote.vue'
 import { goNext } from '../../next'
 import { useSession } from '../../stores/session'
 
@@ -38,6 +39,7 @@ async function logIn() {
 <template>
   <section>
     <h1 class="text-h5 text-primary mb-6">Log in</h1>
+    <HotspotNote />
     <v-form @submit.prevent="logIn">
       <v-text-field
         v-model="username"

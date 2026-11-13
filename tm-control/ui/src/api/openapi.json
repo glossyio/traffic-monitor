@@ -21,13 +21,55 @@
         }
       }
     },
+    "/api/v1/auth/download-link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Download Link",
+        "description": "A link to /storefiles?files=<files> that passes the login check once without the cookie.\n\nFor browsers that hand a download to a helper without the cookie (Android's sign-in window). It works once, for\n600 seconds, from this browser's address, for these files only.",
+        "operationId": "download_link_api_v1_auth_download_link_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DownloadLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLink"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/verify": {
       "get": {
         "tags": [
           "auth"
         ],
         "summary": "Verify",
-        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.",
+        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.\nWithout a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,\nno other secret and no cookie. A login redirect's next= leaves the link's token out.",
         "operationId": "verify_api_v1_auth_verify_get",
         "responses": {
           "200": {
@@ -135,7 +177,7 @@
           "setup"
         ],
         "summary": "Status",
-        "description": "Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in.",
+        "description": "Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when\nthe page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.",
         "operationId": "status_api_v1_setup_status_get",
         "responses": {
           "200": {
@@ -2056,6 +2098,34 @@
           "free"
         ],
         "title": "Disk"
+      },
+      "DownloadLink": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "DownloadLink"
+      },
+      "DownloadLinkRequest": {
+        "properties": {
+          "files": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "DownloadLinkRequest"
       },
       "EulaAcceptance": {
         "properties": {

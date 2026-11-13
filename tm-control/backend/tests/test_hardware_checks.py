@@ -138,10 +138,11 @@ def hardware_group(hw, **kwargs):
     return {check.id: check for check in group.checks}
 
 
-def test_hardware_module_comes_after_apps_and_before_system():
+def test_hardware_module_comes_after_apps_and_before_network():
     ids = [m.id for m in MODULES]
     assert ids[ids.index("apps") + 1] == "hardware"
-    assert ids[ids.index("hardware") + 1] == "system"
+    assert ids[ids.index("hardware") + 1] == "network"
+    assert ids[ids.index("network") + 1] == "system"
     (module,) = [m for m in MODULES if m.id == "hardware"]
     assert [g.id for g in module.check_groups] == ["hardware"]
     assert module.router.routes == []

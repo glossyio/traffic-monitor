@@ -51,8 +51,8 @@ export const THEME = {
   colors: { background: '#0C1120', header_text: '#3a82ff', body_text: '#f8fafc', link_hover_text: '#8895a7' },
 }
 
-export function status(claimed: boolean, accepted = claimed) {
-  return { claimed, eula: { version: '1', accepted }, theme: THEME }
+export function status(claimed: boolean, accepted = claimed, hotspot: { local_name: string } | null = null) {
+  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot }
 }
 
 export const ADMIN = { id: 1, username: 'owner', role: 'admin', created_at: '2026-10-27T12:00:00+00:00' }

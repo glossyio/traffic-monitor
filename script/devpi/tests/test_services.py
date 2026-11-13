@@ -127,6 +127,26 @@ def test_polkit_allows_only_the_listed_actions(host, codeowner):
         f"as {codeowner}, timedatectl set-ntp {ntp} exited {result.rc}: {result.stderr.strip()[:200]}")
 
 
+def test_polkit_lets_tm_control_start_the_wifi_retry(host, codeowner):
+    """The rules file lets the code owner start tm-network-retry.service, which the Network checks' fix starts. Not
+    tried here: a start would run the retry, which can move the radio. The unit is in the role's list, and the
+    installed rules name it."""
+    unit = "tm-network-retry.service"
+    assert unit in role_vars()["tmsetup_tm_control_polkit"]["units"]
+    if codeowner == "root":
+        pytest.skip("the code owner is root, which polkit doesn't limit")
+    with host.sudo():
+        rules = host.file("/etc/polkit-1/rules.d/50-traffic-monitor.rules").content_string
+    assert f'"{unit}"' in rules, f"/etc/polkit-1/rules.d/50-traffic-monitor.rules doesn't name {unit}"
+
+
+def test_tm_control_can_read_the_wifi_country(host):
+    """tm-control.service may open a netlink socket (AF_NETLINK), which iw needs to read the Wi-Fi country for the
+    Network checks."""
+    families = host.check_output("systemctl show -p RestrictAddressFamilies --value tm-control.service").split()
+    assert "AF_NETLINK" in families, f"tm-control.service's RestrictAddressFamilies are {families}"
+
+
 def test_tm_control_has_the_video_group(request, host, address):
     """tm-control runs with the video group, which vcgencmd needs to read the firmware's power and throttling flags,
     so the Device page shows them."""

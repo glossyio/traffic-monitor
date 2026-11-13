@@ -12,10 +12,12 @@ from tm_control.core.auth import (
     Audit,
     Backoff,
     Device,
+    DownloadGrants,
     NodeRedToken,
     SessionClaims,
     Sessions,
     SetupCode,
+    User,
     Users,
     check_password_rules,
     check_username_rules,
@@ -345,3 +347,55 @@ def test_load_eula_without_the_version_line_raises(tmp_path):
     path.write_text("# Terms\n\n<!-- eula-version: 1 -->\n", encoding="utf-8")
     with pytest.raises(ValueError):
         load_eula(path)
+
+
+# Download links
+
+
+ADMIN_USER = User(id=1, username="admin", role="admin", session_epoch=7, created_at="2026-11-10T00:00:00+00:00")
+PHONE, FILES = "10.42.0.23", "/db/tmdb.sqlite"
+
+
+def test_a_download_link_works_once_from_its_address_for_its_files():
+    grants = DownloadGrants()
+    token = grants.issue(ADMIN_USER, PHONE, FILES, now=100.0)
+    grant = grants.redeem(token, PHONE, FILES, now=699.9)
+    assert (grant.uid, grant.epoch) == (1, 7)
+    assert grants.redeem(token, PHONE, FILES, now=699.9) is None
+    assert len(grants) == 0
+
+
+@pytest.mark.parametrize(
+    "address, files, now",
+    [
+        ("10.42.0.24", FILES, 101.0),  # another address
+        (PHONE, "events.json", 101.0),  # other files
+        (PHONE, FILES, 700.0),  # 600 seconds on
+    ],
+)
+def test_a_link_presented_wrongly_is_refused_and_spent(address, files, now):
+    grants = DownloadGrants()
+    token = grants.issue(ADMIN_USER, PHONE, FILES, now=100.0)
+    assert grants.redeem(token, address, files, now) is None
+    assert grants.redeem(token, PHONE, FILES, 101.0) is None
+
+
+def test_an_unknown_token_is_refused():
+    assert DownloadGrants().redeem("no-such-token", PHONE, FILES, now=1.0) is None
+
+
+def test_links_are_bounded_and_expired_ones_are_forgotten():
+    grants = DownloadGrants()
+    first = grants.issue(ADMIN_USER, PHONE, FILES, now=0.0)
+    for n in range(DownloadGrants.LIMIT):
+        grants.issue(ADMIN_USER, PHONE, FILES, now=1.0 + n)
+    assert len(grants) == DownloadGrants.LIMIT
+    assert grants.redeem(first, PHONE, FILES, now=40.0) is None  # the oldest went
+    grants.issue(ADMIN_USER, PHONE, FILES, now=5000.0)
+    assert len(grants) == 1
+
+
+def test_tokens_differ_and_are_long():
+    grants = DownloadGrants()
+    tokens = {grants.issue(ADMIN_USER, PHONE, FILES, now=1.0) for _ in range(8)}
+    assert len(tokens) == 8 and all(len(token) == 43 for token in tokens)

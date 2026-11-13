@@ -1,0 +1,18 @@
+# /etc/systemd/system/tm-hotspot-firewall.service
+# Loads the table that keeps phones on the hotspot from reaching anything behind the unit. It is up before
+# NetworkManager can start the hotspot. A reload replaces the table in one step.
+
+[Unit]
+Description=Traffic Monitor hotspot firewall
+Before=NetworkManager.service network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f {{ tmsetup_etc_dir }}/hotspot-firewall.nft
+ExecReload=/usr/sbin/nft -f {{ tmsetup_etc_dir }}/hotspot-firewall.nft
+ExecStop=/usr/sbin/nft delete table inet tm_hotspot
+
+[Install]
+WantedBy=multi-user.target
