@@ -408,21 +408,14 @@ def test_thingsboard_switch_still_sees_http_for_https():
 
 
 def test_thingsboard_url_nodes_take_the_token_from_the_environment():
-    """The token is rendered from Node-RED's environment by template nodes; an http request node's URL sees only
-    msg, so the restore request gets its URL from a template too."""
+    """The token is rendered from Node-RED's environment by template nodes: an http request node's URL sees only msg."""
     flows = json.loads(FLOWS.read_text())
     by_id = {node["id"]: node for node in flows}
-    backup = named(flows, "backup read msg.url")
-    for node in (by_id["9c944328e288b2dc"], by_id["d739b10ce5fa8f40"], backup):
+    for node in (by_id["9c944328e288b2dc"], by_id["d739b10ce5fa8f40"]):
         assert node["type"] == "template"
         assert (node["field"], node["fieldType"], node["syntax"]) == ("url", "msg", "mustache")
         assert "{{{env.TM_THINGSBOARD_ACCESS_TOKEN}}}" in node["template"]
         assert "{{{global.config.thingsboard.url}}}" in node["template"]
-    assert backup["template"].endswith("/attributes?clientKeys=backup")
-    assert backup["z"] == tab_id(flows, "thingsboard")
-    assert by_id["0372cefb5e2ec968"]["wires"] == [[backup["id"]]]
-    assert backup["wires"] == [["56cafb11de5348b2"]]
-    assert by_id["56cafb11de5348b2"]["url"] == ""
 
 
 @needs_node
@@ -1813,12 +1806,11 @@ def test_a_new_config_load_warns_again(camera, warning):
 
 
 # What leaves the device and what the Frigate API is asked, by key. Plate Recognizer is sent the camera's name in
-# config.yml and the regions the admin set (issue #249), ThingsBoard's copy of the config has no Frigate names,
-# and the node that asks Frigate for its daily summary maps the key back to the name Frigate uses.
+# config.yml and the regions the admin set (issue #249), ThingsBoard gets no copy of the config, and the node that
+# asks Frigate for its daily summary maps the key back to the name Frigate uses.
 
 PR_FORMAT = "ce5360091646c733"  # plate-recognizer: format http request
 PR_ROW = "f76c2b5b2b99096a"  # plate-recognizer: write params for plate_recognizer insert
-TB_CONFIG = "9941048ea93dc79c"  # thingsboard: format init-config client-side attributes
 SUMMARY = "eb140f61419c6a08"  # ui-monitoring: structure frigate api/summary
 DEFAULT_REGIONS = ["us", "us-or", "us-wa"]
 
@@ -1857,22 +1849,51 @@ def test_the_plate_row_stores_the_cameras_key():
     assert step["result"]["params"]["$camera_id"] == "camera_1_3fa9c2"
 
 
+def thingsboard_nodes():
+    flows = json.loads(FLOWS.read_text())
+    tab = tab_id(flows, "thingsboard")
+    return flows, [node for node in flows if node.get("z") == tab]
+
+
+def test_the_settings_are_not_uploaded():
+    flows, nodes = thingsboard_nodes()
+    assert [node["id"] for node in nodes
+            if "config_tm" in node.get("func", "") or "config_tm" in node.get("template", "")] == []
+    by_id = {node["id"]: node for node in flows}
+    capture_radar = tab_id(flows, "capture-radar")
+    links = by_id["2fa46892748adc43"]["links"]
+    assert links and all(by_id[link]["z"] == capture_radar for link in links)
+
+
+def test_backup_and_restore_are_gone():
+    flows, nodes = thingsboard_nodes()
+    assert [node["id"] for node in nodes if node["type"] in ("ui_button", "ui_template", "ui_toast")] == []
+    assert [node["id"] for node in nodes
+            if any("backup" in str(node.get(key, "")).lower() for key in ("name", "func", "template"))] == []
+    assert [node["id"] for node in flows if node["type"] == "ui_group" and node.get("name") == "Backup & Restore"] == []
+    assert {node["id"] for node in nodes if node["type"] == "http request"} == {"677a57bbf3619854"}
+
+
+def test_no_reference_to_a_removed_node():
+    flows = json.loads(FLOWS.read_text())
+    ids = {node["id"] for node in flows}
+    missing = []
+    for node in flows:
+        references = [target for output in node.get("wires", []) for target in output]
+        references += node.get("links", []) + node.get("nodes", [])
+        references += [node[key] for key in ("g", "group", "z") if node.get(key)]
+        missing += [(node["id"], target) for target in references if target not in ids]
+    assert missing == []
+
+
 @needs_node
-def test_config_tm_has_no_frigate_camera_and_leaves_the_config_alone():
-    config = config_with_cameras({
-        "camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True},
-        "main_st": {"enabled": False},
-    })
-    # The node is given an object kept in the global context, so the context shows whether it was edited.
-    # global.config no longer holds frigate_camera; the node strips it anyway, as a second line.
-    node = {**node_by_id(TB_CONFIG), "func": 'msg.payload = global.get("given");\n' + node_by_id(TB_CONFIG)["func"]}
-    run = run_functions([(node, {})], context={"given": config})
-    [step] = run["results"]
-    sent = step["result"]["payload"]
-    assert "oak_ave_wide" not in json.dumps(sent) and "frigate_camera" not in json.dumps(sent)
-    assert sent["config_tm"]["sensors"]["cameras"]["camera_1_3fa9c2"]["enabled"] is True
-    assert sent["config_tm"]["sensors"]["cameras"]["main_st"] == {"enabled": False}
-    assert run["global"]["given"]["sensors"]["cameras"]["camera_1_3fa9c2"]["frigate_camera"] == "oak_ave_wide"
+def test_system_info_attributes_have_no_network_slots():
+    payload = {"tmVersion": "0.9.0", "osHostname": "host", "osRelease": "13", "osTimeZone": "UTC",
+               "deviceName": "unit", "frigateVersion": "0.16", "ssid": "net", "ipv4Address": "10.0.0.2"}
+    [step] = run_functions([(node_by_id("e507fdc9cbf67095"), {"payload": payload})])["results"]
+    assert sorted(step["result"]["payload"]) == sorted(
+        ["sysinfo_tmVersion", "sysinfo_osHostname", "sysinfo_osRelease", "sysinfo_osTimeZone",
+         "sysinfo_deviceName", "sysinfo_frigateVersion"])
 
 
 @needs_node
@@ -1923,15 +1944,15 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 
 
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
-    """Nodes that call Frigate's API (frigate:5000): config/raw, config/save, version, events/summary, and the
-    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
+    """Nodes that call Frigate's API (frigate:5000): version, events/summary, and the thumbnail and snapshot of an
+    event id. None puts a camera name in its URL. Frigate's summary lists every camera
     by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
     (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
     camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
     frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
-    assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
+    assert len(calls) == 4 and not [node["id"] for node in calls if "camera" in node["url"]]
     selects = [node["id"] for node in flows
                if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
     assert selects == [SUMMARY]
