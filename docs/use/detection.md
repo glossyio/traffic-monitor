@@ -27,7 +27,7 @@ Each model is a card with its name, its kind (Frigate+ or local), and when it wa
 
 The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be deleted either.
 
-Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, the Frigate+ API key, and a Frigate+ model's ID. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
+Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, the Frigate+ API key, and **Use a model by its ID**. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
 When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and **Use** on a model, or on the installer's model, gives Frigate a config it can run. In both cases the model in use still has its card, made from the config file. The objects Frigate tracks aren't known while it's down, so that list is empty, and the recognised list is there only when the model has a `.json` or the installer's labels file. A model that Frigate runs but the device has no entry for gets a card too, named for the model or **Unknown model**.
 
@@ -116,7 +116,7 @@ The panel titled **Use a model by its ID** is for a model you've trained and hav
 
 1. On the Frigate+ website, open your models and copy the model's ID: 32 characters, each 0-9 or a-f. An address that starts with `plus://` works too, and so does an ID with spaces around it. The page refuses anything else before it sends anything.
 2. Paste it into **Model ID** and choose **Download and use**, then confirm.
-3. Frigate downloads the model while it checks the configuration with the model in it. This can take a few minutes, and the device waits up to 10 minutes. The panel says that Frigate is downloading, and every other action on the page is off meanwhile. You can leave the page: the device keeps following the download, and when you open the page again it shows the download while it runs, or why it failed.
+3. Frigate downloads the model while it checks the configuration with the model in it. This can take a few minutes, and the device waits up to 10 minutes. The panel says that Frigate is downloading, and **Use**, **Upload a model**, **Download**, and **Delete** are off meanwhile. You can leave the page: the device keeps following the download, and when you open the page again it shows the download while it runs, or why it failed.
 4. When Frigate has saved the configuration, the device restarts Frigate, which takes about a minute. The page then says when Frigate runs the model, as it does after [Use](#use-a-model). Traffic isn't counted while Frigate restarts.
 
 If the device already has the model's two files, there's nothing to download: the box does what **Use** on the model's card does, and the confirmation is Use's too: it names the model and the button reads **Use**.
@@ -129,6 +129,7 @@ A download ends in one of these ways:
 | Frigate refused the model, with Frigate's reason. | Frigate checked the configuration and said no, for example because the key is wrong or Frigate+ doesn't know the ID. Frigate's config is unchanged. |
 | Frigate didn't finish downloading the model in 10 minutes. | The device stopped waiting. The download may have been slow, or Frigate may have refused the model too late for the device to hear. Check the device's internet connection, then try again. |
 | Frigate stopped before the download finished. | Frigate restarted or went down, for example after a key change or a restart from the Status page, so the download was lost. Try again once Frigate runs. |
+| Frigate answered with a number, or the download couldn't be followed. | Rare. Frigate answered the save with something unexpected, or the device couldn't keep following the download because of an error of its own. Try again, and if it repeats, [download the diagnostics](device-health.md#download-diagnostics) from the Device page. |
 
 The device refuses to start a download when no key is set, when Frigate isn't answering (unlike **Use**, it doesn't edit Frigate's config file itself), or while another model change is going on.
 

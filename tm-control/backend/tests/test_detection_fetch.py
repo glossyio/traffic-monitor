@@ -1,5 +1,7 @@
 """The record of a Frigate+ model's download and the background wait that follows Frigate's save."""
 
+import logging
+
 import pytest
 from placeholders import PLACEHOLDER_KEY
 
@@ -19,6 +21,14 @@ STOPPED = "Frigate stopped before the download finished. Try again once Frigate 
 FRIGATE_HEADER_LINES = (
     "Your configuration is invalid.\nSee the official documentation at docs.frigate.video.\n"
 )
+
+
+def assert_key_not_logged(caplog):
+    """The wait logs an exception's class name only, so no record carries the key it was given."""
+    assert caplog.records
+    for record in caplog.records:
+        text = record.getMessage()
+        assert PLACEHOLDER_KEY not in text and PLACEHOLDER_KEY[-20:] not in text, "a log record quotes the key"
 
 
 def downloading() -> Fetches:
@@ -252,12 +262,14 @@ def test_no_answer_a_502_and_a_504_are_all_followed(monkeypatch, status):
     assert fetches.current() == fetch.Fetch(MODEL_A, "saved", None)
 
 
-def test_an_error_mid_poll_never_leaves_it_downloading(monkeypatch):
+def test_an_error_mid_poll_never_leaves_it_downloading(monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
     answers(monkeypatch, (504, None))
     raws(monkeypatch, OLD, OLD, OSError(PLACEHOLDER_KEY))
     fetches = downloading()
     wait(fetches, TEXT, never_saved, clock=clock(0, 10, 20), sleep=Sleeps())
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: OSError")
+    assert_key_not_logged(caplog)
 
 
 def test_another_status_is_failed_with_the_status(monkeypatch):
@@ -267,14 +279,17 @@ def test_another_status_is_failed_with_the_status(monkeypatch):
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "Frigate answered 503 to the save.")
 
 
-def test_an_error_in_the_wait_never_leaves_it_downloading(monkeypatch):
+def test_an_error_in_the_wait_never_leaves_it_downloading(monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
     answers(monkeypatch, RuntimeError(f"boom {PLACEHOLDER_KEY}"))
     fetches = downloading()
     wait(fetches, TEXT, never_saved)
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: RuntimeError")
+    assert_key_not_logged(caplog)
 
 
-def test_an_error_reading_the_config_back_is_failed(monkeypatch):
+def test_an_error_reading_the_config_back_is_failed(monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
     answers(monkeypatch, (None, None))
 
     def config_raw():
@@ -284,9 +299,11 @@ def test_an_error_reading_the_config_back_is_failed(monkeypatch):
     fetches = downloading()
     wait(fetches, TEXT, never_saved, clock=clock(0, 12), sleep=Sleeps())
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: ValueError")
+    assert_key_not_logged(caplog)
 
 
-def test_an_error_in_on_saved_is_failed_too(monkeypatch):
+def test_an_error_in_on_saved_is_failed_too(monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
     answers(monkeypatch, (200, "Config successfully saved."))
     fetches = downloading()
 
@@ -295,6 +312,7 @@ def test_an_error_in_on_saved_is_failed_too(monkeypatch):
 
     wait(fetches, TEXT, on_saved)
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: OSError")
+    assert_key_not_logged(caplog)
 
 
 def test_spawn_runs_the_target_on_a_daemon_thread():
