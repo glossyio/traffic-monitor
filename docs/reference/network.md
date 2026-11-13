@@ -13,7 +13,7 @@ Other computers reach the Traffic Monitor's apps through the [home page](../use/
 | 1883 | MQTT, only when the broker has a login. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md#mqtt). |
 | 5353 (UDP) | `<hostname>.local` names (mDNS) |
 | 8554 | The camera stream (RTSP), with a username and password |
-| 9090 | Cockpit, with your Raspberry Pi login only. Use it if the home page doesn't load or the control app isn't answering. |
+| 9090 | [Cockpit](../use/system-admin.md#cockpit), with your Raspberry Pi login. The home page's Cockpit tile opens it, and it works when the home page doesn't. |
 
 When the device hosts its own Wi-Fi network, it also answers DHCP and DNS on it.
 
