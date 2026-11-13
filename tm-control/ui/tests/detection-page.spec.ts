@@ -4,7 +4,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
-import { click, clickInDialog, dialogButtons, dialogText, mountAlone, mountApp } from './mount'
+import { click, clickInDialog, dialogButtons, dialogText, field, mountAlone, mountApp, typeInto } from './mount'
 import LabelChips from '../src/modules/detection/LabelChips.vue'
 import ModelBlock, { type Block } from '../src/modules/detection/ModelBlock.vue'
 
@@ -507,8 +507,8 @@ describe('the Detection page', () => {
     expect(headings(wrapper)).toContain('Frigate+')
     const plus = wrapper.find('#frigate-plus').text()
     expect(plus).toContain(
-      'When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings, System, ' +
-        'Detectors and model, and Frigate downloads it.',
+      'When the device is online and has a Frigate+ API key, an administrator can use a model by its ID below, or pick ' +
+        'one in Frigate, under Settings, System, Detectors and model.',
     )
     expect(plus).toContain(
       "When it's offline, an administrator can upload the model's two files on this page, as a package from whoever " +
@@ -1171,6 +1171,224 @@ describe("the Detection page's actions", () => {
     const { wrapper } = await mountApp('/detection')
     expect(section(wrapper, 'Other models').findAll('button').map((b) => b.text().trim())).toEqual(['Upload a model'])
   })
+
+  describe('the model ID form', () => {
+    const NEW_ID = 'fedcba9876543210fedcba9876543210'
+    const USE_ID = `POST /api/v1/models/plus/${NEW_ID}/use`
+    const ON_DEVICE = { ...MODELS.models[1], name: NEW_ID, title: 'Downloaded yolov9', running: false }
+    const WITH_IT: ModelsState = { ...MODELS, models: [...MODELS.models, ON_DEVICE] }
+    const fetching = (state: 'downloading' | 'saved' | 'refused' | 'failed', message: string | null = null) =>
+      ({ ...WITH_IT, fetch: { model_id: NEW_ID, state, message } }) satisfies ModelsState
+    const RUNS_IT: ModelsState = {
+      ...running(NEW_ID, 'frigate_plus'),
+      models: WITH_IT.models.map((model) => ({ ...model, running: model.name === NEW_ID })),
+      fetch: { model_id: NEW_ID, state: 'saved', message: null },
+    }
+    const LINE = 'Frigate is downloading the model. This can take a few minutes. You can leave this page.'
+
+    // GET /models answers each of `answers` once, in order, then the last one for good
+    function inOrder(...answers: ModelsState[]) {
+      let calls = 0
+      return () => json(200, answers[Math.min(calls++, answers.length - 1)])
+    }
+
+    async function enter(wrapper: VueWrapper, id: string) {
+      await typeInto(field(wrapper, 'Model ID').element, id)
+    }
+    async function ask(wrapper: VueWrapper, id: string) {
+      await enter(wrapper, id)
+      await click(wrapper, 'Download and use')
+    }
+    const useButtons = (wrapper: VueWrapper) =>
+      wrapper.findAll('.model button').filter((b) => b.text().trim() === 'Use')
+    const idPanel = (wrapper: VueWrapper) => panel(wrapper, 'Use a model by its ID')
+
+    it('asks first, posts the id, and follows a download to the restart', async () => {
+      vi.useFakeTimers()
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: inOrder(MODELS, fetching('downloading'), fetching('downloading'), fetching('saved'), RUNS_IT),
+        [USE_ID]: json(202, { name: NEW_ID, started: 'download', restarts: [] }),
+      })
+      const { wrapper } = await mountApp('/detection')
+      expect(useButtons(wrapper).length).toBeGreaterThan(0)
+      expect(wrapper.text()).not.toContain(LINE)
+
+      await ask(wrapper, `plus://${NEW_ID}`)
+      expect(dialogText()).toContain(`Download and use ${NEW_ID}?`)
+      expect(dialogText()).toContain(
+        "Frigate downloads the model, then restarts. The download can take a few minutes, and the restart about one. Traffic isn't counted while Frigate restarts.",
+      )
+      expect(api.sent.some((r) => r.method === 'POST')).toBe(false)
+      await clickInDialog('Download and use')
+      expect(api.sent.filter((r) => r.method === 'POST').map((r) => r.path)).toEqual([`/api/v1/models/plus/${NEW_ID}/use`])
+      expect(wrapper.text()).toContain(LINE)
+      expect(useButtons(wrapper).every((b) => b.attributes('disabled') !== undefined)).toBe(true)
+      expect(field(wrapper, 'Model ID').attributes('disabled')).toBeDefined()
+
+      await vi.advanceTimersByTimeAsync(3000) // downloading
+      await vi.advanceTimersByTimeAsync(3000) // downloading
+      expect(wrapper.text()).toContain(LINE)
+      expect(wrapper.text()).not.toContain('Frigate is restarting.')
+      await vi.advanceTimersByTimeAsync(3000) // saved: Frigate restarts
+      expect(wrapper.text()).not.toContain(LINE)
+      expect(wrapper.text()).toContain('Frigate is restarting.')
+      expect(field(wrapper, 'Model ID').element.value).toBe('') // the form starts over
+      expect(useButtons(wrapper).every((b) => b.attributes('disabled') !== undefined)).toBe(true) // Frigate restarts
+      await vi.advanceTimersByTimeAsync(3000) // runs it
+      expect(wrapper.find('#frigate-plus').text()).toContain('Frigate runs Downloaded yolov9.')
+      expect(wrapper.find('#frigate-plus').text()).not.toContain('Frigate is restarting.')
+      expect(item(wrapper, 'Downloaded yolov9').classes('in-use')).toBe(true)
+      expect(field(wrapper, 'Model ID').attributes('disabled')).toBeUndefined()
+      const calls = modelCalls(api)
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(modelCalls(api)).toBe(calls) // nothing polls any more
+    })
+
+    it('treats a model already on the device as a use', async () => {
+      vi.useFakeTimers()
+      signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: inOrder(WITH_IT, WITH_IT, RUNS_IT),
+        [USE_ID]: json(202, { name: NEW_ID, started: 'restart', restarts: ['frigate.service'] }),
+      })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, NEW_ID)
+      await clickInDialog('Download and use')
+      expect(wrapper.text()).not.toContain(LINE)
+      expect(wrapper.find('#frigate-plus').text()).toContain('Frigate is restarting.')
+      expect(field(wrapper, 'Model ID').element.value).toBe('')
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(wrapper.find('#frigate-plus').text()).toContain('Frigate is restarting.')
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(wrapper.find('#frigate-plus').text()).toContain('Frigate runs Downloaded yolov9.')
+    })
+
+    it("shows Frigate's reason under the form when the fetch is refused, and reloads the list", async () => {
+      vi.useFakeTimers()
+      const reason = 'Frigate refused the model: Exception: Model not found'
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: inOrder(MODELS, { ...MODELS, fetch: { model_id: NEW_ID, state: 'refused', message: reason } }),
+        [USE_ID]: json(202, { name: NEW_ID, started: 'download', restarts: [] }),
+      })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, NEW_ID)
+      await clickInDialog('Download and use')
+      expect(wrapper.text()).toContain(LINE)
+      await vi.advanceTimersByTimeAsync(3000)
+      const form = idPanel(wrapper).element.closest('.v-expansion-panel')!
+      expect(form.textContent).toContain(reason)
+      expect(wrapper.text()).not.toContain(LINE)
+      expect(wrapper.text()).not.toContain('Frigate is restarting.')
+      expect(field(wrapper, 'Model ID').element.value).toBe(NEW_ID) // kept, to correct
+      expect(field(wrapper, 'Model ID').attributes('disabled')).toBeUndefined()
+      expect(useButtons(wrapper).every((b) => b.attributes('disabled') === undefined)).toBe(true)
+      const calls = modelCalls(api)
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(modelCalls(api)).toBe(calls)
+    })
+
+    it("shows the API's refusal under the form", async () => {
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: MODELS,
+        [USE_ID]: apiError(409, 'no_key', 'Set the Frigate+ API key first.'),
+      })
+      const { wrapper } = await mountApp('/detection')
+      await ask(wrapper, NEW_ID)
+      await clickInDialog('Download and use')
+      const alerts = wrapper.findAll('#frigate-plus .v-alert').map((a) => a.text())
+      expect(alerts).toContain('Set the Frigate+ API key first.')
+      expect(idPanel(wrapper).element.closest('.v-expansion-panel')!.textContent).toContain('Set the Frigate+ API key first.')
+      expect(wrapper.text()).not.toContain(LINE)
+      expect(field(wrapper, 'Model ID').element.value).toBe(NEW_ID)
+      expect(modelCalls(api)).toBe(1) // no polling
+    })
+
+    it('shows a running download to an admin who opens the page, with the panel open', async () => {
+      vi.useFakeTimers()
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: inOrder(fetching('downloading'), fetching('downloading'), fetching('saved'), RUNS_IT),
+      })
+      const { wrapper } = await mountApp('/detection')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('true')
+      expect(panel(wrapper, 'API key').attributes('aria-expanded')).toBe('false')
+      expect(wrapper.text()).toContain(LINE)
+      expect(useButtons(wrapper).every((b) => b.attributes('disabled') !== undefined)).toBe(true)
+      expect(wrapper.findAll('main button').find((b) => b.text().trim() === 'Upload a model')!.attributes('disabled')).toBeDefined()
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(modelCalls(api)).toBe(2)
+      await vi.advanceTimersByTimeAsync(3000) // saved
+      expect(wrapper.text()).toContain('Frigate is restarting.')
+      await vi.advanceTimersByTimeAsync(3000)
+      expect(wrapper.find('#frigate-plus').text()).toContain('Frigate runs Downloaded yolov9.')
+    })
+
+    it('stops following a download when the page is left', async () => {
+      vi.useFakeTimers()
+      const api = signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: inOrder(fetching('downloading')),
+      })
+      const { wrapper } = await mountApp('/detection')
+      await vi.advanceTimersByTimeAsync(6000)
+      expect(modelCalls(api)).toBe(3)
+      wrapper.unmount()
+      await vi.advanceTimersByTimeAsync(30_000)
+      expect(modelCalls(api)).toBe(3)
+    })
+
+    it('shows the last refusal to an admin who opens the page', async () => {
+      const reason = 'Frigate refused the model: Exception: Model not found'
+      signedIn(ADMIN, {
+        [SECRETS]: { secrets: TWO_SECRETS },
+        [MODELS_PATH]: { ...MODELS, fetch: { model_id: NEW_ID, state: 'refused', message: reason } },
+      })
+      const { wrapper } = await mountApp('/detection')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('true')
+      expect(idPanel(wrapper).element.closest('.v-expansion-panel')!.textContent).toContain(reason)
+    })
+
+    it('says nothing of a download that finished before the page opened', async () => {
+      signedIn(ADMIN, { [SECRETS]: { secrets: TWO_SECRETS }, [MODELS_PATH]: fetching('saved') })
+      const { wrapper } = await mountApp('/detection')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('false')
+      expect(wrapper.text()).not.toContain('Frigate is restarting.')
+      expect(wrapper.findAll('#frigate-plus .v-alert')).toEqual([])
+    })
+
+    it('opens the panel for /detection#frigate-plus-model, and only that one', async () => {
+      signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
+      const scrolled = vi.fn()
+      Element.prototype.scrollIntoView = scrolled
+      const { wrapper } = await mountApp('/detection#frigate-plus-model')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('true')
+      expect(panel(wrapper, 'API key').attributes('aria-expanded')).toBe('false')
+      expect(scrolled).toHaveBeenCalled()
+      expect((scrolled.mock.contexts[0] as Element).id).toBe('frigate-plus')
+      Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
+    })
+
+    it('keeps the two panels apart, closed until opened', async () => {
+      signedIn(ADMIN, { [MODELS_PATH]: MODELS, [SECRETS]: { secrets: TWO_SECRETS } })
+      const { wrapper } = await mountApp('/detection')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('false')
+      expect(wrapper.find('#frigate-plus').findAll('.v-expansion-panel-title').map((t) => t.text().trim().split(' ')[0])).toEqual(['API', 'Use'])
+      await idPanel(wrapper).trigger('click')
+      expect(idPanel(wrapper).attributes('aria-expanded')).toBe('true')
+      expect(panel(wrapper, 'API key').attributes('aria-expanded')).toBe('false')
+    })
+
+    it('shows a viewer no ID panel', async () => {
+      signedIn(VIEWER, { [MODELS_PATH]: MODELS })
+      const { wrapper } = await mountApp('/detection')
+      expect(wrapper.text()).not.toContain('Use a model by its ID')
+      expect(wrapper.text()).not.toContain('Model ID')
+    })
+  })
+
 })
 
 describe('LabelChips', () => {
