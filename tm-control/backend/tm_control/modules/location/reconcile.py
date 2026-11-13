@@ -9,7 +9,8 @@ last seen with a survey named unless the file's is coarser, the place's bearings
 place's point, if it has one, over whatever the installer rendered; blank lat and lon get the place's point back too,
 since a place with a point is never corrected to none (decision 9).
 
-Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock.
+Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock,
+and so does the sharing follow step after it (modules/sharing/follow.py).
 Nothing here logs a coordinate, a description, an id, or anything read from a file: only exception class names and
 counts.
 """
@@ -29,6 +30,7 @@ from tm_control.adapters.nodered import NodeRedError
 from tm_control.modules.location.config import DEFAULT_PRECISION, ConfigError, Deployment, NodeRedConfig
 from tm_control.modules.location.coordinates import exact, is_coarser, new_survey_id, normalize_survey_id
 from tm_control.modules.location.places import Bearing, Places, Survey
+from tm_control.modules.sharing import follow
 
 log = logging.getLogger(__name__)
 
@@ -88,9 +90,12 @@ def ensure(app_state, user_id: int | None = None) -> Outcome:
 
     app_state carries state, manifest, nodered, config_path, and reconcile_lock. user_id becomes created_by on the
     places this creates. A ConfigError from saving config.yml (changed since it was read, or not writable) is raised.
+    The sharing follow step (modules/sharing/follow.py) runs next, under the same lock, whatever the places' state.
     """
     with app_state.reconcile_lock:
-        return _ensure(app_state, user_id)
+        outcome = _ensure(app_state, user_id)
+        follow.run(app_state)
+        return outcome
 
 
 def for_status_report(app_state) -> None:
@@ -102,9 +107,14 @@ def for_status_report(app_state) -> None:
         log.info("reconcile skipped for the status report: a write is in progress")
         return
     try:
-        _ensure(app_state, None)
-    except Exception as error:  # a ConfigError (the file changed meanwhile, or isn't writable) or anything else
-        log.warning("reconcile for the status report failed: %s", type(error).__name__)
+        try:
+            _ensure(app_state, None)
+        except Exception as error:  # a ConfigError (the file changed meanwhile, or isn't writable) or anything else
+            log.warning("reconcile for the status report failed: %s", type(error).__name__)
+        try:
+            follow.run(app_state)
+        except Exception as error:  # likewise
+            log.warning("the sharing follow for the status report failed: %s", type(error).__name__)
     finally:
         lock.release()
 
