@@ -84,7 +84,8 @@ export interface IssueBox {
 const DIRECTION_ZONES = ['zone_near', 'zone_far']
 
 // What the Status page's camera checks report about a row (the API's issues), worded for this page: what is wrong,
-// and what to do here. One box per issue, none for a row in step.
+// and what to do here. One box per issue, none for a row in step or for a new Frigate camera whose detection is off
+// (it drops nothing, so the API reports no issue for it).
 export function issueBoxes(row: CameraRow): IssueBox[] {
   const words: Record<CameraIssue['code'], () => Omit<IssueBox, 'level'>> = {
     not_paired: () => ({

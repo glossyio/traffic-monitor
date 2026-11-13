@@ -70,7 +70,8 @@ podman run --rm -v "$PWD/tm-control/ui:/ui:Z" -w /ui docker.io/library/node:22.2
   changed. Only Off in Frigate is a chip. What the Status page's camera checks report about a row (the API's `issues`)
   is a compact tonal `v-alert` in the row, in the check's color, worded by `issueBoxes` with what to do on this page
   (a zones box links to Frigate's masks and zones settings at that camera), and one alert above the list counts the
-  rows that need attention. An entry in step has no box, and while Frigate can't be compared a row
+  rows that need attention. An entry in step has no box, nor has a new Frigate camera whose detection is off (it drops
+  nothing, so the API reports no issue for it; it keeps Point and Add as new), and while Frigate can't be compared a row
   shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
   neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
   confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which

@@ -131,6 +131,13 @@ def test_a_frigate_camera_no_entry_points_at_is_an_error():
     assert issues(rows[1]) == [("error", "not_paired")]
 
 
+def test_a_frigate_camera_no_entry_points_at_with_detection_off_has_no_issue():
+    """Nothing is detected, so nothing is dropped: the row is listed, to add or point at, with no issue."""
+    rows = compare([entry("main_st")], {"main_st": ON, "oak_ave_tele": ON | {"detect": {"enabled": False}}})
+    assert rows[1].name is None and rows[1].in_frigate == "on" and rows[1].detect is False
+    assert issues(rows[1]) == []
+
+
 def test_a_duplicate_is_an_error_and_nothing_else():
     rows = compare([entry("a_1", "main_st"), entry("b_2", "main_st")], {"main_st": ON | {"zones": {}}})
     assert issues(rows[1]) == [("error", "duplicate")]

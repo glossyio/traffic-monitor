@@ -25,7 +25,7 @@ class CameraIssue(BaseModel):
 
     level: Literal["error", "warn"]
     code: Literal[
-        "not_paired",  # a Frigate camera that is on and that no entry points at: its events are dropped
+        "not_paired",  # a Frigate camera that is on, detecting, and that no entry points at: its events are dropped
         "duplicate",  # an entry pointing at the same Frigate camera as an earlier one: it is unused
         "gone",  # an enabled entry whose Frigate camera Frigate doesn't have
         "camera_off",  # an enabled entry whose Frigate camera is turned off there
@@ -99,7 +99,8 @@ def _issues(row: CameraRow, radars: dict[str, bool] | None) -> list[CameraIssue]
         return CameraIssue(level=level, code=code)
 
     if row.name is None:
-        return [issue("error", "not_paired")] if row.in_frigate == "on" else []
+        # with Frigate's detection off, nothing is detected, so nothing is dropped
+        return [issue("error", "not_paired")] if row.in_frigate == "on" and row.detect is not False else []
     found = []
     if row.duplicate_of is not None:
         found.append(issue("error", "duplicate"))

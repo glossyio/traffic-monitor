@@ -512,6 +512,13 @@ def test_a_frigate_camera_that_is_off_and_unpaired_is_not_listed_and_cant_be_add
     assert r.status_code == 409 and error_code(r) == "cameras_changed"
 
 
+def test_a_new_camera_with_detection_off_has_no_issue_and_can_be_added(admin, monkeypatch, token):
+    with_camera(monkeypatch, admin, "main_st", detect={"enabled": False})
+    row = cameras(admin)["rows"][-1]
+    assert (row["name"], row["frigate_camera"], row["detect"], row["issues"]) == (None, "main_st", False, [])
+    assert add(admin, frigate_camera="main_st").status_code == 200
+
+
 def test_detection_switches_frigates_live_switch_and_leaves_config_yml_alone(admin):
     before = admin.app.state.config_path.read_text()
     r = detection(admin, "picam_h265", False)

@@ -39,10 +39,10 @@ A Frigate camera that no entry is paired with shows its **Frigate detection**, a
 
 The page marks each problem the Status page's [camera checks](device-health.md#the-camera-checks) report, on the camera it's about, in the same colors: red for a problem, amber for a warning. Above the list, a line says how many cameras need attention. Each marked row has a box for each problem that says what's wrong and what to do on this page:
 
-* Red: a camera **is new in Frigate and isn't recorded** (point an entry at it, or add it), or another entry **already records this Frigate camera** (remove this one).
+* Red: a camera **is new in Frigate and isn't recorded** while Frigate detects objects on it (point an entry at it, or add it), or another entry **already records this Frigate camera** (remove this one).
 * Amber: **Frigate no longer has** the camera (point the entry at its new name, or remove it); the camera is turned off in Frigate, Frigate's detection is off, or **Database capture** is off, so its events **aren't recorded**; zones are missing or turned off, with a link, **Edit its zones in Frigate**, that opens Frigate's masks and zones settings at that camera; or the camera's radar isn't turned on in `config.yml`.
 
-A row with no box is in step. The page and the checks come from the same comparison, so they always agree.
+A row with no box is in step. A new Frigate camera whose **Frigate detection** is off has no box either: nothing is detected, so nothing is dropped. You can still point an entry at it or add it. The page and the checks come from the same comparison, so they always agree.
 
 When Frigate isn't answering, or has stopped itself in safe mode with no cameras, the page says so and can't compare. The settings stay editable, and the other buttons wait until Frigate answers.
 
@@ -73,14 +73,14 @@ Radar settings themselves, such as turning a radar off, stay in [`config.yml`](.
 When you rename a camera in Frigate, the Traffic Monitor doesn't know the new name belongs to the same camera, and records nothing from it until you say so.
 
 1. In Frigate's configuration editor, rename the camera and choose **Save & Restart**. Frigate uses the new name only after it restarts, so **Save** alone changes nothing yet.
-2. Open the Cameras page. The old entry reads **Frigate no longer has** the old name, and the new name has its own row, **new in Frigate and isn't recorded**.
+2. Open the Cameras page. The old entry reads **Frigate no longer has** the old name, and the new name has its own row, **new in Frigate and isn't recorded**. If Frigate's detection is off for the camera, the new row has no box, because nothing is being dropped, but it still offers **Point**.
 3. On the new row, choose **Point `<entry>` at this**, and confirm.
 
 ![The confirmation for Point camera_1_3fa9c2 at oak_ave_tele, saying that events from oak_ave_tele will be recorded as camera_1_3fa9c2 with the same settings and nothing already recorded changes](../assets/images/cameras-point.png){ width="300" }
 
 The entry keeps its name and settings, so the camera's records carry on under the same name, in the same deployment, with nothing changed in the database. If two cameras were renamed together, each new row offers a button for each entry whose camera is gone. To choose the right pair, look at the entries' rows: each shows Frigate's old name for its camera and its radar. An entry whose camera is only turned **Off** in Frigate isn't offered, because that camera still exists.
 
-Until you point the entry at the new name, the Status page's **Cameras in config.yml** check is a problem.
+Until you point the entry at the new name, the Status page's **Cameras in config.yml** check is a problem. While Frigate's detection is off for the camera, it's a warning instead, about the old entry, whose camera is gone.
 
 ## Add a camera
 

@@ -307,6 +307,18 @@ describe('Cameras page', () => {
       ])
     })
 
+    it('shows no box on a new row whose Frigate detection is off, and still offers Point and Add as new', async () => {
+      const quiet = newRow('oak_ave_tele', { detect: false, issues: [] })
+      const { wrapper } = await openPage(camerasState({ rows: [GONE, quiet] }))
+      const row = rowItems(wrapper)[1]
+      expect(row.find('[data-issue]').exists()).toBe(false)
+      expect(row.text()).toContain('Frigate detection: off')
+      expect(wrapper.find('[data-summary]').text()).toBe('1 camera needs attention. Each marked row says why.')
+      expect(actionTexts(wrapper)).toEqual(['Remove', 'Point camera_1_3fa9c2 at this'])
+      expect(row.find('.v-expansion-panel-title').text()).toContain('Add as new')
+      expect((await openRow(wrapper, 1)).getAttribute('aria-label')).toBe('Add oak_ave_tele')
+    })
+
     it('has no buttons on a new row when no entry is gone', async () => {
       const { wrapper } = await openPage(camerasState({ rows: [WIDE, FRESH] }))
       expect(actionTexts(wrapper)).toEqual([])

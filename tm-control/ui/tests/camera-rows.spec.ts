@@ -206,6 +206,8 @@ describe('issueBoxes', () => {
 
   it('gives a row in step no boxes, and each of several issues its own', () => {
     expect(issueBoxes(cameraRow())).toEqual([])
+    // a new Frigate camera whose detection is off drops nothing, so the API reports no issue for it
+    expect(issueBoxes(newRow('main_st', { detect: false, issues: [] }))).toEqual([])
     const two = cameraRow({ zones_missing: ['zone_far'], issues: [warn('detect_off'), warn('zones')] })
     expect(issueBoxes(two).map((box) => box.level)).toEqual(['warning', 'warning'])
   })

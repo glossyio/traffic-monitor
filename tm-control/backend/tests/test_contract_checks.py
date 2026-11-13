@@ -141,6 +141,15 @@ def test_a_frigate_camera_that_is_off_is_not_an_error(apps):
     assert config_group(apps)["config.cameras"].status == "ok"
 
 
+def test_a_frigate_camera_no_entry_points_at_is_fine_while_its_detection_is_off(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"].update(
+        oak_ave_tele=dict(config["cameras"]["picam_h265"], detect={"enabled": False})
+    ))
+    check = config_group(apps)["config.cameras"]
+    assert (check.status, check.fix) == ("ok", None)
+    assert "oak_ave_tele" not in check.detail
+
+
 def test_a_duplicate_frigate_camera_is_an_error(apps):
     apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(
         {NEUTRAL: {"frigate_camera": "picam_h265", "enabled": True}}
