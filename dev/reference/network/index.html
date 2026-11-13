@@ -2225,7 +2225,7 @@
 </tbody>
 </table>
 <p>A request that reaches the device on the hotspot's address with any other name, such as the one a phone's connection test uses, gets a redirect to <code>http://10.42.0.1/</code>. A request for <code>10.42.0.1</code> or for the device's own name is answered as usual.</p>
-<p>Whenever the device has a network, NetworkManager asks <code>connectivity-check.ubuntu.com</code> every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer.</p>
+<p>Whenever the device has a network, NetworkManager asks <code>connectivity-check.ubuntu.com</code> every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer. When an administrator <a href="../../use/wifi-hotspot/#put-the-unit-on-a-wi-fi-network">tests a Wi-Fi network</a> from the Network page, the device asks that network's DNS server for the address of <code>connectivity-check.ubuntu.com</code> (up to three times, a second apart) and makes one request to it through that network, to report whether the internet is reachable there.</p>
 <h2 id="camera-stream-login">Camera stream login<a class="headerlink" href="#camera-stream-login" title="Permanent link">&para;</a></h2>
 <p>The camera stream on port 8554 needs the username <code>frigate</code> and a password generated on the device at install. To play the stream in another program, such as VLC, read the password on the device:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/traffic-monitor/secrets/go2rtc_rtsp_password

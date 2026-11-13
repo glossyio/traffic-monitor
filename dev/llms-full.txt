@@ -439,7 +439,7 @@ The installer asks for your password when it needs administrator rights. If the 
 
 Near the end, the installer shows the device's card on the terminal: its **setup code**, which you need once to claim the device and create its administrator account, and the name and password of its hotspot. Keep them; the hotspot's password isn't in the installer's log, and `sudo tm-control card` prints the card again. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/#claim-the-device) says where else to find the setup code.
 
-Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). A device that isn't on a network you can reach runs its own hotspot. Join it with the password from the card, and your phone's sign-in window opens the setup page; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md).
+Then the installer asks to reboot. A first install always needs the reboot, with or without an AI accelerator, because it changes the Raspberry Pi's boot settings for the camera and any accelerator it found. The services start after the reboot. After it, open `http://<hostname>.local/`, claim the device with the setup code, and continue with [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md). A device that isn't on a network you can reach runs its own hotspot. Join it with the password from the card, and your phone's sign-in window opens the setup page. Once the device is claimed, an administrator can put it on a Wi-Fi network from the control app's Network page; see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md). The Wi-Fi network you set in Imager works too, and the Network page lists it as a saved network.
 
 The installer's flags, such as a different install folder or time zone, are listed in [Installer options](https://docs.trafficmonitor.ai/dev/reference/tmsetup/index.md).
 
@@ -562,6 +562,8 @@ As installed, the camera and the first radar are turned on in the Traffic Monito
 Open `http://<device>/`, where `<device>` is the hostname you set when imaging the card followed by `.local`, or the device's IP address. [Home page and apps](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) explains each link and how to find the address.
 
 A device at the roadside has no network to join. If its Wi-Fi isn't on a network it knows, it runs its own hotspot, named `TM-` and four characters. Join it with the password from the device's card; your phone's sign-in window then opens the setup page by itself, or you can open `http://10.42.0.1/`. [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md) has the details, including what to do on an iPhone or an Android 17 phone.
+
+A device you didn't give a Wi-Fi network when imaging the card is reached through its hotspot. Join it, finish setup below, and then put the device on the network it will use: as the administrator, open **Network**, choose **Refresh**, pick the network, and type its password. The device tests the network and switches to it after a five-minute countdown; [Put the unit on a Wi-Fi network](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#put-the-unit-on-a-wi-fi-network) walks through it. A Wi-Fi network you set in Imager works too, and shows up on that page as a saved network.
 
 A device that hasn't been claimed opens its setup page:
 
@@ -894,7 +896,7 @@ The checks come in groups:
 | Check         | What it says                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Hotspot       | **On as `TM-4F2A`, at `http://10.42.0.1/`** while the hotspot is up. **Standing by** while the device is on a saved network; the hotspot starts when that network is out of reach. **Off by choice** when the hotspot is turned off. A problem when the hotspot isn't set up (rerun the installer with `-t wifi`), the Wi-Fi radio is switched off, the hotspot should be on and isn't (**Restart the hotspot**), the hotspot has no password (**Set a password** opens the [Network page](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#change-the-password); see also [A hotspot you set up by hand](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#a-hotspot-you-set-up-by-hand)), a USB Wi-Fi adapter has taken the built-in radio's place, or the hotspot's firewall isn't loaded. A warning when the hotspot isn't secured with WPA2. |
-| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Wi-Fi network | The network the device is on and its signal, or that it has no saved network, or that none of the saved networks is in reach. The [Network page](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#saved-networks) lists the saved networks and lets an administrator join a network, reorder them, and forget them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Internet      | **Reachable**, or **Not reachable. That's normal for an offline unit.** It also says when the network needs a sign-in page, so the device has no internet. It is never a warning or a problem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Wi-Fi country | The country, or a warning that none is set. Rerun the installer with `-t wifi` and it asks; see [The Wi-Fi country](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#the-wi-fi-country).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
@@ -1218,6 +1220,9 @@ Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, i
 - **Ethernet** and **Wi-Fi:** whether each is connected, and for each its MAC address, IP address, gateway, and DNS servers. The Wi-Fi line says which network the unit is on, with its signal, or that it is on its own hotspot. A unit without Ethernet has no Ethernet line, and a unit without a built-in radio says so.
 - **Internet:** whether the unit reaches the internet. An offline unit says **Not reachable**, which is normal.
 - **Hotspot:** whether it is on, its name, whether the name is hidden, and the two addresses it answers on.
+- **Wi-Fi networks:** the networks the unit has saved and the ones it heard the last time it looked. See [Put the unit on a Wi-Fi network](#put-the-unit-on-a-wi-fi-network) and [Saved networks](#saved-networks).
+
+**This device** and **Hotspot** sit side by side on a wide screen, above **Wi-Fi networks**, and are folded each time you open the page. Folded, **This device** shows the `.local` name and the addresses in use, and **Hotspot** shows its name, or **Hotspot off**. Select a heading to open it. A panel opens by itself when something in it needs your attention, such as a hotspot change that fails or is refused, and a folded one then shows a warning mark.
 
 Every name and address has a **Copy** button. If the network service doesn't answer, the page says so and shows only the names.
 
@@ -1225,24 +1230,94 @@ The [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-devi
 
 Find the MAC address
 
-A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Copy it from the Wi-Fi block of the Network page, and add it to the router's list.
+A router set to admit listed devices only needs the unit's Wi-Fi **MAC address**. Open **This device** on the Network page, copy the address from the Wi-Fi block, and add it to the router's list.
 
-Viewers see the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: show or change the password, rename the hotspot, hide its name, and turn it on or off.
+Viewers see the lists of networks, a join's progress card (read only, with no buttons), the hotspot's state, name, whether the name is hidden, and addresses, and nothing else. They never see its password or a control. Administrators get the controls described in the rest of this page: put the unit on a Wi-Fi network, change the saved networks, show or change the hotspot's password, rename the hotspot, hide its name, and turn it on or off.
 
 Changes restart the hotspot
 
 A change to the hotspot's name, password, or hidden setting restarts it when it is up. Phones on it are disconnected, and each phone must rejoin by hand. When you use the Network page from a phone on the hotspot, the page stops answering when you save. Join the hotspot again, then reload the page. The page warns you before a change that restarts the hotspot, before you turn the hotspot off, and before you hide its name. Turning the hotspot on doesn't ask.
 
+## Put the unit on a Wi-Fi network
+
+An administrator can put the unit on a Wi-Fi network from the Network page, without a cable or a keyboard. The unit tests the network first, and switches to it only once the test has passed and the countdown has ended or you choose **Switch now**.
+
+1. Open **Network**. Under **Wi-Fi networks**, choose **Refresh** to have the unit look for networks. It takes about 4 seconds, and a phone on the hotspot pauses for a few seconds while the unit looks. **Nearby networks** lists what it heard, strongest first, and says how long ago it looked.
+1. Choose **Join** next to the network, and read what the dialog says will happen. It shows the unit's Wi-Fi MAC address too.
+1. Type the network's password, and choose **Test and join**. The page shows the password as you type it, and asks only once.
+
+The unit doesn't save the network or its password at this point. Until the switch, the network exists only in the unit's memory, so a wrong password never reaches the microSD card.
+
+### The test
+
+A test takes up to about a minute, and the unit's radio is busy with it. If the unit was on its hotspot, the hotspot is away for the test and a phone on it is disconnected. The hotspot is back within a few seconds after the test ends. Join it again by hand, and reload the page to see the result. If the unit was on another network, it leaves that network for the test and returns to it. Until the join ends (the test, the countdown, and the switch), the unit refuses every other Wi-Fi or hotspot change. Once the test has passed, choose **Cancel** or **Switch now** to free it.
+
+The test asks the network for an address, then asks the network's DNS server for the address of `connectivity-check.ubuntu.com` (up to three times, a second apart, because the first question right after joining can fail) and makes one request to it, to see whether the internet is reachable. The unit comes back to where it was either way. To test a network the unit has saved already, choose **Join** and keep its saved password, or enter a new one.
+
+A card at the top of the Network page shows the test as it runs. Administrators also see a line with a **See it** link on the [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md), so you can find the result from there.
+
+### The result and the countdown
+
+When the test passes, the card says **`<name>` works** and shows:
+
+- the address the unit got on that network, and its `.local` name, which you can use to reach it there;
+- the unit's Wi-Fi MAC address;
+- whether the internet is reachable there.
+
+Below that, a countdown starts at 5 minutes: **Joining `<name>` in 4:32**. Use the time to join the same network with your phone or computer, so you can open one of the addresses once the unit has switched.
+
+- **Switch now** ends the countdown, and the unit joins at once.
+- **Cancel** ends it, and the unit stays where it is. Nothing is saved.
+- If you do nothing, the unit joins when the countdown ends.
+
+When the unit joins, the network is saved and the unit uses it. If the unit was on the hotspot, the hotspot stops. A phone on the hotspot loses it, so join the network yourself and open one of the addresses from the card. On an Android 17 phone a browser may not open a device on the phone's own Wi-Fi network; see [the Android 17 entry](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/#troubleshooting) if the address doesn't open. The result stays on the page until you choose **Dismiss**.
+
+A network with a sign-in page
+
+Some networks, such as a hotel's or a cafe's, give the unit an address but make a device open a web page before it reaches the internet. The unit can't complete that page. The card says "Joined, but this network needs a sign-in page, so the unit has no internet there." The unit can still join the network and be reached on it, and you can switch to it if you want that.
+
+### If the test fails
+
+The card says why, and the unit is back where it was. Nothing is saved for a new network.
+
+| The card says                                                                     | What it means                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`<name>` isn't in range right now, so nothing was tried**                       | The unit didn't hear the network when it checked, so it left its radio alone. Choose **Refresh** and try again from a place with a better signal.                                                                                                                                                                                            |
+| **The unit couldn't join `<name>`**                                               | Usually a wrong password. This fails after about 25 seconds. A router set to admit listed devices only also refuses the unit until you add the unit's Wi-Fi MAC address, which the card and the dialog show, to its list.                                                                                                                    |
+| **`<name>` let the unit in but gave it no address**                               | The unit connected, but the network's DHCP gave it nothing. This fails after about 45 seconds. Try again later, or check the network's address range.                                                                                                                                                                                        |
+| **The unit was busy with its Wi-Fi**                                              | Another Wi-Fi change was under way. Try again in a minute.                                                                                                                                                                                                                                                                                   |
+| **The test couldn't run**                                                         | The unit couldn't prepare to come back, so it left its radio alone, or it hit an error it didn't expect. It is back where it was.                                                                                                                                                                                                            |
+| **The test of `<name>` was interrupted**                                          | The test stopped partway, for example because the unit lost power. The unit goes back to where it was within a minute and a half.                                                                                                                                                                                                            |
+| **The test passed, but the unit couldn't join `<name>` when the countdown ended** | The unit is back where it was. If the network went away during the countdown, the switch waits for it, and the hotspot is away for up to about a minute before it comes back. The network stays saved, and the unit tries it again by itself, after a wait that grows to about an hour. See [When the hotspot runs](#when-the-hotspot-runs). |
+
+A saved network that fails is kept, because the cause may be temporary. A new network that fails is not saved.
+
+## Saved networks
+
+**Saved networks** lists the networks the unit joins by itself. Above the list the page says: "The unit joins the first of these it finds." The order is the order the unit tries them in, so the network at the top wins when more than one is in range. A network the unit joined from the page goes to the top of the list.
+
+Each network shows whether it is **Joined**, **In range**, or **Not in range**, and flags a network that is **Hidden** or **Not joined by itself**. A network saved through Raspberry Pi Imager's Wi-Fi settings shows here too, as an ordinary saved network.
+
+- **Move up** and **Move down** change a network's place in the order. Only the networks the unit joins by itself have a place.
+- **Forget** deletes a saved network, after a question. The unit no longer joins it. When it isn't the network in use, nothing else changes.
+- **Forget** on the network in use makes the unit leave it. The question says so, and says what happens next. The hotspot starts within about 5 seconds, and a page opened over that network loses the unit, so join the hotspot and open `http://10.42.0.1/`. With the hotspot turned off, the question warns that the unit then has no wireless way in, and that you would need an Ethernet cable.
+
+### Couldn't join
+
+A saved network that the unit failed to join shows **Couldn't join**. The unit tries again by itself, about 10 minutes after the failure, then about 20, then about 65 minutes after each further one; [When the hotspot runs](#when-the-hotspot-runs) has the details. Joining the network by hand from the page, with the right password, tests it again at once.
+
 ## When the hotspot runs
 
 The hotspot yields to the networks the unit has saved. A unit joins a saved network that's in range, and the hotspot runs when none is.
 
-| Situation                                      | What happens                                                                              |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| The unit starts with a saved network in range  | It's on the network within a minute. The hotspot stays off.                               |
-| The unit starts with no saved network in range | The hotspot is up about 15 seconds after the unit starts.                                 |
-| The unit's Wi-Fi network disappears            | The hotspot starts about 75 seconds later.                                                |
-| A saved network has the wrong password         | The hotspot is away for about a minute while the unit tries the network, then comes back. |
+| Situation                                      | What happens                                                                                                                                                                           |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The unit starts with a saved network in range  | It's on the network within a minute. The hotspot stays off.                                                                                                                            |
+| The unit starts with no saved network in range | The hotspot is up about 15 seconds after the unit starts.                                                                                                                              |
+| The unit's Wi-Fi network disappears            | The hotspot starts about 75 seconds later.                                                                                                                                             |
+| A saved network has the wrong password         | The hotspot is away for about a minute while the unit tries the network, then comes back.                                                                                              |
+| You join a network from the page               | The hotspot is away for up to a minute for the test, then comes back. When the countdown ends, or you choose **Switch now**, the unit joins the network and the hotspot stops at once. |
+| You forget the network in use                  | The hotspot starts within about 5 seconds.                                                                                                                                             |
 
 While the hotspot is up and nobody is joined to it, the unit looks for its saved networks every 5 minutes and joins one it hears. A network that won't join is tried again about 10 minutes after the failure, then about 20 minutes after the next one, then about 65 minutes after each further failure. While a phone is joined to the hotspot, the unit doesn't look, so nothing interrupts the phone.
 
@@ -1264,13 +1339,13 @@ The unit keeps it in `/etc/traffic-monitor/secrets/hotspot_password`, readable o
 
 ### Show the password
 
-On the Network page, an administrator chooses **Show** next to **Password**. The page asks the unit for the password each time and forgets it again when you choose **Hide**, change anything, or leave the page. The control app records each time an administrator shows it.
+On the Network page, an administrator opens **Hotspot** and chooses **Show** next to **Password**. The page asks the unit for the password each time and forgets it again when you choose **Hide**, change anything, or leave the page. The control app records each time an administrator shows it.
 
 If you can't sign in, run `sudo tm-control card` on the unit instead. Over Ethernet or SSH works when you're locked out of the hotspot.
 
 ### Change the password
 
-1. Sign in as an administrator and open **Network**.
+1. Sign in as an administrator and open **Network**, then open **Hotspot**.
 1. Next to **Password**, choose **Change**. A unit whose hotspot has no password offers **Set a password** here.
 1. Type the new password, 8 to 63 letters, digits, and symbols with no space at either end.
 1. Write the password down, then choose **Change password**, or **Set password** on a unit that has none.
@@ -1295,11 +1370,11 @@ The hotspot restarts with the new password, and phones on it are disconnected. E
 
 ## Rename the hotspot or hide its name
 
-An administrator can change the name phones see, and hide it, on the Network page.
+An administrator can change the name phones see, and hide it, in the **Hotspot** panel of the Network page.
 
 ### Rename the hotspot
 
-1. Open **Network**, and next to the hotspot's **Name**, choose **Change**.
+1. Open **Network**, open **Hotspot**, and next to its **Name**, choose **Change**.
 1. Type the new name. It takes 1 to 32 bytes, so fewer characters if it has accents or emoji, with no space at either end.
 1. Choose **Change name**.
 
@@ -1307,7 +1382,7 @@ The hotspot restarts, and each phone must join the new name by hand. A printed c
 
 ### Hide the name
 
-1. Open **Network**, and switch on **Hide the name**.
+1. Open **Network**, open **Hotspot**, and switch on **Hide the name**.
 1. Read the warning, and choose **Hide the name**.
 
 The warning says: "The hotspot is still on and can still be found by scanning. Only its name is hidden." Hiding the name doesn't stop anyone from finding the hotspot, so it isn't a lock. A phone no longer lists the hotspot by name. On Android, add the network by hand: choose **Add network**, type the name and the password, and tick **Hidden network**. Without that, the phone never connects. Switch **Hide the name** off to show the name again.
@@ -1316,7 +1391,7 @@ The warning says: "The hotspot is still on and can still be found by scanning. O
 
 A hotspot you made yourself in NetworkManager is kept. When a unit has no profile named `tm-hotspot`, the installer takes over your access-point profile, the one that starts by itself and was used last, renames it `tm-hotspot`, and stops any other access point from starting. Its name on air, password, band, and hidden setting stay as you set them. The installer sets the profile's address to `10.42.0.1` and its priority below your saved networks, and copies the password into the password file.
 
-A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. The Status page's **Set a password** link opens the Network page. There, next to **Password**, choose **Set a password** and follow the steps in [Change the password](#change-the-password). The installer then keeps the profile's password the same as the password file's. An empty file tells the installer to leave the hotspot's security alone.
+A hand-made hotspot with no password shows as a problem on the Status page, because anyone nearby can join it. The Status page's **Set a password** link opens the Network page with **Hotspot** open. There, next to **Password**, choose **Set a password** and follow the steps in [Change the password](#change-the-password). The installer then keeps the profile's password the same as the password file's. An empty file tells the installer to leave the hotspot's security alone.
 
 A hand-made hotspot with a hidden name keeps it. Manage it as in [Hide the name](#hide-the-name).
 
@@ -1336,6 +1411,8 @@ The change applies at once, with no reboot. The Status page warns while no count
 
 ## Limits
 
+- The page can't join an open network, a hidden network (a saved hidden network included), a WPA3-only network, or a network that asks for a user name as well as a password (an enterprise network). It lists open, WPA3-only, enterprise, and other kinds with the reason, such as "Open networks can't be joined." or "This kind of network can't be joined." A hidden network is never listed by a scan, and a saved hidden network shows a **Hidden** mark and has no **Join**. A network that offers both WPA2 and WPA3 is joined as WPA2. The page doesn't complete a sign-in page, it only reports one.
+- One join (the test, the countdown, and the switch) runs at a time, and the page joins over IPv4 only.
 - A network the unit is also connected to that uses `10.42.0.x` addresses clashes with the hotspot's fixed address. Give that network another range.
 - The hotspot runs on the built-in radio, `wlan0`. If a USB Wi-Fi adapter takes that name, the hotspot stays off, and the Status page says so. Unplug the adapter and reboot.
 
@@ -1776,7 +1853,7 @@ When the device's Wi-Fi isn't on a network it knows, it runs a [hotspot](https:/
 
 A request that reaches the device on the hotspot's address with any other name, such as the one a phone's connection test uses, gets a redirect to `http://10.42.0.1/`. A request for `10.42.0.1` or for the device's own name is answered as usual.
 
-Whenever the device has a network, NetworkManager asks `connectivity-check.ubuntu.com` every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer.
+Whenever the device has a network, NetworkManager asks `connectivity-check.ubuntu.com` every 5 minutes whether the internet is reachable. The Status page's Internet check shows the answer. When an administrator [tests a Wi-Fi network](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#put-the-unit-on-a-wi-fi-network) from the Network page, the device asks that network's DNS server for the address of `connectivity-check.ubuntu.com` (up to three times, a second apart) and makes one request to it through that network, to report whether the internet is reachable there.
 
 ## Camera stream login
 
@@ -2785,16 +2862,17 @@ Rules live in the backend; the UI shows what the API returns and posts what the 
 
 tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in `tmsetup_tm_control_polkit` in the role's `vars/main.yml`, and nothing else:
 
-- Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. `tm-job-network.service` is on it for the Network page's changes, `tm-network-retry.service` is on it for the Hotspot check's fix, and `FIX_UNITS` in `modules/services/units.py` lists the units like it, which a check's fix may start but the Services list doesn't show; `POST /services/{unit}/restart` accepts them.
+- Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. `tm-job-network.service` is on it for the Network page's changes, `tm-job-network-join.service` for a Wi-Fi join, `tm-network-retry.service` is on it for the Hotspot check's fix, and `FIX_UNITS` in `modules/services/units.py` lists the units like it, which a check's fix may start but the Services list doesn't show; `POST /services/{unit}/restart` accepts them.
 - Seven actions: `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp` for the Date and time page, and `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` for the Device page. The `-ignore-inhibit` variants aren't granted, so tm-control asks logind (`CanReboot`, `CanPowerOff`) first and answers 409 while an inhibitor, such as an update, holds the device up.
 
-A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are three jobs:
+A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are four jobs:
 
 | Job               | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `system-password` | Sets the installing user's Linux password. It refuses an account that doesn't exist or has uid 0. `tmsetup.sh` also refuses to run as root, but a remote install with `-l root` still records root as the installing user, so the job's own check is the one that counts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `set-secret`      | Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the four names in its own table (`thingsboard_access_token`, `frigate_plus_api_key`, `plate_recognizer_token`, and `plate_recognizer_license_key`), and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's `KEY=` lines in `node-red-tm.env`, `frigate.env`, or `plate-recognizer.env`, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again. |
-| `network`         | Changes the Wi-Fi hotspot: on or off, its name, its password, and whether its name is hidden. See [The Network module and the hotspot](#the-network-module-and-the-hotspot).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `network`         | Changes the Wi-Fi hotspot: on or off, its name, its password, and whether its name is hidden. It also scans for networks, forgets a saved one, sets the order of the saved ones, and passes Switch now and Cancel to the join. See [The Network module and the hotspot](#the-network-module-and-the-hotspot).                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `network-join`    | Tests a Wi-Fi network under a NetworkManager checkpoint, comes back, counts down, and switches to it. See [The Wi-Fi join](#the-wi-fi-join).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 `SECRETS` in `tm-control/jobs/tm-job-set-secret` repeats the secrets' patterns (`VALUE_PATTERNS` in `core/secrets.py`) and restart units (`ENTERED` in `modules/secrets/router.py`), because the script imports nothing from tm-control; tests keep them the same.
 
@@ -2905,7 +2983,20 @@ The routes are in `modules/network/router.py`:
 | `GET /network/hotspot/password` | Admins             | The password file's text, `""` for a hotspot with no password, and `null` when the file can't be read. The answer carries `Cache-Control: no-store`, and each call records a `network.hotspot_password_shown` audit row. It is the only place a password leaves the device.                                                                                                                                                                                                   |
 | `POST /network/hotspot`         | Admins             | Takes any of `enabled`, `name`, `password`, and `hidden`, checks them, and answers 202 with the job's id. A name takes 1 to 32 bytes of UTF-8 and a password 8 to 63 printable ASCII characters, each with no space at either end; a value that breaks its rule, or a request with nothing to change, is a 422 with a sentence and no job. A unit with no hotspot profile is a 409 (`no_hotspot`). The audit row `network.hotspot` lists the fields sent, never their values. |
 
-The page follows the job with `GET /jobs/{id}`. In fake mode, `fake_network` stands in for NetworkManager and the password file.
+The Wi-Fi routes come from `modules/network/wifi.py` and the same router. `wifi.py` reads three files that root's scripts write in `/run/traffic-monitor/` (`network-scan.json`, `network-retry.json`, and `network-join.json`) and the saved networks from `adapters/network.py`. It is read only and never reads a password. A file that is missing, unreadable, or not in its form reads as nothing, not as an error. NetworkManager's sentences are never read: a saved network is what `saved_wifi` returns, and the network in use is its profile's UUID. The profile a join is testing is left out of the saved networks until the join saves it, because NetworkManager lists it while the test runs.
+
+| Route                            | Who                | What it does                                                                                                                                                                                                                                                                                                              |
+| -------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /network/wifi`              | Any signed-in user | `WifiNetworks`: the saved networks in the order the unit tries them (with `in_use`, `automatic`, `hidden`, `in_range`, and `could_not_join`), the nearby networks from the last scan (with `signal`, `security`, `saved`, `in_use`), how long ago the scan was, and the join.                                             |
+| `GET /network/join`              | Any signed-in user | The `JoinState` the Network page's card and the home page's banner show, or `null`. It reads one file, and the join unit's state while a stage is still going: a pending stage while the unit isn't running reads as `interrupted`.                                                                                       |
+| `POST /network/wifi/scan`        | Admin              | Starts the `network` job's `scan`. A radio that is missing (`no_radio`) or off (`radio_off`) is a 409 before any job.                                                                                                                                                                                                     |
+| `POST /network/wifi/forget`      | Admin              | Starts `forget` for a saved network's UUID, or 404 for one that isn't saved. The audit row names the network.                                                                                                                                                                                                             |
+| `POST /network/wifi/order`       | Admin              | Starts `order` with the UUIDs of exactly the networks that join by themselves, or 409 `stale_order`.                                                                                                                                                                                                                      |
+| `POST /network/wifi/join`        | Admin              | Checks the name and password, the radio, that no join is pending, that the network isn't in use, and that the last scan heard it with a password; then starts the `network-join` job with a name and password, or a saved network's UUID when no password is sent. The audit row names the network and holds no password. |
+| `POST /network/wifi/join/switch` | Admin              | Starts the `network` job's `switch-now`, or 409 `no_countdown`.                                                                                                                                                                                                                                                           |
+| `POST /network/wifi/join/cancel` | Admin              | Starts `cancel`, which also dismisses a result. 409 while the join is switching.                                                                                                                                                                                                                                          |
+
+Every route that starts a change refuses it with 409 `join_pending` while a join is testing, counting down, or switching (`refuse_while_joining`), and the Network page disables its controls the same way. The routes answer 202 with the job's id and the page follows the job with `GET /jobs/{id}`. In fake mode, `fake_network` stands in for NetworkManager, the password file, and the join job's state.
 
 `jobs/tm-job-network` is the root script behind `POST /network/hotspot`, run by `tm-job-network.service`. Its docstring lists every check and the order of its steps. The request is `{"action": "hotspot"}` plus the fields that were sent. The script repeats the name and password rules from `router.py`, because it imports nothing from tm-control, and a test keeps the two the same. In short, it:
 
@@ -2914,6 +3005,41 @@ The page follows the job with `GET /jobs/{id}`. In fake mode, `fake_network` sta
 1. Restarts the hotspot only when it is up and its name, password, or hidden setting changed (`connection up` applies them). Turning the hotspot off takes it down. Turning it on, on the built-in radio only, switches the radio on if it is off and starts the hotspot if the radio is idle. Nothing here restarts NetworkManager.
 
 It prints one line per step, never a password, and exits 1 with `refused: <sentence>` or `failed: <step>`; a line ending `the settings are saved` means the profile changed and only the restart failed.
+
+`tm-job-network` has five more actions, `{"action": "scan"}`, `forget`, `order`, `switch-now`, and `cancel`, and the same checks, hostile request, and lock. Its docstring has the full list:
+
+- `scan` runs `iw dev <device> scan flush` and writes `network-scan.json`: the time, and each network heard with its signal (0 to 100) and its security (`open`, `password`, `wpa3`, `enterprise`, or `other`). What `iw` prints is the names and settings of other people's networks, so the script parses it as text, never prints it, and sends a name to `nmcli` only when tm-control sends it back in a later request. `flush` empties the kernel's cache first, because a plain scan keeps listing a network for about 30 seconds after it left the air. While `iw` is busy (exit status 240, which it is while NetworkManager scans and for 10 to 14 seconds after the hotspot restarts) the action tries again every 5 seconds for as long as its 60 seconds last.
+- `forget` deletes a saved Wi-Fi client profile by UUID. When the unit was on it, it waits for the radio and starts the hotspot if nothing took over.
+- `order` gives the networks that join by themselves a priority, the first the highest, changing only the ones that differ.
+- `switch-now` and `cancel` never wait for the lock, because the join job holds it for its whole run. They write one word to `network-join.control`, which the join job reads every second. `cancel` on a finished result removes the state file, and on a join that died it rolls back the checkpoint, deletes the profile under test unless it is saved, and then removes the state file.
+
+### The Wi-Fi join
+
+`jobs/tm-job-network-join` is the root script behind `POST /network/wifi/join`, run by `tm-job-network-join.service`. Its request is `{"ssid": ..., "password": ...}` or `{"uuid": ...}`, and it deletes the request as soon as it reads it, so the password is on `/run` for a moment. Its docstring lists every step. In short, it:
+
+1. Takes the lock and holds it to the end. Held by someone else: the state becomes `failed` with reason `busy`. When the state file shows that an earlier run died mid-test, the job rolls back that run's checkpoint and deletes its profile under test unless it is saved. A checkpoint that no such run left belongs to another program, such as Cockpit's networking page around each change, so the job leaves it alone; step 3 then fails, and nothing is changed.
+1. Checks the radio and the profile in use, and scans with `flush`, once; a scan that fails doesn't stop the test. A network the scan doesn't hear is `failed` with reason `not_in_range`, and the radio is never touched. The flush is what keeps the hotspot from being taken away for a network that has just left.
+1. Makes the checkpoint: a NetworkManager checkpoint with a 90-second rollback timeout, over D-Bus with `busctl`. If it can't, the job stops before it touches the radio. After this point every path, including an error and SIGTERM, rolls back to the checkpoint. If the script itself dies, NetworkManager rolls back by itself 90 seconds later.
+1. Adds the profile under test in memory (`save no`), so a password that fails never reaches the microSD card, and runs `nmcli --wait 45 connection up` on it. The in-memory profile is the only place the new password lives, and the job never prints it.
+1. On success reads the address and DNS servers and probes the internet: up to three DNS questions, a second apart, to the network's first two DNS servers in turn (the first question right after a join can fail at once), then one HTTP request to `connectivity-check.ubuntu.com`, over sockets bound to the Wi-Fi, in 10 seconds in all. Only the answer's status code is read: 204 is `reachable`, and any other answer is `sign_in_page`. No address, no answer, or an error is `not_reachable`.
+1. Rolls back the checkpoint and waits for the radio to be where it was. A failure is `not_joined`, or `no_address` when the join waited out its 45 seconds with the device connected but without an address (exit status 3 with the device at state 70).
+1. Counts down 300 seconds, reading the control file every second. `cancel` ends it and deletes the profile unless it is saved. `switch` starts the switch.
+1. Switches: sets the profile to autoconnect with a priority above every other saved network, deletes the saved profiles of the same name when the password is new, and runs `connection up`. The radio is read until it is up on any profile. If it isn't, `connection up` on the profile it was on, or on the hotspot, and the state is `switch_failed`; the network stays saved and its failure goes on record in `network-retry.json`.
+
+The reasons the page gives come from the scan and from exit statuses and device states, never from a sentence of `nmcli`, `iw`, or `busctl`, which can carry a command line. The job prints fixed sentences, exit statuses, and error type names.
+
+The files, all in `/run/traffic-monitor/`, 0644 and root's, each written under a temporary name and renamed:
+
+| File                   | Written by                                         | Holds                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `network-scan.json`    | `tm-job-network` (`scan`)                          | The networks heard, strongest first, with the time.                                                                                                                                                                                                                                                                                                                                     |
+| `network-join.json`    | `tm-job-network-join`                              | The state: `stage` (`testing`, `countdown`, `switching`, `joined`, `failed`, `cancelled`, `switch_failed`), `ssid`, `uuid`, `saved`, `before`, `joined`, `reason` (`not_in_range`, `not_joined`, `no_address`, `busy`, `error`), `address`, `internet`, `switch_monotonic`, `finished_at`. Never the password. tm-control adds `interrupted` when a pending stage's unit isn't running. |
+| `network-join.control` | `tm-job-network` (`switch-now`, `cancel`)          | One word, `switch` or `cancel`. The join job reads it every second and removes it once read, and whenever a run ends.                                                                                                                                                                                                                                                                   |
+| `network-retry.json`   | `tm-network-retry`, and the join job for a failure | The failures on record per saved network, which set its wait of 5, 15, then 60 minutes.                                                                                                                                                                                                                                                                                                 |
+
+The lock, `/run/traffic-monitor/network.lock`, is held by `tm-job-network` for its run, by `tm-job-network-join` for all of its run (the test, the countdown, and the switch), and by each `tm-network-retry` run. The retry never waits for it, so the timer never moves the radio mid-change. `tm-job-network` waits up to 10 seconds, except for `switch-now` and `cancel`, which must reach a join that holds it. A join that finds the lock held ends as `busy`.
+
+The unit allows 900 seconds (`TimeoutStartSec`), the longest a run can take: 10 + 60 + 90 + 45 + 300 + 75 + 45. `TimeoutStopSec=120` gives a stop time to roll back.
 
 Two scripts in `jobs/` run as root, and neither is a `tm-job` unit. Both are standard-library Python with no `tm_control` imports, run as `/usr/bin/python3 -EP` from the root-owned `/usr/local/libexec/traffic-monitor/`, and read no password into their output:
 
