@@ -15,7 +15,7 @@ The control app's **Detection** page shows what the device looks for and which A
 * **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key and use a model by its ID.
 * **Other models on this device** lists the rest, and its title counts them.
 
-![The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key panel closed, and the other models](../assets/images/detection-page-models.png){ width="300" }
+![The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key and model ID panels closed, and the other models](../assets/images/detection-page-models.png){ width="300" }
 
 Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select **Files and objects** on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and [the objects it recognises](#what-the-model-recognises). A model with no list of objects has **Files** instead, and the running model's card with no files has **Objects**. A mark says when the model is:
 

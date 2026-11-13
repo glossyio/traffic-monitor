@@ -566,7 +566,11 @@ function openUpload() {
           </v-expansion-panel-text>
         </v-expansion-panel>
         <v-expansion-panel :value="MODEL_PANEL" class="border" eager>
-          <v-expansion-panel-title class="text-h6">Use a model by its ID</v-expansion-panel-title>
+          <h3 class="text-body-1">
+            <v-expansion-panel-title>
+              <span class="text-subtitle-1 font-weight-medium">Use a model by its ID</span>
+            </v-expansion-panel-title>
+          </h3>
           <v-expansion-panel-text>
             <PlusModelById
               :key="plusForms"

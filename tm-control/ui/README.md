@@ -534,8 +534,9 @@ Object detection, Model in use, Frigate+, Other models on this device.
 | a Frigate+ API key, pick ...       |
 | When it's offline, an              |  <- both paragraphs: everyone
 | administrator can upload ...       |
-| > API key  set, ending in 0001     |  <- admins: two panels, closed;
-| > Use a model by its ID            |     a viewer sees no panels
+| > API key  set, ending in 0001     |  <- admins: two panels, closed (an
+| > Use a model by its ID            |     h3 holds each title); a viewer
+|                                    |     sees no panels
 |                                    |
 | Other models on this device (2)(h2)|
 | [Upload a model]                   |
@@ -630,10 +631,10 @@ and the Frigate+ text.
   no panels. The section does not wait for `GET /models`, so it shows, and the key's form works, when the models can't
   load. The Status page's "Set the key" links to `/detection#frigate-plus`, which opens the key's panel and scrolls to
   the section, and its "Choose a model" to `/detection#frigate-plus-model`, which opens the ID panel the same way. The
-  panels' content is rendered while closed (`eager`), so the page's height is known when the link scrolls. The key
-  panel's title, a button, sits inside an h3 (`text-body-1`, like the Location page's panels), with "API key" in
-  `text-subtitle-1 font-weight-medium`, the size of `EnteredSecret`'s own h3 on the Device page. At `text-h6` it read as
-  large as the section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and
+  panels' content is rendered while closed (`eager`), so the page's height is known when the link scrolls. Each
+  panel's title, a button, sits inside an h3 (`text-body-1`, like the Location page's panels), with its words ("API
+  key", "Use a model by its ID") in `text-subtitle-1 font-weight-medium`, the size of `EnteredSecret`'s own h3 on the
+  Device page. At `text-h6` they read as large as the section's h2. The key's form is the Device page's (`EnteredSecret.vue`) without its own heading and
   state line.
 - The ID panel (`PlusModelById.vue`) is a short paragraph on where the ID is, one field, "Model ID", and one 44 px button,
   "Download and use". The field takes a pasted `plus://` address and surrounding spaces, and says "A model ID is 32
@@ -713,8 +714,8 @@ through the `#frigate-plus` link, and through a Use and a Delete:
   read "(91)" over rows of `unknown` chips while the card said 17. The API now leaves `unknown` out of every list.
 - Looked at and kept: at 375 px each list title in the fold wraps and its Copy sits on its own row. Nothing overlaps,
   and Copy sat on its own row inside the old panels too.
-- The panel title "API key" was at `text-h6`, as large as the "Frigate+" h2 above it, and had no heading around it.
-  It now sits in an h3 at the size of the Device page's key titles.
+- The panel titles ("API key", and "Use a model by its ID" after it) were at `text-h6`, as large as the "Frigate+" h2
+  above them, and had no heading around them. Each now sits in an h3 at the size of the Device page's key titles.
 
 #### Defaults rejected
 
