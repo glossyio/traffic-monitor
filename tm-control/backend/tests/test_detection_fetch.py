@@ -5,11 +5,17 @@ from placeholders import PLACEHOLDER_KEY
 
 from tm_control.adapters import frigate, httpjson
 from tm_control.modules.detection import fetch, picker
-from tm_control.modules.detection.fetch import WAIT, Fetches, wait
+from tm_control.modules.detection.fetch import POLL, WAIT, Fetches, wait
 
 MODEL_A = "a" * 32
 MODEL_B = "b" * 32
 TEXT = f"detectors:\n  coral:\n    type: edgetpu\nmodel:\n  path: plus://{MODEL_A}\n"
+OLD = "model:\n  path: /config/model_cache/old.tflite\n"  # what Frigate has until the save writes TEXT
+TOO_LONG = (
+    "Frigate didn't finish downloading the model in 10 minutes. Check the device's internet connection, then try "
+    "again."
+)
+STOPPED = "Frigate stopped before the download finished. Try again once Frigate is running."
 FRIGATE_HEADER_LINES = (
     "Your configuration is invalid.\nSee the official documentation at docs.frigate.video.\n"
 )
@@ -34,6 +40,26 @@ def answers(monkeypatch, save, raw=None):
     monkeypatch.setattr(frigate, "save_config", save_config)
     monkeypatch.setattr(frigate, "config_raw", lambda: raw)
     return sent
+
+
+def raws(monkeypatch, *values):
+    """frigate.config_raw answers each value in turn (an exception is raised), then the last one again."""
+    values = list(values)
+
+    def config_raw():
+        value = values.pop(0) if len(values) > 1 else values[0]
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    monkeypatch.setattr(frigate, "config_raw", config_raw)
+
+
+class Sleeps(list):
+    """A sleep that only records how long it was asked to sleep."""
+
+    def __call__(self, seconds):
+        self.append(seconds)
 
 
 def clock(*times):
@@ -85,8 +111,10 @@ def test_no_answer_with_the_config_saved_counts_as_saved(monkeypatch):
     answers(monkeypatch, (None, None), raw=TEXT)
     fetches = downloading()
     seen = []
-    wait(fetches, TEXT, lambda: seen.append(fetches.current().state), clock=clock(0, 600))
+    sleeps = Sleeps()
+    wait(fetches, TEXT, lambda: seen.append(fetches.current().state), clock=clock(0, 600), sleep=sleeps)
     assert seen == ["downloading"]
+    assert sleeps == []
     assert fetches.current() == fetch.Fetch(MODEL_A, "saved", None)
 
 
@@ -130,30 +158,80 @@ def test_a_traceback_refusal_keeps_its_last_line_and_no_key(monkeypatch):
 
 
 def test_no_answer_after_the_wait_says_ten_minutes(monkeypatch):
-    answers(monkeypatch, (None, None), raw="model:\n  path: /config/model_cache/old.tflite\n")
+    answers(monkeypatch, (None, None), raw=OLD)
     fetches = downloading()
-    wait(fetches, TEXT, never_saved, clock=clock(0, 600))
-    assert fetches.current() == fetch.Fetch(
-        MODEL_A, "failed",
-        "Frigate didn't finish downloading the model in 10 minutes. Check the device's internet connection, then try "
-        "again.",
-    )
+    sleeps = Sleeps()
+    wait(fetches, TEXT, never_saved, clock=clock(0, 600), sleep=sleeps)
+    assert sleeps == []
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", TOO_LONG)
 
 
 def test_no_answer_just_inside_the_wait_still_says_ten_minutes(monkeypatch):
-    answers(monkeypatch, (None, None), raw=None)
+    answers(monkeypatch, (None, None), raw=OLD)
     fetches = downloading()
-    wait(fetches, TEXT, never_saved, clock=clock(100, 100 + WAIT - 5))
-    assert fetches.current().message.startswith("Frigate didn't finish downloading the model in 10 minutes.")
+    wait(fetches, TEXT, never_saved, clock=clock(100, 100 + WAIT - 5), sleep=Sleeps())
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", TOO_LONG)
 
 
 def test_no_answer_sooner_says_frigate_stopped(monkeypatch):
     answers(monkeypatch, (None, None), raw=None)
     fetches = downloading()
-    wait(fetches, TEXT, never_saved, clock=clock(0, 12))
-    assert fetches.current() == fetch.Fetch(
-        MODEL_A, "failed", "Frigate stopped before the download finished. Try again once Frigate is running."
-    )
+    sleeps = Sleeps()
+    wait(fetches, TEXT, never_saved, clock=clock(0, 12), sleep=sleeps)
+    assert sleeps == []
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", STOPPED)
+
+
+def test_no_answer_with_the_old_config_polls_until_the_wait_ends(monkeypatch):
+    answers(monkeypatch, (None, None))
+    raws(monkeypatch, OLD)
+    fetches = downloading()
+    sleeps = Sleeps()
+    wait(fetches, TEXT, never_saved, clock=clock(0, 12, 300, WAIT - 6, WAIT - 5), sleep=sleeps)
+    assert sleeps == [POLL, POLL, POLL]
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", TOO_LONG)
+
+
+def test_a_504_is_followed_until_frigate_has_saved_the_config(monkeypatch):
+    # Frigate's nginx gives up on the save after 6 minutes; Frigate itself keeps downloading, then writes the file
+    answers(monkeypatch, (504, None))
+    raws(monkeypatch, OLD, OLD, TEXT)
+    fetches = downloading()
+    seen = []
+    sleeps = Sleeps()
+    wait(fetches, TEXT, lambda: seen.append(fetches.current().state), clock=clock(0, 360, 365), sleep=sleeps)
+    assert sleeps == [POLL, POLL]
+    assert seen == ["downloading"]
+    assert fetches.current() == fetch.Fetch(MODEL_A, "saved", None)
+
+
+def test_a_504_then_frigate_down_says_stopped_without_waiting_out_the_clock(monkeypatch):
+    answers(monkeypatch, (504, None))
+    raws(monkeypatch, OLD, None)
+    fetches = downloading()
+    sleeps = Sleeps()
+    wait(fetches, TEXT, never_saved, clock=clock(0, 360), sleep=sleeps)
+    assert sleeps == [POLL]
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", STOPPED)
+
+
+@pytest.mark.parametrize("status", [None, 502, 504])
+def test_no_answer_a_502_and_a_504_are_all_followed(monkeypatch, status):
+    answers(monkeypatch, (status, None))
+    raws(monkeypatch, OLD, TEXT)
+    fetches = downloading()
+    saved = []
+    wait(fetches, TEXT, lambda: saved.append(True), clock=clock(0, 10), sleep=Sleeps())
+    assert saved == [True]
+    assert fetches.current() == fetch.Fetch(MODEL_A, "saved", None)
+
+
+def test_an_error_mid_poll_never_leaves_it_downloading(monkeypatch):
+    answers(monkeypatch, (504, None))
+    raws(monkeypatch, OLD, OLD, OSError(PLACEHOLDER_KEY))
+    fetches = downloading()
+    wait(fetches, TEXT, never_saved, clock=clock(0, 10, 20), sleep=Sleeps())
+    assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: OSError")
 
 
 def test_another_status_is_failed_with_the_status(monkeypatch):
@@ -178,7 +256,7 @@ def test_an_error_reading_the_config_back_is_failed(monkeypatch):
 
     monkeypatch.setattr(frigate, "config_raw", config_raw)
     fetches = downloading()
-    wait(fetches, TEXT, never_saved, clock=clock(0, 12))
+    wait(fetches, TEXT, never_saved, clock=clock(0, 12), sleep=Sleeps())
     assert fetches.current() == fetch.Fetch(MODEL_A, "failed", "The download couldn't be followed: ValueError")
 
 
