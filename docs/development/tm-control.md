@@ -168,6 +168,7 @@ The `detection` module serves the [Detection page](../use/detection.md). It read
 | `POST /models/{name}/sidecar` | Admin | Writes the sidecar for a model file that has none, from the form's values |
 | `POST /models/{name}/use` | Admin | Sets Frigate's `model:` section to the model, then restarts Frigate |
 | `POST /models/default/use` | Admin | Puts back the installer's model, or removes the section on a device without a Coral |
+| `POST /models/plus/{id}/use` | Admin | Uses a Frigate+ model by its ID: a Use when the device has the model's two files, otherwise a download that Frigate makes (see [Using a Frigate+ model by its ID](#using-a-frigate-model-by-its-id)). Answers 202, with `started` as `restart` or `download` |
 | `GET /models/{name}/package` | Admin | A zip of the model's two files and `SHA256SUMS` |
 | `GET /models/{name}/file` | Admin | The model file alone, for a model with no sidecar to package, such as the installer's |
 | `DELETE /models/{name}` | Admin | Removes the model's files, unless it runs or is the installer's or Frigate's own default |
@@ -177,6 +178,26 @@ The module writes only inside `model_cache` and Frigate's `config.yml`, plus its
 Uploads need two things from the edge. nginx has its own location, `^~ /api/v1/models/upload/` in `tm-control-api.conf.j2`, with `client_max_body_size 100m` and `proxy_request_buffering off`, so the body streams to tm-control instead of being buffered. Because of that, tm-control reads the rest of a refused upload before it answers, so nginx can pass the answer on rather than a 502. The upload body is `application/octet-stream`, which the cross-site check in `core/csrf.py` admits along with `application/json`, because the check still requires a same-origin request. Every other `/api/` path keeps nginx's default body limit.
 
 The sidecars are a Frigate+ model record's JSON. The module reads only the fields the page shows and keeps the whole file as it was uploaded, so a download returns it unchanged. It never puts a record's other fields in an answer, a log line, or an audit row.
+
+### Using a Frigate+ model by its ID
+
+`POST /models/plus/{id}/use` takes an ID of 32 lowercase hexadecimal characters (`PLUS_ID` in `inventory.py`), and answers 422 `bad_id` for anything else. `contracts.MODEL_ID` is looser on purpose: it is the rule for a path someone typed into a config. When `model_cache` already holds the model's file and sidecar under that ID, the route is `POST /models/{id}/use`. Otherwise it needs the Frigate+ API key (409 `no_key`) and a Frigate that answers (409 `frigate_down`), and it never writes `config.yml` itself: a model that isn't on the device can't be validated without Frigate, which is also what downloads it.
+
+Frigate downloads the model while it validates a config whose `model:` has `path: plus://<id>`, so its `POST /api/config/save` holds its answer for minutes. The route sends that config from a thread (`fetch.py`) and answers 202 at once. The thread keeps one record, which `GET /models` returns to admins as `fetch` (`downloading`, then `saved`, `refused`, or `failed`, with a message for the last two). The record stays until the next download starts or a Use succeeds. A viewer's `fetch` is null. The record lives in memory, in `app.state.fetches`.
+
+How the thread follows the save:
+
+* A 200 is `saved`: it audits `models.use` with the ID and restarts `frigate.service`. A 400 is `refused`, with Frigate's own lines, redacted by `picker.refusal_lines`.
+* Frigate's port 5000 is its own nginx, which gives up on a request after 6 minutes (`proxy_read_timeout 360`) while Frigate goes on downloading. So after no answer, a 502, or a 504, the thread reads Frigate's config every 5 seconds. The config holding exactly the text it sent means Frigate saved: `saved`, then the restart. Frigate not answering is `failed` at once, "Frigate stopped before the download finished." The old config after 10 minutes (`WAIT`) is `failed` with "Frigate didn't finish downloading the model in 10 minutes." A refusal Frigate makes after its proxy gave up is never seen, so it ends as that same message.
+* Whatever the thread calls, it ends the record: an unexpected error is `failed`, named by its class only, because an exception's text could hold the key.
+
+One model change reaches Frigate at a time. `Fetches` has a gate that a Use, the default's Use, and a use by ID each take, without waiting, before they send Frigate a config, and a download's start takes it before it lets go. A second change meanwhile is 409 `changing`, and any change while a download runs is 409 `downloading`. Upload, download, and delete stay open. Fake mode follows a fake download on a thread of its own (`FAKE_FETCH_SECONDS`), through the same record and gate.
+
+The design leaves three gaps, which are accepted:
+
+* The record is in memory. If tm-control restarts during a download, the record is lost, and a save Frigate makes afterwards gets no restart from tm-control. Frigate has the new config on disk but runs the old model until it restarts for another reason.
+* Frigate writes the config text it was sent. An edit saved in Frigate's configuration editor during the download is overwritten.
+* If Frigate's download outlasts the 10-minute wait, Frigate may still write the config later, with no restart from tm-control, after the gate is free again.
 
 ### The Location module
 

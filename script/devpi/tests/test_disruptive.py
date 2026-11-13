@@ -640,6 +640,27 @@ def test_upload_package_and_delete_a_model_from_the_control_app(host, address, e
             raise AssertionError(f"the placeholder model may still be there ({error})")
 
 
+def test_using_a_plus_model_by_id_without_a_key_changes_nothing(host, address, expect, tm_login):
+    """With no Frigate+ API key set, an admin's POST /models/plus/<id>/use for a model the device doesn't have is
+    refused with 409 no_key, before any call to Frigate or to Frigate+: no download starts and frigate.service keeps
+    its invocation. The ID is 32 f's, not a model. Skips when a key is set, since the refusal is about the key."""
+    require_pii_free(expect)
+    cookie = session(address, *tm_login)
+    state = secret_state(address, cookie, KEY)
+    if state != (False, None):
+        pytest.skip(f"the Frigate+ key isn't empty ({state}); remove it on the Detection page first")
+    path = f"{API}/models/plus/{'f' * 32}/use"
+    frigate = invocation(host, "frigate.service")
+    answer = request_from_this_machine(address, path, "POST", cookie, {})
+    found = answer.json() if answer.status == 409 else None
+    error = found.get("error") if isinstance(found, dict) else None
+    code = error.get("code") if isinstance(error, dict) else None
+    assert (answer.status, code) == (409, "no_key"), f"POST {path} with no key (status, code)"
+    listed = request_from_this_machine(address, f"{API}/models", cookie=cookie).json()
+    assert isinstance(listed, dict) and listed.get("fetch") is None, f"GET {API}/models after it has a fetch record"
+    assert invocation(host, "frigate.service") == frigate, "frigate.service restarted; nothing here should"
+
+
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)
 ZONE_UNITS = ["traffic-monitor.service", "revproxy.service"]
 TEST_ZONES = ["Pacific/Auckland", "UTC", "America/Los_Angeles"]
