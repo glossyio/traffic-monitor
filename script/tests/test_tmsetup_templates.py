@@ -667,10 +667,10 @@ def frigate_plus_lines(key):
 
 
 def test_frigate_env_renders_the_frigate_plus_key_from_the_secrets():
-    """The key is set on the Device page and kept in the secrets, so -f writes it back rather than blanking it."""
+    """The key is set on the Detection page and kept in the secrets, so -f writes it back rather than blanking it."""
     comment, line = frigate_plus_lines(PLACEHOLDER_KEY)
     assert line == f"PLUS_API_KEY={PLACEHOLDER_KEY}"
-    assert comment.startswith("#") and "Device page" in comment
+    assert comment.startswith("#") and "Detection page" in comment
     assert frigate_plus_lines("")[1] == "PLUS_API_KEY="
 
 

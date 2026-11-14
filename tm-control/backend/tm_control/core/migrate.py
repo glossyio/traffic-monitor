@@ -13,7 +13,6 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScala
 from ruamel.yaml.tokens import CommentToken
 
 from tm_control.adapters.yamlfile import ConcurrentEditError, RoundTripFile, back_up, put_after, read_text, write_atomic
-from tm_control.core.manifest import SharingInfo
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, PLATE_RECOGNIZER_LICENSE_KEY, PLATE_RECOGNIZER_TOKEN
 from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.core.secrets import VALUE_RULES, is_valid_value
@@ -335,7 +334,7 @@ def run(frigate_config, dry_run=False):
 # the Frigate+ API key into frigate.env. tmsetup runs these steps as root, before it renders any of those files, so
 # that -f can't throw away a value's only copy. Each key path, the secret file it moves to, and whether mappings it
 # leaves empty go too.
-# Only a value that meets its secret's pattern (core/secrets.py) moves, as through the Device page: a value the env
+# Only a value that meets its secret's pattern (core/secrets.py) moves, as when it's entered in the control app: a value the env
 # line or the upload URL can't carry never reaches an env file.
 CONFIG_SECRETS = (
     (("thingsboard", "access_token"), THINGSBOARD_ACCESS_TOKEN, False),
@@ -365,6 +364,9 @@ def _enter_on(name):
     return f"Enter it on the control app's {SECRET_PAGES[name]} page"
 
 
+# The maintainer's upload server. Migrate may not import core/manifest.py (SharingInfo's default), which needs
+# pydantic; a test keeps this equal to it and to the role's tmsetup_sharing_maintainer_host.
+MAINTAINER_HOST = "tb.roadwaybiome.com"
 # The host the old config.yml.j2 shipped as a placeholder; a unit that never changed it never chose it.
 PLACEHOLDER_HOST = "tb.server.com"
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
@@ -728,7 +730,7 @@ def _run_node_red(config_path, secrets_dir, dry_run):
         after = "survey_id" if "survey_id" in deployment else "bearing"
         put_after(deployment, "database_precision", SingleQuotedScalarString("2"), after)  # the default, about 1 km
     if placeholder_host is not None:
-        placeholder_host["host"] = _requoted(placeholder_host["host"], SharingInfo().maintainer_host)
+        placeholder_host["host"] = _requoted(placeholder_host["host"], MAINTAINER_HOST)
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
     try:

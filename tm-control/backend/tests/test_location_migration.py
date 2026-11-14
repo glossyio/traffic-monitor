@@ -164,11 +164,13 @@ def test_migrate_never_opens_the_state_database(config_yml, secrets_dir, monkeyp
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
 
 
-def test_importing_migrate_does_not_import_the_modules_package():
-    """Migrate runs as root after the secret files are written; an import failure in any module must not reach it."""
+def test_importing_migrate_does_not_import_the_modules_package_or_the_web_dependencies():
+    """Migrate runs as root after the secret files are written; an import failure in any module, or in the web
+    dependencies (pydantic comes in with the manifest), must not reach it."""
     code = "\n".join([
         "import sys, tm_control.core.migrate",
-        "sys.exit(any(name.startswith('tm_control.modules') for name in sys.modules))",
+        "forbidden = ('tm_control.modules', 'tm_control.core.manifest', 'pydantic', 'fastapi')",
+        "sys.exit(any(name == f or name.startswith(f + '.') for name in sys.modules for f in forbidden))",
     ])
     package_root = Path(migrate.__file__).resolve().parents[2]
     env = {**os.environ, "PYTHONPATH": str(package_root)}
@@ -190,13 +192,13 @@ def host_config(tmp_path, host="tb.server.com", enabled="false", comment=""):
     return path
 
 
-def test_the_maintainer_host_in_the_manifest_default_is_the_roles():
+def test_migrates_maintainer_host_is_the_manifests_default_and_the_roles():
+    """Migrate keeps its own copy (it may not import the manifest, which needs pydantic); this keeps the three equal."""
     from tm_control.core.manifest import SharingInfo
 
     role = Path(__file__).resolve().parents[3] / "script/ansible/roles/tmsetup/vars/main.yml"
-    assert SharingInfo().maintainer_host == YAML(typ="safe", pure=True).load(role.read_text())[
-        "tmsetup_sharing_maintainer_host"
-    ]
+    roles_host = YAML(typ="safe", pure=True).load(role.read_text())["tmsetup_sharing_maintainer_host"]
+    assert migrate.MAINTAINER_HOST == SharingInfo().maintainer_host == roles_host
 
 
 @pytest.mark.parametrize("value", ["tb.server.com", "'tb.server.com'", '"TB.Server.com"', "HTTPS://TB.SERVER.COM/",
@@ -239,6 +241,13 @@ def test_migrate_leaves_the_placeholder_host_alone_when_the_upload_is_on(tmp_pat
     assert config.read_text() == original
     assert backups(config) == []
     assert output(capsys) == f"tm-control migrate: {config}: up to date\n"
+
+
+def test_migrate_counts_a_string_enabled_as_off_and_rewrites_the_placeholder_host(tmp_path, secrets_dir):
+    config = host_config(tmp_path, enabled="'true'")  # a string, not the boolean true: Node-RED doesn't upload
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert data(config.read_text())["thingsboard"]["host"] == "tb.roadwaybiome.com"
+    assert "enabled: 'true'" in config.read_text()
 
 
 def test_migrate_rewrites_the_placeholder_host_when_there_is_no_enabled_key(tmp_path, secrets_dir):
