@@ -517,7 +517,9 @@ def test_a_withdrawal_keeps_the_version_of_its_grant(admin):
 def test_a_changed_file_records_no_consent(admin, monkeypatch):
     sharing_router = importlib.import_module("tm_control.modules.sharing.router")
     set_token(admin)
-    Consents(admin.app.state.state).set_review_needed(True)
+    edit_file(admin, "thingsboard:\n    enabled: false\n", "thingsboard:\n    enabled: true\n")
+    assert get(admin)["review_needed"] is True  # an upload found on
+    count = len(rows(admin))
     real_load = sharing_router.load_config
 
     def load_then_edit(app_state):
@@ -528,10 +530,10 @@ def test_a_changed_file_records_no_consent(admin, monkeypatch):
 
     monkeypatch.setattr(sharing_router, "load_config", load_then_edit)
     error(put(admin, exact_location=True), 409, "config_changed")
-    assert rows(admin) == []
+    assert rows(admin)[count:] == []
     assert Consents(admin.app.state.state).review_needed() is True
     assert audit_rows(admin) == []
-    assert file_data(admin)["thingsboard"]["enabled"] is False
+    assert file_data(admin)["sharing"]["exact_location"] is False
 
 
 def test_a_save_leaves_nothing_for_the_follow_step_to_rewrite(admin):
@@ -548,8 +550,8 @@ def test_a_save_leaves_nothing_for_the_follow_step_to_rewrite(admin):
 
 def test_reviewed_clears_the_flag(admin):
     consents = Consents(admin.app.state.state)
-    consents.set_review_needed(True)
-    assert get(admin)["review_needed"] is True
+    edit_file(admin, "thingsboard:\n    enabled: false\n", "thingsboard:\n    enabled: true\n")
+    assert get(admin)["review_needed"] is True  # an upload found on
     r = admin.post("/api/v1/sharing/reviewed", headers=JSON_HEADERS)
     assert r.status_code == 204
     assert get(admin)["review_needed"] is False

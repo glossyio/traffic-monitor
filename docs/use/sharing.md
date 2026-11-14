@@ -63,7 +63,7 @@ The **Sharing** check, in the Configuration group, says what is shared: **Not sh
 
 ## After an update
 
-A device that already uploaded before it had these choices keeps uploading, with the location as the database stores it. The exact location stops until an administrator turns it on. The Status page shows **Review sharing** until an administrator chooses **I've reviewed this** on the Sharing page or saves the page. Until someone reads the notice and saves the page, the Sharing check also says so.
+A device that already uploaded before it had these choices keeps uploading, with the location as the database stores it. The exact location stops until an administrator turns it on. The first time someone opens the Status, Location, or Sharing page, the control app adds a `sharing` block to `config.yml` that records this, with the exact location and the public map both off. Node-RED reloads its settings once when that happens. The Status page shows **Review sharing** until an administrator chooses **I've reviewed this** on the Sharing page or saves the page. Until someone reads the notice and saves the page, the Sharing check also says so.
 
 The upload of the device's settings, and the Backup & Restore section of the legacy dashboard, are removed while they are reworked.
 
@@ -71,7 +71,7 @@ An old `config.yml` that still has the placeholder server `tb.server.com`, with 
 
 ## What the installer's `-f` does to sharing
 
-Running the installer with `-f` writes a fresh `config.yml` with the upload off and no `sharing` block, so every choice is turned off, and none is restored afterwards. The access token stays, because the device keeps it with its other secrets. Turning the upload back on by editing the file shares the rounded data only: the exact location and the public map are never turned on from the file. Choose them again on this page.
+Running the installer with `-f` writes a fresh `config.yml` with the upload off and no `sharing` block, so every choice is turned off, and none is restored afterwards. The access token stays, because the device keeps it with its other secrets. Turning the upload back on by editing the file shares the rounded data only, whether or not anyone opened a page in between: the exact location and the public map are never turned on from the file. The control app then writes the `sharing` block back with both turned off. Choose them again on this page.
 
 ## Where it's stored
 

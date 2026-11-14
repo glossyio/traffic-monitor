@@ -42,7 +42,7 @@ What the device shares, and for which server. The control app's [Sharing page](.
 | `public_map` | `none` or `rounded_point` | Whether the device is shown on the public map. |
 | `notice_version` | text | The version of the sharing notice that was read when sharing was turned on. |
 
-A missing `sharing` section means the device shares the rounded location only, with no exact location and no map. The installer's `-f` leaves the section out, which turns every choice off; see [What the installer's `-f` does to sharing](../use/sharing.md#what-the-installers-f-does-to-sharing).
+A missing `sharing` section means the device shares the rounded location only, with no exact location and no map. When the upload is on, the control app writes the section back with both turned off, even if they were chosen before the section went missing. The installer's `-f` leaves the section out, which turns every choice off; see [What the installer's `-f` does to sharing](../use/sharing.md#what-the-installers-f-does-to-sharing).
 
 ## deployment
 
