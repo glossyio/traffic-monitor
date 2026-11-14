@@ -34,7 +34,9 @@ export function apiError(status: number, code: string, message: string): Respons
 // `answers` maps "METHOD /path" to a body (sent as 200), a Response, or a function of the request.
 export function fakeApi(answers: Record<string, Answer>) {
   const sent: Sent[] = []
-  const fetch = vi.fn(async (request: Request) => {
+  // The API client sends a Request; the home button's script sends a path and its options
+  const fetch = vi.fn(async (input: Request | string, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(new URL(input, window.location.href), init)
     const path = new URL(request.url).pathname
     sent.push({ method: request.method, path, body: await bodyOf(request) })
     const answer = answers[`${request.method} ${path}`]

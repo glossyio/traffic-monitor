@@ -31,7 +31,14 @@ PYTHONPATH=tm-control/backend python -m tm_control dump-openapi > tm-control/ui/
 cd tm-control/ui && npm run api:generate
 ```
 
-`npm run build` writes the site to `dist/`, and `npm test` runs the Vitest tests in `tests/`. To use the same Node
+To try the home button that nginx adds to each app's page, open `http://localhost:5173/home-button-demo.html` while
+`npm run dev` runs. It's a stand-in app page with the button on it; add `?app=nr` (or `dashboard`, `ui`, `feeds`) to
+try another app's spot. Drag it to either side, drop it at an edge to tuck it, and reload to see that it stays where
+you left it. Logged in on the same address, it shows the fake device's name and puts it in the tab's title; without
+the backend or a login, it's the icon alone. The build leaves this page out.
+
+`npm run build` writes the site to `dist/`, and the home button's script beside it as `dist/home-button.js` (the
+build fails if that grows past 10 240 bytes). `npm test` runs the Vitest tests in `tests/`. To use the same Node
 as the device's build, run them in the pinned image:
 
 ```bash

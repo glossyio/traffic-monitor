@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build && vite build --config vite.home-button.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "api:generate": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts"
