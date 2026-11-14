@@ -219,12 +219,13 @@ class FakeApps:
     def asked(self, url) -> int:
         return sum(1 for asked, _ in self.requests if asked == url)
 
-    def context(self, state=None):
+    def context(self, state=None, notice_version=None):
         from tm_control.core.checks import Context
         from tm_control.core.manifest import load_manifest
 
         manifest = load_manifest(FIXTURES / "manifest.json").model_copy(update={"codedir": str(self.codedir)})
-        return Context(settings=None, manifest=manifest, secrets=self.secrets, state=state)
+        return Context(settings=None, manifest=manifest, secrets=self.secrets, state=state,
+                       notice_version=notice_version)
 
 
 @pytest.fixture

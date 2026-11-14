@@ -587,6 +587,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Places
+         * @description The places as a CSV with their exact coordinates (five decimals, empty for a place with none) and no
+         *     description, for an admin to keep or hand to the server's operator. The audit row holds the row count only.
+         */
+        get: operations["export_places_api_v1_surveys_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/surveys/import": {
         parameters: {
             query?: never;
@@ -3243,6 +3264,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    export_places_api_v1_surveys_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

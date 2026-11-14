@@ -81,7 +81,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Each report reconciles the places first (decision 5), so the Location check reads the result.
     app.state.status = StatusCache(
         check_groups,
-        lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state),
+        lambda: Context(
+            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version
+        ),
         prepare=lambda: reconcile.for_status_report(app.state),
     )
     install_error_handlers(app)

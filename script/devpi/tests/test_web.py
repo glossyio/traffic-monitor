@@ -707,7 +707,8 @@ DETECTOR_KIND = {"hailo8": "hailo8l"}
 # The status page's runtime assumptions, which only a device shows: Frigate and Node-RED answer tm-control, and the
 # sandboxed tm-control sees the pod's published 1883 with ss
 APPS_OK = ["apps.frigate.reachable", "apps.nodered.reachable", "apps.nodered.schema", "apps.broker.login"]
-CONFIG_CHECKS = ["config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard"]
+CONFIG_CHECKS = ["config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard",
+                 "config.sharing"]
 
 
 def test_status_report_agrees_with_the_inventory(address, expect, admin_session):

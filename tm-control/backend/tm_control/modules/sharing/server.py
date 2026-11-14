@@ -32,6 +32,12 @@ def _time(value) -> float | None:
     return moment.timestamp()
 
 
+def seconds_since(at: str | None, now: float) -> int | None:
+    """Whole seconds from the time `at` (as ServerStatus.at gives it) to `now`, never below 0; None for no time."""
+    moment = _time(at)
+    return None if moment is None else max(0, int(now - moment))
+
+
 def server_status(report: dict | None, now: float) -> ServerStatus:
     """The state from Node-RED's status body (None when Node-RED didn't answer): unknown without an upload section;
     off with the upload off; waiting with nothing recorded since the settings loaded; the failure's kind when it is

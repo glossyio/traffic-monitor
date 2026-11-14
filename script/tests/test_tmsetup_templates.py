@@ -785,7 +785,7 @@ def test_plate_recognizer_env_template_renders_from_the_secrets():
 
 
 def test_node_red_config_template_has_no_secret_key():
-    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Device page."""
+    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Sharing page."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
               "tmsetup_bearing": "n"}
     text = render("container/node-red-tm/config/config.yml.j2", **values)

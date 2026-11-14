@@ -6,6 +6,7 @@ import socket
 import struct
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -72,10 +73,12 @@ def test_all_apps_checks_are_ok_on_a_healthy_device(apps):
         "apps.nodered.schema",
         "apps.go2rtc.streams",
         "apps.broker.login",
+        "apps.sharing_server",
     ]
     assert {c.id: c.status for c in checks.values() if c.status != "ok"} == {}
     assert [c.title for c in checks.values()] == [
         "Frigate", "Cameras", "Node-RED", "Node-RED configuration", "Database schema", "Camera streams", "MQTT broker",
+        "Sharing server",
     ]
     # Each Frigate and go2rtc read happens once per report, however many checks use it.
     assert all(apps.asked(url) == 1 for url in (VERSION, CONFIG, STATS, NODE_RED_STATUS, GO2RTC_STREAMS))
@@ -840,3 +843,91 @@ def test_ss_missing_or_timing_out_is_none(monkeypatch):
     assert mqtt.port_1883_open_to_network() is None
     monkeypatch.setattr(mqtt, "run", lambda argv, **kwargs: CommandResult(-9, "", "", True))
     assert mqtt.port_1883_open_to_network() is None
+
+
+# The sharing server's answer, from Node-RED's status
+
+SERVER_HOST = "tb.example.invalid"
+
+
+def ago(seconds: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z")
+
+
+def upload_status(apps, **upload):
+    """The upload section as Node-RED reports it, with each key ending in _ago given as seconds before now (the times
+    are made when the test runs, not when it is collected)."""
+    given = {key[:-4] + "_at" if key.endswith("_ago") else key: ago(value) if key.endswith("_ago") else value
+             for key, value in upload.items()}
+    apps.edit_json(NODE_RED_STATUS, lambda body: body["upload"].update(
+        {"enabled": True, "last_ok_at": None, "last_failure_at": None, "last_failure": None} | given
+    ))
+
+
+TOKEN_FIX = Fix(kind="link", text="Check the token", href="/sharing#token")
+
+
+@pytest.mark.parametrize(
+    "upload, status, phrase, fix",
+    [
+        ({"enabled": False}, "ok", "Nothing is being uploaded.", None),
+        ({}, "ok", "Waiting for the first upload since the settings loaded.", None),
+        ({"last_ok_ago": 30}, "ok", "The server accepted an upload less than a minute ago.", None),
+        ({"last_ok_ago": 300}, "ok", "The server accepted an upload 5 minutes ago.", None),
+        ({"last_ok_ago": 2 * 3600}, "warn", "The server hasn't accepted an upload for 2 hours.", None),
+        ({"last_ok_ago": 3 * 86400 + 5}, "warn", "The server hasn't accepted an upload for 3 days.", None),
+        (
+            {"last_failure_ago": 10, "last_failure": "unreachable"},
+            "warn",
+            "The server can't be reached. The device keeps recording; uploads that fail aren't sent again.",
+            None,
+        ),
+        (
+            {"last_ok_ago": 60, "last_failure_ago": 10, "last_failure": "refused"},
+            "error",
+            "The server refused this device's token.",
+            TOKEN_FIX,
+        ),
+        ({"last_failure_ago": 10, "last_failure": "rejected"}, "error", "The server refused an upload.", None),
+        ({"last_failure_ago": 10, "last_failure": "server_error"}, "warn",
+         "The server answered with an error.", None),
+        # an upload accepted after the failure puts the failure behind it
+        ({"last_ok_ago": 10, "last_failure_ago": 100, "last_failure": "refused"}, "ok",
+         "The server accepted an upload less than a minute ago.", None),
+    ],
+)
+def test_sharing_server_check(apps, upload, status, phrase, fix):
+    upload_status(apps, **upload)
+    check = apps_group(apps)["apps.sharing_server"]
+    assert check.title == "Sharing server"
+    assert (check.status, check.detail, check.fix) == (status, phrase, fix)
+
+
+def test_sharing_server_check_is_unknown_when_node_red_does_not_answer(apps):
+    apps.answers[NODE_RED_STATUS] = (None, None)
+    check = apps_group(apps)["apps.sharing_server"]
+    assert (check.status, check.fix) == ("unknown", None)
+    assert check.detail == "Node-RED didn't answer, so the server's status isn't known."
+
+
+def test_sharing_server_check_is_unknown_without_an_upload_section(apps):
+    apps.edit_json(NODE_RED_STATUS, lambda body: body.pop("upload"))
+    assert apps_group(apps)["apps.sharing_server"].status == "unknown"
+
+
+def test_sharing_server_check_uses_the_one_status_read(apps):
+    upload_status(apps)
+    apps_group(apps)
+    assert apps.asked(NODE_RED_STATUS) == 1
+
+
+def test_sharing_server_check_shows_no_host(apps):
+    for upload in (
+        {"last_failure_ago": 10, "last_failure": "refused"},
+        {"last_failure_ago": 10, "last_failure": "rejected"},
+        {"last_ok_ago": 5000},
+        {"last_ok_ago": 5, "host": SERVER_HOST, "last_error": f"connect to {SERVER_HOST} failed"},
+    ):
+        upload_status(apps, **upload)
+        check = apps_group(apps)["apps.sharing_server"]
+        assert "example" not in check.detail and "invalid" not in check.detail

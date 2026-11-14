@@ -819,3 +819,48 @@ def test_the_fake_engine_closes_a_removed_sensors_row(admin):
     path.write_text(path.read_text().replace(off, "        TM_RADAR_SERIAL_PORT_00:\n            enabled: false\n"))
     admin.app.state.nodered.after_config_write()
     assert rows(admin, in_use) == list(after.values())
+
+
+# The exact-locations file
+
+
+def export(client):
+    return client.get("/api/v1/surveys/export")
+
+
+def test_export_is_admin_only_and_has_no_description(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    place = create(claimed_client, MAIN_ST, lat=45.52252, lon=-122.69120)
+    r = export(claimed_client)
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "text/csv; charset=utf-8"
+    assert r.headers["content-disposition"] == 'attachment; filename="traffic-monitor-places.csv"'
+    lines = r.text.splitlines()
+    assert lines[0] == "survey_id,lat,lon,status,created_at,updated_at"
+    assert len(lines) == 1 + len(places(claimed_client)["surveys"])
+    mine = next(line for line in lines if line.startswith(place["id"] + ","))
+    assert mine.startswith(f"{place['id']},45.52252,-122.69120,planned,")
+    assert len(mine.split(",")) == 6
+    assert "Main St" not in r.text and MAIN_ST not in r.text
+    assert ("survey.export", str(len(lines) - 1)) in audit_rows(claimed_client)
+    assert "45.52252" not in str([detail for _, detail in audit_rows(claimed_client)])
+
+    claimed_client.cookies.clear()
+    assert export(claimed_client).status_code == 401
+    Users(claimed_client.app.state.state).create(*VIEWER, "viewer")
+    login(claimed_client, *VIEWER)
+    assert export(claimed_client).status_code == 403
+
+
+def test_export_lists_the_places_in_the_lists_order(admin):
+    create(admin, "First", lat=45.1, lon=-122.2)
+    create(admin, "Second", lat=45.3, lon=-122.4)
+    listed = [place["id"] for place in places(admin)["surveys"]]
+    body = export(admin).text.splitlines()[1:]
+    assert [line.split(",")[0] for line in body] == listed
+
+
+def test_export_writes_an_empty_pair_for_no_location(admin):
+    place = create(admin, "Somewhere", lat=None, lon=None)
+    line = next(line for line in export(admin).text.splitlines() if line.startswith(place["id"] + ","))
+    assert line.startswith(f"{place['id']},,,planned,")

@@ -107,6 +107,12 @@
                     "title": "MQTT broker",
                     "status": "ok",
                     "detail": "Broker on this device only: port 1883 isn't open to the network."
+                },
+                {
+                    "id": "apps.sharing_server",
+                    "title": "Sharing server",
+                    "status": "ok",
+                    "detail": "Nothing is being uploaded."
                 }
             ]
         },
@@ -148,6 +154,12 @@
                     "title": "ThingsBoard upload",
                     "status": "ok",
                     "detail": "The upload is off."
+                },
+                {
+                    "id": "config.sharing",
+                    "title": "Sharing",
+                    "status": "ok",
+                    "detail": "Not sharing."
                 },
                 {
                     "id": "config.frigate_plus",

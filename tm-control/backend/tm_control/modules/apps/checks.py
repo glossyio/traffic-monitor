@@ -5,6 +5,7 @@ Details name cameras, zones, streams, and radars, never a URL, an input path, or
 """
 
 import re
+import time
 from pathlib import Path
 
 from tm_control.adapters import mqtt
@@ -12,6 +13,7 @@ from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, VALUE_PATTERNS
 from tm_control.modules.apps import probes
 from tm_control.modules.services.units import RESTART_LOOP_SPACING, restart_fix, restart_loop
+from tm_control.modules.sharing.server import seconds_since, server_status
 
 MIGRATION = re.compile(r"(\d{4})_.*\.sql")
 STREAM = re.compile(r":8554/([^?#]+)")  # a go2rtc stream in a Frigate input path: rtsp://*:*@host...:8554/<name>
@@ -361,6 +363,42 @@ def mqtt_broker(context: Context) -> list[Check]:
     )
 
 
+# The sharing server
+
+
+def sharing_server(context: Context) -> list[Check]:
+    """How the server the upload goes to last answered, from the upload section of Node-RED's status (the one read
+    the other checks share). Never the host, an answer's body, or a line of Node-RED's log."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="apps.sharing_server", title="Sharing server", status=status, detail=detail, fix=fix)]
+
+    now = time.time()
+    server = server_status(probes.nodered_report(context), now)
+    age = seconds_since(server.at, now) or 0
+    if server.state == "off":
+        return check("ok", "Nothing is being uploaded.")
+    if server.state == "waiting":
+        return check("ok", "Waiting for the first upload since the settings loaded.")
+    if server.state == "ok":
+        return check("ok", f"The server accepted an upload {duration(age)} ago.")
+    if server.state == "stale":
+        return check("warn", f"The server hasn't accepted an upload for {duration(age)}.")
+    if server.state == "unreachable":
+        return check("warn", "The server can't be reached. The device keeps recording; uploads that fail aren't sent "
+                             "again.")
+    if server.state == "refused":
+        return check("error", "The server refused this device's token.",
+                     Fix(kind="link", text="Check the token", href="/sharing#token"))
+    if server.state == "rejected":
+        return check("error", "The server refused an upload.")
+    if server.state == "server_error":
+        return check("warn", "The server answered with an error.")
+    return check("unknown", "Node-RED didn't answer, so the server's status isn't known.")
+
+
 GROUP = CheckGroup(
-    "apps", "Apps", [frigate, cameras, node_red, node_red_configuration, database_schema, camera_streams, mqtt_broker]
+    "apps",
+    "Apps",
+    [frigate, cameras, node_red, node_red_configuration, database_schema, camera_streams, mqtt_broker, sharing_server],
 )

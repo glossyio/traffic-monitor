@@ -170,6 +170,54 @@ def _parse_sharing(block) -> SharingBlock:
     )
 
 
+SHARING_KEYS = ("target", "host", "exact_location", "public_map", "notice_version")
+
+
+def _sharing_value_ignored(key: str, value) -> bool:
+    """Whether _parse_sharing drops or changes this key's value. An empty key is not a value, and a host or notice
+    version that is text is kept (a host may normalise differently, which the device reads the same)."""
+    if value is None:
+        return False
+    if key == "target":
+        return value not in ("maintainer", "own")
+    if key == "exact_location":
+        return not isinstance(value, bool)
+    if key == "public_map":
+        return value not in ("none", "rounded_point")
+    return not isinstance(value, str)  # host and notice_version
+
+
+def sharing_ignored(data: Mapping) -> bool:
+    """The raw sharing: block of a config.yml already read holds something the device ignores: a block that isn't a
+    mapping, a key it doesn't know, or a value that isn't one of its key's own. No block, and an empty one, hold
+    nothing."""
+    block = data.get("sharing")
+    if block is None:
+        return False
+    if not isinstance(block, Mapping):
+        return True
+    return any(key not in SHARING_KEYS or _sharing_value_ignored(key, value) for key, value in block.items())
+
+
+def sharing_kind(upload: Upload, block: SharingBlock | None) -> Literal["none", "data", "exact"]:
+    """"none" with the upload off; "exact" when the sharing: block asks for the exact location for the very server
+    the upload goes to; else "data"."""
+    if not upload.enabled:
+        return "none"
+    if block is not None and block.exact_location and block.host is not None:
+        if block.host == normalize_host(upload.host):
+            return "exact"
+    return "data"
+
+
+def read_sharing(read: ConfigRead) -> tuple[Upload, SharingBlock | None] | None:
+    """The upload and the sharing: block (None when the file has no `sharing:` key) from a file already read with
+    read_config, leniently; None when it couldn't be read."""
+    if read.data is None:
+        return None
+    return _parse_upload(read.data), (_parse_sharing(read.data["sharing"]) if "sharing" in read.data else None)
+
+
 SHARING_COMMENT = "Written by the control app's Sharing page. A choice made here isn't recorded: use the page."
 
 
@@ -411,16 +459,8 @@ class NodeRedConfig:
         return _parse_sharing(data["sharing"]) if "sharing" in data else None
 
     def sharing(self) -> Literal["none", "data", "exact"]:
-        """"none" with the upload off; "exact" when the sharing: block asks for the exact location for the very server
-        the upload goes to; else "data"."""
-        upload = self.upload()
-        if not upload.enabled:
-            return "none"
-        block = self.sharing_block()
-        if block is not None and block.exact_location and block.host is not None:
-            if block.host == normalize_host(upload.host):
-                return "exact"
-        return "data"
+        """What the upload sends: see sharing_kind."""
+        return sharing_kind(self.upload(), self.sharing_block())
 
     # editing
 

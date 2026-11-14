@@ -1057,6 +1057,21 @@
         }
       }
     },
+    "/api/v1/surveys/export": {
+      "get": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Export Places",
+        "description": "The places as a CSV with their exact coordinates (five decimals, empty for a place with none) and no\ndescription, for an admin to keep or hand to the server's operator. The audit row holds the row count only.",
+        "operationId": "export_places_api_v1_surveys_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
     "/api/v1/surveys/import": {
       "post": {
         "tags": [
