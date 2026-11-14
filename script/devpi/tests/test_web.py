@@ -1254,11 +1254,18 @@ def sharing_answer(address, cookie, method="GET", path="", body=None):
     return answer.status, found if isinstance(found, dict) else None
 
 
+def sharing_snapshot(state):
+    """What a refused save must leave alone: the share switch, the server's kind, and the three recorded choices.
+    Booleans and the kind ("maintainer", "own" or None) only, so a failure may print it."""
+    return (state.get("enabled"), state.get("target"), *((state.get(key) or {}).get("granted")
+                                                         for key in ("share_data", "exact_location", "public_map")))
+
+
 def test_sharing_is_readable_by_a_viewer_and_writable_by_an_admin_only(address, admin_session, viewer_session):
     """Any signed-in user may read the Sharing page's state: a viewer's answer says it isn't writable and has no token
-    state, and the admin's says it is. A viewer's save is refused with require_admin's 403, whatever the body (this one
-    turns everything off, the safest valid body), and the admin's state doesn't change. Only booleans, the status
-    codes and the share switch are kept."""
+    state, and the admin's says it is. A viewer's save is refused with require_admin's 403 (the body is empty, so were
+    the refusal to regress the answer would be a 422 that writes nothing), and the admin's (enabled, target, Share
+    data, exact location, public map) is the same before and after."""
     admin_status, admin_state = sharing_answer(address, admin_session)
     assert admin_status == 200 and admin_state is not None, (
         f"GET {API}/sharing with the admin session: HTTP {admin_status}")
@@ -1270,13 +1277,15 @@ def test_sharing_is_readable_by_a_viewer_and_writable_by_an_admin_only(address, 
     assert (viewer_state.get("writable"), viewer_state.get("token")) == (False, None), (
         "a viewer's GET /sharing (writable, token present): "
         f"{(viewer_state.get('writable'), viewer_state.get('token') is not None)}")
-    switch = admin_state.get("enabled")
-    refused = request_from_this_machine(
-        address, f"{API}/sharing", method="PUT", cookie=viewer_session,
-        body={"target": "maintainer", "enabled": False, "exact_location": False, "public_map": "none"})
+    before = sharing_snapshot(admin_state)
+    refused = request_from_this_machine(address, f"{API}/sharing", method="PUT", cookie=viewer_session, body={})
     assert admin_refusal(refused) == (403, ADMIN_ONLY), f"PUT {API}/sharing with a viewer session (status, message)"
-    assert sharing_answer(address, admin_session)[1].get("enabled") == switch, (
-        "the share switch changed after a viewer's refused PUT")
+    after_status, after_state = sharing_answer(address, admin_session)
+    assert after_status == 200 and after_state is not None, (
+        f"GET {API}/sharing with the admin session after the refused PUT: HTTP {after_status}")
+    assert sharing_snapshot(after_state) == before, (
+        "(enabled, target, share_data, exact_location, public_map granted) before and after a viewer's refused PUT: "
+        f"{before} and {sharing_snapshot(after_state)}")
 
 
 def test_the_notice_is_served(address, viewer_session):
