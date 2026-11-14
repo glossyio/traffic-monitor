@@ -29,7 +29,7 @@ Every app except Cockpit shows a small home button. Press it to come back to the
 
 On a computer the button also shows the device's name. If you share a screenshot of an app and would rather the name weren't in it, tuck the button first. On a narrow screen, such as a phone held upright, the button is the icon alone.
 
-Each tab's title starts with the device's name, so you can tell several devices apart in one browser window.
+Once you've signed in, the home page's tab and the tab of each app with the button start with the device's name, so you can tell several devices apart in one browser window.
 
 ??? note "Finding the device's address"
 

@@ -151,6 +151,16 @@ def test_accept_changes_nothing_for_anyone_else(claimed_client, login):
     assert verify_page(viewer, "/dashboard/", "viewer").status_code == 200
 
 
+def test_a_viewers_page_load_on_an_admin_path_waits_for_the_license_first(claimed_client, login, monkeypatch):
+    """The license check comes before the role check, so a waiting viewer sees /waiting, not /admin-only."""
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    monkeypatch.setattr(claimed_client.app.state, "eula", Eula(version="2", markdown="# New terms\n"))
+    r = verify_page(claimed_client, "/nr/", "admin")
+    assert (r.status_code, r.headers["X-TM-Redirect"]) == (401, "/waiting")
+    assert r.json()["error"]["code"] == "eula_required"
+
+
 IDENTITY_HEADERS = ("X-TM-User", "X-TM-Role", "X-TM-Frigate-Secret", "X-TM-NR-Token", "X-TM-Redirect")
 
 

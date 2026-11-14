@@ -518,10 +518,20 @@ APP_PAGES = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/feeds/stre
 
 @pytest.mark.parametrize("path", APP_PAGES)
 def test_app_pages_carry_the_home_button(address, admin_session, path):
-    """nginx adds the script line to each app's page, once, and serves the page uncompressed to do it."""
+    """nginx adds the script line to each app's page, once, and serves the page uncompressed to do it. No app may
+    send a Content-Security-Policy, which could block the script."""
     answer = request_from_this_machine(address, path, cookie=admin_session, headers=PAGE)
-    found = (answer.status, answer.headers.get("Content-Encoding"), answer.body.count(SCRIPT_LINE))
-    assert found == (200, None, 1), f"{path}: (status, Content-Encoding, script lines)"
+    found = (answer.status, answer.headers.get("Content-Encoding"), answer.body.count(SCRIPT_LINE),
+             answer.headers.get("Content-Security-Policy"))
+    assert found == (200, None, 1, None), f"{path}: (status, Content-Encoding, script lines, Content-Security-Policy)"
+
+
+def test_the_editors_node_html_gets_no_script_line(address, admin_session):
+    """The Node-RED editor fetches its nodes' HTML with Accept: text/html. A node package whose editor HTML holds a
+    literal </head> would get the line there; none does today."""
+    answer = request_from_this_machine(address, "/nr/nodes", cookie=admin_session, headers=PAGE)
+    found = (answer.status, answer.body.count(SCRIPT_LINE))
+    assert found == (200, 0), "/nr/nodes: (status, script lines)"
 
 
 def test_what_isnt_a_page_load_stays_compressed(address, admin_session):

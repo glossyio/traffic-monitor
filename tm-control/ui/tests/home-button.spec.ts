@@ -150,7 +150,7 @@ it('tucks on Escape and moves focus to the handle', () => {
   expect(host().shadowRoot!.activeElement).toBe(handle())
 })
 
-it('keeps Escape to itself, so the app under it does not also close a dialog', () => {
+it('stops Escape at the link, so the app\'s bubbling listeners never see it', () => {
   start(window, 'dashboard')
   link().focus()
   const seen = vi.fn()
@@ -163,7 +163,7 @@ it('keeps Escape to itself, so the app under it does not also close a dialog', (
   expect(escape.defaultPrevented).toBe(true)
 })
 
-it('does not leave Escape alone when the key is another one', () => {
+it('lets every other key through to the app', () => {
   start(window, 'dashboard')
   const seen = vi.fn()
   document.addEventListener('keydown', seen)
