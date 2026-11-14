@@ -23,13 +23,14 @@ function isHidden(element: Element): boolean {
   return element.hasAttribute('hidden')
 }
 
-function pointer(type: string, [clientX, clientY]: number[]) {
-  link().dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true }))
+function pointer(type: string, [clientX, clientY]: number[], buttons = 0) {
+  link().dispatchEvent(new MouseEvent(type, { clientX, clientY, buttons, bubbles: true, cancelable: true }))
 }
 
+// A move while the button is down reports `buttons: 1`, as a mouse, a finger, and a pen all do
 function drag(from: number[], to: number[]) {
-  pointer('pointerdown', from)
-  pointer('pointermove', to)
+  pointer('pointerdown', from, 1)
+  pointer('pointermove', to, 1)
   pointer('pointerup', to)
 }
 
@@ -147,6 +148,66 @@ it('tucks on Escape and moves focus to the handle', () => {
   link().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   expect(isHidden(link())).toBe(true)
   expect(host().shadowRoot!.activeElement).toBe(handle())
+})
+
+it('keeps Escape to itself, so the app under it does not also close a dialog', () => {
+  start(window, 'dashboard')
+  link().focus()
+  const seen = vi.fn()
+  document.addEventListener('keydown', seen)
+  const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true, cancelable: true })
+  link().dispatchEvent(escape)
+  document.removeEventListener('keydown', seen)
+  expect(isHidden(link())).toBe(true)
+  expect(seen).not.toHaveBeenCalled()
+  expect(escape.defaultPrevented).toBe(true)
+})
+
+it('does not leave Escape alone when the key is another one', () => {
+  start(window, 'dashboard')
+  const seen = vi.fn()
+  document.addEventListener('keydown', seen)
+  link().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true }))
+  document.removeEventListener('keydown', seen)
+  expect(seen).toHaveBeenCalledTimes(1)
+  expect(isHidden(link())).toBe(false)
+})
+
+it('does not start a drag from a hover after a press that ended elsewhere', () => {
+  start(window, 'dashboard')
+  const top = host().style.top
+  pointer('pointerdown', [900, 700], 1)                                         // the pointerup never reaches the link
+  pointer('pointermove', [300, 400], 0)                                         // a hover, no button down
+  expect(host().style.top).toBe(top)
+  expect(host().dataset.side).not.toBe('')
+  pointer('pointermove', [300, 400], 1)                                         // and the press is over for good
+  expect(host().style.top).toBe(top)
+})
+
+it('puts the button back when it loses the pointer in the middle of a drag', () => {
+  start(window, 'dashboard')
+  const [top, side] = [host().style.top, host().dataset.side]
+  pointer('pointerdown', [900, 700], 1)
+  pointer('pointermove', [300, 400], 1)
+  expect(host().style.top).not.toBe(top)
+  pointer('lostpointercapture', [300, 400])
+  expect(host().style.top).toBe(top)
+  expect(host().dataset.side).toBe(side)
+  expect(localStorage.getItem('tm-home-button')).toBeNull()
+})
+
+it('lets a later click through when the one after a drag never came', async () => {
+  start(window, 'dashboard')
+  drag([900, 700], [300, 400])
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  expect(clickIsLetThrough(() => {})).toBe(true)                                // Enter on the focused link
+})
+
+it('swallows only the one click after a drag', () => {
+  start(window, 'dashboard')
+  drag([900, 700], [300, 400])
+  expect(clickIsLetThrough(() => {})).toBe(false)
+  expect(clickIsLetThrough(() => {})).toBe(true)
 })
 
 it('still works when storage is refused', () => {

@@ -9,9 +9,9 @@ const sizeLimit: Plugin = {
   name: 'home-button-size-limit',
   generateBundle(_options, bundle) {
     for (const file of Object.values(bundle)) {
-      if (file.type === 'chunk' && file.code.length > LIMIT) {
-        throw new Error(`home-button.js is ${file.code.length} bytes; the limit is ${LIMIT}`)
-      }
+      // Bytes, which is what nginx sends, and not characters
+      const size = file.type === 'chunk' ? Buffer.byteLength(file.code, 'utf8') : 0
+      if (size > LIMIT) throw new Error(`home-button.js is ${size} bytes; the limit is ${LIMIT}`)
     }
   },
 }

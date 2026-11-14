@@ -97,7 +97,8 @@ export function start(win: Window = window, app: string | null = appOf(win.locat
     place()
   }
 
-  // A press goes home; a drag moves the button and the click that ends it is swallowed
+  // A press goes home; a drag moves the button and the click that ends it is swallowed, once, and only if it comes
+  // straight away (Enter on the focused link makes a click of its own, later)
   let from: { x: number; y: number } | null = null
   let dragging = false
   let swallow = false
@@ -105,6 +106,11 @@ export function start(win: Window = window, app: string | null = appOf(win.locat
     from = null
     dragging = false
     link.classList.remove('on')
+  }
+  const cancel = () => {
+    if (!from) return
+    settle()
+    place()
   }
   link.addEventListener('dragstart', (event) => event.preventDefault())
   link.addEventListener('pointerdown', (event) => {
@@ -122,7 +128,10 @@ export function start(win: Window = window, app: string | null = appOf(win.locat
     }
   })
   link.addEventListener('pointermove', (event) => {
-    if (!from || (!dragging && !isDrag(event.clientX - from.x, event.clientY - from.y))) return
+    if (!from) return
+    // No button down: the press ended somewhere we didn't hear about, and this is a hover
+    if (event.buttons === 0) return cancel()
+    if (!dragging && !isDrag(event.clientX - from.x, event.clientY - from.y)) return
     dragging = true
     host.dataset.side = ''
     host.style.right = ''
@@ -133,20 +142,22 @@ export function start(win: Window = window, app: string | null = appOf(win.locat
     if (!from) return
     if (dragging) {
       swallow = true
+      setTimeout(() => (swallow = false), 0)
       keep(dropped(event.clientX, event.clientY, win.innerWidth, win.innerHeight))
     }
     settle()
   })
-  link.addEventListener('pointercancel', () => {
-    settle()
-    place()
-  })
+  link.addEventListener('pointercancel', cancel)
+  link.addEventListener('lostpointercapture', cancel)
   link.addEventListener('click', (event) => {
     if (swallow) event.preventDefault()
     swallow = false
   })
   link.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
+    // The app's own Escape (closing a dialog, say) isn't meant for this
+    event.preventDefault()
+    event.stopPropagation()
     keep({ ...current(), tucked: true })
     handle.focus()
   })
