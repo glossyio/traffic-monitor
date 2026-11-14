@@ -1302,9 +1302,10 @@ one script line to each app's page, and the script draws a button that links to 
   with the icon and the device's name, cut with an ellipsis when the name is long. Resting at 60% opacity, it goes solid
   on hover, focus, or touch. It stays 8 px inside the window and clear of a phone's notch and home bar.
 - **Two edges.** A drag (a movement of more than 8 px; less is a press, which goes home) ends with the button on the
-  left or right edge, whichever is nearer, at the height it was dropped. Free placement would leave it in the middle
-  of an app's page, where it covers more, and the tuck needs an edge to go to anyway. Its starting spot is the bottom right in every app, except
-  Frigate on a narrow screen, where it starts higher on the right edge so it clears Frigate's bottom bar.
+  left or right edge, whichever is nearer, at the height it was dropped. A button that can rest anywhere
+  tends to end up over the middle of a page, and the tuck needs an edge to go to anyway. Its starting spot is the
+  bottom right in every app, except Frigate on a narrow screen, where it starts higher on the right edge so it clears
+  Frigate's bottom bar.
 - **Tuck instead of remove.** Dropping the button within 12 px of an edge, or pressing Escape while it has focus,
   shrinks it to a thin handle that stays on the edge. Pressing the handle brings the button back. There's no setting that
   removes it for good, because once it's gone there is nowhere inside another program's page to offer "show it again".
@@ -1315,8 +1316,8 @@ one script line to each app's page, and the script draws a button that links to 
   into the app. A page that is embedded in another page (a stream inside a dashboard) gets no button, and nothing is
   drawn when printing. The icon is the house from `@mdi/js`; the project's logo, which is the control app's favicon,
   doesn't read as "home" at 20 px.
-- **Colors.** The device's `background` and `header_text` colors, with the control app's defaults until the device
-  answers (or if it doesn't).
+- **Colors.** The device's `background`, `header_text`, and `body_text` colors (the last for the name), with the control
+  app's defaults until the device answers (or if it doesn't).
 - **The name.** The script asks `GET /api/v1/system/device` after it draws the button. With an answer, the button shows
   the name and the tab's title becomes `tm-01 · <the app's own title>`, kept in place when the app changes its title
   (Frigate does on every view). Without one, the button is the icon alone and the title is untouched.

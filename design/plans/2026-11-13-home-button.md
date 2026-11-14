@@ -13,9 +13,9 @@
 
 **Tech Stack:** nginx 1.31.0 (`sub_filter`, `map`, `ssi`; all in the pinned image), Jinja templates in the Ansible role, Python 3.11 + FastAPI (pytest), Vue 3 + Vuetify 3 + TypeScript + Vite 7 (Vitest, jsdom), Material for MkDocs, the dev-Pi tooling (`script/devpi/tmdev.py`). No new dependency in any of them.
 
-**Issue:** #TBD (a way back to the control app from every app, and the device's name in every tab). Also closes #263.
+**Issue:** #319 (a way back to the control app from every app, and the device's name in every tab). Also closes #263.
 
-**Status:** written 2026-11-13 against `dev` at `b4a26f1`. Not started. Branch: `feature/home-button/<id>`, off `dev`, in its own worktree. The PR also closes [issue 263](https://github.com/glossyio/traffic-monitor/issues/263). The open Detection PRs (315, 318) don't touch these files apart from the regenerated `openapi.json` and `schema.d.ts`; whichever merges second regenerates them.
+**Status:** written 2026-11-13 against `dev` at `b4a26f1`. Implemented on the branch through Task 8 (docs); the Task 9 bench passed on 2026-11-14, and its fixes are the commits after this plan's. The decisions are in the "Decisions" list below and in the issue; at the bench the maintainer also chose to show the unit's name before login. Branch: `feature/home-button/319`, off `dev`, in its own worktree. The PR also closes [issue 263](https://github.com/glossyio/traffic-monitor/issues/263). The open Detection PRs (315, 318) don't touch these files apart from the regenerated `openapi.json` and `schema.d.ts`; whichever merges second regenerates them.
 
 **Models:** implementers on Sonnet 5.5, except Task 4 (the button's behavior), which is marked tricky (Opus 5.5). Per-task reviews on Sonnet 5.5; the final whole-branch review on Fable 5.2. Tasks 3, 4, 5, and 6 touch the UI: their implementers load `frontend-design` and the superpowers TDD and verification skills, and the constraint (conventional Vuetify for the pages, the control app's colors for the button) wins over any flourish. Stop for the maintainer after Task 4 (the button can be tried on a laptop) and before Task 9 (the bench).
 

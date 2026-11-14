@@ -27,7 +27,7 @@ Every app except Cockpit shows a small home button. Press it to come back to the
 * **Tuck it away** by dragging it into the edge of the window. A thin handle stays on the edge; press the handle to bring the button back. With the button selected from the keyboard, **Escape** tucks it.
 * **Each app remembers its own spot**, separately in each browser.
 
-On a computer the button also shows the device's name. If you share a screenshot of an app and would rather the name weren't in it, tuck the button first. On a phone the button is the icon alone.
+On a computer the button also shows the device's name. If you share a screenshot of an app and would rather the name weren't in it, tuck the button first. On a narrow screen, such as a phone held upright, the button is the icon alone.
 
 Each tab's title starts with the device's name, so you can tell several devices apart in one browser window.
 
