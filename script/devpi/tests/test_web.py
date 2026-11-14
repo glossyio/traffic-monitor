@@ -502,9 +502,51 @@ VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403)
 
 @pytest.mark.parametrize("path, expected", VIEWER_STATUSES, ids=[path for path, _ in VIEWER_STATUSES])
 def test_viewer_gets_403_on_admin_paths(address, viewer_session, path, expected):
-    """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list."""
+    """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list.
+
+    The request sends no Accept header, as a script would; a page load gets the admin-only page instead
+    (test_a_viewers_page_load_on_an_admin_app_goes_to_the_admin_only_page).
+    """
     status = status_from_this_machine(address, path, cookie=viewer_session)
     assert status == expected, f"{path} with a viewer session answered {status}"
+
+
+SCRIPT_LINE = b'<script src="/home-button.js" defer></script></head>'
+PAGE = {"Accept": "text/html,application/xhtml+xml", "Accept-Encoding": "gzip"}
+APP_PAGES = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/feeds/stream.html"]
+
+
+@pytest.mark.parametrize("path", APP_PAGES)
+def test_app_pages_carry_the_home_button(address, admin_session, path):
+    """nginx adds the script line to each app's page, once, and serves the page uncompressed to do it."""
+    answer = request_from_this_machine(address, path, cookie=admin_session, headers=PAGE)
+    found = (answer.status, answer.headers.get("Content-Encoding"), answer.body.count(SCRIPT_LINE))
+    assert found == (200, None, 1), f"{path}: (status, Content-Encoding, script lines)"
+
+
+def test_what_isnt_a_page_load_stays_compressed(address, admin_session):
+    """The Dashboard compresses its page when asked; a request that isn't a page load must still get that."""
+    answer = request_from_this_machine(address, "/dashboard/", cookie=admin_session,
+                                       headers={"Accept": "*/*", "Accept-Encoding": "gzip"})
+    found = (answer.status, answer.headers.get("Content-Encoding"))
+    assert found == (200, "gzip"), "/dashboard/: (status, Content-Encoding)"
+
+
+def test_home_button_script_is_served_without_a_login(address):
+    """/home-button.js loads with no session, as JavaScript, is never served stale, and fits its size limit."""
+    answer = request_from_this_machine(address, "/home-button.js")
+    kind = (answer.headers.get("Content-Type") or "").split(";")[0]
+    found = (answer.status, kind, answer.headers.get("Cache-Control"), len(answer.body) <= 10240)
+    assert found == (200, "application/javascript", "no-cache", True), \
+        "/home-button.js: (status, type, Cache-Control, within 10240 bytes)"
+
+
+@pytest.mark.parametrize("path", ["/nr/", "/feeds/", "/storefiles?files=x"])
+def test_a_viewers_page_load_on_an_admin_app_goes_to_the_admin_only_page(address, viewer_session, path):
+    """A viewer who opens an admin app in a browser lands on /admin-only, not on a bare 403."""
+    answer = request_from_this_machine(address, path, cookie=viewer_session, headers={"Accept": "text/html"})
+    found = (answer.status, answer.headers.get("Location"))
+    assert found == (302, "/admin-only"), f"{path}: (status, Location)"
 
 
 COCKPIT_PORT = 9090

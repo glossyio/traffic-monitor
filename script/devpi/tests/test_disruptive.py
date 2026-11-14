@@ -209,18 +209,21 @@ def test_pod_starts_after_its_network_unit_fails_once(host):
         wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
 
 
-# The status of a path through nginx, and how many lines of its page name Cockpit's port 9090. The page names the
-# Pi's hostname, so only the two numbers come back.
+# The status of a path through nginx, and how many lines of its page name Cockpit's port 9090. Only the two numbers
+# come back, not the page.
 RESCUE_PAGE = """\
 page=$(curl -s --max-time 10 -H {host_header} -w '\\n%{{http_code}}' http://localhost{path})
 printf '%s\\n' "$page" | tail -n 1
 printf '%s\\n' "$page" | grep -c 9090"""
+# The rescue page for a request made on the Pi to http://localhost/, whole: its Cockpit link names the address the
+# request went to, through an nginx server-side include of $host. Nothing in it is secret.
+RESCUE_PAGE_FROM_LOCALHOST = "curl -s --max-time 10 http://localhost/dashboard/"
 
 
 def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     """With tm-control stopped, nginx can't check the login, so app paths answer 503 with the rescue page, which
     says to use Cockpit on port 9090, instead of letting anyone in. The home page still loads, and so does Cockpit at
-    the rescue page's link."""
+    the rescue page's link, which names the address the request was sent to."""
     host_header = shlex.quote(f"Host: {address}")
     try:
         with host.sudo():
@@ -228,6 +231,7 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
         # A viewer path and an admin path: each auth snippet has its own error_page
         pages = {path: host.run(RESCUE_PAGE.format(host_header=host_header, path=path)).stdout.split()
                  for path in ("/frigate/", "/nr/")}
+        from_localhost = host.run(RESCUE_PAGE_FROM_LOCALHOST).stdout
         home = proxy_status(host, address, "/")
         cockpit = host.run("curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:9090/").stdout
     finally:
@@ -237,6 +241,9 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     wrong = {path: found for path, found in pages.items()
              if len(found) != 2 or found[0] != "503" or found[1] == "0"}
     assert not wrong, f"with tm-control stopped, (status, lines naming 9090) per path: {wrong}"
+    link = (("http://localhost:9090/" in from_localhost), ("<!--#" in from_localhost))
+    assert link == (True, False), ("with tm-control stopped, a request to http://localhost/ got a rescue page with "
+                                   "(Cockpit's link naming localhost, an unprocessed include)")
     assert home == "200", f"with tm-control stopped, / answered {home}"
     assert cockpit == "200", f"with tm-control stopped, Cockpit at :9090/ answered {cockpit}"
 
