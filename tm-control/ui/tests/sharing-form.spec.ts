@@ -92,12 +92,64 @@ describe('the sharing form', () => {
     expect(wrapper.text()).toContain('Counts and speeds.')
   })
 
-  it('does not need the notice for a save that only keeps what is shared, even when the notice changed', () => {
+  it('offers the notice when it has changed, without needing it for a save that only keeps what is shared', () => {
     const changed = mountForm({ ...SHARING_ON, notice_current: false })
-    expect(changed.text()).not.toContain("I've read the notice")
+    expect(changed.text()).toContain("I've read the notice")
+    expect(checked(changed, "I've read the notice")).toBe(false)
     expect(button(changed, 'Save').attributes('disabled')).toBeUndefined()
+  })
+
+  it('shows no notice box when the notice is current and nothing is added', () => {
     const current = mountForm(SHARING_ON)
     expect(current.text()).not.toContain("I've read the notice")
+    expect(button(current, 'Save').attributes('disabled')).toBeUndefined()
+  })
+
+  it('sends the current notice version when the offered box is ticked, so the grants are recorded again', async () => {
+    const api = fakeApi({ [PUT]: json(200, SHARING_ON) })
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await field(wrapper, "I've read the notice").setValue(true)
+    await click(wrapper, 'Save')
+    expect(body(api)).toMatchObject({ enabled: true, exact_location: false, notice_version: '1' })
+  })
+
+  it('never brings the notice box back ticked after it was hidden', async () => {
+    const api = fakeApi({ [PUT]: json(200, SHARING_ON) })
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await field(wrapper, "I've read the notice").setValue(true)
+    await field(wrapper, 'Share data').setValue(false)
+    expect(wrapper.text()).not.toContain("I've read the notice")
+    await field(wrapper, 'Share data').setValue(true)
+    expect(checked(wrapper, "I've read the notice")).toBe(false)
+    await click(wrapper, 'Save')
+    expect(body(api)).toMatchObject({ enabled: true, notice_version: null })
+  })
+
+  it('never brings the notice box back ticked after the server is switched away and back', async () => {
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await field(wrapper, "I've read the notice").setValue(true)
+    await field(wrapper, 'Your own ThingsBoard server').setValue()
+    expect(wrapper.text()).not.toContain("I've read the notice")
+    await field(wrapper, "Traffic Monitor's server (tb.example.invalid)").setValue()
+    expect(checked(wrapper, "I've read the notice")).toBe(false)
+  })
+
+  it('needs the notice and sends its version for a choice added under a changed notice', async () => {
+    const api = fakeApi({ [PUT]: json(200, SHARING_ON) })
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await field(wrapper, 'Share the exact location').setValue(true)
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
+    await field(wrapper, "I've read the notice").setValue(true)
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeUndefined()
+    await click(wrapper, 'Save')
+    expect(body(api)).toMatchObject({ exact_location: true, notice_version: '1' })
+  })
+
+  it('sends no notice version for an offered box left unticked', async () => {
+    const api = fakeApi({ [PUT]: json(200, SHARING_ON) })
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await click(wrapper, 'Save')
+    expect(body(api)).toMatchObject({ enabled: true, notice_version: null })
   })
 
   it('needs the notice only for a choice newly ticked after the notice changed', async () => {
@@ -106,7 +158,7 @@ describe('the sharing form', () => {
     expect(wrapper.text()).toContain("I've read the notice")
     expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
     await field(wrapper, 'Share the exact location').setValue(false)
-    expect(wrapper.text()).not.toContain("I've read the notice")
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeUndefined() // still offered, no longer needed
   })
 
   it('withdraws a choice under a changed notice without reading it', async () => {
@@ -117,7 +169,7 @@ describe('the sharing form', () => {
       exact_location: { granted: true, at: '2026-11-02T12:00:00+00:00', notice_version: '1' },
     })
     await field(wrapper, 'Share the exact location').setValue(false)
-    expect(wrapper.text()).not.toContain("I've read the notice")
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeUndefined()
     await click(wrapper, 'Save')
     expect(body(api)).toMatchObject({ enabled: true, exact_location: false, notice_version: null })
   })

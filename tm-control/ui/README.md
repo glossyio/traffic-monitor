@@ -1299,11 +1299,13 @@ so the Status page's "Check the token" link doesn't land under the app bar).
   that is already ticked is never disabled, so a choice can always be withdrawn where it was given: untick it and save.
   Unticking Share data unticks the other two. Changing the server unticks the exact location and the map (the choices
   were made for the old server) and asks first, in a dialog, when either was on.
-- **The notice** ("I've read the notice") is asked for only on the maintainer's server, and only when the save adds
+- **The notice** ("I've read the notice") is for the maintainer's server only. It is needed when the save adds
   something to what is shared: Share data turned on, the server just changed to the maintainer's, or a choice newly
-  ticked while the notice has changed since it was read. A save that only keeps or withdraws choices never needs it,
-  so an admin can withdraw under a changed notice without reading it; the API keeps the grants under the notice they
-  were given under until someone reads the new one. The page never sends a notice version without the box ticked.
+  ticked while the notice has changed since it was read; Save stays disabled until it is ticked. A save that only keeps
+  or withdraws choices never needs it, so an admin can withdraw under a changed notice without reading it. While the
+  notice has changed and Share data is on, the box is offered anyway (never pre-ticked), because ticking it is how
+  the grants are recorded under the new version and the Status warning clears. The page sends a notice version only
+  with the box shown and ticked.
 - **The summary card** is the saved state, not the form: it says what is shared, with which server, how the server
   last answered (in the Status check's words, shorter), and, while sharing is on, which location is sent. Viewers see
   the card and one sentence. After a save that leaves the upload on, the page reads the state again every 5 seconds

@@ -33,7 +33,7 @@ Each of the three choices starts off, is ticked on its own, and is turned off in
 | **Share the exact location** | The exact coordinates of the place in use, with its id. For Traffic Monitor's server, the notice says how they are used; for your own server, that is up to whoever runs it. It needs **Share data**, and over your own server it needs `https`. Nothing is sent until the place in use has a location. | Any place but the one in use. |
 | **Show this device on the public map** | A point rounded to about 100 m, and nothing else about where the device is. It needs **Share data**, and it's offered for Traffic Monitor's server only. The box says **Not live yet** until a release opens the map. | The exact location. |
 
-For Traffic Monitor's server, the page asks you to read the notice, and to tick **I've read the notice**, when a save turns **Share data** on, switches to Traffic Monitor's server, or adds a choice under a notice that has changed. A save that only keeps or turns off choices never asks. When the notice changes, the device keeps sharing as you set it, and asks an administrator to read the new version; a choice you add after that waits for you to read it.
+For Traffic Monitor's server, the page requires you to read the notice, and to tick **I've read the notice**, when a save turns **Share data** on, switches to Traffic Monitor's server, or adds a choice under a notice that has changed. A save that only keeps or turns off choices never requires it. When the notice changes, the device keeps sharing as you set it, and, while **Share data** is on, the page offers **I've read the notice** until someone ticks it and saves. Ticking it and choosing **Save** records your choices under the new version, and the Status page stops asking. A choice you add after the change waits for you to read it.
 
 !!! info "The exact location is for you to give or keep"
 
@@ -63,7 +63,7 @@ The **Sharing** check, in the Configuration group, says what is shared: **Not sh
 
 ## After an update
 
-A device that already uploaded before it had these choices keeps uploading, with the location as the database stores it. The exact location stops until an administrator turns it on. The first time someone opens the Status, Location, or Sharing page, the control app adds a `sharing` block to `config.yml` that records this, with the exact location and the public map both off. Node-RED reloads its settings once when that happens. The Status page shows **Review sharing** until an administrator chooses **I've reviewed this** on the Sharing page or saves the page. Until someone reads the notice and saves the page, the Sharing check also says so.
+A device that already uploaded before it had these choices keeps uploading, with the location as the database stores it. The exact location stops until an administrator turns it on. The first time someone opens the Status, Location, or Sharing page, the control app adds a `sharing` block to `config.yml` that records this, with the exact location and the public map both off. Node-RED reloads its settings once when that happens. The Status page shows **Review sharing** until an administrator chooses **I've reviewed this** on the Sharing page or saves the page. Until an administrator ticks **I've read the notice** and saves the page, the Sharing check also says so.
 
 The upload of the device's settings, and the Backup & Restore section of the legacy dashboard, are removed while they are reworked.
 

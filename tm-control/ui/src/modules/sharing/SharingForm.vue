@@ -88,9 +88,10 @@ watch(shareData, (on) => {
   if (!on) publicMap.value = false
 })
 
-// The notice (the maintainer's server only), asked for when the save adds something to what is shared: Share data
+// The notice (the maintainer's server only). It is needed when the save adds something to what is shared: Share data
 // turned on, the server just changed to the maintainer's, or a choice newly ticked under a notice that has changed.
-// A save that only keeps or withdraws choices never needs it.
+// A save that only keeps or withdraws choices never needs it. It is offered, though not needed, whenever sharing is on
+// under a notice that has changed, so an admin can read it and have the grants recorded under it.
 const addsChoice = computed(
   () =>
     (exactLocation.value && !props.state.exact_location.granted) || (publicMap.value && !props.state.public_map.granted),
@@ -104,6 +105,13 @@ const noticeNeeded = computed(
       props.state.target !== 'maintainer' ||
       (!props.state.notice_current && addsChoice.value)),
 )
+const noticeOffered = computed(
+  () => noticeNeeded.value || (target.value === 'maintainer' && shareData.value && !props.state.notice_current),
+)
+// A box that goes away comes back unticked: the notice is read again each time it is asked for
+watch(noticeOffered, (offered) => {
+  if (!offered) noticeRead.value = false
+})
 const noticeOpen = ref(false)
 const notice = ref<Notice | null>(null)
 const noticeError = ref('')
@@ -166,7 +174,7 @@ async function save() {
     enabled: shareData.value,
     exact_location: shareData.value && exactLocation.value,
     public_map: target.value === 'maintainer' && shareData.value && publicMap.value ? ('rounded_point' as const) : ('none' as const),
-    notice_version: noticeNeeded.value && noticeRead.value ? props.state.notice_version : null,
+    notice_version: noticeOffered.value && noticeRead.value ? props.state.notice_version : null,
   }
   try {
     const { data } = await api.PUT('/api/v1/sharing', { body })
@@ -286,7 +294,7 @@ async function save() {
       <EulaText v-else-if="noticeOpen && notice" :markdown="notice.markdown" />
       <v-progress-linear v-else-if="noticeOpen" indeterminate color="primary" />
       <v-checkbox
-        v-if="noticeNeeded"
+        v-if="noticeOffered"
         v-model="noticeRead"
         label="I've read the notice"
         color="primary"
