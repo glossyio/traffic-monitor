@@ -5,6 +5,7 @@ whatever it is allowed to), and the real config in front of it. Skipped without 
 required_tools.py).
 """
 
+import contextlib
 import os
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ import pytest
 
 from required_tools import missing_tool
 from test_nginx_config_parses import ROLE_VARS, have_image, render_config
+from tmsetup_render import render
 
 LINE = '<script src="/home-button.js" defer></script></head>'
 PAGE = {"Accept": "text/html,application/xhtml+xml", "Accept-Encoding": "gzip, deflate"}
@@ -60,8 +62,10 @@ class Proxy:
         return Answer(int(lines[0].split()[1]), answer_headers, "" if compressed else body.decode("utf-8", "replace"))
 
 
-@pytest.fixture(scope="module")
-def proxy(tmp_path_factory):
+@contextlib.contextmanager
+def running_proxy(tmp_path_factory, stub_conf_text, label):
+    """The stub with this config and the rendered revproxy (its rescue page included) in front of it. The label keeps
+    two proxies of one module apart."""
     if shutil.which("podman") is None:
         missing_tool("needs Podman")
     image = f"docker.io/library/nginx:{ROLE_VARS['tmsetup_nginx_version']}"
@@ -78,12 +82,15 @@ def proxy(tmp_path_factory):
     srv.mkdir(mode=0o755)
     (srv / "index.html").write_text("<html><head><title>App</title></head><body>An app's page</body></html>")
     (srv / "app.js").write_text("console.log('an app script');" * 20)
+    # No hostname facts: the page must work out the name from the request
+    unavailable = root / "unavailable.html"
+    unavailable.write_text(render("container/revproxy/html/unavailable.html.j2", **ROLE_VARS))
     stub_conf = root / "stub.conf"
-    stub_conf.write_text(STUB_CONF % {"control_port": ROLE_VARS["tmsetup_tm_control_port"]})
-    for path in (srv / "index.html", srv / "app.js", stub_conf):
+    stub_conf.write_text(stub_conf_text)
+    for path in (srv / "index.html", srv / "app.js", unavailable, stub_conf):
         path.chmod(0o644)
 
-    stub, front = f"tm-home-button-stub-{os.getpid()}", f"tm-home-button-proxy-{os.getpid()}"
+    stub, front = f"tm-home-button-{label}-stub-{os.getpid()}", f"tm-home-button-{label}-proxy-{os.getpid()}"
     nginx = ["--entrypoint", "nginx"]
     daemon_off = [image, "-g", "daemon off;"]
     try:
@@ -92,6 +99,7 @@ def proxy(tmp_path_factory):
                        capture_output=True, text=True, timeout=120, check=True)
         mounts = [arg for mount in ROLE_VARS["tmsetup_revproxy_config_mounts"]
                   for arg in ("-v", f"{config / mount['path']}:{mount['target']}:ro,Z")]
+        mounts += ["-v", f"{unavailable}:/usr/share/nginx/html/unavailable.html:ro,Z"]
         subprocess.run(["podman", "run", "-d", "--name", front, "--network", f"container:{stub}", *nginx,
                         *mounts, *daemon_off],
                        capture_output=True, text=True, timeout=120, check=True)
@@ -100,6 +108,22 @@ def proxy(tmp_path_factory):
         # The proxy first: it uses the stub's network namespace, so the stub can't go while it is there
         for name in (front, stub):
             subprocess.run(["podman", "rm", "-f", "-t", "0", name], capture_output=True, timeout=120)
+
+
+@pytest.fixture(scope="module")
+def proxy(tmp_path_factory):
+    with running_proxy(tmp_path_factory, STUB_CONF % {"control_port": ROLE_VARS["tmsetup_tm_control_port"]},
+                       "with-control") as running:
+        yield running
+
+
+@pytest.fixture(scope="module")
+def proxy_without_tm_control(tmp_path_factory):
+    """The same, but nothing listens where verify should be, so the login check fails."""
+    apps_only = STUB_CONF.replace(STUB_CONF[STUB_CONF.index("    server {  # tm-control"):
+                                            STUB_CONF.index("    server {  # every app")], "")
+    with running_proxy(tmp_path_factory, apps_only, "no-control") as running:
+        yield running
 
 
 @pytest.mark.parametrize("path", ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/"])
@@ -119,8 +143,20 @@ def test_a_script_stays_compressed_and_untouched(proxy):
 
 def test_a_page_fetched_as_data_is_left_alone(proxy):
     answer = proxy.get("/frigate/", {"Accept": "*/*", "Accept-Encoding": "gzip"})
+    assert answer.headers.get("x-saw-accept-encoding") == "[gzip]"
     assert answer.headers.get("content-encoding") == "gzip"
 
 
 def test_downloads_never_get_the_script_line(proxy):
-    assert LINE not in proxy.get("/storefiles?files=x", PAGE).body
+    answer = proxy.get("/storefiles?files=x", PAGE)
+    assert answer.status == 200
+    assert LINE not in answer.body
+
+
+@pytest.mark.parametrize("host, shown", [("tm-01.local", "tm-01.local"), ("192.0.2.7", "192.0.2.7"),
+                                         ("[2001:db8::7]", "[2001:db8::7]")])
+def test_the_rescue_page_links_to_cockpit_on_the_name_the_browser_used(proxy_without_tm_control, host, shown):
+    answer = proxy_without_tm_control.get("/dashboard/", {"Accept": "text/html", "Host": host})
+    assert answer.status == 503
+    assert f'<a href="http://{shown}:9090/">http://{shown}:9090/</a>' in answer.body
+    assert "<!--#" not in answer.body

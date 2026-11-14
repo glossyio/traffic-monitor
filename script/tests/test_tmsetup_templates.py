@@ -296,7 +296,7 @@ def test_verify_is_told_the_browsers_address_and_nothing_the_client_sent(name):
 def test_failed_logins_redirect_and_the_rescue_page_is_internal():
     conf = location("tm-control-auth.conf")
     assert "location @tm_login { return 302 $tm_redirect; }" in conf
-    assert "location = /unavailable.html { internal; root /usr/share/nginx/html; }" in conf
+    assert "location = /unavailable.html { internal; root /usr/share/nginx/html; ssi on; }" in conf
 
 
 def test_verify_is_unreachable_from_the_network():
@@ -364,13 +364,11 @@ def test_unavailable_page_names_cockpit_and_the_service():
         "container/revproxy/html/unavailable.html.j2",
         tmsetup_homepage_colors=load_role_yaml("defaults/main.yml")["tmsetup_homepage_colors"],
         tmsetup_homepage_font="Helvetica",
-        ansible_facts={"hostname": "tm"},
     )
-    assert '<a href="http://tm.local:9090/">' in page
-    assert "or the device's IP address with port 9090" in page
-    assert "tm-control.service" in page
-    assert "sudo systemctl restart tm-control.service" in page
-    assert "<script" not in page
+    assert '<a href="http://<!--# echo var="host" -->:9090/">http://<!--# echo var="host" -->:9090/</a>' in page
+    assert "<title>Traffic Monitor unavailable</title>" in page
+    assert "tm-control.service" in page and "sudo systemctl restart tm-control.service" in page
+    assert "<script" not in page and ".local" not in page
 
 
 @pytest.mark.parametrize("name", LOCATIONS)
