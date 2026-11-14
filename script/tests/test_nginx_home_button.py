@@ -46,9 +46,10 @@ class Proxy:
     def __init__(self, stub):
         self.stub = stub
 
-    def get(self, path, headers):
-        """GET path on the proxy's port 80 with these request headers; the body is text unless it is compressed."""
-        command = ["podman", "exec", self.stub, "curl", "-s", "-i", "http://127.0.0.1:80" + path]
+    def get(self, path, headers, port=80):
+        """GET path on the proxy's port 80 (or the stub's own port) with these request headers; the body is text
+        unless it is compressed."""
+        command = ["podman", "exec", self.stub, "curl", "-s", "-i", f"http://127.0.0.1:{port}" + path]
         for name, value in headers.items():
             command += ["-H", f"{name}: {value}"]
         raw = subprocess.run(command, capture_output=True, timeout=60, check=True).stdout
@@ -133,6 +134,26 @@ def test_a_page_load_gets_the_script_line_once(proxy, path):
     assert answer.headers.get("x-saw-accept-encoding") == "[]"  # the app was asked for plain text
     assert "content-encoding" not in answer.headers
     assert answer.body.count(LINE) == 1
+
+
+def app_validator(proxy, path, name):
+    """The ETag or Last-Modified the app itself gives this file, as a browser kept it before the upgrade."""
+    return proxy.get(path, {}, port=1880).headers[{"If-None-Match": "etag",
+                                                  "If-Modified-Since": "last-modified"}[name]]
+
+
+@pytest.mark.parametrize("validator", ["If-None-Match", "If-Modified-Since"])
+def test_a_page_load_with_a_cached_copy_still_gets_the_script_line(proxy, validator):
+    """A page the browser cached before the upgrade has no line; a 304 would keep it that way."""
+    answer = proxy.get("/dashboard/", {**PAGE, validator: app_validator(proxy, "/index.html", validator)})
+    assert answer.status == 200
+    assert answer.body.count(LINE) == 1
+
+
+def test_a_script_with_a_cached_copy_keeps_its_304(proxy):
+    etag = app_validator(proxy, "/app.js", "If-None-Match")
+    answer = proxy.get("/frigate/app.js", {"Accept": "*/*", "Accept-Encoding": "gzip", "If-None-Match": etag})
+    assert answer.status == 304
 
 
 def test_a_script_stays_compressed_and_untouched(proxy):

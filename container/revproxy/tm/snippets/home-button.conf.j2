@@ -2,5 +2,8 @@
 # (tm-control/ui/src/home-button). Include this in an app location that serves pages, beside its proxy-common.conf
 # and auth snippet. No add_header here: the auth snippets' Set-Cookie must stay the location's only one.
 proxy_set_header Accept-Encoding $tm_page_encoding;
+# No validators on a page load, so the app sends the whole page, never a 304 for a cached copy without the line
+proxy_set_header If-None-Match $tm_page_if_none_match;
+proxy_set_header If-Modified-Since $tm_page_if_modified_since;
 sub_filter '</head>' '<script src="/home-button.js" defer></script></head>';
 sub_filter_once on;

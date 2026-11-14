@@ -32,11 +32,20 @@ http {
         ''      close;
     }
 
-    # A page load asks the app for an uncompressed answer, so home-button.conf can add its script line to the HTML.
-    # Every other request keeps the browser's own Accept-Encoding. (An empty value sends no header.) A browser on
-    # plain HTTP sends no Sec-Fetch-* headers, so Accept is what tells a page load from the rest.
+    # A page load asks the app for an uncompressed, whole answer, so home-button.conf can add its script line to the
+    # HTML: no Accept-Encoding, and no validators, because a page cached before the upgrade has no line and a 304
+    # would keep it. Every other request keeps the browser's own headers. (An empty value sends no header.) A
+    # browser on plain HTTP sends no Sec-Fetch-* headers, so Accept is what tells a page load from the rest.
     map $http_accept $tm_page_encoding {
         default $http_accept_encoding;
+        "~*text/html" "";
+    }
+    map $http_accept $tm_page_if_none_match {
+        default $http_if_none_match;
+        "~*text/html" "";
+    }
+    map $http_accept $tm_page_if_modified_since {
+        default $http_if_modified_since;
         "~*text/html" "";
     }
 

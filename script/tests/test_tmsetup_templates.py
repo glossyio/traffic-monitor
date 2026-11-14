@@ -234,13 +234,21 @@ def test_home_button_snippet_adds_one_script_line_and_no_header():
     assert "sub_filter '</head>' '<script src=\"/home-button.js\" defer></script></head>';" in lines
     assert "sub_filter_once on;" in lines
     assert "proxy_set_header Accept-Encoding $tm_page_encoding;" in lines
+    assert "proxy_set_header If-None-Match $tm_page_if_none_match;" in lines
+    assert "proxy_set_header If-Modified-Since $tm_page_if_modified_since;" in lines
     assert not [line for line in lines if line.startswith("add_header")]
 
 
-def test_only_a_page_load_asks_the_app_for_an_uncompressed_answer():
+@pytest.mark.parametrize("variable, browser_value", [
+    ("tm_page_encoding", "$http_accept_encoding"),
+    ("tm_page_if_none_match", "$http_if_none_match"),
+    ("tm_page_if_modified_since", "$http_if_modified_since"),
+])
+def test_only_a_page_load_drops_the_browser_header(variable, browser_value):
+    """A page load asks for an uncompressed, whole answer (no 304), so the script line can be added."""
     lines = [line.strip() for line in nginx_main_conf().splitlines()]
-    start = lines.index("map $http_accept $tm_page_encoding {")
-    assert lines[start + 1:start + 4] == ["default $http_accept_encoding;", '"~*text/html" "";', "}"]
+    start = lines.index(f"map $http_accept ${variable} {{")
+    assert lines[start + 1:start + 4] == [f"default {browser_value};", '"~*text/html" "";', "}"]
 
 
 @pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])
