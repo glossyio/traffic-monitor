@@ -135,6 +135,16 @@ describe('the deploy review', () => {
     expect(wrapper.text()).toContain('Counts from now on attach to the new deployment.')
   })
 
+  it('says what is shared: not sharing, data with a rounded location, or data and the exact location', () => {
+    const lines = (sharing: PlacesState['sharing']) =>
+      mountAlone(DeployReview, { place: USED, state: { ...STATE, sharing } }).text()
+    expect(lines('none')).toContain('Not sharing')
+    expect(lines('data')).toContain('Sharing: data, rounded location')
+    const exact = lines('exact')
+    expect(exact).toContain('Sharing: data and the exact location')
+    expect(exact).not.toContain('rounded location')
+  })
+
   it('lists New deployment starts for the sensor whose bearing changes and Unchanged for the other', async () => {
     const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')

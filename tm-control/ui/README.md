@@ -158,12 +158,12 @@ Pages before login (setup, login, the license pages) have no menu: one column, a
 a small "Traffic Monitor" name above the page title. Pages after login have the app bar and a menu drawer that stays
 open from the `md` breakpoint (960 px) up and slides in below it. Content is left-aligned and at most 760 px wide.
 
-Setup (one page, four steps):
+Setup (one page, five steps):
 
 ```text
 +--------------------------------+
 | Traffic Monitor                |
-| Step 3 of 4                    |
+| Step 3 of 5                    |
 | [=========-----]               |
 |                                |
 | Create the administrator       |
@@ -178,6 +178,12 @@ Setup (one page, four steps):
 | [Back]      [Claim this device]|
 +--------------------------------+
 ```
+
+The fifth step is Sharing. The paragraph (nothing is shared unless the admin turns it on) is always there. When the
+ThingsBoard token is already set (an upgraded device that had one), the Sharing page's own form (`SharingForm` with
+`firstRun`, whose button reads "Save and finish") sits under it; without a token there is no form, since the token
+is entered on the Sharing page later. "Not now" ends setup either way. If the state can't be read, the step is the
+paragraph and "Not now".
 
 Home (desktop; on a phone the drawer hides behind the menu button and the tiles stack):
 
@@ -364,13 +370,13 @@ Device:
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
 - Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists,
-  but the Frigate+ API key, whose form is on the Detection page. The ThingsBoard access token appears on every
-  device; the Plate Recognizer token and license key appear only on a device with the add-on. The section ends with
-  "The Frigate+ API key is on the Detection page.", the last words a link to `/detection#frigate-plus`, so an admin
-  who looks for the key here finds it. It's one expansion panel,
-  closed when the page opens. The Status page's "Set the token" links to `/device#tokens-and-keys`, which opens it and scrolls to
-  it. The page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns
-  about a missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
+  but the Frigate+ API key, whose form is on the Detection page, and the ThingsBoard access token, whose form is on
+  the Sharing page. The Plate Recognizer token and license key appear only on a device with the add-on. The section
+  ends with "The Frigate+ API key is on the Detection page. The ThingsBoard token is on the Sharing page.", each
+  last phrase a link (`/detection#frigate-plus`, `/sharing`), so an admin who looks for either here finds it. It's
+  one expansion panel, closed when the page opens; a link to `/device#tokens-and-keys` opens it and scrolls to it. The
+  page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns about a
+  missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
   screen readers. Each form is a small heading
   with the secret's name, a line saying whether it's set ("Set, ending in 0001.", "Set." when the device shows no
   ending, "Not set."), a field that is always empty when the page loads, Save, and Remove when there's something to
@@ -732,6 +738,11 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
+- "Exact locations" sits between the places and the precision: one sentence and one button, "Export exact locations".
+  The button asks first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error colour,
+  because the file is not destroyed, only handed out. The file comes from `GET /surveys/export` and is saved with
+  `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's line
+  say "Sharing: data and the exact location" when the exact location is on.
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
@@ -1321,6 +1332,16 @@ changing the server) and as a viewer.
 - Looked at and kept: the reason line under a disabled box is in normal text, not the secondary color, because it is
   the instruction a person needs; the boxes' text wraps to five lines at 375 px, which keeps the words the plan asks for.
 - Looked at and kept: a viewer sees the card and one sentence, with no empty space where the form would be.
+
+The first-run step and the Location page's "Exact locations" were checked the same way, in fake mode at 375 px and
+1366 px wide (setup with and without a token; the section and its confirmation on the Location page). What changed:
+
+- With no token, "Not now" was a text button with the text button's inner padding, so it sat 20 px right of the
+  paragraph above it, as the only thing on the step. It is a filled button then, and an outlined one under the form's
+  "Save and finish", so the two never look alike.
+- Looked at and kept: the Location page's Precision paragraph still says a later update will export the database with
+  each place's exact location. The new file lists the places, not the database, so the sentence is still true.
+- Looked at and kept: the export confirmation uses the primary colour, not the error colour used for deletes.
 
 #### Defaults rejected
 

@@ -103,10 +103,10 @@ describe('the Device page', () => {
 
     await click(wrapper, 'Tokens and keys')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(3)
+    expect(wrapper.findAll('h3')).toHaveLength(2)
   })
 
-  it('shows an admin one form per secret the API lists, but the Frigate+ key', async () => {
+  it('shows an admin one form per secret the API lists, but the Frigate+ key and the ThingsBoard token', async () => {
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Tokens and keys')
@@ -115,34 +115,44 @@ describe('the Device page', () => {
         'restarts the app that uses it, and counting pauses meanwhile.',
     )
     expect(wrapper.findAll('h3').map((h) => h.text().trim())).toEqual([
-      'ThingsBoard access token',
       'Plate Recognizer API token',
       'Plate Recognizer license key',
     ])
+  })
+
+  it("doesn't list the ThingsBoard token, and links to the Sharing page where it is", async () => {
+    signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
+    const { wrapper } = await mountApp('/device')
+    await click(wrapper, 'Tokens and keys')
+    expect(wrapper.findAll('h3').map((h) => h.text().trim())).not.toContain('ThingsBoard access token')
+    expect(wrapper.text()).not.toContain('Set, ending in 0001.') // the token's line
+    expect(wrapper.text()).toContain('The ThingsBoard token is on the Sharing page.')
+    const link = wrapper.findAll('a').find((a) => a.text().trim() === 'Sharing page')!
+    expect(link.attributes('href')).toBe('/sharing')
   })
 
   it('no longer shows the Frigate+ key and points at the Detection page', async () => {
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device')
     await click(wrapper, 'Tokens and keys')
-    expect(wrapper.findAll('form')).toHaveLength(3)
+    expect(wrapper.findAll('form')).toHaveLength(2)
     expect(wrapper.findAll('h3').map((h) => h.text().trim())).not.toContain('Frigate+ API key')
     expect(wrapper.text()).toContain('The Frigate+ API key is on the Detection page.')
     const link = wrapper.findAll('a').find((a) => a.text().trim() === 'Detection page')!
     expect(link.attributes('href')).toBe('/detection#frigate-plus')
   })
 
-  it("opens Tokens and keys when a link names it, as the Status page's Set the token does", async () => {
+  it('opens Tokens and keys when a link names it', async () => {
     signedIn(ADMIN, { [INFO]: SYSTEM_INFO, [SECRETS]: { secrets: FOUR_SECRETS } })
     const { wrapper } = await mountApp('/device#tokens-and-keys')
     expect(button(wrapper, 'Tokens and keys').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('h3')).toHaveLength(3)
+    expect(wrapper.findAll('h3')).toHaveLength(2)
     expect(wrapper.find('#tokens-and-keys').exists()).toBe(true)
   })
 
   it('reloads the secrets after a save, and offers Try again when they do not load', async () => {
     let loads = 0
-    const entry = { name: 'thingsboard_access_token', title: 'ThingsBoard access token', restarts: ['node-red-tm.service'] }
+    const entry = { name: 'plate_recognizer_token', title: 'Plate Recognizer API token', restarts: ['plate-recognizer.service', 'node-red-tm.service'] }
     signedIn(ADMIN, {
       [INFO]: SYSTEM_INFO,
       [SECRETS]: () => {
@@ -151,7 +161,7 @@ describe('the Device page', () => {
         const set = loads > 2
         return json(200, { secrets: [{ ...entry, set, ends_with: set ? '0001' : null }] })
       },
-      'POST /api/v1/secrets/thingsboard_access_token': json(202, { id: 'job1' }),
+      'POST /api/v1/secrets/plate_recognizer_token': json(202, { id: 'job1' }),
       'GET /api/v1/jobs/job1': json(200, {
         id: 'job1', name: 'set-secret', status: 'succeeded', requested_at: '2026-11-03T12:00:00+00:00',
         finished_at: '2026-11-03T12:00:30+00:00', log: [],
@@ -163,11 +173,11 @@ describe('the Device page', () => {
     await click(wrapper, 'Try again')
     expect(wrapper.text()).toContain('Not set.')
 
-    await field(wrapper, 'ThingsBoard access token').setValue('tb-placeholder-0001')
+    await field(wrapper, 'Plate Recognizer API token').setValue('pr-placeholder-0001')
     await click(wrapper, 'Save')
     expect(loads).toBe(3)
     expect(wrapper.text()).toContain('Set, ending in 0001.')
-    expect(wrapper.text()).toContain('Saved. Node-RED restarted.')
+    expect(wrapper.text()).toContain('Saved. Plate Recognizer and Node-RED restarted.')
   })
 
   it('reboots only after the admin confirms, then says so in place', async () => {

@@ -1,20 +1,25 @@
 <!--
-  First run, in four steps on one page: welcome, the license agreement, the administrator account (which claims the
-  device with its setup code), and an optional new system password. The API checks everything; this page collects the
-  answers, posts them, and shows the API's messages.
+  First run, in five steps on one page: welcome, the license agreement, the administrator account (which claims the
+  device with its setup code), an optional new system password, and sharing (the Sharing page's form, when the
+  ThingsBoard token is already set; nothing is shared unless the admin turns it on). The API checks everything; this
+  page collects the answers, posts them, and shows the API's messages.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, api, messageOf } from '../../api/client'
+import type { components } from '../../api/schema'
 import type { Device, Eula, Job } from '../../api/types'
 import EulaText from '../../components/EulaText.vue'
 import HotspotNote from '../../components/HotspotNote.vue'
 import { followJob } from '../../components/jobs'
 import { goNext } from '../../next'
 import { useSession } from '../../stores/session'
+import SharingForm from '../sharing/SharingForm.vue'
 
-const STEPS = ['Welcome', 'License agreement', 'Administrator account', 'System password']
+type SharingState = components['schemas']['SharingState']
+
+const STEPS = ['Welcome', 'License agreement', 'Administrator account', 'System password', 'Sharing']
 
 const session = useSession()
 const router = useRouter()
@@ -167,6 +172,25 @@ async function setSystemPassword() {
   }
 }
 
+// Step 5: sharing, read when the step opens. With the token already set the form is offered; without one the step only
+// says what sharing is, since the token is entered on the Sharing page. If the state can't be read, the same.
+const sharing = ref<SharingState | null>(null)
+
+async function loadSharing() {
+  try {
+    const { data } = await api.GET('/api/v1/sharing')
+    sharing.value = data as SharingState
+  } catch {
+    sharing.value = null
+  }
+}
+
+const showForm = computed(() => !!sharing.value?.token?.set && sharing.value.writable)
+
+watch(step, (now) => {
+  if (now === 5) void loadSharing()
+})
+
 function finish() {
   void goNext(router, route.query.next)
 }
@@ -278,7 +302,7 @@ function finish() {
       </v-form>
     </section>
 
-    <section v-else>
+    <section v-else-if="step === 4">
       <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Set the system password</h1>
       <template v-if="job?.status === 'succeeded'">
         <v-alert type="success" class="mb-6">
@@ -290,7 +314,7 @@ function finish() {
             System password set. Use it from now on to log in to Cockpit (the device's system tools) and over SSH.
           </template>
         </v-alert>
-        <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
+        <v-btn color="primary" size="large" block @click="step = 5">Continue</v-btn>
       </template>
       <template v-else-if="jobTimedOut">
         <v-alert type="warning" class="mb-6">
@@ -302,7 +326,7 @@ function finish() {
           <template v-else>Later, log in to Cockpit with the new password.</template>
           If it doesn't work, use the old one, and change it on Cockpit's Accounts page.
         </v-alert>
-        <v-btn color="primary" size="large" block @click="finish">Go to the home page</v-btn>
+        <v-btn color="primary" size="large" block @click="step = 5">Continue</v-btn>
       </template>
       <template v-else>
         <p class="text-body-1 mb-6">
@@ -344,12 +368,31 @@ function finish() {
             <pre v-if="job.log.length" class="text-body-2 mt-2 text-wrap">{{ job.log.join('\n') }}</pre>
           </v-alert>
           <div class="d-flex ga-3 flex-wrap">
-            <v-btn variant="text" size="large" @click="finish">Skip for now</v-btn>
+            <v-btn variant="text" size="large" @click="step = 5">Skip for now</v-btn>
             <v-spacer />
             <v-btn type="submit" color="primary" size="large" :loading="jobRunning">Set system password</v-btn>
           </div>
         </v-form>
       </template>
+    </section>
+
+    <section v-else>
+      <h1 ref="heading" tabindex="-1" class="text-h5 text-primary mb-4">Sharing</h1>
+      <p class="text-body-1 mb-6">
+        This device shares nothing unless you turn it on. You can send its counts and speeds to Traffic Monitor's
+        server or to your own, and choose how much of its location goes with them. You can do this now or later on the
+        Sharing page.
+      </p>
+      <SharingForm
+        v-if="sharing && showForm"
+        :state="sharing"
+        first-run
+        class="mb-6"
+        @saved="finish"
+        @reload="loadSharing"
+      />
+      <!-- With no form it is the only button, so it is the filled one; under the form's Save it is the quiet one -->
+      <v-btn :variant="showForm ? 'outlined' : 'flat'" color="primary" size="large" @click="finish">Not now</v-btn>
     </section>
   </div>
 </template>

@@ -14,6 +14,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import { saveBlob } from '../../components/download'
 import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import {
@@ -46,6 +47,12 @@ const RECONCILE: Record<string, string> = {
     "page says what's wrong with the file.",
 }
 
+const SHARING_WORDS = {
+  none: 'Not sharing',
+  data: 'Sharing: data',
+  exact: 'Sharing: data and the exact location',
+}
+
 const state = ref<PlacesState | null>(null)
 const loadError = ref('')
 
@@ -72,7 +79,7 @@ const cardItems = computed(() => {
   return [
     { label: 'Stored in the database', value: stored(place) },
     { label: 'Exact location', value: formatExact(place.lat, place.lon) },
-    { label: 'Sharing', value: state.value.sharing === 'data' ? 'Sharing: data' : 'Not sharing' },
+    { label: 'Sharing', value: SHARING_WORDS[state.value.sharing] },
     ...state.value.sensors.map((sensor) => ({
       label: `Bearing, ${sensor.sensor_name}`,
       value: bearingTitle(sensor.bearing),
@@ -129,6 +136,24 @@ async function savePrecision() {
     if (error instanceof ApiError && error.status === 409) await load()
   } finally {
     savingPrecision.value = false
+  }
+}
+
+// The exact locations as a file, after a confirmation: the CSV the API sends, saved under the name it gives
+const confirmExport = ref(false)
+const exporting = ref(false)
+const exportError = ref('')
+
+async function exportExact() {
+  exporting.value = true
+  exportError.value = ''
+  try {
+    const { data } = await api.GET('/api/v1/surveys/export', { parseAs: 'blob' })
+    saveBlob(data as Blob, 'traffic-monitor-places.csv')
+  } catch (error) {
+    exportError.value = messageOf(error)
+  } finally {
+    exporting.value = false
   }
 }
 
@@ -407,6 +432,24 @@ onMounted(load)
       </section>
 
       <section class="mt-10">
+        <h2 class="text-h6 mb-2">Exact locations</h2>
+        <p class="text-body-1 mb-4">
+          The database keeps a rounded location. This file lists each place's exact one, by place id.
+        </p>
+        <v-btn
+          variant="outlined"
+          color="primary"
+          size="large"
+          :loading="exporting"
+          :disabled="exporting"
+          @click="confirmExport = true"
+        >
+          Export exact locations
+        </v-btn>
+        <v-alert v-if="exportError" type="error" class="mt-4">{{ exportError }}</v-alert>
+      </section>
+
+      <section class="mt-10">
         <h2 class="text-h6 mb-2">Precision</h2>
         <p class="text-body-1 mb-4">
           To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A
@@ -523,6 +566,14 @@ onMounted(load)
       "
       :confirm-text="removing ? 'Save and remove' : 'Save and round'"
       @confirm="savePrecision"
+    />
+    <ConfirmDialog
+      v-model="confirmExport"
+      title="Export the exact locations?"
+      text="This file says exactly where the device has been. Anyone you give it to can match it to the database by place id."
+      confirm-text="Export"
+      confirm-color="primary"
+      @confirm="exportExact"
     />
     <ConfirmDialog
       v-model="deleteOpen"
