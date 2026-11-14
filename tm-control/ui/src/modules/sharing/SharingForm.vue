@@ -205,7 +205,7 @@ async function save() {
         <v-text-field
           v-model="host"
           label="Host"
-          hint="The server's name or address, with no https:// and no path."
+          hint="The server's name or address, with no https://, no port, and no path."
           persistent-hint
           :error-messages="hostError"
           autocomplete="off"

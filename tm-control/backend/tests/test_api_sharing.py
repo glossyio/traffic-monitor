@@ -410,6 +410,7 @@ def test_changing_the_server_withdraws_the_other_choices(admin):
 
 @pytest.mark.parametrize(("host", "target"), [
     ("https://x", None),
+    ("host:8080", None),
     ("a b", None),
     ("x/y", None),
     ("", None),
@@ -439,6 +440,38 @@ def test_an_own_server_host_is_validated(admin, host, target):
         assert (data["host"], data["protocol"]) == (MAINTAINER_HOST, "https")
         assert "port" not in data
         assert rows(admin)[-1][:4] == (MAINTAINER, "share_data", 1, notice(admin))
+
+
+def test_a_host_message_says_the_port_has_its_own_field(admin):
+    set_token(admin)
+    found = error(put(admin, target="own", host="other.example.invalid:8080"), 422, "validation")
+    assert found["message"] == (
+        "Enter the server's name or address only: no https://, no port, and no path. The port has its own field."
+    )
+    assert found["detail"] == {"field": "host"}
+
+
+@pytest.mark.parametrize("scheme", ["http://", "HTTP://"])
+def test_a_host_written_with_http_reads_as_http_and_a_save_keeps_it(admin, scheme):
+    """Node-RED keeps the host's own scheme and ignores `protocol`, so the page must show http and a save must not
+    move the upload to https."""
+    set_token(admin)
+    assert put(admin, target="own", host=OTHER, protocol="http", port=8080).status_code == 200
+    edit_file(admin, "    host: other.example.invalid\n", f"    host: {scheme}other.example.invalid\n")
+    edit_file(admin, "    protocol: http\n", "    protocol: https\n")
+    state = get(admin)
+    assert (state["target"], state["host"], state["protocol"], state["port"]) == ("own", OTHER, "http", 8080)
+
+    found = error(put(admin, target="own", host=state["host"], protocol=state["protocol"], port=8080,
+                      exact_location=True), 422, "validation")
+    assert found["detail"] == {"field": "exact_location"}
+
+    r = put(admin, target="own", host=state["host"], protocol=state["protocol"], port=state["port"])
+    assert r.status_code == 200, r.text
+    data = file_data(admin)["thingsboard"]
+    assert (data["host"], data["protocol"], data["port"]) == (OTHER, "http", 8080)
+    assert get(admin)["protocol"] == "http"
+    assert file_data(admin)["sharing"]["exact_location"] is False
 
 
 def edit_file(client, old, new):

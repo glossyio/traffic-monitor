@@ -705,12 +705,12 @@ def sharing_check(apps, state=None, notice_version=NOTICE):
 
 
 def share_with(apps, server=HOST, **block):
-    """The upload on for `server`, and a sharing block with `block`'s keys over the page's own."""
+    """The upload on for `server` over https, and a sharing block with `block`'s keys over the page's own."""
     values = {"target": "maintainer" if server == HOST else "own", "host": server, "exact_location": False,
               "public_map": "none", "notice_version": NOTICE}
 
     def edit(data):
-        data["thingsboard"].update(enabled=True, host=server)
+        data["thingsboard"].update(enabled=True, host=server, protocol="https")
         data["sharing"] = values | block
 
     apps.edit_config_yml(edit)
@@ -738,6 +738,11 @@ def test_sharing_check_when_the_upload_is_off_is_ok(apps):
         # the exact location counts only for the server the upload goes to
         ({"exact_location": True, "host": "tb.elsewhere.invalid", "target": "own"}, SHARING_DATA),
         ({"exact_location": True, "host": "HTTPS://TB.EXAMPLE.INVALID/"}, SHARING_EXACT),  # normalised, not ignored
+        # the map is on only where the gate sends the point: the maintainer's server, chosen for that host
+        ({"public_map": "rounded_point", "target": "own"}, SHARING_DATA),
+        ({"public_map": "rounded_point", "host": "tb.elsewhere.invalid"}, SHARING_DATA),
+        ({"exact_location": True, "public_map": "rounded_point", "host": "tb.elsewhere.invalid", "target": "own"},
+         SHARING_DATA),
     ],
 )
 def test_sharing_check_says_what_is_shared(apps, block, text):
@@ -746,6 +751,18 @@ def test_sharing_check_says_what_is_shared(apps, block, text):
         apps.edit_config_yml(lambda data: data.pop("sharing"))
     check = sharing_check(apps)
     assert (check.status, check.detail, check.fix) == ("ok", text, None)
+
+
+@pytest.mark.parametrize("scheme, protocol", [("", "http"), ("http://", "https"), ("HTTP://", "https")])
+def test_sharing_check_does_not_call_the_exact_location_shared_over_http(apps, scheme, protocol):
+    share_with(apps, exact_location=True, public_map="rounded_point")
+
+    def edit(data):
+        data["thingsboard"].update(host=scheme + HOST, protocol=protocol)
+
+    apps.edit_config_yml(edit)
+    check = sharing_check(apps)
+    assert (check.status, check.detail) == ("ok", SHARING_DATA + PUBLIC_MAP)
 
 
 def test_sharing_check_asks_for_a_review(apps, state):

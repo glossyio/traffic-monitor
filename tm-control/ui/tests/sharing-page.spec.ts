@@ -61,6 +61,13 @@ describe('the Sharing page', () => {
     expect(fact(both, 'Location sent')).toBe('Exact')
     both.unmount()
 
+    // a server reached over http gets no exact location, whatever was chosen, so the summary doesn't say so
+    signedIn(VIEWER, { [SHARING]: { ...FOR_VIEWER, exact_location: exact, protocol: 'http' } })
+    const plain = (await mountApp('/sharing')).wrapper
+    expect(fact(plain, 'Sharing')).toBe('Data')
+    expect(fact(plain, 'Location sent')).toBe('As the database stores it')
+    plain.unmount()
+
     signedIn(VIEWER, { [SHARING]: { ...FOR_VIEWER, target: 'own', host: null } })
     expect(fact((await mountApp('/sharing')).wrapper, 'Server')).toBe('Your own server')
   })

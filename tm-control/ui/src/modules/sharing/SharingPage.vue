@@ -121,7 +121,8 @@ function serverStatus(server: SharingState['server']) {
 const facts = computed(() => {
   const current = state.value
   if (!current) return []
-  const exact = current.enabled && current.exact_location.granted
+  // the exact location goes only over https, so a server reached over http gets the stored location
+  const exact = current.enabled && current.exact_location.granted && current.protocol === 'https'
   const items = [
     { label: 'Sharing', value: !current.enabled ? 'Off' : exact ? 'Data and the exact location' : 'Data' },
     { label: 'Server', value: current.target ? SERVER_NAMES[current.target] : 'Not chosen' },

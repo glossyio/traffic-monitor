@@ -10,6 +10,7 @@ from tm_control.modules.location.config import (
     NodeRedConfig,
     SharingBlock,
     read_deployment,
+    sends_public_map,
 )
 from tm_control.modules.location.places import Bearing
 
@@ -390,12 +391,17 @@ def between(text, first, second):
     ("enabled: true\nhost: '   '", {"host": None, "host_has_scheme": False}),
     ("enabled: true\nhost: 42", {"host": None}),
     ("enabled: true\nhost: tb.example.invalid\nprotocol: ftp", {"protocol": "https"}),
-    ("enabled: true\nhost: tb.example.invalid\nport: '8080'", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '8080'", {"port": 8080}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '  8080'", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '80a'", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '0'", {"port": None}),
+    ("enabled: true\nhost: tb.example.invalid\nport: '65536'", {"port": None}),
     ("enabled: true\nhost: tb.example.invalid\nport: 70000", {"port": None}),
     ("enabled: true\nhost: tb.example.invalid\nport: true", {"port": None}),
     ("", {"enabled": False, "host": None, "protocol": "https", "port": None}),
 ], ids=["enabled-string", "defaults", "trimmed", "scheme-in-host", "scheme-in-any-case", "no-scheme", "blank-host",
-        "number-host", "unknown-protocol", "string-port", "port-out-of-range", "boolean-port", "no-values"])
+        "number-host", "unknown-protocol", "quoted-port", "port-with-space", "port-with-letters", "quoted-port-zero",
+        "quoted-port-out-of-range", "port-out-of-range", "boolean-port", "no-values"])
 def test_upload_reads_the_block_leniently(tmp_path, block, expected):
     indented = "".join("    " + line + "\n" for line in block.splitlines())
     target = tmp_path / "config.yml"
@@ -403,6 +409,20 @@ def test_upload_reads_the_block_leniently(tmp_path, block, expected):
     upload = NodeRedConfig(target).upload()
     for name, value in expected.items():
         assert getattr(upload, name) == value, name
+
+
+@pytest.mark.parametrize("protocol", ["http", "https", None])
+@pytest.mark.parametrize("scheme, expected", [
+    ("http://", "http"), ("HTTP://", "http"), ("https://", "https"), ("HTTPS://", "https"), ("", None),
+])
+def test_a_host_with_a_scheme_decides_the_protocol_as_node_red_builds_the_url(tmp_path, scheme, expected, protocol):
+    """Node-RED keeps a host's own scheme and ignores `protocol` then; without one the protocol (https by default)."""
+    target = tmp_path / "config.yml"
+    lines = ["enabled: true", f"host: {scheme}tb.example.invalid"] + ([f"protocol: {protocol}"] if protocol else [])
+    target.write_text("thingsboard:\n" + "".join(f"    {line}\n" for line in lines))
+    upload = NodeRedConfig(target).upload()
+    assert upload.host_has_scheme is (scheme != "")
+    assert upload.protocol == (expected or protocol or "https")
 
 
 def test_upload_without_a_block_is_off(tmp_path):
@@ -652,6 +672,31 @@ def test_sharing_is_exact_only_for_the_host_the_choice_was_made_for(path):
     assert make(True, OTHER_HOST, CHOSEN) == "data"
     assert make(True, HOST, CHOSEN.model_copy(update={"exact_location": False})) == "data"
     assert make(True, HOST, CHOSEN.model_copy(update={"host": None})) == "data"
+    # the exact location goes only over https: a protocol of http, or a host written with http://, withholds it
+    assert make(True, "http://tb.example.invalid", CHOSEN) == "data"
+    assert make(True, "HTTP://tb.example.invalid", CHOSEN) == "data"
+
+
+MAP = CHOSEN.model_copy(update={"target": "maintainer", "exact_location": False})
+
+
+def test_the_public_map_is_sent_only_for_the_maintainers_host_the_choice_was_made_for(path):
+    def make(enabled, upload_host, block):
+        config = NodeRedConfig(path)
+        config.set_upload(enabled, upload_host, "https", None)
+        config.save()
+        upload = NodeRedConfig(path).upload()
+        return sends_public_map(upload, block)
+
+    assert make(True, HOST, MAP) is True
+    assert make(True, "HTTPS://TB.Example.invalid/", MAP) is True
+    assert make(True, HOST, None) is False
+    assert make(False, HOST, MAP) is False
+    assert make(True, HOST, MAP.model_copy(update={"public_map": "none"})) is False
+    assert make(True, HOST, MAP.model_copy(update={"target": "own"})) is False
+    assert make(True, HOST, MAP.model_copy(update={"target": None})) is False
+    assert make(True, OTHER_HOST, MAP) is False  # chosen for another server
+    assert make(True, HOST, MAP.model_copy(update={"host": None})) is False
 
 
 def test_sharing_is_data_when_the_file_has_no_sharing_block(path):

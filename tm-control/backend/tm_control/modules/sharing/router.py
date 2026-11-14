@@ -189,7 +189,11 @@ def _server_for(body: SharingIn, maintainer_host: str) -> tuple[str, str, Litera
     if body.target == "own":
         host = (body.host or "").strip().lower()
         if HOST.fullmatch(host) is None:
-            raise _invalid("Enter the server's name or address, with no https:// and no path.", "host")
+            raise _invalid(
+                "Enter the server's name or address only: no https://, no port, and no path. "
+                "The port has its own field.",
+                "host",
+            )
         target = target_key(host, maintainer_host)
         if target != MAINTAINER:
             return target, host, body.protocol, body.port

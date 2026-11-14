@@ -245,6 +245,7 @@ describe('the sharing form', () => {
     expect(wrapper.text()).not.toContain('Read the sharing notice')
     expect(wrapper.text()).not.toContain("I've read the notice")
     field(wrapper, 'Host') // the own server's fields are there
+    expect(wrapper.text()).toContain("The server's name or address, with no https://, no port, and no path.")
   })
 
   it('sends the own server as typed, without a notice', async () => {
@@ -340,7 +341,7 @@ describe('the sharing form', () => {
 
   it('shows a host the API refused under the field', async () => {
     const refusal = new Response(
-      JSON.stringify({ error: { code: 'validation', message: "Enter the server's name or address, with no https:// and no path.", detail: { field: 'host' } } }),
+      JSON.stringify({ error: { code: 'validation', message: "Enter the server's name or address only: no https://, no port, and no path. The port has its own field.", detail: { field: 'host' } } }),
       { status: 422, headers: { 'Content-Type': 'application/json' } },
     )
     fakeApi({ [PUT]: refusal })
@@ -348,7 +349,7 @@ describe('the sharing form', () => {
     await field(wrapper, 'Your own ThingsBoard server').setValue()
     await typeInto(field(wrapper, 'Host').element, 'https://x')
     await click(wrapper, 'Save')
-    expect(wrapper.find('.v-input--error').text()).toContain("Enter the server's name or address")
+    expect(wrapper.find('.v-input--error').text()).toContain('The port has its own field.')
   })
 
   it('says the file changed and asks the page to load it again', async () => {

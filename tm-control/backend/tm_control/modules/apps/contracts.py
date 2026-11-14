@@ -22,6 +22,7 @@ from tm_control.modules.location.config import (
     camera_entries,
     read_deployment,
     read_sharing,
+    sends_public_map,
     sharing_ignored,
     sharing_kind,
 )
@@ -430,7 +431,7 @@ def sharing(context: Context) -> list[Check]:
         return check("warn", " ".join(warnings), SHARING_LINK)
     kind = sharing_kind(upload, block)
     detail = SHARING_WORDS[kind]
-    if kind != "none" and block is not None and block.public_map == "rounded_point":
+    if sends_public_map(upload, block):
         detail += " The public map is on."
     return check("ok", detail)
 

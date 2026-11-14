@@ -6,6 +6,7 @@ Nothing here puts a coordinate, or any of the file's text, in an error: ConfigEr
 YAML the line and column.
 """
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -125,7 +126,8 @@ class Upload(BaseModel):
 
     enabled: bool  # true only for the boolean true
     host: str | None  # as written, trimmed; None when blank
-    # the value trimmed and lower-cased (so HTTP reads as http); https when missing or anything else
+    # the scheme of a host that has one; else the protocol key, trimmed and lower-cased (so HTTP reads as http), and
+    # https when missing or anything else. This is the scheme of the URL Node-RED uploads to.
     protocol: Literal["http", "https"]
     port: int | None  # an integer in 1..65535, else None
     host_has_scheme: bool  # the host starts with http:// or https:// (Node-RED then ignores protocol)
@@ -148,13 +150,17 @@ def _parse_upload(data: Mapping) -> Upload:
     host = raw_host.strip() if isinstance(raw_host, str) else ""
     protocol = block.get("protocol")
     protocol = protocol.strip().lower() if isinstance(protocol, str) else ""
+    # Node-RED keeps a host's own scheme and uses `protocol` only for a host without one
+    scheme = "https" if host.lower().startswith("https://") else "http" if host.lower().startswith("http://") else None
     port = block.get("port")
+    if isinstance(port, str) and re.fullmatch(r"[0-9]+", port):  # a number quoted in YAML is used as it stands
+        port = int(port)
     return Upload(
         enabled=block.get("enabled") is True,
         host=host or None,
-        protocol="http" if protocol == "http" else "https",
+        protocol=scheme or ("http" if protocol == "http" else "https"),
         port=port if isinstance(port, int) and not isinstance(port, bool) and 0 < port < 65536 else None,
-        host_has_scheme=host.lower().startswith(("http://", "https://")),
+        host_has_scheme=scheme is not None,
     )
 
 
@@ -199,15 +205,32 @@ def sharing_ignored(data: Mapping) -> bool:
     return any(key not in SHARING_KEYS or _sharing_value_ignored(key, value) for key, value in block.items())
 
 
+def _chosen_for_the_upload_host(upload: Upload, block: SharingBlock | None) -> bool:
+    """The sharing: block was made for the server the upload goes to."""
+    return block is not None and block.host is not None and block.host == normalize_host(upload.host)
+
+
 def sharing_kind(upload: Upload, block: SharingBlock | None) -> Literal["none", "data", "exact"]:
     """"none" with the upload off; "exact" when the sharing: block asks for the exact location for the very server
-    the upload goes to; else "data"."""
+    the upload goes to and the upload is over https (the gate sends it over nothing else); else "data"."""
     if not upload.enabled:
         return "none"
-    if block is not None and block.exact_location and block.host is not None:
-        if block.host == normalize_host(upload.host):
+    if block is not None and block.exact_location and upload.protocol == "https":
+        if _chosen_for_the_upload_host(upload, block):
             return "exact"
     return "data"
+
+
+def sends_public_map(upload: Upload, block: SharingBlock | None) -> bool:
+    """The gate sends the rounded point for the public map: the upload is on, and the block asks for the map for the
+    very server the upload goes to, which is the maintainer's."""
+    return (
+        upload.enabled
+        and block is not None
+        and block.public_map == "rounded_point"
+        and block.target == "maintainer"
+        and _chosen_for_the_upload_host(upload, block)
+    )
 
 
 def read_sharing(read: ConfigRead) -> tuple[Upload, SharingBlock | None] | None:
