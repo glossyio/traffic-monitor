@@ -131,6 +131,7 @@ nav:
       - Choose the detection model: use/detection.md
       - Cameras: use/cameras.md
       - Places and location: use/location.md
+      - Share data: use/sharing.md
       - Dashboards:
           - Monitoring: ui/monitoring.md
           - Movements: ui/movements.md

@@ -91,7 +91,7 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
-  (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
+  (`EnteredSecret.vue`, the Device page's tokens and keys, the Detection page's Frigate+ key, and the Sharing page's token), copying text
   (`clipboard.ts`, the diagnostics and the label lists; `CopyButton.vue`, an icon button that copies one value), and
   saving a file (`download.ts`, the diagnostics and the model packages and files).
 - The `network` module is the Network page (`NetworkPage.vue`), the hotspot's settings for admins
@@ -350,9 +350,9 @@ Device:
 | +------------------------------+ |
 |   opened:                        |
 |   Credentials this device ...    |
-|   ThingsBoard access token       |
+|   Plate Recognizer API token     |
 |   Set, ending in 0001.           |
-|   [ ThingsBoard access token (o)]|
+|   [ Plate Recognizer token   (o)]|
 |   [Save] [Remove]                |
 | Diagnostics                 (h6) |
 | [Download diagnostics] [Copy]    |

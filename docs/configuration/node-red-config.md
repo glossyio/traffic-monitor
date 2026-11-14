@@ -14,20 +14,35 @@ Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in th
 * A camera without `frigate_camera` is the Frigate camera with the same name as its entry.
 * A radar without `opt_api_commands_array` gets no extra commands.
 * ThingsBoard without `host` stays off.
+* A device without a `sharing` section shares the rounded location only.
 * A camera whose `camera_radar` names a radar that isn't in the file records its events without a radar, and Node-RED logs a warning. On a device without a radar, remove `camera_radar` or keep the radar's entry with `enabled: false`.
 
 ## thingsboard
 
-Uploads events, readings, and device telemetry to a [ThingsBoard](https://thingsboard.io/) server. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md).
+Uploads events, readings, and device telemetry to a [ThingsBoard](https://thingsboard.io/) server. The control app's [Sharing page](../use/sharing.md) writes `enabled`, `host`, `protocol`, and `port`, so you rarely edit them here. See [MQTT and ThingsBoard](../data-and-payloads/integrations.md).
 
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `false` | Turn the upload on. |
-| `host` | text | `tb.server.com` (a placeholder) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
+| `host` | text | `tb.roadwaybiome.com` (Traffic Monitor's server) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
 | `protocol` | `http` or `https` | `https` | How to reach the server. |
 | `port` | number | none | Set it only if the server isn't on the standard port for the protocol. |
 
-The device's access token isn't in this file. Set it on the control app's [Device page](../use/device-health.md#tokens-and-keys); it's kept with the device's other secrets.
+The device's access token isn't in this file. Set it on the Sharing page's [Access token](../use/sharing.md#set-the-access-token) section; it's kept with the device's other secrets.
+
+## sharing
+
+What the device shares, and for which server. The control app's [Sharing page](../use/sharing.md) writes this section when an administrator saves it, and Node-RED reads it. A choice made here by hand has no effect, so you never need to edit it.
+
+| Setting | Type | Meaning |
+|---|---|---|
+| `target` | `maintainer` or `own` | Whether the choices were made for Traffic Monitor's server or for an operator's own. |
+| `host` | text | The server the choices were made for. They count only while `thingsboard.host` is the same server. |
+| `exact_location` | `true` or `false` | Whether the exact location is sent. Only the Sharing page turns it on; the device writes a `true` that someone set by hand back to `false`. |
+| `public_map` | `none` or `rounded_point` | Whether the device is shown on the public map. |
+| `notice_version` | text | The version of the sharing notice that was read when sharing was turned on. |
+
+A missing `sharing` section means the device shares the rounded location only, with no exact location and no map. The installer's `-f` leaves the section out, which turns every choice off; see [What the installer's `-f` does to sharing](../use/sharing.md#what-the-installers-f-does-to-sharing).
 
 ## deployment
 
