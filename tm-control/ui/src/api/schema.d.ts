@@ -58,7 +58,8 @@ export interface paths {
          *     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
          *     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
          *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
-         *     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
+         *     agreement waits), /waiting (a viewer, meanwhile), or /admin-only (a viewer's page load, an Accept that names
+         *     text/html, on an admin path). Anything else a viewer asks of an admin path is 403, forbidden.
          *     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
          *     Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
          *     no other secret and no cookie. A login redirect's next= leaves the link's token out.

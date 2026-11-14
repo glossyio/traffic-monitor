@@ -36,6 +36,7 @@ export function redirectFor(to: RouteLocationNormalized, access: Access): RouteL
     return to.path === page ? true : page
   }
   if (to.path === '/welcome' || to.path === '/waiting') return '/'
+  if (to.path === '/admin-only' && access.user.role === 'admin') return '/'
   if (to.meta.adminOnly && access.user.role !== 'admin') return '/'
   return true
 }

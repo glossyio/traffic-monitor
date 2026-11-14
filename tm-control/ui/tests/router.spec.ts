@@ -81,6 +81,20 @@ describe('router', () => {
     expect(await landing('/account')).toBe('/waiting')
   })
 
+  it('shows a viewer the administrators-only page', async () => {
+    device(true, VIEWER)
+    const router = createAppRouter(createMemoryHistory())
+    await router.push('/admin-only')
+    expect(router.currentRoute.value.fullPath).toBe('/admin-only')
+  })
+
+  it('sends an admin home from the administrators-only page', async () => {
+    device(true, ADMIN)
+    const router = createAppRouter(createMemoryHistory())
+    await router.push('/admin-only')
+    expect(router.currentRoute.value.fullPath).toBe('/')
+  })
+
   it('leaves setup and the license pages once they are done', async () => {
     device(true, ADMIN)
     expect(await landing('/setup')).toBe('/')
