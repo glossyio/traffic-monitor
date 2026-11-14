@@ -1,0 +1,38 @@
+// What each sharing choice sends, as the person sees it before ticking the box. The values are made up (the
+// coordinates are an example, not a place this device is); the shapes are the ones the upload uses.
+
+// Share data: an event with its speed, and a deployment row whose location is rounded to the stored precision
+export const SHARE_DATA_EXAMPLE = JSON.stringify(
+  {
+    event: {
+      camera: 'camera_1_3fa9c2',
+      label: 'car',
+      start_time: 1_793_000_000.2,
+      end_time: 1_793_000_003.9,
+      direction_calc: 'inbound',
+      speed_calc: 31.5,
+    },
+    deployment: {
+      survey_id: '3f9a1c2e-si',
+      lat: 45.52,
+      lon: -122.69,
+      location_precision: 2,
+    },
+  },
+  null,
+  2,
+)
+
+// Share the exact location: the coordinates as the place stores them, nothing rounded
+export const EXACT_LOCATION_EXAMPLE = JSON.stringify(
+  { survey_id: '3f9a1c2e-si', lat: 45.52252, lon: -122.6912 },
+  null,
+  2,
+)
+
+// The public map: one point, rounded to about 100 m
+export const PUBLIC_MAP_EXAMPLE = JSON.stringify(
+  { survey_id: '3f9a1c2e-si', mode: 'rounded_point', lat: 45.523, lon: -122.691 },
+  null,
+  2,
+)

@@ -98,6 +98,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
   (`HotspotSettings.vue`, its name-or-password dialog `HotspotField.vue`, and `rules.ts`, the name and password rules),
   `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
   internet that the Device page's card reuses.
+- The `sharing` module is the Sharing page (`SharingPage.vue`: the summary card, the review alert, and the polling after
+  a save), its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three
+  sample payloads the "See an example" buttons show.
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -1267,3 +1270,60 @@ page network, the page that lost the unit, a very long name) were checked with t
   never shows back, but this password is one the person must read and hand to every phone.
 - A refresh timer: an address changes when the unit changes network, and the person has just done that; the page loads
   when opened, and "Try again" reloads it.
+
+### Sharing
+
+The page says what the device uploads and to which server, for everyone signed in, and lets an admin change it. It is
+built from conventional Vuetify parts and no CSS beyond spacing (and one `scroll-margin-top`, as the Device page has,
+so the Status page's "Check the token" link doesn't land under the app bar).
+
+- **Where the state lives.** `SharingPage` reads `GET /sharing` and holds the answer. It passes it to `SharingForm`
+  as a prop. The form copies it into its own fields (server, host, protocol, port, three boxes, "I've read the
+  notice") and sends them with `PUT /sharing`; the API's answer goes back up as `saved` and replaces the page's copy.
+  The form starts its fields again from the state only when the saved choices change, not when the token's state or
+  the server's answer does, so a host typed before the token job finishes isn't lost.
+- **The rules for the boxes are in one place, `SharingForm`.** Each box is its own `ConsentBox`, never ticked unless
+  the saved state says so, never bundled. A box that can't be ticked says why in a line under it ("Set the access
+  token first.", "Turn on Share data first.", "The exact location is only sent over https.", "Not live yet."). A box
+  that is already ticked is never disabled, so a choice can always be withdrawn where it was given: untick it and save.
+  Unticking Share data unticks the other two. Changing the server unticks the exact location and the map (the choices
+  were made for the old server) and asks first, in a dialog, when either was on.
+- **The notice** ("I've read the notice") is asked for only on the maintainer's server, and only when sharing is being
+  turned on, the notice changed since it was read, or the server was just changed to the maintainer's. The page
+  never sends a notice version without the box ticked.
+- **The summary card** is the saved state, not the form: it says what is shared, with which server, how the server
+  last answered (in the Status check's words, shorter), and, while sharing is on, which location is sent. Viewers see
+  the card and one sentence. After a save that leaves the upload on, the page reads the state again every 5 seconds
+  for up to a minute while the server's answer is `waiting` or `unknown`.
+- **Two Save buttons.** The token has its own Save (`EnteredSecret`, which saves it through the secrets API and
+  restarts Node-RED), and the form has one for the server and the choices. The token's form sits in a bordered sheet
+  so the two read as separate.
+
+#### What the screenshot review changed
+
+The page was checked in fake mode at 375 px and 1366 px wide, as an admin (a new device, the token set, Share data and
+the exact location ticked with their examples open, the saved state, the own-server fields, and the question about
+changing the server) and as a viewer.
+
+- The card was titled "What this device shares", the same as the section of boxes below it. It is "Saved settings"
+  now, which also says that it shows what is saved, not what is ticked.
+- The token's field and its Save sat in the page's flow, so the token's Save and the form's Save read as one pair. The
+  token is in a bordered sheet.
+- The Protocol drop-down had Vuetify's underlined style next to the outlined text fields. It is outlined.
+- "I've read the notice" was 8 px left of the other checkboxes (a negative margin copied from the license page). It
+  lines up with them now.
+- The "Saved." line disappeared at once when the saved state came back with a normalised value (the form started again
+  from it and counted that as an edit). It waits for the form to settle.
+- Looked at and kept: the reason line under a disabled box is in normal text, not the secondary color, because it is
+  the instruction a person needs; the boxes' text wraps to five lines at 375 px, which keeps the words the plan asks for.
+- Looked at and kept: a viewer sees the card and one sentence, with no empty space where the form would be.
+
+#### Defaults rejected
+
+- Switches instead of checkboxes: a switch reads as taking effect at once, and nothing here does until Save.
+- One "I agree" box for all three choices: each choice has its own box, with its own example and its own withdrawal.
+- A tooltip for each example: a phone has no hover. The example opens under the box, in the page's flow.
+- The notice in a dialog: a long text in a dialog scrolls twice on a phone. It opens in place, in the license page's
+  box.
+- Polling for as long as the page is open: the first upload takes a minute at most, and a page left open on a unit
+  with the server down would ask every 5 seconds for ever.

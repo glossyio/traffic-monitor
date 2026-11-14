@@ -25,3 +25,9 @@ export function ago(seconds: number): string {
   if (seconds < 86400) return `${count(Math.floor(seconds / 3600), 'hour')} ago`
   return `${count(Math.floor(seconds / 86400), 'day')} ago`
 }
+
+// How long ago a time was, from the ISO text the API sends ("5 minutes ago"); "unknown" when the text isn't a time
+export function agoAt(iso: string | null, now = Date.now()): string {
+  const moment = iso === null ? NaN : Date.parse(iso)
+  return Number.isNaN(moment) ? 'at an unknown time' : ago(Math.max(0, (now - moment) / 1000))
+}
