@@ -38,6 +38,8 @@ def write_config(path, access_token=TOKEN, addons=ADDONS):
     between thingsboard and deployment, where it shows whether the blank lines around it survive."""
     text = OLD_TEMPLATE.read_text()
     text = text.replace(OLD_TOKEN_LINE, f"    access_token: {access_token}\n", 1)
+    # These tests are about the secrets; the placeholder host (which a migrate run rewrites) has its own tests.
+    text = text.replace("host: tb.server.com\n", "host: tb.example.invalid\n", 1)
     if addons:
         text = text.replace("\ndeployment:", f"\n{addons}\ndeployment:", 1)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -146,7 +148,9 @@ def test_addons_at_the_end_of_the_file_go_with_their_blank_line(tmp_path, secret
     config.write_text(original)
     assert migrate.run_node_red(config, secrets_dir) == 0
     new = config.read_text()
-    assert lines(new) == lines(OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, ""))
+    # The template's placeholder host is rewritten in the same run (the upload is off).
+    expected = OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, "").replace("tb.server.com", "tb.roadwaybiome.com")
+    assert lines(new) == lines(expected)
     assert new.endswith("readings\n")
 
 
@@ -253,7 +257,7 @@ def test_a_value_that_is_not_one_token_is_left_as_it_is(tmp_path, secrets_dir, v
     assert captured.out == f"tm-control migrate: {config}: up to date\n"
     assert f"WARNING {config}: thingsboard.access_token " in captured.err
     assert "left as it is" in captured.err
-    assert captured.err.endswith(" Enter it on the control app's Device page and delete the key.\n")
+    assert captured.err.endswith(" Enter it on the control app's Sharing page and delete the key.\n")
     assert "placeholder" not in captured.err
     assert config.read_text() == original
     assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == ""
@@ -289,7 +293,8 @@ def test_an_empty_key_is_removed(tmp_path, value, capsys):
 def test_an_empty_plate_recognizer_token_is_removed_with_its_empty_mappings(tmp_path, capsys):
     config = write_config(tmp_path / "config.yml", access_token="", addons="addons:\n    plate_recognizer:\n        token: ''\n")
     assert migrate.run_node_red(config, tmp_path / "missing-secrets") == 0
-    assert lines(config.read_text()) == lines(OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, ""))
+    expected = OLD_TEMPLATE.read_text().replace(OLD_TOKEN_LINE, "").replace("tb.server.com", "tb.example.invalid")
+    assert lines(config.read_text()) == lines(expected)
     printed = output(capsys)
     assert "removed the empty thingsboard.access_token, removed the empty addons.plate_recognizer.token (backup: " in printed
 
@@ -489,6 +494,7 @@ def test_the_fixture_has_the_old_templates_empty_slot():
 
 
 CONFIG_REMEDY = " Enter it on the control app's Device page and delete the key.\n"
+THINGSBOARD_REMEDY = " Enter it on the control app's Sharing page and delete the key.\n"
 TB_RULE = "1 to 256 letters, digits, and . _ ~ -"
 PR_RULE = "1 to 256 printable ASCII characters with no spaces"
 
@@ -504,7 +510,7 @@ def test_a_thingsboard_token_the_upload_url_cannot_carry_is_left_with_a_warning(
     assert captured.out == f"tm-control migrate: {config}: up to date\n"
     (warning,) = captured.err.splitlines(keepends=True)
     assert warning.startswith(f"tm-control migrate: WARNING {config}: thingsboard.access_token ")
-    assert TB_RULE in warning and "left as it is" in warning and warning.endswith(CONFIG_REMEDY)
+    assert TB_RULE in warning and "left as it is" in warning and warning.endswith(THINGSBOARD_REMEDY)
     assert "placeholder" not in warning
     assert config.read_text() == original
     assert secret(secrets_dir, THINGSBOARD_ACCESS_TOKEN) == ""
@@ -778,7 +784,7 @@ def test_a_frigate_plus_key_that_frigate_would_reject_is_left_with_a_warning(tmp
     (warning,) = captured.err.splitlines()
     assert warning.startswith(f"tm-control migrate: WARNING {path}: PLUS_API_KEY isn't ")
     assert VALUE_RULES[FRIGATE_PLUS_API_KEY] in warning
-    assert warning.endswith(f"Enter it on the control app's Device page; the env file was backed up to {backup}.")
+    assert warning.endswith(f"Enter it on the control app's Detection page; the env file was backed up to {backup}.")
     assert key not in captured.out + captured.err
     assert not holds_a_key(captured.out + captured.err)
 

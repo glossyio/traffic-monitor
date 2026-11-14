@@ -690,6 +690,7 @@ REVIEW = (
     "database stores it. Review the choices."
 )
 NOTICE_CHANGED = "The sharing notice has changed. Read it and save your choices again."
+NOTICE_UNREAD = "No one has read the sharing notice yet. Read it and save your choices again."
 IGNORED = "config.yml's sharing block has a value the device ignores. Save the Sharing page to rewrite it."
 REVIEW_LINK = Fix(kind="link", href="/sharing", text="Review sharing")
 
@@ -780,11 +781,27 @@ def test_sharing_check_notices_a_new_notice_version(apps, state):
     grant(state, version=PRE_CONSENT)
     Consents(state).set_review_needed(False)
     check = sharing_check(apps, state)
-    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_CHANGED, REVIEW_LINK)
+    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_UNREAD, REVIEW_LINK)
     share_with(apps, OWN_HOST, notice_version=None)
     grant(state, OWN_HOST, "own-server")
     check = sharing_check(apps, state)
     assert (check.status, check.detail, check.fix) == ("ok", SHARING_DATA, None)
+
+
+def test_sharing_check_says_no_one_has_read_the_notice_when_no_share_is_recorded(apps, state):
+    share_with(apps)  # the upload is on for the maintainer's server and nothing was ever granted
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_UNREAD, REVIEW_LINK)
+
+
+def test_sharing_check_review_flag_comes_before_the_unread_notice(apps, state):
+    from tm_control.modules.sharing.consents import PRE_CONSENT, Consents
+
+    share_with(apps)
+    grant(state, version=PRE_CONSENT)
+    Consents(state).set_review_needed(True)
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", REVIEW, REVIEW_LINK)
 
 
 def test_sharing_check_without_a_state_or_a_notice_skips_the_recorded_parts(apps, state):

@@ -27,7 +27,7 @@ from tm_control.modules.location.config import (
 )
 from tm_control.modules.location.coordinates import exact
 from tm_control.modules.location.places import Places
-from tm_control.modules.sharing.consents import MAINTAINER, Consents, target_key
+from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents, target_key
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
@@ -379,6 +379,7 @@ SHARING_REVIEW = (
     "database stores it. Review the choices."
 )
 SHARING_NOTICE = "The sharing notice has changed. Read it and save your choices again."
+SHARING_NOTICE_UNREAD = "No one has read the sharing notice yet. Read it and save your choices again."
 SHARING_IGNORED = "config.yml's sharing block has a value the device ignores. Save the Sharing page to rewrite it."
 SHARING_WORDS = {
     "none": "Not sharing.",
@@ -387,16 +388,19 @@ SHARING_WORDS = {
 }
 
 
-def _notice_needs_reading(context: Context, upload, consents: Consents) -> bool:
-    """The upload is on for the maintainer's server and the latest granted Share data isn't under the current notice.
-    A pre-consent share is never under it: reviewing a share found on doesn't read the notice, so only saving the page
-    clears this."""
+def _notice_warning(context: Context, upload, consents: Consents) -> str | None:
+    """The warning for a unit whose upload is on for the maintainer's server and whose latest granted Share data isn't
+    under the current notice; None when it is, or when this check doesn't apply. A pre-consent share, or none at all,
+    means no one has read the notice yet; an older version means it changed. A pre-consent share is never under the
+    current notice: reviewing a share found on doesn't read it, so only saving the page clears this."""
     if context.notice_version is None or not upload.enabled:
-        return False
+        return None
     if target_key(upload.host, context.manifest.sharing.maintainer_host) != MAINTAINER:
-        return False
+        return None
     share = consents.latest(MAINTAINER).get("share_data")
-    return share is None or not share.granted or share.notice_version != context.notice_version
+    if share is None or not share.granted or share.notice_version == PRE_CONSENT:
+        return SHARING_NOTICE_UNREAD
+    return SHARING_NOTICE if share.notice_version != context.notice_version else None
 
 
 def sharing(context: Context) -> list[Check]:
@@ -418,8 +422,8 @@ def sharing(context: Context) -> list[Check]:
         consents = Consents(context.state)
         if consents.review_needed():
             warnings.append(SHARING_REVIEW)
-        elif _notice_needs_reading(context, upload, consents):
-            warnings.append(SHARING_NOTICE)
+        elif notice := _notice_warning(context, upload, consents):
+            warnings.append(notice)
     if sharing_ignored(read.data):
         warnings.append(SHARING_IGNORED)
     if warnings:
