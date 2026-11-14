@@ -30,7 +30,7 @@ Each of the three choices starts off, is ticked on its own, and is turned off in
 | Choice | What it sends | What it doesn't send |
 |---|---|---|
 | **Share data** | Each [event](../data-and-payloads/events-payload.md) with its speed and direction, the [radar](../data-and-payloads/radar-payload.md) and [air quality](../data-and-payloads/air-quality-aq-payload.md) readings, and the device's system health: its software versions, name on the network, time zone, serial number, temperature, and disk use. With them goes where the device is, as the database stores it: the place's id and its location rounded to about 1 km, unless you chose another [precision](location.md#choose-the-precision), and the way each sensor faces. Turning this off stops every upload. | Images, video, plate reads, the device's settings, its Wi-Fi details, and the descriptions you give places. |
-| **Share the exact location** | The exact coordinates of the place in use, with its id, for the server's operator to use and not to publish. It needs **Share data**, and over your own server it needs `https`. Nothing is sent until the place in use has a location. | Any place but the one in use. |
+| **Share the exact location** | The exact coordinates of the place in use, with its id. For Traffic Monitor's server, the notice says how they are used; for your own server, that is up to whoever runs it. It needs **Share data**, and over your own server it needs `https`. Nothing is sent until the place in use has a location. | Any place but the one in use. |
 | **Show this device on the public map** | A point rounded to about 100 m, and nothing else about where the device is. It needs **Share data**, and it's offered for Traffic Monitor's server only. The box says **Not live yet** until a release opens the map. | The exact location. |
 
 For Traffic Monitor's server, the page asks you to read the notice, and to tick **I've read the notice**, when a save turns **Share data** on, switches to Traffic Monitor's server, or adds a choice under a notice that has changed. A save that only keeps or turns off choices never asks. When the notice changes, the device keeps sharing as you set it, and asks an administrator to read the new version; a choice you add after that waits for you to read it.
@@ -41,7 +41,7 @@ For Traffic Monitor's server, the page asks you to read the notice, and to tick 
 
 ## What the server already has
 
-Turning a choice off stops the device sending. What the server already received stays there. To ask for it to be deleted, use the contact in the notice (for Traffic Monitor's server) or ask the operator of your own server.
+Turning a choice off stops the device sending. What the server already received stays there. To ask for it to be deleted, use the email address in the notice (for Traffic Monitor's server) or ask the operator of your own server.
 
 ## Check that the server gets the data
 

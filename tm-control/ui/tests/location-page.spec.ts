@@ -316,7 +316,7 @@ describe('the Location page', () => {
     expect(note.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       "To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A " +
         'shared copy of the database holds only the rounded location. This device keeps the exact location you enter, ' +
-        "outside the database. A later update will let you choose to export the database with each place's exact " +
+        "outside the database. A later update will let you export a copy of the database with each place's exact " +
         'location, for analysis and mapping.',
     )
     const card = wrapper.find('.v-card').element

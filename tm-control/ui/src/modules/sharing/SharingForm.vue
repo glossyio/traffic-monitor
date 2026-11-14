@@ -248,7 +248,7 @@ async function save() {
         v-model="exactLocation"
         class="mt-6"
         title="Share the exact location"
-        text="This device's exact coordinates, for the server's operator to use and not to publish. Turning this off stops it."
+        text="This device's exact coordinates. Turning this off stops them being sent."
         :example="EXACT_LOCATION_EXAMPLE"
         :disabled="!!exactReason && !exactLocation"
         :disabled-reason="exactReason"
