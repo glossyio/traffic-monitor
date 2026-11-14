@@ -994,6 +994,28 @@ def test_tm_internal_needs_the_token_on_the_pi(host, expect):
         f"Node-RED's status gives schema_version as {type(version).__name__}, not an integer")
 
 
+def test_tm_internal_status_has_the_upload_section(host, expect):
+    """With the token, Node-RED's internal status has the upload section tm-control's Sharing server check reads: its
+    four keys, the switch a boolean, the two times null or text, and the last failure null or one of the four reasons.
+    Only the shape is kept; no value is printed."""
+    if not expect["pii_free"]:
+        pytest.skip("reads a device secret; set tm_expect.pii_free: true (bench units only)")
+    token = tm_internal_token(host)
+    status, body = tm_internal_answer(host, token)
+    upload = body.get("upload") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
+    assert isinstance(upload, dict), f"Node-RED's status has no upload section (it is {type(upload).__name__})"
+    assert sorted(upload) == ["enabled", "last_failure", "last_failure_at", "last_ok_at"], (
+        f"the upload section's keys: {sorted(upload)}")
+    problems = [] if isinstance(upload["enabled"], bool) else ["enabled isn't a boolean"]
+    problems += [f"{key} is neither null nor text" for key in ("last_ok_at", "last_failure_at")
+                 if upload[key] is not None and not isinstance(upload[key], str)]
+    if upload["last_failure"] not in (None, "unreachable", "refused", "rejected", "server_error"):
+        problems.append("last_failure is none of null, unreachable, refused, rejected, server_error")
+    assert not problems, "Node-RED's upload section: " + "; ".join(problems)
+
+
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body
 # holds no coordinate, so a request that got past the token check would change nothing.
 TM_INTERNAL_WRITES = [
@@ -1222,6 +1244,80 @@ def test_in_use_place_matches_config_yml(address, admin_session, usable_host, ex
     wanted = (str(deployment.get("survey_id") or "").lower() or None, "2" if precision is None else str(precision))
     found = (state.get("in_use"), state.get("precision"))
     assert found == wanted, f"(place in use, precision) from GET {API}/surveys and from config.yml: {found} and {wanted}"
+
+
+def sharing_answer(address, cookie, method="GET", path="", body=None):
+    """/sharing<path> as this session: (HTTP status, the answer's JSON object or None). Never raises, and nothing
+    here keeps the token's state or the server's host for a failure to print."""
+    answer = request_from_this_machine(address, f"{API}/sharing{path}", method=method, cookie=cookie, body=body)
+    found = answer.json()
+    return answer.status, found if isinstance(found, dict) else None
+
+
+def test_sharing_is_readable_by_a_viewer_and_writable_by_an_admin_only(address, admin_session, viewer_session):
+    """Any signed-in user may read the Sharing page's state: a viewer's answer says it isn't writable and has no token
+    state, and the admin's says it is. A viewer's save is refused with require_admin's 403, whatever the body (this one
+    turns everything off, the safest valid body), and the admin's state doesn't change. Only booleans, the status
+    codes and the share switch are kept."""
+    admin_status, admin_state = sharing_answer(address, admin_session)
+    assert admin_status == 200 and admin_state is not None, (
+        f"GET {API}/sharing with the admin session: HTTP {admin_status}")
+    assert admin_state.get("writable") is True, (
+        f"the admin's GET {API}/sharing says writable is {admin_state.get('writable')!r}")
+    viewer_status, viewer_state = sharing_answer(address, viewer_session)
+    assert viewer_status == 200 and viewer_state is not None, (
+        f"GET {API}/sharing with a viewer session: HTTP {viewer_status}")
+    assert (viewer_state.get("writable"), viewer_state.get("token")) == (False, None), (
+        "a viewer's GET /sharing (writable, token present): "
+        f"{(viewer_state.get('writable'), viewer_state.get('token') is not None)}")
+    switch = admin_state.get("enabled")
+    refused = request_from_this_machine(
+        address, f"{API}/sharing", method="PUT", cookie=viewer_session,
+        body={"target": "maintainer", "enabled": False, "exact_location": False, "public_map": "none"})
+    assert admin_refusal(refused) == (403, ADMIN_ONLY), f"PUT {API}/sharing with a viewer session (status, message)"
+    assert sharing_answer(address, admin_session)[1].get("enabled") == switch, (
+        "the share switch changed after a viewer's refused PUT")
+
+
+def test_the_notice_is_served(address, viewer_session):
+    """GET /sharing/notice gives any signed-in user the notice: a version and non-empty Markdown."""
+    status, notice = sharing_answer(address, viewer_session, path="/notice")
+    assert status == 200 and notice is not None, f"GET {API}/sharing/notice with a viewer session: HTTP {status}"
+    version, markdown = notice.get("version"), notice.get("markdown")
+    assert isinstance(version, str) and version, "the notice has no version"
+    assert isinstance(markdown, str) and markdown.strip(), "the notice has no text"
+
+
+def test_the_sharing_server_check_is_on_the_status_page(address, admin_session):
+    """The Apps group has apps.sharing_server. On a unit that isn't sharing it is ok; on one that is, it is one of
+    ok, warn and error (a server's refusal or silence is the operator's to fix), never unknown or missing. Its detail
+    is fixed text naming no host or token."""
+    sharing = sharing_answer(address, admin_session)[1]
+    assert sharing is not None, f"GET {API}/sharing with the admin session isn't a sharing state"
+    status, detail = status_checks(address, admin_session).get("apps.sharing_server", ("missing", None))
+    if sharing.get("enabled") is True:
+        assert status in ("ok", "warn", "error"), f"apps.sharing_server is {status} on a unit that is sharing"
+    else:
+        assert status == "ok", f"apps.sharing_server is {status} ({detail}) on a unit that isn't sharing"
+
+
+def test_sharing_matches_config_yml(address, admin_session, usable_host, expect, codedir):
+    """The upload's switch is the one config.yml holds (thingsboard.enabled is true), and with no sharing: block there,
+    neither the exact location nor the public map has been agreed to. GET /sharing follows the file (it can write what
+    the file says into the consent rows), so config.yml is read after it. Only booleans are kept: the file holds the
+    server's host and the place's coordinates."""
+    require_pii_free(expect)
+    status, state = sharing_answer(address, admin_session)
+    assert status == 200 and state is not None, f"GET {API}/sharing with the admin session: HTTP {status}"
+    config = yaml.safe_load(read_root_file(usable_host, f"{codedir}/node-red-tm/config/config.yml"))
+    enabled = (config.get("thingsboard") or {}).get("enabled") is True
+    assert state.get("enabled") is enabled, (
+        f"enabled from GET {API}/sharing and from config.yml: {state.get('enabled')!r} and {enabled}")
+    if "sharing" not in config:
+        granted = {key: (state.get(key) or {}).get("granted") for key in ("exact_location", "public_map")}
+        assert granted == {"exact_location": False, "public_map": False}, (
+            f"config.yml has no sharing: block, but GET {API}/sharing grants {granted}")
+    del config
 
 
 # Last in the module: it leaves this machine's address backing off for a few seconds.
