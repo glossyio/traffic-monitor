@@ -10,6 +10,7 @@ export const useSession = defineStore('session', {
     user: null as User | null,
     loaded: false,
     loadError: '', // why the last load failed, such as the device not answering
+    hostname: '', // the unit's name for the tab and the bar; '' until known, or when it couldn't be read
   }),
   getters: {
     claimed: (state) => state.status?.claimed ?? false,
@@ -31,12 +32,24 @@ export const useSession = defineStore('session', {
         this.user = (session.data as Session).user
         this.loaded = true
         this.loadError = ''
+        if (this.user) void this.loadName()
       } catch (error) {
         this.loadError = messageOf(error)
       }
     },
+    // The name is a nicety: any failure leaves it empty, and the tab and the bar say just "Traffic Monitor"
+    async loadName() {
+      try {
+        const { data } = await api.GET('/api/v1/system/device')
+        const name = (data as { hostname?: unknown } | undefined)?.hostname
+        this.hostname = typeof name === 'string' ? name : ''
+      } catch {
+        this.hostname = ''
+      }
+    },
     sessionEnded() {
       this.user = null
+      this.hostname = ''
     },
   },
 })

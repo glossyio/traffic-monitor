@@ -11,6 +11,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     adminOnly?: boolean // only admins may open it
     bare?: boolean // shown without the menu, before login or while the license is outstanding
+    title?: string // the page's name in the tab, for a page with no entry in the menu
   }
 }
 

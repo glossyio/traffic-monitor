@@ -48,6 +48,8 @@ export interface Device {
   system_user: string | null
   time: string
   apps: DeviceApp[]
+  // The font and colors the unit's pages use; the home button reads them too
+  theme: { font: string; colors: Record<string, string> }
 }
 
 // GET /jobs/{id} declares its schema

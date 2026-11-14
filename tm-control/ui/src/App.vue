@@ -5,11 +5,12 @@
 -->
 <script setup lang="ts">
 import { mdiAccountOutline, mdiLogout } from '@mdi/js'
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { MODULES } from './modules'
 import { useSession } from './stores/session'
+import { pageTitle } from './title'
 
 const session = useSession()
 const route = useRoute()
@@ -21,6 +22,16 @@ const navItems = computed(() =>
 )
 const roleName = computed(() => (session.isAdmin ? 'Administrator' : 'Viewer'))
 const unreachable = computed(() => !session.loaded && session.loadError !== '')
+
+// The page's name for the tab: its own title, or else its entry in the menu. Setup, login, the license pages, and the
+// error page stand alone and say only "Traffic Monitor", without the unit's name.
+const standalone = computed(() => unreachable.value || !!route.meta.bare)
+const pageName = computed(
+  () => route.meta.title ?? MODULES.flatMap((module) => module.nav).find((item) => item.to === route.path)?.title,
+)
+watchEffect(() => {
+  document.title = pageTitle(standalone.value ? '' : session.hostname, pageName.value)
+})
 
 function logOut() {
   // The server ends the session and redirects to /login; the full page load starts the app afresh.
@@ -34,7 +45,7 @@ function reload() {
 
 <template>
   <v-app>
-    <template v-if="unreachable || route.meta.bare">
+    <template v-if="standalone">
       <v-main>
         <v-container class="py-8 py-sm-12">
           <v-sheet max-width="480" color="transparent" class="mx-auto">
@@ -53,7 +64,13 @@ function reload() {
     <template v-else>
       <v-app-bar flat color="background" border="b">
         <v-app-bar-nav-icon v-if="smAndDown" aria-label="Menu" @click="drawer = !drawer" />
-        <v-app-bar-title class="text-primary font-weight-bold">Traffic Monitor</v-app-bar-title>
+        <!-- A long name is cut with an ellipsis, so it never pushes the controls off the bar -->
+        <v-app-bar-title class="text-primary font-weight-bold">
+          <template v-if="session.hostname">
+            {{ session.hostname }}<span class="text-secondary"> | Traffic Monitor</span>
+          </template>
+          <template v-else>Traffic Monitor</template>
+        </v-app-bar-title>
       </v-app-bar>
 
       <v-navigation-drawer v-model="drawer" mobile-breakpoint="md" color="background">
