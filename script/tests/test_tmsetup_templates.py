@@ -216,8 +216,31 @@ def test_redirects_keep_the_port_the_browser_used():
 
 def test_snippets_are_listed():
     assert load_role_yaml("vars/main.yml")["tmsetup_revproxy_snippets"] == [
-        "proxy-common.conf", "auth-viewer.conf", "auth-admin.conf",
+        "proxy-common.conf", "auth-viewer.conf", "auth-admin.conf", "home-button.conf",
     ]
+
+
+HOME_BUTTON = "include /etc/nginx/tm/snippets/home-button.conf;"
+PAGE_LOCATIONS = ["dashboard.conf", "frigate.conf", "go2rtc.conf", "legacy-ui.conf", "nodered.conf"]
+
+
+@pytest.mark.parametrize("name", LOCATIONS)
+def test_only_the_apps_with_pages_get_the_home_button(name):
+    assert location(name).count(HOME_BUTTON) == (1 if name in PAGE_LOCATIONS else 0)
+
+
+def test_home_button_snippet_adds_one_script_line_and_no_header():
+    lines = [line.strip() for line in snippet("home-button.conf").splitlines()]
+    assert "sub_filter '</head>' '<script src=\"/home-button.js\" defer></script></head>';" in lines
+    assert "sub_filter_once on;" in lines
+    assert "proxy_set_header Accept-Encoding $tm_page_encoding;" in lines
+    assert not [line for line in lines if line.startswith("add_header")]
+
+
+def test_only_a_page_load_asks_the_app_for_an_uncompressed_answer():
+    lines = [line.strip() for line in nginx_main_conf().splitlines()]
+    start = lines.index("map $http_accept $tm_page_encoding {")
+    assert lines[start + 1:start + 4] == ["default $http_accept_encoding;", '"~*text/html" "";', "}"]
 
 
 @pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])

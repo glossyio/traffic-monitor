@@ -13,6 +13,7 @@ location /feeds/ {
     if ($arg_src !~ "^[A-Za-z0-9_-]*$") { return 403; }
     proxy_pass http://127.0.0.1:1984/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
+    include /etc/nginx/tm/snippets/home-button.conf;
 }
 location ~ "^/feeds/api(?!/(streams|ws|frame\.jpeg|stream\.(mp4|m3u8|mjpeg)|hls/(playlist\.m3u8|segment\.(ts|m4s)|init\.mp4))$)" {
     return 403;

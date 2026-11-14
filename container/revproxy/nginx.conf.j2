@@ -32,6 +32,14 @@ http {
         ''      close;
     }
 
+    # A page load asks the app for an uncompressed answer, so home-button.conf can add its script line to the HTML.
+    # Every other request keeps the browser's own Accept-Encoding. (An empty value sends no header.) A browser on
+    # plain HTTP sends no Sec-Fetch-* headers, so Accept is what tells a page load from the rest.
+    map $http_accept $tm_page_encoding {
+        default $http_accept_encoding;
+        "~*text/html" "";
+    }
+
     # The sign-in window. On its hotspot the unit answers every name (dnsmasq), so a phone's connection test arrives
     # here with a foreign Host; the redirect is what makes the phone open its sign-in window on the control app.
     # Only for requests that arrived on the hotspot address. Never answer such a test with success: an Android 17

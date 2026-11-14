@@ -1,0 +1,6 @@
+# The home button: one script line added to an app's HTML page, which draws a link back to the control app
+# (tm-control/ui/src/home-button). Include this in an app location that serves pages, beside its proxy-common.conf
+# and auth snippet. No add_header here: the auth snippets' Set-Cookie must stay the location's only one.
+proxy_set_header Accept-Encoding $tm_page_encoding;
+sub_filter '</head>' '<script src="/home-button.js" defer></script></head>';
+sub_filter_once on;

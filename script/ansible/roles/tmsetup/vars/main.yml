@@ -93,6 +93,7 @@ tmsetup_revproxy_snippets:
   - proxy-common.conf
   - auth-viewer.conf
   - auth-admin.conf
+  - home-button.conf
 
 # Secrets generated once on the device by tasks/secrets.yml. Only names here; values never in the repo.
 tmsetup_secrets_dir: /etc/traffic-monitor/secrets
