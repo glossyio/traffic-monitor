@@ -212,30 +212,45 @@ def _check(app_state, body: SharingIn, target: str, protocol: str) -> None:
             raise ApiError(409, "map_not_live", "The public map isn't live yet.")
 
 
-def _check_notice(body: SharingIn, target: str, latest: dict[str, Consent], version: str) -> None:
-    """Turning the upload on, or keeping it on, for the maintainer's server needs the current notice. A save that
-    leaves the version out is taken while Share data is already granted under the current notice."""
+def _check_notice(
+    body: SharingIn, target: str, latest: dict[str, Consent], wanted: dict[str, bool], version: str
+) -> None:
+    """The maintainer's server, upload on: the current notice version is needed only when the save turns Share data on
+    or grants a choice that isn't granted yet. A save that leaves the version out and only keeps or withdraws choices
+    passes, whatever notice they were given under (a new notice asks again without pausing sharing; only added data
+    waits). A save that leaves the version out also passes while Share data is granted under the current notice."""
     if target != MAINTAINER or not body.enabled:
         return
     if body.notice_version == version:
         return
-    if body.notice_version is None and _notice_current(target, latest, version):
-        return
+    if body.notice_version is None:
+        if _notice_current(target, latest, version):
+            return
+        if not any(wanted[name] and not _granted(latest.get(name)) for name in CONSENTS):
+            return
     raise _invalid("That isn't the current notice. Reload the page to read it.", "notice_version")
 
 
 def _record(
-    consents: Consents, target: str, latest: dict[str, Consent], wanted: dict[str, bool], version: str, user_id: int
+    consents: Consents,
+    target: str,
+    latest: dict[str, Consent],
+    wanted: dict[str, bool],
+    version: str,
+    user_id: int,
+    regrant: bool = True,
 ) -> None:
     """Withdraw every choice for any other server, record each choice for this one that changed, and clear the
-    review. A grant records `version`; a withdrawal keeps the version of the grant it withdraws, as withdraw_all."""
+    review. A grant records `version`, and with `regrant` a grant under an older notice is recorded again under it;
+    without, a grant that is already on keeps its row. A withdrawal keeps the version of the grant it withdraws, as
+    withdraw_all."""
     for other in consents.targets():
         if other != target:
             consents.withdraw_all(other, user_id, CHANGED_NOTE)
     for name in CONSENTS:
         found = latest.get(name)
         if wanted[name]:
-            if not _granted(found) or found.notice_version != version:
+            if not _granted(found) or (regrant and found.notice_version != version):
                 consents.record(target, name, True, version, user_id)
         elif _granted(found):
             consents.record(target, name, False, found.notice_version, user_id)
@@ -289,7 +304,9 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
         except ConfigError as error:
             raise config_error(error) from None
         latest = consents.latest(target)
-        _check_notice(body, target, latest, notice_version)
+        _check_notice(body, target, latest, wanted, notice_version)
+        # Without the version a save keeps the grants as they are, under the notice they were given under
+        regrant = target != MAINTAINER or body.notice_version is not None
         config = load_config(app_state)
         upload = config.upload()
         old_target = target_key(upload.host, maintainer_host)
@@ -299,8 +316,10 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
         # The file, from the state the rows below will record.
         share = None
         if body.enabled:
+            kept = latest.get("share_data")
+            share_version = kept.notice_version if _granted(kept) and not regrant else version
             share = Consent(
-                consent="share_data", granted=True, notice_version=version, at="", user_id=admin.id, note=None
+                consent="share_data", granted=True, notice_version=share_version, at="", user_id=admin.id, note=None
             )
         block = follow.wanted_block(target, host, share, wanted["exact_location"], wanted["public_map"])
         try:
@@ -313,7 +332,7 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
         # The rows. Should recording them fail, the follow step writes the file back to what the store holds, so a
         # choice in the file without its row is undone at once, not at the next GET.
         try:
-            _record(consents, target, latest, wanted, version, admin.id)
+            _record(consents, target, latest, wanted, version, admin.id, regrant)
         except Exception:
             with contextlib.suppress(Exception):  # the first error is the one to raise
                 follow.run(app_state)
@@ -325,7 +344,7 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
         }
         changed = [name for name in FIELDS if before[name] != after[name]]
         old_share = old_latest.get("share_data")
-        if old_target == target and before["enabled"] and body.enabled and _granted(old_share) and (
+        if regrant and old_target == target and before["enabled"] and body.enabled and _granted(old_share) and (
             old_share.notice_version != version
         ):
             changed.append("notice_version")

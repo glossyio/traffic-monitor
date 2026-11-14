@@ -3,7 +3,7 @@ import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
 import SharingForm from '../src/modules/sharing/SharingForm.vue'
 import { SHARING_ON, apiError, fakeApi, json, sharingState } from './fake-api'
-import { click, clickInDialog, clickLast, dialogText, field, lastButton, mountAlone, typeInto } from './mount'
+import { button, click, clickInDialog, dialogText, field, mountAlone, typeInto } from './mount'
 
 const PUT = 'PUT /api/v1/sharing'
 const NOTICE = 'GET /api/v1/sharing/notice'
@@ -57,11 +57,11 @@ describe('the sharing form', () => {
     const wrapper = mountForm({ token: TOKEN_SET })
     await field(wrapper, 'Share data').setValue(true)
     expect(wrapper.text()).toContain('Read the sharing notice (version 1)')
-    expect(lastButton(wrapper, 'Save').attributes('disabled')).toBeDefined()
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
 
     await field(wrapper, "I've read the notice").setValue(true)
-    expect(lastButton(wrapper, 'Save').attributes('disabled')).toBeUndefined()
-    await clickLast(wrapper, 'Save')
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeUndefined()
+    await click(wrapper, 'Save')
     expect(body(api)).toEqual({
       target: 'maintainer',
       host: null,
@@ -78,7 +78,7 @@ describe('the sharing form', () => {
   it('says Saved, and stops saying it once something is edited', async () => {
     fakeApi({ [PUT]: json(200, { ...SHARING_ON, protocol: 'http' }) })
     const wrapper = mountForm(SHARING_ON)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(wrapper.text()).toContain('Saved.')
     await field(wrapper, 'Share data').setValue(false)
     expect(wrapper.text()).not.toContain('Saved.')
@@ -92,12 +92,52 @@ describe('the sharing form', () => {
     expect(wrapper.text()).toContain('Counts and speeds.')
   })
 
-  it('asks for the notice again when it changed, but not when the current one was read', () => {
+  it('does not need the notice for a save that only keeps what is shared, even when the notice changed', () => {
     const changed = mountForm({ ...SHARING_ON, notice_current: false })
-    expect(lastButton(changed, 'Save').attributes('disabled')).toBeDefined()
+    expect(changed.text()).not.toContain("I've read the notice")
+    expect(button(changed, 'Save').attributes('disabled')).toBeUndefined()
     const current = mountForm(SHARING_ON)
     expect(current.text()).not.toContain("I've read the notice")
-    expect(lastButton(current, 'Save').attributes('disabled')).toBeUndefined()
+  })
+
+  it('needs the notice only for a choice newly ticked after the notice changed', async () => {
+    const wrapper = mountForm({ ...SHARING_ON, notice_current: false })
+    await field(wrapper, 'Share the exact location').setValue(true)
+    expect(wrapper.text()).toContain("I've read the notice")
+    expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
+    await field(wrapper, 'Share the exact location').setValue(false)
+    expect(wrapper.text()).not.toContain("I've read the notice")
+  })
+
+  it('withdraws a choice under a changed notice without reading it', async () => {
+    const api = fakeApi({ [PUT]: json(200, SHARING_ON) })
+    const wrapper = mountForm({
+      ...SHARING_ON,
+      notice_current: false,
+      exact_location: { granted: true, at: '2026-11-02T12:00:00+00:00', notice_version: '1' },
+    })
+    await field(wrapper, 'Share the exact location').setValue(false)
+    expect(wrapper.text()).not.toContain("I've read the notice")
+    await click(wrapper, 'Save')
+    expect(body(api)).toMatchObject({ enabled: true, exact_location: false, notice_version: null })
+  })
+
+  it('names the token\'s Save so it is not taken for the form\'s', () => {
+    const wrapper = mountForm(SHARING_ON)
+    expect(button(wrapper, 'Save token').exists()).toBe(true)
+    expect(button(wrapper, 'Save').exists()).toBe(true)
+  })
+
+  it('keeps "On since" for Share data after the server is changed, and drops it for the other choices', async () => {
+    const wrapper = mountForm({
+      ...SHARING_ON,
+      exact_location: { granted: true, at: new Date(Date.now() - 3 * 86_400_000).toISOString(), notice_version: '1' },
+      share_data: { granted: true, at: new Date(Date.now() - 5 * 86_400_000).toISOString(), notice_version: '1' },
+    })
+    expect(wrapper.text()).toContain('On since 3 days ago')
+    await field(wrapper, 'Your own ThingsBoard server').setValue()
+    expect(wrapper.text()).toContain('On since 5 days ago')
+    expect(wrapper.text()).not.toContain('On since 3 days ago')
   })
 
   it('disables the exact location until Share data is on, and over http, and says why', () => {
@@ -162,7 +202,7 @@ describe('the sharing form', () => {
     await typeInto(field(wrapper, 'Host').element, ` ${OWN} `)
     await typeInto(field(wrapper, 'Port (optional)').element, '8443')
     await field(wrapper, 'Share data').setValue(true)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(body(api)).toEqual({
       target: 'own',
       host: OWN,
@@ -184,7 +224,7 @@ describe('the sharing form', () => {
     expect(checked(wrapper, 'Share the exact location')).toBe(true)
     await field(wrapper, 'Your own ThingsBoard server').setValue()
     await typeInto(field(wrapper, 'Host').element, OWN)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(dialogText()).toContain(
       'Changing the server turns off the exact location and the public map. You can turn them on again for the new server.',
     )
@@ -200,7 +240,7 @@ describe('the sharing form', () => {
       ...SHARING_ON,
       exact_location: { granted: true, at: '2026-11-02T12:00:00+00:00', notice_version: '1' },
     })
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(dialogText()).toBe('')
     expect(body(api)).toMatchObject({ exact_location: true })
   })
@@ -212,7 +252,7 @@ describe('the sharing form', () => {
       exact_location: { granted: true, at: '2026-11-02T12:00:00+00:00', notice_version: '1' },
     })
     await field(wrapper, 'Share the exact location').setValue(false)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(body(api)).toMatchObject({ enabled: true, exact_location: false, notice_version: null })
   })
 
@@ -226,7 +266,7 @@ describe('the sharing form', () => {
     })
     await field(wrapper, 'Share data').setValue(false)
     expect(checked(wrapper, 'Share the exact location')).toBe(false)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(body(api)).toMatchObject({ enabled: false, exact_location: false, public_map: 'none' })
   })
 
@@ -241,7 +281,7 @@ describe('the sharing form', () => {
   it('shows the reason for a refused save and keeps what was typed', async () => {
     fakeApi({ [PUT]: apiError(409, 'no_token', 'Set the access token first.') })
     const wrapper = mountForm(SHARING_ON)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(wrapper.text()).toContain('Set the access token first.')
     expect(wrapper.emitted('saved')).toBeUndefined()
   })
@@ -255,7 +295,7 @@ describe('the sharing form', () => {
     const wrapper = mountForm(SHARING_ON)
     await field(wrapper, 'Your own ThingsBoard server').setValue()
     await typeInto(field(wrapper, 'Host').element, 'https://x')
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(wrapper.find('.v-input--error').text()).toContain("Enter the server's name or address")
   })
 
@@ -263,13 +303,13 @@ describe('the sharing form', () => {
     const message = 'config.yml changed while you were editing. Reload and try again.'
     fakeApi({ [PUT]: apiError(409, 'config_changed', message) })
     const wrapper = mountForm(SHARING_ON)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     await flushPromises()
     expect(wrapper.text()).toContain(message)
     expect(wrapper.emitted('reload')).toHaveLength(1)
   })
 
   it('reads "Save and finish" on the first run', () => {
-    expect(lastButton(mountForm({}, { firstRun: true }), 'Save and finish').exists()).toBe(true)
+    expect(button(mountForm({}, { firstRun: true }), 'Save and finish').exists()).toBe(true)
   })
 })

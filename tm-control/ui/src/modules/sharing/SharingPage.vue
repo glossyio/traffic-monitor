@@ -75,15 +75,26 @@ function stopPolling() {
   poll = undefined
 }
 
+// One check while polling. A failed read is not shown (the form above still works); the checking just stops.
+async function check(): Promise<boolean> {
+  try {
+    const { data } = await api.GET('/api/v1/sharing')
+    state.value = data as SharingState
+    return true
+  } catch {
+    return false
+  }
+}
+
 function saved(next: SharingState) {
   state.value = next
   stopPolling()
   if (!next.enabled) return
   giveUpAt = Date.now() + POLL_LIMIT_MS
   poll = setInterval(async () => {
-    await load()
+    const read = await check()
     const answered = state.value && !['waiting', 'unknown'].includes(state.value.server.state)
-    if (answered || Date.now() >= giveUpAt) stopPolling()
+    if (!read || answered || Date.now() >= giveUpAt) stopPolling()
   }, POLL_MS)
 }
 
@@ -96,8 +107,8 @@ function serverStatus(server: SharingState['server']) {
   const words: Record<SharingState['server']['state'], string> = {
     off: 'Off',
     waiting: 'Waiting for the first upload',
-    ok: `Accepted an upload ${agoAt(server.at)}`,
-    stale: `No upload accepted since ${agoAt(server.at)}`,
+    ok: server.at ? `Accepted an upload ${agoAt(server.at)}` : 'Accepted an upload',
+    stale: server.at ? `No upload accepted since ${agoAt(server.at)}` : 'No upload accepted for a while',
     unreachable: "Can't be reached",
     refused: 'Refused the token',
     rejected: 'Refused an upload',

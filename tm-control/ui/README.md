@@ -1288,16 +1288,20 @@ so the Status page's "Check the token" link doesn't land under the app bar).
   that is already ticked is never disabled, so a choice can always be withdrawn where it was given: untick it and save.
   Unticking Share data unticks the other two. Changing the server unticks the exact location and the map (the choices
   were made for the old server) and asks first, in a dialog, when either was on.
-- **The notice** ("I've read the notice") is asked for only on the maintainer's server, and only when sharing is being
-  turned on, the notice changed since it was read, or the server was just changed to the maintainer's. The page
-  never sends a notice version without the box ticked.
+- **The notice** ("I've read the notice") is asked for only on the maintainer's server, and only when the save adds
+  something to what is shared: Share data turned on, the server just changed to the maintainer's, or a choice newly
+  ticked while the notice has changed since it was read. A save that only keeps or withdraws choices never needs it,
+  so an admin can withdraw under a changed notice without reading it; the API keeps the grants under the notice they
+  were given under until someone reads the new one. The page never sends a notice version without the box ticked.
 - **The summary card** is the saved state, not the form: it says what is shared, with which server, how the server
   last answered (in the Status check's words, shorter), and, while sharing is on, which location is sent. Viewers see
   the card and one sentence. After a save that leaves the upload on, the page reads the state again every 5 seconds
   for up to a minute while the server's answer is `waiting` or `unknown`.
-- **Two Save buttons.** The token has its own Save (`EnteredSecret`, which saves it through the secrets API and
-  restarts Node-RED), and the form has one for the server and the choices. The token's form sits in a bordered sheet
-  so the two read as separate.
+- **Two Save buttons.** The token has its own (`EnteredSecret`'s `saveText`, "Save token"; it saves the token through
+  the secrets API and restarts Node-RED), and the form has "Save" for the server and the choices. The token's form
+  also sits in a bordered sheet so the two read as separate.
+- **Polling is quiet.** A failed check while the page waits for the first upload stops the checking and shows nothing,
+  because the form above still works; only the page's first read shows an error.
 
 #### What the screenshot review changed
 
@@ -1308,7 +1312,7 @@ changing the server) and as a viewer.
 - The card was titled "What this device shares", the same as the section of boxes below it. It is "Saved settings"
   now, which also says that it shows what is saved, not what is ticked.
 - The token's field and its Save sat in the page's flow, so the token's Save and the form's Save read as one pair. The
-  token is in a bordered sheet.
+  token is in a bordered sheet, and its button reads "Save token".
 - The Protocol drop-down had Vuetify's underlined style next to the outlined text fields. It is outlined.
 - "I've read the notice" was 8 px left of the other checkboxes (a negative margin copied from the license page). It
   lines up with them now.

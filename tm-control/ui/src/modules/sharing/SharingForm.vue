@@ -88,12 +88,21 @@ watch(shareData, (on) => {
   if (!on) publicMap.value = false
 })
 
-// The notice (the maintainer's server only): read when sharing is turned on, or when it changed since it was read
+// The notice (the maintainer's server only), asked for when the save adds something to what is shared: Share data
+// turned on, the server just changed to the maintainer's, or a choice newly ticked under a notice that has changed.
+// A save that only keeps or withdraws choices never needs it.
+const addsChoice = computed(
+  () =>
+    (exactLocation.value && !props.state.exact_location.granted) || (publicMap.value && !props.state.public_map.granted),
+)
 const noticeNeeded = computed(
   () =>
     target.value === 'maintainer' &&
     shareData.value &&
-    (!props.state.enabled || !props.state.notice_current || props.state.target !== 'maintainer'),
+    (!props.state.enabled ||
+      !props.state.share_data.granted ||
+      props.state.target !== 'maintainer' ||
+      (!props.state.notice_current && addsChoice.value)),
 )
 const noticeOpen = ref(false)
 const notice = ref<Notice | null>(null)
@@ -218,9 +227,9 @@ async function save() {
       <p class="text-body-1 mb-4">
         The server gives each device a token. Saving it restarts Node-RED, which takes about thirty seconds.
       </p>
-      <!-- The token has a Save of its own, apart from the form's: the border keeps the two apart -->
+      <!-- The token has a Save of its own, apart from the form's: its name and the border keep the two apart -->
       <v-sheet v-if="state.token" border rounded="lg" color="surface" class="pa-4">
-        <EnteredSecret :secret="state.token" hide-title @changed="emit('reload')" />
+        <EnteredSecret :secret="state.token" hide-title save-text="Save token" @changed="emit('reload')" />
       </v-sheet>
     </section>
 
@@ -233,7 +242,7 @@ async function save() {
         :example="SHARE_DATA_EXAMPLE"
         :disabled="!!shareDataReason && !shareData"
         :disabled-reason="shareDataReason"
-        :recorded="recorded(state.share_data)"
+        :recorded="state.share_data"
       />
       <ConsentBox
         v-model="exactLocation"

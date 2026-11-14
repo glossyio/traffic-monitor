@@ -332,6 +332,58 @@ def test_a_new_notice_is_recorded_again(admin):
     assert file_data(admin)["sharing"]["notice_version"] == "2099-01"
 
 
+def stale_notice(admin) -> str:
+    """Share data and the exact location granted under the current notice, then a new notice published; returns the
+    version they were granted under."""
+    set_token(admin)
+    assert put(admin, exact_location=True).status_code == 200
+    old = notice(admin)
+    admin.app.state.notice = dataclasses.replace(admin.app.state.notice, version="2099-01")
+    assert get(admin)["notice_current"] is False
+    return old
+
+
+def test_withdrawing_under_a_stale_notice_needs_no_version_and_keeps_the_other_grants(admin):
+    """A new notice asks again without pausing sharing: a save that only withdraws a choice is taken without the
+    version, records only the withdrawal, and leaves Share data under the notice it was given under."""
+    old = stale_notice(admin)
+    count = len(rows(admin))
+    r = put(admin, exact_location=False, notice_version=None)
+    assert r.status_code == 200, r.text
+    assert rows(admin)[count:] == [(MAINTAINER, "exact_location", 0, old, admin_id(admin), None)]
+    state = r.json()
+    assert state["enabled"] is True
+    assert state["exact_location"]["granted"] is False
+    assert state["share_data"]["notice_version"] == old
+    assert state["notice_current"] is False
+    assert file_data(admin)["sharing"]["notice_version"] == old
+
+
+def test_keeping_the_choices_under_a_stale_notice_records_nothing(admin):
+    old = stale_notice(admin)
+    count = len(rows(admin))
+    r = put(admin, exact_location=True, notice_version=None)
+    assert r.status_code == 200, r.text
+    assert rows(admin)[count:] == []
+    assert r.json()["share_data"]["notice_version"] == old
+    assert r.json()["notice_current"] is False
+
+
+def test_granting_more_under_a_stale_notice_needs_the_current_version(admin):
+    stale_notice(admin)
+    assert put(admin, exact_location=False, notice_version=None).status_code == 200
+    count = len(rows(admin))
+    found = error(put(admin, exact_location=True, notice_version=None), 422, "validation")
+    assert found["detail"] == {"field": "notice_version"}
+    assert rows(admin)[count:] == []
+    # With the current version the grants are recorded again under it, as before
+    assert put(admin, exact_location=True).status_code == 200
+    assert rows(admin)[-2:] == [
+        (MAINTAINER, "share_data", 1, "2099-01", admin_id(admin), None),
+        (MAINTAINER, "exact_location", 1, "2099-01", admin_id(admin), None),
+    ]
+
+
 def test_changing_the_server_withdraws_the_other_choices(admin):
     set_token(admin)
     assert put(admin, exact_location=True).status_code == 200

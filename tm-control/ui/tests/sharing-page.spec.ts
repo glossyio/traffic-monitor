@@ -2,7 +2,7 @@
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ADMIN, SHARING_ON, VIEWER, apiError, json, sharingState, signedIn, type SharingState } from './fake-api'
-import { click, clickLast, field, mountApp } from './mount'
+import { click, field, mountApp } from './mount'
 
 const SHARING = 'GET /api/v1/sharing'
 const SAVE = 'PUT /api/v1/sharing'
@@ -114,6 +114,7 @@ describe('the Sharing page', () => {
     ['off', null, 'Off'],
     ['ok', 300, 'Accepted an upload 5 minutes ago'],
     ['stale', 1200, 'No upload accepted since 20 minutes ago'],
+    ['stale', null, 'No upload accepted for a while'],
   ] as const)('says how the server answered, to viewers too (%s)', async (state, secondsAgo, words) => {
     const at = secondsAgo === null ? null : new Date(Date.now() - secondsAgo * 1000).toISOString()
     signedIn(VIEWER, { [SHARING]: { ...FOR_VIEWER, server: { state, at } } })
@@ -135,7 +136,7 @@ describe('the Sharing page', () => {
     await vi.advanceTimersByTimeAsync(30_000)
     expect(gets()).toBe(1) // nothing was saved, so nothing is checked again
 
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     expect(wrapper.text()).toContain('Saved.')
     expect(fact(wrapper, 'Server status')).toBe('Waiting for the first upload')
     await vi.advanceTimersByTimeAsync(5000)
@@ -150,7 +151,7 @@ describe('the Sharing page', () => {
     const waiting = { ...SHARING_ON, server: { state: 'waiting', at: null } }
     const api = signedIn(ADMIN, { [SHARING]: waiting, [SAVE]: json(200, waiting) })
     const { wrapper } = await mountApp('/sharing')
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     await vi.advanceTimersByTimeAsync(120_000)
     const gets = api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/sharing').length
     expect(gets).toBe(1 + 12) // the first read and one every 5 seconds for a minute
@@ -162,8 +163,40 @@ describe('the Sharing page', () => {
     const api = signedIn(ADMIN, { [SHARING]: SHARING_ON, [SAVE]: json(200, off) })
     const { wrapper } = await mountApp('/sharing')
     await field(wrapper, 'Share data').setValue(false)
-    await clickLast(wrapper, 'Save')
+    await click(wrapper, 'Save')
     await vi.advanceTimersByTimeAsync(30_000)
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/sharing')).toHaveLength(1)
+  })
+
+  it('stops checking when the page is left', async () => {
+    vi.useFakeTimers()
+    const waiting = { ...SHARING_ON, server: { state: 'waiting', at: null } }
+    const api = signedIn(ADMIN, { [SHARING]: waiting, [SAVE]: json(200, waiting) })
+    const { wrapper } = await mountApp('/sharing')
+    await click(wrapper, 'Save')
+    await vi.advanceTimersByTimeAsync(5000)
+    const gets = () => api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/sharing').length
+    expect(gets()).toBe(2)
+    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(gets()).toBe(2)
+  })
+
+  it('stops checking quietly when a check fails, leaving the form without an error', async () => {
+    vi.useFakeTimers()
+    let reads = 0
+    const waiting = { ...SHARING_ON, server: { state: 'waiting', at: null } }
+    const api = signedIn(ADMIN, {
+      [SHARING]: () => (++reads === 1 ? json(200, waiting) : apiError(500, 'error', 'The device answered with an error.')),
+      [SAVE]: json(200, waiting),
+    })
+    const { wrapper } = await mountApp('/sharing')
+    await click(wrapper, 'Save')
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(wrapper.text()).not.toContain('The device answered with an error.')
+    expect(wrapper.find('.v-alert').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Saved.')
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/sharing')).toHaveLength(2)
   })
 })

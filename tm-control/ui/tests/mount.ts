@@ -43,19 +43,6 @@ export function button(wrapper: VueWrapper, text: string) {
   return buttons[0]
 }
 
-// The last button reading `text`, for a page whose form button shares its name with an earlier one's (the Sharing
-// page's token has a Save of its own, above the form's)
-export function lastButton(wrapper: VueWrapper, text: string) {
-  const buttons = wrapper.findAll('button').filter((b) => b.text().trim() === text)
-  expect(buttons.length, `a button reading "${text}"`).toBeGreaterThan(0)
-  return buttons[buttons.length - 1]
-}
-
-export async function clickLast(wrapper: VueWrapper, text: string) {
-  await lastButton(wrapper, text).trigger('click')
-  await flushPromises()
-}
-
 export async function click(wrapper: VueWrapper, text: string) {
   await button(wrapper, text).trigger('click')
   await flushPromises()
