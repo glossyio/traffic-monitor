@@ -55,6 +55,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
   outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
+- `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
+  `dist/` as it is.
 - `src/stores/session.ts` is the only store: the setup status and the logged-in user.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
