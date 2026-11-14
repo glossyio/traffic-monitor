@@ -3,14 +3,16 @@
 GET (any signed-in user) follows config.yml first (follow.run), then says where the upload goes, which choices are
 recorded for that server, and how the server last answered (from Node-RED's status; tm-control never contacts the
 server). A viewer gets no host of an operator's own server and no token state. PUT (admins) saves the server and the
-choices: under app.state.reconcile_lock, config.yml is written first (the thingsboard: and sharing: blocks) and the
-consent rows second, so a refused or failed save records nothing and a failure between the two leaves less shared,
-never more. POST /reviewed clears the review an upload found on asks for.
+choices: under app.state.reconcile_lock, the store first follows config.yml (so a hand edit since the page was read
+is what the save is judged against), then config.yml is written (the thingsboard: and sharing: blocks) and the
+consent rows second, so a refused save records nothing; should the rows fail, the follow step writes the file back to
+what the store holds. POST /reviewed clears the review an upload found on asks for.
 
 No host, token, or notice version is logged, audited, or put in an error message: audit rows name the fields that
 changed, never a value.
 """
 
+import contextlib
 import re
 import time
 from typing import Literal
@@ -43,6 +45,7 @@ router = APIRouter(prefix="/sharing", tags=["sharing"])
 
 # An own server's host as typed: a name or an address, with no scheme, port, or path (those are separate fields).
 HOST = re.compile(r"[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?")
+# A change made on this page; deliberately not follow.CHANGED_NOTE ("... in config.yml"), which marks a hand edit.
 CHANGED_NOTE = "the server changed"
 # The settings an audit row may name, in the form's order.
 FIELDS = ("target", "host", "protocol", "port", "enabled", "exact_location", "public_map")
@@ -157,8 +160,8 @@ def _state(app_state, user: User, server: ServerStatus) -> SharingState:
         notice_version=notice_version,
         notice_current=_notice_current(target, latest, notice_version),
         review_needed=consents.review_needed(),
-        has_location=place is not None and place.lat is not None and place.lon is not None,
-        precision=config.deployment().precision,
+        has_location=place.lat is not None and place.lon is not None,
+        precision=place.precision,
         writable=admin,
         server=server,
     )
@@ -221,6 +224,24 @@ def _check_notice(body: SharingIn, target: str, latest: dict[str, Consent], vers
     raise _invalid("That isn't the current notice. Reload the page to read it.", "notice_version")
 
 
+def _record(
+    consents: Consents, target: str, latest: dict[str, Consent], wanted: dict[str, bool], version: str, user_id: int
+) -> None:
+    """Withdraw every choice for any other server, record each choice for this one that changed, and clear the
+    review. A grant records `version`; a withdrawal keeps the version of the grant it withdraws, as withdraw_all."""
+    for other in consents.targets():
+        if other != target:
+            consents.withdraw_all(other, user_id, CHANGED_NOTE)
+    for name in CONSENTS:
+        found = latest.get(name)
+        if wanted[name]:
+            if not _granted(found) or found.notice_version != version:
+                consents.record(target, name, True, version, user_id)
+        elif _granted(found):
+            consents.record(target, name, False, found.notice_version, user_id)
+    consents.set_review_needed(False)
+
+
 # Routes
 
 
@@ -261,6 +282,12 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
     }
     consents = Consents(app_state.state)
     with app_state.reconcile_lock:
+        # The store first follows the file, so a hand edit since the page was read (the upload turned off, another
+        # server) is recorded before the save is judged against it.
+        try:
+            follow.run(app_state)
+        except ConfigError as error:
+            raise config_error(error) from None
         latest = consents.latest(target)
         _check_notice(body, target, latest, notice_version)
         config = load_config(app_state)
@@ -283,15 +310,14 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
             raise config_error(error) from None
         save_config(app_state, config)
 
-        # The rows.
-        for other in consents.targets():
-            if other != target:
-                consents.withdraw_all(other, admin.id, CHANGED_NOTE)
-        for name in CONSENTS:
-            found = latest.get(name)
-            if _granted(found) != wanted[name] or (wanted[name] and found.notice_version != version):
-                consents.record(target, name, wanted[name], version, admin.id)
-        consents.set_review_needed(False)
+        # The rows. Should recording them fail, the follow step writes the file back to what the store holds, so a
+        # choice in the file without its row is undone at once, not at the next GET.
+        try:
+            _record(consents, target, latest, wanted, version, admin.id)
+        except Exception:
+            with contextlib.suppress(Exception):  # the first error is the one to raise
+                follow.run(app_state)
+            raise
 
         after = {
             "target": _kind(target), "host": normalize_host(host), "protocol": protocol, "port": port,

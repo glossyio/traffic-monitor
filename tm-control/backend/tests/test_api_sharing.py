@@ -13,6 +13,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from fastapi.testclient import TestClient
 from ruamel.yaml import YAML
 
 from tm_control.adapters.nodered import NodeRedError
@@ -30,6 +31,7 @@ MAINTAINER_HOST = "tb.example.invalid"  # the fixture manifest's maintainer_host
 OTHER = "other.example.invalid"
 TOKEN = "tb-placeholder-0001"
 CHANGED_NOTE = "the server changed"
+OFF_NOTE = "the upload was off in config.yml"  # follow's, for a hand edit
 
 
 @pytest.fixture
@@ -385,6 +387,79 @@ def test_an_own_server_host_is_validated(admin, host, target):
         assert (data["host"], data["protocol"]) == (MAINTAINER_HOST, "https")
         assert "port" not in data
         assert rows(admin)[-1][:4] == (MAINTAINER, "share_data", 1, notice(admin))
+
+
+def edit_file(client, old, new):
+    path = client.app.state.config_path
+    text = path.read_text()
+    assert old in text
+    path.write_text(text.replace(old, new, 1))
+
+
+def grants_since(client, count: int) -> list[tuple]:
+    return [row for row in rows(client)[count:] if row[2] == 1]
+
+
+def test_a_hand_edit_before_the_save_needs_the_notice_again(admin):
+    """The upload turned off by hand after the page was read: a save that leaves the notice version out is judged
+    against the withdrawal the follow step records, not the grant the page saw."""
+    set_token(admin)
+    assert put(admin).status_code == 200
+    assert get(admin)["notice_current"] is True
+    edit_file(admin, "thingsboard:\n    enabled: true\n", "thingsboard:\n    enabled: false\n")
+    count = len(rows(admin))
+    found = error(put(admin, notice_version=None), 422, "validation")
+    assert found["detail"] == {"field": "notice_version"}
+    assert rows(admin)[count:] == [(MAINTAINER, "share_data", 0, notice(admin), None, OFF_NOTE)]
+    assert file_data(admin)["thingsboard"]["enabled"] is False
+
+
+def test_a_hand_switch_to_another_server_needs_the_notice_again(admin):
+    """thingsboard.host edited by hand to another server: the maintainer's grant is withdrawn before the save is
+    judged, so a save for the maintainer's server that leaves the notice version out doesn't revive it."""
+    set_token(admin)
+    assert put(admin, exact_location=True).status_code == 200
+    edit_file(admin, f"    host: {MAINTAINER_HOST}\n    protocol: https\n", f"    host: {OTHER}\n    protocol: https\n")
+    count = len(rows(admin))
+    error(put(admin, notice_version=None), 422, "validation")
+    found = rows(admin)[count:]
+    assert (MAINTAINER, "share_data", 0, notice(admin), None, "the server changed in config.yml") in found
+    assert (MAINTAINER, "exact_location", 0, notice(admin), None, "the server changed in config.yml") in found
+    # The follow step records the upload it found on for the other server (no user); nothing is granted for the
+    # maintainer's, and nothing in the admin's name.
+    assert all(row[0] != MAINTAINER and row[4] is None for row in grants_since(admin, count))
+    assert not Consents(admin.app.state.state).granted(MAINTAINER, "share_data")
+    assert file_data(admin)["thingsboard"]["host"] == OTHER
+
+
+def test_a_grant_whose_record_failed_is_written_back(admin, monkeypatch):
+    set_token(admin)
+    assert put(admin).status_code == 200
+    count = len(rows(admin))
+
+    def fails(*args, **kwargs):
+        raise RuntimeError("the database is locked")
+
+    monkeypatch.setattr(Consents, "record", fails)
+    client = TestClient(admin.app, base_url=BASE, raise_server_exceptions=False, cookies=dict(admin.cookies))
+    r = client.put("/api/v1/sharing", json=body(admin, exact_location=True), headers=ORIGIN)
+    assert r.status_code == 500
+    assert r.json()["error"]["code"] == "internal"
+    assert rows(admin)[count:] == []
+    assert file_data(admin)["sharing"]["exact_location"] is False  # written back by the follow step
+    assert file_data(admin)["thingsboard"]["enabled"] is True  # Share data is still recorded
+
+
+def test_a_withdrawal_keeps_the_version_of_its_grant(admin):
+    set_token(admin)
+    assert put(admin, exact_location=True).status_code == 200
+    old = notice(admin)
+    admin.app.state.notice = dataclasses.replace(admin.app.state.notice, version="2099-01")
+    assert put(admin, enabled=False, notice_version=None).status_code == 200
+    assert rows(admin)[-2:] == [
+        (MAINTAINER, "share_data", 0, old, admin_id(admin), None),
+        (MAINTAINER, "exact_location", 0, old, admin_id(admin), None),
+    ]
 
 
 def test_a_changed_file_records_no_consent(admin, monkeypatch):
