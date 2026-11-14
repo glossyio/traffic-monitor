@@ -24,7 +24,7 @@ Uploads events, readings, and device telemetry to a [ThingsBoard](https://things
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `false` | Turn the upload on. |
-| `host` | text | `tb.roadwaybiome.com` (Traffic Monitor's server) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
+| `host` | text | `tb.roadwaybiome.com` (Traffic Monitor's server, set by the installer) | The server's hostname. If it starts with `http://` or `https://`, that is used and `protocol` is ignored. Required when enabled. |
 | `protocol` | `http` or `https` | `https` | How to reach the server. |
 | `port` | number | none | Set it only if the server isn't on the standard port for the protocol. |
 

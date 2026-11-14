@@ -52,7 +52,7 @@ The **Server status** line on the Sharing page, and the **Sharing server** check
 | Off | Nothing is uploaded. |
 | Waiting for the first upload | Sharing is on and no upload has been sent since the settings loaded. The device sends system health every five minutes. |
 | Accepted an upload 4 minutes ago | The server is taking the data. |
-| No upload accepted for a while | The server hasn't accepted an upload for 15 minutes. Check the device's internet connection on the [Network page](wifi-hotspot.md#the-network-page). |
+| No upload accepted for a while | The server hasn't accepted an upload for more than 15 minutes. Check the device's internet connection on the [Network page](wifi-hotspot.md#the-network-page). |
 | Can't be reached | The device couldn't reach the server. The device keeps counting and recording, and an upload that fails isn't sent again, so the server misses what the device sent while it was offline. This is a warning, because an offline device is normal. |
 | Refused the token | The server doesn't accept this device's token. The Status page's **Check the token** link opens the token's section. This is a problem. |
 | Refused an upload | The server turned down what the device sent. Ask the server's operator. This is a problem. |
