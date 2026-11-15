@@ -23,7 +23,7 @@ const POLL_LIMIT_MS = 60_000
 
 // The Status page's check says the same thing
 const REVIEW_TEXT =
-  'This device was sharing before the sharing choices existed. It keeps sharing data with the location as the ' +
+  'This device\'s upload was turned on without a choice on the Sharing page. It shares data with the location as the ' +
   'database stores it. Review the choices.'
 
 const session = useSession()

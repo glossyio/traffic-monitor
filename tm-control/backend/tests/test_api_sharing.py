@@ -581,6 +581,31 @@ def test_a_save_leaves_nothing_for_the_follow_step_to_rewrite(admin):
         assert backups(admin) == before_backups
 
 
+def assert_a_save_without_the_version_leaves_nothing_to_rewrite(admin, **changes):
+    assert put(admin, notice_version=None, **changes).status_code == 200
+    before_rows, before_backups = rows(admin), backups(admin)
+    before_file = admin.app.state.config_path.read_text()
+    with admin.app.state.reconcile_lock:
+        assert follow.run(admin.app.state) is False
+    assert rows(admin) == before_rows
+    assert backups(admin) == before_backups
+    assert admin.app.state.config_path.read_text() == before_file
+
+
+def test_a_save_without_the_version_under_an_older_notice_leaves_nothing_to_rewrite(admin):
+    set_token(admin)
+    assert put(admin, exact_location=True).status_code == 200
+    admin.app.state.notice = dataclasses.replace(admin.app.state.notice, version="2099-01")  # the notice changed
+    assert_a_save_without_the_version_leaves_nothing_to_rewrite(admin, exact_location=True)
+
+
+def test_a_save_without_the_version_for_an_upload_found_on_leaves_nothing_to_rewrite(admin):
+    set_token(admin)
+    edit_file(admin, "thingsboard:\n    enabled: false\n", "thingsboard:\n    enabled: true\n")
+    assert get(admin)["share_data"]["notice_version"] == "pre-consent"
+    assert_a_save_without_the_version_leaves_nothing_to_rewrite(admin)
+
+
 def test_reviewed_clears_the_flag(admin):
     consents = Consents(admin.app.state.state)
     edit_file(admin, "thingsboard:\n    enabled: false\n", "thingsboard:\n    enabled: true\n")

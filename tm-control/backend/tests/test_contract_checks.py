@@ -686,7 +686,7 @@ SHARING_DATA = "Sharing data, with the location as the database stores it."
 SHARING_EXACT = "Sharing data and the exact location."
 PUBLIC_MAP = " The public map is on."
 REVIEW = (
-    "This device was sharing before the sharing choices existed. It keeps sharing data with the location as the "
+    "This device's upload was turned on without a choice on the Sharing page. It shares data with the location as the "
     "database stores it. Review the choices."
 )
 NOTICE_CHANGED = "The sharing notice has changed. Read it and save your choices again."

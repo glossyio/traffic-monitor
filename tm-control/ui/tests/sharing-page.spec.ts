@@ -8,7 +8,7 @@ const SHARING = 'GET /api/v1/sharing'
 const SAVE = 'PUT /api/v1/sharing'
 const REVIEWED = 'POST /api/v1/sharing/reviewed'
 const REVIEW_TEXT =
-  'This device was sharing before the sharing choices existed. It keeps sharing data with the location as the ' +
+  'This device\'s upload was turned on without a choice on the Sharing page. It shares data with the location as the ' +
   'database stores it. Review the choices.'
 
 function menu(wrapper: VueWrapper) {
