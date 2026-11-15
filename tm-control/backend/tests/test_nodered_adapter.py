@@ -123,6 +123,27 @@ def test_a_failed_post_raises(wire):
     assert "45" not in str(raised.value)
 
 
+def test_keep_exact_copy_posts_the_ticket_and_the_places(wire):
+    wire.answer = (204, b"")
+    ticket = "0123456789abcdef0123456789abcdef"
+    places = [{"survey_id": SURVEY, "lat": 45.52252, "lon": -122.6912}]
+    assert NodeRed(TOKEN).keep_exact_copy(ticket, places) is None
+    method, url, headers, body, content_type = wire.calls[0]
+    assert (method, url, content_type) == ("POST", f"{BASE}/database/exact-copy", "application/json")
+    assert headers == {"X-TM-Internal-Token": TOKEN}
+    assert json.loads(body) == {"ticket": ticket, "places": places}
+
+
+def test_a_refused_exact_copy_raises_without_the_body(wire):
+    wire.answer = (400, b'{"error": "bad_request", "detail": "places"}')
+    places = [{"survey_id": SURVEY, "lat": 45.52252, "lon": -122.6912}]
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).keep_exact_copy("0123456789abcdef0123456789abcdef", places)
+    assert raised.value.code == "bad_request"
+    for text in (repr(raised.value), str(raised.value)):
+        assert "45.52252" not in text and "0123456789abcdef" not in text
+
+
 def test_after_config_write_does_nothing(wire):
     assert NodeRed(TOKEN).after_config_write() is None
     assert wire.calls == []

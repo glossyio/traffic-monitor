@@ -428,6 +428,19 @@ def test_a_link_needs_files(claimed_client, login, files):
     assert link(claimed_client, files).status_code == 422
 
 
+def test_verify_passes_a_database_copy_link_once_without_a_session(claimed_client, login):
+
+    login(claimed_client, *ADMIN)
+    place = claimed_client.get("/api/v1/surveys").json()["in_use"]
+    assert place
+    r = claimed_client.post("/api/v1/surveys/database-copy", headers={**ORIGIN, "Content-Type": "application/json"})
+    assert r.status_code == 200, r.text
+    url = r.json()["url"]
+    helper = other_client(claimed_client)
+    assert verify(helper, url, role="admin").status_code == 200
+    assert verify(helper, url, role="admin").status_code == 401
+
+
 def test_a_link_passes_verify_once_without_a_cookie(claimed_client, login):
     url = admin_link(claimed_client, login)
     helper = other_client(claimed_client)
