@@ -1498,7 +1498,7 @@
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1082
+        "h": 1182
     },
     {
         "id": "484071aff09e5ec2",
@@ -3133,12 +3133,19 @@
             "0aae1d3d3e4c7d3e",
             "beadba835546c0ae",
             "0acc95218c0c0a0c",
-            "477aff9a19ae76ba"
+            "477aff9a19ae76ba",
+            "208618ccc9a81219",
+            "202d31e1bcdd0e1a",
+            "cc2d3a7a9d1c4bff",
+            "19330a26e7147ec2",
+            "90f459bbf47fedaa",
+            "74bbeec1de9cbb88",
+            "4c3e0ddb6be3f58c"
         ],
         "x": 94,
         "y": 1419,
         "w": 1786,
-        "h": 742
+        "h": 842
     },
     {
         "id": "13e034c27f12073e",
@@ -15392,5 +15399,128 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "208618ccc9a81219",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/database/exact-copy",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2180,
+        "wires": [
+            [
+                "202d31e1bcdd0e1a"
+            ]
+        ]
+    },
+    {
+        "id": "202d31e1bcdd0e1a",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2180,
+        "wires": [
+            [
+                "19330a26e7147ec2"
+            ],
+            [
+                "cc2d3a7a9d1c4bff"
+            ]
+        ]
+    },
+    {
+        "id": "cc2d3a7a9d1c4bff",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2220,
+        "wires": []
+    },
+    {
+        "id": "19330a26e7147ec2",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate exact copy",
+        "func": "// tm-control hands over the exact locations for one database copy: a ticket (32 lowercase hex characters) and\n// 1 to 10000 places, each a survey id and a finite latitude and longitude as JSON numbers (a string, null, or NaN is\n// refused). Only those three keys of a place are kept, and no survey id may appear twice. The list is passed on as\n// msg.exactCopy and msg.payload is removed. Nothing is logged or echoed back, so no coordinate leaves the request.\nconst refuse = (detail) => {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail };\n    return [null, msg];\n};\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nif (typeof body.ticket !== \"string\" || !/^[0-9a-f]{32}$/.test(body.ticket)) {\n    return refuse(\"ticket\");\n}\nif (!Array.isArray(body.places) || body.places.length < 1 || body.places.length > 10000) {\n    return refuse(\"places\");\n}\nconst number = (v, limit) => typeof v === \"number\" && Number.isFinite(v) && v >= -limit && v <= limit;\nconst seen = new Set();\nconst places = [];\nfor (const place of body.places) {\n    if (place === null || typeof place !== \"object\" || typeof place.survey_id !== \"string\"\n        || !/^[0-9a-f]{8}-si$/.test(place.survey_id) || seen.has(place.survey_id)\n        || !number(place.lat, 90) || !number(place.lon, 180)) {\n        return refuse(\"places\");\n    }\n    seen.add(place.survey_id);\n    places.push({ survey_id: place.survey_id, lat: place.lat, lon: place.lon });\n}\nmsg.exactCopy = { ticket: body.ticket, places };\ndelete msg.payload;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2180,
+        "wires": [
+            [
+                "74bbeec1de9cbb88"
+            ],
+            [
+                "90f459bbf47fedaa"
+            ]
+        ]
+    },
+    {
+        "id": "90f459bbf47fedaa",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2220,
+        "wires": []
+    },
+    {
+        "id": "74bbeec1de9cbb88",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: keep exact copy list",
+        "func": "// Keeps the list tm-control just handed over, in memory only, under its ticket for ten minutes. Nothing is written\n// to disk, logged, or put on a message, and the answer is 204 with no body. The 600000 ms match DownloadGrants.TTL\n// (600 seconds) in tm-control's core/auth.py, the life of a download link: a link and its list run out together.\n// At most four lists are held: expired ones go first, then the one that expires soonest, until room is made.\nconst life = 600000;\nconst now = Date.now();\nconst copies = global.get(\"exact_copies\") || {};\nfor (const ticket of Object.keys(copies)) {\n    if (!(copies[ticket].expires > now)) {\n        delete copies[ticket];\n    }\n}\ndelete copies[msg.exactCopy.ticket];\nwhile (Object.keys(copies).length >= 4) {\n    const soonest = Object.keys(copies).reduce((a, b) => (copies[a].expires <= copies[b].expires ? a : b));\n    delete copies[soonest];\n}\nconst ticket = msg.exactCopy.ticket;\nconst expires = now + life;\ncopies[ticket] = { places: msg.exactCopy.places, expires };\nglobal.set(\"exact_copies\", copies);\nsetTimeout(() => {\n    const held = global.get(\"exact_copies\");\n    if (held && held[ticket] && held[ticket].expires === expires) {\n        delete held[ticket];\n        global.set(\"exact_copies\", held);\n    }\n}, life);\ndelete msg.exactCopy;\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 2180,
+        "wires": [
+            [
+                "4c3e0ddb6be3f58c"
+            ]
+        ]
+    },
+    {
+        "id": "4c3e0ddb6be3f58c",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1340,
+        "y": 2180,
+        "wires": []
     }
 ]

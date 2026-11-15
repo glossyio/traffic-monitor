@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import textwrap
+import time
 from pathlib import Path
 
 import pytest
@@ -224,7 +225,9 @@ for (const step of input.steps) {
     const result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
     results.push({ result: result === undefined ? null : result, logged });
 }
-console.log(JSON.stringify({ results, global: store, flow: flowStore }));
+// Ends the process itself once the output is written: a function's pending timer (the exact-copy list's ten
+// minutes) must not hold a test for as long as the timer.
+process.stdout.write(JSON.stringify({ results, global: store, flow: flowStore }), () => process.exit(0));
 """
 
 
@@ -1228,11 +1231,13 @@ def test_the_radar_pickers_keep_a_selection_that_is_still_there():
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
-                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"}
+                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing",
+                     "/tm-internal/database/exact-copy"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
-                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post"}
+                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post",
+                       "/tm-internal/database/exact-copy": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
@@ -1257,7 +1262,8 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
               "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
-              "/tm-internal/deployments/precision": "tm-internal: validate precision"}
+              "/tm-internal/deployments/precision": "tm-internal: validate precision",
+              "/tm-internal/database/exact-copy": "tm-internal: validate exact copy"}
 
 
 def tm_internal_endpoints():
@@ -1498,6 +1504,119 @@ def test_tm_internal_correction_endpoints_exist():
         assert endpoints[url]["method"] == "post", url
         [[check_id]] = endpoints[url]["wires"]
         assert by_id[check_id]["name"] == "tm-internal: check token", url
+
+
+TICKET = "0123456789abcdef0123456789abcdef"
+PLACE = {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
+
+
+def exact_copy_msg(body):
+    return {"req": {}, "payload": body}
+
+
+@needs_node
+@pytest.mark.parametrize("body, detail", [
+    ({"ticket": TICKET, "places": [PLACE]}, None),
+    ({"ticket": TICKET.upper(), "places": [PLACE]}, "ticket"),
+    ({"ticket": TICKET[:-1], "places": [PLACE]}, "ticket"),
+    ({"places": [PLACE]}, "ticket"),
+    ({"ticket": TICKET, "places": []}, "places"),
+    ({"ticket": TICKET, "places": "3f9a1c2e-si"}, "places"),
+    ({"ticket": TICKET, "places": [PLACE, PLACE]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lat": "45.52252"}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lon": None}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lat": 90.5}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lon": -180.5}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "survey_id": "x' OR 1=1"}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "survey_id": "3F9A1C2E-si"}]}, "places"),
+    ({"ticket": TICKET, "places": ["3f9a1c2e-si"]}, "places"),
+    ("ticket=x", "ticket"),
+])
+def test_exact_copy_list_is_validated(body, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+    [step] = run_functions([(validator, exact_copy_msg(body))])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["exactCopy"] == {"ticket": TICKET, "places": [PLACE]}
+        assert "payload" not in passed
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert "45.52252" not in json.dumps(refused)
+
+
+@needs_node
+def test_exact_copy_list_accepts_the_largest_list_and_refuses_one_more():
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+
+    def places(count):
+        return [{"survey_id": f"{n:08x}-si", "lat": 45.0, "lon": -122.0} for n in range(count)]
+
+    [ok, too_many] = run_functions([(validator, exact_copy_msg({"ticket": TICKET, "places": places(10000)})),
+                                    (validator, exact_copy_msg({"ticket": TICKET, "places": places(10001)}))])["results"]
+    assert ok["result"][1] is None and len(ok["result"][0]["exactCopy"]["places"]) == 10000
+    assert too_many["result"][0] is None and too_many["result"][1]["payload"] == bad_request("places")
+
+
+@needs_node
+def test_exact_copy_list_keeps_only_three_keys_per_place():
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+    body = {"ticket": TICKET, "places": [{**PLACE, "description": "x"}]}
+    [step] = run_functions([(validator, exact_copy_msg(body))])["results"]
+    assert step["result"][0]["exactCopy"]["places"] == [PLACE]
+
+
+def keep_node():
+    return named(json.loads(FLOWS.read_text()), "tm-internal: keep exact copy list")
+
+
+@needs_node
+def test_keep_stores_the_list_for_ten_minutes_and_answers_204():
+    before = time.time() * 1000
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})])
+    [step] = result["results"]
+    kept = result["global"]["exact_copies"][TICKET]
+    assert kept["places"] == [PLACE]
+    assert 595000 <= kept["expires"] - before <= 605000
+    msg = step["result"]
+    assert msg["statusCode"] == 204 and msg["payload"] == "" and "exactCopy" not in msg
+    assert "45.52252" not in json.dumps(msg)
+    assert step["logged"] == []
+
+
+@needs_node
+def test_keep_drops_expired_lists_and_keeps_at_most_four():
+    now = time.time() * 1000
+    old = "f" * 32
+    current = {f"{n:032x}": {"places": [PLACE], "expires": now + 100000 * (n + 1)} for n in range(1, 5)}
+    context = {"exact_copies": {old: {"places": [PLACE], "expires": now - 1000}, **current}}
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})], context=context)
+    kept = result["global"]["exact_copies"]
+    soonest = f"{1:032x}"
+    assert old not in kept and soonest not in kept
+    assert len(kept) == 4 and TICKET in kept
+    assert set(kept) == {TICKET, f"{2:032x}", f"{3:032x}", f"{4:032x}"}
+
+
+@needs_node
+def test_keep_replaces_a_ticket_it_already_holds():
+    now = time.time() * 1000
+    context = {"exact_copies": {TICKET: {"places": [], "expires": now + 1000}}}
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})], context=context)
+    assert result["global"]["exact_copies"][TICKET]["places"] == [PLACE]
+
+
+def test_keep_sets_a_timer_that_matches_the_download_links_life():
+    func = keep_node()["func"]
+    assert "setTimeout(" in func and "600000" in func and "DownloadGrants.TTL" in func
+
+
+@needs_node
+def test_the_harness_ends_the_process_without_waiting_for_a_timer():
+    started = time.monotonic()
+    run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})])
+    assert time.monotonic() - started < 10
 
 
 LOCATION_SQL = ("UPDATE deployment SET lat = ROUND($lat, location_precision), "
