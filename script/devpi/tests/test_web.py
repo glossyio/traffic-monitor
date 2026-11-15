@@ -551,6 +551,15 @@ def test_home_button_script_is_served_without_a_login(address):
         "/home-button.js: (status, type, Cache-Control, within 10240 bytes)"
 
 
+def test_setup_status_names_the_unit_without_a_login(host, address):
+    """The login, setup, and license pages put the unit's name in the tab and the title. Only whether it matches
+    comes back, so no device name reaches the output."""
+    answer = request_from_this_machine(address, f"{API}/setup/status")
+    body = answer.json() if answer.status == 200 else {}
+    same = isinstance(body, dict) and body.get("hostname") == host.run("hostname").stdout.strip()
+    assert (answer.status, same) == (200, True), "GET /setup/status without a session: (status, names this unit)"
+
+
 def test_the_favicon_is_served_without_a_login(address):
     """The control app's tab icon. Vite copies public/ files with their own mode, and the sources arrive with no
     world read, so a file nginx's worker can't read answers 403 and the browser shows another app's icon."""

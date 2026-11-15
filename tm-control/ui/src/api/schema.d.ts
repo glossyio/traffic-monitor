@@ -156,8 +156,9 @@ export interface paths {
         };
         /**
          * Status
-         * @description Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when
-         *     the page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
+         * @description Also the device's home-page theme and its name, so the setup, login, and license pages use its colors and name
+         *     the unit before anyone logs in (mDNS announces the name anyway), and, when the page came over the hotspot (nginx
+         *     sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
          */
         get: operations["status_api_v1_setup_status_get"];
         put?: never;

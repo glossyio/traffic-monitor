@@ -33,7 +33,7 @@ On a computer the button also shows the device's name. If you share a screenshot
 
     The window that opens when a phone joins the device's hotspot has gestures of its own: dragging down reloads the page, and a drag that starts near a side goes back or forward. So there the button is hard to move. Pressing it and tucking it still work. To place the button where you like, open the device on a laptop or desktop computer instead.
 
-Once you've signed in, the home page's tab and the tab of each app with the button start with the device's name, so you can tell several devices apart in one browser window.
+The control app's tab, from the login page on, and the tab of each app with the button start with the device's name, so you can tell several devices apart in one browser window.
 
 ??? note "Finding the device's address"
 

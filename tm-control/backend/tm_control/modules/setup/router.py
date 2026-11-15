@@ -27,18 +27,21 @@ def _check_eula_version(request: Request, version: str) -> None:
 
 @router.get("/status")
 def status(request: Request):
-    """Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when
-    the page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it."""
+    """Also the device's home-page theme and its name, so the setup, login, and license pages use its colors and name
+    the unit before anyone logs in (mDNS announces the name anyway), and, when the page came over the hotspot (nginx
+    sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it."""
     app_state = request.app.state
     device = Device(app_state.state)
     version = app_state.eula.version
     homepage = app_state.manifest.homepage
     on_hotspot = request.headers.get("X-TM-Hotspot") == "1"
+    name = hostname(app_state)
     return {
         "claimed": device.is_claimed(),
         "eula": {"version": version, "accepted": device.eula_accepted(version)},
         "theme": {"font": homepage.font, "colors": homepage.colors},
-        "hotspot": {"local_name": f"{hostname(app_state)}.local"} if on_hotspot else None,
+        "hotspot": {"local_name": f"{name}.local"} if on_hotspot else None,
+        "hostname": name,
     }
 
 

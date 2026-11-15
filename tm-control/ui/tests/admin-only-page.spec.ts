@@ -1,6 +1,6 @@
 // What a viewer sees after nginx sends them away from an app that needs the administrator.
 import { describe, expect, it } from 'vitest'
-import { THEME, VIEWER, fakeApi, session, status } from './fake-api'
+import { VIEWER, fakeApi, session, status } from './fake-api'
 import { mountApp } from './mount'
 
 describe('the administrators-only page', () => {
@@ -8,7 +8,6 @@ describe('the administrators-only page', () => {
     fakeApi({
       'GET /api/v1/setup/status': status(true),
       'GET /api/v1/auth/session': session(true, VIEWER),
-      'GET /api/v1/system/device': { hostname: 'tm-01', apps: [], theme: THEME },
     })
     return mountApp('/admin-only')
   }

@@ -45,6 +45,7 @@ def test_status_and_eula_are_open(client):
         "eula": {"version": "1", "accepted": False},
         "theme": THEME,
         "hotspot": None,
+        "hostname": FAKE_HOSTNAME,
     }
     r = client.get("/api/v1/setup/eula")
     assert r.status_code == 200 and r.json()["version"] == "1" and "placeholder" in r.json()["markdown"]
@@ -54,6 +55,13 @@ def test_status_gives_the_theme_before_anyone_logs_in(client):
     """The setup and login pages use the device's colors, so the open status carries the manifest's theme."""
     assert COOKIE_NAME not in client.cookies
     assert client.get("/api/v1/setup/status").json()["theme"] == THEME
+
+
+def test_status_gives_the_name_before_anyone_logs_in(client):
+    """The setup, login, and license pages name the unit in the tab and the title bar. mDNS announces the name on
+    the network anyway, so it is no secret."""
+    assert COOKIE_NAME not in client.cookies
+    assert client.get("/api/v1/setup/status").json()["hostname"] == FAKE_HOSTNAME
 
 
 def test_status_says_when_the_page_came_over_the_hotspot(client):

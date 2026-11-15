@@ -11,7 +11,6 @@ function device(claimed: boolean, user: object | null, accepted = claimed) {
   return fakeApi({
     'GET /api/v1/setup/status': status(claimed, accepted),
     'GET /api/v1/auth/session': session(claimed, user, accepted),
-    'GET /api/v1/system/device': { hostname: 'tm-01' },
   })
 }
 
@@ -113,16 +112,12 @@ describe('router', () => {
     expect(router.currentRoute.value.fullPath).toBe('/')
   })
 
-  it('loads the status, session, and name once, not on every navigation', async () => {
+  it('loads the status (which carries the name) and the session once, not on every navigation', async () => {
     const api = device(true, ADMIN)
     const router = createAppRouter(createMemoryHistory())
     await router.push('/')
     await router.push('/account')
     await router.push('/users')
-    expect(api.sent.map((r) => r.path).sort()).toEqual([
-      '/api/v1/auth/session',
-      '/api/v1/setup/status',
-      '/api/v1/system/device',
-    ])
+    expect(api.sent.map((r) => r.path).sort()).toEqual(['/api/v1/auth/session', '/api/v1/setup/status'])
   })
 })

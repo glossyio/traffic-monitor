@@ -58,10 +58,10 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
   `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
   stage makes `dist/` readable for nginx (`chmod -R a+rX`).
-- `src/stores/session.ts` is the only store: the setup status, the logged-in user, and the device's hostname, read once
-  after login from `GET /system/device`.
-- `src/title.ts` builds the tab's title (`tm-01 · Status | Traffic Monitor` after login, `Traffic Monitor` before it and
-  on the setup and license pages). A page's name comes from its menu entry, or from `meta.title` in its route where it
+- `src/stores/session.ts` is the only store: the setup status, the logged-in user, and the device's hostname, which
+  comes with `GET /setup/status`, so the pages before login have it too, and stays when the session ends.
+- `src/title.ts` builds the tab's title (`tm-01 · Status | Traffic Monitor` with a page name, `tm-01 | Traffic Monitor`
+  on setup, login, and the license pages, and `Traffic Monitor` when the name is unknown, as on the error page). A page's name comes from its menu entry, or from `meta.title` in its route where it
   has none (the page for a viewer who opened an administrator's app, for one).
 - `src/colors.ts` holds the default colors and the check for a device's own. It imports nothing, so the home button's
   script can use it without pulling in Vuetify; `src/theme.ts` re-exports `DEFAULT_COLORS`.
@@ -175,7 +175,7 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 ### Layout
 
 Pages before login (setup, login, the license pages) have no menu: one column, at most 480 px wide, centered, with
-a small "Traffic Monitor" name above the page title. Pages after login have the app bar and a menu drawer that stays
+a small `tm-01 | Traffic Monitor` line, as in the app bar, above the page title. Pages after login have the app bar and a menu drawer that stays
 open from the `md` breakpoint (960 px) up and slides in below it. Content is left-aligned and at most 760 px wide.
 
 Setup (one page, four steps):
