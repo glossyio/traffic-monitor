@@ -32,7 +32,8 @@ export function internetLine(internet: NetworkState['internet']): string {
 }
 
 // What the Hotspot panel says while the unit is on a Wi-Fi network and the hotspot would start by itself;
-// null at any other time. The timings are tm-network-retry's, as in "When the hotspot runs" in the docs.
+// null at any other time. The 5 minutes is tm-network-retry's timer; the minute is NetworkManager's, measured at
+// about 75 seconds ("When the hotspot runs" in the docs).
 export function fallbackNote(wifi: Wifi | null, hotspot: HotspotState | null): { line: string; detail: string } | null {
   if (wifi?.mode !== 'network' || !hotspot?.enabled) return null
   return {

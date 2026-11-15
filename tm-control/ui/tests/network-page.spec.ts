@@ -573,6 +573,7 @@ describe('the Network page layout', () => {
     const summary = wrapper.find('#hotspot-summary')
     expect(summary.text()).toContain('TM-AB12')
     expect(summary.find('.text-secondary').text()).toBe(LINE)
+    expect(summary.find('.text-secondary').classes()).toContain('text-break')
     expect(isOpen(wrapper, 'hotspot')).toBe(false) // information, not news: the panel stays folded
     expect(wrapper.find(WARNING).exists()).toBe(false)
   })
@@ -582,6 +583,7 @@ describe('the Network page layout', () => {
     const admin = await openAdmin(routes)
     await toggle(admin.wrapper, 'hotspot').trigger('click')
     expect(admin.wrapper.find('#hotspot-body p').text()).toBe(DETAIL)
+    expect(admin.wrapper.find('#hotspot-body p').classes()).toContain('text-break')
     expect(admin.wrapper.find('#hotspot-summary').exists()).toBe(false)
 
     document.body.replaceChildren()

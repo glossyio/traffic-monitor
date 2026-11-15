@@ -10,7 +10,7 @@
 
 **Spec:** this file. The maintainer approved the design and the wording on 2026-11-14.
 
-**Status:** written 2026-11-14 against `origin/dev` at `b4a26f1`, in the worktree `~/code/tm-hotspot-note`, branch `feature/hotspot-fallback-note/323`, for [issue 323](https://github.com/glossyio/traffic-monitor/issues/323). This file is not committed yet (Task 1, Step 1). No open PR touches the files below.
+**Status:** written 2026-11-14 against `origin/dev` at `b4a26f1`, in the worktree `~/code/tm-hotspot-note`, branch `feature/hotspot-fallback-note/323`, for [issue 323](https://github.com/glossyio/traffic-monitor/issues/323). Tasks 1 to 3 done 2026-11-14; the maintainer declined a bench run. A whole-branch review followed; its fixes are the commit after the docs one. No open PR touches the files below.
 
 ## Design
 
@@ -60,7 +60,7 @@
 2. **A name that looks like markup, or 32 characters with no space:** shown as text, and it wraps. Pinned in Task 1, Step 4 (markup); the wrap is `text-break`, checked by eye at 375 px in Task 3.
 3. **The hotspot is off while the unit is on a network:** the summary is exactly "Hotspot off" and the open panel has no fallback sentence, because nothing would start. Pinned in Task 1, Step 4.
 4. **The unit is on its hotspot:** the summary is exactly the name, as today. Already pinned by `starts with This device and Hotspot collapsed, each with its summary`; Step 4 adds the open panel.
-5. **A Wi-Fi join is under way:** the note follows the last `GET /network` answer, which the page doesn't reload while the test runs. A unit that was on a network keeps its note through the test and the countdown, which is right: it is still on that network until the switch. A unit that was on its hotspot has none. No code for this; the join card above says what is happening.
+5. **A Wi-Fi join is under way:** the note follows the last `GET /network` answer, which the page doesn't reload while the test runs. A unit that was on a network keeps its note through the test and the countdown, which is right: it is still on that network until the switch. A unit that was on its hotspot has none. No code for this; the join card above says what is happening. A page loaded during the test, over Ethernet, shows the note for the network under test, which is where the unit is at that moment.
 6. **Ethernet and Wi-Fi together:** the note depends on the radio only, so it shows. A unit on a cable with the radio idle or off has none.
 7. **The network service didn't answer** (`readable: false`): the Hotspot column isn't drawn at all, as today.
 

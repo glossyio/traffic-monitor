@@ -53,6 +53,9 @@ describe('the network summary', () => {
       line: 'Fallback only. This unit is on a Wi-Fi network.',
       detail: `The hotspot is a fallback. If this unit loses its Wi-Fi network${after}`,
     })
+    expect(fallbackNote({ ...joined, network: '' }, hotspot)?.line).toBe(
+      'Fallback only. This unit is on a Wi-Fi network.',
+    )
   })
 
   it('has no fallback note at any other time', () => {
