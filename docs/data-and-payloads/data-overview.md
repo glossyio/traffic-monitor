@@ -87,6 +87,20 @@ Free-text notes an operator adds on the [Data export](../ui/database.md) page, f
 | `comment` | TEXT | The note |
 | `commenter_name` | TEXT | Who wrote it |
 
+### The exact location in a database copy
+
+The database on the device never holds an exact location. A copy made with [**Download the database with exact locations**](../use/location.md#download-the-database-with-exact-locations) on the Location page does: the device adds a table and a view to the copy, and only to the copy. The database itself, and the download on the [Data export](../ui/database.md) page, never have them. The `deployment` table in the copy is unchanged, so its `lat` and `lon` stay rounded.
+
+`survey_exact_location` has one row for each place the device has been at that has a location:
+
+| Column | Type | Meaning |
+|---|---|---|
+| `survey_id` | TEXT, primary key | The place, as in `deployment.survey_id` |
+| `lat` | REAL | Latitude in decimal degrees, to five decimal places |
+| `lon` | REAL | Longitude in decimal degrees, to five decimal places |
+
+`deployment_exact` is the `deployment` table with two more columns after its own, `exact_lat` and `exact_lon`, taken from `survey_exact_location` by `survey_id`. They are empty for a row whose place has no row in the table: a place with no location, a place deleted from the Location page, and a deployment from before any place was recorded. A planned place is never in the table. The table holds what the `exact_location` attribute holds when the exact location is [shared](../use/sharing.md): a place's id and its coordinates. [Places and location](../use/location.md#what-the-copy-adds) has an example query.
+
 ### Schema versions
 
 The tables are defined by numbered migrations in the repository's [`container/node-red-tm/schema/`](https://github.com/glossyio/traffic-monitor/tree/main/container/node-red-tm/schema) folder, and `schema.sql` there shows the whole current schema. Each time the Node-RED service starts, it applies any migrations the database doesn't have yet and records the schema version in the database. Before it does, it saves a copy of the database in `/opt/traffic-monitor/node-red-tm/db/backup/` and keeps only the most recent copy. It makes no copy of a new database, or when the disk has less free space than about 1.2 times the database's size. It also makes none when the only migration to apply is the first, which only adds missing tables. You can read the version with `PRAGMA user_version;`.

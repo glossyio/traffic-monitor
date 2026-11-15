@@ -1370,6 +1370,8 @@ The first-run step and the Location page's "Exact locations" were checked the sa
   "Save and finish", so the two never look alike.
 - Looked at and kept: the Location page's Precision paragraph still says a later update will export the database with
   each place's exact location. The new file lists the places, not the database, so the sentence is still true.
+  (Since changed: the database copy now exists, and the paragraph points at Download the database with exact
+  locations.)
 - Looked at and kept: the export confirmation uses the primary colour, not the error colour used for deletes.
 
 #### Defaults rejected
