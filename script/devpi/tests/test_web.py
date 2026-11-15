@@ -551,6 +551,14 @@ def test_home_button_script_is_served_without_a_login(address):
         "/home-button.js: (status, type, Cache-Control, within 10240 bytes)"
 
 
+def test_the_favicon_is_served_without_a_login(address):
+    """The control app's tab icon. Vite copies public/ files with their own mode, and the sources arrive with no
+    world read, so a file nginx's worker can't read answers 403 and the browser shows another app's icon."""
+    answer = request_from_this_machine(address, "/favicon.svg")
+    kind = (answer.headers.get("Content-Type") or "").split(";")[0]
+    assert (answer.status, kind) == (200, "image/svg+xml"), "/favicon.svg: (status, type)"
+
+
 @pytest.mark.parametrize("path", ["/nr/", "/feeds/", "/storefiles?files=x"])
 def test_a_viewers_page_load_on_an_admin_app_goes_to_the_admin_only_page(address, viewer_session, path):
     """A viewer who opens an admin app in a browser lands on /admin-only, not on a bare 403."""

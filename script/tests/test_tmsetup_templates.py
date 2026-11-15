@@ -1069,9 +1069,17 @@ def test_revproxy_image_builds_the_ui_from_a_pinned_node_image():
     copy_packages = lines.index("COPY ui/package.json ui/package-lock.json ./")
     npm_ci = lines.index("RUN npm ci --no-audit --no-fund")
     copy_sources = lines.index("COPY ui/ ./")
-    assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build")
+    assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build && chmod -R a+rX dist")
     assert [line for line in lines if line.startswith("FROM ")][-1] == "FROM docker.io/nginx:1.31.0"
     assert lines[-1] == "COPY --from=ui /ui/dist /usr/share/nginx/ui"
+
+
+def test_revproxy_image_makes_the_built_ui_readable_by_nginx():
+    """The sources arrive with no world read (the unarchive task's o=), Vite copies public/ files with their own mode,
+    and nginx's worker isn't root: without this, /favicon.svg answers 403."""
+    lines = revproxy_containerfile()
+    assert lines.index("RUN npm run build && chmod -R a+rX dist") < lines.index(
+        "COPY --from=ui /ui/dist /usr/share/nginx/ui")
 
 
 def test_revproxy_image_puts_the_ui_where_its_location_serves_it():

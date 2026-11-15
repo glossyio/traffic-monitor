@@ -56,7 +56,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
   outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
 - `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
-  `dist/` as it is.
+  `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
+  stage makes `dist/` readable for nginx (`chmod -R a+rX`).
 - `src/stores/session.ts` is the only store: the setup status, the logged-in user, and the device's hostname, read once
   after login from `GET /system/device`.
 - `src/title.ts` builds the tab's title (`tm-01 · Status | Traffic Monitor` after login, `Traffic Monitor` before it and
