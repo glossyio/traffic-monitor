@@ -308,6 +308,35 @@ describe('the Location page', () => {
         expect(wrapper.text()).toContain(NOTE_START)
       })
 
+      it('keeps the database copy disabled after a copy has started, until the page is reloaded', async () => {
+        const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [COPY]: { url: LINK, places: 2 } })
+        vi.spyOn(download, 'openDownload').mockImplementation(() => {})
+        const { wrapper } = await mountApp('/location')
+        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeUndefined()
+        await click(wrapper, COPY_BUTTON)
+        await clickInDialog('Download')
+        expect(wrapper.text()).toContain(NOTE_START)
+        // A second copy, with the exact locations, would sit on the card too: no second request is possible
+        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeDefined()
+        await button(wrapper, COPY_BUTTON).trigger('click')
+        await flushPromises()
+        expect(document.querySelectorAll('.v-overlay--active .v-dialog')).toHaveLength(0) // no question opens
+        expect(api.sent.filter((r) => r.method === 'POST' && r.path === '/api/v1/surveys/database-copy')).toHaveLength(1)
+      })
+
+      it('lets the admin try again after the copy could not start', async () => {
+        signedIn(ADMIN, {
+          [SURVEYS]: PLACES,
+          [COPY]: apiError(502, 'nodered_error', 'Node-RED did not accept the places.'),
+        })
+        vi.spyOn(download, 'openDownload').mockImplementation(() => {})
+        const { wrapper } = await mountApp('/location')
+        await click(wrapper, COPY_BUTTON)
+        await clickInDialog('Download')
+        expect(wrapper.text()).toContain('Node-RED did not accept the places.')
+        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeUndefined()
+      })
+
       it('disables the database copy when no place the device has been at has an exact location, and says why', async () => {
         const REASON = 'No place this device has been at has an exact location yet.'
         // Only a located planned place, and a used place with no coordinates: neither counts

@@ -755,6 +755,9 @@ importing places open dialogs from this page, so they move nothing on it.
   or used has both coordinates. That is what the API needs (it answers 409 `no_exact_locations` otherwise), and a
   planned place doesn't count, because the copy holds only places the device has been at. In fake mode the link leads
   nowhere (there is no Node-RED to make the copy), so the browser lands on a 404 after the info alert shows.
+- Once a copy has started the button stays disabled until the page is reloaded (the maintainer chose this on review):
+  the request is answered at once, but the device may still be making a multi-GB copy, and a second confirm would start
+  a second copy that holds the exact locations. A request that fails doesn't count as started, so it can be retried.
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value

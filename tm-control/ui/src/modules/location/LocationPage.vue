@@ -165,7 +165,7 @@ async function exportExact() {
 const confirmCopy = ref(false)
 const copying = ref(false)
 const copyError = ref('')
-const copyStarted = ref(false)
+const copyStarted = ref(false) // set once the request is answered; stays set until the page is reloaded
 const hasLocatedPlace = computed(() =>
   (state.value?.surveys ?? []).some(
     (survey) => (survey.status === 'in_use' || survey.status === 'used') && survey.lat !== null && survey.lon !== null,
@@ -175,7 +175,6 @@ const hasLocatedPlace = computed(() =>
 async function downloadCopy() {
   copying.value = true
   copyError.value = ''
-  copyStarted.value = false
   try {
     const { data } = await api.POST('/api/v1/surveys/database-copy')
     openDownload(data!.url)
@@ -478,7 +477,10 @@ onMounted(load)
           >
             Export exact locations
           </v-btn>
-          <!-- The long name wraps on a narrow phone instead of being cut off (the button's own text doesn't wrap) -->
+          <!-- The long name wraps on a narrow phone instead of being cut off (the button's own text doesn't wrap).
+               Once a copy has started the button stays off until the page is reloaded: the device may still be making
+               a large copy, and a second one with the exact locations would sit on the card too. A failed request
+               doesn't count as started, so it can be tried again. -->
           <v-btn
             variant="outlined"
             color="primary"
@@ -486,7 +488,7 @@ onMounted(load)
             height="auto"
             class="py-2"
             :loading="copying"
-            :disabled="copying || !hasLocatedPlace"
+            :disabled="copying || copyStarted || !hasLocatedPlace"
             @click="confirmCopy = true"
           >
             <span class="text-wrap text-center">Download the database with exact locations</span>
