@@ -977,7 +977,8 @@ never folds. The join card stays above all of them, also never folded: it carrie
 | +-----------------+ +----------+ |  md and up: two columns
 | | This device   v | | Hotspot v| |  folded: a summary under the title
 | | tm-ab12.local   | | TM-AB12  | |  This device: the .local name and the addresses in use
-| | 192.168.1.57, ..| |          | |  Hotspot: its name, or "Hotspot off"
+| | 192.168.1.57, ..| | Fallback | |  Hotspot: its name, or "Hotspot off"; under the name, the
+| |                 | | only. ...| |  fallback line while the unit is on a Wi-Fi network
 | +-----------------+ +----------+ |
 | Wi-Fi networks              (h6) |
 ```
@@ -1000,8 +1001,14 @@ never folds. The join card stays above all of them, also never folded: it carrie
   `modules/network/checks.py`), so an admin lands on the open panel with the password row. The Device page and the join
   banner link to plain `/network`.
 - The summary is two short lines at most: the unit's `.local` name, then the addresses in use (the cable's when it is
-  connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". A unit without a hotspot has no
-  panel, only the sentence that says so.
+  connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". Hotspot's second line is the
+  fallback line ("Fallback only. This unit is on HomeNet.", grey like This device's addresses), shown only while the
+  unit is on a Wi-Fi network and the hotspot is on, because then the hotspot isn't on air and the name alone reads as if
+  it were. A unit without a hotspot has no panel, only the sentence that says so.
+- Open, the Hotspot panel then starts with one grey sentence on when the hotspot would start and how the unit gets
+  back to a network (`fallbackNote` in `summary.ts`, with the timings of `tm-network-retry`). It is grey text, not a
+  `v-alert`, and it neither opens the panel nor sets its warning mark: it describes how the unit normally works, and an
+  alert on this page means something needs doing.
 - Viewers get the same panels, with the read-only facts inside and no control but the heading's own button.
 
 #### The hotspot's settings (admins)

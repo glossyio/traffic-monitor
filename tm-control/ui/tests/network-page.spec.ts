@@ -563,6 +563,51 @@ describe('the Network page layout', () => {
     expect(wrapper.find('#hotspot-summary').text()).toBe('Hotspot off')
   })
 
+  const LINE = 'Fallback only. This unit is on HomeNet.'
+  const DETAIL =
+    'The hotspot is a fallback. If this unit loses HomeNet, the hotspot starts about a minute later. While nobody is joined to the hotspot, the unit looks for its saved networks every 5 minutes and joins one that is back.'
+  const STANDBY = { ...NETWORK_STATE.hotspot!, active: false }
+
+  it('says under the folded Hotspot name that it is only a fallback while the unit is on a Wi-Fi network', async () => {
+    const { wrapper } = await openAdmin({ [NETWORK]: networkState({ wifi: JOINED, hotspot: STANDBY }) })
+    const summary = wrapper.find('#hotspot-summary')
+    expect(summary.text()).toContain('TM-AB12')
+    expect(summary.find('.text-secondary').text()).toBe(LINE)
+    expect(isOpen(wrapper, 'hotspot')).toBe(false) // information, not news: the panel stays folded
+    expect(wrapper.find(WARNING).exists()).toBe(false)
+  })
+
+  it('starts the open Hotspot panel with when the hotspot would start, for an admin and for a viewer', async () => {
+    const routes = { [NETWORK]: networkState({ wifi: JOINED, hotspot: STANDBY }) }
+    const admin = await openAdmin(routes)
+    await toggle(admin.wrapper, 'hotspot').trigger('click')
+    expect(admin.wrapper.find('#hotspot-body p').text()).toBe(DETAIL)
+    expect(admin.wrapper.find('#hotspot-summary').exists()).toBe(false)
+
+    document.body.replaceChildren()
+    signedIn(VIEWER, { [WIFI]: WIFI_NETWORKS, ...routes })
+    const viewer = await mountApp('/network')
+    expect(viewer.wrapper.find('#hotspot-body p').text()).toBe(DETAIL)
+  })
+
+  it('has no fallback note on the hotspot, or with the hotspot off', async () => {
+    const onHotspot = await openAdmin()
+    expect(onHotspot.wrapper.find('#hotspot-body').text()).not.toContain('fallback')
+
+    document.body.replaceChildren()
+    const off = { ...NETWORK_STATE.hotspot!, enabled: false, active: false }
+    const { wrapper } = await openAdmin({ [NETWORK]: networkState({ wifi: JOINED, hotspot: off }) })
+    expect(wrapper.find('#hotspot-summary').text()).toBe('Hotspot off')
+    expect(wrapper.find('#hotspot-body').text()).not.toContain('fallback')
+  })
+
+  it("shows a network's name as text", async () => {
+    const odd = { ...JOINED, network: '<b>Cafe</b>' }
+    const { wrapper } = await openAdmin({ [NETWORK]: networkState({ wifi: odd, hotspot: STANDBY }) })
+    expect(wrapper.find('#hotspot-summary').text()).toContain('This unit is on <b>Cafe</b>.')
+    expect(wrapper.find('#hotspot b').exists()).toBe(false)
+  })
+
   it('shows the details when a panel is expanded, and the summary only while it is collapsed', async () => {
     const { wrapper } = await openAdmin()
     await toggle(wrapper, 'this-device').trigger('click')

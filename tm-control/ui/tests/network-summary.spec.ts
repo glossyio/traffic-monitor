@@ -1,6 +1,6 @@
 // The words for the unit's network, shared by the Network page and the Device page's card.
 import { describe, expect, it } from 'vitest'
-import { internetLine, summaryFacts, wifiLine } from '../src/modules/network/summary'
+import { fallbackNote, internetLine, summaryFacts, wifiLine } from '../src/modules/network/summary'
 import { NETWORK_STATE, networkState } from './fake-api'
 
 const wifi = NETWORK_STATE.wifi!
@@ -39,5 +39,28 @@ describe('the network summary', () => {
     const idle = { ...wifi, connected: false, addresses: [], mode: 'idle' as const }
     expect(summaryFacts(networkState({ ethernet: noCable, wifi: idle }))).toEqual([])
     expect(summaryFacts(networkState({ ethernet: null, wifi: null }))).toEqual([])
+  })
+
+  it('says the hotspot is only a fallback while the unit is on a Wi-Fi network', () => {
+    const joined = { ...wifi, mode: 'network' as const, network: 'HomeNet', signal: 72 }
+    const after =
+      ', the hotspot starts about a minute later. While nobody is joined to the hotspot, the unit looks for its saved networks every 5 minutes and joins one that is back.'
+    expect(fallbackNote(joined, hotspot)).toEqual({
+      line: 'Fallback only. This unit is on HomeNet.',
+      detail: `The hotspot is a fallback. If this unit loses HomeNet${after}`,
+    })
+    expect(fallbackNote({ ...joined, network: null }, hotspot)).toEqual({
+      line: 'Fallback only. This unit is on a Wi-Fi network.',
+      detail: `The hotspot is a fallback. If this unit loses its Wi-Fi network${after}`,
+    })
+  })
+
+  it('has no fallback note at any other time', () => {
+    const joined = { ...wifi, mode: 'network' as const, network: 'HomeNet', signal: 72 }
+    expect(fallbackNote(wifi, hotspot)).toBeNull() // on its hotspot
+    for (const mode of ['joining', 'idle', 'off'] as const) expect(fallbackNote({ ...wifi, mode }, hotspot), mode).toBeNull()
+    expect(fallbackNote(joined, { ...hotspot!, enabled: false, active: false })).toBeNull()
+    expect(fallbackNote(joined, null)).toBeNull()
+    expect(fallbackNote(null, hotspot)).toBeNull()
   })
 })
