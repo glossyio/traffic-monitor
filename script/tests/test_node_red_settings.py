@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from required_tools import needs
+from required_tools import needs, needs_node_sqlite
 from tmsetup_render import REPO
 
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
@@ -162,3 +162,17 @@ def test_javascript_verifier_refuses_tokens_when_the_time_is_not_a_number(now):
         "console.log(u === null ? 'null' : JSON.stringify(u));"
     )
     assert out == "null"
+
+
+@needs_node_sqlite
+def test_function_nodes_get_sqlite_for_the_database_copy():
+    """The one function that adds the exact locations to a download's copy opens it with node:sqlite."""
+    keys = run_node("console.log(JSON.stringify(Object.keys(s.functionGlobalContext).sort()));")
+    assert json.loads(keys) == ["fs", "path", "sqlite"]
+    assert run_node("console.log(typeof s.functionGlobalContext.sqlite.DatabaseSync);") == "function"
+
+
+def test_settings_start_without_node_sqlite():
+    """A Node without node:sqlite gives null, not a failed start; the copy's function then refuses."""
+    text = SETTINGS.read_text()
+    assert "require('node:sqlite')" in text and "catch (err) { return null; }" in text
