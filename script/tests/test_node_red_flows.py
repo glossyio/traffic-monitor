@@ -2135,7 +2135,7 @@ def gate_node():
 def gate_run(msgs, sharing=None, thingsboard=None, deployment=None):
     """Run the upload gate on each message in turn, with this config; returns the run (results, global)."""
     config = {"sharing": SHARING_OFF if sharing is None else sharing,
-              "thingsboard": GATE_THINGSBOARD if thingsboard is None else thingsboard,
+              "thingsboard": {"enabled": True, **(GATE_THINGSBOARD if thingsboard is None else thingsboard)},
               "deployment": GATE_PLACE if deployment is None else deployment}
     gate = gate_node()
     return run_functions([(gate, msg) for msg in msgs], context={"config": config, "tm_warned": {}})
@@ -2312,6 +2312,27 @@ def test_gate_sends_no_exact_location_to_a_host_the_choice_was_not_made_for():
 
 
 @needs_node
+@pytest.mark.parametrize("sharing, thingsboard", [
+    (SHARING_ON, {"host": "other.example.invalid", "url": "https://other.example.invalid"}),
+    ({**SHARING_ON, "host": None}, GATE_THINGSBOARD),
+    (SHARING_ON, {"url": "https://tb.example.invalid"}),
+], ids=["other-host", "no-block-host", "no-upload-host"])
+def test_gate_names_no_target_or_notice_for_a_server_the_choice_was_not_made_for(sharing, thingsboard):
+    """The consents attribute describes the server it is sent to: the block's target and notice version go only to
+    the host the block was made for."""
+    sent = deployments_attribute(sharing=sharing, thingsboard=thingsboard)
+    assert sent["consents"] == {"share_data": True, "exact_location": False, "public_map": "none",
+                                "notice_version": None, "target": None}
+
+
+@needs_node
+def test_gate_names_the_target_and_notice_for_the_server_the_choice_was_made_for():
+    sent = deployments_attribute(sharing={**SHARING_ON, "target": "own", "exact_location": False,
+                                          "public_map": "none"})
+    assert (sent["consents"]["target"], sent["consents"]["notice_version"]) == ("own", "2026-11")
+
+
+@needs_node
 @pytest.mark.parametrize("given, expected", SHARING_HOST_CASES,
                          ids=[f"host-{index}" for index in range(len(SHARING_HOST_CASES))])
 def test_gate_compares_hosts_by_the_shared_rule(given, expected):
@@ -2359,6 +2380,83 @@ def test_gate_sends_nothing_it_cannot_read(msg):
     out, logged = gate(msg)
     assert out is None
     assert all(level == "warn" for level, _, _ in logged)
+
+
+@needs_node
+@pytest.mark.parametrize("msg", [
+    {"type": "attributes", "payload": {"deployments": "picam_h265"}},
+    {"type": "attributes", "payload": {"deployments": [GATE_ATTRIBUTES["deployments"]]}},
+    {"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": [GATE_ROW]}}},
+    {"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": {"surprise": [GATE_ROW]}}}},
+    {"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": {"updatedDeployment": "kept-on-the-unit"}}}},
+], ids=["attribute-not-a-mapping", "attribute-a-list", "telemetry-not-a-mapping", "telemetry-unknown-key-only",
+        "telemetry-list-not-an-array"])
+def test_gate_leaves_out_a_deployments_value_it_cannot_read(msg):
+    out, logged = gate(msg)
+    assert out is None
+    assert logged and all(level == "warn" for level, _, _ in logged)
+    assert "kept-on-the-unit" not in json.dumps(logged)
+
+
+@needs_node
+def test_gate_keeps_the_rest_when_a_deployments_attribute_is_left_out():
+    out, _ = gate({"type": "attributes", "payload": {"deployments": "picam_h265", "sysinfo_tmVersion": "0.9.0"}})
+    assert out["payload"] == {"sysinfo_tmVersion": "0.9.0"}
+
+
+@needs_node
+def test_gate_keeps_only_the_two_lists_of_telemetry_deployments_and_only_arrays():
+    deployments = {"currentDeployment": [GATE_ROW], "updatedDeployment": "kept-on-the-unit",
+                   "surprise": [{"note": "kept-on-the-unit"}]}
+    out, logged = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": deployments}}})
+    assert out["payload"] == {"ts": TS, "values": {"deployments": {"currentDeployment": [GATE_ROW]}}}
+    assert "kept-on-the-unit" not in json.dumps(logged)
+    assert all(level == "warn" for level, _, _ in logged)
+
+
+@needs_node
+def test_gate_drops_rows_that_are_not_mappings():
+    rows = [GATE_ROW, "kept-on-the-unit", None, ["kept-on-the-unit"], 7]
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": rows, "currentDeployment": [GATE_ROW]}}}
+    out, logged = gate({"type": "telemetry", "payload": payload})
+    assert out["payload"]["values"]["deployments"] == {"updatedDeployment": [GATE_ROW], "currentDeployment": [GATE_ROW]}
+    assert logged and "kept-on-the-unit" not in json.dumps(logged)
+    attribute = {**GATE_ATTRIBUTES["deployments"], "picam_h265": "kept-on-the-unit", "extra": None}
+    sent = attributes({"deployments": attribute})["deployments"]
+    assert set(sent) == {"deploymentTopLevel"}
+    assert sent["deploymentTopLevel"] == GATE_ATTRIBUTES["deployments"]["deploymentTopLevel"]
+
+
+@needs_node
+def test_gate_warns_once_about_a_shape_it_cannot_read():
+    bad = {"type": "attributes", "payload": {"deployments": "picam_h265"}}
+    run = gate_run([bad, bad])
+    warnings = [text for step in run["results"] for level, text, _ in step["logged"] if level == "warn"]
+    assert len(warnings) == 1 and "picam_h265" not in warnings[0]
+
+
+@needs_node
+@pytest.mark.parametrize("thingsboard", [
+    {**GATE_THINGSBOARD, "enabled": False},
+    {**GATE_THINGSBOARD, "enabled": "true"},
+    {**GATE_THINGSBOARD, "enabled": None},
+    {**GATE_THINGSBOARD, "enabled": 1},
+], ids=["off", "string", "null", "number"])
+def test_gate_sends_nothing_while_the_upload_is_off(thingsboard):
+    """A message that waited in the rate limit while Share data was turned off is not sent on."""
+    item = {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}
+    for msg in ({"type": "telemetry", "payload": item}, {"type": "attributes", "payload": {"sysinfo_tmVersion": "1"}}):
+        [step] = run_functions([(gate_node(), msg)], context={
+            "config": {"sharing": SHARING_OFF, "thingsboard": thingsboard, "deployment": GATE_PLACE},
+            "tm_warned": {}})["results"]
+        assert step["result"] is None and step["logged"] == []
+
+
+@needs_node
+def test_gate_sends_nothing_without_a_thingsboard_block():
+    [step] = run_functions([(gate_node(), {"type": "telemetry", "payload": {"ts": TS, "values": {"event": {}}}})],
+                           context={"config": {"sharing": SHARING_OFF}, "tm_warned": {}})["results"]
+    assert step["result"] is None and step["logged"] == []
 
 
 @needs_node

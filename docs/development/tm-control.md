@@ -236,9 +236,9 @@ The upload gate is a function node on the `thingsboard` tab, after the rate limi
 
 * Telemetry keys `event`, `radar`, `airquality`, `system_metrics`, and `deployments`. Deployment rows are re-rounded to the coarser of their own `location_precision` and the unit's `database_precision`.
 * Attribute keys `deployments`, `radarinfo`, and six `sysinfo_*` keys (`sysinfo_tmVersion`, `sysinfo_osHostname`, `sysinfo_osRelease`, `sysinfo_osTimeZone`, `sysinfo_deviceName`, `sysinfo_frigateVersion`).
-* Three attributes added to the `deployments` one: `consents` (what the page chose, and for which target), `exact_location` (the place's id and its coordinates to five places, only with the consent, a `sharing.host` that matches `thingsboard.host`, an `https` URL, and a place with a location, else empty), and `public_map` (the id and a point to three places, for the maintainer's server only).
+* Three attributes added to the `deployments` one: `consents` (what the page chose, and the target and notice version, which it reports only to the server they were chosen for and as `null` to any other), `exact_location` (the place's id and its coordinates to five places, only with the consent, a `sharing.host` that matches `thingsboard.host`, an `https` URL, and a place with a location, else empty), and `public_map` (the id and a point to three places, for the maintainer's server only).
 
-A key that isn't listed is left out and named once per config load, never with its value. Nothing uploads `config.yml` or Frigate's configuration. `script/tests/test_node_red_flows.py` pins the gate, the lists, and the `upload` section.
+The gate sends nothing while the upload is off, so a message that waited in the rate limit while Share data was turned off is dropped rather than sent. It also fails closed on shapes it can't read: a `deployments` value that isn't a mapping is left out, telemetry `deployments` keeps only its `updatedDeployment` and `currentDeployment` lists and only when each is an array, and a row that isn't a mapping is dropped. A key or shape that isn't listed is left out and named once per config load, never with its value. Nothing uploads `config.yml` or Frigate's configuration. `script/tests/test_node_red_flows.py` pins the gate, the lists, and the `upload` section.
 
 ### The Cameras module
 
