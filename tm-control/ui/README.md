@@ -738,11 +738,23 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- "Exact locations" sits between the places and the precision: one sentence and one button, "Export exact locations".
-  The button asks first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error colour,
-  because the file is not destroyed, only handed out. The file comes from `GET /surveys/export` and is saved with
+- "Exact locations" sits between the places and the precision: one sentence and two buttons, "Export exact locations"
+  and "Download the database with exact locations", in a row that wraps (`d-flex flex-wrap ga-3`). Both are outlined,
+  primary, and large, and both ask first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error
+  colour, because nothing is destroyed, only handed out. The export comes from `GET /surveys/export` and is saved with
   `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's line
   say "Sharing: data and the exact location" when the exact location is on.
+- The database copy is a different kind of download: `POST /surveys/database-copy` answers with the address of the
+  device's own `/storefiles` download, and the page hands it to `openDownload` (`components/download.ts`), which is
+  `window.location.assign`. That is how the Dashboard's download starts, and the only way that works in Android's
+  sign-in window, which gives a download to a helper that follows a navigation and sends no cookie. The page can't
+  watch the download, so after the request it says in an info alert what is happening: the device makes the copy first,
+  which takes a few minutes for a large database, and the download starts by itself. The alert stays until the next try;
+  a failure shows the API's message in the section's error alert and opens nothing.
+- The copy button is disabled, with its reason in normal text under the buttons, until a place with the status in use
+  or used has both coordinates. That is what the API needs (it answers 409 `no_exact_locations` otherwise), and a
+  planned place doesn't count, because the copy holds only places the device has been at. In fake mode the link leads
+  nowhere (there is no Node-RED to make the copy), so the browser lands on a 404 after the info alert shows.
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
@@ -894,6 +906,17 @@ on one place, the precision panel open, and No location stored chosen:
 - `column-gap-2` isn't a Vuetify class, so the deployment line's gap came only from its button's padding. It's `gc-2`
   now.
 
+The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: the section, the confirmation, the
+"making the copy" alert, the failure alert, and the disabled button):
+
+- At 320 px the long button name was cut off on both sides, because a button's text doesn't wrap. The name is in a
+  `text-wrap` span inside a button of automatic height, so it breaks onto two lines and the button grows.
+- Looked at and kept: at 375 px the name also breaks onto two lines, under the shorter "Export exact locations"
+  button, since the two don't fit on one row; at 1366 px both sit on one row.
+- Looked at and kept: the file name in the info alert breaks after "tmdb-exact-" on a phone. It is a name to recognise,
+  not to type, so it isn't held together.
+- Looked at and kept: the disabled button's reason is in normal text, as for the Sharing page's disabled boxes.
+
 #### Defaults rejected
 
 - A data table of the deployments: see above.
@@ -910,6 +933,10 @@ on one place, the precision panel open, and No location stored chosen:
   Node-RED hasn't reloaded must stay until it's read.
 - A table for the import's preview: a sensor column per sensor doesn't fit 375 px. Each place is a short list item,
   as the deployments are.
+- A progress bar or polling for the database copy: the device doesn't report progress, and the browser's own download
+  list shows the transfer once it starts. The info alert says what to expect instead.
+- A link in the info alert for the download: the address is good for ten minutes, and a link left on the page would
+  let a later click start another copy that holds the exact locations. The page opens it once and keeps no link.
 - One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
   before anything is created.
 
