@@ -47,7 +47,8 @@ _APOSTROPHES = ("'", "’")
 def _known(word: str) -> bool:
     if word.isdigit():
         return len(word) <= 2
-    return len(word) == 1 or word in KNOWN_WORDS or word in ADDRESS_WORDS
+    # A single letter is known only in ASCII: one character of another script can be a whole word or a name.
+    return (len(word) == 1 and word.isascii()) or word in KNOWN_WORDS or word in ADDRESS_WORDS
 
 
 def check_name(name: str) -> Literal["unknown_word", "pattern"] | None:

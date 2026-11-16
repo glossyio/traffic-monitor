@@ -13,7 +13,9 @@ def test_a_name_made_of_known_words_passes(name):
     assert check_name(name) is None
 
 
-@pytest.mark.parametrize("name", ["zone_maple", "zone_nord", "zone_smith", "zone_bergstrasse", "зона_север", "zone_café"])
+@pytest.mark.parametrize("name", [
+    "zone_maple", "zone_nord", "zone_smith", "zone_bergstrasse", "зона_север", "zone_café", "北", "김", "李_家",
+])
 def test_a_word_the_lists_dont_know_is_a_note(name):
     assert check_name(name) == "unknown_word"
 
