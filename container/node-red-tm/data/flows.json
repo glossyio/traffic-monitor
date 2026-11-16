@@ -15410,7 +15410,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "remove database copies left by a restart",
-        "func": "// No download can be in progress when the flows start, so anything under /db/snapshot\n// was left by a download that a restart cut short.\nconst fs = global.get(\"fs\");\nconst root = \"/db/snapshot\";\nflow.set(\"databaseCopiesInProgress\", 0);\ntry {\n    const leftovers = fs.existsSync(root) ? fs.readdirSync(root) : [];\n    fs.rmSync(root, { recursive: true, force: true });\n    if (leftovers.length > 0) {\n        node.warn(\"Removed database copies left by a restart: \" + leftovers.join(\", \"));\n    }\n} catch (err) {\n    node.warn(\"Couldn't remove \" + root + \": \" + err.message);\n}\nreturn null;",
+        "func": "// No download can be in progress when the flows start, so anything under /db/snapshot\n// was left by a download that a restart cut short.\nconst fs = global.get(\"fs\");\nconst root = \"/db/snapshot\";\nflow.set(\"databaseCopiesInProgress\", 0);\n// Nor can a copy be waiting for its exact locations: drop the lists claimed for copies and those kept under tickets\nflow.set(\"exactCopyPlaces\", {});\nglobal.set(\"exact_copies\", {});\ntry {\n    const leftovers = fs.existsSync(root) ? fs.readdirSync(root) : [];\n    fs.rmSync(root, { recursive: true, force: true });\n    if (leftovers.length > 0) {\n        node.warn(\"Removed database copies left by a restart: \" + leftovers.join(\", \"));\n    }\n} catch (err) {\n    node.warn(\"Couldn't remove \" + root + \": \" + err.message);\n}\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,

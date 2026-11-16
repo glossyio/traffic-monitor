@@ -189,6 +189,16 @@ def test_free_space_counts_an_earlier_copy_under_either_name(name):
     assert result.stdout == "allowed"
 
 
+@needs_node
+def test_starting_the_flows_drops_the_exact_location_lists():
+    by_name, _ = _download_nodes()
+    cleanup = by_name["remove database copies left by a restart"]
+    result = run_functions([(cleanup, {})], flow={"exactCopyPlaces": {"/db/snapshot/x1": [PLACE]}},
+                           context={"exact_copies": {TICKET: {"places": [PLACE], "expires": time.time() * 1000 + 60000}}})
+    assert result["flow"]["exactCopyPlaces"] == {} and result["global"]["exact_copies"] == {}
+    assert "45.52252" not in json.dumps(result["results"])
+
+
 def test_every_end_of_a_database_copy_releases_its_count():
     """A count left behind would refuse every later database download until Node-RED restarts."""
     by_name, _ = _download_nodes()
