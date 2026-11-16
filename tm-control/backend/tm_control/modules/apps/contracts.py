@@ -2,9 +2,11 @@
 fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the deployment's location values, the
 ThingsBoard upload's settings, and whether the Frigate+ key and model are paired.
 
-Details name cameras, zones, radars, config.yml keys, and a Frigate+ model's id, never another config value. Log lines
-are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted: Frigate's validation
-messages when it starts in safe mode, and the last exception in its journal whenever Frigate doesn't answer.
+Details name cameras, the zones the flows expect, radars, config.yml keys, and a Frigate+ model's id, never another
+config value. Other zone names, which an operator typed, are counted and never quoted, because details go into Copy
+diagnostics. Log lines are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted:
+Frigate's validation messages when it starts in safe mode, and the last exception in its journal whenever Frigate
+doesn't answer.
 """
 
 import os
@@ -175,6 +177,41 @@ def zones(context: Context) -> list[Check]:
         link = frigate_zones_link(cameras[0]) if len(cameras) == 1 else CAMERAS_LINK
         return check("warn", " ".join(problems) + " " + fix, link)
     return check("ok", f"Each enabled camera has {listed(ZONES)}, turned on.")
+
+
+def zone_names(context: Context) -> list[Check]:
+    """No zone of a recorded camera has a name that looks like an address or a person's name: a zone's name is saved
+    with every event that enters it. The detail counts such names and never quotes one; the Cameras page shows them."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="config.zone_names", title="Zone names", status=status, detail=detail, fix=fix)]
+
+    read = probes.config_yml(context)
+    if read.data is None:
+        return check("unknown", f"{CONFIG_YML_PROBLEM[read.problem]}, so the zone names can't be checked.")
+    frigate = probes.frigate_config(context)
+    if frigate is None:
+        return check("unknown", "Frigate isn't answering, so the zone names can't be checked.")
+    if probes.frigate_safe_mode(frigate):
+        return check("unknown", "Frigate is in safe mode, with no cameras, so the zone names can't be checked; see the "
+                                "Frigate check under Apps.")
+    count, cameras = 0, []
+    for row in _compared(read, frigate):
+        if "zone_names" not in _codes(row):
+            continue
+        count += sum(zone.check == "pattern" for zone in row.zone_names or [])
+        cameras.append(_label(row.name, row.frigate_camera))
+    if not count:
+        return check("ok", "No zone name looks like an address or a person's name.")
+    one = count == 1
+    return check(
+        "warn",
+        f"{count} zone {'name' if one else 'names'} on {'camera' if len(cameras) == 1 else 'cameras'} "
+        f"{listed(cameras)} {'looks' if one else 'look'} like an address or a person's name. A zone's name is saved "
+        "with every event that enters it and shared with the data. The Cameras page shows which; rename "
+        f"{'it' if one else 'them'} in Frigate.",
+        CAMERAS_LINK,
+    )
 
 
 def radar_names(context: Context) -> list[Check]:
@@ -503,5 +540,5 @@ def frigate_plus(context: Context) -> list[Check]:
 
 
 GROUP = CheckGroup(
-    "config", "Configuration", [cameras_in_config, zones, radar_names, location, thingsboard, frigate_plus]
+    "config", "Configuration", [cameras_in_config, zones, zone_names, radar_names, location, thingsboard, frigate_plus]
 )
