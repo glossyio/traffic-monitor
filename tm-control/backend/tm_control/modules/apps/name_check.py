@@ -40,28 +40,38 @@ STREET_ABBREVIATIONS = frozenset("""
 st ave av rd blvd dr ln ct pl hwy pkwy cir ter sq trl rte str apt bldg
 """.split())
 
-_WORDS = re.compile(r"[^\W\d_]+|\d+")  # runs of letters (any script) and runs of digits
+# An ordinal (5th) as one word, then runs of letters (any script) and runs of digits.
+_WORDS = re.compile(r"\d+(?:st|nd|rd|th)(?![^\W\d_])|[^\W\d_]+|\d+")
+_NUMBER = re.compile(r"(\d+)(st|nd|rd|th)?")  # a number or an ordinal: its digits, and its suffix if any
 _APOSTROPHES = ("'", "’")
 
 
+def _number(word: str) -> re.Match[str] | None:
+    return _NUMBER.fullmatch(word)
+
+
 def _known(word: str) -> bool:
-    if word.isdigit():
-        return len(word) <= 2
+    if number := _number(word):
+        return len(number[1]) <= 2
     # A single letter is known only in ASCII: one character of another script can be a whole word or a name.
     return (len(word) == 1 and word.isascii()) or word in KNOWN_WORDS or word in ADDRESS_WORDS
 
 
 def check_name(name: str) -> Literal["unknown_word", "pattern"] | None:
-    """"pattern" when the name looks like an address or a person's name: a number of three or more digits, an
-    apostrophe, a shortened street kind, or an address word beside a word the lists don't know. Otherwise
-    "unknown_word" when a word isn't in the lists, and None when every word is."""
+    """"pattern" when the name looks like an address or a person's name: a number or an ordinal of three or more
+    digits, an apostrophe, a shortened street kind, or an address word together with a word the lists don't know or
+    an ordinal (5th). Otherwise "unknown_word" when a word isn't in the lists, and None when every word is."""
     words = _WORDS.findall(name.casefold())
+    numbers = [number for word in words if (number := _number(word))]
     unknown = [word for word in words if not _known(word)]
     if (
-        any(word.isdigit() and len(word) >= 3 for word in words)
+        any(len(number[1]) >= 3 for number in numbers)
         or any(mark in name for mark in _APOSTROPHES)
         or any(word in STREET_ABBREVIATIONS for word in words)
-        or (unknown and any(word in ADDRESS_WORDS for word in words))
+        or (
+            (unknown or any(number[2] for number in numbers))
+            and any(word in ADDRESS_WORDS for word in words)
+        )
     ):
         return "pattern"
     return "unknown_word" if unknown else None
