@@ -194,6 +194,22 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - `_lowercase` names are functions, `UPPERCASE` are user-editable variables (the `TUNEABLE VARIABLES` block), and `_UPPERCASE` are internal-only variables.
   - Local variables inside functions are plain `lowercase` (`local output status`). A leading underscore would make them read like function calls. Declare them `local`, or they become globals.
 
+## Issues and discussions
+
+- Before filing an issue, read the matching template in `.github/ISSUE_TEMPLATE/` and fill its headings in order. Don't add a `[Bug]` or `[Feature]` prefix to the title; the Type shows it.
+- Say where it came from ("found while reviewing #123") and whether anyone has seen it happen on a device or in a test.
+- Set the Type (Bug, Feature, Task), the Source and Impact fields, one `area:` label, and the relationships: a sub-issue of the work it belongs to, "relates to" the issue it was found in, "blocked by" what it waits for. "How we track work" in CONTRIBUTING.md defines the values.
+- An idea with no design yet is a discussion in Ideas, not an issue. Draft it and show the maintainer; never post one unasked.
+- Never file a weakness that would give someone a way into a device. Tell the maintainer instead.
+- The maintainer reads an issue's or discussion's text before it is posted.
+
+`gh` 2.46.0 has no flags for Types, fields, or relationships, so use `gh api`:
+
+- Type: `gh api -X PATCH repos/glossyio/traffic-monitor/issues/<n> -f type=Bug`, or `"type"` in the JSON body of `POST .../issues`.
+- Fields: GraphQL `setIssueFieldValue(input: {issueId, issueFields: [{fieldId, singleSelectOptionId}]})`, with the issue's node id. Field and option ids come from `repository(owner: "glossyio", name: "traffic-monitor") { issueFields(first: 20) { nodes { ... on IssueFieldSingleSelect { id name options { id name } } } } }`.
+- Relationships, REST: `POST .../issues/<n>/sub_issues`, `.../dependencies/blocked_by`, and `.../relates_to`. Each takes the other issue's database `id`, not its number.
+- Search: `type:Bug`, `field.source:community`. `gh pr edit` fails on this repo; use `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/<n>`.
+
 ## AI use in this repository
 
 The policy is "Use of AI tools" in CONTRIBUTING.md: AI may draft, but a person reviews, tests, and owns every change.

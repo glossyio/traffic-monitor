@@ -1,24 +1,25 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
+about: A change you'd like, with an idea of how it should work
 title: ''
 labels: ''
 assignees: ''
+type: Feature
 
 ---
 
+<!--
+An idea with no design yet fits better in Discussions → Ideas, where others can add to it.
+-->
+
 ## Problem
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+What you're trying to do, and what gets in the way today.
 
-## Proposed Solution
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Proposed solution
+How you'd like it to work.
 
-## Alternative Solutions
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Alternatives
+Other ways you've considered, or how you work around it now.
 
-## Additional Info
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Additional context
+Who else would use it, links, and screenshots.

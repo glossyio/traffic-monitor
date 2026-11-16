@@ -4,13 +4,42 @@ Thank you for your interest in contributing! We need volunteer contributors like
 
 You can find us at https://trafficmonitor.zulipchat.com/ for discussions, questions, and immediate community-based assistance. 
 
-Important resources (many coming soon):
-- Use GitHub Issues to [report bugs](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=) and make [feature requests](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=)
-- Use [GitHub Discussions](https://github.com/glossyio/traffic-monitor/discussions/new/choose) to deep-dive and get support.
-- [Traffic Monitor Zulic Chat](https://trafficmonitor.zulipchat.com/) to connect with other contributors and chat for community support.
-- About us
-- Roadmap
-- Project management (Taiga)
+Important resources:
+- Use GitHub Issues to [report bugs](https://github.com/glossyio/traffic-monitor/issues/new?template=bug_report.md) and make [feature requests](https://github.com/glossyio/traffic-monitor/issues/new?template=feature_request.md).
+- Use [GitHub Discussions](https://github.com/glossyio/traffic-monitor/discussions/new/choose) to ask questions, get support, and share ideas.
+- [Traffic Monitor Zulip Chat](https://trafficmonitor.zulipchat.com/) to connect with other contributors and chat for community support.
+- Report security problems privately, never in a public issue: see [SECURITY.md](SECURITY.md).
+
+## How we track work
+
+Every issue has a **Type**:
+
+- **Bug:** something doesn't work the way the docs say it should.
+- **Feature:** a change with a direction chosen.
+- **Task:** a ready-to-build piece of a larger feature, or docs, tests, and cleanup.
+
+Two fields say where an issue came from and what it costs to leave:
+
+| Field | Value | Meaning |
+|---|---|---|
+| Source | Community | A contributor, user, or customer raised it, even when a maintainer wrote it up |
+| | Maintainer | From a maintainer's own use, testing, or plans |
+| | Dev follow-up | Seen while building, testing, or reviewing another change, and left out of that pull request |
+| | AI suggestion | Raised by an AI assistant from reading code or docs; nobody has seen it happen yet. It changes to Dev follow-up once someone does |
+| Impact (bugs only) | High | Wrong or lost data, a security or privacy exposure, or a device that can't be used |
+| | Medium | Something fails or misleads, and there's a way around it |
+| | Low | Cosmetic, rare, or seen only in development |
+
+`area:` labels say which part of the product an issue is about, and `security` and `privacy` mark hardening and privacy work. A feature built over several pull requests is a parent issue with a sub-issue for each piece. The one open milestone holds what must be in the next release.
+
+Ideas with no design yet go to [Discussions → Ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas), not issues. An idea isn't a commitment; when one is picked up, it becomes an issue and the discussion links to it.
+
+What's open to take:
+
+- Issues labeled `help wanted` or `good first issue` are open to anyone. Comment that you're working on one.
+- Small fixes, such as typos and broken links, are welcome any time, with or without an issue.
+- For anything else, comment on the issue first, so we can agree on the approach before you build it.
+- An issue assigned to someone is taken. Many open issues are the maintainers' own reminders for work in progress.
 
 ## Testing
 

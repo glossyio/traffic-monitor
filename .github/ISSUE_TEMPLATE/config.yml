@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/glossyio/traffic-monitor/discussions/new?category=q-a
+    about: Help with building, installing, or using a Traffic Monitor.
+  - name: Suggest an idea
+    url: https://github.com/glossyio/traffic-monitor/discussions/new?category=ideas
+    about: A feature idea with no design yet. Ideas aren't commitments.
+  - name: Chat on Zulip
+    url: https://trafficmonitor.zulipchat.com/
+    about: Quick questions, and talking with other users and contributors.
+  - name: Report a security problem
+    url: https://github.com/glossyio/traffic-monitor/security/advisories/new
+    about: Report it privately to the maintainers, never in a public issue.

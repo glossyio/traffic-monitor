@@ -26,9 +26,13 @@ The [discussions board](https://github.com/glossyio/traffic-monitor/discussions)
 
 ## GitHub issues
 
-Open an [issue](https://github.com/glossyio/traffic-monitor/issues) for a specific bug, a feature request, or a technical question that the discussions haven't answered. Include enough detail for someone else to reproduce or understand it.
+Open an [issue](https://github.com/glossyio/traffic-monitor/issues) for a specific bug, or for a feature request with an idea of how it should work. A feature idea with no design yet goes to Ideas, above. Include enough detail for someone else to reproduce or understand it.
 
-* 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?assignees=\&labels=\&projects=\&template=bug_report.md\&title=)
-* 💡 [Feature request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=\&labels=\&projects=\&template=feature_request.md\&title=)
+* 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?template=bug_report.md)
+* 💡 [Feature request](https://github.com/glossyio/traffic-monitor/issues/new?template=feature_request.md)
 
 An issue may be closed without a full resolution, for example as a duplicate, after inactivity, or because the work is tracked elsewhere. That isn't a lack of interest; comment or reopen if it still matters.
+
+## Report a security problem
+
+If you find a way for someone to get into a Traffic Monitor, read its data, or take it over without permission, report it privately through the repository's [Security tab](https://github.com/glossyio/traffic-monitor/security), not in an issue, a discussion, or the chat. [SECURITY.md](https://github.com/glossyio/traffic-monitor/blob/main/SECURITY.md) says what to include.
