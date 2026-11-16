@@ -77,11 +77,16 @@ from an existing lockfile without trouble, so the image still builds and tests t
   rows that need attention. An entry in step has no box, nor has a new Frigate camera whose detection is off (it drops
   nothing, so the API reports no issue for it; it keeps Point and Add as new), and while Frigate can't be compared a row
   shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
-  neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
-  confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which
-  POSTs. A save that works closes the panel; one that fails keeps it open with the reason inside it. A refused
-  action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it again.
+  neutral camera name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral camera
+  name, and Remove confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with
+  `adding`, which POSTs. A save that works closes the panel; one that fails keeps it open with the reason inside it. A
+  refused action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it
+  again.
   Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  A camera's other zones (`otherZonesText`) are a secondary-color line under the zones line, because their names are
+  saved with every event. Names with a word the backend's name check doesn't know get a note (`zoneNote`): a tonal
+  `v-alert` with no `type`, so it takes the neutral color and no icon and reads quieter than an issue box, because it
+  isn't a problem and doesn't count toward the alert above the list. A name that looks like an address is an issue box.
   The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
   each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
   names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows
