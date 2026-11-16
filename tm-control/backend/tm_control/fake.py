@@ -145,8 +145,9 @@ def use_model(settings: Settings, name: str) -> None:
 
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
     """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, a
-    second camera (oak_ave_tele, a copy of the first), the detection switches set_frigate_detect keeps, and a config.yml
-    that is missing. Nothing outside the fake directory is read."""
+    second camera (oak_ave_tele, a copy of the first), three more zones on the first camera (zone_lane_bus, zone_maple,
+    zone_1420_oak_st, for the name check), the detection switches set_frigate_detect keeps, and a config.yml that is
+    missing. Nothing outside the fake directory is read."""
     config = json.loads((FAKE_FIXTURES / "frigate_api_config.json").read_text())
     try:
         name = running_model_file(settings).read_text().strip()
@@ -160,6 +161,8 @@ def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
         model.pop("path", None)
     first = next(iter(config["cameras"].values()))  # a camera that no config.yml entry points at, for the Cameras page
     config["cameras"]["oak_ave_tele"] = copy.deepcopy(first) | {"name": "oak_ave_tele"}
+    # zones beyond the four, for the Cameras page's line, note, and warning: a known name, an unknown word, an address
+    first.setdefault("zones", {}).update({"zone_lane_bus": {}, "zone_maple": {}, "zone_1420_oak_st": {}})
     for camera, on in _detect_switches(settings).items():
         if camera in config["cameras"] and isinstance(on, bool):
             config["cameras"][camera].setdefault("detect", {})["enabled"] = on
