@@ -290,7 +290,7 @@ describe('the Location page', () => {
         expect(open).not.toHaveBeenCalled()
       })
 
-      it('clears an earlier failure or note when the admin starts again', async () => {
+      it('clears an earlier failure when the admin starts again', async () => {
         let calls = 0
         signedIn(ADMIN, {
           [SURVEYS]: PLACES,

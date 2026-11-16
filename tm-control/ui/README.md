@@ -749,7 +749,7 @@ importing places open dialogs from this page, so they move nothing on it.
   `window.location.assign`. That is how the Dashboard's download starts, and the only way that works in Android's
   sign-in window, which gives a download to a helper that follows a navigation and sends no cookie. The page can't
   watch the download, so after the request it says in an info alert what is happening: the device makes the copy first,
-  which takes a few minutes for a large database, and the download starts by itself. The alert stays until the next try;
+  which takes a few minutes for a large database, and the download starts by itself. The alert stays until the page is reloaded;
   a failure shows the API's message in the section's error alert and opens nothing.
 - The copy button is disabled, with its reason in normal text under the buttons, until a place with the status in use
   or used has both coordinates. That is what the API needs (it answers 409 `no_exact_locations` otherwise), and a
