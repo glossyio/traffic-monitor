@@ -13,11 +13,16 @@ _KEY_VALUE = re.compile(
     r"(?i)(?:password|passwd|secret|token|setup[ _-]?code)(?:[_-]?key)?(?![A-Za-z0-9_])"
     r"[\"']?[ \t]*[=:][ \t]*(?P<value>\S+)"
 )
+# The ticket in the name of a database copy with exact locations (files=tmdb-exact-<ticket>, made by POST
+# /surveys/database-copy): for ten minutes it names a list of exact locations in Node-RED's memory, and nginx's access
+# log holds it. The name before it stays, so the request can still be recognized.
+_COPY_TICKET = re.compile(r"tmdb-exact-(?P<value>[0-9a-f]{32})")
 
 
 def _spans(text: str, values: list[str]) -> list[tuple[int, int]]:
-    """Where text holds a secret: every occurrence of each value, and the value after each secret-looking key."""
-    spans = [match.span("value") for match in _KEY_VALUE.finditer(text)]
+    """Where text holds a secret: every occurrence of each value, the value after each secret-looking key, and a
+    database copy's ticket."""
+    spans = [match.span("value") for pattern in (_KEY_VALUE, _COPY_TICKET) for match in pattern.finditer(text)]
     for value in sorted({value for value in values if value}):
         start = text.find(value)
         while start >= 0:
@@ -27,10 +32,11 @@ def _spans(text: str, values: list[str]) -> list[tuple[int, int]]:
 
 
 def redact(text: str, values: list[str]) -> str:
-    """text with each secret replaced by REDACTED: every occurrence of each of `values`, and the value after every
-    secret-looking key (password=, token:, the setup code, ...), whose key and separator stay.
+    """text with each secret replaced by REDACTED: every occurrence of each of `values`, the value after every
+    secret-looking key (password=, token:, the setup code, ...), whose key and separator stay, and the ticket in the
+    file name of a database copy with exact locations (tmdb-exact-<ticket>).
 
-    Both kinds of span are found in the original text, then overlapping and touching spans are merged and each merged
+    Every span is found in the original text, then overlapping and touching spans are merged and each merged
     span becomes one REDACTED. So a value that is also a key's word (frigate.env's default password is "password")
     can't hide the secret after that key, and a value with spaces in it is redacted whole even after a key.
     """

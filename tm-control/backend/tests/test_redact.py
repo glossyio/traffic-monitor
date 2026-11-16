@@ -94,3 +94,23 @@ def test_a_download_links_token_in_nginxs_log_is_hidden():
     )
     out = redact(line, [])
     assert "PLACEHOLDER" not in out and "files=/db/tmdb.sqlite&tm_token=" in out and ' HTTP/1.1" 200' in out
+
+
+def test_a_database_copys_ticket_in_nginxs_log_is_hidden():
+    ticket = "0123456789abcdef" * 2
+    line = (
+        '10.42.0.23 - - [15/Nov/2026:08:11:15 +0000] '
+        f'"GET /storefiles?files=tmdb-exact-{ticket}&tm_token=PLACEHOLDER HTTP/1.1" 200 394000'
+    )
+    out = redact(line, [])
+    assert ticket not in out and "PLACEHOLDER" not in out
+    assert f"files=tmdb-exact-{REDACTED}&tm_token={REDACTED} HTTP/1.1" in out and ' HTTP/1.1" 200' in out
+    # with the session's cookie the same file can be asked for without a token
+    assert redact(f'"GET /storefiles?files=tmdb-exact-{ticket} HTTP/1.1" 404', []) == (
+        f'"GET /storefiles?files=tmdb-exact-{REDACTED} HTTP/1.1" 404'
+    )
+
+
+def test_the_database_copys_own_file_names_are_not_taken_for_a_ticket():
+    line = "tm_20261115_tmdb-exact-locations.tar.gz holds tmdb-exact-locations.sqlite"
+    assert redact(line, []) == line

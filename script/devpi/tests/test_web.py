@@ -1214,6 +1214,42 @@ def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_s
     assert not leaked, f"secrets in the diagnostics text (lines holding the value, or missing): {leaked}"
 
 
+# The diagnostics through the proxy with the admin session, then: how many lines hold the file name of a database copy
+# with exact locations with a ticket after it, and how many hold that name with the ticket replaced. The cookie is on
+# curl's command line, as in DIAGNOSTICS_COUNTS.
+COPY_TICKET_COUNTS = """\
+diag=$(mktemp) || exit 3
+trap 'rm -f "$diag"' EXIT
+curl -sf --max-time 90 -H {host_header} -H {cookie_header} -o "$diag" http://localhost{path} || exit 3
+grep -c -E 'tmdb-exact-[0-9a-f]{{32}}' "$diag"
+grep -c -F 'tmdb-exact-<redacted>' "$diag"
+exit 0"""
+
+
+def copy_ticket_counts(host, address, cookie):
+    """COPY_TICKET_COUNTS's exit code and output lines. The command holds the cookie, so its CommandResult stays in
+    here, as in diagnostics_counts."""
+    result = host.run(COPY_TICKET_COUNTS.format(host_header=shlex.quote(f"Host: {address}"),
+                                                cookie_header=shlex.quote(f"Cookie: {cookie}"),
+                                                path=f"{API}/system/diagnostics"))
+    return result.rc, result.stdout.splitlines()
+
+
+def test_diagnostics_hides_a_database_copy_ticket(host, address, admin_session):
+    """nginx's log holds the ticket in the file name of a database copy with exact locations, and the diagnostics quote
+    that log with the ticket replaced. The request here is for a ticket that was never made (32 zeros, a 404), so no
+    copy is made and no list of places is involved. Counted on the Pi."""
+    path = "/storefiles?files=tmdb-exact-" + "0" * 32
+    status = status_from_this_machine(address, path, cookie=admin_session)
+    assert status == 404, f"a database copy link whose ticket was never made answered {status}"
+    rc, lines = copy_ticket_counts(host, address, admin_session)
+    assert rc == 0 and len(lines) == 2, (
+        f"couldn't download {API}/system/diagnostics through the proxy with the admin session")
+    shown, hidden = lines
+    assert shown == "0", f"{shown} lines of the diagnostics text hold a database copy's ticket"
+    assert hidden != "0", "the diagnostics text doesn't hold the request just made, so nothing was checked"
+
+
 # --- The entered secrets ---------------------------------------------------------------------------------------------
 
 # The keys that held a secret in config.yml before the entered secrets; tm-control migrate moves them out

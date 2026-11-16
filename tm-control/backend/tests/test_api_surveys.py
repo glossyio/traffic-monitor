@@ -15,6 +15,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from tm_control.adapters.nodered import NodeRedError
+from tm_control.adapters.redact import REDACTED, redact
 from tm_control.core.auth import Users
 from tm_control.modules.location.places import Places
 
@@ -952,6 +953,17 @@ def test_database_copy_makes_no_link_when_node_red_fails(admin, monkeypatch):
     assert "wasn't started" in r.json()["error"]["message"]
     assert len(admin.app.state.download_grants) == 0
     assert not [row for row in audit_rows(admin) if row[0] == "survey.database_copy"]
+
+
+def test_the_diagnostics_hide_a_database_copy_links_ticket_and_token(admin):
+    """nginx's access log holds the link, and the diagnostics quote that log: redact() must know the name the route
+    gives the file."""
+    locate_in_use(admin)
+    url = admin.post(COPY, headers=JSON_HEADERS).json()["url"]
+    ticket = COPY_URL.match(url).group(1)
+    out = redact(f'10.42.0.23 - - [15/Nov/2026:08:11:15 +0000] "GET {url} HTTP/1.1" 200 394000', [])
+    assert ticket not in out and url.rpartition("=")[2] not in out
+    assert f'"GET /storefiles?files=tmdb-exact-{REDACTED}&tm_token={REDACTED} HTTP/1.1" 200' in out
 
 
 def test_database_copy_audits_the_count_only(admin, caplog):
