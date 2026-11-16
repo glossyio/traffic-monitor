@@ -145,6 +145,50 @@ def test_database_copies_in_progress_count_against_free_space():
     assert func.index("throw new Error(") < increment < func.index("msg.countsAsCopy = true;") < func.index("mkdirSync(msg.snapshot")
 
 
+SPACE_CHECK = textwrap.dedent(r"""
+    const vm = require("vm"), path = require("path");
+    const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    const GB = 1024 ** 3, size = 3 * GB;
+    const files = { "/db/tmdb.sqlite": size, ["/db/snapshot/earlier/" + input.name]: size };
+    const fs = {
+        existsSync: (p) => p === "/db/snapshot",
+        readdirSync: () => ["earlier"],
+        statSync: (p) => {
+            if (p === "/db/snapshot/earlier") return { mtimeMs: Date.now() };
+            if (p in files) return { size: files[p] };
+            throw new Error("ENOENT");
+        },
+        statfsSync: () => ({ bavail: (4 * GB) / 4096, bsize: 4096 }),
+        mkdirSync: () => {},
+        rmSync: () => {},
+    };
+    const flowStore = { databaseCopiesInProgress: 1 };
+    const context = vm.createContext({
+        Date, Math,
+        global: { get: (key) => ({ fs, path })[key] },
+        flow: { get: (key) => flowStore[key], set: (key, value) => { flowStore[key] = value; } },
+    });
+    let outcome = "allowed";
+    try {
+        new vm.Script("(function(msg, node) {" + input.func + "\n})").runInContext(context)({ snapshot: "/db/snapshot/new" }, {});
+    } catch (err) {
+        outcome = "refused";
+    }
+    process.stdout.write(outcome);
+""")
+
+
+@needs_node
+@pytest.mark.parametrize("name", ["tmdb.sqlite", "tmdb-exact-locations.sqlite"])
+def test_free_space_counts_an_earlier_copy_under_either_name(name):
+    """One earlier 3 GB copy is fully written and still streaming, and 4 GB is free: enough for this copy."""
+    by_name, _ = _download_nodes()
+    result = subprocess.run(["node", "-e", SPACE_CHECK], capture_output=True, text=True, timeout=30,
+                            input=json.dumps({"func": by_name["copy database first?"]["func"], "name": name}))
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "allowed"
+
+
 def test_every_end_of_a_database_copy_releases_its_count():
     """A count left behind would refuse every later database download until Node-RED restarts."""
     by_name, _ = _download_nodes()
