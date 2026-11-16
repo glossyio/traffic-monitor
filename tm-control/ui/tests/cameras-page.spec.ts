@@ -1,7 +1,7 @@
 // The Cameras page: one panel per camera, the intro, Frigate's state, and the save of the settings a panel opens to.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { ADMIN, ZONE_NAMES, apiError, camerasState, cameraRow, json, newRow, signedIn } from './fake-api'
+import { ADMIN, MADE_UP_ZONE, ZONE_NAMES, apiError, camerasState, cameraRow, json, newRow, signedIn } from './fake-api'
 import { buttonsIn, click, clickIn, clickInDialog, dialogButtons, dialogText, fieldIn, mountApp } from './mount'
 
 const CAMERAS = 'GET /api/v1/cameras'
@@ -151,6 +151,15 @@ describe('Cameras page', () => {
     expect(wrapper.find('[data-other-zones]').text()).toBe(
       'Other zones enabled: zone_lane_bus',
     )
+  })
+
+  it("shows Frigate's name beside a zone key Frigate made up", async () => {
+    const row = cameraRow({ zone_names: [ZONE_NAMES[0], MADE_UP_ZONE] })
+    const { wrapper } = await openPage(camerasState({ rows: [row] }))
+    expect(wrapper.find('[data-other-zones]').text()).toBe(
+      'Other zones enabled: zone_lane_bus, zone_a9bacc03 ("Bus lane (north)" in Frigate)',
+    )
+    expect(wrapper.find('[data-zone-note]').exists()).toBe(false)
   })
 
   it("says nothing about a camera's other zones while Frigate can't be compared", async () => {

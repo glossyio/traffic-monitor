@@ -80,10 +80,13 @@ export function frigateZonesHref(row: CameraRow): string {
   return `/frigate/settings?page=masksAndZones&camera=${encodeURIComponent(row.frigate_camera)}`
 }
 
-// The camera's zones other than the four the flows read, which are on; Frigate saves their names with every event
-// that enters one
+// The camera's zones other than the four the flows read, which are on; Frigate saves their keys with every event
+// that enters one. A key Frigate made up from a name it couldn't use (zone_a9bacc03) says nothing to the operator,
+// so Frigate's name for it follows in brackets.
 export function otherZonesText(row: CameraRow): string {
-  const names = (row.zone_names ?? []).map((zone) => zone.name)
+  const names = (row.zone_names ?? []).map((zone) =>
+    zone.friendly_name ? `${zone.name} ("${zone.friendly_name}" in Frigate)` : zone.name,
+  )
   return names.length ? `Other zones enabled: ${names.join(', ')}` : ''
 }
 

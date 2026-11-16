@@ -2213,13 +2213,15 @@ export interface components {
         };
         /**
          * ZoneName
-         * @description One of a camera's zones other than the four the flows read, saved by name with every event that enters it.
+         * @description One of a camera's zones other than the four the flows read, saved by its key with every event that enters it.
          */
         ZoneName: {
             /** Name */
             name: string;
             /** Check */
             check: ("unknown_word" | "pattern") | null;
+            /** Friendly Name */
+            friendly_name: string | null;
         };
     };
     responses: never;

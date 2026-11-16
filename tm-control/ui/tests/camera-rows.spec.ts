@@ -9,7 +9,7 @@ import {
   zoneNote,
   zonesText,
 } from '../src/modules/cameras/rows'
-import { RADARS, ZONE_NAMES, cameraRow, newRow, type CameraRadar } from './fake-api'
+import { MADE_UP_ZONE, RADARS, ZONE_NAMES, cameraRow, newRow, type CameraRadar } from './fake-api'
 
 describe('rowState', () => {
   it('says in step for an entry whose Frigate camera is on', () => {
@@ -234,6 +234,14 @@ describe('otherZonesText', () => {
       'Other zones enabled: zone_lane_bus, zone_maple, zone_nord, zone_1420_oak_st',
     )
   })
+
+  it("shows Frigate's name beside a key Frigate made up, and no note for it", () => {
+    const row = cameraRow({ zone_names: [ZONE_NAMES[0], MADE_UP_ZONE] })
+    expect(otherZonesText(row)).toBe(
+      'Other zones enabled: zone_lane_bus, zone_a9bacc03 ("Bus lane (north)" in Frigate)',
+    )
+    expect(zoneNote(row)).toBeNull()
+  })
 })
 
 describe('zoneNote', () => {
@@ -265,7 +273,7 @@ describe('zoneNote, one name', () => {
 
 describe('issueBoxes, zone names', () => {
   it('speaks of several zones', () => {
-    const zone_names = [...ZONE_NAMES, { name: 'zone_main_st', check: 'pattern' as const }]
+    const zone_names = [...ZONE_NAMES, { name: 'zone_main_st', check: 'pattern' as const, friendly_name: null }]
     const [box] = issueBoxes(cameraRow({ zone_names, issues: [{ level: 'warn', code: 'zone_names' }] }))
     expect(box.text).toMatch(
       /^Review the zone names that look like an address or a person's name: zone_1420_oak_st, zone_main_st\. /,

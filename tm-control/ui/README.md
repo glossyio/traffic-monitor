@@ -87,6 +87,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
   saved with every event. Names with a word the backend's name check doesn't know get a note (`zoneNote`): a tonal
   `v-alert` with no `type`, so it takes the neutral color and no icon and reads quieter than an issue box, because it
   isn't a problem and doesn't count toward the alert above the list. A name that looks like an address is an issue box.
+  A key Frigate made up (`zone_a9bacc03`) is what an event saves, so it leads; Frigate's name follows it in brackets
+  only so the operator can find the zone in Frigate.
   The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
   each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
   names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows
