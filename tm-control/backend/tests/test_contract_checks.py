@@ -1196,3 +1196,14 @@ def test_frigate_stopping_for_its_own_restart_is_unknown(apps):
     assert (check.status, check.detail) == unknown
     check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_tail()))
     assert (check.status, check.detail) == unknown
+
+
+def test_a_zone_key_frigate_made_up_isnt_checked_or_quoted(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].update(
+        {"zone_a6669b83": {"friendly_name": "Main St."}}
+    ))
+    assert config_group(apps)["config.zone_names"].status == "ok"
+    add_zones(apps, "zone_1420_oak_st")
+    detail = config_group(apps)["config.zone_names"].detail
+    assert detail.startswith("1 zone name on camera picam_h265 looks like an address or a person's name.")
+    assert "Main" not in detail and "a6669b83" not in detail

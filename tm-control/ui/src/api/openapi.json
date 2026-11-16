@@ -5635,15 +5635,27 @@
               }
             ],
             "title": "Check"
+          },
+          "friendly_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Friendly Name"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "check"
+          "check",
+          "friendly_name"
         ],
         "title": "ZoneName",
-        "description": "One of a camera's zones other than the four the flows read, saved by name with every event that enters it."
+        "description": "One of a camera's zones other than the four the flows read, saved by its key with every event that enters it."
       }
     }
   }

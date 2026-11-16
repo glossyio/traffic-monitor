@@ -8,6 +8,7 @@ answer, or runs in safe mode with no cameras, gives no cameras (None), and then 
 every one is "unknown", never "absent".
 """
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel
@@ -39,10 +40,11 @@ class CameraIssue(BaseModel):
 
 
 class ZoneName(BaseModel):
-    """One of a camera's zones other than the four the flows read, saved by name with every event that enters it."""
+    """One of a camera's zones other than the four the flows read, saved by its key with every event that enters it."""
 
-    name: str  # as typed in Frigate
-    check: Literal["unknown_word", "pattern"] | None  # check_name's answer: a note, a warning, or nothing
+    name: str  # the zone's key in Frigate (its ID), which is what an event saves
+    check: Literal["unknown_word", "pattern"] | None  # check_name's answer; None too for a key Frigate made up
+    friendly_name: str | None  # Frigate's name for a zone whose key Frigate made up from it; None for every other
 
 
 class CameraRow(BaseModel):
@@ -86,12 +88,25 @@ def _zones_off(camera: dict) -> list[str]:
     return [zone for zone in ZONES if zone in zones and probes.mapping(zones[zone]).get("enabled") is False]
 
 
+# The key Frigate's zone editor makes up when the typed name, lower-cased with "_" for spaces, has a character it
+# can't use in a key: "zone_" and 8 hex characters of a hash of the name. It says nothing about the place.
+_MADE_UP = re.compile(r"zone_[0-9a-f]{8}")
+
+
+def _zone_name(key: str, value: object) -> ZoneName:
+    friendly_name = probes.mapping(value).get("friendly_name")
+    if _MADE_UP.fullmatch(key) and isinstance(friendly_name, str) and friendly_name and friendly_name != key:
+        return ZoneName(name=key, check=None, friendly_name=friendly_name)
+    return ZoneName(name=key, check=check_name(key), friendly_name=None)
+
+
 def _zone_names(camera: dict) -> list[ZoneName]:
     """The camera's other zones that are on, with what the name check found. A zone that is off is left out: Frigate
-    ignores it, so its name reaches no event."""
+    ignores it, so its name reaches no event. A key Frigate made up isn't checked, and carries Frigate's name so the
+    page can show which zone it is."""
     zones = probes.mapping(camera.get("zones"))
     return [
-        ZoneName(name=str(zone), check=check_name(str(zone)))
+        _zone_name(str(zone), value)
         for zone, value in zones.items()
         if zone not in ZONES and probes.mapping(value).get("enabled") is not False
     ]

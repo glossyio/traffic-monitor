@@ -232,3 +232,34 @@ def test_a_near_miss_of_a_fixed_name_is_another_zone():
     [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": {"Zone_Capture": {}}}})
     assert "zone_capture" in row.zones_missing
     assert [(zone.name, zone.check) for zone in row.zone_names] == [("Zone_Capture", None)]
+
+
+def test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name():
+    zones = ZONES | {
+        "zone_a6669b83": {"friendly_name": "Main St."},  # made up: three digits in a row, and not an address
+        "zone_a9bacc03": {"friendly_name": "Bus lane (north)"},
+        "zone_deadbeef": {"friendly_name": None},  # typed by hand: no name beside it, so it is checked
+        "zone_a2939495": {"friendly_name": "zone_a2939495"},  # the name is the key: checked
+        "1420_oak_st": {"friendly_name": "1420 Oak St"},  # a key made from the name: checked, name not carried
+    }
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert [(zone.name, zone.check, zone.friendly_name) for zone in row.zone_names] == [
+        ("zone_a6669b83", None, "Main St."),
+        ("zone_a9bacc03", None, "Bus lane (north)"),
+        ("zone_deadbeef", "unknown_word", None),
+        ("zone_a2939495", "pattern", None),
+        ("1420_oak_st", "pattern", None),
+    ]
+
+
+def test_made_up_keys_alone_raise_no_issue():
+    zones = ZONES | {"zone_a6669b83": {"friendly_name": "Main St."}}
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert row.issues == []
+
+
+def test_a_friendly_name_of_an_odd_shape_is_no_name():
+    for name in ("", 12, [], {}):
+        zones = ZONES | {"zone_a6669b83": {"friendly_name": name}}
+        [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+        assert (row.zone_names[0].check, row.zone_names[0].friendly_name) == ("pattern", None)
