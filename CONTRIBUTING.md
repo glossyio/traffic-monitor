@@ -30,6 +30,8 @@ Two fields say where an issue came from and what it costs to leave:
 | | Medium | Something fails or misleads, and there's a way around it |
 | | Low | Cosmetic, rare, or seen only in development |
 
+A problem that gives someone a way in is reported privately first; see [SECURITY.md](SECURITY.md).
+
 `area:` labels say which part of the product an issue is about, and `security` and `privacy` mark hardening and privacy work. A feature built over several pull requests is a parent issue with a sub-issue for each piece. The one open milestone holds what must be in the next release.
 
 Ideas with no design yet go to [Discussions → Ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas), not issues. An idea isn't a commitment; when one is picked up, it becomes an issue and the discussion links to it.

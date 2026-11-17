@@ -4,8 +4,8 @@
 
 If you find a way for someone to get into a Traffic Monitor, read its data, or take it over without permission, please report it privately:
 
-1. Open the repository's [Security tab](https://github.com/glossyio/traffic-monitor/security).
-2. Choose **Report a vulnerability**, or go straight to the [report form](https://github.com/glossyio/traffic-monitor/security/advisories/new).
+1. Open the [report form](https://github.com/glossyio/traffic-monitor/security/advisories/new).
+2. If that link doesn't open the form, go to the repository's [security page](https://github.com/glossyio/traffic-monitor/security) and choose **Report a vulnerability**.
 
 Never report it in a public issue, discussion, or the chat, because others could use it before it's fixed.
 
@@ -19,7 +19,7 @@ Leave out camera images, video, plate reads, real passwords, keys, and tokens.
 
 ## What happens next
 
-The report and the conversation about it stay private between you and the maintainers. Traffic Monitor is maintained by volunteers, so we answer as soon as we can. When the fix is released, we describe the problem in its pull request and credit you unless you'd rather we didn't.
+The report and the conversation about it stay private between you and the maintainers. Traffic Monitor is maintained by volunteers, so we answer as soon as we can. Once a release has the fix, we describe the problem in the release notes and credit you unless you'd rather we didn't.
 
 ## Supported versions
 

@@ -1,6 +1,6 @@
 ---
 name: Task
-about: A ready-to-build piece of a larger feature, filed as a sub-issue of its parent
+about: A ready-to-build piece of work, such as one part of a larger feature (filed as a sub-issue), or docs, tests, or cleanup
 title: ''
 labels: ''
 assignees: ''

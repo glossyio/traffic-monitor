@@ -10,8 +10,8 @@ type: Bug
 
 <!--
 Please don't attach camera images or video, license plate reads, passwords, keys, tokens,
-or your device's exact location. To report a security problem, use the Security tab's
-"Report a vulnerability" instead of an issue.
+or your device's exact location. To report a security problem, use "Report a vulnerability"
+on the repository's security page instead of an issue.
 -->
 
 ## Describe the bug
@@ -38,7 +38,7 @@ What happens if this is never fixed? For example: data is wrong or lost, the dev
 - How you installed it (on the Pi, or from another computer with `-H`):
 
 ## Diagnostics
-If the control app is running, open the **Device** page, choose **Copy** under **Download diagnostics**, and paste the text below. Passwords, keys, and tokens are already replaced, but the text names the device and holds its serial number; replace those two before you paste.
+If the control app is running, sign in as an administrator, open the **Device** page, choose **Copy** under **Diagnostics**, and paste the text below. Passwords, keys, and tokens are already replaced. The text still holds the device's name and serial number, the names of its Wi-Fi network and hotspot, and the user name it was installed under; replace any you don't want public.
 
 <details><summary>Diagnostics</summary>
 

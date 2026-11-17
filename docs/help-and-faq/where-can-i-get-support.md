@@ -35,4 +35,4 @@ An issue may be closed without a full resolution, for example as a duplicate, af
 
 ## Report a security problem
 
-If you find a way for someone to get into a Traffic Monitor, read its data, or take it over without permission, report it privately through the repository's [Security tab](https://github.com/glossyio/traffic-monitor/security), not in an issue, a discussion, or the chat. [SECURITY.md](https://github.com/glossyio/traffic-monitor/blob/main/SECURITY.md) says what to include.
+If you find a way for someone to get into a Traffic Monitor, read its data, or take it over without permission, report it privately through the repository's [security page](https://github.com/glossyio/traffic-monitor/security), not in an issue, a discussion, or the chat. [SECURITY.md](https://github.com/glossyio/traffic-monitor/blob/main/SECURITY.md) says what to include.
