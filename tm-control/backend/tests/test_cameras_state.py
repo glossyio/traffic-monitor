@@ -241,6 +241,7 @@ def test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name():
         "zone_deadbeef": {"friendly_name": None},  # typed by hand: no name beside it, so it is checked
         "zone_a2939495": {"friendly_name": "zone_a2939495"},  # the name is the key: checked
         "1420_oak_st": {"friendly_name": "1420 Oak St"},  # a key made from the name: checked, name not carried
+        "zone_00001420": {"friendly_name": "Zone 00001420"},  # Frigate's first hex character is a letter: checked
     }
     [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
     assert [(zone.name, zone.check, zone.friendly_name) for zone in row.zone_names] == [
@@ -249,6 +250,7 @@ def test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name():
         ("zone_deadbeef", "unknown_word", None),
         ("zone_a2939495", "pattern", None),
         ("1420_oak_st", "pattern", None),
+        ("zone_00001420", "pattern", None),
     ]
 
 

@@ -89,8 +89,9 @@ def _zones_off(camera: dict) -> list[str]:
 
 
 # The key Frigate's zone editor makes up when the typed name, lower-cased with "_" for spaces, has a character it
-# can't use in a key: "zone_" and 8 hex characters of a hash of the name. It says nothing about the place.
-_MADE_UP = re.compile(r"zone_[0-9a-f]{8}")
+# can't use in a key: "zone_" and 8 hex characters of a hash of the name, the first turned into "a" when it is a
+# digit, so always a letter. It says nothing about the place.
+_MADE_UP = re.compile(r"zone_[a-f][0-9a-f]{7}")
 
 
 def _zone_name(key: str, value: object) -> ZoneName:
