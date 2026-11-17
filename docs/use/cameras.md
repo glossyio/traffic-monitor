@@ -31,7 +31,7 @@ An entry's row shows its name in bold, and Frigate's name beside it when the two
 * **Database capture**: whether the Traffic Monitor saves the camera's events in its database and sends them on. An event is recorded only when both are on.
 * **Radar**, and, when the Plate Recognizer add-on is installed, **Plates**.
 * **Recommended zones present** and the four zones the [flows expect](../setup-guide.md#3-adjust-the-zones), or **Recommended zones missing in Frigate** and the ones the camera lacks, or **turned off in Frigate** and the ones that are there but switched off. Frigate can turn a zone off in its configuration or from its live view, and an object never enters a zone that is off, so it counts as missing for the Traffic Monitor.
-* **Other zones enabled**: the camera's other zones that are on. Their names are saved with every event; see [Zone names are saved with your data](#zone-names-are-saved-with-your-data).
+* **Other zones enabled**: the camera's other zones that are on, by their IDs, with your name beside an ID that Frigate made up. Their IDs are saved with every event; see [Zone names are saved with your data](#zone-names-are-saved-with-your-data).
 * **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
 A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**.
@@ -101,14 +101,16 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 
 ## Zone names are saved with your data
 
-A zone's name is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Name zones for what they are, such as a compass direction (`zone_north`) or a lane (`zone_lane_bus`), not for a street, a house number, or a person.
+A zone's ID is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Frigate makes the ID from the name you type in its zone editor, in lower case with `_` for spaces, so `1420 Oak St` is saved as `1420_oak_st`. Name zones for what they are, such as a compass direction (`zone_north`) or a lane (`zone_lane_bus`), not for a street, a house number, or a person.
 
-The page checks the names of each camera's zones that are on:
+A name with other punctuation, or with letters outside a to z, gets an ID that Frigate makes up, such as `zone_a9bacc03`. The page shows your name beside that ID and doesn't check it, because the ID says nothing about the place.
 
-* On a camera whose events are recorded, an amber box names the zones whose names look like an address or a person's name: a number of three or more digits, an apostrophe, a street abbreviation such as `st` or `ave`, or a street word such as `lane` or `strasse` next to a word the check doesn't recognize. The Status page's **Zone names** check warns too.
-* A grey note names the zones whose names have a word the check doesn't recognize. The check knows about 200 English words for parts of a road, directions, and what moves on it, and can't tell whether another word is a street's name or a person's. A name in another language gets the note too, so review the names and leave them if they're fine.
+The page checks the IDs of each camera's other zones that are on:
 
-To rename a zone, choose **Edit its zones in Frigate** and rename it there. Events already saved keep the old name. The page never changes a zone itself.
+* On a camera whose events are recorded, an amber box names the zones whose names look like an address or a person's name: a number of three or more digits, an apostrophe, a street abbreviation such as `st` or `ave`, or a street word such as `lane` or `strasse` together with a word the check doesn't recognize, or an ordinal such as `5th`. The Status page's **Zone names** check warns too.
+* A grey note names the zones whose names have a word the check doesn't recognize. The check knows about 200 English words for parts of a road, directions, and what moves on it, and can't tell whether another word is a street's name or a person's. A word in another language written in a to z, such as `nord`, gets the note too, so review the names and leave them if they're fine.
+
+To rename a zone, choose **Edit its zones in Frigate** and change its name there. Its ID follows the new name. Events already saved keep the old ID. The page never changes a zone itself.
 
 ## What still carries Frigate's name
 
