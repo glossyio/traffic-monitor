@@ -894,3 +894,119 @@ The Global Constraints and the review fixes' constraints still hold. The code st
     - The screenshots line becomes "Screenshots are in the first comment." and its hidden `attach:` comment goes.
     - The AI section names the fourth review (of the whole branch at `c1c1d6a`): it found nothing to fix in the branch and this gap on `dev`, fixed in the new commit. "The three whole-branch reviews" becomes four.
   - `issue-306-comment.md` and `followup-issue.md` stay as they are.
+
+---
+
+## Fifth review fix (added 2026-11-17, after the review of Task 14)
+
+The review of `c1c1d6a..d40b3e2` found the two commits to be what Task 14 says, and one form of the same redirect that the new edge misses. Task 15 is new commits on top of `d40b3e2`; no earlier commit is rewritten.
+
+### What the review found
+
+Read from `tm-control/backend/tm_control/adapters/redact.py` and `tm-control/backend/tm_control/modules/auth/router.py`, and from Frigate v0.18.1's source (`web/src/hooks/use-api-filter.ts`, `web/src/pages/Explore.tsx`), and run through verify and `diagnostics.build` in a scratch test. Not seen on a device.
+
+- Task 14's edge is `%` and two hex digits. verify encodes the whole address once more, so an escape the address already had becomes `%25` and its two digits: `%2C` turns into `%252C`. The three characters before the name are then `52C`, which is not an escape, and `C` is a letter, so the name stays.
+- Frigate's Explore page keeps its filter in its address: `useApiFilterArgs` joins the selected cameras with a comma and writes them with react-router's `setSearchParams`, and `URLSearchParams` writes a comma as `%2C`. So the address is `/frigate/explore?cameras=oak_ave_wide%2Celm_st_north`, and without a session verify sends it to:
+
+  `/login?next=/frigate/explore%3Fcameras%3Doak_ave_wide%252Celm_st_north`
+
+- So an admin who filtered Explore to two or more cameras, and reloads or reopens that tab after the session ended, leaves every camera's name after the first in the proxy's access log in a form Copy diagnostics keeps. The first one, after `%3D`, is replaced since Task 14.
+- The component that calls the hook (`SearchView`) was not read, so "Explore puts the camera filter in its address" rests on the hook and on `cameras` being in Explore's key list.
+- Two levels are enough: verify encodes once, and `/login` isn't behind the login, so nothing encodes a third time.
+- With a session, the proxy logs Explore's own address (`cameras=oak_ave_wide%2Celm_st_north`). `dev` kept the second name there for Task 14's reason, and `599e450` already replaces it; Step 1's second test holds that line too.
+
+### Task 15: A camera name after an escape that was encoded once more
+
+The Global Constraints and the review fixes' constraints still hold. The code step is test-first. Both tests below were tried on a scratch copy at `d40b3e2`: they fail there, and pass with Step 2's change.
+
+- [ ] **Step 1: The failing tests.** Files: `tm-control/backend/tests/test_redact.py`, `tm-control/backend/tests/test_api_system_info.py`.
+
+  In `test_redact.py`, after `test_redact_words_reads_a_percent_escape_as_an_edge`:
+
+  ```python
+  def test_redact_words_reads_an_escape_encoded_again_as_an_edge():
+      # A login redirect encodes an escape the address already had once more: %2C becomes %252C
+      line = "next=/frigate/explore%3Fcameras%3Doak_ave_wide%252Celm_st_north HTTP/1.1"
+      assert redact_words(line, ["oak_ave_wide", "elm_st_north"]) == (
+          "next=/frigate/explore%3Fcameras%3D<redacted>%252C<redacted> HTTP/1.1"
+      )
+      assert redact_words("camera%253doak_ave_wide", ["oak_ave_wide"]) == "camera%253d<redacted>"
+      # Not one: without the percent sign, and a longer name after it
+      assert redact_words("A252Coak_ave_wide %252Coak_ave_wide_2", ["oak_ave_wide"]) == (
+          "A252Coak_ave_wide %252Coak_ave_wide_2"
+      )
+  ```
+
+  In `test_api_system_info.py`, after `test_diagnostics_replace_a_camera_name_in_a_login_redirect`. It takes the redirect from verify itself, as that test does:
+
+  ```python
+  def test_diagnostics_replace_a_list_of_cameras_in_a_login_redirect(device_client, login, host, tmp_path, monkeypatch):
+      """Frigate's Explore page writes its camera filter into its address with the comma as %2C. The login redirect
+      encodes that once more, as %252C, and the name after it is replaced like the first one."""
+      config_dir = tmp_path / "nr"
+      config_dir.mkdir()
+      config = config_dir / "config.yml"
+      config.write_text(
+          "sensors:\n  cameras:\n"
+          "    camera_1_3fa9c2:\n      frigate_camera: oak_ave_wide\n      enabled: true\n"
+          "    camera_2_77aa01:\n      frigate_camera: elm_st_north\n      enabled: true\n"
+      )
+      device_client.app.state.config_path = config
+      monkeypatch.setattr(
+          frigate, "config", lambda: {"cameras": {"oak_ave_wide": {"enabled": True}, "elm_st_north": {"enabled": True}}}
+      )
+      page = "/frigate/explore?cameras=oak_ave_wide%2Celm_st_north"
+      r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": page, "X-TM-Required-Role": "viewer"})
+      assert r.status_code == 401
+      redirect = r.headers["X-TM-Redirect"]
+      assert redirect == "/login?next=/frigate/explore%3Fcameras%3Doak_ave_wide%252Celm_st_north"
+      host.journal = lambda unit, lines: [
+          f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {page} HTTP/1.1" 302 145',
+          f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {redirect} HTTP/1.1" 200 612',
+      ]
+      login(device_client, *ADMIN)
+      text = diagnostics(device_client).text
+      assert '"GET /frigate/explore?cameras=<redacted>%2C<redacted> HTTP/1.1" 302 145' in text
+      assert '"GET /login?next=/frigate/explore%3Fcameras%3D<redacted>%252C<redacted> HTTP/1.1" 200 612' in text
+      assert "oak_ave_wide" not in text
+      assert "elm_st_north" not in text
+  ```
+
+  Run `python -m pytest tm-control/backend/tests/test_redact.py tm-control/backend/tests/test_api_system_info.py -q` and see both fail: the first on its first assertion, the second on the `/login?next=` line (its plain line already passes).
+- [ ] **Step 2: The code.** File: `tm-control/backend/tm_control/adapters/redact.py`.
+
+  The left edge moves out of `redact_words` into a constant after `_WORD_EDGE`, with a third alternative, so the pattern's line gets shorter, not longer:
+
+  ```python
+  _WORD_EDGE = "A-Za-z0-9_"
+  # Where a word may start: not after a letter, digit, or underscore; or directly after a percent escape (%3D), which
+  # ends in one; or after an escape that was encoded once more (%253D)
+  _LEFT_EDGE = rf"(?:(?<![{_WORD_EDGE}])|(?<=%[0-9A-Fa-f]{{2}})|(?<=%25[0-9A-Fa-f]{{2}}))"
+  ```
+
+  and in `redact_words`:
+
+  ```python
+      pattern = re.compile(
+          rf"{_LEFT_EDGE}(?:{'|'.join(re.escape(word) for word in ordered)})(?![{_WORD_EDGE}])"
+      )
+  ```
+
+  The right edge and the rest stay. The docstring's sentence about the escape gains one more: so does an escape that was encoded once more (`%252C`), which the redirect holds where the address already had an escape. `diagnostics.py` doesn't change. Both tests pass, and so does the rest of both files.
+
+  Docs in the same commit: `docs/development/tm-control.md`, the Copy diagnostics bullet. The clause after "(whole words, longest first;" becomes: a percent escape before a name, or one that was encoded once more (`%252C`), counts as an edge, so every name in a login redirect's `next=` is replaced too. `CLAUDE.md` and `docs/use/device-health.md` stay as they are.
+
+  Commit: `Replace a Frigate camera name after a doubly encoded escape in Copy diagnostics`.
+
+  Not in this step: an escape encoded a third time (nothing makes one), and the other kinds of escape Task 14 left out.
+- [ ] **Step 3:** The three off-device commands pass at the head (expected: 3094 passed, 1 skipped; UI 591; `mkdocs build --strict` clean); `dump-openapi` and `api:generate` leave no diff.
+- [ ] **Step 4: Bench: none is planned**, for Task 14's reasons: `redact_words` is a function of text, and the test takes the redirect from verify. A bench unit could show it only with two cameras whose names in Frigate differ from their entries' keys; never change a unit's cameras to make them. No device contact in this task.
+- [ ] **Step 5: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as before, and no blank line at the end of the file. Commit it last: `Add the fifth review's fix to the zone name check's plan`.
+- [ ] **Step 6: The drafts, then stop.** In the SDD workspace. Nothing is pushed, and the PR's body on GitHub is not changed, until the maintainer has read the four unpushed commits and the draft.
+  - `pr-body.md` (start from the draft as Task 14 left it, not from the posted body; its `Title:` line and the blank line after it stay the draft's own header and are not part of the body):
+    - The Copy diagnostics bullet gains, after Task 14's sentence: "The redirect also encodes an escape the address already had once more (`%2C` becomes `%252C`), as for each camera after the first in the filter of Frigate's Explore page; that form counts as an edge too."
+    - Docs: the `docs/development/tm-control.md` sentence says "a percent escape before a camera name, or one that was encoded once more, counts as a word's edge, so every name in a login redirect's `next=` is replaced too".
+    - Testing: the new counts and Step 2's commit. The paragraph that starts "The head is one code commit past the fourth run" becomes two code commits: `599e450` and Step 2's commit both change only the left edge in `redact_words` and add its tests; no bench run, and why, as it says now.
+    - The AI section gains, after the fourth review's sentence: "A fifth fresh review, of `599e450`, found that the redirect encodes an escape the address already had once more, so a second camera's name after `%252C` stayed, fixed in" Step 2's commit. "The four whole-branch reviews" becomes "the five reviews".
+    - The release note stays as it is.
+  - `issue-306-comment.md` and `followup-issue.md` stay as they are.
