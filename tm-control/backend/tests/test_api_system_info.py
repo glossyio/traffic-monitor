@@ -636,6 +636,31 @@ def test_diagnostics_leave_out_what_a_change_to_frigates_settings_held(device_cl
     assert "GET /frigate/api/stats?fresh=1 HTTP/1.1" in text
 
 
+def test_diagnostics_leave_out_a_change_to_frigates_settings_sent_to_the_login_page(device_client, login, host):
+    """A save made after the session ended is sent to /login?next=<its address, percent-encoded>, and the browser
+    repeats the PUT there, so the proxy's access log holds config/set%3F and the encoded query string. It is replaced
+    like the plain form, in either letter case and with the slash encoded too."""
+    saved = ("/frigate/api/config/set?cameras.picam_h265.zones.1420_oak_st.coordinates=0.1,0.2"
+             "&cameras.picam_h265.zones.1420_oak_st.friendly_name=1420%20Oak%20St")
+    r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": saved, "X-TM-Required-Role": "viewer"})
+    assert r.status_code == 401
+    redirect = r.headers["X-TM-Redirect"]
+    assert redirect.startswith("/login?next=/frigate/api/config/set%3Fcameras.picam_h265.zones.1420_oak_st.")
+    host.journal = lambda unit, lines: [
+        f'192.0.2.10 - - [17/Nov/2026:09:15:02 -0800] "PUT {redirect} HTTP/1.1" 405 157',
+        '192.0.2.10 - - [17/Nov/2026:09:15:03 -0800] "GET /login?next=%2ffrigate%2fapi%2fconfig%2fset%3fcameras.'
+        'picam_h265.zones.1420_oak_st.friendly_name%3d1420%2520Oak%2520St HTTP/1.1" 200 612',
+        '192.0.2.10 - - [17/Nov/2026:09:15:04 -0800] "GET /frigate/api/config/schema.json HTTP/1.1" 200 2048',
+    ]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert '"PUT /login?next=/frigate/api/config/set%3F<redacted> HTTP/1.1" 405 157' in text
+    assert '"GET /login?next=%2ffrigate%2fapi%2fconfig%2fset%3f<redacted> HTTP/1.1" 200 612' in text
+    for held in ("oak_st", "Oak"):
+        assert held not in text, held
+    assert "GET /frigate/api/config/schema.json HTTP/1.1" in text
+
+
 def frigate_file(host, text):
     """Frigate's config file where the host keeps it, which is what Frigate reads when it starts."""
     path = Path(host.codedir) / "frigate" / "config" / "config.yml"

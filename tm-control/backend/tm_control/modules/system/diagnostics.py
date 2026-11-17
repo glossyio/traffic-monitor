@@ -7,7 +7,8 @@ the apps' .env files (the broker password can show up inside a URL in a log line
 token-, or secret-style key. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
 The names come from config.yml, Frigate's running config, Frigate's own config file (so a stopped Frigate hides
 none), and the config.yml backups. So is the query string of every saved change to Frigate's settings (config/set),
-which holds what was set, such as a zone's key and the name typed for it.
+which holds what was set, such as a zone's key and the name typed for it, and in its percent-encoded form, which a
+login redirect's next= carries.
 """
 
 import json
@@ -36,8 +37,9 @@ ENV_FILES = ("node-red-tm/node-red-tm.env", "frigate/frigate.env", "plate-recogn
 ENV_SECRET_KEY = re.compile(r"PASSWORD|PASSWD|SECRET|TOKEN|KEY", re.IGNORECASE)
 ENV_MIN_VALUE = 4  # shorter values would redact ordinary words
 # A saved change to Frigate's settings carries what it sets in the query string, and nginx's access log and Frigate's
-# journal keep the request line. The zone editor's holds a zone's key and the name typed for it.
-_CONFIG_SET = re.compile(r"(config/set\?)\S+")
+# journal keep the request line. The zone editor's holds a zone's key and the name typed for it. A save made without a
+# session is sent to the login page with its address percent-encoded in next=, so the encoded form is replaced too.
+_CONFIG_SET = re.compile(r"(config(?:/|%2F)set(?:\?|%3F))\S+", re.IGNORECASE)
 
 
 def env_secret_values(codedir: Path) -> list[str]:
