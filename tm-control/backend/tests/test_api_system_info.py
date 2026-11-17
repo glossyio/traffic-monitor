@@ -618,6 +618,33 @@ def test_diagnostics_replace_frigates_camera_names(device_client, login, host, t
     assert "oak_ave_wide_2 isn't <redacted>" in text  # a longer name isn't touched
 
 
+def test_diagnostics_replace_a_camera_name_in_a_login_redirect(device_client, login, host, tmp_path, monkeypatch):
+    """A page asked for after the session ended is sent to /login?next=<its address, percent-encoded>, so the proxy's
+    access log holds Frigate's name for the camera after %3D. It is replaced like the plain form."""
+    config_dir = tmp_path / "nr"
+    config_dir.mkdir()
+    config = config_dir / "config.yml"
+    config.write_text(
+        "sensors:\n  cameras:\n    camera_1_3fa9c2:\n      frigate_camera: oak_ave_wide\n      enabled: true\n"
+    )
+    device_client.app.state.config_path = config
+    monkeypatch.setattr(frigate, "config", lambda: {"cameras": {"oak_ave_wide": {"enabled": True}}})
+    page = "/frigate/settings?page=masksAndZones&camera=oak_ave_wide"
+    r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": page, "X-TM-Required-Role": "viewer"})
+    assert r.status_code == 401
+    redirect = r.headers["X-TM-Redirect"]
+    assert redirect == "/login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3Doak_ave_wide"
+    host.journal = lambda unit, lines: [
+        f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {page} HTTP/1.1" 302 145',
+        f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {redirect} HTTP/1.1" 200 612',
+    ]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert '"GET /frigate/settings?page=masksAndZones&camera=<redacted> HTTP/1.1" 302 145' in text
+    assert '"GET /login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3D<redacted> HTTP/1.1" 200 612' in text
+    assert "oak_ave_wide" not in text
+
+
 def test_diagnostics_leave_out_what_a_change_to_frigates_settings_held(device_client, login, host):
     """Frigate's zone editor saves with config/set and the zone's key and typed name in the query string, which nginx's
     access log and Frigate's journal keep: the whole query string is replaced. Other query strings stay."""

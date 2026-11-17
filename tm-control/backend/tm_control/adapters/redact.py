@@ -55,12 +55,14 @@ _WORD_EDGE = "A-Za-z0-9_"
 
 def redact_words(text: str, words: Iterable[str]) -> str:
     """text with each of `words` replaced by REDACTED where it stands as a whole word: not directly after or before a
-    letter, digit, or underscore, so a short word doesn't eat the longer ones that contain it. The words are matched
-    literally, the longest first; empty ones are ignored."""
+    letter, digit, or underscore, so a short word doesn't eat the longer ones that contain it. A percent escape
+    directly before a word counts as an edge too, because an escape ends in a letter or a digit, and a login
+    redirect's `next=` holds a camera's name after `%3D`. The words are matched literally, the longest first; empty
+    ones are ignored."""
     ordered = sorted({word for word in words if word}, key=len, reverse=True)
     if not ordered:
         return text
     pattern = re.compile(
-        rf"(?<![{_WORD_EDGE}])(?:{'|'.join(re.escape(word) for word in ordered)})(?![{_WORD_EDGE}])"
+        rf"(?:(?<![{_WORD_EDGE}])|(?<=%[0-9A-Fa-f]{{2}}))(?:{'|'.join(re.escape(word) for word in ordered)})(?![{_WORD_EDGE}])"
     )
     return pattern.sub(REDACTED, text)
