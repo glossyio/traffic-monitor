@@ -97,6 +97,19 @@ def test_redact_words_reads_a_percent_escape_as_an_edge():
     assert redact_words("A3Doak_ave_wide %3Doak_ave_wide_2", ["oak_ave_wide"]) == "A3Doak_ave_wide %3Doak_ave_wide_2"
 
 
+def test_redact_words_reads_an_escape_encoded_again_as_an_edge():
+    # A login redirect encodes an escape the address already had once more: %2C becomes %252C
+    line = "next=/frigate/explore%3Fcameras%3Doak_ave_wide%252Celm_st_north HTTP/1.1"
+    assert redact_words(line, ["oak_ave_wide", "elm_st_north"]) == (
+        "next=/frigate/explore%3Fcameras%3D<redacted>%252C<redacted> HTTP/1.1"
+    )
+    assert redact_words("camera%253doak_ave_wide", ["oak_ave_wide"]) == "camera%253d<redacted>"
+    # Not one: without the percent sign, and a longer name after it
+    assert redact_words("A252Coak_ave_wide %252Coak_ave_wide_2", ["oak_ave_wide"]) == (
+        "A252Coak_ave_wide %252Coak_ave_wide_2"
+    )
+
+
 def test_a_download_links_token_in_nginxs_log_is_hidden():
     line = (
         '10.42.0.23 - - [10/Nov/2026:08:11:15 +0000] '
