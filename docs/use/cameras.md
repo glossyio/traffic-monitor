@@ -110,7 +110,7 @@ The page checks the IDs of each camera's other zones that are on:
 * On a camera whose events are recorded, an amber box names the zones whose names look like an address or a person's name: a number of three or more digits, an apostrophe, a street abbreviation such as `st` or `ave`, or a street word such as `lane` or `strasse` together with a word the check doesn't recognize, or an ordinal such as `5th`. The Status page's **Zone names** check warns too.
 * A grey note names the zones whose names have a word the check doesn't recognize. The check knows about 200 English words for parts of a road, directions, and what moves on it, and can't tell whether another word is a street's name or a person's. A word in another language written in a to z, such as `nord`, gets the note too, so review the names and leave them if they're fine.
 
-To rename a zone, choose **Edit its zones in Frigate** and change its name there. Its ID follows the new name. Events already saved keep the old ID. The page never changes a zone itself.
+To rename a zone, choose **Edit its zones in Frigate** and change its name there. Its ID follows the new name. While the zone is one of the camera's required zones in Frigate's review settings, Frigate keeps its ID and changes only its name, and the page goes on showing the old ID: take the zone off that list, rename it, then add it back under its new ID. Events already saved keep the old ID. The page never changes a zone itself.
 
 ## What still carries Frigate's name
 
