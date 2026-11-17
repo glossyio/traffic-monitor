@@ -731,3 +731,75 @@ The Global Constraints and the review fixes' constraints still hold. Each code s
   - `pr-body.md`: the diagnostics change (in the summary, "Choices worth a look", Docs, and the bench section if Step 5 ran, by its time only; say so if it didn't run); new test counts and the commit they were run at; the limit gains `zone_3rd_main` and the zone IDs in Frigate's other query strings; the Docs section's "the names are saved as typed" becomes what is true (the ID Frigate makes from the name); the AI section says the plan was drafted at effort xhigh and names the second review.
   - `issue-306-comment.md`: one sentence on Copy diagnostics.
   - Screenshots to attach: `bench-desktop.png`, `cameras-desktop.png`, `cameras-phone.png`. Not the two `bench-added-*.png` files.
+
+---
+
+## Third review fixes (added 2026-11-17, after the review of Task 12)
+
+The review of `c47d463..5c37472` found Task 12 built as planned. It found one request line the new pattern misses, and one kind of log line no request-line pattern can reach. Task 13 is new commits on top of `5c37472`; no earlier commit is rewritten.
+
+### What the review found
+
+Read from `tm-control/backend/tm_control/modules/auth/router.py` and from Frigate's source at tag `v0.18.1` (`frigate/comms/dispatcher.py`, `frigate/__main__.py`, `frigate/config/config.py`, `frigate/api/app.py`).
+
+- **A save sent to the login page.** verify answers a request that has no session with a redirect to `/login?next=` and the original address percent-encoded (`quote(..., safe="/")`). nginx sends it as a 302, and a browser repeats a PUT at the new address. So a zone save pressed after the session ended (a logout in another tab, a changed password, an expired cookie) leaves this in the proxy's access log:
+
+  `"PUT /login?next=/frigate/api/config/set%3Fcameras.<camera>.zones.1420_oak_st.coordinates%3D…%26…friendly_name%3D1420%2520Oak%2520St HTTP/1.1"`
+
+  `config/set%3F` is not `config/set?`, so the zone's ID and the typed name stay in Copy diagnostics.
+- **Frigate's own error lines.** They are not request lines, and they hold a zone's ID: a zone on/off command that fails (`Unknown zone: <ID>`), the startup block for a config that doesn't validate (its `Key` line, and three `Message` lines that name a zone), and the traceback of a save Frigate refuses. For a zone that doesn't validate, the startup block's `Value` line can print the whole zone, the typed name included. The Status page's Frigate check quotes the `Message` lines of a safe-mode start. An operator in that state needs those lines read by whoever helps them, so they stay; the PR says so, and a follow-up issue records it.
+
+### Task 13: The encoded address, and what the PR says about Frigate's error lines
+
+The Global Constraints and the review fixes' constraints still hold. The code step is test-first.
+
+- [ ] **Step 1: The encoded address.** Files: `tm-control/backend/tm_control/modules/system/diagnostics.py`, `tm-control/backend/tests/test_api_system_info.py`.
+
+  Failing test first, after `test_diagnostics_leave_out_what_a_change_to_frigates_settings_held`. It takes the redirect from verify itself, so it follows the encoding if verify's ever changes:
+
+  ```python
+  def test_diagnostics_leave_out_a_change_to_frigates_settings_sent_to_the_login_page(device_client, login, host):
+      """A save made after the session ended is sent to /login?next=<its address, percent-encoded>, and the browser
+      repeats the PUT there, so the proxy's access log holds config/set%3F and the encoded query string. It is replaced
+      like the plain form, in either letter case and with the slash encoded too."""
+      saved = ("/frigate/api/config/set?cameras.picam_h265.zones.1420_oak_st.coordinates=0.1,0.2"
+               "&cameras.picam_h265.zones.1420_oak_st.friendly_name=1420%20Oak%20St")
+      r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": saved, "X-TM-Required-Role": "viewer"})
+      assert r.status_code == 401
+      redirect = r.headers["X-TM-Redirect"]
+      assert redirect.startswith("/login?next=/frigate/api/config/set%3Fcameras.picam_h265.zones.1420_oak_st.")
+      host.journal = lambda unit, lines: [
+          f'192.0.2.10 - - [17/Nov/2026:09:15:02 -0800] "PUT {redirect} HTTP/1.1" 405 157',
+          '192.0.2.10 - - [17/Nov/2026:09:15:03 -0800] "GET /login?next=%2ffrigate%2fapi%2fconfig%2fset%3fcameras.'
+          'picam_h265.zones.1420_oak_st.friendly_name%3d1420%2520Oak%2520St HTTP/1.1" 200 612',
+          '192.0.2.10 - - [17/Nov/2026:09:15:04 -0800] "GET /frigate/api/config/schema.json HTTP/1.1" 200 2048',
+      ]
+      login(device_client, *ADMIN)
+      text = diagnostics(device_client).text
+      assert '"PUT /login?next=/frigate/api/config/set%3F<redacted> HTTP/1.1" 405 157' in text
+      assert '"GET /login?next=%2ffrigate%2fapi%2fconfig%2fset%3f<redacted> HTTP/1.1" 200 612' in text
+      for held in ("oak_st", "Oak"):
+          assert held not in text, held
+      assert "GET /frigate/api/config/schema.json HTTP/1.1" in text
+  ```
+
+  See it fail on the first `<redacted>` line. Then the code: `_CONFIG_SET = re.compile(r"(config(?:/|%2F)set(?:\?|%3F))\S+", re.IGNORECASE)`. Its comment gains a sentence saying why (a save made without a session is sent to the login page with its address percent-encoded in `next=`), and the module docstring a clause. `build` doesn't change. Both tests pass.
+
+  Docs in the same commit, a clause each: `docs/development/tm-control.md` (the Copy diagnostics bullet) and `CLAUDE.md` (the zone names sentence of the camera contract) say the query string is replaced after `config/set?` and after its percent-encoded form, which a login redirect's `next=` carries. `docs/use/device-health.md` stays as it is.
+
+  Commit: `Replace a percent-encoded config/set address in Copy diagnostics too`.
+- [ ] **Step 2:** The three off-device commands pass at the head; `dump-openapi` and `api:generate` leave no diff.
+- [ ] **Step 3: Bench**, only after the maintainer says go: a new `tmdev check` on a `pii_free` unit at the head, `-t tm-control -t revproxy`. This run changes nothing in Frigate: the request has no session, so the proxy never passes it on. Record detection, snapshots, and recording, and the camera's zones, before and after; they stay off, and the zones stay the four. Restore the unit's earlier branch after.
+  1. Through the proxy, with no session cookie, send the editor's form of request for a zone `1420_oak_st` named `1420 Oak St`. The answer is a 302 whose `Location` is `/login?next=/frigate/api/config/set%3F…`. Send the same PUT to that address, as a browser does (Python's `urllib` won't follow a 302 for a PUT, so the script sends it).
+  2. Count, without printing them, the `revproxy.service` journal lines that hold `config/set%3F` and the ID: at least 1. With an admin session, Copy diagnostics shows `config/set%3F<redacted>` for that line and `config/set?<redacted>` for the first request's line, and holds neither the ID nor the name.
+
+  If the `Location` or the journal's line doesn't have the shape Step 1's test assumes, stop and report.
+- [ ] **Step 4: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as before, and no blank line at the end of the file. Commit it last: `Add the third review's fixes to the zone name check's plan`.
+- [ ] **Step 5: The drafts**, in the SDD workspace. Nothing is pushed.
+  - `pr-body.md`:
+    - The Copy diagnostics bullet says the percent-encoded form is replaced too, and when it arises.
+    - "Limits" gains: "A line Frigate logs about an error in a zone's settings can name the zone's ID, and for a zone that doesn't validate, the name typed for it. Copy diagnostics keeps those lines, because whoever helps needs them."
+    - Testing: the new counts and the commit they were run at; the bench run by its time only if Step 3 ran, and if it didn't, that the third run was at `082c8c3` and what the one later code commit changes.
+    - The AI section names the third review and what it found, and no longer says "both" reviews.
+  - `issue-306-comment.md`: the Copy diagnostics sentence says what is replaced (what a zone's save held, in the request's plain and percent-encoded forms), not that the diagnostics never carry a zone's name.
+  - `followup-issue.md`, new, for the maintainer to file: "Copy diagnostics: Frigate's config-error lines can hold a zone's ID or name". It says which lines (from "What the review found" above), that it was found by reading Frigate's source during an AI-assisted review and not seen on a device, and one way to fix it: replace each zone's `friendly_name` by value, read from Frigate's running config and its config file as the camera names are, which can't cover a name that was renamed away. No device names or addresses.
