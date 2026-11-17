@@ -662,10 +662,72 @@ Load the three skills Task 4 names. **Files:** `schema.d.ts` (regenerated), `row
 
   If item 2 doesn't give those keys, stop and report: Task 8's rule rests on it.
 
-  The bench run found two things this plan didn't know. In item 2 the editor gave `zone_a647021c` for `Bus lane (north)`, not `zone_a9bacc03`, and the ID changed with each character typed: the key has the shape Task 8 reads, but the hash isn't of the name alone, so `zone_a9bacc03` is only an example. Item 4 showed the `required_zones` behaviour, so its docs sentence is a commit of its own after Task 10's.
+  The bench run found two things this plan didn't know. In item 2 the editor gave `zone_a647021c` for `Bus lane (north)`, not `zone_a9bacc03`. The key has the shape Task 8 reads, which is all the rule uses. The source's hash is of the typed name alone and gives `zone_a9bacc03` for that name, so why the unit's differed was not found; `zone_a9bacc03` in the docs and tests is only an example. Item 4 showed the `required_zones` behaviour, so its docs sentence is a commit of its own after Task 10's.
 - [ ] **Step 3: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as the first copy, and no blank line at the end of the file. Commit it last: `Add the review fixes to the zone name check's plan`.
 - [ ] **Step 4: The drafts**, in the SDD workspace, for the maintainer to read. Nothing is pushed.
   - `pr-body.md`: add a title line; the new behaviour (made-up keys, ordinals, single characters) and the second bench check by its time only; new test counts; the AI section names each model's part, as PR 326's does (Fable 5.2 for the plan and the whole-branch review, the implementing model for the code).
   - Correct two sentences the review found wrong: the docs screenshot shows the old zones line ("Zones: all four") and the old button name; and the pattern rule is "together with", not "next to".
   - `issue-306-comment.md`: one sentence on Frigate's IDs and the made-up ones; "together with".
   - Attach one bench screenshot of the Cameras page, not two: the first run's "phone" file was a copy of the desktop one.
+
+---
+
+## Second review fixes (added 2026-11-16, after the review of Tasks 7 to 11)
+
+The review of `0e7497a..c47d463` found no fault in the code of Tasks 7 to 10. It found one thing the device does that the branch's promise doesn't cover, three sentences to correct, and a rule to tighten. Task 12 is new commits on top of `c47d463`; no earlier commit is rewritten.
+
+### What the review found
+
+Read from Frigate's source at tag `v0.18.1` (`web/src/components/settings/ZoneEditPane.tsx`, `web/src/utils/stringUtil.ts`) and the second bench run's record.
+
+- The zone editor saves with `PUT config/set?cameras.<camera>.zones.<key>.coordinates=…&…friendly_name=<the typed name, URL-encoded>`. The key and the typed name are in the query string; the body holds two flags. nginx's access log (`revproxy.service`) and Frigate's own journal keep the request line, and Copy diagnostics takes the last 50 lines of each unit. The bench found the typed name there (`Oak`, with its capital).
+- Frigate replaces a made-up ID's first hex character with `a` when it is a digit, so the shape is `zone_`, a letter `a` to `f`, and 7 hex characters.
+- The editor keeps a zone's ID on rename while the zone is in any of six `required_zones` lists (`review.alerts`, `review.detections`, `snapshots`, `mqtt`, `objects.genai`, `onvif.autotracking`) or a profile overrides it.
+
+### Task 12: Diagnostics, the made-up shape, and three sentences
+
+The Global Constraints and the review fixes' constraints still hold. Each code step is test-first.
+
+- [ ] **Step 1: Copy diagnostics.** Files: `tm-control/backend/tm_control/modules/system/diagnostics.py`, `tm-control/backend/tests/test_api_system_info.py`.
+
+  Failing test first, beside `test_diagnostics_replace_frigates_camera_names`, with `host.journal` giving three lines:
+
+  ```python
+  host.journal = lambda unit, lines: [
+      '192.0.2.10 - - [16/Nov/2026:22:04:11 -0800] "PUT /frigate/api/config/set?cameras.picam_h265.zones.1420_oak_st.'
+      'coordinates=0.1,0.2&cameras.picam_h265.zones.1420_oak_st.friendly_name=1420%20Oak%20St HTTP/1.1" 200 61',
+      'PUT /api/config/set?cameras.picam_h265.zones.zone_a9bacc03.friendly_name=Bus%20lane%20(north) HTTP/1.1',
+      '192.0.2.10 - - [16/Nov/2026:22:04:12 -0800] "GET /frigate/api/stats?fresh=1 HTTP/1.1" 200 512',
+  ]
+  ```
+
+  The text holds `config/set?<redacted> HTTP/1.1` for both, holds none of `oak_st`, `Oak`, `a9bacc03`, `Bus%20lane`, and still holds `stats?fresh=1`.
+
+  Then the code: in `diagnostics.py`, `_CONFIG_SET = re.compile(r"(config/set\?)\S+")`, with a comment saying why (a change to Frigate's settings carries what it sets in the query string; the zone editor's holds a zone's key and the name typed for it). `build` replaces each match with the group and `REDACTED` (imported from `adapters.redact`) before the other two redactions. Add a sentence to the module docstring.
+
+  Docs in the same commit:
+  - `docs/use/device-health.md`, "Download diagnostics": one sentence after the camera names one. What a saved change to Frigate's settings held, such as a zone's name, is replaced too.
+  - `docs/development/tm-control.md` (the Copy diagnostics bullet) and `CLAUDE.md` (the zone names sentence of the camera contract): a clause each.
+
+  Commit: `Leave what a change to Frigate's settings held out of Copy diagnostics`.
+
+  Not in this step: Frigate's own pages may put a zone's ID in other query strings (a filter by zone). Those hold the ID, which is saved with the data anyway, never the typed name. Say so in the PR body's limit.
+- [ ] **Step 2: The made-up shape.** Files: `tm-control/backend/tm_control/modules/cameras/state.py`, `tm-control/backend/tests/test_cameras_state.py`.
+
+  Add to `test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name`: `"zone_00001420": {"friendly_name": "Zone 00001420"}` gives `("zone_00001420", "pattern", None)`; see it fail. Then `_MADE_UP = re.compile(r"zone_[a-f][0-9a-f]{7}")`, and its comment says Frigate turns a leading digit into `a`. In `docs/development/tm-control.md` and `CLAUDE.md`, "`zone_` and 8 hex characters" gains "the first a letter". Commit: `Read a made-up zone key's first character as a letter`.
+- [ ] **Step 3: Two sentences in `docs/use/cameras.md`.**
+  - The amber rule: "…or a street word such as `lane` or `strasse` together with an ordinal such as `5th` or a word the check doesn't recognize." An ordinal alone is not amber.
+  - Renaming: "While the zone is on one of the camera's required-zones lists in Frigate (for reviews, snapshots, MQTT, and a few others), or a Frigate profile changes it, Frigate keeps its ID and changes only its name, and the page goes on showing the old ID: take the zone off those lists, rename it, then add it back under its new ID."
+
+  `mkdocs build --strict` passes. Commit: `Correct two sentences about zone names in the Cameras docs`.
+- [ ] **Step 4:** The three off-device commands pass at the head; `dump-openapi` and `api:generate` leave no diff.
+- [ ] **Step 5: Bench**, only after the maintainer says go: a new `tmdev check` on a `pii_free` unit at the head, `-t tm-control -t revproxy`. Record detection, snapshots, and recording before and after; they stay off. Restore the unit's earlier branch after.
+  1. Through the proxy, send the editor's own form of request (the values in the query string) to add one zone with a `friendly_name`. Copy diagnostics shows `config/set?<redacted>` in the `revproxy.service` and `frigate.service` sections, and holds neither the zone's key nor its name.
+  2. Delete the zone. `/api/config` (with `X-Cache-Bypass: 1`) has only the four zones. Record the cleanup.
+
+  If the journals' lines don't have the shape Step 1's test assumes, stop and report.
+- [ ] **Step 6: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as before, and no blank line at the end of the file. The copy now carries the corrected bench paragraph in Task 11 Step 2. Commit it last: `Add the second review's fixes to the zone name check's plan`.
+- [ ] **Step 7: The drafts**, in the SDD workspace. Nothing is pushed.
+  - `pr-body.md`: the diagnostics change (in the summary, "Choices worth a look", Docs, and the bench section if Step 5 ran, by its time only; say so if it didn't run); new test counts and the commit they were run at; the limit gains `zone_3rd_main` and the zone IDs in Frigate's other query strings; the Docs section's "the names are saved as typed" becomes what is true (the ID Frigate makes from the name); the AI section says the plan was drafted at effort xhigh and names the second review.
+  - `issue-306-comment.md`: one sentence on Copy diagnostics.
+  - Screenshots to attach: `bench-desktop.png`, `cameras-desktop.png`, `cameras-phone.png`. Not the two `bench-added-*.png` files.
