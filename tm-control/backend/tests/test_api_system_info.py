@@ -618,6 +618,24 @@ def test_diagnostics_replace_frigates_camera_names(device_client, login, host, t
     assert "oak_ave_wide_2 isn't <redacted>" in text  # a longer name isn't touched
 
 
+def test_diagnostics_leave_out_what_a_change_to_frigates_settings_held(device_client, login, host):
+    """Frigate's zone editor saves with config/set and the zone's key and typed name in the query string, which nginx's
+    access log and Frigate's journal keep: the whole query string is replaced. Other query strings stay."""
+    host.journal = lambda unit, lines: [
+        '192.0.2.10 - - [16/Nov/2026:22:04:11 -0800] "PUT /frigate/api/config/set?cameras.picam_h265.zones.1420_oak_st.'
+        'coordinates=0.1,0.2&cameras.picam_h265.zones.1420_oak_st.friendly_name=1420%20Oak%20St HTTP/1.1" 200 61',
+        'PUT /api/config/set?cameras.picam_h265.zones.zone_a9bacc03.friendly_name=Bus%20lane%20(north) HTTP/1.1',
+        '192.0.2.10 - - [16/Nov/2026:22:04:12 -0800] "GET /frigate/api/stats?fresh=1 HTTP/1.1" 200 512',
+    ]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert '"PUT /frigate/api/config/set?<redacted> HTTP/1.1" 200 61' in text
+    assert "PUT /api/config/set?<redacted> HTTP/1.1" in text
+    for held in ("oak_st", "Oak", "a9bacc03", "Bus%20lane"):
+        assert held not in text, held
+    assert "GET /frigate/api/stats?fresh=1 HTTP/1.1" in text
+
+
 def frigate_file(host, text):
     """Frigate's config file where the host keeps it, which is what Frigate reads when it starts."""
     path = Path(host.codedir) / "frigate" / "config" / "config.yml"
