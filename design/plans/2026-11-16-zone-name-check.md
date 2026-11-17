@@ -532,3 +532,140 @@ git commit   # subject: Document that zone names are saved with every event, and
   - the PR title and body from `.github/PULL_REQUEST_TEMPLATE.md`, against `dev`, with "Refs #306" (it doesn't close the issue: `sub_label` is still to do), the bench check's id, and the template's "Docs" and "AI assistance" sections filled in;
   - a comment for issue 306 saying what was decided for zone names and why: they stay as typed because the Movements page and lane counting use custom names; the names are documented and checked; `sub_label` is handled in a later change.
 
+---
+
+## Review fixes (added 2026-11-16, after the whole-branch review)
+
+The review of `b4a26f1..0e7497a` found three things to fix before the PR. Tasks 7 to 11 are new commits on top of `0e7497a`; no earlier commit is rewritten. Tasks 1 to 6 above stay as they were built.
+
+### What the review found in Frigate
+
+Read from Frigate's source at tag `v0.18.1` (`web/src/components/settings/ZoneEditPane.tsx`, `web/src/components/input/NameAndIdFields.tsx`, `web/src/utils/stringUtil.ts`, `frigate/track/tracked_object.py`). The first bench run added zones through the config API, so it never met this.
+
+- In the zone editor the operator types a **Name**, which Frigate stores as the zone's `friendly_name`. The zone's key (Frigate calls it the ID) is made from the name: lower-cased, with `_` for each run of spaces.
+- When the result has a character outside `a-z`, `0-9`, `_`, and `-`, the key is instead `zone_` and 8 hex characters (a hash of the typed name, its first character always a letter). `Bus lane (north)` gives `zone_a9bacc03`.
+- `entered_zones` carries the key, never `friendly_name`. `/api/config` gives each zone's `friendly_name`, or null.
+- The editor changes the key with the name when a zone is renamed, except while the zone is in a `required_zones` list or a profile overrides it; then only `friendly_name` changes.
+
+So a made-up key is neutral, and `check_name` must not read its hex as a house number: of 20,000 simulated keys, 59% drew the amber warning and 33% the note.
+
+### What changes
+
+1. A key Frigate made up gets no note and no warning, and the page shows Frigate's name beside it so the operator can tell which zone it is.
+2. A single character counts as known only when it is ASCII. `北`, `김`, and `李_家` get the note.
+3. An ordinal (`1st`, `22nd`, `3rd`, `4th`) is one word. Alone it is known, with the number's rule (three or more digits is still a pattern). Together with an address word it is a pattern, as `zone_5th_street` and `zone_1st_lane` are today.
+
+### Constraints
+
+- The Global Constraints above still hold. `name_check.py` stays a leaf; the made-up-key rule lives in `state.py`, because it is about Frigate, not about names.
+- `friendly_name` is shown only on the Cameras page (admins). It never goes into a check's detail, a log line, or anything saved.
+- The editor's page shows the camera's picture. Never take or read a screenshot of Frigate's zone editor on a bench unit; the maintainer does the editor steps by hand, and the agent reads `/api/config` and the Cameras page.
+
+### Task 7: Single characters and ordinals in `check_name`
+
+**Files:** `tm-control/backend/tm_control/modules/apps/name_check.py`, `tm-control/backend/tests/test_name_check.py`. Two commits, one per rule, each test-first.
+
+- [ ] **Step 1: Single characters.** Add `"北"`, `"김"`, `"李_家"` to the `unknown_word` test's names; see them fail (`None`). In `_known`, a single letter is known only when `word.isascii()`. Commit: `Count a single letter as known only when it is ASCII`.
+- [ ] **Step 2: Ordinals.** Tests first:
+  - passes (`None`): `zone_1st`, `zone_2nd`, `zone_3rd`, `zone_4th`, `zone_22ND`
+  - `"pattern"`: `zone_1st_lane`, `zone_5th_street`, `zone_3rd_ave`, `zone_100th`, `lane_1st`, `zone_1_st`
+
+  Today `zone_1st` and `zone_3rd` are `"pattern"` and `zone_2nd` and `zone_4th` are `"unknown_word"`; the rest already hold and must keep holding.
+
+  Then the code:
+  - `_WORDS` becomes `r"\d+(?:st|nd|rd|th)(?![^\W\d_])|[^\W\d_]+|\d+"`: an ordinal first, then runs of letters, then runs of digits.
+  - `_NUMBER = re.compile(r"(\d+)(st|nd|rd|th)?")`, matched with `fullmatch`, gives a word's digits and whether it is an ordinal.
+  - A number or an ordinal is known when it has one or two digits, and a pattern when it has three or more.
+  - The last pattern rule becomes: an address word together with a word that isn't known **or an ordinal**.
+
+  Update the docstring ("together with", not "beside": the rule isn't adjacency). Commit: `Read an ordinal as one word in the name check`.
+- [ ] **Step 3:** `python -m pytest tm-control/backend/tests/test_name_check.py -q` passes.
+
+### Task 8: Zone keys Frigate made up
+
+**Files:** `tm-control/backend/tm_control/modules/cameras/state.py`, `tm-control/backend/tm_control/fake.py`, `tm-control/ui/src/api/openapi.json` (regenerated); tests in `test_cameras_state.py`, `test_contract_checks.py`.
+
+**Interfaces:** `ZoneName` gains `friendly_name: str | None`: Frigate's name for a zone whose key Frigate made up from it; `None` for every other zone.
+
+- [ ] **Step 1: Failing tests** in `test_cameras_state.py`:
+
+```python
+def test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name():
+    zones = ZONES | {
+        "zone_a6669b83": {"friendly_name": "Main St."},  # made up: three digits in a row, and not an address
+        "zone_a9bacc03": {"friendly_name": "Bus lane (north)"},
+        "zone_deadbeef": {"friendly_name": None},  # typed by hand: no name beside it, so it is checked
+        "zone_a2939495": {"friendly_name": "zone_a2939495"},  # the name is the key: checked
+        "1420_oak_st": {"friendly_name": "1420 Oak St"},  # a key made from the name: checked, name not carried
+    }
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert [(zone.name, zone.check, zone.friendly_name) for zone in row.zone_names] == [
+        ("zone_a6669b83", None, "Main St."),
+        ("zone_a9bacc03", None, "Bus lane (north)"),
+        ("zone_deadbeef", "unknown_word", None),
+        ("zone_a2939495", "pattern", None),
+        ("1420_oak_st", "pattern", None),
+    ]
+
+
+def test_made_up_keys_alone_raise_no_issue():
+    zones = ZONES | {"zone_a6669b83": {"friendly_name": "Main St."}}
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert row.issues == []
+
+
+def test_a_friendly_name_of_an_odd_shape_is_no_name():
+    for name in ("", 12, [], {}):
+        zones = ZONES | {"zone_a6669b83": {"friendly_name": name}}
+        [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+        assert (row.zone_names[0].check, row.zone_names[0].friendly_name) == ("pattern", None)
+```
+
+  And in `test_contract_checks.py`, one test: a recorded camera whose only other zone is `zone_a6669b83` with `friendly_name` `"Main St."` leaves `config.zone_names` `ok`, and with `zone_1420_oak_st` beside it the detail counts 1 and holds neither `Main` nor `a6669b83`.
+
+- [ ] **Step 2: `state.py`.** `_MADE_UP = re.compile(r"zone_[0-9a-f]{8}")`, with a comment saying where the shape comes from (Frigate's zone editor, for a name it can't use as a key). In `_zone_names`, a zone is made up when its key `fullmatch`es and its `friendly_name` is a non-empty `str` other than the key; then `check` is `None` and `friendly_name` is carried. Otherwise `check_name(key)` and `friendly_name=None`. Update the `ZoneName` comments.
+- [ ] **Step 3: Fake mode.** In `fake.frigate_answer`, the first camera also gets `"zone_a9bacc03": {"friendly_name": "Bus lane (north)"}`; say so in the docstring. The fake Status page's count stays 1.
+- [ ] **Step 4:** Regenerate `openapi.json`. Run `python -m pytest tm-control/backend/tests -q`; all pass.
+- [ ] **Step 5: Commit:** `Leave zone keys Frigate made up out of the name check, and carry Frigate's name for them`.
+
+### Task 9: Show Frigate's name beside a made-up key
+
+Load the three skills Task 4 names. **Files:** `schema.d.ts` (regenerated), `rows.ts`, `tests/fake-api.ts`, `camera-rows.spec.ts`, `cameras-page.spec.ts`, `tm-control/ui/README.md`.
+
+- [ ] **Step 1:** `npm run api:generate`. `ZONE_NAMES` and every `zone_names` literal in the tests gain `friendly_name: null`.
+- [ ] **Step 2: Failing test** in `camera-rows.spec.ts`: with `{ name: 'zone_a9bacc03', check: null, friendly_name: 'Bus lane (north)' }` after `zone_lane_bus`, `otherZonesText` is `Other zones enabled: zone_lane_bus, zone_a9bacc03 ("Bus lane (north)" in Frigate)`, and `zoneNote` is `null`. One page test: the `[data-other-zones]` line shows it.
+- [ ] **Step 3:** `otherZonesText` writes a zone with a `friendly_name` as `` `${name} ("${friendly_name}" in Frigate)` ``. Vue's text interpolation escapes it; never use `v-html`. Update the function's comment, and add one line to the README's design note: the key is what is saved, Frigate's name is shown so the operator can find the zone.
+- [ ] **Step 4:** The full UI command from "Commands" passes. Retake the two fake-mode screenshots (phone and desktop width) for the PR.
+- [ ] **Step 5: Commit:** `Show Frigate's name beside a zone key it made up`. Then show the maintainer the line in fake mode; the wording is theirs to change.
+
+### Task 10: Docs
+
+- [ ] **`docs/use/cameras.md`**, "Zone names are saved with your data":
+  - Say what is saved: the zone's ID, which Frigate makes from the name you type (lower case, `_` for spaces), so `1420 Oak St` is saved as `1420_oak_st`.
+  - A name with other punctuation, or with letters outside a to z, gets an ID Frigate makes up, such as `zone_a9bacc03`. The page shows your name beside it and doesn't check it, because the ID says nothing about the place.
+  - Replace "A name in another language gets the note too" with what is true: a word in another language written in a to z, such as `nord`, gets the note.
+  - The amber rule's list: "together with a word the check doesn't recognize, or an ordinal such as `5th`".
+  - Renaming: change the zone's name in Frigate and its ID follows. Add the `required_zones` sentence only if bench item 4 shows it.
+  - The row list's **Other zones enabled** bullet: mention the name beside a made-up ID.
+- [ ] **`docs/development/tm-control.md`** and **`CLAUDE.md`** (the paragraphs Task 5 edited): `ZoneName.friendly_name` and the made-up-key rule, in a clause each.
+- [ ] `mkdocs build --strict` passes. **Commit:** `Document zone IDs, and the ones Frigate makes up`.
+
+### Task 11: Bench, the plan copy, and the drafts
+
+- [ ] **Step 1:** The three off-device commands pass at the head.
+- [ ] **Step 2: Bench**, a new `tmdev check` on a `pii_free` unit at the head, `-t tm-control -t revproxy`. Record detection, snapshots, and recording before and after; they stay off. Restore the unit's earlier branch after.
+  1. Through the config API (as the first run did): add `zone_a9bacc03` with `friendly_name` `Bus lane (north)`, and `zone_3rd`. The Cameras page shows the line with both, the name beside the first, and no note or box; **Zone names** is ok.
+  2. **Maintainer, by hand in Frigate's zone editor:** add a zone named `Bus lane (north)` and one named `1420 Oak St`. The agent then reads `/api/config`: the keys are `zone_` plus 8 hex with that `friendly_name`, and `1420_oak_st`. The page shows the first with its name and no note, and the amber box names `1420_oak_st`; **Zone names** warns for 1.
+  3. **Maintainer:** rename `1420 Oak St` to `North side` in the editor. The key becomes `north_side`, the box goes, **Zone names** is ok.
+  4. **Maintainer, optional:** with a zone listed under `review.alerts.required_zones` (set through the config API; it turns nothing on), the editor doesn't offer to change its ID. If so, add the docs sentence in Task 10; if not, leave it out and say so.
+  5. Delete every added zone and the `required_zones` entry. `/api/config` (with `X-Cache-Bypass: 1`) has only the four zones. Record the cleanup.
+
+  If item 2 doesn't give those keys, stop and report: Task 8's rule rests on it.
+
+  The bench run found two things this plan didn't know. In item 2 the editor gave `zone_a647021c` for `Bus lane (north)`, not `zone_a9bacc03`, and the ID changed with each character typed: the key has the shape Task 8 reads, but the hash isn't of the name alone, so `zone_a9bacc03` is only an example. Item 4 showed the `required_zones` behaviour, so its docs sentence is a commit of its own after Task 10's.
+- [ ] **Step 3: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as the first copy, and no blank line at the end of the file. Commit it last: `Add the review fixes to the zone name check's plan`.
+- [ ] **Step 4: The drafts**, in the SDD workspace, for the maintainer to read. Nothing is pushed.
+  - `pr-body.md`: add a title line; the new behaviour (made-up keys, ordinals, single characters) and the second bench check by its time only; new test counts; the AI section names each model's part, as PR 326's does (Fable 5.2 for the plan and the whole-branch review, the implementing model for the code).
+  - Correct two sentences the review found wrong: the docs screenshot shows the old zones line ("Zones: all four") and the old button name; and the pattern rule is "together with", not "next to".
+  - `issue-306-comment.md`: one sentence on Frigate's IDs and the made-up ones; "together with".
+  - Attach one bench screenshot of the Cameras page, not two: the first run's "phone" file was a copy of the desktop one.
