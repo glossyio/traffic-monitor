@@ -803,3 +803,94 @@ The Global Constraints and the review fixes' constraints still hold. The code st
     - The AI section names the third review and what it found, and no longer says "both" reviews.
   - `issue-306-comment.md`: the Copy diagnostics sentence says what is replaced (what a zone's save held, in the request's plain and percent-encoded forms), not that the diagnostics never carry a zone's name.
   - `followup-issue.md`, new, for the maintainer to file: "Copy diagnostics: Frigate's config-error lines can hold a zone's ID or name". It says which lines (from "What the review found" above), that it was found by reading Frigate's source during an AI-assisted review and not seen on a device, and one way to fix it: replace each zone's `friendly_name` by value, read from Frigate's running config and its config file as the camera names are, which can't cover a name that was renamed away. No device names or addresses.
+
+---
+
+## Fourth review fix (added 2026-11-17, after the review of the whole branch)
+
+The review of `b4a26f1..c1c1d6a` found nothing to fix in the branch's code, tests, or docs. It found one gap that `dev` already has, of the same kind as Task 13's, in how Copy diagnostics replaces Frigate's camera names. Task 14 is new commits on top of `c1c1d6a`; no earlier commit is rewritten.
+
+### What the review found
+
+Read from `tm-control/backend/tm_control/adapters/redact.py` and `tm-control/backend/tm_control/modules/auth/router.py`, and run through `diagnostics.build` in a scratch test.
+
+- verify answers a request that has no session with a redirect to `/login?next=` and the original address percent-encoded (`quote(..., safe="/")`). For Frigate's settings page of one camera, which is where the Cameras page's "Edit its zones in Frigate" links go, that is:
+
+  `/login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3Doak_ave_wide`
+
+- `redact_words` replaces a camera name only where no letter, digit, or underscore stands directly before it. The `D` of `%3D` is a letter, so the name stays. The plain request line (`camera=oak_ave_wide`) is replaced, and so is a name in the path (`/frigate/api/oak_ave_wide/latest.webp`), because `/` stays unencoded.
+- So an admin whose session ended, who follows that link from a stale Cameras page or opens a bookmark to Frigate's settings or review for one camera, leaves Frigate's name for the camera in the proxy's access log in a form Copy diagnostics keeps.
+- The UI's router, when it rewrites `next`, writes `=` plain, so its forms were already replaced.
+- This branch adds two more of those links (the grey note and the zone names box), and `5804df5` fixed the same redirect for zone names, which is why the fix is taken here.
+
+### Task 14: A camera name after a percent escape
+
+The Global Constraints and the review fixes' constraints still hold. The code step is test-first. Both tests below were tried on a scratch copy at `c1c1d6a`: they fail there, and pass with Step 2's one-line change.
+
+- [ ] **Step 1: The failing tests.** Files: `tm-control/backend/tests/test_redact.py`, `tm-control/backend/tests/test_api_system_info.py`.
+
+  In `test_redact.py`, after `test_redact_words_prefers_the_longest_and_ignores_empty_words`:
+
+  ```python
+  def test_redact_words_reads_a_percent_escape_as_an_edge():
+      line = '"GET /login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3Doak_ave_wide HTTP/1.1" 200 612'
+      assert redact_words(line, ["oak_ave_wide"]) == line.replace("oak_ave_wide", "<redacted>")
+      assert redact_words("next=%2ffrigate%2freview%3fcameras%3doak_ave_wide%26zones%3dx", ["oak_ave_wide"]) == (
+          "next=%2ffrigate%2freview%3fcameras%3d<redacted>%26zones%3dx"
+      )
+      # Not an escape: a letter and a digit before the name, without the percent sign
+      assert redact_words("A3Doak_ave_wide %3Doak_ave_wide_2", ["oak_ave_wide"]) == "A3Doak_ave_wide %3Doak_ave_wide_2"
+  ```
+
+  In `test_api_system_info.py`, after `test_diagnostics_replace_frigates_camera_names`. It takes the redirect from verify itself, as Task 13's test does:
+
+  ```python
+  def test_diagnostics_replace_a_camera_name_in_a_login_redirect(device_client, login, host, tmp_path, monkeypatch):
+      """A page asked for after the session ended is sent to /login?next=<its address, percent-encoded>, so the proxy's
+      access log holds Frigate's name for the camera after %3D. It is replaced like the plain form."""
+      config_dir = tmp_path / "nr"
+      config_dir.mkdir()
+      config = config_dir / "config.yml"
+      config.write_text(
+          "sensors:\n  cameras:\n    camera_1_3fa9c2:\n      frigate_camera: oak_ave_wide\n      enabled: true\n"
+      )
+      device_client.app.state.config_path = config
+      monkeypatch.setattr(frigate, "config", lambda: {"cameras": {"oak_ave_wide": {"enabled": True}}})
+      page = "/frigate/settings?page=masksAndZones&camera=oak_ave_wide"
+      r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": page, "X-TM-Required-Role": "viewer"})
+      assert r.status_code == 401
+      redirect = r.headers["X-TM-Redirect"]
+      assert redirect == "/login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3Doak_ave_wide"
+      host.journal = lambda unit, lines: [
+          f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {page} HTTP/1.1" 302 145',
+          f'192.0.2.10 - - [17/Nov/2026:10:02:11 -0800] "GET {redirect} HTTP/1.1" 200 612',
+      ]
+      login(device_client, *ADMIN)
+      text = diagnostics(device_client).text
+      assert '"GET /frigate/settings?page=masksAndZones&camera=<redacted> HTTP/1.1" 302 145' in text
+      assert '"GET /login?next=/frigate/settings%3Fpage%3DmasksAndZones%26camera%3D<redacted> HTTP/1.1" 200 612' in text
+      assert "oak_ave_wide" not in text
+  ```
+
+  Run `python -m pytest tm-control/backend/tests/test_redact.py tm-control/backend/tests/test_api_system_info.py -q` and see both fail: the first on its first line, the second on the `/login?next=` line.
+- [ ] **Step 2: The code.** File: `tm-control/backend/tm_control/adapters/redact.py`, `redact_words` only.
+
+  The left edge becomes `(?:(?<![{_WORD_EDGE}])|(?<=%[0-9A-Fa-f]{{2}}))` in place of `(?<![{_WORD_EDGE}])` (the braces doubled because the pattern is an f-string). The right edge and the rest stay. Its docstring gains a sentence: a percent escape directly before a word counts as an edge too, because an escape ends in a letter or a digit, and a login redirect's `next=` holds a camera's name after `%3D`. `diagnostics.py` doesn't change. Both tests pass, and so does the rest of `test_redact.py`.
+
+  Docs in the same commit: `docs/development/tm-control.md`, the Copy diagnostics bullet, one clause after "(whole words, longest first)": a percent escape before a name counts as an edge, so a name in a login redirect's `next=` is replaced too. `CLAUDE.md` and `docs/use/device-health.md` stay as they are: they say the names are replaced, which is now true of this form too.
+
+  Commit: `Replace a Frigate camera name after a percent escape in Copy diagnostics`.
+
+  Not in this step: a name directly after another kind of escape, such as nginx's `\x22` for a raw quote or a `\n` inside a printed string. No request a browser sends puts one there.
+- [ ] **Step 3:** The three off-device commands pass at the head (expected: 3092 passed, 1 skipped; UI 591; `mkdocs build --strict` clean); `dump-openapi` and `api:generate` leave no diff.
+- [ ] **Step 4: Bench: none is planned.** `redact_words` is a function of text, its test takes the redirect from verify, and the fourth bench run already showed that the proxy's journal keeps a login redirect's line in this shape. A bench unit can show the replacement only if it has a camera whose name in Frigate differs from its entry's key; never change a unit's cameras to make one. If the maintainer asks for a run anyway, it is a new `tmdev check` at the head with `-t tm-control -t revproxy`, the device tests, detection, snapshots, and recording read before and after, and the unit's earlier branch restored.
+- [ ] **Step 5: The public plan copy.** Copy this plan again to `design/plans/2026-11-16-zone-name-check.md`, with the same edits as before, and no blank line at the end of the file. Commit it last: `Add the fourth review's fix to the zone name check's plan`.
+- [ ] **Step 6: The drafts, then stop.** In the SDD workspace. Nothing is pushed, and the PR's body on GitHub is not changed, until the maintainer has read the two commits and the draft.
+  - `pr-body.md` (start from the PR's body as posted, `gh pr view 332 --json body`, which has two mentions of the follow-up issue the draft lacks):
+    - The release note's last sentence gains: "and it now replaces a Frigate camera name inside a login redirect too."
+    - The Copy diagnostics bullet gains: "The same redirect holds Frigate's name for a camera after `%3D` (`…camera%3D<name>`), which the camera-name replacement on `dev` missed because it took the escape's last character for part of a word; a percent escape now counts as a word's edge."
+    - Docs: `docs/development/tm-control.md` gains the clause.
+    - Testing: the new counts and the commit they were run at; one sentence saying the head is one code commit past the fourth bench run and what that commit changes (one pattern in `redact_words`, no bench run, and why).
+    - The screenshots line becomes "Screenshots are in the first comment." and its hidden `attach:` comment goes.
+    - The AI section names the fourth review (of the whole branch at `c1c1d6a`): it found nothing to fix in the branch and this gap on `dev`, fixed in the new commit. "The three whole-branch reviews" becomes four.
+  - `issue-306-comment.md` and `followup-issue.md` stay as they are.
