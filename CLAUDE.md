@@ -208,7 +208,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - Type: `gh api -X PATCH repos/glossyio/traffic-monitor/issues/<n> -f type=Bug`, or `"type"` in the JSON body of `POST .../issues`.
 - Fields: GraphQL `setIssueFieldValue(input: {issueId, issueFields: [{fieldId, singleSelectOptionId}]})`, with the issue's node id. Field and option ids come from `repository(owner: "glossyio", name: "traffic-monitor") { issueFields(first: 20) { nodes { ... on IssueFieldSingleSelect { id name options { id name } } } } }`.
 - Relationships, REST: sub-issue `POST .../issues/<parent>/sub_issues -F sub_issue_id=<child's id>`; blocked by `POST .../issues/<blocked>/dependencies/blocked_by -F issue_id=<blocker's id>`; relates to `POST .../issues/<n>/relates_to -F issue_id=<other's id>`. Use `-F`, since the id must be a number; it is `.id` from `gh api repos/glossyio/traffic-monitor/issues/<n>`, not the issue's number.
-- Search (web UI, or `gh api -X GET search/issues -f advanced_search=true -f q=...`): `type:Bug`, `field.source:community`, `field.source:"ai suggestion"` (a value with a space needs quotes). `gh issue list --search` ignores `field.`.
+- Search (web UI, or `gh api -X GET search/issues -f advanced_search=true -f q=...`): `type:Bug`, `field.source:community`, `field.source:"ai suggestion"` (a value with a space needs quotes). `gh issue list --search`, like the search API without `advanced_search`, returns nothing for `field.`.
 - `gh pr edit` fails on this repo; use `gh api -X PATCH repos/glossyio/traffic-monitor/pulls/<n>`.
 
 ## AI use in this repository
