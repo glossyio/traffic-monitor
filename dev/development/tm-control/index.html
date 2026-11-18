@@ -2173,6 +2173,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#using-a-frigate-model-by-its-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a Frigate+ model by its ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-location-module" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2456,6 +2467,17 @@
     <span class="md-ellipsis">
       
         The Detection module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-a-frigate-model-by-its-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a Frigate+ model by its ID
       
     </span>
   </a>
@@ -2815,6 +2837,11 @@
 <td>Puts back the installer's model, or removes the section on a device without a Coral</td>
 </tr>
 <tr>
+<td><code>POST /models/plus/{id}/use</code></td>
+<td>Admin</td>
+<td>Uses a Frigate+ model by its ID: a Use when the device has the model's two files, otherwise a download that Frigate makes (see <a href="#using-a-frigate-model-by-its-id">Using a Frigate+ model by its ID</a>). Answers 202, with <code>started</code> as <code>restart</code> or <code>download</code></td>
+</tr>
+<tr>
 <td><code>GET /models/{name}/package</code></td>
 <td>Admin</td>
 <td>A zip of the model's two files and <code>SHA256SUMS</code></td>
@@ -2834,6 +2861,22 @@
 <p>The module writes only inside <code>model_cache</code> and Frigate's <code>config.yml</code>, plus its own state directory. Every <code>model_cache</code> write goes through a descriptor of the directory opened with <code>O_NOFOLLOW</code>, after <code>valid_name</code> has checked the name; <code>config.yml</code> is edited by its path through <code>RoundTripFile</code>, as <code>tm-control migrate</code> edits config files (a backup, an atomic replace, the owner kept). When Frigate answers in safe mode, which it enters when its config fails to validate, it runs a stand-in config, so <code>GET /models</code> reads the detector and the running model from <code>config.yml</code> and says <code>frigate_safe_mode</code>; a Use still goes through Frigate's API, which validates the whole config. The caps are 100 MB for a request and a model file, 2 MB for a sidecar, 3 archive members, and 512 MB of free storage left afterwards. Use goes through Frigate's config API, which checks the whole config, and edits <code>config.yml</code> itself, with a backup, only when Frigate doesn't answer. Both end in a restart of <code>frigate.service</code>.</p>
 <p>Uploads need two things from the edge. nginx has its own location, <code>^~ /api/v1/models/upload/</code> in <code>tm-control-api.conf.j2</code>, with <code>client_max_body_size 100m</code> and <code>proxy_request_buffering off</code>, so the body streams to tm-control instead of being buffered. Because of that, tm-control reads the rest of a refused upload before it answers, so nginx can pass the answer on rather than a 502. The upload body is <code>application/octet-stream</code>, which the cross-site check in <code>core/csrf.py</code> admits along with <code>application/json</code>, because the check still requires a same-origin request. Every other <code>/api/</code> path keeps nginx's default body limit.</p>
 <p>The sidecars are a Frigate+ model record's JSON. The module reads only the fields the page shows and keeps the whole file as it was uploaded, so a download returns it unchanged. It never puts a record's other fields in an answer, a log line, or an audit row.</p>
+<h3 id="using-a-frigate-model-by-its-id">Using a Frigate+ model by its ID<a class="headerlink" href="#using-a-frigate-model-by-its-id" title="Permanent link">&para;</a></h3>
+<p><code>POST /models/plus/{id}/use</code> takes an ID of 32 lowercase hexadecimal characters (<code>PLUS_ID</code> in <code>inventory.py</code>), and answers 422 <code>bad_id</code> for anything else. <code>contracts.MODEL_ID</code> is looser on purpose: it is the rule for a path someone typed into a config. When <code>model_cache</code> already holds the model's file and sidecar under that ID, the route is <code>POST /models/{id}/use</code>. Otherwise it needs the Frigate+ API key (409 <code>no_key</code>) and a Frigate that answers (409 <code>frigate_down</code>), and it never writes <code>config.yml</code> itself: a model that isn't on the device can't be validated without Frigate, which is also what downloads it.</p>
+<p>Frigate downloads the model while it validates a config whose <code>model:</code> has <code>path: plus://&lt;id&gt;</code>, so its <code>POST /api/config/save</code> holds its answer for minutes. The route sends that config from a thread (<code>fetch.py</code>) and answers 202 at once. The thread keeps one record, which <code>GET /models</code> returns to admins as <code>fetch</code> (<code>downloading</code>, then <code>saved</code>, <code>refused</code>, or <code>failed</code>, with a message for the last two). The record stays until the next download starts or a Use succeeds. A viewer's <code>fetch</code> is null. The record lives in memory, in <code>app.state.fetches</code>.</p>
+<p>How the thread follows the save:</p>
+<ul>
+<li>A 200 is <code>saved</code>: it audits <code>models.use</code> with the ID and restarts <code>frigate.service</code>. A 400 is <code>refused</code>, with Frigate's own lines, redacted by <code>picker.refusal_lines</code>.</li>
+<li>Frigate's port 5000 is its own nginx, which gives up on a request after 6 minutes (<code>proxy_read_timeout 360</code>) while Frigate goes on downloading. So after no answer, a 502, or a 504, the thread reads Frigate's config every 5 seconds. The config holding exactly the text it sent means Frigate saved: <code>saved</code>, then the restart. Frigate not answering is <code>failed</code> at once, "Frigate stopped before the download finished." The old config after 10 minutes (<code>WAIT</code>) is <code>failed</code> with "Frigate didn't finish downloading the model in 10 minutes." A refusal Frigate makes after its proxy gave up is never seen, so it ends as that same message.</li>
+<li>Whatever the thread calls, it ends the record: an unexpected error is <code>failed</code>, named by its class only, because an exception's text could hold the key.</li>
+</ul>
+<p>One model change reaches Frigate at a time. <code>Fetches</code> has a gate that a Use, the default's Use, and a use by ID each take, without waiting, before they send Frigate a config, and a download's start takes it before it lets go. A second change meanwhile is 409 <code>changing</code>, and any change while a download runs is 409 <code>downloading</code>. Upload, download, and delete stay open. Any new caller of <code>frigate.save_config</code> has to take the gate first; today's callers are the picker's Use save and the download's wait. Fake mode follows a fake download on a thread of its own (<code>FAKE_FETCH_SECONDS</code>), through the same record and gate.</p>
+<p>The design leaves three gaps, which are accepted:</p>
+<ul>
+<li>The record is in memory. If tm-control restarts during a download, the record is lost, and a save Frigate makes afterwards gets no restart from tm-control. Frigate has the new config on disk but runs the old model until it restarts for another reason.</li>
+<li>Frigate writes the config text it was sent. An edit saved in Frigate's configuration editor during the download is overwritten.</li>
+<li>If Frigate's download outlasts the 10-minute wait, Frigate may still write the config later, with no restart from tm-control, after the gate is free again.</li>
+</ul>
 <h3 id="the-location-module">The Location module<a class="headerlink" href="#the-location-module" title="Permanent link">&para;</a></h3>
 <p>The <code>location</code> module serves the <a href="../../use/location/">Location page</a>. It's for admins only, because the places hold exact coordinates: every route under <code>/api/v1/surveys</code> takes <code>require_admin</code>. The places are in <code>state.sqlite</code>; the place in use is also in Node-RED's <code>config.yml</code>, under <code>deployment:</code>, which is what Node-RED reads. tm-control never opens <code>tmdb.sqlite</code>, and Node-RED never opens <code>state.sqlite</code>.</p>
 <table>
@@ -3150,7 +3193,7 @@
 <span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>serve<span class="w">        </span><span class="c1"># the backend on 127.0.0.1:8090</span>
 <span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                                         </span><span class="c1"># the UI on http://localhost:5173</span>
 </code></pre></div>
-<p>Fake mode seeds <code>.tm-control-fake/node-red-tm/config/config.yml</code> from <code>tests/fixtures/node_red_config_ok.yml</code> (a camera and a radar, and a <code>deployment</code> block at 45.0, -122.0 with no survey id), and keeps it, with whatever the app wrote to it, until the next <code>fake-reset</code>. Its Node-RED (<code>FakeNodeRed</code> in <code>fake.py</code>) keeps deployment rows in memory and runs the deployment engine's rules on them whenever that file changes, so deploys, corrections, and hand edits of the file behave as on a device; after a restart of <code>serve</code>, only the place in use has deployments. Its backup directory is empty, so there's nothing to import. Fake mode also seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
+<p>Fake mode seeds <code>.tm-control-fake/node-red-tm/config/config.yml</code> from <code>tests/fixtures/node_red_config_ok.yml</code> (a camera and a radar, and a <code>deployment</code> block at 45.0, -122.0 with no survey id), and keeps it, with whatever the app wrote to it, until the next <code>fake-reset</code>. Its Node-RED (<code>FakeNodeRed</code> in <code>fake.py</code>) keeps deployment rows in memory and runs the deployment engine's rules on them whenever that file changes, so deploys, corrections, and hand edits of the file behave as on a device; after a restart of <code>serve</code>, only the place in use has deployments. Its backup directory is empty, so there's nothing to import. Fake mode also seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. The fake Frigate can download one Frigate+ model ID, <code>fedcba9876543210fedcba9876543210</code> (<code>fake.FAKE_FETCHABLE_ID</code>); any other ID is refused after 5 seconds (<code>FAKE_FETCH_SECONDS</code>), as a device would show a refusal. The Frigate+ key has to be set first, or the route answers 409 <code>no_key</code>. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
 <p>Every change to the API regenerates the UI's typed client in the same commit, so each commit's tests pass:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>dump-openapi<span class="w"> </span>&gt;<span class="w"> </span>tm-control/ui/src/api/openapi.json
 <span class="o">(</span><span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>api:generate<span class="o">)</span><span class="w">   </span><span class="c1"># writes src/api/schema.d.ts</span>

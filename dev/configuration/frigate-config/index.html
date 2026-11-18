@@ -2534,11 +2534,12 @@
 </tbody>
 </table>
 <p>Choose the <code>yolov9</code> model type; <code>mobiledet</code> is the older one. The <a href="../../use/device-health/#the-status-page">Status page</a> tells you which detector the device has, in its Hardware group.</p>
-<p>To use a model on a device that's online, either:</p>
+<p>To use a model on a device that's online, any of these works:</p>
 <ul>
-<li>pick it in Frigate's <strong>Settings &gt; System &gt; Detectors and model</strong>, or</li>
+<li>On the control app's Detection page, <a href="../../use/detection/#use-a-model-by-its-id">paste the model's ID</a> into <strong>Use a model by its ID</strong> and choose <strong>Download and use</strong>. The page needs the key, and does the rest.</li>
+<li>Pick the model in Frigate's <strong>Settings &gt; System &gt; Detectors and model</strong>.</li>
 <li>
-<p>in <strong>Settings &gt; Configuration editor</strong>, replace the whole <code>model:</code> section with only the model's path, then choose <strong>Save &amp; Restart</strong>:</p>
+<p>In Frigate's <strong>Settings &gt; Configuration editor</strong>, replace the whole <code>model:</code> section with only the model's path, then choose <strong>Save &amp; Restart</strong>:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">model</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">plus://&lt;model id&gt;</span>
 </code></pre></div>
@@ -2575,11 +2576,11 @@
 </tr>
 <tr>
 <td>Warning</td>
-<td>A key is set, but Frigate runs the installer's model, its own default model (on a device with no <code>model:</code> section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in <a href="#use-a-model">Use a model</a>.</td>
+<td>A key is set, but Frigate runs the installer's model, its own default model (on a device with no <code>model:</code> section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in <a href="#use-a-model">Use a model</a>; <strong>Choose a model</strong> opens the Detection page's box for its ID.</td>
 </tr>
 <tr>
 <td>Problem</td>
-<td>Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (<strong>Set the key</strong> opens the Frigate+ API key section of the Detection page), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and <strong>Set the key</strong> opens the Frigate+ API key section of the Detection page. See <a href="#if-frigate-stops-over-a-model">If Frigate stops over a model</a>.</td>
+<td>Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (<strong>Set the key</strong> opens the API key panel in the Detection page's Frigate+ section), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and <strong>Set the key</strong> opens the same panel. See <a href="#if-frigate-stops-over-a-model">If Frigate stops over a model</a>.</td>
 </tr>
 <tr>
 <td>Couldn't run</td>

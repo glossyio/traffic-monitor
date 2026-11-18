@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, and set the Frigate+ API key.">
+        <meta name="description" content="See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, set the Frigate+ API key, and use a Frigate+ model by its ID.">
       
       
       
@@ -1070,6 +1070,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Frigate+">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The API key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-model-by-its-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a model by its ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2263,6 +2291,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Frigate+">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The API key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-model-by-its-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a model by its ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2296,17 +2352,17 @@
   
   
   <h1 id="choose-the-detection-model">Choose the detection model<a class="headerlink" href="#choose-the-detection-model" title="Permanent link">&para;</a></h1>
-<p class="tm-description">See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, and set the Frigate+ API key.</p>
+<p class="tm-description">See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, set the Frigate+ API key, and use a Frigate+ model by its ID.</p>
 <p>The control app's <strong>Detection</strong> page shows what the device looks for and which AI model does the looking, and lets the administrator change the model without SSH. <a href="../../configuration/frigate-config/">Frigate</a> runs the model on the device's detector: a Coral or Hailo accelerator, or the processor when there's none. To get a better model for a difficult site, see <a href="../../configuration/frigate-config/#better-models">Better models</a>.</p>
 <h2 id="the-detection-page">The Detection page<a class="headerlink" href="#the-detection-page" title="Permanent link">&para;</a></h2>
 <p><strong>Detection</strong> is in the control app's menu, after <strong>Device</strong>. The page opens with a line on what it's for, then four sections:</p>
 <ul>
 <li><strong>Object detection</strong> gives the <strong>Detector</strong>, such as <code>edgetpu</code> for a Coral, and the <strong>Running model</strong>. It also tells you when Frigate isn't answering.</li>
 <li><strong>Model in use</strong> is the model Frigate runs, as one card. The card holds everything about the running model, including <a href="#what-the-model-recognises">the objects it recognises and the objects the device tracks</a>. The card is always there once the page has loaded the models, even when Frigate isn't answering or doesn't name its model. The section is left out only when the page can't load the models.</li>
-<li><strong><a href="#frigate-plus">Frigate+</a></strong> is how to get a Frigate+ model, and where administrators set the API key.</li>
+<li><strong><a href="#frigate-plus">Frigate+</a></strong> is how to get a Frigate+ model, and where administrators set the API key and use a model by its ID.</li>
 <li><strong>Other models on this device</strong> lists the rest, and its title counts them.</li>
 </ul>
-<p><img alt="The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key panel closed, and the other models" src="../../assets/images/detection-page-models.png" width="300" /></p>
+<p><img alt="The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key and model ID panels closed, and the other models" src="../../assets/images/detection-page-models.png" width="300" /></p>
 <p>Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select <strong>Files and objects</strong> on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and <a href="#what-the-model-recognises">the objects it recognises</a>. A model with no list of objects has <strong>Files</strong> instead, and the running model's card with no files has <strong>Objects</strong>. A mark says when the model is:</p>
 <table>
 <thead>
@@ -2331,7 +2387,7 @@
 </tbody>
 </table>
 <p>The model the installer set up is shown as <strong>The installer's model</strong>. It has no <code>.json</code>, and it can't be deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as <strong>Frigate's built-in model</strong>, which can't be deleted either.</p>
-<p>Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get <strong>Upload a model</strong>, under the <strong>Other models on this device</strong> heading, then <strong>Use</strong>, <strong>Download</strong>, and <strong>Delete</strong> on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a <strong>Use</strong> of its own.</p>
+<p>Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get <strong>Upload a model</strong>, under the <strong>Other models on this device</strong> heading, then <strong>Use</strong>, <strong>Download</strong>, and <strong>Delete</strong> on each model, the Frigate+ API key, and <strong>Use a model by its ID</strong>. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a <strong>Use</strong> of its own.</p>
 <p>When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and <strong>Use</strong> on a model, or on the installer's model, gives Frigate a config it can run. In both cases the model in use still has its card, made from the config file. The objects Frigate tracks aren't known while it's down, so that list is empty, and the recognised list is there only when the model has a <code>.json</code> or the installer's labels file. A model that Frigate runs but the device has no entry for gets a card too, named for the model or <strong>Unknown model</strong>.</p>
 <h2 id="upload-a-model">Upload a model<a class="headerlink" href="#upload-a-model" title="Permanent link">&para;</a></h2>
 <p>A model is a model file and a small <code>.json</code> file beside it, its <em>sidecar</em>, which tells Frigate how to use it. Choose <strong>Upload a model</strong> under <strong>Other models on this device</strong>, then pick one of these:</p>
@@ -2353,6 +2409,7 @@
 <p>The page refuses a <strong>Use</strong> in these cases:</p>
 <ul>
 <li>Frigate is restarting. Try again in a minute.</li>
+<li>Frigate is downloading a model by its <a href="#use-a-model-by-its-id">ID</a>, or the device is applying another model change. Wait for it to finish.</li>
 <li>The device's detector can't be told, because Frigate isn't answering and its config file can't be read, so the model can't be checked against it.</li>
 <li>Frigate's config sets a model inside a detector, which would override this one. Remove that model in Frigate's config editor first.</li>
 <li>The installer's model file is gone from the device.</li>
@@ -2373,13 +2430,16 @@
 <p>The other models' cards each have their own <strong>Objects it recognises</strong> list, read from that model's <code>.json</code> or, for the installer's model, its labels file. Frigate's built-in model has none. On those cards, a line names the tracked objects that model doesn't recognise, which the device would stop counting if you switched to it.</p>
 <p>The recognised list comes from Frigate, and the model's <code>.json</code> has a list of its own. They should agree. When Frigate's list has different objects, a line above the lists says "Frigate reports a different list than this model's .json." This is rare, and it usually means someone edited the label map in Frigate's config on purpose.</p>
 <h2 id="frigate-plus">Frigate+<a class="headerlink" href="#frigate-plus" title="Permanent link">&para;</a></h2>
-<p><a href="../../configuration/frigate-config/#better-models">Frigate+</a> trains models on snapshots from your device. There are two ways to get one onto it:</p>
+<p><a href="../../configuration/frigate-config/#better-models">Frigate+</a> trains models on snapshots from your device. There are three ways to get one onto it:</p>
 <ul>
-<li><strong>Online:</strong> when the device has internet and a Frigate+ API key, pick the model in Frigate, under <strong>Settings &gt; System &gt; Detectors and model</strong>, and Frigate downloads it. Then choose <a href="#use-a-model">Use</a> here if Frigate doesn't run it already.</li>
+<li><strong>By its ID:</strong> when the device has internet and a Frigate+ API key, an administrator <a href="#use-a-model-by-its-id">pastes the model's ID</a> on this page, and Frigate downloads the model.</li>
+<li><strong>In Frigate:</strong> pick the model in Frigate, under <strong>Settings &gt; System &gt; Detectors and model</strong>, and Frigate downloads it. Then choose <a href="#use-a-model">Use</a> here if Frigate doesn't run it already.</li>
 <li><strong>Offline:</strong> upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See <a href="../../configuration/frigate-config/#a-device-without-internet">A device without internet</a>.</li>
 </ul>
-<p><img alt="The Frigate+ section on a phone, as an administrator: the two ways to get a model onto the device, then the API key panel opened, with the key field and Save" src="../../assets/images/detection-page-frigate-plus-key.png" width="300" /></p>
-<p>The two paragraphs show for everyone, and the section is there even when the page can't load the models. Administrators enter the API key in the panel titled <strong>API key</strong>, under the two paragraphs and above <strong>Other models on this device</strong>. The panel is closed until you select its title. The Status page's <strong>Set the key</strong> opens it. The key is kept with the device's other secrets, not in <code>config.yml</code>. A viewer sees the paragraphs and no panel.</p>
+<p><img alt="The Frigate+ section on a phone, as an administrator: the text on the ways to get a model onto the device, then the two panels, API key and Use a model by its ID, the second opened to show the Model ID field and its button" src="../../assets/images/detection-page-frigate-plus-key.png" width="300" /></p>
+<p>The text shows for everyone, and the section is there even when the page can't load the models. Administrators get two panels under it, above <strong>Other models on this device</strong>. Both are closed until you select their titles. A viewer sees the text and no panels.</p>
+<h3 id="the-api-key">The API key<a class="headerlink" href="#the-api-key" title="Permanent link">&para;</a></h3>
+<p>The panel titled <strong>API key</strong> holds the key. The Status page's <strong>Set the key</strong> opens it. The key is kept with the device's other secrets, not in <code>config.yml</code>.</p>
 <ul>
 <li>The page never shows the key back. Beside the panel's title is a short note on whether the key is set: "not set", "set", or "set, ending in" its last four characters for a key of 12 or more characters. A set key's note adds ", in use" while Frigate runs a Frigate+ model; "not set" never does.</li>
 <li><strong>Save</strong> stores what you typed. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else. The eye icon shows the key while you type.</li>
@@ -2387,6 +2447,48 @@
 <li>Saving or removing restarts Frigate, which takes about a minute. The device counts nothing meanwhile.</li>
 </ul>
 <p>The ThingsBoard and Plate Recognizer keys are on the <a href="../device-health/#tokens-and-keys">Device page</a>.</p>
+<h3 id="use-a-model-by-its-id">Use a model by its ID<a class="headerlink" href="#use-a-model-by-its-id" title="Permanent link">&para;</a></h3>
+<p>The panel titled <strong>Use a model by its ID</strong> is for a model you've trained and have as an ID on the Frigate+ website. To download a model, the device needs the API key above, internet, and a Frigate that answers.</p>
+<ol>
+<li>On the Frigate+ website, open your models and copy the model's ID: 32 characters, each 0-9 or a-f. An address that starts with <code>plus://</code> works too, and so does an ID with spaces around it. The page refuses anything else before it sends anything.</li>
+<li>Paste it into <strong>Model ID</strong> and choose <strong>Download and use</strong>, then confirm.</li>
+<li>Frigate downloads the model while it checks the configuration with the model in it. This can take a few minutes, and the device waits up to 10 minutes. The panel says that Frigate is downloading, and <strong>Use</strong>, <strong>Upload a model</strong>, <strong>Download</strong>, and <strong>Delete</strong> are off meanwhile. You can leave the page: the device keeps following the download, and when you open the page again it shows the download while it runs, or why it failed.</li>
+<li>When Frigate has saved the configuration, the device restarts Frigate, which takes about a minute. The page then says when Frigate runs the model, as it does after <a href="#use-a-model">Use</a>. Traffic isn't counted while Frigate restarts.</li>
+</ol>
+<p>If the device already has the model's two files, there's nothing to download: the box does what <strong>Use</strong> on the model's card does, and the confirmation is Use's too: it names the model and the button reads <strong>Use</strong>.</p>
+<p>A download ends in one of these ways:</p>
+<table>
+<thead>
+<tr>
+<th>What the panel says</th>
+<th>What happened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frigate runs the model.</td>
+<td>Frigate downloaded the model, saved the configuration, and restarted.</td>
+</tr>
+<tr>
+<td>Frigate refused the model, with Frigate's reason.</td>
+<td>Frigate checked the configuration and said no, for example because the key is wrong or Frigate+ doesn't know the ID. Frigate's config is unchanged.</td>
+</tr>
+<tr>
+<td>Frigate didn't finish downloading the model in 10 minutes.</td>
+<td>The device stopped waiting. The download may have been slow, or Frigate may have refused the model too late for the device to hear. Check the device's internet connection, then try again.</td>
+</tr>
+<tr>
+<td>Frigate stopped before the download finished.</td>
+<td>Frigate restarted or went down, for example after a key change or a restart from the Status page, so the download was lost. Try again once Frigate runs.</td>
+</tr>
+<tr>
+<td>Frigate answered with a number, or the download couldn't be followed.</td>
+<td>Rare. Frigate answered the save with something unexpected, or the device couldn't keep following the download because of an error of its own. Try again, and if it repeats, <a href="../device-health/#download-diagnostics">download the diagnostics</a> from the Device page.</td>
+</tr>
+</tbody>
+</table>
+<p>The device refuses to start a download when no key is set, when Frigate isn't answering (unlike <strong>Use</strong>, it doesn't edit Frigate's config file itself), or while another model change is going on.</p>
+<p>A model built for another detector than the device's is downloaded, and Frigate then refuses it. Its files stay on the device, and it's listed under <strong>Other models on this device</strong> as unable to run here. A model whose download went wrong may stay on the device in a state Frigate won't load. Choose <strong>Delete</strong> on its card, then enter the ID again.</p>
   
 
 
