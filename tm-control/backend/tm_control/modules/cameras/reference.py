@@ -3,11 +3,13 @@ a ticket for a few minutes so that the pictures an admin looks at are the pictur
 in.
 
 Nothing here touches the disk or logs: the pictures, the ticket, and the place's point stay in memory and in answers to
-the admin who took them.
+the admin who took them. The picture and zip addresses carry the ticket, so `HideTickets` takes it out of uvicorn's
+access log (`cli.serve` installs it). nginx's own access log still holds it, as it holds a download link's token.
 """
 
 import io
 import json
+import logging
 import re
 import secrets
 import threading
@@ -23,6 +25,19 @@ NO_PLACE = "no-place"  # the stem's survey part when no place is in use
 FORMAT = "traffic-monitor-reference"
 FORMAT_VERSION = 1
 _UNSAFE = re.compile(r"[^A-Za-z0-9_-]")
+# A held picture's address: the camera's name, then the ticket. A camera's name never holds a slash (it is URL-encoded).
+_TICKET_IN_PATH = re.compile(r"(/api/v1/cameras/[^/?\s]+/reference/)[^/?\s]+")
+
+
+class HideTickets(logging.Filter):
+    """Replaces the ticket in a uvicorn access record's path (its third argument) with "-". Other records pass as they
+    are."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) >= 3 and isinstance(args[2], str):
+            record.args = (*args[:2], _TICKET_IN_PATH.sub(r"\1-", args[2]), *args[3:])
+        return True
 
 
 @dataclass(frozen=True)

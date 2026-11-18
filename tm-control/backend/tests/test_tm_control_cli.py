@@ -162,3 +162,19 @@ def test_dump_openapi_prints_the_apps_document_without_device_files(tmp_path, mo
     assert main(["dump-openapi"]) == 0
     assert json.loads(capsys.readouterr().out) == create_app(settings).openapi()
     assert not (tmp_path / "missing-state").exists()
+
+
+def test_serve_hides_tickets_in_the_access_log(monkeypatch, settings):
+    import logging
+
+    import uvicorn
+
+    from tm_control.core.settings import Settings
+    from tm_control.modules.cameras.reference import HideTickets
+
+    access = logging.getLogger("uvicorn.access")
+    monkeypatch.setattr(access, "filters", [])
+    monkeypatch.setattr(Settings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: None)
+    assert main(["serve"]) == 0
+    assert [type(f) for f in access.filters] == [HideTickets]

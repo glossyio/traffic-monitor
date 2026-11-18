@@ -4,6 +4,7 @@ names, and the data file."""
 import base64
 import io
 import json
+import logging
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree
@@ -13,7 +14,7 @@ import pytest
 from tests.jpegs import jpeg
 from tests.test_cameras_zones import CAMERA
 from tm_control.modules.cameras.reference import (
-    Reference, References, caption, data_file, jpeg_size, package, stem,
+    HideTickets, Reference, References, caption, data_file, jpeg_size, package, stem,
 )
 from tm_control.modules.cameras.svg import reference_svg
 from tm_control.modules.cameras.zones import ZoneFacts, zone_facts
@@ -222,3 +223,36 @@ def test_the_zip_without_the_location_holds_it_nowhere():
     data = package(reference(), with_location=False)
     archive = zipfile.ZipFile(io.BytesIO(data))
     assert all(b"45.5231" not in archive.read(name) for name in archive.namelist())
+
+
+def access_record(path: str) -> logging.LogRecord:
+    """A record as uvicorn's access log makes one: client, method, path with its query, HTTP version, status."""
+    return logging.LogRecord(
+        "uvicorn.access", logging.INFO, __file__, 0, '%s - "%s %s HTTP/%s" %d',
+        ("127.0.0.1:50000", "GET", path, "1.1", 200), None,
+    )
+
+
+@pytest.mark.parametrize(("path", "shown"), [
+    ("/api/v1/cameras/camera_1_3fa9c2/reference/made-up-ticket/clean.jpg",
+     "/api/v1/cameras/camera_1_3fa9c2/reference/-/clean.jpg"),
+    ("/api/v1/cameras/camera_1_3fa9c2/reference/made-up-ticket/package?location=true",
+     "/api/v1/cameras/camera_1_3fa9c2/reference/-/package?location=true"),
+    ("/api/v1/cameras/camera_1_3fa9c2/reference/made-up-ticket", "/api/v1/cameras/camera_1_3fa9c2/reference/-"),
+    ("/api/v1/cameras/reference/reference/made-up-ticket/zones.jpg",
+     "/api/v1/cameras/reference/reference/-/zones.jpg"),
+    ("/api/v1/cameras/camera_1_3fa9c2/reference", "/api/v1/cameras/camera_1_3fa9c2/reference"),
+    ("/api/v1/status", "/api/v1/status"),
+])
+def test_the_access_log_shows_no_ticket(path, shown):
+    record = access_record(path)
+    assert HideTickets().filter(record) is True
+    assert record.getMessage() == f'127.0.0.1:50000 - "GET {shown} HTTP/1.1" 200'
+    assert "made-up-ticket" not in record.getMessage()
+
+
+def test_hiding_tickets_leaves_other_records_alone():
+    record = logging.LogRecord("x", logging.INFO, __file__, 0, "plain %s", ("words",), None)
+    assert HideTickets().filter(record) is True and record.getMessage() == "plain words"
+    bare = logging.LogRecord("x", logging.INFO, __file__, 0, "no arguments", None, None)
+    assert HideTickets().filter(bare) is True and bare.getMessage() == "no arguments"
