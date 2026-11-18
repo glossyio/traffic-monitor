@@ -13,7 +13,7 @@ Each camera has two names:
 
 For a new camera, the page makes the second name for you: `camera_` and a number, then six random characters from 0 to 9 and a to f, such as `camera_1_3fa9c2`. The number tells two cameras apart when you read the page. The random part keeps the name from being used twice on a device, so records from two different cameras never share a name. You can't type one yourself, because a typed name can hold a street again.
 
-A device that has only `picam_h265`, as the installer sets it up, keeps working with no change: when an entry doesn't say which camera it is, it's the Frigate camera with the same name. `picam_h265` doesn't say where the device is, so you can leave it. To switch a camera with a name of your own to a neutral one, see [Use a neutral name](#use-a-neutral-name).
+A device that has only `picam_h265`, as the installer sets it up, keeps working with no change: when an entry doesn't say which camera it is, it's the Frigate camera with the same name. `picam_h265` doesn't say where the device is, so you can leave it. To switch a camera with a name of your own to a neutral one, see [Use a neutral camera name](#use-a-neutral-camera-name).
 
 ## The Cameras page
 
@@ -24,7 +24,8 @@ An entry's row shows its name in bold, and Frigate's name beside it when the two
 - **Frigate detection**: whether Frigate detects objects on the camera now. A camera turned off in Frigate detects nothing, so it reads off.
 - **Database capture**: whether the Traffic Monitor saves the camera's events in its database and sends them on. An event is recorded only when both are on.
 - **Radar**, and, when the Plate Recognizer add-on is installed, **Plates**.
-- **Zones: all four**, or **Missing in Frigate** and the zones the [flows expect](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) that the camera lacks, or **Turned off in Frigate** and the ones that are there but switched off. Frigate can turn a zone off in its configuration or from its live view, and an object never enters a zone that is off, so it counts as missing for the Traffic Monitor.
+- **Recommended zones present** and the four zones the [flows expect](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones), or **Recommended zones missing in Frigate** and the ones the camera lacks, or **turned off in Frigate** and the ones that are there but switched off. Frigate can turn a zone off in its configuration or from its live view, and an object never enters a zone that is off, so it counts as missing for the Traffic Monitor.
+- **Other zones enabled**: the camera's other zones that are on, by their IDs, with your name beside an ID that Frigate made up. Their IDs are saved with every event; see [Zone names are saved with your data](#zone-names-are-saved-with-your-data).
 - **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
 A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**.
@@ -34,7 +35,9 @@ A Frigate camera that no entry is paired with shows its **Frigate detection**, a
 The page marks each problem the Status page's [camera checks](https://docs.trafficmonitor.ai/dev/use/device-health/#the-camera-checks) report, on the camera it's about, in the same colors: red for a problem, amber for a warning. Above the list, a line says how many cameras need attention. Each marked row has a box for each problem that says what's wrong and what to do on this page:
 
 - Red: a camera **is new in Frigate and isn't recorded** while Frigate detects objects on it (point an entry at it, or add it), or another entry **already records this Frigate camera** (remove this one).
-- Amber: **Frigate no longer has** the camera (point the entry at its new name, or remove it); the camera is turned off in Frigate, Frigate's detection is off, or **Database capture** is off, so its events **aren't recorded**; zones are missing or turned off, with a link, **Edit its zones in Frigate**, that opens Frigate's masks and zones settings at that camera; or the camera's radar isn't turned on in `config.yml`.
+- Amber: **Frigate no longer has** the camera (point the entry at its new name, or remove it); the camera is turned off in Frigate, Frigate's detection is off, or **Database capture** is off, so its events **aren't recorded**; zones are missing or turned off, with a link, **Edit its zones in Frigate**, that opens Frigate's masks and zones settings at that camera; the camera's radar isn't turned on in `config.yml`; or a zone's name **looks like an address or a person's name**.
+
+A grey note names the zones whose names have a word the Traffic Monitor doesn't recognize, and asks you to review them. It isn't a problem, and it doesn't count toward the line above the list.
 
 A row with no box is in step. A new Frigate camera whose **Frigate detection** is off has no box either: nothing is detected, so nothing is dropped. You can still point an entry at it or add it. The page and the checks come from the same comparison, so they always agree.
 
@@ -76,15 +79,28 @@ Until you point the entry at the new name, the Status page's **Cameras in config
 
 A Frigate camera that no entry is paired with isn't recorded. On its row, choose **Add as new**. The row opens to the new entry's settings, with **Database capture** on, **No radar**, and plates off. Choose the radar, and **Add**. The page gives the entry its name.
 
-## Use a neutral name
+## Use a neutral camera name
 
-An entry whose name isn't of the form `camera_<number>_<six characters>` has **Use a neutral name** on its row. Choose it to switch the camera to a name the page makes, such as `camera_2_81d0e4`. The entry keeps its settings and its place in `config.yml`, and remembers the old name as Frigate's name, so the pairing doesn't change.
+An entry whose name isn't of the form `camera_<number>_<six characters>` has **Use a neutral camera name** on its row. Choose it to switch the camera to a name the page makes, such as `camera_2_81d0e4`. The entry keeps its settings and its place in `config.yml`, and remembers the old name as Frigate's name, so the pairing doesn't change.
 
 Records already saved keep the old name. They can't be renamed here, because rewriting a database of several gigabytes on a microSD card takes a long time. The dashboards' charts start again under the new name, and Node-RED ends the camera's deployment under the old name and starts one under the new one, at the same place and facing the same way. The confirmation says so before it does anything. A server that receives the device's data sees the old sensor end and a new one start.
 
 ## Remove an entry
 
 An entry whose Frigate camera is gone, because you deleted the camera or renamed it and pointed no entry at the new name, has **Remove**. Choose it and confirm. The entry's settings are removed from `config.yml`, and Node-RED ends the camera's deployment. Records already saved are kept. The same button removes an entry that repeats another entry's Frigate camera.
+
+## Zone names are saved with your data
+
+A zone's ID is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Frigate makes the ID from the name you type in its zone editor, in lower case with `_` for spaces, so `1420 Oak St` is saved as `1420_oak_st`. Name zones for what they are, such as a compass direction (`zone_north`) or a lane (`zone_lane_bus`), not for a street, a house number, or a person.
+
+A name with other punctuation, or with letters outside a to z, gets an ID that Frigate makes up, such as `zone_a9bacc03`. The page shows your name beside that ID and doesn't check it, because the ID says nothing about the place.
+
+The page checks the IDs of each camera's other zones that are on:
+
+- On a camera whose events are recorded, an amber box names the zones whose names look like an address or a person's name: a number of three or more digits, an apostrophe, a street abbreviation such as `st` or `ave`, or a street word such as `lane` or `strasse` together with an ordinal such as `5th` or a word the check doesn't recognize. The Status page's **Zone names** check warns too.
+- A grey note names the zones whose names have a word the check doesn't recognize. The check knows about 200 English words for parts of a road, directions, and what moves on it, and can't tell whether another word is a street's name or a person's. A word in another language written in a to z, such as `nord`, gets the note too, so review the names and leave them if they're fine.
+
+To rename a zone, choose **Edit its zones in Frigate** and change its name there. Its ID follows the new name. While the zone is on one of the camera's required-zones lists in Frigate (for reviews, snapshots, MQTT, and a few others), or a Frigate profile changes it, Frigate keeps its ID and changes only its name, and the page goes on showing the old ID: take the zone off those lists, rename it, then add it back under its new ID. Events already saved keep the old ID. The page never changes a zone itself.
 
 ## What still carries Frigate's name
 
@@ -94,7 +110,7 @@ The Traffic Monitor keeps Frigate's name out of what it saves and shares. These 
 - **Frigate's `frigate/events` messages** on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md). Anything subscribed to the broker sees them. Frigate publishes them, not the Traffic Monitor.
 - **Frigate+.** The name identifies the camera for the scene conditions and annotations you submit.
 - **The Backup button.** With ThingsBoard connected, the **Backup & Restore** section of the legacy dashboard uploads Frigate's whole configuration, camera names included, when you press it. The copy of `config.yml` that goes to ThingsBoard leaves out each entry's `frigate_camera` setting.
-- **Records saved before a switch.** A device whose entry was named by hand has saved that name with its records, and keeps it there after you [use a neutral name](#use-a-neutral-name).
+- **Records saved before a switch.** A device whose entry was named by hand has saved that name with its records, and keeps it there after you [use a neutral camera name](#use-a-neutral-camera-name).
 
 The Status page shows Frigate's camera names to anyone who is logged in, as Frigate does. The [diagnostics file](https://docs.trafficmonitor.ai/dev/use/device-health/#download-diagnostics) replaces them before you send it to someone; that section lists its limits.
 

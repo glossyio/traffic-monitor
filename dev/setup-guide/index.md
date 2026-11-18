@@ -46,7 +46,7 @@ The Traffic Monitor looks for four zones with fixed names. Frigate ships with al
 
 The four zones drawn over a residential street
 
-Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, can have any other name. [Ideas and use cases](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/index.md) has examples.
+Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, can have any other name. [Ideas and use cases](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/index.md) has examples. A zone's name is saved with every event that enters it and shared with the data, so name it for a direction or a lane, such as `zone_north` or `zone_lane_bus`, not for a street, an address, or a person; see [Zone names are saved with your data](https://docs.trafficmonitor.ai/dev/use/cameras/#zone-names-are-saved-with-your-data).
 
 ## 4. Record the location and sensors
 

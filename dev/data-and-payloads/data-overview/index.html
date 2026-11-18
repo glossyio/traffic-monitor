@@ -2349,6 +2349,7 @@
 <li>Install the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Plate numbers go into the <code>plate_recognizer</code> table. Don't share a database from a device that has ever had the add-on on.</li>
 <li>Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.</li>
 <li>Write identifying details into operator comments.</li>
+<li>Name a zone in Frigate after a street, a house number, or a person. Zone names are saved with every event; see <a href="../../use/cameras/#zone-names-are-saved-with-your-data">Zone names are saved with your data</a>.</li>
 <li>Keep the copy of the database that an upgrade leaves in <code>db/backup/</code>. It can hold the exact coordinates from before they were rounded (see <a href="#deployment">deployment</a>), so don't share it.</li>
 </ul>
 <p>For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A <a href="../../configuration/frigate-config/#masks">motion mask</a> only stops motion there from starting a detection; the area still shows in the live view and in recordings.</p>
@@ -2367,7 +2368,7 @@
 <tr>
 <td><code>events</code></td>
 <td>One row per object the camera detected, with direction and speed. See <a href="../events-payload/">Events</a>.</td>
-<td>Only through Frigate sub-labels or attributes, if you turn those on</td>
+<td>Only through Frigate sub-labels or attributes, if you turn those on, or a zone name you typed</td>
 </tr>
 <tr>
 <td><code>radar_dov</code></td>
