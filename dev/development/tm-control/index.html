@@ -2100,6 +2100,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-home-button" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The home button
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#backend-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2401,6 +2412,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-home-button" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The home button
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#backend-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2653,7 +2675,8 @@
        ▼                     ▼                          ▼                          ▼
   200 + identity       401 + X-TM-Redirect         403 forbidden        no answer (down, timeout)
   headers               (/setup, /login?next=…,     nginx returns 403    nginx returns 503 with
-       │                 /welcome, or /waiting)                          the rescue page
+       │                 /welcome, /waiting, or                          the rescue page
+       │                 /admin-only)
        │                nginx answers 302
        ▼
   nginx proxies to the app, adding the headers that app needs
@@ -2686,6 +2709,7 @@
 <li>Only nginx's internal <code>/_auth</code> and <code>/_auth_admin</code> locations may call verify. A <code>location ^~ /api/v1/auth/verify</code> returns 404 to the network, the <code>/api/</code> location clears <code>X-TM-Required-Role</code>, and verify answers 404 without that header.</li>
 <li>The check is always a <code>GET</code> without a body, and without the <code>Authorization</code> header, so no credential a client sends there reaches tm-control.</li>
 <li>Sessions last 7 days and roll: verify and the API re-issue a cookie that's more than a day old, and the snippets pass verify's <code>Set-Cookie</code> on to the browser. An app location must not set an <code>add_header</code> of its own, or it would drop that cookie.</li>
+<li>A viewer on an admin path gets a 403, except for a page load: when the request's <code>Accept</code> header names <code>text/html</code>, verify answers 401 with <code>X-TM-Redirect: /admin-only</code>, and nginx turns that into a 302 to a page of the control app that says the app is for administrators and offers <strong>Home</strong> and <strong>Log out</strong>. Scripts, downloads, and anything else that doesn't ask for HTML keep the 403. A client can send any <code>Accept</code> it likes; the only difference is a redirect to a page that holds nothing instead of a 403.</li>
 <li>Only the check's own failure, which <code>auth_request</code> turns into a 500, becomes the rescue page (<code>error_page 500 =503 /unavailable.html</code>). An app's own 502 or 504 stays as it is.</li>
 </ul>
 <p>The Node-RED token is <code>base64url(JSON {"u", "r", "exp"})</code>, a dot, and <code>base64url(HMAC-SHA256(key, first part))</code>, without padding, valid for 5 minutes. <code>NodeRedToken</code> in <code>backend/tm_control/core/auth.py</code> mints it, and <code>verifyProxyToken</code> in <code>container/node-red-tm/data/settings.js</code> checks it. Change both together; <code>script/tests/test_node_red_settings.py</code> runs tokens from one through the other.</p>
@@ -2698,6 +2722,15 @@
 <li>The helper's request has no session. verify lets it through as the administrator only when the address is exactly <code>/storefiles</code> with <code>files</code> and <code>tm_token</code> and nothing else, on an admin location, within 600 seconds, from the address the link was made for (<code>X-Forwarded-For</code>, which the <code>/_auth</code> locations set to nginx's own <code>$remote_addr</code>), and for the same <code>files</code>. The user must still be an administrator with the same sessions, and the current license agreement must be accepted. The answer carries <code>X-TM-User</code> and <code>X-TM-Role</code> only: no Frigate secret, no Node-RED token, no cookie.</li>
 </ol>
 <p>The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its <code>next=</code>. nginx's access log records the token; the parameter is named <code>tm_token</code> so that the diagnostics download hides its value with every other key ending in <code>token</code>. The two download templates live in <code>flows.json</code> (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and <code>script/tests/test_node_red_flows.py</code> checks that they ask for the same link.</p>
+<h2 id="the-home-button">The home button<a class="headerlink" href="#the-home-button" title="Permanent link">&para;</a></h2>
+<p>Each app is a separate program, so none of them links back to the control app. nginx adds one line to the HTML of the five apps that serve pages (Dashboard 2.0, the legacy dashboard, Frigate, the Node-RED editor, and the camera feeds): <code>&lt;script src="/home-button.js" defer&gt;&lt;/script&gt;</code>, placed before <code>&lt;/head&gt;</code>. The script draws a home button over the page and puts the device's name in the tab's title. The user-facing description is in <a href="../../use/home-page/#getting-back-to-the-home-page">Home page and apps</a>.</p>
+<ul>
+<li><strong>The snippet</strong> is <code>container/revproxy/tm/snippets/home-button.conf.j2</code>, which sets <code>sub_filter</code> and the upstream <code>Accept-Encoding</code>, <code>If-None-Match</code>, and <code>If-Modified-Since</code>. The five app locations include it beside <code>proxy-common.conf</code> and their auth snippet. <code>storefiles</code> and the control app's own locations don't. The snippet adds no response header, so the rule that an app location sets no <code>add_header</code> still holds.</li>
+<li><strong>The <code>$tm_page_encoding</code> map</strong> in <code>nginx.conf.j2</code> is why the apps' scripts and data stay compressed. <code>sub_filter</code> works only on uncompressed text, so nginx asks the app for an uncompressed answer when the request's <code>Accept</code> header contains <code>text/html</code>, and passes the browser's own <code>Accept-Encoding</code> otherwise. Two maps beside it do the same for <code>If-None-Match</code> and <code>If-Modified-Since</code>, so an app never answers a page load with a 304 for a copy the browser cached before the button existed. <code>Accept</code> is the signal because a browser on plain HTTP sends no <code>Sec-Fetch-*</code> headers. An app's own background request for an HTML fragment is treated as a page load; a fragment has no <code>&lt;/head&gt;</code>, so nothing is added, and the script does nothing the second time it loads on a page.</li>
+<li><strong>The script</strong> is <code>tm-control/ui/src/home-button/</code> (<code>place.ts</code> holds the logic as plain functions, <code>main.ts</code> the button, <code>entry.ts</code> the start). A second Vite build, <code>vite.home-button.config.ts</code>, turns it into one file, <code>dist/home-button.js</code>, with no Vue or Vuetify in it. The build fails when the file is over 10 240 bytes. nginx serves it from the control app's UI directory with the rest of the site (<code>no-cache</code>), and it needs no login to fetch.</li>
+<li><strong>The device call:</strong> the script asks <code>GET /api/v1/system/device</code>, which any logged-in user may read, for <code>hostname</code> and the theme's colors. (The control app's own pages take the name from <code>GET /api/v1/setup/status</code>, which needs no login.) Without an answer (the control app is restarting, or the session ended), the button is the icon alone, the title stays as the app set it, and the button still goes home. The script, and the pages it adds to, carry no copy of the name made at install.</li>
+<li><strong>After an app upgrade,</strong> open each app once and look at where the button sits, and run the device tests, which check that each app's page still carries the script line. An app that compresses a page when asked not to would stop the script line from being added. A <code>Content-Security-Policy</code> that doesn't allow the control app's own script, or its <code>/api</code> fetch, would stop the script or its device call; a same-origin script passes <code>script-src 'self'</code>.</li>
+</ul>
 <h2 id="backend-layout">Backend layout<a class="headerlink" href="#backend-layout" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>tm-control/backend/tm_control/
   app.py         create_app(): loads the state, secrets, manifest, and license agreement, and mounts the modules
@@ -3175,7 +3208,7 @@
 </tbody>
 </table>
 <p><code>tm-hotspot-firewall.service</code> loads the <code>inet tm_hotspot</code> nftables table before NetworkManager can start the hotspot. The table drops forwarded traffic into and out of the hotspot's subnet, so phones on it reach the unit and nothing behind it.</p>
-<p>nginx's sign-in rule is in <code>container/revproxy/nginx.conf.j2</code>. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign <code>Host</code>. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to <code>http://10.42.0.1/</code>, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets <code>X-TM-Hotspot: 1</code> from the address a request arrived on, replacing any value the client sent, and <code>GET /api/v1/setup/status</code> then returns <code>hotspot.local_name</code>, which the login and setup pages show to an iPhone.</p>
+<p>nginx's sign-in rule is in <code>container/revproxy/nginx.conf.j2</code>. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign <code>Host</code>. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to <code>http://10.42.0.1/</code>, which makes the phone open its sign-in window. The rule must never answer such a test with success: an Android 17 phone has no other way in. nginx also sets <code>X-TM-Hotspot: 1</code> from the address a request arrived on, replacing any value the client sent, and <code>GET /api/v1/setup/status</code> then returns <code>hotspot.local_name</code>, which the login and setup pages show to an iPhone. The same answer carries <code>hostname</code> for everyone, with no login, and the control app's tab and bar take the unit's name from it, so the pages before login name the unit too. The name is no secret: mDNS announces it on the network.</p>
 <p><code>sudo tm-control card</code> (<code>core/card.py</code>) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. <code>--json</code> prints the same values, and <code>--unclaimed-only</code>, which the installer passes, prints nothing and exits 3 once the device is claimed.</p>
 <h3 id="what-the-sandbox-allows">What the sandbox allows<a class="headerlink" href="#what-the-sandbox-allows" title="Permanent link">&para;</a></h3>
 <p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and two config directories under the code directory (<code>ReadWritePaths</code>): Frigate's, <code>frigate/config</code>, for the models the Detection page manages, and Node-RED's, <code>node-red-tm/config</code>, for the <code>config.yml</code> the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
