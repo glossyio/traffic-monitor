@@ -19,16 +19,21 @@ export function rowState(row: CameraRow): RowState {
   return 'in-step'
 }
 
+// The four zones the flows read, in the backend's order
+const RECOMMENDED_ZONES = ['zone_capture', 'zone_near', 'zone_far', 'zone_radar']
+
 // Which of the four zones the flows read Frigate lacks or has turned off for this camera (an event never enters a zone
-// that is off); nothing for a camera Frigate doesn't have
+// that is off), or all four by name when none is; nothing for a camera Frigate doesn't have
 export function zonesText(row: CameraRow): string {
   if (row.zones_missing === null) return ''
   const off = row.zones_off ?? []
-  if (row.zones_missing.length === 0 && off.length === 0) return 'Zones: all four'
+  if (row.zones_missing.length === 0 && off.length === 0) {
+    return `Recommended zones present: ${RECOMMENDED_ZONES.join(', ')}`
+  }
   const parts = []
-  if (row.zones_missing.length) parts.push(`Missing in Frigate: ${row.zones_missing.join(', ')}`)
-  if (off.length) parts.push(`${parts.length ? 'turned' : 'Turned'} off in Frigate: ${off.join(', ')}`)
-  return parts.join('; ')
+  if (row.zones_missing.length) parts.push(`missing in Frigate: ${row.zones_missing.join(', ')}`)
+  if (off.length) parts.push(`turned off in Frigate: ${off.join(', ')}`)
+  return `Recommended zones ${parts.join('; ')}`
 }
 
 // For a new row: the entries whose Frigate camera is gone, which it could be a rename of. The API allows pointing any
@@ -73,6 +78,38 @@ export function radarChoices(row: CameraRow, radars: CameraRadar[]): RadarChoice
 // Frigate's masks and zones settings, opened at this camera, as Frigate's own UI links there
 export function frigateZonesHref(row: CameraRow): string {
   return `/frigate/settings?page=masksAndZones&camera=${encodeURIComponent(row.frigate_camera)}`
+}
+
+// The camera's zones other than the four the flows read, which are on; Frigate saves their keys with every event
+// that enters one. A key Frigate made up from a name it couldn't use (zone_a9bacc03) says nothing to the operator,
+// so Frigate's name for it follows in brackets.
+export function otherZonesText(row: CameraRow): string {
+  const names = (row.zone_names ?? []).map((zone) =>
+    zone.friendly_name ? `${zone.name} ("${zone.friendly_name}" in Frigate)` : zone.name,
+  )
+  return names.length ? `Other zones enabled: ${names.join(', ')}` : ''
+}
+
+function zoneNamesWith(row: CameraRow, check: 'unknown_word' | 'pattern'): string[] {
+  return (row.zone_names ?? []).filter((zone) => zone.check === check).map((zone) => zone.name)
+}
+
+// Why the page asks about zone names, after it names them
+const SAVED_WITH_EVENTS = 'Like camera names, zone names are saved with every event, so'
+
+// A note, not an issue, for the zones whose names have a word the name check doesn't know: it can't tell whether such
+// a word is a street's or a person's name, so it asks the operator to look
+export function zoneNote(row: CameraRow): { text: string; link: { href: string; text: string } } | null {
+  const names = zoneNamesWith(row, 'unknown_word')
+  if (!names.length) return null
+  const one = names.length === 1
+  return {
+    text:
+      `Review the zone ${one ? 'name with a word' : 'names with words'} the Traffic Monitor doesn't recognize: ` +
+      `${names.join(', ')}. ${SAVED_WITH_EVENTS} a name that points to a street, an address, or a person adds ` +
+      'personal information to your de-identified data.',
+    link: { href: frigateZonesHref(row), text: 'Edit its zones in Frigate' },
+  }
 }
 
 export interface IssueBox {
@@ -123,6 +160,18 @@ export function issueBoxes(row: CameraRow): IssueBox[] {
         `Radar ${row.camera_radar} isn't turned on in config.yml, so this camera gets no speed or direction. ` +
         'Choose another radar in Settings.',
     }),
+    zone_names: () => {
+      const names = zoneNamesWith(row, 'pattern')
+      const one = names.length === 1
+      return {
+        text:
+          `Review the zone ${one ? 'name that looks' : 'names that look'} like an address or a person's name: ` +
+          `${names.join(', ')}. ${SAVED_WITH_EVENTS} ${one ? 'this one adds' : 'these add'} personal information ` +
+          `to your de-identified data. Rename ${one ? 'it' : 'them'} in Frigate, for example by compass direction ` +
+          '(zone_north).',
+        link: { href: frigateZonesHref(row), text: 'Edit its zones in Frigate' },
+      }
+    },
   }
   return row.issues.map((issue) => ({
     level: issue.level === 'error' ? 'error' : 'warning',

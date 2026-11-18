@@ -19,6 +19,22 @@ The home page is the device's [control app](control-app.md). A new device first 
 
 Cockpit is the one app with its own port. It asks for the Raspberry Pi user account, not your control app login.
 
+## Getting back to the home page
+
+Every app except Cockpit shows a small home button. Press it to come back to the home page. Viewers see it on the dashboards and Frigate. Administrators also see it on the Node-RED editor and the camera feeds.
+
+* **Move it** if it covers something: drag it to either side of the window, at any height. It settles on the nearer side.
+* **Tuck it away** by dragging it all the way to the left or right edge of the window and letting go there. A thin handle stays on the edge; press the handle to bring the button back. With the button selected from the keyboard, **Escape** tucks it.
+* **Each app remembers its own spot**, separately in each browser.
+
+On a computer the button also shows the device's name. If you share a screenshot of an app and would rather the name weren't in it, tuck the button first. On a narrow screen, such as a phone held upright, the button is the icon alone.
+
+!!! note "In an Android phone's sign-in window"
+
+    The window that opens when a phone joins the device's hotspot has gestures of its own: dragging down reloads the page, and a drag that starts near a side goes back or forward. So there the button is hard to move. Pressing it and tucking it still work. To place the button where you like, open the device on a laptop or desktop computer instead.
+
+The control app's tab, from the login page on, and the tab of each app with the button start with the device's name, so you can tell several devices apart in one browser window.
+
 ??? note "Finding the device's address"
 
     * If you set a hostname in Raspberry Pi Imager, `http://<hostname>.local/` works from most computers and phones on the same network.

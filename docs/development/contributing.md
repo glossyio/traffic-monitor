@@ -4,11 +4,13 @@ Thank you for your interest in getting involved!  We welcome all skill levels an
 
 Contributions can include any of the following plus more!
 
-* 💡 [Feature requests](https://github.com/glossyio/traffic-monitor/issues/new?assignees=\&labels=\&projects=\&template=feature_request.md\&title=) and use case ideas
-* 🐞 [Bug reports](https://github.com/glossyio/traffic-monitor/issues/new?assignees=\&labels=\&projects=\&template=bug_report.md\&title=)
+* 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas) and use cases, and [feature requests](https://github.com/glossyio/traffic-monitor/issues/new?template=feature_request.md) with an idea of how they should work
+* 🐞 [Bug reports](https://github.com/glossyio/traffic-monitor/issues/new?template=bug_report.md)
 * 👩‍💻 [Code contributions](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md), see Contributing
-* 👍 Comment on or thumbs-up [milestones](https://github.com/glossyio/traffic-monitor/milestones) or [issues](https://github.com/glossyio/traffic-monitor/issues)
+* 👍 Comment on or thumbs-up [ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas) or [issues](https://github.com/glossyio/traffic-monitor/issues)
 * 💬 Questions, comments, and videos/images of your deployments on our [Traffic Monitor Zulip Chat](https://trafficmonitor.zulipchat.com/)!
+
+Issues labeled `help wanted` or `good first issue` are open to anyone, and small fixes are welcome any time. For anything else, comment on the issue first. [How we track work](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md#how-we-track-work) in CONTRIBUTING.md explains the issue types and fields. Report security problems privately, as [Get support](../help-and-faq/where-can-i-get-support.md#report-a-security-problem) describes.
 
 We foster a safe and welcoming community, review [our Code of Conduct](https://github.com/glossyio/traffic-monitor?tab=coc-ov-file#readme).
 

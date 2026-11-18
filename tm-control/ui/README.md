@@ -31,7 +31,14 @@ PYTHONPATH=tm-control/backend python -m tm_control dump-openapi > tm-control/ui/
 cd tm-control/ui && npm run api:generate
 ```
 
-`npm run build` writes the site to `dist/`, and `npm test` runs the Vitest tests in `tests/`. To use the same Node
+To try the home button that nginx adds to each app's page, open `http://localhost:5173/home-button-demo.html` while
+`npm run dev` runs. It's a stand-in app page with the button on it; add `?app=nr` (or `dashboard`, `ui`, `feeds`) to
+try another app's spot. Drag it to either side, drop it at an edge to tuck it, and reload to see that it stays where
+you left it. Logged in on the same address, it shows the fake device's name and puts it in the tab's title; without
+the backend or a login, it's the icon alone. The build leaves this page out.
+
+`npm run build` writes the site to `dist/`, and the home button's script beside it as `dist/home-button.js` (the
+build fails if that grows past 10 240 bytes). `npm test` runs the Vitest tests in `tests/`. To use the same Node
 as the device's build, run them in the pinned image:
 
 ```bash
@@ -48,7 +55,23 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
   outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
-- `src/stores/session.ts` is the only store: the setup status and the logged-in user.
+- `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
+  `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
+  stage makes `dist/` readable for nginx (`chmod -R a+rX`).
+- `src/stores/session.ts` is the only store: the setup status, the logged-in user, and the device's hostname, which
+  comes with `GET /setup/status`, so the pages before login have it too, and stays when the session ends.
+- `src/title.ts` builds the tab's title (`tm-01 · Status | Traffic Monitor` with a page name, `tm-01 | Traffic Monitor`
+  on setup, login, and the license pages, and `Traffic Monitor` when the name is unknown, as on the error page). A page's name comes from its menu entry, or from `meta.title` in its route where it
+  has none (the page for a viewer who opened an administrator's app, for one).
+- `src/colors.ts` holds the default colors and the check for a device's own. It imports nothing, so the home button's
+  script can use it without pulling in Vuetify; `src/theme.ts` re-exports `DEFAULT_COLORS`.
+- `src/home-button/` is the home button nginx adds to each proxied app's page. `place.ts` is its logic as plain
+  functions (which app a path belongs to, where a drop settles, what the browser remembers, the title's prefix),
+  `main.ts` draws the button and handles the pointer and keyboard, and `entry.ts` starts it. It imports no Vue,
+  Vuetify, or Pinia, and nothing that does, because it runs on other programs' pages and has to stay small.
+  `vite.home-button.config.ts` is a second Vite build that turns `entry.ts` into one file, `dist/home-button.js`, after
+  the main build, without emptying `dist/`. It fails the build when the file is over 10 240 bytes. The demo page
+  `home-button-demo.html` is used by `npm run dev` only and isn't built.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
@@ -77,11 +100,18 @@ from an existing lockfile without trouble, so the image still builds and tests t
   rows that need attention. An entry in step has no box, nor has a new Frigate camera whose detection is off (it drops
   nothing, so the API reports no issue for it; it keeps Point and Add as new), and while Frigate can't be compared a row
   shows its settings and nothing about Frigate. The actions that need the comparison (Point at this, Add as new, Use a
-  neutral name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral name, and Remove
-  confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with `adding`, which
-  POSTs. A save that works closes the panel; one that fails keeps it open with the reason inside it. A refused
-  action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it again.
+  neutral camera name, Remove) are offered only while Frigate answers and has cameras. Point, Use a neutral camera
+  name, and Remove confirm first in a dialog (the error color only for Remove); Add as new opens `CameraEdit` with
+  `adding`, which POSTs. A save that works closes the panel; one that fails keeps it open with the reason inside it. A
+  refused action shows the API's message above the list, and a 409 or 404 (another admin got there first) loads it
+  again.
   Every write answers with the whole new state, which replaces the page's, so there is no second request.
+  A camera's other zones (`otherZonesText`) are a secondary-color line under the zones line, because their names are
+  saved with every event. Names with a word the backend's name check doesn't know get a note (`zoneNote`): a tonal
+  `v-alert` with no `type`, so it takes the neutral color and no icon and reads quieter than an issue box, because it
+  isn't a problem and doesn't count toward the alert above the list. A name that looks like an address is an issue box.
+  A key Frigate made up (`zone_a9bacc03`) is what an event saves, so it leads; Frigate's name follows it in brackets
+  only so the operator can find the zone in Frigate.
   The Radar field is a drop-down, because the radars are a short fixed list and a typed name could only be wrong:
   each shows its state under its name, a radar `config.yml` doesn't set up can't be chosen, and a radar the file
   names that the unit doesn't have is listed as missing so the field says what the file says. Vuetify's select shows
@@ -155,7 +185,7 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 ### Layout
 
 Pages before login (setup, login, the license pages) have no menu: one column, at most 480 px wide, centered, with
-a small "Traffic Monitor" name above the page title. Pages after login have the app bar and a menu drawer that stays
+a small `tm-01 | Traffic Monitor` line, as in the app bar, above the page title. Pages after login have the app bar and a menu drawer that stays
 open from the `md` breakpoint (960 px) up and slides in below it. Content is left-aligned and at most 760 px wide.
 
 Setup (one page, five steps):
@@ -443,6 +473,16 @@ Date and time (below 600 px the clocks stack, the device's first):
 - A viewer sees the clocks, the sentence, the time zone, and whether the device keeps time from the internet, with
   no button, picker, or switch, and the page ends with "An administrator can set the time and time zone here."
 
+#### Using a model by its ID, 2026-11-13
+
+A Frigate+ model could only be used once it was on the device, which meant Frigate's own settings page or an upload,
+and a person with a phone and the model's ID on the Frigate+ website had to leave the control app for the first.
+The Frigate+ section now has a second panel, beside the key's: paste the ID, and Frigate downloads the model. It sits
+with the key because the key is what it needs, and it is a panel because it's for the one time a model is chosen, so
+it needn't take room on a page most people read. The download takes minutes, so the panel opens when one runs and the
+page follows it instead of holding a request, and the Status page's Frigate+ warning (a key, no Frigate+ model) now
+links to it.
+
 #### What the screenshot review changed
 
 The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and as a viewer.
@@ -479,10 +519,13 @@ The pages were checked in fake mode at 375 px and 1366 px wide, as an admin and 
 
 ### Detection
 
-The same people, the same rules. The page answers "what does this device look for, and with which model", and is
-where the Frigate+ API key lives, because the key is how Frigate gets a Frigate+ model. Everyone who can log in sees
-it all; admins also get the key's form and the actions that change the model (upload, use, download, delete), which
-sit in this layout without moving anything.
+The same people, the same rules. The page answers "what does this device look for, and with which model". It is also
+where the Frigate+ API key lives, and where a Frigate+ model is used by its ID, since the key is how Frigate gets a
+Frigate+ model. Everyone who can log in sees it all; admins also get the key's form, the ID form, and the actions that
+change the model (upload, use, download, delete), which sit in this layout without moving anything.
+
+The page keeps the running model in one place, its card under "Model in use", and has four sections in this order:
+Object detection, Model in use, Frigate+, Other models on this device.
 
 ```text
 +------------------------------------+
@@ -494,31 +537,47 @@ sit in this layout without moving anything.
 | Detector        Running model      |
 | edgetpu         My model, a local  |
 |                 model              |
-| (Frigate reports a different list  |
-|  than this model's .json.)         |
-| Frigate tracks only the objects    |
-| that are in both lists.            |
-| > Objects the running model        |  <- h3 panel, closed
-|   recognises (3)                   |
-|     As Frigate reports them.       |
-|     [Copy] [person] [bicycle] (car)|  <- [filled] = tracked
-|     Filled: tracked on this device.|
-| > Objects tracked on this device   |  <- h3 panel, closed
-|   (6, 2 not recognised)            |
-|     [Copy] (person) (car) !dog!    |  <- !amber! = not recognised
-|     Amber: the running model       |
-|     doesn't recognise it.          |
-| Tracked but not recognised by the  |  <- visible while the panels are closed
-| running model: !dog! !cat!         |
 |                                    |
 | Model in use                  (h2) |
 | +--------------------------------+ |
 | | My model  (In use)        (h3) | |  <- tinted
 | | Local model, trained 2026-10.. | |
+| | Tracked but not recognised by  | |  <- outside the fold: visible
+| | the running model: !dog! !cat! | |     while it is closed
 | | [Download]                     | |
 | | (Frigate runs My model.)       | |
-| | > Files and objects            | |  <- closed
+| | v Files and objects            | |  <- open here; "Objects" with no files
+| |   Frigate tracks only the      | |
+| |   objects in both lists.       | |
+| |   (Frigate reports a different | |  <- only when the lists differ
+| |    list than this model's      | |
+| |    .json.)                     | |
+| |   Objects the running model    | |
+| |   recognises (3) (h4)  [Copy]  | |
+| |   As Frigate reports them.     | |
+| |   [person] [bicycle] (car)     | |  <- [filled] = tracked
+| |   Filled: tracked on this      | |
+| |   device.                      | |
+| |   Objects tracked on this      | |
+| |   device (6, 2 not recognised) | |
+| |   (h4)                 [Copy]  | |
+| |   (person) (car) !dog! !cat!   | |  <- !amber! = not recognised
+| |   Amber: the running model     | |
+| |   doesn't recognise it.        | |
+| |   mine.tflite, 2.0 KB, SHA-256 | |
+| |   mine.tflite.json, 433 bytes  | |
 | +--------------------------------+ |
+|                                    |
+| Frigate+                      (h2) |  <- outside the panel
+| When the device is online and has  |
+| a Frigate+ API key, an             |
+| administrator can use a model by   |
+| its ID below, or ...               |  <- both paragraphs: everyone
+| When it's offline, an              |
+| administrator can upload ...       |
+| > API key  set, ending in 0001     |  <- admins: two panels, closed (an
+| > Use a model by its ID            |     h3 holds each title); a viewer
+|                                    |     sees no panels
 |                                    |
 | Other models on this device (2)(h2)|
 | [Upload a model]                   |
@@ -527,7 +586,7 @@ sit in this layout without moving anything.
 | | The installer's model     (h3) | |
 | | yolov9-s-...edgetpu.tflite     | |
 | | [Use] [Download]               | |  <- filled, outlined
-| | > Files and objects            | |
+| | > Files                        | |
 | +--------------------------------+ |
 | +--------------------------------+ |
 | | Test site yolov9          (h3) | |
@@ -545,13 +604,11 @@ sit in this layout without moving anything.
 | |   !dog! !cat!                  | |
 | +--------------------------------+ |
 | (No other models on this device.)  |  <- when there are none
-|                                    |
-| > Frigate+      API key not set    |  <- h2 panel, closed
 +------------------------------------+
 ```
 
-A viewer sees the same page without Upload, the card buttons, the key's state, and the key's form, and keeps the Copy
-buttons.
+A viewer sees the same page without Upload, the card buttons, and the two Frigate+ panels, and keeps the Copy buttons
+and the Frigate+ text.
 
 - A line under the title says what the page is for, in two sentences so a viewer isn't told the page lets them
   switch models.
@@ -573,43 +630,65 @@ buttons.
   two, "SHA-256" and its hash staying together. A file name may break anywhere (`word-break: break-all`, scoped in
   `ModelBlock.vue`): the names that are long are IDs, and otherwise a 32-character Frigate+ name that fills a card's
   line leaves its comma to start the next one.
-- A default with no file on the device (Frigate's built-in model on a device without a Coral, which the API can't
-  list) still gets a card, made by the page, with "Built into Frigate." as its facts line and no fold. Without it, a CPU
-  device's one choice would be a button with no card.
+- The card in use is always there once the models have loaded, so the running model's lists have a home whether
+  Frigate answers or not. The page makes the card when the list has none. A default with no file on the device
+  (Frigate's built-in model on a device without a Coral, which the API can't list) gets one with "Built into
+  Frigate." as its facts line ("Set up by the installer." for the installer's model) and no files; a running model
+  with no entry in the list gets one titled with its name, or "Unknown model" when Frigate gave none, with no buttons
+  and no file lines. Without the first, a CPU device's one choice would be a button with no
+  card. The other cards are as the API lists them.
 - One chip per model at most, in words: "In use" (in the heading blue), "can't run on this detector", or
   "incomplete" (a model file without its sidecar, or the other way round). The API's reason, when it has one, is a
   line under the facts.
-- Three panels of the page's own: the two label lists and Frigate+, on the page's background rather than Vuetify's
-  `surface`, so the card in use stays the only tinted thing. They're closed when the page opens. Each title says what's
-  inside and counts it, or for Frigate+ says the key's state, so a closed row still says something. They open
-  independently (both label lists can be open at once, to compare them), and their content is rendered while closed
-  (`eager`), so the page's height is known when a link scrolls to the key. Each title, a button, sits inside its h3
-  (the key's inside its h2), as the Device page's "Tokens and keys" does, so the outline stays the same for screen
-  readers. The cards aren't in a panel: "Upload a model" and each model's buttons are one glance away, and a fold never
-  sits inside a fold.
-- The running model's list appears in two places on purpose. The list at the top is what Frigate reports, and it's the
-  only list a model with no `.json` can have, such as Frigate's built-in model. The card's list is read from the
-  model's `.json` or the installer's labels file, so the card in use looks like every other card. A caption in the top
-  list says where it came from (`labels.source`). When it's Frigate's and the objects differ from the card's, as sets,
-  one plain line under the facts says so. It has no alert color: it's rare, and
-  usually a deliberate label-map edit.
-- The label lists are chips because they are many short words that wrap well on a phone. A sentence above the two
-  panels says how they relate: "Frigate tracks only the objects that are in both lists.", so "dog" in the second
-  list and not the first is never tracked. The second is "Objects tracked on this device", not "by this model",
-  because it's Frigate's `objects: track` config, not the model's; the wording sends someone to the right place to
-  change it. Each list's Copy puts it on the clipboard comma-separated, ready to paste elsewhere, and says "Copied."
-  beside the button for two seconds; a refused copy says so and stays.
+- The card in use's fold holds the running model's lists, in this order: the sentence "Frigate tracks only the objects
+  that are in both lists.", the "different list" line when it applies, "Objects the running model recognises" with its
+  source line, "Objects tracked on this device", then the file lines. The sentence says how the two lists relate, so
+  "dog" in the second list and not the first is never tracked. The second is "Objects tracked on this device", not "by
+  this model", because it's Frigate's `objects: track` config, not the model's; the wording sends someone to the right
+  place to change it. The fold is titled "Files and objects", or "Objects" on a card with no files. The lists
+  (`RunningLists.vue`) are plain h4-headed lists, always shown inside the fold: the page's earlier two closed panels
+  were rows to open inside a card that is itself a row to open, and a fold never sits inside a fold.
+- The running model's list is Frigate's, as `labels.recognised` says, with `labels.source` naming where it came from
+  in a caption; for a model with no `.json`, such as Frigate's built-in model, it's the only list there is. When it's
+  Frigate's and the objects differ from the model's `.json`, as sets, one plain line says so. It has no alert color:
+  it's rare, and usually a deliberate label-map edit. The `.json`'s own list isn't shown a second time on the card in
+  use, so the card has one list of what the model recognises. The other models' cards keep theirs.
+- The label lists are chips because they are many short words that wrap well on a phone. Each list's Copy puts it on
+  the clipboard comma-separated, ready to paste elsewhere, and says "Copied." beside the button for two seconds; a
+  refused copy says so and stays.
 - A chip can carry one of two marks, each with a legend in words that shows only when a chip has it, so color is never
   the only cue. Filled (`variant="tonal"`, the heading blue) is a recognised object the device tracks. Amber
   (`variant="outlined" color="warning"`) is a tracked object the running model doesn't recognise, and wins over filled.
-  The amber objects also show under the closed panels, and the tracked list's title counts them ("(6, 2 not
-  recognised)"), because they're the one thing here that means counts are missing. An other-model card's fold names
-  what a switch would lose the same way. The card in use has no such line, since the top of the page says it already.
-- The last panel is titled "Frigate+", because it covers getting a model as well as the key. Its state says "API key
-  not set", "API key set", or "API key set, ending in ab12", with ", in use" while Frigate runs a Frigate+ model, and
-  nothing for a viewer or until the secrets answer. The Status page's "Set the key" links to
-  `/detection#frigate-plus`, which opens the panel and scrolls to it once the models have loaded. The key's form is
-  the Device page's (`EnteredSecret.vue`) without its own heading and state line, which the title has.
+  The amber objects also sit on the card in use outside its fold, under its facts and above its buttons, because
+  they're the one thing here that means counts are missing and it shouldn't take an open fold to see them. The tracked
+  list's title counts them ("(6, 2 not recognised)"). An other-model card's fold names what a switch would lose the
+  same way.
+- Frigate+ is its own section, between the model in use and the other models, because the key and the ways to get a
+  Frigate+ model come before a list of models already on the device. Its heading is an h2 outside any panel, and its
+  two paragraphs show for everyone. An admin gets two panels under them, "API key" and "Use a model by its ID", both
+  closed when the page opens, on the page's background rather than Vuetify's `surface`, so the card in use stays the
+  only tinted thing. The key's state is grey text beside the first title: "not set", "set", or "set, ending in ab12",
+  with ", in use" while Frigate runs a Frigate+ model, and nothing until the secrets answer. A viewer gets the text
+  and no panels. The section does not wait for `GET /models`, so it shows, and the key's form works, when the models
+  can't load. The Status page's "Set the key" links to `/detection#frigate-plus`, which opens the key's panel and
+  scrolls to the section, and its "Choose a model" to `/detection#frigate-plus-model`, which opens the ID panel the
+  same way. The panels' content is rendered while closed (`eager`), so the page's height is known when the link
+  scrolls. Each panel's title, a button, sits inside an h3 (`text-body-1`, like the Location page's panels), with its
+  words ("API key", "Use a model by its ID") in `text-subtitle-1 font-weight-medium`, the size of `EnteredSecret`'s
+  own h3 on the Device page. At `text-h6` they read as large as the section's h2. The key's form is the Device page's
+  (`EnteredSecret.vue`) without its own heading and state line.
+- The ID panel (`PlusModelById.vue`) is a short paragraph on where the ID is, one field, "Model ID", and one 44 px
+  button, "Download and use". The field takes a pasted `plus://` address and surrounding spaces, and says "A model ID
+  is 32 characters, each 0-9 or a-f." under itself for anything else, with the button off, so nothing wrong is sent.
+  The confirmation says the download can take a few minutes and the restart about one. An ID of a model the device
+  already has, with both its files, is confirmed as a Use ("Use <title>?", Use's own text and button), since the
+  server takes the short path; the request is the same. The page's `working` flag also covers a running download, so
+  Use, Upload a model, Download, and Delete are off meanwhile (the key's panel stays open to Save and Remove), and the
+  panel shows an info alert, "Frigate is downloading the model. This can take a few minutes. You can leave this
+  page.", under the button. The page asks `GET /models` every 3 seconds while the record says `downloading`, with no
+  limit of its own, because the server ends the record; a download begun elsewhere opens the panel and is followed the
+  same way. A `saved` record is a Use's restart: the page waits for Frigate as after a Use. A `refused` or `failed`
+  one shows its message under the button, Frigate's own words included, also when it's found on opening the page.
 - The admin's actions are buttons on each card, 44 px tall, in order of weight: Use (filled, not on the model in use),
   Download (outlined, any model whose model file is on the device), and Delete (red outline, when the API says it can
   be). "Upload a model" sits under the "Other models" heading, above the cards it adds to, visible with nothing to
@@ -633,6 +712,22 @@ buttons.
   shows where its action was: on the model's card (it moves to "Model in use" with the card when Frigate runs it),
   or, for a deleted model, above the other models' cards. An API refusal shows its message there, Frigate's
   own words included.
+
+#### What changed on 2026-11-13
+
+The running model's lists lived in a section of their own at the top, apart from the card for the same model, so
+"what is this device running" was answered in two places, and the Frigate+ key sat after the long list of other
+models. The page now keeps the running model in one place:
+
+- The two label lists, the sentence about them, and the "different list" line moved from the top section into the card
+  in use's fold. The amber "not recognised" chips moved onto the card, outside the fold. The top section is now the
+  detector, the running model, and Frigate's alerts.
+- The card in use is always there, so the lists show when the running model has no entry or can't be read.
+- Frigate+ moved above the other models and lost its panel around the text. Its heading and two paragraphs are
+  plain, and the key is the one panel, "API key".
+
+The two closed label panels, the three-panel layout, and the placement of Frigate+ last, described in the notes below,
+are the layout before this change.
 
 #### What the screenshot review changed
 
@@ -660,6 +755,10 @@ through the `#frigate-plus` link, and through a Use and a Delete:
 - A closed card looked bottom-heavy, with the card's padding under the title's own. The fold takes back 8 px of it.
 - On a Coral unit running the installer's model, Frigate's list had 91 entries, 74 of them `unknown`, so the top list
   read "(91)" over rows of `unknown` chips while the card said 17. The API now leaves `unknown` out of every list.
+- Looked at and kept: at 375 px each list title in the fold wraps and its Copy sits on its own row. Nothing overlaps,
+  and Copy sat on its own row inside the old panels too.
+- The panel titles ("API key", and "Use a model by its ID" after it) were at `text-h6`, as large as the "Frigate+" h2
+  above them, and had no heading around them. Each now sits in an h3 at the size of the Device page's key titles.
 
 #### Defaults rejected
 
@@ -1021,7 +1120,8 @@ never folds. The join card stays above all of them, also never folded: it carrie
 | +-----------------+ +----------+ |  md and up: two columns
 | | This device   v | | Hotspot v| |  folded: a summary under the title
 | | tm-ab12.local   | | TM-AB12  | |  This device: the .local name and the addresses in use
-| | 192.168.1.57, ..| |          | |  Hotspot: its name, or "Hotspot off"
+| | 192.168.1.57, ..| | Fallback | |  Hotspot: its name, or "Hotspot off"; under the name, the
+| |                 | | only. ...| |  fallback line while the unit is on a Wi-Fi network
 | +-----------------+ +----------+ |
 | Wi-Fi networks              (h6) |
 ```
@@ -1043,9 +1143,16 @@ never folds. The join card stays above all of them, also never folded: it carrie
   password" fix for a hotspot with no password links to `/network#hotspot` (`SET_A_PASSWORD` in
   `modules/network/checks.py`), so an admin lands on the open panel with the password row. The Device page and the join
   banner link to plain `/network`.
-- The summary is two short lines at most: the unit's `.local` name, then the addresses in use (the cable's when it is
-  connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". A unit without a hotspot has no
-  panel, only the sentence that says so.
+- The summary is two lines at most (the fallback line may wrap in a narrow column): the unit's `.local` name, then the addresses in use (the cable's when it is
+  connected, the Wi-Fi's when it has one), then for Hotspot its name or "Hotspot off". Hotspot's second line is the
+  fallback line ("Fallback only. This unit is on HomeNet.", grey like This device's addresses), shown only while the
+  unit is on a Wi-Fi network and the hotspot is on, because then the hotspot isn't on air and the name alone reads as if
+  it were. A unit without a hotspot has no panel, only the sentence that says so.
+- Open, the Hotspot panel then starts with one grey sentence on when the hotspot would start and how the unit gets
+  back to a network (`fallbackNote` in `summary.ts`; the 5 minutes is `tm-network-retry`'s timer, and the minute is
+  NetworkManager's, measured at about 75 seconds). It is grey text, not a `v-alert`, and it neither opens the panel nor
+  sets its warning mark: it describes how the unit normally works, and an alert on this page means something needs
+  doing.
 - Viewers get the same panels, with the read-only facts inside and no control but the heading's own button.
 
 #### The hotspot's settings (admins)
@@ -1386,3 +1493,48 @@ The first-run step and the Location page's "Exact locations" were checked the sa
   box.
 - Polling for as long as the page is open: the first upload takes a minute at most, and a page left open on a unit
   with the server down would ask every 5 seconds for ever.
+
+### The home button
+
+The apps nginx proxies (Dashboard 2.0, the legacy dashboard, Frigate, the Node-RED editor, and the camera feeds) have
+no way back to the control app, and in a phone's sign-in window there's no address bar to retype it in. So nginx adds
+one script line to each app's page, and the script draws a button that links to `/`. The nginx side is described in
+[tm-control](../../docs/development/tm-control.md#the-home-button).
+
+- **Size.** A round button 40 px across, with a touch target of 46 px (the link's own box plus 3 px on each side that
+  take the press). A window under 600 px wide is narrow, and there the button is the icon alone; wider, it's a pill
+  with the icon and the device's name, cut with an ellipsis when the name is long. Resting at 60% opacity, it goes solid
+  on hover, focus, or touch. It stays 8 px inside the window and clear of a phone's notch and home bar.
+- **Two edges.** A drag (a movement of more than 8 px; less is a press, which goes home) ends with the button on the
+  left or right edge, whichever is nearer, at the height it was dropped. A button that can rest anywhere
+  tends to end up over the middle of a page, and the tuck needs an edge to go to anyway. Its starting spot is the
+  bottom right in every app, except Frigate on a narrow screen, where it starts higher on the right edge so it clears
+  Frigate's bottom bar.
+- **Tuck instead of remove.** Dropping the button within 12 px of an edge, or pressing Escape while it has focus,
+  shrinks it to a thin handle that stays on the edge. Pressing the handle brings the button back. There's no setting that
+  removes it for good, because once it's gone there is nowhere inside another program's page to offer "show it again".
+  Each app's side, height, and tucked state are kept in one `localStorage` entry, `tm-home-button`, keyed by the
+  app's path (`dashboard`, `frigate`, `ui`, `nr`, `feeds`). Storage that is missing, refuses writes, or holds something
+  unusable means the defaults, quietly.
+- **Shadow root.** The button lives in a shadow root, so an app's styles can't change it and its styles can't leak
+  into the app. A page that is embedded in another page (a stream inside a dashboard) gets no button, and nothing is
+  drawn when printing. The icon is the house from `@mdi/js`; the project's logo, which is the control app's favicon,
+  doesn't read as "home" at 20 px.
+- **Colors.** The device's `background`, `header_text`, and `body_text` colors (the last for the name), with the control
+  app's defaults until the device answers (or if it doesn't).
+- **The name.** The script asks `GET /api/v1/system/device` after it draws the button. With an answer, the button shows
+  the name and the tab's title becomes `tm-01 · <the app's own title>`, kept in place when the app changes its title
+  (Frigate does on every view). Without one, the button is the icon alone and the title is untouched.
+- **After a drag.** The click that ends a drag is swallowed once, and only if it comes straight away (Enter on the
+  focused link makes a click of its own, later). A hover with no button down cancels a drag whose release was missed.
+
+What was considered and rejected:
+
+- A full-width bar on top of every app. Frigate and the Node-RED editor size themselves to the full window, so a bar
+  pushes their bottom edge off the screen. Avoiding that means wrapping each app in a frame, which hides the app's real
+  address; bookmarks, the return-after-login link, and the sign-in window's downloads all depend on it.
+- Each app's own hooks. The Node-RED editor can load an extra script and the dashboards can carry a link, but Frigate
+  and go2rtc offer nothing: three mechanisms, a change to the flows, and two apps still without a way home.
+- A service worker that adds the button in the browser. Service workers need HTTPS, and the device serves plain HTTP.
+- The device's name written into the page by nginx, which is one more copy made at install and stale after a rename.
+- A hand-written script beside nginx's static files: no type check, and its tests would need a setup of their own.

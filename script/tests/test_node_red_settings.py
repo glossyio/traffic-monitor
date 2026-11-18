@@ -176,3 +176,7 @@ def test_settings_start_without_node_sqlite():
     """A Node without node:sqlite gives null, not a failed start; the copy's function then refuses."""
     text = SETTINGS.read_text()
     assert "require('node:sqlite')" in text and "catch (err) { return null; }" in text
+
+
+def test_the_editor_takes_no_name_from_the_installer():
+    assert "TM_HOSTNAME" not in SETTINGS.read_text()

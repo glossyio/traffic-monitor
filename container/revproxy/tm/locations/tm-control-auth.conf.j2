@@ -27,7 +27,8 @@ location = /_auth_admin {
     proxy_set_header X-Forwarded-For $remote_addr;
     proxy_set_header X-TM-Required-Role admin;
 }
-# A 401 from the check: tm-control said where to go (/setup, /welcome, /waiting, or /login?next=...)
+# A 401 from the check: tm-control said where to go (/setup, /welcome, /waiting, /admin-only for a viewer's page load on an admin app, or /login?next=...)
 location @tm_login { return 302 $tm_redirect; }
-# tm-control isn't answering; the page says how to start it again
-location = /unavailable.html { internal; root /usr/share/nginx/html; }
+# tm-control isn't answering; the page says how to start it again. ssi fills in the address the browser used,
+# so its Cockpit link works whether the browser came by name or by IP address
+location = /unavailable.html { internal; root /usr/share/nginx/html; ssi on; }

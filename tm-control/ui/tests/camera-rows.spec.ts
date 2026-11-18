@@ -1,7 +1,15 @@
 // What a camera's row says and the radar choices: pure functions of the API's rows.
 import { describe, expect, it } from 'vitest'
-import { issueBoxes, pointChoices, radarChoices, rowState, zonesText } from '../src/modules/cameras/rows'
-import { RADARS, cameraRow, newRow, type CameraRadar } from './fake-api'
+import {
+  issueBoxes,
+  otherZonesText,
+  pointChoices,
+  radarChoices,
+  rowState,
+  zoneNote,
+  zonesText,
+} from '../src/modules/cameras/rows'
+import { MADE_UP_ZONE, RADARS, ZONE_NAMES, cameraRow, newRow, type CameraRadar } from './fake-api'
 
 describe('rowState', () => {
   it('says in step for an entry whose Frigate camera is on', () => {
@@ -33,19 +41,21 @@ describe('rowState', () => {
 
 describe('zonesText', () => {
   it('says all four when none is missing', () => {
-    expect(zonesText(cameraRow())).toBe('Zones: all four')
+    expect(zonesText(cameraRow())).toBe('Recommended zones present: zone_capture, zone_near, zone_far, zone_radar')
   })
 
   it('lists the zones Frigate lacks', () => {
     expect(zonesText(cameraRow({ zones_missing: ['zone_near', 'zone_far'] }))).toBe(
-      'Missing in Frigate: zone_near, zone_far',
+      'Recommended zones missing in Frigate: zone_near, zone_far',
     )
   })
 
   it('lists the zones Frigate has turned off, and both kinds together', () => {
-    expect(zonesText(cameraRow({ zones_off: ['zone_capture'] }))).toBe('Turned off in Frigate: zone_capture')
+    expect(zonesText(cameraRow({ zones_off: ['zone_capture'] }))).toBe(
+      'Recommended zones turned off in Frigate: zone_capture',
+    )
     expect(zonesText(cameraRow({ zones_missing: ['zone_radar'], zones_off: ['zone_near'] }))).toBe(
-      'Missing in Frigate: zone_radar; turned off in Frigate: zone_near',
+      'Recommended zones missing in Frigate: zone_radar; turned off in Frigate: zone_near',
     )
   })
 
@@ -194,13 +204,13 @@ describe('issueBoxes', () => {
       {
         level: 'warning',
         text:
-          'Missing in Frigate: zone_radar; turned off in Frigate: zone_near. Without zone_near and zone_far, ' +
-          'the direction comes only from the radar.',
+          'Recommended zones missing in Frigate: zone_radar; turned off in Frigate: zone_near. Without zone_near ' +
+          'and zone_far, the direction comes only from the radar.',
         link: { href: '/frigate/settings?page=masksAndZones&camera=oak_ave_wide', text: 'Edit its zones in Frigate' },
       },
     ])
     const capture = cameraRow({ frigate_camera: 'oak ave', zones_missing: ['zone_capture'], issues: [warn('zones')] })
-    expect(issueBoxes(capture)[0].text).toBe('Missing in Frigate: zone_capture.')
+    expect(issueBoxes(capture)[0].text).toBe('Recommended zones missing in Frigate: zone_capture.')
     expect(issueBoxes(capture)[0].link?.href).toBe('/frigate/settings?page=masksAndZones&camera=oak%20ave')
   })
 
@@ -210,5 +220,79 @@ describe('issueBoxes', () => {
     expect(issueBoxes(newRow('main_st', { detect: false, issues: [] }))).toEqual([])
     const two = cameraRow({ zones_missing: ['zone_far'], issues: [warn('detect_off'), warn('zones')] })
     expect(issueBoxes(two).map((box) => box.level)).toEqual(['warning', 'warning'])
+  })
+})
+
+describe('otherZonesText', () => {
+  it('is empty without other zones', () => {
+    expect(otherZonesText(cameraRow())).toBe('')
+    expect(otherZonesText(cameraRow({ zone_names: null }))).toBe('')
+  })
+
+  it('lists every other zone', () => {
+    expect(otherZonesText(cameraRow({ zone_names: ZONE_NAMES }))).toBe(
+      'Other zones enabled: zone_lane_bus, zone_maple, zone_nord, zone_1420_oak_st',
+    )
+  })
+
+  it("shows Frigate's name beside a key Frigate made up, and no note for it", () => {
+    const row = cameraRow({ zone_names: [ZONE_NAMES[0], MADE_UP_ZONE] })
+    expect(otherZonesText(row)).toBe(
+      'Other zones enabled: zone_lane_bus, zone_a9bacc03 ("Bus lane (north)" in Frigate)',
+    )
+    expect(zoneNote(row)).toBeNull()
+  })
+})
+
+describe('zoneNote', () => {
+  it('is null when every word is known', () => {
+    expect(zoneNote(cameraRow({ zone_names: [ZONE_NAMES[0], ZONE_NAMES[3]] }))).toBeNull()
+  })
+
+  it('names the zones with unknown words and links to Frigate', () => {
+    const note = zoneNote(cameraRow({ zone_names: ZONE_NAMES }))
+    expect(note?.text).toBe(
+      "Review the zone names with words the Traffic Monitor doesn't recognize: zone_maple, zone_nord. Like camera " +
+        'names, zone names are saved with every event, so a name that points to a street, an address, or a person ' +
+        'adds personal information to your de-identified data.',
+    )
+    expect(note?.link).toEqual({
+      href: '/frigate/settings?page=masksAndZones&camera=oak_ave_wide',
+      text: 'Edit its zones in Frigate',
+    })
+  })
+})
+
+describe('zoneNote, one name', () => {
+  it('speaks of one zone', () => {
+    expect(zoneNote(cameraRow({ zone_names: [ZONE_NAMES[1]] }))?.text).toMatch(
+      /^Review the zone name with a word the Traffic Monitor doesn't recognize: zone_maple\. /,
+    )
+  })
+})
+
+describe('issueBoxes, zone names', () => {
+  it('speaks of several zones', () => {
+    const zone_names = [...ZONE_NAMES, { name: 'zone_main_st', check: 'pattern' as const, friendly_name: null }]
+    const [box] = issueBoxes(cameraRow({ zone_names, issues: [{ level: 'warn', code: 'zone_names' }] }))
+    expect(box.text).toMatch(
+      /^Review the zone names that look like an address or a person's name: zone_1420_oak_st, zone_main_st\. /,
+    )
+    expect(box.text).toContain('so these add personal information')
+    expect(box.text).toContain('Rename them in Frigate')
+  })
+
+  it('names the zones that look like an address, as a warning with the link', () => {
+    const row = cameraRow({ zone_names: ZONE_NAMES, issues: [{ level: 'warn', code: 'zone_names' }] })
+    expect(issueBoxes(row)).toEqual([
+      {
+        level: 'warning',
+        text:
+          "Review the zone name that looks like an address or a person's name: zone_1420_oak_st. Like camera " +
+          'names, zone names are saved with every event, so this one adds personal information to your ' +
+          'de-identified data. Rename it in Frigate, for example by compass direction (zone_north).',
+        link: { href: '/frigate/settings?page=masksAndZones&camera=oak_ave_wide', text: 'Edit its zones in Frigate' },
+      },
+    ])
   })
 })

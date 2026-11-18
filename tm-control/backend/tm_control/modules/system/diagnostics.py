@@ -7,7 +7,9 @@ the apps' .env files (the broker password can show up inside a URL in a log line
 token-, or secret-style key, and the ticket in the file name of a database copy with exact locations, which nginx's
 access log holds. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
 The names come from config.yml, Frigate's running config, Frigate's own config file (so a stopped Frigate hides
-none), and the config.yml backups.
+none), and the config.yml backups. So is the query string of every saved change to Frigate's settings (config/set),
+which holds what was set, such as a zone's key and the name typed for it, and in its percent-encoded form, which a
+login redirect's next= carries.
 """
 
 import json
@@ -19,7 +21,7 @@ from urllib.parse import quote
 
 from tm_control import fake
 from tm_control.adapters import frigate, sysinfo, systemd
-from tm_control.adapters.redact import redact, redact_words
+from tm_control.adapters.redact import REDACTED, redact, redact_words
 from tm_control.adapters.yamlfile import read_config
 from tm_control.core.checks import Report
 from tm_control.core.secrets import DEVICE_SECRETS, MissingSecret, read_hotspot_password
@@ -35,6 +37,10 @@ JOURNAL_LINES = 50
 ENV_FILES = ("node-red-tm/node-red-tm.env", "frigate/frigate.env", "plate-recognizer/plate-recognizer.env")
 ENV_SECRET_KEY = re.compile(r"PASSWORD|PASSWD|SECRET|TOKEN|KEY", re.IGNORECASE)
 ENV_MIN_VALUE = 4  # shorter values would redact ordinary words
+# A saved change to Frigate's settings carries what it sets in the query string, and nginx's access log and Frigate's
+# journal keep the request line. The zone editor's holds a zone's key and the name typed for it. A save made without a
+# session is sent to the login page with its address percent-encoded in next=, so the encoded form is replaced too.
+_CONFIG_SET = re.compile(r"(config(?:/|%2F)set(?:\?|%3F))\S+", re.IGNORECASE)
 
 
 def env_secret_values(codedir: Path) -> list[str]:
@@ -167,4 +173,5 @@ def build(app_state, info: SystemInfo, hostname: str, now: datetime) -> str:
         "Camera names from Frigate are replaced too.",
     ]
     text = "\n".join(header) + "\n" + "".join(f"\n== {title} ==\n{body}\n" for title, body in sections)
+    text = _CONFIG_SET.sub(lambda match: match.group(1) + REDACTED, text)
     return redact_words(redact(text, secret_values(app_state)), camera_names(app_state))

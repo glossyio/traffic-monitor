@@ -10,6 +10,7 @@ export const useSession = defineStore('session', {
     user: null as User | null,
     loaded: false,
     loadError: '', // why the last load failed, such as the device not answering
+    hostname: '', // the unit's name for the tab and the bar, from /setup/status; '' until known, or when unusable
   }),
   getters: {
     claimed: (state) => state.status?.claimed ?? false,
@@ -31,10 +32,14 @@ export const useSession = defineStore('session', {
         this.user = (session.data as Session).user
         this.loaded = true
         this.loadError = ''
+        // The name is a nicety: an answer without a usable one leaves the tab and the bar saying "Traffic Monitor"
+        const name = (status.data as { hostname?: unknown } | undefined)?.hostname
+        this.hostname = typeof name === 'string' ? name : ''
       } catch (error) {
         this.loadError = messageOf(error)
       }
     },
+    // The name stays: the login page that follows shows it too
     sessionEnded() {
       this.user = null
     },
