@@ -46,6 +46,17 @@ function verifyProxyToken(token, key, nowSeconds) {
   return { username: claims.u, permissions: "*" };
 }
 
+// What may leave the unit: the "upload gate" function on the thingsboard tab reads these lists as
+// global.upload_lists. Read once, when Node-RED starts. A file that is missing or isn't JSON gives null,
+// and the gate then sends nothing.
+function readUploadLists() {
+  try {
+    return JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "upload-lists.json"), "utf8"));
+  } catch (error) {
+    return null;
+  }
+}
+
 module.exports = {
   flowFile: "flows.json",
   credentialSecret: process.env.NODE_RED_CREDENTIAL_SECRET,
@@ -134,7 +145,8 @@ module.exports = {
 
   functionGlobalContext: {
     fs:require('fs'),
-    path:require('path')
+    path:require('path'),
+    upload_lists: readUploadLists(),
   },
 
   debugMaxLength: 1000,

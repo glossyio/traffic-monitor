@@ -162,3 +162,26 @@ def test_javascript_verifier_refuses_tokens_when_the_time_is_not_a_number(now):
         "console.log(u === null ? 'null' : JSON.stringify(u));"
     )
     assert out == "null"
+
+
+@needs_node
+def test_settings_load_the_upload_lists():
+    out = run_node("console.log(JSON.stringify(s.functionGlobalContext.upload_lists));")
+    assert json.loads(out) == json.loads((SETTINGS.parent / "upload-lists.json").read_text())
+
+
+@needs_node
+def test_settings_survive_a_missing_or_broken_upload_lists_file(tmp_path):
+    """Node-RED must still start; the upload gate then sends nothing."""
+    for name, content in (("missing", None), ("broken", "{not json")):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / "settings.js").write_text(SETTINGS.read_text())
+        if content is not None:
+            (folder / "upload-lists.json").write_text(content)
+        result = subprocess.run(
+            ["node", "-e", f"const s = require({json.dumps(str(folder / 'settings.js'))});\n"
+                           "console.log(JSON.stringify(s.functionGlobalContext.upload_lists));"],
+            capture_output=True, text=True, timeout=30)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == "null"

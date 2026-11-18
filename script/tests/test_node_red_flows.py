@@ -2075,6 +2075,20 @@ GATE_THINGSBOARD = {"host": "tb.example.invalid", "url": "https://tb.example.inv
 GATE_ADDED = {"consents", "exact_location", "public_map"}
 CONSENTS_OFF = {"share_data": True, "exact_location": False, "public_map": "none", "notice_version": None,
                 "target": None}
+UPLOAD_LISTS = FLOWS.parent / "upload-lists.json"
+EVENT_COLUMNS = [
+    "id", "camera", "label", "sub_label", "top_score", "frame_time", "start_time", "end_time", "entered_zones",
+    "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
+    "provenance", "deployment_id", "radarName",
+]
+KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
+LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
+
+
+def upload_lists():
+    return json.loads(UPLOAD_LISTS.read_text())
+
+
 TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
             "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
@@ -2132,18 +2146,24 @@ def gate_node():
     return named(json.loads(FLOWS.read_text()), "upload gate")
 
 
-def gate_run(msgs, sharing=None, thingsboard=None, deployment=None):
-    """Run the upload gate on each message in turn, with this config; returns the run (results, global)."""
+def gate_run(msgs, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
+    """Run the upload gate on each message in turn, with this config and the upload lists (upload-lists.json unless
+    given; none at all for None); returns the run (results, global)."""
     config = {"sharing": SHARING_OFF if sharing is None else sharing,
               "thingsboard": {"enabled": True, **(GATE_THINGSBOARD if thingsboard is None else thingsboard)},
               "deployment": GATE_PLACE if deployment is None else deployment}
+    context = {"config": config, "tm_warned": {}}
+    if lists is MISSING:
+        context["upload_lists"] = upload_lists()
+    elif lists is not None:
+        context["upload_lists"] = lists
     gate = gate_node()
-    return run_functions([(gate, msg) for msg in msgs], context={"config": config, "tm_warned": {}})
+    return run_functions([(gate, msg) for msg in msgs], context=context)
 
 
-def gate(msg, sharing=None, thingsboard=None, deployment=None):
+def gate(msg, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
     """The upload gate's output for one message (None when it sends nothing), and its log."""
-    [step] = gate_run([msg], sharing, thingsboard, deployment)["results"]
+    [step] = gate_run([msg], sharing, thingsboard, deployment, lists)["results"]
     return step["result"], step["logged"]
 
 
@@ -2489,11 +2509,62 @@ def test_everything_uploaded_passes_the_gate():
     assert {node["id"] for node in nodes if node["type"] == "http request"} == {UPLOAD_REQUEST}
 
 
-def test_gate_lists():
+def test_upload_lists_file():
+    lists = upload_lists()
+    assert list(lists) == ["telemetry", "attributes", "event"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments"]
+    assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
+                                   "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
+                                   "sysinfo_frigateVersion"]
+    assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert all(len(names) == len(set(names)) for names in lists.values())
+    # one name per line, so two changes that each add a field merge without touching the same line
+    assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
+
+
+def test_the_gate_holds_no_list_of_its_own():
     func = gate_node()["func"]
-    assert 'const TELEMETRY = ["event", "radar", "airquality", "system_metrics", "deployments"];' in func
-    assert ('const ATTRIBUTES = ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname", '
-            '"sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName", "sysinfo_frigateVersion"];') in func
+    assert 'global.get("upload_lists")' in func
+    assert "const TELEMETRY" not in func and "const ATTRIBUTES" not in func and '"sysinfo_tmVersion"' not in func
+
+
+@needs_node
+@pytest.mark.parametrize("lists", [
+    None, {}, [], "event", {"telemetry": ["event"], "attributes": []},
+    {"telemetry": "event", "attributes": [], "event": []},
+    {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
+], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text"])
+def test_gate_sends_nothing_without_readable_lists(lists):
+    msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
+            {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
+    run = gate_run(msgs, lists=lists)
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [entry for step in run["results"] for entry in step["logged"]] == [["warn", LISTS_WARNING, False]]
+    assert run["global"]["tm_warned"] == {"upload:lists": True}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_event_fields():
+    event = {**GATE_TELEMETRY["event"], "surprise": "kept-on-the-unit"}
+    item = {"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}}
+    run = gate_run([item, item])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["ThingsBoard upload: left out event.surprise, which isn't on the list of what is shared."]
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+    assert run["global"]["tm_warned"] == {"upload:event.surprise": True}
+
+
+@needs_node
+@pytest.mark.parametrize("event", ["text", ["id"], None, 7, {"surprise": 1}],
+                         ids=["text", "list", "null", "number", "no-listed-field"])
+def test_gate_leaves_out_an_event_it_cannot_read(event):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event, "radar": radar}}})
+    assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}})
+    assert out is None
 
 
 def record_node():
