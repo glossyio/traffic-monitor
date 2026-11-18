@@ -192,7 +192,7 @@ Two login checks leave something behind:
 - **The reset-admin test** (`--disruptive`, `pii_free` units with `tm_control_login`) deletes every control app account on the Pi, including viewers that people made, and ends every browser session. It then re-creates only the inventory's administrator, so everyone else has to be added again.
 - **The login backoff test** makes six wrong logins. The control app remembers the failures against your machine's address for 15 minutes, unless a successful login from it clears them sooner. Meanwhile, one more wrong password from your machine makes you wait a few seconds. Without `tm_control_login`, a second run within those 15 minutes skips the test, because it can't clear the count first.
 
-**The made-up event test** (`--disruptive`, `pii_free` units without a broker login) publishes one made-up Frigate `end` message on `frigate/events` on the Pi's broker, which turns nothing on in Frigate. The row it makes stays in `tmdb.sqlite`. Its label, `tmdev_check`, and its only zone, `zone_tmdev`, keep it out of every dashboard count; its id ends in `-tmdev0`.
+**The made-up event test** (`--disruptive`, `pii_free` units without a broker login) publishes one made-up Frigate `end` message on `frigate/events` on the Pi's broker, which turns nothing on in Frigate. The row it makes stays in `tmdb.sqlite`. Its label, `tmdev_check`, and its only zone, `zone_tmdev`, keep it out of every dashboard count; its id ends in `-tmdev0`. When the unit is sharing data, the event is uploaded like a real one.
 
 **The unclean reset test** (`--disruptive`) resets the Pi without shutting it down, after a `sync`, as a power loss
 would. It checks that every app comes back and that no image build did the boot's Podman refresh (#268).
