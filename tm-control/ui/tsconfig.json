@@ -14,5 +14,5 @@
     "noUnusedParameters": true,
     "jsx": "preserve"
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "vite.config.ts", "vite.home-button.config.ts"]
 }

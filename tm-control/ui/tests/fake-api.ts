@@ -34,7 +34,9 @@ export function apiError(status: number, code: string, message: string): Respons
 // `answers` maps "METHOD /path" to a body (sent as 200), a Response, or a function of the request.
 export function fakeApi(answers: Record<string, Answer>) {
   const sent: Sent[] = []
-  const fetch = vi.fn(async (request: Request) => {
+  // The API client sends a Request; the home button's script sends a path and its options
+  const fetch = vi.fn(async (input: Request | string, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(new URL(input, window.location.href), init)
     const path = new URL(request.url).pathname
     sent.push({ method: request.method, path, body: await bodyOf(request) })
     const answer = answers[`${request.method} ${path}`]
@@ -51,8 +53,13 @@ export const THEME = {
   colors: { background: '#0C1120', header_text: '#3a82ff', body_text: '#f8fafc', link_hover_text: '#8895a7' },
 }
 
-export function status(claimed: boolean, accepted = claimed, hotspot: { local_name: string } | null = null) {
-  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot }
+export function status(
+  claimed: boolean,
+  accepted = claimed,
+  hotspot: { local_name: string } | null = null,
+  hostname: unknown = 'tm-01',
+) {
+  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot, hostname }
 }
 
 export const ADMIN = { id: 1, username: 'owner', role: 'admin', created_at: '2026-10-27T12:00:00+00:00' }
@@ -184,10 +191,22 @@ export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
     plate_recognizer: null,
     zones_missing: [],
     zones_off: [],
+    zone_names: [],
     issues: [],
     ...changes,
   }
 }
+
+// A camera's other zones, one of each kind: known words, unknown words, and a name like an address
+export const ZONE_NAMES = [
+  { name: 'zone_lane_bus', check: null, friendly_name: null },
+  { name: 'zone_maple', check: 'unknown_word' as const, friendly_name: null },
+  { name: 'zone_nord', check: 'unknown_word' as const, friendly_name: null },
+  { name: 'zone_1420_oak_st', check: 'pattern' as const, friendly_name: null },
+]
+
+// A zone key Frigate's zone editor made up from a name it couldn't use as a key: not checked, Frigate's name beside it
+export const MADE_UP_ZONE = { name: 'zone_a9bacc03', check: null, friendly_name: 'Bus lane (north)' }
 
 // A Frigate camera that no entry points at
 export function newRow(frigate_camera = 'oak_ave_tele', changes: Partial<CameraRow> = {}): CameraRow {

@@ -15,6 +15,7 @@ export interface SetupStatus {
   eula: { version: string; accepted: boolean }
   theme: { font: string; colors: Record<string, string> }
   hotspot: { local_name: string } | null // set when the page came over the unit's hotspot
+  hostname: string // the unit's name, for the tab and the bar on every page
 }
 
 // GET /auth/session
@@ -48,6 +49,8 @@ export interface Device {
   system_user: string | null
   time: string
   apps: DeviceApp[]
+  // The font and colors the unit's pages use; the home button reads them too
+  theme: { font: string; colors: Record<string, string> }
 }
 
 // GET /jobs/{id} declares its schema

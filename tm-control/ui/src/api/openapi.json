@@ -69,7 +69,7 @@
           "auth"
         ],
         "summary": "Verify",
-        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.\nWithout a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,\nno other secret and no cookie. A login redirect's next= leaves the link's token out.",
+        "description": "nginx's auth_request: may this browser have X-Original-URI, which needs X-TM-Required-Role?\n\nOnly nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);\nnginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.\n401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license\nagreement waits), /waiting (a viewer, meanwhile), or /admin-only (a viewer's page load, an Accept that names\ntext/html, on an admin path). Anything else a viewer asks of an admin path is 403, forbidden.\n200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.\nWithout a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,\nno other secret and no cookie. A login redirect's next= leaves the link's token out.",
         "operationId": "verify_api_v1_auth_verify_get",
         "responses": {
           "200": {
@@ -177,7 +177,7 @@
           "setup"
         ],
         "summary": "Status",
-        "description": "Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when\nthe page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.",
+        "description": "Also the device's home-page theme and its name, so the setup, login, and license pages use its colors and name\nthe unit before anyone logs in (mDNS announces the name anyway), and, when the page came over the hotspot (nginx\nsets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.",
         "operationId": "status_api_v1_setup_status_get",
         "responses": {
           "200": {
@@ -936,6 +936,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UseQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/plus/{model_id}/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Plus Model",
+        "description": "Make Frigate run a Frigate+ model by its ID. A model whose pair is on the device is used as POST\n/models/{name}/use does. Otherwise Frigate is sent its config with `path: plus://<id>` and downloads the model while\nit validates; the answer comes before that ends, and GET /models's `fetch` follows it. Frigate restarts only once it\nhas saved.",
+        "operationId": "use_plus_model_api_v1_models_plus__model_id__use_post",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlusUseQueued"
                 }
               }
             }
@@ -2537,7 +2580,8 @@
               "capture_off",
               "detect_off",
               "zones",
-              "radar"
+              "radar",
+              "zone_names"
             ],
             "title": "Code"
           }
@@ -2721,6 +2765,20 @@
             ],
             "title": "Zones Off"
           },
+          "zone_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ZoneName"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Names"
+          },
           "issues": {
             "items": {
               "$ref": "#/components/schemas/CameraIssue"
@@ -2742,7 +2800,8 @@
           "camera_radar",
           "plate_recognizer",
           "zones_missing",
-          "zones_off"
+          "zones_off",
+          "zone_names"
         ],
         "title": "CameraRow"
       },
@@ -3167,6 +3226,42 @@
           "last_event"
         ],
         "title": "EventsOut"
+      },
+      "FetchOut": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "downloading",
+              "saved",
+              "refused",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "state",
+          "message"
+        ],
+        "title": "FetchOut"
       },
       "Fix": {
         "properties": {
@@ -4110,6 +4205,16 @@
           },
           "labels": {
             "$ref": "#/components/schemas/LabelsOut"
+          },
+          "fetch": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FetchOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4120,7 +4225,8 @@
           "default",
           "running",
           "models",
-          "labels"
+          "labels",
+          "fetch"
         ],
         "title": "ModelsState"
       },
@@ -4405,6 +4511,36 @@
           "nodered"
         ],
         "title": "PlacesState"
+      },
+      "PlusUseQueued": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "started": {
+            "type": "string",
+            "enum": [
+              "restart",
+              "download"
+            ],
+            "title": "Started"
+          },
+          "restarts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "started",
+          "restarts"
+        ],
+        "title": "PlusUseQueued"
       },
       "PowerQueued": {
         "properties": {
@@ -5598,6 +5734,48 @@
           "join"
         ],
         "title": "WifiNetworks"
+      },
+      "ZoneName": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "check": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "unknown_word",
+                  "pattern"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check"
+          },
+          "friendly_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Friendly Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "check",
+          "friendly_name"
+        ],
+        "title": "ZoneName",
+        "description": "One of a camera's zones other than the four the flows read, saved by its key with every event that enters it."
       }
     }
   }

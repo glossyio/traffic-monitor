@@ -162,3 +162,7 @@ def test_javascript_verifier_refuses_tokens_when_the_time_is_not_a_number(now):
         "console.log(u === null ? 'null' : JSON.stringify(u));"
     )
     assert out == "null"
+
+
+def test_the_editor_takes_no_name_from_the_installer():
+    assert "TM_HOSTNAME" not in SETTINGS.read_text()

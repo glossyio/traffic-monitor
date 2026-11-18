@@ -31,6 +31,9 @@ from tm_control.core.state import State
 FAKE_RUNNING_MODEL = "running-model"  # the file holding the name of the model the fake Frigate runs
 FAKE_DETECT = "frigate-detect.json"  # the fake Frigate's detection switches, {camera: bool}
 FAKE_PLUS_ID = "0123456789abcdef0123456789abcdef"  # the fixture sidecar's model id
+FAKE_FETCHABLE_ID = "fedcba9876543210fedcba9876543210"  # the one Frigate+ model ID the fake Frigate can download
+FAKE_FETCH_SECONDS = 5  # how long the fake Frigate takes to download it, or to refuse another ID
+FAKE_FETCH_REFUSED = "Frigate refused the model: Exception: Model not found"
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
 
 # Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
@@ -143,10 +146,27 @@ def use_model(settings: Settings, name: str) -> None:
     running_model_file(settings).write_text(name)
 
 
+def fetch_model(settings: Settings, model_id: str) -> str | None:
+    """Fake mode's stand-in for Frigate downloading a Frigate+ model by its ID: FAKE_FETCHABLE_ID's pair (the fixture
+    sidecar under that id and another name) lands in the fake model_cache, and None is returned; any other ID is
+    refused with the message a device would show. Nothing is sent anywhere."""
+    if model_id != FAKE_FETCHABLE_ID:
+        return FAKE_FETCH_REFUSED
+    record = json.loads((FAKE_FIXTURES / "model_sidecar.json").read_text()) | {
+        "id": model_id, "name": "Downloaded yolov9"}
+    cache = model_cache(settings)
+    cache.mkdir(parents=True, exist_ok=True)
+    (cache / model_id).write_bytes(bytes(4096))
+    (cache / f"{model_id}.json").write_text(json.dumps(record, indent=2) + "\n")
+    return None
+
+
 def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
     """The fake Frigate's /api/config, which is the fixture's with the running model's path in the first detector, a
-    second camera (oak_ave_tele, a copy of the first), the detection switches set_frigate_detect keeps, and a config.yml
-    that is missing. Nothing outside the fake directory is read."""
+    second camera (oak_ave_tele, a copy of the first), four more zones on the first camera (zone_lane_bus,
+    zone_a9bacc03 with Frigate's name "Bus lane (north)", zone_maple, zone_1420_oak_st, for the name check), the
+    detection switches set_frigate_detect keeps, and a config.yml that is missing. Nothing outside the fake directory
+    is read."""
     config = json.loads((FAKE_FIXTURES / "frigate_api_config.json").read_text())
     try:
         name = running_model_file(settings).read_text().strip()
@@ -160,6 +180,14 @@ def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
         model.pop("path", None)
     first = next(iter(config["cameras"].values()))  # a camera that no config.yml entry points at, for the Cameras page
     config["cameras"]["oak_ave_tele"] = copy.deepcopy(first) | {"name": "oak_ave_tele"}
+    # zones beyond the four, for the Cameras page's line, note, and warning: a known name, a key Frigate made up from a
+    # name it couldn't use, an unknown word, an address
+    first.setdefault("zones", {}).update({
+        "zone_lane_bus": {},
+        "zone_a9bacc03": {"friendly_name": "Bus lane (north)"},
+        "zone_maple": {},
+        "zone_1420_oak_st": {},
+    })
     for camera, on in _detect_switches(settings).items():
         if camera in config["cameras"] and isinstance(on, bool):
             config["cameras"][camera].setdefault("detect", {})["enabled"] = on

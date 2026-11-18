@@ -74,6 +74,8 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Cameras** page | Yes | No |
 | The **Location** page | Yes | No |
 
+A viewer who opens an administrator's app from a link sees a page that says so, with a way back to the home page.
+
 Cockpit uses the Raspberry Pi user account, not these accounts.
 
 ### Add a viewer

@@ -104,6 +104,7 @@ def download_link(body: DownloadLinkRequest, request: Request, admin: User = Dep
 
 
 VERIFY_PATH = "/api/v1/auth/verify"
+ADMIN_ONLY_PAGE = "/admin-only"  # the UI's page for a viewer who opened an admin app
 
 
 @router.get("/verify")
@@ -113,7 +114,8 @@ def verify(request: Request):
     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
-    agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
+    agreement waits), /waiting (a viewer, meanwhile), or /admin-only (a viewer's page load, an Accept that names
+    text/html, on an admin path). Anything else a viewer asks of an admin path is 403, forbidden.
     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
     Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
     no other secret and no cookie. A login redirect's next= leaves the link's token out.
@@ -146,6 +148,10 @@ def verify(request: Request):
         raise ApiError(401, "eula_required", message, headers={"X-TM-Redirect": page})
 
     if ROLES.index(user.role) < ROLES.index(required):
+        if "text/html" in request.headers.get("accept", "").lower():
+            raise ApiError(
+                401, "admin_only", "This app is for administrators.", headers={"X-TM-Redirect": ADMIN_ONLY_PAGE}
+            )
         raise ApiError(403, "forbidden", "You don't have access to this page.")
 
     headers = {
