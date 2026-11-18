@@ -32,7 +32,7 @@ Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, i
 - **Hotspot:** whether it is on, its name, whether the name is hidden, and the two addresses it answers on.
 - **Wi-Fi networks:** the networks the unit has saved and the ones it heard the last time it looked. See [Put the unit on a Wi-Fi network](#put-the-unit-on-a-wi-fi-network) and [Saved networks](#saved-networks).
 
-**This device** and **Hotspot** sit side by side on a wide screen, above **Wi-Fi networks**, and are folded each time you open the page. Folded, **This device** shows the `.local` name and the addresses in use, and **Hotspot** shows its name, or **Hotspot off**. Select a heading to open it. A panel opens by itself when something in it needs your attention, such as a hotspot change that fails or is refused, and a folded one then shows a warning mark.
+**This device** and **Hotspot** sit side by side on a wide screen, above **Wi-Fi networks**, and are folded each time you open the page. Folded, **This device** shows the `.local` name and the addresses in use, and **Hotspot** shows its name, or **Hotspot off**. Select a heading to open it. While the unit is on a Wi-Fi network and the hotspot is on, a grey line under the hotspot's name says the hotspot is only a fallback and names that network, and the open panel starts with a sentence on when the hotspot would start; see [When the hotspot runs](#when-the-hotspot-runs). A panel opens by itself when something in it needs your attention, such as a hotspot change that fails or is refused, and a folded one then shows a warning mark.
 
 Every name and address has a **Copy** button. If the network service doesn't answer, the page says so and shows only the names.
 
