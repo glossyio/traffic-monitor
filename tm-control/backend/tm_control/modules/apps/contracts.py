@@ -172,7 +172,7 @@ def zones(context: Context) -> list[Check]:
             parts.append(f"has {listed(off)} turned off {'there' if missing else 'in Frigate'}")
         problem = f"Camera {_label(row.name, row.frigate_camera)} {', and '.join(parts)}"
         if any(zone in missing + off for zone in DIRECTION_ZONES):
-            problem += "; without zone_near and zone_far, events get a direction only from the radar (#243)"
+            problem += "; without zone_near and zone_far, events get a direction only from the radar"
         problems.append(f"{problem}.")
     if problems:
         if any_missing and off_count:
