@@ -83,6 +83,12 @@ module.exports = {
     ui: false,
   },
 
+  // The installer pins Node-RED's version, so the editor doesn't ask to send usage data for update notices.
+  telemetry: {
+    enabled: false,
+    updateNotification: false,
+  },
+
   logging: {
     console: {
       level: "info",
@@ -103,14 +109,6 @@ module.exports = {
   },
 
   editorTheme: {
-    header: {
-      // This is the text next to the Node-red logo on the editor page header
-      title: process.env.TM_HOSTNAME,
-    },
-    page: {
-      // And this is the text next to the favicon on the browser tab
-      title: process.env.TM_HOSTNAME,
-    },
     palette: {
     },
     projects: {

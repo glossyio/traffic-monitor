@@ -29,6 +29,7 @@ The database stops being de-identified if you:
 * Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
 * Keep a database that an earlier version of the Traffic Monitor recorded while Frigate's face recognition or license plate recognition was on. The `sub_label` column keeps only delivery companies' logos, so a recognized person's or a known plate's name isn't saved, but rows recorded earlier can still hold one.
 * Write identifying details into operator comments.
+* Name a zone in Frigate after a street, a house number, or a person. Zone names are saved with every event; see [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data).
 * Keep the copy of the database that an upgrade leaves in `db/backup/`. It can hold the exact coordinates from before they were rounded (see [deployment](#deployment)), so don't share it.
 
 For an area the camera shouldn't see at all, such as a window or a yard, aim the camera so the area is out of frame. A [motion mask](../configuration/frigate-config.md#masks) only stops motion there from starting a detection; the area still shows in the live view and in recordings.
@@ -41,7 +42,7 @@ Tables for sensors the device doesn't have stay empty.
 
 | Table | Contents | Could identify a person? |
 |---|---|---|
-| `events` | One row per object the camera detected, with its path, direction, and speed. See [Events](events-payload.md). | No, except rows an earlier version recorded with a recognized person's or plate's name in `sub_label` |
+| `events` | One row per object the camera detected, with its path, direction, and speed. See [Events](events-payload.md). | No, except rows an earlier version recorded with a recognized person's or plate's name in `sub_label`, or a zone name you typed |
 | `radar_dov` | Detected object velocity readings from the radar | No |
 | `radar_timed_speed_counts` | Counts and average speeds the radar reports every 300 seconds | No |
 | `radar_raw_speed_magnitude` | Raw speed and magnitude readings, three per sample | No |

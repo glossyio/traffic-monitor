@@ -3,6 +3,7 @@ location /frigate/ {
     include /etc/nginx/tm/snippets/auth-viewer.conf;
     proxy_pass http://127.0.0.1:8971/;
     include /etc/nginx/tm/snippets/proxy-common.conf;
+    include /etc/nginx/tm/snippets/home-button.conf;
     proxy_set_header X-Forwarded-Scheme $scheme;
     proxy_set_header X-Ingress-Path "/frigate";
     proxy_set_header X-Proxy-Secret $tm_frigate_secret;

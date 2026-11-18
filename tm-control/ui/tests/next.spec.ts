@@ -35,6 +35,14 @@ describe('nextStep', () => {
     expect(nextStep(next, ORIGIN, SPA_PATHS)).toEqual({ href: `${ORIGIN}${next}` })
   })
 
+  it('goes home from /system/, which is no app of the device', () => {
+    expect(nextStep('/system/', ORIGIN, [])).toEqual({ route: '/' })
+  })
+
+  it('routes to the administrators-only page, one of this app\'s own', () => {
+    expect(nextStep('/admin-only', ORIGIN, [...SPA_PATHS, '/admin-only'])).toEqual({ route: '/admin-only' })
+  })
+
   it('uses the parsed address, never the text it was given', () => {
     expect(nextStep('/frigate/../users', ORIGIN, SPA_PATHS)).toEqual({ route: '/users' })
     expect(nextStep('/frigate/..//evil.example', ORIGIN, SPA_PATHS)).toEqual({ route: '/' })

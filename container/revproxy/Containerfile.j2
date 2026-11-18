@@ -4,7 +4,9 @@ WORKDIR /ui
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY ui/ ./
-RUN npm run build
+# The sources arrive with no world read, and Vite copies public/ files with their own mode, so nginx's worker
+# (not root) could read the files Vite writes but not those copies
+RUN npm run build && chmod -R a+rX dist
 
 FROM docker.io/nginx:{{ tmsetup_nginx_version }}
 # Outside /usr/share/nginx/html, which revproxy.container bind-mounts over the image's copy

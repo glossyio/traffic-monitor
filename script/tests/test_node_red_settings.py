@@ -185,3 +185,7 @@ def test_settings_survive_a_missing_or_broken_upload_lists_file(tmp_path):
             capture_output=True, text=True, timeout=30)
         assert result.returncode == 0, result.stderr
         assert result.stdout.strip() == "null"
+
+
+def test_the_editor_takes_no_name_from_the_installer():
+    assert "TM_HOSTNAME" not in SETTINGS.read_text()

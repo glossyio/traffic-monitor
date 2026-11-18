@@ -3,7 +3,7 @@
 import type { Router } from 'vue-router'
 
 // The device's other apps, served by nginx next to this UI (container/revproxy/tm/locations/)
-export const APP_PATHS = ['/dashboard', '/frigate', '/ui', '/nr', '/feeds', '/system', '/storefiles']
+export const APP_PATHS = ['/dashboard', '/frigate', '/ui', '/nr', '/feeds', '/storefiles']
 
 export type NextStep = { route: string } | { href: string }
 

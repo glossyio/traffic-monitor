@@ -1,7 +1,7 @@
 // The Cameras page: one panel per camera, the intro, Frigate's state, and the save of the settings a panel opens to.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { ADMIN, apiError, camerasState, cameraRow, json, newRow, signedIn } from './fake-api'
+import { ADMIN, MADE_UP_ZONE, ZONE_NAMES, apiError, camerasState, cameraRow, json, newRow, signedIn } from './fake-api'
 import { buttonsIn, click, clickIn, clickInDialog, dialogButtons, dialogText, fieldIn, mountApp } from './mount'
 
 const CAMERAS = 'GET /api/v1/cameras'
@@ -67,8 +67,8 @@ describe('Cameras page', () => {
   it("shows each camera's settings and zones", async () => {
     const { wrapper } = await openPage()
     const text = wrapper.text()
-    expect(text).toContain('Zones: all four')
-    expect(text).toContain('Missing in Frigate: zone_near, zone_far')
+    expect(text).toContain('Recommended zones present: zone_capture, zone_near, zone_far, zone_radar')
+    expect(text).toContain('Recommended zones missing in Frigate: zone_near, zone_far')
     expect(text).toContain('Radar: TM_RADAR_SERIAL_PORT_00')
     expect(text).toContain('Radar: none')
     expect(text).toContain('Frigate detection: on')
@@ -107,7 +107,66 @@ describe('Cameras page', () => {
     const link = wrapper.find('[data-issue] a')
     expect(link.text()).toBe('Edit its zones in Frigate')
     expect(link.attributes('href')).toBe('/frigate/settings?page=masksAndZones&camera=oak_ave_wide')
-    expect(wrapper.text().split('Missing in Frigate: zone_far').length - 1).toBe(1) // said once, in the box
+    // said once, in the box
+    expect(wrapper.text().split('Recommended zones missing in Frigate: zone_far').length - 1).toBe(1)
+  })
+
+  it("shows a camera's other zones: the warning, then the note, then the line", async () => {
+    const row = cameraRow({ zone_names: ZONE_NAMES, issues: [{ level: 'warn', code: 'zone_names' }] })
+    const { wrapper } = await openPage(camerasState({ rows: [row] }))
+    const issues = wrapper.findAll('[data-issue]')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].classes()).toContain('text-warning')
+    expect(issues[0].text()).toContain(
+      "Review the zone name that looks like an address or a person's name: zone_1420_oak_st.",
+    )
+    const notes = wrapper.findAll('[data-zone-note]')
+    expect(notes).toHaveLength(1)
+    expect(notes[0].text()).toContain(
+      "Review the zone names with words the Traffic Monitor doesn't recognize: zone_maple, zone_nord.",
+    )
+    expect(notes[0].classes()).not.toContain('text-warning')
+    expect(notes[0].find('a').attributes('href')).toBe('/frigate/settings?page=masksAndZones&camera=oak_ave_wide')
+    expect(notes[0].find('a').text()).toBe('Edit its zones in Frigate')
+    const lines = wrapper.findAll('[data-other-zones]')
+    expect(lines).toHaveLength(1)
+    expect(lines[0].text()).toBe(
+      'Other zones enabled: zone_lane_bus, zone_maple, zone_nord, zone_1420_oak_st',
+    )
+    const html = wrapper.find('.v-expansion-panel').html()
+    const order = ['data-issue', 'data-zone-note', 'data-other-zones'].map((mark) => html.indexOf(mark))
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+  })
+
+  it('shows neither the line nor the note for a camera with no other zones', async () => {
+    const { wrapper } = await openPage()
+    expect(wrapper.find('[data-other-zones]').exists()).toBe(false)
+    expect(wrapper.find('[data-zone-note]').exists()).toBe(false)
+  })
+
+  it("shows a camera's other zones even when nothing else is under its header", async () => {
+    // No zones line (zones_missing null), no issue, no action: the other zones are the body's only content
+    const row = cameraRow({ zones_missing: null, zones_off: null, zone_names: [ZONE_NAMES[0]] })
+    const { wrapper } = await openPage(camerasState({ rows: [row] }))
+    expect(wrapper.find('[data-other-zones]').text()).toBe(
+      'Other zones enabled: zone_lane_bus',
+    )
+  })
+
+  it("shows Frigate's name beside a zone key Frigate made up", async () => {
+    const row = cameraRow({ zone_names: [ZONE_NAMES[0], MADE_UP_ZONE] })
+    const { wrapper } = await openPage(camerasState({ rows: [row] }))
+    expect(wrapper.find('[data-other-zones]').text()).toBe(
+      'Other zones enabled: zone_lane_bus, zone_a9bacc03 ("Bus lane (north)" in Frigate)',
+    )
+    expect(wrapper.find('[data-zone-note]').exists()).toBe(false)
+  })
+
+  it("says nothing about a camera's other zones while Frigate can't be compared", async () => {
+    const row = cameraRow({ in_frigate: 'unknown', zone_names: ZONE_NAMES })
+    const { wrapper } = await openPage(camerasState({ frigate: 'down', rows: [row] }))
+    expect(wrapper.find('[data-other-zones]').exists()).toBe(false)
+    expect(wrapper.find('[data-zone-note]').exists()).toBe(false)
   })
 
   it('has no summary when nothing needs attention', async () => {
@@ -374,14 +433,14 @@ describe('Cameras page', () => {
       const hand = cameraRow({ name: 'main_st', frigate_camera: 'main_st', neutral: false })
       const answer = camerasState({ rows: [cameraRow({ name: 'camera_1_3fa9c2', frigate_camera: 'main_st' })] })
       const { api, wrapper } = await openPage(camerasState({ rows: [hand, WIDE] }), { [NEUTRAL]: answer })
-      expect(actionTexts(wrapper).filter((text) => text === 'Use a neutral name')).toHaveLength(1)
-      await press(wrapper, 'Use a neutral name')
+      expect(actionTexts(wrapper).filter((text) => text === 'Use a neutral camera name')).toHaveLength(1)
+      await press(wrapper, 'Use a neutral camera name')
       expect(dialogText()).toContain(
         'New records will be saved under a name like camera_1_3fa9c2 instead of main_st. ' +
           'Records already saved keep the name main_st, and the dashboards\' charts start again under the new name. ' +
           'A new deployment starts for this camera.',
       )
-      await clickInDialog('Use a neutral name')
+      await clickInDialog('Use a neutral camera name')
       const post = api.sent.find((request) => request.method === 'POST')!
       expect(post.path).toBe('/api/v1/cameras/main_st/neutral-name')
       expect(post.body).toBeNull()

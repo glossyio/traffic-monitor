@@ -50,7 +50,7 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `frame_time` | REAL | *Frigate.* When the last frame Frigate processed for the object was taken | Unix time in seconds |
 | `start_time` | REAL | *Frigate.* When the object was first seen | Unix time in seconds |
 | `end_time` | REAL | *Frigate.* When the object was last seen | Unix time in seconds |
-| `entered_zones` | TEXT | *Frigate.* The zones the object entered, in order | A JSON array of zone names, such as `["zone_capture", "zone_near", "zone_radar", "zone_far"]` |
+| `entered_zones` | TEXT | *Frigate.* The zones the object entered, in order, named as they are in Frigate | A JSON array of zone names, such as `["zone_capture", "zone_near", "zone_radar", "zone_far"]`. See [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data). |
 | `score` | REAL | *Frigate.* The object's current score when the event ended | 0 to 1 |
 | `area` | REAL | *Frigate.* Width × height of the object's box, in pixels | |
 | `ratio` | REAL | *Frigate.* Width ÷ height of the object's box | Less than 1 is taller than wide |

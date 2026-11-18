@@ -2,7 +2,7 @@
   One list of object labels, as chips, under a small heading when it has a title, with Copy, which puts them on the clipboard as
   comma-separated text ("person, bicycle, car") and says "Copied." for two seconds. A label in `marked` is filled and
   one in `flagged` is amber, which wins over filled. A mark's legend shows only when a chip has that mark, so colour is
-  never the only cue.
+  never the only cue. Anything in the slot sits between the heading and the chips.
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
@@ -48,6 +48,7 @@ async function copy() {
       <v-btn v-if="labels.length" variant="outlined" color="primary" min-height="44" @click="copy">Copy</v-btn>
       <span role="status" class="text-body-2 text-secondary">{{ result }}</span>
     </div>
+    <slot />
     <div v-if="labels.length" class="d-flex flex-wrap ga-2">
       <v-chip v-for="(label, index) in labels" :key="index" size="small" v-bind="look(label)">{{ label }}</v-chip>
     </div>

@@ -111,6 +111,56 @@ def test_verify_gives_viewers_no_node_red_token_and_403_on_admin_paths(claimed_c
     assert "X-TM-User" not in r.headers and "X-TM-Redirect" not in r.headers
 
 
+def verify_page(client, uri, role, accept="text/html,application/xhtml+xml,*/*;q=0.8"):
+    headers = {"X-Original-URI": uri, "X-TM-Required-Role": role, "Accept": accept}
+    return client.get("/api/v1/auth/verify", headers=headers)
+
+
+@pytest.mark.parametrize("uri", ["/nr/", "/feeds/", "/storefiles?files=x"])
+def test_verify_sends_a_viewers_page_load_on_an_admin_path_to_the_admin_only_page(claimed_client, login, uri):
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    r = verify_page(claimed_client, uri, "admin")
+    assert r.status_code == 401 and r.json()["error"]["code"] == "admin_only"
+    assert r.headers["X-TM-Redirect"] == "/admin-only"
+    assert not [name for name in r.headers if name.lower().startswith("x-tm-") and name.lower() != "x-tm-redirect"]
+
+
+@pytest.mark.parametrize("accept", ["*/*", "application/json", "", "text/plain, image/*"])
+def test_verify_still_refuses_a_viewers_other_requests_on_an_admin_path(claimed_client, login, accept):
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    r = verify_page(claimed_client, "/nr/", "admin", accept=accept)
+    assert r.status_code == 403 and r.json()["error"]["code"] == "forbidden"
+    assert "X-TM-User" not in r.headers and "X-TM-Redirect" not in r.headers
+
+
+def test_verify_reads_accept_in_any_case(claimed_client, login):
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    assert verify_page(claimed_client, "/nr/", "admin", accept="TEXT/HTML").status_code == 401
+
+
+def test_accept_changes_nothing_for_anyone_else(claimed_client, login):
+    assert verify_page(claimed_client, "/nr/", "admin").headers["X-TM-Redirect"].startswith("/login?next=")
+    login(claimed_client, *ADMIN)
+    assert verify_page(claimed_client, "/nr/", "admin").status_code == 200
+    add_viewer(claimed_client)
+    viewer = other_client(claimed_client)
+    login(viewer, *VIEWER)
+    assert verify_page(viewer, "/dashboard/", "viewer").status_code == 200
+
+
+def test_a_viewers_page_load_on_an_admin_path_waits_for_the_license_first(claimed_client, login, monkeypatch):
+    """The license check comes before the role check, so a waiting viewer sees /waiting, not /admin-only."""
+    add_viewer(claimed_client)
+    login(claimed_client, *VIEWER)
+    monkeypatch.setattr(claimed_client.app.state, "eula", Eula(version="2", markdown="# New terms\n"))
+    r = verify_page(claimed_client, "/nr/", "admin")
+    assert (r.status_code, r.headers["X-TM-Redirect"]) == (401, "/waiting")
+    assert r.json()["error"]["code"] == "eula_required"
+
+
 IDENTITY_HEADERS = ("X-TM-User", "X-TM-Role", "X-TM-Frigate-Secret", "X-TM-NR-Token", "X-TM-Redirect")
 
 
