@@ -86,10 +86,11 @@ A model trained by Frigate+ has to be built for the device's detector:
 
 Choose the `yolov9` model type; `mobiledet` is the older one. The [Status page](../use/device-health.md#the-status-page) tells you which detector the device has, in its Hardware group.
 
-To use a model on a device that's online, either:
+To use a model on a device that's online, any of these works:
 
-* pick it in Frigate's **Settings > System > Detectors and model**, or
-* in **Settings > Configuration editor**, replace the whole `model:` section with only the model's path, then choose **Save & Restart**:
+* On the control app's Detection page, [paste the model's ID](../use/detection.md#use-a-model-by-its-id) into **Use a model by its ID** and choose **Download and use**. The page needs the key, and does the rest.
+* Pick the model in Frigate's **Settings > System > Detectors and model**.
+* In Frigate's **Settings > Configuration editor**, replace the whole `model:` section with only the model's path, then choose **Save & Restart**:
 
     ```yaml
     model:
@@ -127,8 +128,8 @@ The Status page's Configuration group has a **Frigate+** check. It compares the 
 | Status | Meaning |
 |---|---|
 | Passed | Frigate+ isn't in use: no key and no Frigate+ model. Or Frigate runs the Frigate+ model the config names. Without a key, it runs from the files on the device, and you can't submit snapshots. |
-| Warning | A key is set, but Frigate runs the installer's model, its own default model (on a device with no `model:` section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in [Use a model](#use-a-model). |
-| Problem | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens the Frigate+ API key section of the Detection page), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and **Set the key** opens the Frigate+ API key section of the Detection page. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
+| Warning | A key is set, but Frigate runs the installer's model, its own default model (on a device with no `model:` section), or one of your own. Snapshots can be submitted. Once Frigate+ has trained a model, set it as in [Use a model](#use-a-model); **Choose a model** opens the Detection page's box for its ID. |
+| Problem | Frigate can't use the Frigate+ model the config names. Either no key is set and the model's files aren't on the device, so Frigate can't download it (**Set the key** opens the API key panel in the Detection page's Frigate+ section), or the model isn't built for the device's detector; where Frigate's log says why, the check quotes it. Also a problem: the model id has characters an id can't have, or Frigate isn't answering and its log has an error, which the check quotes. When Frigate+ gave Frigate no token for the key, as with a wrong key, the check says so, and **Set the key** opens the same panel. See [If Frigate stops over a model](#if-frigate-stops-over-a-model). |
 | Couldn't run | Frigate's config is missing or isn't valid YAML, or Frigate isn't answering and its log has no error to quote. Or Frigate is in safe mode for a reason other than the model, so whether it can use the model is unknown; the Apps group's **Frigate** check says why. |
 
 When Frigate can't use its config, for example because of a model built for another detector, it starts in safe mode: it answers and looks healthy, but has no cameras and counts nothing. The Apps group's **Frigate** check reports that as a problem, whatever the cause, and quotes Frigate's messages. Fix the config in Frigate's configuration editor, then choose **Save & Restart**.

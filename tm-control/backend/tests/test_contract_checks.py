@@ -679,6 +679,7 @@ def test_errors_outrank_warnings(apps):
 
 CORAL_PATH = "/config/model_cache/yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite"  # the installer's, as rendered
 SET_THE_KEY = Fix(kind="link", text="Set the key", href="/detection#frigate-plus")
+CHOOSE_A_MODEL = Fix(kind="link", text="Choose a model", href="/detection#frigate-plus-model")
 
 
 def frigate_config_file(apps, text: str):
@@ -741,8 +742,9 @@ def test_frigate_plus_not_in_use_is_ok(apps):
 def warning_naming(which):
     return (
         "A Frigate+ key is set, so snapshots can be submitted from Frigate's Explore page, but Frigate runs "
-        f"{which} rather than a Frigate+ model. Once a model is trained, pick it under Settings, System, Detectors "
-        "and model in Frigate, or upload it on the Detection page and choose Use."
+        f"{which} rather than a Frigate+ model. Once a model is trained, use it by its ID on the Detection page, "
+        "under Frigate+, pick it under Settings, System, Detectors and model in Frigate, or upload it on the Detection "
+        "page and choose Use."
     )
 
 
@@ -750,7 +752,7 @@ def test_a_key_without_a_plus_model_is_a_warning_naming_the_installers_model(app
     set_key(apps)
     with_model(apps, CORAL_PATH)
     check = frigate_plus_check(apps)
-    assert (check.status, check.detail, check.fix) == ("warn", warning_naming("the installer's model"), None)
+    assert (check.status, check.detail, check.fix) == ("warn", warning_naming("the installer's model"), CHOOSE_A_MODEL)
     assert PLACEHOLDER_KEY not in check.detail
 
 
@@ -761,14 +763,14 @@ def test_a_key_without_a_model_path_is_a_warning_naming_frigates_default_model(a
     set_key(apps)
     frigate_config_file(apps, text)
     check = frigate_plus_check(apps)
-    assert (check.status, check.detail) == ("warn", warning_naming("Frigate's default model"))
+    assert (check.status, check.detail, check.fix) == ("warn", warning_naming("Frigate's default model"), CHOOSE_A_MODEL)
 
 
 def test_a_key_with_a_local_model_is_a_warning_naming_a_local_model(apps):
     set_key(apps)
     with_model(apps, "/config/model_cache/my_yolo.onnx")
     check = frigate_plus_check(apps)
-    assert (check.status, check.detail) == ("warn", warning_naming("a local model"))
+    assert (check.status, check.detail, check.fix) == ("warn", warning_naming("a local model"), CHOOSE_A_MODEL)
 
 
 @pytest.mark.parametrize("path", ["plus://../x", "plus://", "plus://a b", f"plus://{'a' * 65}"])

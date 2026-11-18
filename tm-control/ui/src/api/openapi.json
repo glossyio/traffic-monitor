@@ -953,6 +953,49 @@
         }
       }
     },
+    "/api/v1/models/plus/{model_id}/use": {
+      "post": {
+        "tags": [
+          "models"
+        ],
+        "summary": "Use Plus Model",
+        "description": "Make Frigate run a Frigate+ model by its ID. A model whose pair is on the device is used as POST\n/models/{name}/use does. Otherwise Frigate is sent its config with `path: plus://<id>` and downloads the model while\nit validates; the answer comes before that ends, and GET /models's `fetch` follows it. Frigate restarts only once it\nhas saved.",
+        "operationId": "use_plus_model_api_v1_models_plus__model_id__use_post",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlusUseQueued"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/surveys": {
       "get": {
         "tags": [
@@ -3168,6 +3211,42 @@
         ],
         "title": "EventsOut"
       },
+      "FetchOut": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "downloading",
+              "saved",
+              "refused",
+              "failed"
+            ],
+            "title": "State"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_id",
+          "state",
+          "message"
+        ],
+        "title": "FetchOut"
+      },
       "Fix": {
         "properties": {
           "kind": {
@@ -4110,6 +4189,16 @@
           },
           "labels": {
             "$ref": "#/components/schemas/LabelsOut"
+          },
+          "fetch": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FetchOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4120,7 +4209,8 @@
           "default",
           "running",
           "models",
-          "labels"
+          "labels",
+          "fetch"
         ],
         "title": "ModelsState"
       },
@@ -4405,6 +4495,36 @@
           "nodered"
         ],
         "title": "PlacesState"
+      },
+      "PlusUseQueued": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "started": {
+            "type": "string",
+            "enum": [
+              "restart",
+              "download"
+            ],
+            "title": "Started"
+          },
+          "restarts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Restarts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "started",
+          "restarts"
+        ],
+        "title": "PlusUseQueued"
       },
       "PowerQueued": {
         "properties": {

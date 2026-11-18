@@ -1,5 +1,5 @@
 ---
-description: See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, and set the Frigate+ API key.
+description: See which model Frigate detects with and which objects it recognises, upload, use, download, and delete detection models from the control app, set the Frigate+ API key, and use a Frigate+ model by its ID.
 ---
 
 # Choose the detection model
@@ -12,10 +12,10 @@ The control app's **Detection** page shows what the device looks for and which A
 
 * **Object detection** gives the **Detector**, such as `edgetpu` for a Coral, and the **Running model**. It also tells you when Frigate isn't answering.
 * **Model in use** is the model Frigate runs, as one card. The card holds everything about the running model, including [the objects it recognises and the objects the device tracks](#what-the-model-recognises). The card is always there once the page has loaded the models, even when Frigate isn't answering or doesn't name its model. The section is left out only when the page can't load the models.
-* **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key.
+* **[Frigate+](#frigate-plus)** is how to get a Frigate+ model, and where administrators set the API key and use a model by its ID.
 * **Other models on this device** lists the rest, and its title counts them.
 
-![The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key panel closed, and the other models](../assets/images/detection-page-models.png){ width="300" }
+![The Detection page on a phone, as an administrator: the Detector and Running model facts, then the model in use, its Files and objects opened to show the two lists of objects and the model's files, then the Frigate+ section with its API key and model ID panels closed, and the other models](../assets/images/detection-page-models.png){ width="300" }
 
 Each model is a card with its name, its kind (Frigate+ or local), and when it was trained and what it's built for (when it says). Select **Files and objects** on a card to see its files, with their sizes and the start of each file's SHA-256 hash, and [the objects it recognises](#what-the-model-recognises). A model with no list of objects has **Files** instead, and the running model's card with no files has **Objects**. A mark says when the model is:
 
@@ -27,7 +27,7 @@ Each model is a card with its name, its kind (Frigate+ or local), and when it wa
 
 The model the installer set up is shown as **The installer's model**. It has no `.json`, and it can't be deleted. A device without a Coral has no installer's model: Frigate then runs its own built-in model until you choose another, and the page shows it as **Frigate's built-in model**, which can't be deleted either.
 
-Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, and the Frigate+ API key. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
+Everyone who can log in sees the models, the object lists, and the Frigate+ text. Administrators also get **Upload a model**, under the **Other models on this device** heading, then **Use**, **Download**, and **Delete** on each model, the Frigate+ API key, and **Use a model by its ID**. While Frigate runs another model, the device's default (the installer's model, or Frigate's built-in model on a device without a Coral) has a **Use** of its own.
 
 When Frigate isn't answering, the page says so and shows what Frigate's config file says. The same when Frigate started in safe mode because it couldn't use its config: the page says so, nothing is detected meanwhile, and **Use** on a model, or on the installer's model, gives Frigate a config it can run. In both cases the model in use still has its card, made from the config file. The objects Frigate tracks aren't known while it's down, so that list is empty, and the recognised list is there only when the model has a `.json` or the installer's labels file. A model that Frigate runs but the device has no entry for gets a card too, named for the model or **Unknown model**.
 
@@ -57,6 +57,7 @@ If Frigate refuses the change, the page shows Frigate's reason, and nothing chan
 The page refuses a **Use** in these cases:
 
 * Frigate is restarting. Try again in a minute.
+* Frigate is downloading a model by its [ID](#use-a-model-by-its-id), or the device is applying another model change. Wait for it to finish.
 * The device's detector can't be told, because Frigate isn't answering and its config file can't be read, so the model can't be checked against it.
 * Frigate's config sets a model inside a detector, which would override this one. Remove that model in Frigate's config editor first.
 * The installer's model file is gone from the device.
@@ -88,14 +89,19 @@ The recognised list comes from Frigate, and the model's `.json` has a list of it
 
 ## Frigate+ { #frigate-plus }
 
-[Frigate+](../configuration/frigate-config.md#better-models) trains models on snapshots from your device. There are two ways to get one onto it:
+[Frigate+](../configuration/frigate-config.md#better-models) trains models on snapshots from your device. There are three ways to get one onto it:
 
-* **Online:** when the device has internet and a Frigate+ API key, pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
+* **By its ID:** when the device has internet and a Frigate+ API key, an administrator [pastes the model's ID](#use-a-model-by-its-id) on this page, and Frigate downloads the model.
+* **In Frigate:** pick the model in Frigate, under **Settings > System > Detectors and model**, and Frigate downloads it. Then choose [Use](#use-a-model) here if Frigate doesn't run it already.
 * **Offline:** upload the model's two files on this page, as a package from whoever trained the model, or copied from another device's Frigate. See [A device without internet](../configuration/frigate-config.md#a-device-without-internet).
 
-![The Frigate+ section on a phone, as an administrator: the two ways to get a model onto the device, then the API key panel opened, with the key field and Save](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
+![The Frigate+ section on a phone, as an administrator: the text on the ways to get a model onto the device, then the two panels, API key and Use a model by its ID, the second opened to show the Model ID field and its button](../assets/images/detection-page-frigate-plus-key.png){ width="300" }
 
-The two paragraphs show for everyone, and the section is there even when the page can't load the models. Administrators enter the API key in the panel titled **API key**, under the two paragraphs and above **Other models on this device**. The panel is closed until you select its title. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`. A viewer sees the paragraphs and no panel.
+The text shows for everyone, and the section is there even when the page can't load the models. Administrators get two panels under it, above **Other models on this device**. Both are closed until you select their titles. A viewer sees the text and no panels.
+
+### The API key
+
+The panel titled **API key** holds the key. The Status page's **Set the key** opens it. The key is kept with the device's other secrets, not in `config.yml`.
 
 * The page never shows the key back. Beside the panel's title is a short note on whether the key is set: "not set", "set", or "set, ending in" its last four characters for a key of 12 or more characters. A set key's note adds ", in use" while Frigate runs a Frigate+ model; "not set" never does.
 * **Save** stores what you typed. A key is 36 characters, a colon, and 40 lowercase letters or digits, as Frigate+ shows it; the page refuses anything else. The eye icon shows the key while you type.
@@ -103,3 +109,28 @@ The two paragraphs show for everyone, and the section is there even when the pag
 * Saving or removing restarts Frigate, which takes about a minute. The device counts nothing meanwhile.
 
 The ThingsBoard and Plate Recognizer keys are on the [Device page](device-health.md#tokens-and-keys).
+
+### Use a model by its ID
+
+The panel titled **Use a model by its ID** is for a model you've trained and have as an ID on the Frigate+ website. To download a model, the device needs the API key above, internet, and a Frigate that answers.
+
+1. On the Frigate+ website, open your models and copy the model's ID: 32 characters, each 0-9 or a-f. An address that starts with `plus://` works too, and so does an ID with spaces around it. The page refuses anything else before it sends anything.
+2. Paste it into **Model ID** and choose **Download and use**, then confirm.
+3. Frigate downloads the model while it checks the configuration with the model in it. This can take a few minutes, and the device waits up to 10 minutes. The panel says that Frigate is downloading, and **Use**, **Upload a model**, **Download**, and **Delete** are off meanwhile. You can leave the page: the device keeps following the download, and when you open the page again it shows the download while it runs, or why it failed.
+4. When Frigate has saved the configuration, the device restarts Frigate, which takes about a minute. The page then says when Frigate runs the model, as it does after [Use](#use-a-model). Traffic isn't counted while Frigate restarts.
+
+If the device already has the model's two files, there's nothing to download: the box does what **Use** on the model's card does, and the confirmation is Use's too: it names the model and the button reads **Use**.
+
+A download ends in one of these ways:
+
+| What the panel says | What happened |
+|---|---|
+| Frigate runs the model. | Frigate downloaded the model, saved the configuration, and restarted. |
+| Frigate refused the model, with Frigate's reason. | Frigate checked the configuration and said no, for example because the key is wrong or Frigate+ doesn't know the ID. Frigate's config is unchanged. |
+| Frigate didn't finish downloading the model in 10 minutes. | The device stopped waiting. The download may have been slow, or Frigate may have refused the model too late for the device to hear. Check the device's internet connection, then try again. |
+| Frigate stopped before the download finished. | Frigate restarted or went down, for example after a key change or a restart from the Status page, so the download was lost. Try again once Frigate runs. |
+| Frigate answered with a number, or the download couldn't be followed. | Rare. Frigate answered the save with something unexpected, or the device couldn't keep following the download because of an error of its own. Try again, and if it repeats, [download the diagnostics](device-health.md#download-diagnostics) from the Device page. |
+
+The device refuses to start a download when no key is set, when Frigate isn't answering (unlike **Use**, it doesn't edit Frigate's config file itself), or while another model change is going on.
+
+A model built for another detector than the device's is downloaded, and Frigate then refuses it. Its files stay on the device, and it's listed under **Other models on this device** as unable to run here. A model whose download went wrong may stay on the device in a state Frigate won't load. Choose **Delete** on its card, then enter the ID again.
