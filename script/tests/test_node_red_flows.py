@@ -2,6 +2,7 @@
 
 import json
 import re
+import sqlite3
 import subprocess
 import textwrap
 from pathlib import Path
@@ -222,7 +223,10 @@ for (const step of input.steps) {
     }
     started.add(step.id);
     const result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
-    results.push({ result: result === undefined ? null : result, logged });
+    // a key whose value is undefined vanishes in JSON, so the payload's keys are reported on their own
+    const payload = result == null ? undefined : result.payload;
+    const keys = payload !== null && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : null;
+    results.push({ result: result === undefined ? null : result, logged, keys });
 }
 console.log(JSON.stringify({ results, global: store, flow: flowStore }));
 """
@@ -2670,3 +2674,80 @@ def test_upload_result_wiring():
     func = record["func"]
     for forbidden in ("msg.payload", "msg.url", "msg.headers", "error.message", "node.warn", "node.error", "node.log"):
         assert forbidden not in func, forbidden
+
+
+FINALIZE = "a8aeffd2e5bc17f2"  # capture-events: event finalize output
+EVENT_PARAMS = "a96d834e3571c549"  # capture-events: write params for events insert
+EVENT_INSERT = "61d6a19c99c60e0b"  # capture-events: tmdb.events, Prepared Statement
+JSON_COLUMNS = {"entered_zones", "attributes", "provenance"}
+SCHEMA_SQL = FLOWS.parents[1] / "schema" / "schema.sql"
+EVENT = {
+    "id": "1761800000.123456-abc123", "camera": "camera_1_3fa9c2", "label": "car", "sub_label": None,
+    "top_score": 0.91, "frame_time": 1761800004.2, "start_time": 1761800000.1, "end_time": 1761800004.3,
+    "entered_zones": ["zone_near", "zone_far"], "score": 0.88, "area": 57600, "ratio": 1.78, "motionless_count": 0,
+    "position_changes": 3, "attributes": {}, "deployment_id": "1761800000000-0a1b2c3d-d",
+}
+
+
+def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING):
+    """The message "event finalize output" gets: the event under its camera's key, and what the speed nodes found."""
+    found = {"status_radarMatch": speed is not None, "calc_event_direction": direction, "calc_event_speed": speed,
+             "calc_radar_readings": readings}
+    msg = {"frigate_event": {**EVENT, **({"radarName": radar} if radar else {})}, "radarEnabled": radar is not None,
+           "payload": found, "event_direction_speed": found}
+    if fields is not MISSING:
+        msg["frigate_fields"] = fields
+    return msg
+
+
+def event_keys():
+    [step] = run_functions([(node_by_id(FINALIZE), finalize_msg("inbound", 22.5, 7))])["results"]
+    return step["keys"]
+
+
+def event_insert():
+    """The INSERT's columns and the parameter each one takes."""
+    match = re.fullmatch(r"\s*INSERT INTO events \(([^)]*)\)\s*VALUES \((.*)\);\s*", node_by_id(EVENT_INSERT)["sql"],
+                         re.DOTALL)
+    return ([name.strip() for name in match[1].split(",")], [value.strip() for value in match[2].split(",")])
+
+
+@needs_node
+def test_event_fields_agree():
+    """One list of event fields, in one order: what finalize builds, what the INSERT names, what its parameters are,
+    what the table has, and (less what is kept on the unit) what the upload gate lets through."""
+    assert event_keys() == EVENT_COLUMNS
+    names, values = event_insert()
+    assert names == EVENT_COLUMNS
+    assert all(value in (f"${name}", f"json(${name})") for name, value in zip(names, values, strict=True))
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": {name: None for name in EVENT_COLUMNS}})])["results"]
+    assert list(step["result"]["params"]) == [f"${name}" for name in EVENT_COLUMNS]
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    assert {row[1] for row in con.execute("PRAGMA table_info(events)")} >= set(EVENT_COLUMNS)
+    assert upload_lists()["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+
+
+@needs_node
+def test_event_params_bind_only_the_columns():
+    payload = {**EVENT, "direction_calc": "inbound", "provenance": ["frigate"], "surprise": "no column"}
+    del payload["sub_label"]
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert "$surprise" not in params and len(params) == len(EVENT_COLUMNS)
+    assert params["$sub_label"] is None and params["$speed_calc"] is None and params["$radarName"] is None
+    assert params["$entered_zones"] == '["zone_near","zone_far"]'
+    assert params["$attributes"] == "{}" and params["$provenance"] == '["frigate"]'
+    assert params["$top_score"] == 0.91 and params["$motionless_count"] == 0
+    assert step["result"]["payload"]["entered_zones"] == ["zone_near", "zone_far"]  # the payload isn't changed
+
+
+@needs_node
+@pytest.mark.parametrize("column", sorted(JSON_COLUMNS))
+@pytest.mark.parametrize("absent", [True, False], ids=["absent", "null"])
+def test_event_params_keep_a_missing_json_column_empty(column, absent):
+    """Today an absent one becomes the text "undefined", which json() refuses, so the row is lost, and a null one
+    becomes the text "null"."""
+    payload = {name: None for name in EVENT_COLUMNS if not (absent and name == column)}
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    assert step["result"]["params"][f"${column}"] is None
