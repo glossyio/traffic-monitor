@@ -6,13 +6,17 @@ Nothing here touches the disk or logs: the pictures, the ticket, and the place's
 the admin who took them.
 """
 
+import io
+import json
 import re
 import secrets
 import threading
+import zipfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
+from tm_control.modules.cameras.svg import reference_svg
 from tm_control.modules.cameras.zones import ZoneFacts
 
 NO_PLACE = "no-place"  # the stem's survey part when no place is in use
@@ -154,3 +158,36 @@ def data_file(reference: Reference, with_location: bool) -> dict:
         "distance_unit": reference.unit,
         "zones": [zone.model_dump() for zone in reference.zones],
     }
+
+
+def caption(reference: Reference) -> str:
+    """The drawing's caption: the place, the camera, and the clean picture's time in UTC."""
+    return (
+        f"Traffic Monitor reference picture  ·  place {reference.survey_id or 'none'}  ·  camera {reference.camera}"
+        f"  ·  {_utc(reference.clean_at, '%Y-%m-%d %H:%M:%S')} UTC"
+    )
+
+
+def package(reference: Reference, with_location: bool) -> bytes:
+    """The zip of the four files, built in memory: the two pictures as they were taken (stored), the data file and
+    the drawing (deflated), each dated with the clean picture's UTC time."""
+    name = stem(reference)
+    when = datetime.fromtimestamp(reference.clean_at, UTC).timetuple()[:6]
+    data = json.dumps(data_file(reference, with_location), indent=2, ensure_ascii=False) + "\n"
+    drawing = reference_svg(
+        reference.clean, reference.width, reference.height, reference.zones, reference.unit, caption(reference)
+    )
+    entries = [
+        (f"{name}_clean.jpg", reference.clean, zipfile.ZIP_STORED),
+        (f"{name}_zones.jpg", reference.zones_picture, zipfile.ZIP_STORED),
+        (f"{name}.json", data.encode("utf-8"), zipfile.ZIP_DEFLATED),
+        (f"{name}_zones.svg", drawing.encode("utf-8"), zipfile.ZIP_DEFLATED),
+    ]
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for filename, content, method in entries:
+            info = zipfile.ZipInfo(filename, date_time=when)
+            info.compress_type = method
+            info.external_attr = 0o100644 << 16
+            archive.writestr(info, content)
+    return buffer.getvalue()
