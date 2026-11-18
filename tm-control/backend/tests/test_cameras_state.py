@@ -188,3 +188,80 @@ def test_radars_unknown_means_no_radar_issue():
 def test_frigate_down_gives_no_frigate_issue():
     [row] = compare([entry("main_st")], None)
     assert issues(row) == []
+
+
+def test_other_zones_that_are_on_are_listed_with_what_the_check_found():
+    zones = ZONES | {"zone_lane_bus": {}, "zone_maple": {}, "zone_1420_oak_st": {"enabled": True},
+                     "zone_old_st": {"enabled": False}}
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert [(zone.name, zone.check) for zone in row.zone_names] == [
+        ("zone_lane_bus", None), ("zone_maple", "unknown_word"), ("zone_1420_oak_st", "pattern"),
+    ]
+    assert [(issue.level, issue.code) for issue in row.issues] == [("warn", "zone_names")]
+
+
+def test_an_unknown_word_alone_is_no_issue():
+    cameras = {"oak_ave_wide": {"zones": ZONES | {"zone_maple": {}}}}
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], cameras)
+    assert row.zone_names[0].check == "unknown_word" and row.issues == []
+
+
+def test_a_zone_name_raises_no_issue_on_a_camera_that_isnt_recorded():
+    cameras = {"oak_ave_wide": {"zones": ZONES | {"zone_main_st": {}}}}
+
+    def codes(row):
+        return {issue.code for issue in row.issues}
+
+    [off] = compare([entry("camera_1_3fa9c2", "oak_ave_wide", enabled=False)], cameras)
+    assert off.zone_names[0].check == "pattern" and "zone_names" not in codes(off)
+    [unpointed] = compare([], cameras)
+    assert unpointed.zone_names[0].check == "pattern" and "zone_names" not in codes(unpointed)
+    first, second = compare([entry("camera_1_3fa9c2", "oak_ave_wide"), entry("main_st", "oak_ave_wide")], cameras)
+    assert "zone_names" in codes(first) and "zone_names" not in codes(second)
+
+
+def test_zone_names_is_none_without_the_camera_and_empty_for_an_odd_shape():
+    [gone] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {})
+    assert gone.zone_names is None
+    for zones in (None, [], "zone_maple", {"zone_capture": None}):
+        [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+        assert row.zone_names == []
+
+
+def test_a_near_miss_of_a_fixed_name_is_another_zone():
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": {"Zone_Capture": {}}}})
+    assert "zone_capture" in row.zones_missing
+    assert [(zone.name, zone.check) for zone in row.zone_names] == [("Zone_Capture", None)]
+
+
+def test_a_key_frigate_made_up_is_not_checked_and_carries_frigates_name():
+    zones = ZONES | {
+        "zone_a6669b83": {"friendly_name": "Main St."},  # made up: three digits in a row, and not an address
+        "zone_a9bacc03": {"friendly_name": "Bus lane (north)"},
+        "zone_deadbeef": {"friendly_name": None},  # typed by hand: no name beside it, so it is checked
+        "zone_a2939495": {"friendly_name": "zone_a2939495"},  # the name is the key: checked
+        "1420_oak_st": {"friendly_name": "1420 Oak St"},  # a key made from the name: checked, name not carried
+        "zone_00001420": {"friendly_name": "Zone 00001420"},  # Frigate's first hex character is a letter: checked
+    }
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert [(zone.name, zone.check, zone.friendly_name) for zone in row.zone_names] == [
+        ("zone_a6669b83", None, "Main St."),
+        ("zone_a9bacc03", None, "Bus lane (north)"),
+        ("zone_deadbeef", "unknown_word", None),
+        ("zone_a2939495", "pattern", None),
+        ("1420_oak_st", "pattern", None),
+        ("zone_00001420", "pattern", None),
+    ]
+
+
+def test_made_up_keys_alone_raise_no_issue():
+    zones = ZONES | {"zone_a6669b83": {"friendly_name": "Main St."}}
+    [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+    assert row.issues == []
+
+
+def test_a_friendly_name_of_an_odd_shape_is_no_name():
+    for name in ("", 12, [], {}):
+        zones = ZONES | {"zone_a6669b83": {"friendly_name": name}}
+        [row] = compare([entry("camera_1_3fa9c2", "oak_ave_wide")], {"oak_ave_wide": {"zones": zones}})
+        assert (row.zone_names[0].check, row.zone_names[0].friendly_name) == ("pattern", None)

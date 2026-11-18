@@ -1,24 +1,27 @@
 ---
-name: Story template
-about: Issues created as part of Milestones, Projects, or ready with all information
+name: Task
+about: A ready-to-build piece of work, such as one part of a larger feature (filed as a sub-issue), or docs, tests, or cleanup
 title: ''
 labels: ''
 assignees: ''
+type: Task
 
 ---
 
-## Story 
+## Story
 
-As a [persona], I [want to...], [so that]. 
+As a [persona], I [want to...], [so that].
 
-## Definition of done 
+## Definition of done
 
-Needs to have ABC and XYZ deployed in prod. 
+What has to be true, and how it's checked, for this piece to be finished.
 
-## Out-of-scope  
+## Out-of-scope
 
-##Sizing 
+## Sizing
 
-Complexity + Unknowns = Est. Size  
+Complexity + Unknowns = Est. Size
 
 ## Tasks
+
+- [ ]

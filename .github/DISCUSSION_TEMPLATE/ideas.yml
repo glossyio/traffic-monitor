@@ -1,0 +1,22 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are where features start, before anyone has decided how to build them. Others can add to an idea and vote on it. An idea isn't a commitment: when one is picked up, it becomes an issue, and this discussion links to it.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you're trying to do, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Who it's for
+      description: Who would use it, such as people running a device, people reading its data, or contributors.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Rough idea
+      description: How it might work. A sketch is enough.

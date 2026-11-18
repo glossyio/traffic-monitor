@@ -31,6 +31,20 @@ export function internetLine(internet: NetworkState['internet']): string {
   }[internet]
 }
 
+// What the Hotspot panel says while the unit is on a Wi-Fi network and the hotspot would start by itself;
+// null at any other time. The 5 minutes is tm-network-retry's timer; the minute is NetworkManager's, measured at
+// about 75 seconds ("When the hotspot runs" in the docs).
+export function fallbackNote(wifi: Wifi | null, hotspot: HotspotState | null): { line: string; detail: string } | null {
+  if (wifi?.mode !== 'network' || !hotspot?.enabled) return null
+  return {
+    line: `Fallback only. This unit is on ${wifi.network || 'a Wi-Fi network'}.`,
+    detail:
+      `The hotspot is a fallback. If this unit loses ${wifi.network || 'its Wi-Fi network'}, the hotspot starts about ` +
+      'a minute later. While nobody is joined to the hotspot, the unit looks for its saved networks every 5 minutes ' +
+      'and joins one that is back.',
+  }
+}
+
 // One entry per connected link, for the Device page's card: "192.168.1.57 · <MAC>"
 export function summaryFacts(state: NetworkState): { label: string; value: string }[] {
   const facts: { label: string; value: string }[] = []

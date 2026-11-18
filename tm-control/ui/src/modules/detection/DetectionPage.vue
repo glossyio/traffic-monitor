@@ -1,11 +1,16 @@
 <!--
   The Detection page (GET /models), in four sections, for every logged-in user: Object detection (the detector, the
-  running model, and the two label lists), Model in use, Other models on this device, and Frigate+. Admins also get the
-  actions (upload, use, download, delete) and the Frigate+ API key's form, the frigate_plus_api_key row of GET /secrets,
-  which the API refuses viewers.
+  running model, and what is wrong with Frigate's answer), Model in use (one card, which holds the running model's two
+  object lists), Frigate+, and Other models on this device. The card in use always exists once the models have loaded:
+  a model with no entry in the list, or one that can't be read, gets a card the page makes. The Frigate+ section does
+  not wait for the models, so it shows when they can't load. Admins also get the actions (upload, use, download,
+  delete) and, in the Frigate+ section, two panels: the API key's, the frigate_plus_api_key row of GET /secrets, which
+  the API refuses viewers, and the form that uses a Frigate+ model by its ID. Frigate downloads a model for minutes
+  at a time, so the page follows the fetch record GET /models carries for admins, which it shows to anyone who opens
+  the page meanwhile.
 -->
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
@@ -14,8 +19,8 @@ import { saveBlob } from '../../components/download'
 import EnteredSecret from '../../components/EnteredSecret.vue'
 import { useSession } from '../../stores/session'
 import ActionResult, { type Result } from './ActionResult.vue'
-import LabelChips from './LabelChips.vue'
 import ModelBlock, { type Block } from './ModelBlock.vue'
+import PlusModelById from './PlusModelById.vue'
 import UploadModel from './UploadModel.vue'
 
 type ModelsState = components['schemas']['ModelsState']
@@ -39,21 +44,22 @@ async function load() {
 }
 
 // The Frigate+ key (admins only), loaded again after each save or remove. The Status page's "Set the key" links to
-// the section, which opens, and the page scrolls to it once the models have answered and the sections above it have
-// their height.
+// the section, which is always there, and "Choose a model" to the section with the ID panel; the linked panel opens,
+// and the page scrolls to the section once the models have answered and the sections above it have their height.
 const FRIGATE_PLUS_ID = 'frigate-plus'
-const linkedToKey = route.hash === `#${FRIGATE_PLUS_ID}`
+const MODEL_PANEL = 'frigate-plus-model'
+const linked = [FRIGATE_PLUS_ID, MODEL_PANEL].filter((name) => route.hash === `#${name}`)
 const secrets = ref<SecretState[] | null>(null)
 const secretsError = ref('')
 const key = computed(() => secrets.value?.find((secret) => secret.name === 'frigate_plus_api_key'))
-const keyOpen = ref<string[]>(linkedToKey ? [FRIGATE_PLUS_ID] : [])
+const panelsOpen = ref<string[]>([...linked])
 
-// The key's state for the panel's title, which a closed panel still shows: nothing for a viewer or until the
-// secrets answer, and "in use" only while Frigate runs a Frigate+ model
+// The key's state beside the panel's title "API key", which a closed panel still shows: nothing for a viewer or until
+// the secrets answer, and "in use" only while Frigate runs a Frigate+ model
 const keyState = computed(() => {
   if (!key.value) return ''
-  if (!key.value.set) return 'API key not set'
-  const set = key.value.ends_with ? `API key set, ending in ${key.value.ends_with}` : 'API key set'
+  if (!key.value.set) return 'not set'
+  const set = key.value.ends_with ? `set, ending in ${key.value.ends_with}` : 'set'
   return state.value?.running.kind === 'frigate_plus' ? `${set}, in use` : set
 })
 
@@ -70,7 +76,7 @@ async function loadSecrets() {
 onMounted(async () => {
   if (session.isAdmin) void loadSecrets()
   await load()
-  if (linkedToKey) {
+  if (linked.length) {
     await nextTick() // the models are on the page now
     document.getElementById(FRIGATE_PLUS_ID)?.scrollIntoView?.() // jsdom, in the tests, has no scrollIntoView
   }
@@ -128,7 +134,9 @@ function facts(model: ModelOut) {
 }
 
 // One card per model: the one Frigate runs under "Model in use", the rest under "Other models". A default with no file
-// on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be.
+// on the device gets a block the page makes (model null), keyed "#<kind>", which no model's name can be. So does a
+// running model with no entry in the list, keyed RUNNING.
+const RUNNING = '#running'
 function listed(model: ModelOut): Block {
   return { key: model.name, title: titleOf(model), facts: facts(model), model, kind: model.kind, inUse: model.running }
 }
@@ -136,12 +144,24 @@ function made(kind: DefaultKind, inUse: boolean): Block {
   return { key: `#${kind}`, title: DEFAULT_TITLES[kind], facts: MADE_FACTS[kind], model: null, kind, inUse }
 }
 
+// The card in use: the running model's entry, else a default's block, else a block for what Frigate's config names, or
+// for a model that can't be read
 const inUse = computed<Block | null>(() => {
   if (!state.value) return null
   const { running, models } = state.value
   const model = models.find((m) => m.running)
   if (model) return listed(model)
-  return isDefaultKind(running.kind) ? made(running.kind, true) : null
+  if (isDefaultKind(running.kind)) return made(running.kind, true)
+  return {
+    key: RUNNING,
+    title: running.name ?? 'Unknown model',
+    facts: running.name
+      ? "Named in Frigate's config; its files aren't on this device."
+      : "Frigate's model couldn't be read.",
+    model: null,
+    kind: running.kind,
+    inUse: true,
+  }
 })
 
 const others = computed<Block[]>(() => {
@@ -154,19 +174,6 @@ const others = computed<Block[]>(() => {
   return blocks
 })
 
-// Where the running model's list came from, as the recognised panel says
-const SOURCES = {
-  frigate: 'As Frigate reports them.',
-  sidecar: "From the model's .json, because Frigate didn't say.",
-  labels_file: "From the installer's labels file, because Frigate didn't say.",
-}
-
-// The tracked objects the running model doesn't recognise; none when what it recognises isn't known
-const unrecognised = computed(() => {
-  const { recognised, tracked } = state.value?.labels ?? {}
-  return recognised && tracked ? tracked.filter((label) => !recognised.includes(label)) : []
-})
-
 // Frigate's list against the .json of the model in use, as sets
 const listsDiffer = computed(() => {
   const { recognised, source } = state.value?.labels ?? {}
@@ -176,18 +183,15 @@ const listsDiffer = computed(() => {
   return reported.size !== ours.size || [...reported].some((label) => !ours.has(label))
 })
 
-// The panels that are open, by value: one list per group, because a group of panels writes back only its own
-// values and would close the others' if they shared one
-const labelsOpen = ref<string[]>([])
-
 // The admin's actions. One runs at a time; `busy` names it ("use mine.tflite"), and `restarting` is true while the
 // page waits for Frigate after a use. Each result shows where its action was: under the model, under the default's
 // button (DEFAULT), or above the list (LIST) for a model that's gone. A model's name can't start with "#".
 const DEFAULT = '#default'
 const LIST = '#list'
+const PLUS = '#plus' // the ID form's result
 const busy = ref<string | null>(null)
 const restarting = ref(false)
-const working = computed(() => busy.value !== null || restarting.value)
+const working = computed(() => busy.value !== null || restarting.value || state.value?.fetch?.state === 'downloading')
 const result = ref<(Result & { at: string }) | null>(null)
 
 // A default's block offers what POST /models/default/use puts back, when Frigate runs something else
@@ -215,11 +219,14 @@ function missingFrom(block: Block) {
 // block of the default this device would get, so the result follows the block when it moves under "Model in use".
 // Any other result is at its block's key.
 function blockProps(block: Block) {
-  const at = block.kind === state.value?.default ? DEFAULT : block.key
+  const at = block.kind && block.kind === state.value?.default ? DEFAULT : block.key
   const on = (action: string) => busy.value === `${action} ${action === 'use' ? at : block.key}`
   const here = result.value?.at === at || result.value?.at === block.key
   return {
     block,
+    lists: block.inUse
+      ? { labels: state.value!.labels, listsDiffer: listsDiffer.value, frigateAnswers: state.value!.frigate_answers }
+      : null,
     admin: session.isAdmin,
     busy: on('use') ? 'use' : on('download') ? 'download' : on('delete') ? 'delete' : null,
     working: working.value,
@@ -261,6 +268,14 @@ const FILLS_IN = 'fills in what Frigate needs to know about it.'
 const CONFIRM = {
   use: { verb: 'Use', text: "Frigate restarts, which takes about a minute. Traffic isn't counted while it does." },
   delete: { verb: 'Delete', text: "Both of its files are removed from the device. This can't be undone." },
+  // The ID form's: its title is the ID, which the confirmation names. An ID of a model the device has, with both its
+  // files, is confirmed as a use instead (`shown` below; the request is the same)
+  plus: {
+    verb: 'Download and use',
+    text:
+      'Frigate downloads the model, then restarts. The download can take a few minutes, and the restart about one. ' +
+      "Traffic isn't counted while Frigate restarts.",
+  },
   download: {
     verb: 'Download',
     text:
@@ -276,6 +291,22 @@ const CONFIRM = {
 }
 type Action = keyof typeof CONFIRM
 const confirming = ref<{ action: Action; title: string; model: ModelOut | null } | null>(null)
+
+// The ID form's confirmation: a model on the device with both its files is a Use, so the page confirms it as one, with
+// the model's title, and the server takes the short path. Any other ID, or models not loaded yet, is a download.
+function askToUsePlus(id: string) {
+  const model = state.value?.models.find((m) => m.name === id && m.complete) ?? null
+  confirming.value = { action: 'plus', title: id, model }
+}
+
+// What the dialog shows: the action's own words, but a plus action with a model is Use's, titled by the model
+const shown = computed(() => {
+  if (!confirming.value) return null
+  const { action, title, model } = confirming.value
+  const same = action === 'plus' && model
+  const words = CONFIRM[same ? 'use' : action]
+  return { ...words, title: same ? titleOf(model) : title }
+})
 const confirmOpen = computed({
   get: () => confirming.value !== null,
   set: (open: boolean) => {
@@ -284,9 +315,10 @@ const confirmOpen = computed({
 })
 
 function confirmed() {
-  const { action, model } = confirming.value!
+  const { action, model, title } = confirming.value!
   if (action === 'delete') void remove(model!)
   else if (action === 'use') void use(model)
+  else if (action === 'plus') void usePlus(title)
   else void download(model!)
 }
 
@@ -324,7 +356,12 @@ async function use(model: ModelOut | null) {
   poll(at, runs, done, Date.now())
 }
 
-function poll(at: string, runs: (answer: ModelsState) => boolean, done: string, started: number) {
+function poll(
+  at: string,
+  runs: (answer: ModelsState) => boolean,
+  done: string | ((answer: ModelsState) => string),
+  started: number,
+) {
   pollTimer = setTimeout(async () => {
     try {
       const { data } = await api.GET('/api/v1/models')
@@ -334,7 +371,7 @@ function poll(at: string, runs: (answer: ModelsState) => boolean, done: string, 
     }
     if (left) return
     if (state.value && runs(state.value)) {
-      result.value = { at, type: 'success', text: done }
+      result.value = { at, type: 'success', text: typeof done === 'function' ? done(state.value) : done }
     } else if (Date.now() - started >= POLL_FOR) {
       result.value = { at, type: 'warning', text: '', stalled: true }
     } else {
@@ -343,6 +380,81 @@ function poll(at: string, runs: (answer: ModelsState) => boolean, done: string, 
     restarting.value = false
   }, POLL_EVERY)
 }
+
+// Use a Frigate+ model by its ID. A model the device has is a use. Any other is downloaded by Frigate first: the page
+// puts up the download's record at once, which the watcher below follows with GET /models until the server ends it.
+const plusForms = ref(0) // a new form each time the ID went through, so it starts empty
+async function usePlus(id: string) {
+  result.value = null
+  busy.value = `use ${PLUS}`
+  let started: 'restart' | 'download'
+  try {
+    const { data } = await api.POST('/api/v1/models/plus/{model_id}/use', { params: { path: { model_id: id } } })
+    started = data!.started
+  } catch (error) {
+    result.value = { at: PLUS, type: 'error', text: messageOf(error) }
+    return
+  } finally {
+    busy.value = null
+  }
+  if (started === 'download') {
+    if (state.value) state.value.fetch = { model_id: id, state: 'downloading', message: null }
+  } else {
+    plusForms.value += 1
+    waitFor(id)
+  }
+}
+
+// Wait for Frigate to run the model with this ID, as after a use
+function waitFor(id: string) {
+  result.value = { at: PLUS, type: 'info', text: 'Frigate is restarting.' }
+  restarting.value = true
+  const titled = (answer: ModelsState) => answer.models.find((model) => model.name === id)?.title ?? id
+  const runs = (answer: ModelsState) => answer.frigate_answers && answer.running.name === id
+  poll(PLUS, runs, (answer) => `Frigate runs ${titled(answer)}.`, Date.now())
+}
+
+let fetchTimer: ReturnType<typeof setTimeout> | undefined
+onBeforeUnmount(() => clearTimeout(fetchTimer))
+
+// While a download runs, ask GET /models every 3 seconds, with no limit of the page's own: the server ends the record
+function followDownload() {
+  clearTimeout(fetchTimer)
+  fetchTimer = setTimeout(async () => {
+    try {
+      const { data } = await api.GET('/api/v1/models')
+      state.value = data as ModelsState
+    } catch {
+      // the device may be busy; the next poll asks again
+    }
+    if (!left && state.value?.fetch?.state === 'downloading') followDownload()
+  }, POLL_EVERY)
+}
+
+// The page's one watcher on the fetch record: a download starts the polling and opens the panel; its end either
+// restarts Frigate, which the page then waits for, or shows why it didn't. A refusal found on opening the page shows
+// too, but a download that finished before then shows nothing.
+watch(
+  () => state.value?.fetch?.state,
+  (now, before) => {
+    const fetched = state.value?.fetch
+    if (!fetched) return
+    const open = () => {
+      if (!panelsOpen.value.includes(MODEL_PANEL)) panelsOpen.value = [...panelsOpen.value, MODEL_PANEL]
+    }
+    if (now === 'downloading') {
+      open()
+      followDownload()
+    } else if (now === 'saved') {
+      if (before !== 'downloading') return
+      plusForms.value += 1
+      waitFor(fetched.model_id)
+    } else if (before === 'downloading' || before === undefined) {
+      open()
+      result.value = { at: PLUS, type: 'error', text: fetched.message ?? 'Frigate could not download the model.' }
+    }
+  },
+)
 
 async function download(model: ModelOut) {
   result.value = null
@@ -424,62 +536,6 @@ function openUpload() {
             <div class="text-body-1 text-break">{{ runningValue }}</div>
           </v-col>
         </v-row>
-        <p v-if="listsDiffer" class="text-body-2 mb-4">Frigate reports a different list than this model's .json.</p>
-        <p class="text-body-1 mb-4">Frigate tracks only the objects that are in both lists.</p>
-        <!-- Each list in a panel, closed until tapped. Its title, a button, goes inside the h3, so the heading stays a
-             heading for screen readers, as on the Device page. Eager: its content is on the page while it's closed, so
-             the page's height is known when a link scrolls to the key panel. The panels take the page's background, so
-             the card in use is the only tinted thing on the page. -->
-        <v-expansion-panels v-model="labelsOpen" multiple flat bg-color="background" class="ga-3">
-          <v-expansion-panel value="recognised" class="border" eager>
-            <h3 class="text-subtitle-1 font-weight-medium">
-              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Objects the running model recognises{{ state.labels.recognised ? ` (${state.labels.recognised.length})` : '' }}
-              </v-expansion-panel-title>
-            </h3>
-            <v-expansion-panel-text>
-              <template v-if="state.labels.recognised">
-                <p v-if="state.labels.source" class="text-body-2 text-secondary mb-2">{{ SOURCES[state.labels.source] }}</p>
-                <LabelChips
-                  :labels="state.labels.recognised"
-                  :marked="state.labels.tracked"
-                  marked-legend="Filled: tracked on this device."
-                />
-              </template>
-              <p v-else class="text-body-2 text-secondary">
-                {{
-                  state.frigate_answers
-                    ? "The running model's labels aren't known."
-                    : "Frigate isn't answering, and the running model has no sidecar on the device."
-                }}
-              </p>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-          <v-expansion-panel value="tracked" class="border" eager>
-            <h3 class="text-subtitle-1 font-weight-medium">
-              <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">
-                Objects tracked on this device ({{ state.labels.tracked.length
-                }}{{ unrecognised.length ? `, ${unrecognised.length} not recognised` : '' }})
-              </v-expansion-panel-title>
-            </h3>
-            <v-expansion-panel-text>
-              <LabelChips
-                :labels="state.labels.tracked"
-                :flagged="unrecognised"
-                flagged-legend="Amber: the running model doesn't recognise it."
-              />
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-        <!-- Visible while the panels are closed -->
-        <div v-if="unrecognised.length" class="not-recognised mt-4">
-          <p class="text-body-2 mb-2">Tracked but not recognised by the running model:</p>
-          <div class="d-flex flex-wrap ga-2">
-            <v-chip v-for="label in unrecognised" :key="label" size="small" variant="outlined" color="warning">
-              {{ label }}
-            </v-chip>
-          </div>
-        </div>
       </section>
 
       <section v-if="inUse" class="mt-10">
@@ -491,7 +547,61 @@ function openUpload() {
           @remove="confirming = { action: 'delete', title: inUse.title, model: inUse.model }"
         />
       </section>
+    </template>
 
+    <!-- Frigate+ sits above the other models and doesn't wait for them. The admin has two panels: "API key",
+         with the key's state beside its title, and "Use a model by its ID" -->
+    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
+      <h2 class="text-h6 mb-2">Frigate+</h2>
+      <p class="text-body-1 mb-2">
+        When the device is online and has a Frigate+ API key, an administrator can use a model by its ID below, or pick
+        one in Frigate, under Settings, System, Detectors and model.
+      </p>
+      <p class="text-body-1" :class="{ 'mb-4': session.isAdmin }">
+        When it's offline, an administrator can upload the model's two files on this page, as a package from whoever
+        trained the model or copied from another device's Frigate.
+      </p>
+      <v-expansion-panels v-if="session.isAdmin" v-model="panelsOpen" multiple flat bg-color="background">
+        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
+          <h3 class="text-body-1">
+            <v-expansion-panel-title>
+              <span class="d-flex flex-wrap align-baseline key-title">
+                <span class="text-subtitle-1 font-weight-medium">API key{{ ' ' }}</span>
+                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
+              </span>
+            </v-expansion-panel-title>
+          </h3>
+          <v-expansion-panel-text>
+            <v-alert v-if="secretsError" type="error">
+              {{ secretsError }}
+              <template #append>
+                <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
+              </template>
+            </v-alert>
+            <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
+            <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+        <v-expansion-panel :value="MODEL_PANEL" class="border" eager>
+          <h3 class="text-body-1">
+            <v-expansion-panel-title>
+              <span class="text-subtitle-1 font-weight-medium">Use a model by its ID</span>
+            </v-expansion-panel-title>
+          </h3>
+          <v-expansion-panel-text>
+            <PlusModelById
+              :key="plusForms"
+              :disabled="working"
+              :downloading="state?.fetch?.state === 'downloading'"
+              :result="result?.at === PLUS ? result : null"
+              @use="askToUsePlus"
+            />
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </section>
+
+    <template v-if="state">
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Other models on this device ({{ others.length }})</h2>
         <v-btn
@@ -519,51 +629,15 @@ function openUpload() {
       </section>
     </template>
 
-    <!-- The last section is one panel, its title inside the h2, as the Device page's "Tokens and keys" is -->
-    <section :id="FRIGATE_PLUS_ID" class="mt-10 frigate-plus">
-      <v-expansion-panels v-model="keyOpen" multiple flat bg-color="background">
-        <v-expansion-panel :value="FRIGATE_PLUS_ID" class="border" eager>
-          <h2 class="text-h6">
-            <v-expansion-panel-title class="text-h6">
-              <span class="d-flex flex-wrap align-baseline key-title">
-                <span>Frigate+</span>
-                <span v-if="keyState" class="text-body-2 text-secondary">{{ keyState }}</span>
-              </span>
-            </v-expansion-panel-title>
-          </h2>
-          <v-expansion-panel-text>
-            <p class="text-body-1 mb-2">
-              When the device is online and has a Frigate+ API key, pick a Frigate+ model in Frigate, under Settings,
-              System, Detectors and model, and Frigate downloads it.
-            </p>
-            <p class="text-body-1" :class="{ 'mb-6': session.isAdmin }">
-              When it's offline, an administrator can upload the model's two files on this page, as a package from
-              whoever trained the model or copied from another device's Frigate.
-            </p>
-            <template v-if="session.isAdmin">
-              <v-alert v-if="secretsError" type="error">
-                {{ secretsError }}
-                <template #append>
-                  <v-btn variant="text" @click="loadSecrets">Try again</v-btn>
-                </template>
-              </v-alert>
-              <v-progress-linear v-else-if="!secrets" indeterminate color="primary" />
-              <EnteredSecret v-if="key" :secret="key" hide-title @changed="loadSecrets" />
-            </template>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </section>
-
     <v-dialog v-model="uploadOpen" max-width="560">
       <UploadModel :key="uploads" :detector="state?.detector ?? null" @uploaded="load" @close="uploadOpen = false" />
     </v-dialog>
     <ConfirmDialog
       v-model="confirmOpen"
-      :title="confirming ? `${CONFIRM[confirming.action].verb} ${confirming.title}?` : ''"
-      :text="confirming ? CONFIRM[confirming.action].text : ''"
-      :confirm-text="confirming ? CONFIRM[confirming.action].verb : ''"
-      :confirm-color="confirming && CONFIRM[confirming.action].verb === 'Download' ? 'primary' : undefined"
+      :title="shown ? `${shown.verb} ${shown.title}?` : ''"
+      :text="shown?.text ?? ''"
+      :confirm-text="shown?.verb ?? ''"
+      :confirm-color="shown?.verb === 'Download' ? 'primary' : undefined"
       @confirm="confirmed"
     />
   </div>

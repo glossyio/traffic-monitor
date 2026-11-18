@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- A stand-in app page for trying the home button with `npm run dev`. Not part of the build. ?app=nr (or dashboard, ui,
+     feeds) tries another app's remembered spot. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <link rel="icon" href="data:," />
+    <title>Stand-in app</title>
+    <style>
+      body { margin: 0; font: 15px/1.4 system-ui, sans-serif; background: #f2f3f5; color: #1d2330; }
+      header { position: sticky; top: 0; padding: 14px 16px; background: #fff; border-bottom: 1px solid #d5d8de;
+               font-weight: 600; }
+      ol { margin: 0; padding: 8px 16px 88px 40px; }
+      li { padding: 10px 0; border-bottom: 1px solid #e3e5e9; }
+      nav { position: fixed; inset: auto 0 0 0; display: flex; justify-content: space-around;
+            padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid #d5d8de; }
+    </style>
+  </head>
+  <body>
+    <header>Stand-in app</header>
+    <ol id="rows"></ol>
+    <nav><span>Live</span><span>Review</span><span>Explore</span><span>Settings</span></nav>
+    <script>
+      for (let i = 1; i <= 60; i++) {
+        const row = document.createElement('li')
+        row.textContent = `Row ${i}`
+        document.getElementById('rows').append(row)
+      }
+    </script>
+    <script type="module">
+      import { start } from '/src/home-button/main.ts'
+      start(window, new URLSearchParams(location.search).get('app') ?? 'frigate')
+    </script>
+  </body>
+</html>

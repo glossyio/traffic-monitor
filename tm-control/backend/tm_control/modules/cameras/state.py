@@ -8,6 +8,7 @@ answer, or runs in safe mode with no cameras, gives no cameras (None), and then 
 every one is "unknown", never "absent".
 """
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ from tm_control import fake
 from tm_control.adapters import frigate
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import ZONES
+from tm_control.modules.apps.name_check import check_name
 from tm_control.modules.cameras.names import is_neutral
 from tm_control.modules.location.config import CameraEntry
 
@@ -33,7 +35,16 @@ class CameraIssue(BaseModel):
         "detect_off",  # the entry captures, and Frigate's detection is off for the camera
         "zones",  # a captured camera lacks one of ZONES in Frigate, or has it turned off (zones_missing, zones_off)
         "radar",  # a captured camera's camera_radar isn't an enabled radar under sensors.radars
+        "zone_names",  # a captured camera has a zone that is on whose name looks like an address or a person's name
     ]
+
+
+class ZoneName(BaseModel):
+    """One of a camera's zones other than the four the flows read, saved by its key with every event that enters it."""
+
+    name: str  # the zone's key in Frigate (its ID), which is what an event saves
+    check: Literal["unknown_word", "pattern"] | None  # check_name's answer; None too for a key Frigate made up
+    friendly_name: str | None  # Frigate's name for a zone whose key Frigate made up from it; None for every other
 
 
 class CameraRow(BaseModel):
@@ -48,6 +59,7 @@ class CameraRow(BaseModel):
     plate_recognizer: bool | None
     zones_missing: list[str] | None  # of ZONES; None when the camera isn't in Frigate
     zones_off: list[str] | None  # of ZONES, there but turned off (Frigate 0.18's zone enabled); None as zones_missing
+    zone_names: list[ZoneName] | None  # the other zones that are on, in Frigate's order; None as zones_missing
     issues: list[CameraIssue] = []  # what the camera checks report about this row; none while it is in step
 
 
@@ -76,6 +88,31 @@ def _zones_off(camera: dict) -> list[str]:
     return [zone for zone in ZONES if zone in zones and probes.mapping(zones[zone]).get("enabled") is False]
 
 
+# The key Frigate's zone editor makes up when the typed name, lower-cased with "_" for spaces, has a character it
+# can't use in a key: "zone_" and 8 hex characters of a hash of the name, the first turned into "a" when it is a
+# digit, so always a letter. It says nothing about the place.
+_MADE_UP = re.compile(r"zone_[a-f][0-9a-f]{7}")
+
+
+def _zone_name(key: str, value: object) -> ZoneName:
+    friendly_name = probes.mapping(value).get("friendly_name")
+    if _MADE_UP.fullmatch(key) and isinstance(friendly_name, str) and friendly_name and friendly_name != key:
+        return ZoneName(name=key, check=None, friendly_name=friendly_name)
+    return ZoneName(name=key, check=check_name(key), friendly_name=None)
+
+
+def _zone_names(camera: dict) -> list[ZoneName]:
+    """The camera's other zones that are on, with what the name check found. A zone that is off is left out: Frigate
+    ignores it, so its name reaches no event. A key Frigate made up isn't checked, and carries Frigate's name so the
+    page can show which zone it is."""
+    zones = probes.mapping(camera.get("zones"))
+    return [
+        _zone_name(str(zone), value)
+        for zone, value in zones.items()
+        if zone not in ZONES and probes.mapping(value).get("enabled") is not False
+    ]
+
+
 def _in_frigate(camera: dict | None) -> Literal["on", "off", "absent"]:
     if camera is None:
         return "absent"
@@ -92,8 +129,8 @@ def _detect(camera: dict | None) -> bool | None:
 
 
 def _issues(row: CameraRow, radars: dict[str, bool] | None) -> list[CameraIssue]:
-    """The row's problems, by the rules of the config.cameras, config.zones, and config.radars checks, which read them
-    from here so that the page and the Status page can't disagree."""
+    """The row's problems, by the rules of the config.cameras, config.zones, config.zone_names, and config.radars
+    checks, which read them from here so that the page and the Status page can't disagree."""
 
     def issue(level, code):
         return CameraIssue(level=level, code=code)
@@ -113,6 +150,10 @@ def _issues(row: CameraRow, radars: dict[str, bool] | None) -> list[CameraIssue]
         found.append(issue("warn", "gone" if row.in_frigate == "absent" else "camera_off"))
     if row.enabled and row.in_frigate == "on" and row.duplicate_of is None and (row.zones_missing or row.zones_off):
         found.append(issue("warn", "zones"))
+    if row.enabled and row.in_frigate == "on" and row.duplicate_of is None and row.zone_names and any(
+        zone.check == "pattern" for zone in row.zone_names
+    ):
+        found.append(issue("warn", "zone_names"))
     if row.enabled and row.camera_radar and radars is not None and radars.get(row.camera_radar) is not True:
         found.append(issue("warn", "radar"))
     return found
@@ -141,6 +182,7 @@ def compare(
             plate_recognizer=entry.plate_recognizer,
             zones_missing=_zones_missing(camera) if camera is not None else None,
             zones_off=_zones_off(camera) if camera is not None else None,
+            zone_names=_zone_names(camera) if camera is not None else None,
         ))
         first_for.setdefault(entry.frigate_camera, entry.name)
         rows[-1].issues = _issues(rows[-1], radars)
@@ -158,6 +200,7 @@ def compare(
                 plate_recognizer=None,
                 zones_missing=_zones_missing(camera),
                 zones_off=_zones_off(camera),
+                zone_names=_zone_names(camera),
             ))
             rows[-1].issues = _issues(rows[-1], radars)
     return rows

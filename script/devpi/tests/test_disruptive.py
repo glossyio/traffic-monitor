@@ -209,18 +209,21 @@ def test_pod_starts_after_its_network_unit_fails_once(host):
         wait_until_ready(host, RESTART_TIMEOUT_SECONDS)
 
 
-# The status of a path through nginx, and how many lines of its page name Cockpit's port 9090. The page names the
-# Pi's hostname, so only the two numbers come back.
+# The status of a path through nginx, and how many lines of its page name Cockpit's port 9090. Only the two numbers
+# come back, not the page.
 RESCUE_PAGE = """\
 page=$(curl -s --max-time 10 -H {host_header} -w '\\n%{{http_code}}' http://localhost{path})
 printf '%s\\n' "$page" | tail -n 1
 printf '%s\\n' "$page" | grep -c 9090"""
+# The rescue page for a request made on the Pi to http://localhost/, whole: its Cockpit link names the address the
+# request went to, through an nginx server-side include of $host. Nothing in it is secret.
+RESCUE_PAGE_FROM_LOCALHOST = "curl -s --max-time 10 http://localhost/dashboard/"
 
 
 def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     """With tm-control stopped, nginx can't check the login, so app paths answer 503 with the rescue page, which
     says to use Cockpit on port 9090, instead of letting anyone in. The home page still loads, and so does Cockpit at
-    the rescue page's link."""
+    the rescue page's link, which names the address the request was sent to."""
     host_header = shlex.quote(f"Host: {address}")
     try:
         with host.sudo():
@@ -228,6 +231,7 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
         # A viewer path and an admin path: each auth snippet has its own error_page
         pages = {path: host.run(RESCUE_PAGE.format(host_header=host_header, path=path)).stdout.split()
                  for path in ("/frigate/", "/nr/")}
+        from_localhost = host.run(RESCUE_PAGE_FROM_LOCALHOST).stdout
         home = proxy_status(host, address, "/")
         cockpit = host.run("curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost:9090/").stdout
     finally:
@@ -237,6 +241,9 @@ def test_app_paths_fail_closed_when_tm_control_is_down(host, address):
     wrong = {path: found for path, found in pages.items()
              if len(found) != 2 or found[0] != "503" or found[1] == "0"}
     assert not wrong, f"with tm-control stopped, (status, lines naming 9090) per path: {wrong}"
+    link = (("http://localhost:9090/" in from_localhost), ("<!--#" in from_localhost))
+    assert link == (True, False), ("with tm-control stopped, a request to http://localhost/ got a rescue page with "
+                                   "(Cockpit's link naming localhost, an unprocessed include)")
     assert home == "200", f"with tm-control stopped, / answered {home}"
     assert cockpit == "200", f"with tm-control stopped, Cockpit at :9090/ answered {cockpit}"
 
@@ -638,6 +645,32 @@ def test_upload_package_and_delete_a_model_from_the_control_app(host, address, e
             delete_placeholder(address, cookie)
         except AssertionError as error:
             raise AssertionError(f"the placeholder model may still be there ({error})")
+
+
+def test_using_a_plus_model_by_id_without_a_key_changes_nothing(host, address, expect, tm_login):
+    """With no Frigate+ API key set, an admin's POST /models/plus/<id>/use for a model the device doesn't have is
+    refused with 409 no_key, before anything is sent to Frigate's config save or to Frigate+: the download record
+    (GET /models "fetch", which lasts until the next download, a successful Use, or a restart) is as it was, and
+    frigate.service keeps its invocation. The ID is 32 f's, not a model. Skips when a key is set, since the refusal
+    is about the key."""
+    require_pii_free(expect)
+    cookie = session(address, *tm_login)
+    state = secret_state(address, cookie, KEY)
+    if state != (False, None):
+        pytest.skip(f"the Frigate+ key isn't empty ({state}); remove it on the Detection page first")
+    path = f"{API}/models/plus/{'f' * 32}/use"
+    frigate = invocation(host, "frigate.service")
+    before = request_from_this_machine(address, f"{API}/models", cookie=cookie).json()
+    assert isinstance(before, dict), f"GET {API}/models before the POST"
+    answer = request_from_this_machine(address, path, "POST", cookie, {})
+    found = answer.json() if answer.status == 409 else None
+    error = found.get("error") if isinstance(found, dict) else None
+    code = error.get("code") if isinstance(error, dict) else None
+    assert (answer.status, code) == (409, "no_key"), f"POST {path} with no key (status, code)"
+    listed = request_from_this_machine(address, f"{API}/models", cookie=cookie).json()
+    assert isinstance(listed, dict) and listed.get("fetch") == before.get("fetch"), (
+        f"GET {API}/models: the download record changed from {before.get('fetch')} to {listed.get('fetch')}")
+    assert invocation(host, "frigate.service") == frigate, "frigate.service restarted; nothing here should"
 
 
 # POST /time's restarting after a new time zone (CONTAINERS in tm_control/modules/time/router.py)

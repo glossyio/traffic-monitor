@@ -58,7 +58,8 @@ export interface paths {
          *     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
          *     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
          *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
-         *     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
+         *     agreement waits), /waiting (a viewer, meanwhile), or /admin-only (a viewer's page load, an Accept that names
+         *     text/html, on an admin path). Anything else a viewer asks of an admin path is 403, forbidden.
          *     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
          *     Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
          *     no other secret and no cookie. A login redirect's next= leaves the link's token out.
@@ -155,8 +156,9 @@ export interface paths {
         };
         /**
          * Status
-         * @description Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when
-         *     the page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
+         * @description Also the device's home-page theme and its name, so the setup, login, and license pages use its colors and name
+         *     the unit before anyone logs in (mDNS announces the name anyway), and, when the page came over the hotspot (nginx
+         *     sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
          */
         get: operations["status_api_v1_setup_status_get"];
         put?: never;
@@ -535,6 +537,29 @@ export interface paths {
          *     running model may be used again: Frigate just restarts.
          */
         post: operations["use_model_api_v1_models__name__use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/plus/{model_id}/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use Plus Model
+         * @description Make Frigate run a Frigate+ model by its ID. A model whose pair is on the device is used as POST
+         *     /models/{name}/use does. Otherwise Frigate is sent its config with `path: plus://<id>` and downloads the model while
+         *     it validates; the answer comes before that ends, and GET /models's `fetch` follows it. Frigate restarts only once it
+         *     has saved.
+         */
+        post: operations["use_plus_model_api_v1_models_plus__model_id__use_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1404,7 +1429,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar";
+            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar" | "zone_names";
         };
         /** CameraPoint */
         CameraPoint: {
@@ -1449,6 +1474,8 @@ export interface components {
             zones_missing: string[] | null;
             /** Zones Off */
             zones_off: string[] | null;
+            /** Zone Names */
+            zone_names: components["schemas"]["ZoneName"][] | null;
             /**
              * Issues
              * @default []
@@ -1597,6 +1624,18 @@ export interface components {
             first_event: number | null;
             /** Last Event */
             last_event: number | null;
+        };
+        /** FetchOut */
+        FetchOut: {
+            /** Model Id */
+            model_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "downloading" | "saved" | "refused" | "failed";
+            /** Message */
+            message: string | null;
         };
         /**
          * Fix
@@ -1865,6 +1904,7 @@ export interface components {
             /** Models */
             models: components["schemas"]["ModelOut"][];
             labels: components["schemas"]["LabelsOut"];
+            fetch: components["schemas"]["FetchOut"] | null;
         };
         /** Nearby */
         Nearby: {
@@ -1965,6 +2005,18 @@ export interface components {
             reconcile: "done" | "waiting_nodered" | "config_unreadable";
             /** Nodered */
             nodered: boolean;
+        };
+        /** PlusUseQueued */
+        PlusUseQueued: {
+            /** Name */
+            name: string;
+            /**
+             * Started
+             * @enum {string}
+             */
+            started: "restart" | "download";
+            /** Restarts */
+            restarts: string[];
         };
         /** PowerQueued */
         PowerQueued: {
@@ -2390,6 +2442,18 @@ export interface components {
             /** Scanned Seconds Ago */
             scanned_seconds_ago: number | null;
             join: components["schemas"]["JoinState"] | null;
+        };
+        /**
+         * ZoneName
+         * @description One of a camera's zones other than the four the flows read, saved by its key with every event that enters it.
+         */
+        ZoneName: {
+            /** Name */
+            name: string;
+            /** Check */
+            check: ("unknown_word" | "pattern") | null;
+            /** Friendly Name */
+            friendly_name: string | null;
         };
     };
     responses: never;
@@ -3168,6 +3232,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UseQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    use_plus_model_api_v1_models_plus__model_id__use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlusUseQueued"];
                 };
             };
             /** @description Validation Error */

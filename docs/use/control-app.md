@@ -76,6 +76,8 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Location** page | Yes | No |
 | The **Sharing** page | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
 
+A viewer who opens an administrator's app from a link sees a page that says so, with a way back to the home page.
+
 Cockpit uses the Raspberry Pi user account, not these accounts.
 
 ### Add a viewer

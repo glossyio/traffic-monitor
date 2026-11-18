@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ansible_facts['hostname'] }} | Traffic Monitor unavailable</title>
+    <title>Traffic Monitor unavailable</title>
     <style>
         body {
             background-color: {{ tmsetup_homepage_colors['background'] }};
@@ -41,9 +41,8 @@
         <h1>Traffic Monitor</h1>
         <p>The Traffic Monitor's control app isn't answering, so the apps can't check your login.</p>
         <p>
-            Open Cockpit at <a href="http://{{ ansible_facts['hostname'] }}.local:9090/">http://{{ ansible_facts['hostname'] }}.local:9090/</a>
-            (or the device's IP address with port 9090), log in with your Raspberry Pi user account,
-            and start <code>tm-control.service</code>.
+            Open Cockpit at <a href="http://<!--# echo var="host" -->:9090/">http://<!--# echo var="host" -->:9090/</a>,
+            log in with your Raspberry Pi user account, and start <code>tm-control.service</code>.
         </p>
         <p>Or over SSH, run <code>sudo systemctl restart tm-control.service</code>.</p>
     </main>

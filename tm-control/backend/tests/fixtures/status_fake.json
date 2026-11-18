@@ -138,6 +138,17 @@
                     "detail": "Frigate isn't answering, so the cameras' zones can't be checked."
                 },
                 {
+                    "id": "config.zone_names",
+                    "title": "Zone names",
+                    "status": "warn",
+                    "detail": "1 zone name on camera picam_h265 looks like an address or a person's name. A zone's name is saved with every event that enters it and shared with the data. The Cameras page shows which; rename it in Frigate.",
+                    "fix": {
+                        "kind": "link",
+                        "text": "Open the Cameras page",
+                        "href": "/cameras"
+                    }
+                },
+                {
                     "id": "config.radars",
                     "title": "Radar names",
                     "status": "ok",

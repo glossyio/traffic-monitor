@@ -1,5 +1,6 @@
 // The Vuetify theme comes from the device's home-page colors.
 import { describe, expect, it } from 'vitest'
+import { colorOf, DEFAULT_COLORS } from '../src/colors'
 import { buildTheme, contrast } from '../src/theme'
 
 describe('buildTheme', () => {
@@ -37,5 +38,15 @@ describe('contrast', () => {
   it('matches the WCAG ratios', () => {
     expect(contrast('#ffffff', '#000000')).toBeCloseTo(21, 1)
     expect(contrast('#3a82ff', '#0C1120')).toBeCloseTo(5.2, 1)
+  })
+})
+
+describe('colorOf', () => {
+  it("returns the device's color when it is #rrggbb", () => {
+    expect(colorOf({ background: '#112233' }, 'background')).toBe('#112233')
+  })
+  it('returns the default for anything else, or for no colors', () => {
+    expect(colorOf({ background: 'red' }, 'background')).toBe(DEFAULT_COLORS.background)
+    expect(colorOf(undefined, 'background')).toBe(DEFAULT_COLORS.background)
   })
 })

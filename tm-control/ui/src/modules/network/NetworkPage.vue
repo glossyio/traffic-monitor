@@ -6,9 +6,11 @@
 
   One screen on a laptop: This device and Hotspot are folded panels side by side (one column on a phone), each with a
   short summary, and Wi-Fi networks, which people come here for, is open below them. Both panels start folded on every
-  visit. The Hotspot panel opens itself when a change it made is running, has failed, or was refused, so the words that
-  say so are never hidden, and a folded panel with such words shows a warning mark. An anchor in the address
-  (#this-device, #hotspot) opens its panel and scrolls to it.
+  visit. While the unit is on a Wi-Fi network and the hotspot is on, the folded Hotspot panel says under its name that
+  the hotspot is only a fallback, and the open panel starts with when it would start (information: it neither opens the
+  panel nor marks it). The Hotspot panel opens itself when a change it made is running, has failed, or was refused, so
+  the words that say so are never hidden, and a folded panel with such words shows a warning mark. An anchor in the
+  address (#this-device, #hotspot) opens its panel and scrolls to it.
 
   A Wi-Fi join (GET /network/join, kept by useJoin) has its card above "This device" for as long as the unit has one to
   show. While one is pending, and while either section runs a job of its own, both sections are locked. The page owns
@@ -28,7 +30,7 @@ import JoinCard from './JoinCard.vue'
 import JoinDialog from './JoinDialog.vue'
 import WifiNetworks from './WifiNetworks.vue'
 import { HOTSPOT_PROFILE, JOIN_POLL_MS, type JoinState, pending, useJoin } from './join'
-import { internetLine, wifiLine } from './summary'
+import { fallbackNote, internetLine, wifiLine } from './summary'
 
 type NetworkState = components['schemas']['NetworkState']
 type Link = components['schemas']['Link']
@@ -275,6 +277,9 @@ const addresses = computed(() => {
   return found
 })
 
+// The hotspot's fallback note, while the unit is on a Wi-Fi network and the hotspot would start by itself
+const fallback = computed(() => fallbackNote(state.value?.wifi ?? null, state.value?.hotspot ?? null))
+
 const hotspotFacts = computed<Fact[]>(() => {
   const hotspot = state.value?.hotspot
   if (!hotspot) return []
@@ -355,7 +360,9 @@ const hotspotFacts = computed<Fact[]>(() => {
           >
             <template #summary>
               <div class="text-body-1 text-break">{{ state.hotspot.enabled ? state.hotspot.name : 'Hotspot off' }}</div>
+              <div v-if="fallback" class="text-body-2 text-secondary text-break">{{ fallback.line }}</div>
             </template>
+            <p v-if="fallback" class="text-body-2 text-secondary text-break mb-4">{{ fallback.detail }}</p>
             <HotspotSettings
               v-if="session.isAdmin"
               :hotspot="state.hotspot"
