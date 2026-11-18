@@ -5,6 +5,7 @@ import re
 import sqlite3
 import subprocess
 import textwrap
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -3201,3 +3202,27 @@ def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
     assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
                    1761800002.1, None)
     assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
+
+
+SPEED_STATS = "584504e6c8935eaf"  # ui-monitoring: query events, daily cum car counts in zone_radar with speed_calc
+
+
+@needs_node
+def test_the_car_speed_statistics_count_each_source():
+    [step] = run_functions([(node_by_id(SPEED_STATS), {"payload": {}})],
+                           flow={"camera_selection": "camera_1_3fa9c2"})["results"]
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    # 05:00 today, local time: inside "since 04:00 today" whenever the test runs
+    today = datetime.now().replace(hour=5, minute=0, second=0, microsecond=0).timestamp()
+    zones = '["zone_capture", "zone_radar"]'
+    rows = [("a", 22.0, "radar"), ("b", -31.0, "radar"), ("c", 27.0, None), ("d", 24.5, "frigate"),
+            ("e", -19.0, "frigate"), ("f", None, None)]
+    con.executemany("INSERT INTO events (id, camera, label, frame_time, entered_zones, speed_calc, speed_source) "
+                    "VALUES (?, 'camera_1_3fa9c2', 'car', ?, ?, ?, ?)",
+                    [(name, today, zones, speed, source) for name, speed, source in rows])
+    con.row_factory = sqlite3.Row
+    result = dict(con.execute(step["result"]["topic"]).fetchone())
+    assert list(result)[:3] == ["count", "count_radar", "count_frigate"]
+    assert (result["count"], result["count_radar"], result["count_frigate"]) == (5, 3, 2)
+    assert result["max_speed"] == 31.0
