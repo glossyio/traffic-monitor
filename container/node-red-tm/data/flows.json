@@ -224,12 +224,14 @@
             "e17b4d90c6a3f528",
             "9d4f2a6b18e07c35",
             "c58a1e3d7f96b024",
-            "71e3b9c5a2d4f806"
+            "71e3b9c5a2d4f806",
+            "4c7e2a9b6d1f3085",
+            "e2b80d5c3a7f9164"
         ],
         "x": 954,
         "y": 79,
         "w": 852,
-        "h": 122
+        "h": 182
     },
     {
         "id": "3a8e5c1f70d2b946",
@@ -286,16 +288,22 @@
                 "t": "eq",
                 "v": "online",
                 "vt": "str"
+            },
+            {
+                "t": "else"
             }
         ],
         "checkall": "true",
         "repair": false,
-        "outputs": 1,
+        "outputs": 2,
         "x": 1310,
         "y": 160,
         "wires": [
             [
                 "c58a1e3d7f96b024"
+            ],
+            [
+                "e2b80d5c3a7f9164"
             ]
         ]
     },
@@ -330,8 +338,8 @@
         "z": "9269520ddb532b00",
         "g": "b6f20d4e8a1c7395",
         "name": "keep frigate facts",
-        "func": "// Two facts from Frigate's config, kept in memory for \"frigate fields\": each camera's detect width and height, which\n// turn a box in pixels into fractions of the frame, and ui.unit_system, which names the unit of Frigate's speed\n// estimate. Nothing else reads them. The keys of detect are Frigate's camera names; they stay in this flow context.\n// An answer that can't be read keeps the last facts and logs nothing: Frigate restarting is normal.\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction isSize(value) {\n    return typeof value === \"number\" && Number.isFinite(value) && value > 0;\n}\n\nif (msg.statusCode !== 200 || !isMapping(msg.payload) || !isMapping(msg.payload.cameras)) {\n    return null;\n}\nconst ui = isMapping(msg.payload.ui) ? msg.payload.ui : {};\nconst unit_system = (ui.unit_system === \"metric\" || ui.unit_system === \"imperial\") ? ui.unit_system : null;\nconst detect = {};\nfor (const [name, camera] of Object.entries(msg.payload.cameras)) {\n    const size = (isMapping(camera) && isMapping(camera.detect)) ? camera.detect : {};\n    if (isSize(size.width) && isSize(size.height)) {\n        detect[name] = { width: size.width, height: size.height };\n    }\n}\nflow.set(\"frigate_facts\", { unit_system, detect });\nreturn null;",
-        "outputs": 1,
+        "func": "// Two facts from Frigate's config, kept in memory for \"frigate fields\": each camera's detect width and height, which\n// turn a box in pixels into fractions of the frame, and ui.unit_system, which names the unit of Frigate's speed\n// estimate. Nothing else reads them. The keys of detect are Frigate's camera names; they stay in this flow context.\n// An answer that can't be read logs nothing: Frigate restarting is normal. With facts in hand it keeps them, and the\n// ten-minute read comes round. Without facts it asks again in 15 seconds (output 2), up to 20 times, because Frigate\n// says it is online before its API listens. Node-RED's request node logs each failed try, so the tries are bounded.\nconst MAX_TRIES = 20;\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction isSize(value) {\n    return typeof value === \"number\" && Number.isFinite(value) && value > 0;\n}\n\nif (msg.statusCode !== 200 || !isMapping(msg.payload) || !isMapping(msg.payload.cameras)) {\n    if (flow.get(\"frigate_facts\") !== undefined) {\n        return null;\n    }\n    const tries = (Number.isInteger(msg.tries) && msg.tries > 0) ? msg.tries : 0;\n    if (tries >= MAX_TRIES) {\n        return null;\n    }\n    // A new message: the failed one carries the answer's headers, which the request node would send to Frigate.\n    return [null, { tries: tries + 1 }];\n}\nconst ui = isMapping(msg.payload.ui) ? msg.payload.ui : {};\nconst unit_system = (ui.unit_system === \"metric\" || ui.unit_system === \"imperial\") ? ui.unit_system : null;\nconst detect = {};\nfor (const [name, camera] of Object.entries(msg.payload.cameras)) {\n    const size = (isMapping(camera) && isMapping(camera.detect)) ? camera.detect : {};\n    if (isSize(size.width) && isSize(size.height)) {\n        detect[name] = { width: size.width, height: size.height };\n    }\n}\nflow.set(\"frigate_facts\", { unit_system, detect });\nreturn null;",
+        "outputs": 2,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -339,6 +347,54 @@
         "libs": [],
         "x": 1700,
         "y": 140,
+        "wires": [
+            [],
+            [
+                "4c7e2a9b6d1f3085"
+            ]
+        ]
+    },
+    {
+        "id": "4c7e2a9b6d1f3085",
+        "type": "delay",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "try again in 15 s",
+        "pauseType": "delay",
+        "timeout": "15",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1700,
+        "y": 200,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ]
+        ]
+    },
+    {
+        "id": "e2b80d5c3a7f9164",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "forget frigate facts",
+        "func": "// Frigate's frigate/available said something other than \"online\" (it stopped, or the broker lost it): forget its\n// facts, so a box or a unit from before a restart is never applied after it. The read on its next \"online\" fills them\n// again, trying until Frigate's API answers. Logs nothing.\nflow.set(\"frigate_facts\", undefined);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1500,
+        "y": 220,
         "wires": [
             []
         ]

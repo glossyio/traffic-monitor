@@ -2828,8 +2828,12 @@ def keep_facts(msg, flow=None):
 
 
 @needs_node
-def test_frigate_facts_are_kept():
-    step, flow = keep_facts({"statusCode": 200, "payload": FRIGATE_CONFIG})
+@pytest.mark.parametrize("tries", [None, 5], ids=["first-read", "a-later-try"])
+def test_frigate_facts_are_kept(tries):
+    msg = {"statusCode": 200, "payload": FRIGATE_CONFIG}
+    if tries is not None:
+        msg["tries"] = tries
+    step, flow = keep_facts(msg)
     assert flow == {"frigate_facts": FACTS}
     assert step["result"] is None and step["logged"] == []
 
@@ -2844,36 +2848,111 @@ def test_the_unit_system_is_one_of_frigates_two_or_unknown(ui, expected):
     assert flow["frigate_facts"]["unit_system"] == expected
 
 
-@needs_node
-@pytest.mark.parametrize("msg", [
+UNREADABLE_ANSWERS = [
     {"statusCode": 500, "payload": FRIGATE_CONFIG}, {"statusCode": 200, "payload": "<html>"},
     {"statusCode": 200, "payload": None}, {"statusCode": 200, "payload": []}, {"payload": FRIGATE_CONFIG},
     {"statusCode": 200, "payload": {"ui": {"unit_system": "metric"}}},
-], ids=["error", "text", "null", "list", "no-status", "no-cameras"])
+    {"statusCode": "ECONNREFUSED", "payload": "Error: connect ECONNREFUSED : http://frigate:5000/api/config"},
+]
+UNREADABLE_IDS = ["error", "text", "null", "list", "no-status", "no-cameras", "refused"]
+
+
+@needs_node
+@pytest.mark.parametrize("msg", UNREADABLE_ANSWERS, ids=UNREADABLE_IDS)
 def test_an_answer_that_cannot_be_read_keeps_the_last_facts(msg):
+    """With facts in hand a failed read asks nothing more: the ten-minute read comes round."""
     before = {"frigate_facts": {"unit_system": "metric", "detect": {"oak_ave_wide": {"width": 640, "height": 360}}}}
-    step, flow = keep_facts(msg, flow=json.loads(json.dumps(before)))
+    step, flow = keep_facts({**msg, "tries": 3}, flow=json.loads(json.dumps(before)))
     assert flow == before and step["result"] is None and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("msg", UNREADABLE_ANSWERS, ids=UNREADABLE_IDS)
+def test_without_facts_an_answer_that_cannot_be_read_asks_again(msg):
+    """Frigate says it is online before its API listens, so the read that follows fails; it is tried again.
+
+    The retry is a new message holding only its count: the failed one carries the answer's headers, which the request
+    node would send back to Frigate as request headers.
+    """
+    answer = {**msg, "headers": {"content-type": "text/html", "server": "nginx"}, "responseUrl": "x", "_msgid": "a1"}
+    step, flow = keep_facts(answer)
+    assert step["result"] == [None, {"tries": 1}]
+    assert flow == {} and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("tries, expected", [
+    (1, 2), (2, 3), (19, 20), (0, 1), (None, 1), ("3", 1), (2.5, 1), (-1, 1), ([4], 1),
+], ids=["1", "2", "19", "0", "null", "text", "fraction", "negative", "list"])
+def test_each_try_counts_up_in_a_new_message(tries, expected):
+    step, _ = keep_facts({"statusCode": 500, "payload": "<html>", "headers": {"server": "nginx"}, "tries": tries})
+    assert step["result"] == [None, {"tries": expected}]
+
+
+@needs_node
+@pytest.mark.parametrize("tries", [20, 21])
+def test_it_stops_asking_after_twenty_tries(tries):
+    """Node-RED's request node logs each failed try, so the tries are bounded."""
+    step, flow = keep_facts({"statusCode": 500, "payload": "<html>", "tries": tries})
+    assert step["result"] is None and flow == {} and step["logged"] == []
+
+
+def forget_facts(payload, flow):
+    node = named(json.loads(FLOWS.read_text()), "forget frigate facts")
+    run = run_functions([(node, {"topic": "frigate/available", "payload": payload, "retain": True})], flow=flow)
+    return run["results"][0], run["flow"]
+
+
+@needs_node
+@pytest.mark.parametrize("payload", ["stopped", "offline", "restarting", ""])
+def test_frigate_going_away_forgets_the_facts(payload):
+    """A box or a unit from before Frigate restarts is never applied after it: a new detect size may come with it."""
+    step, flow = forget_facts(payload, {"frigate_facts": json.loads(json.dumps(FACTS)), "other": 1})
+    assert flow == {"other": 1}
+    assert step["result"] is None and step["logged"] == []
+
+
+@needs_node
+def test_after_forgetting_the_next_failed_read_asks_again():
+    flows = json.loads(FLOWS.read_text())
+    forget, keep = named(flows, "forget frigate facts"), named(flows, "keep frigate facts")
+    run = run_functions([(forget, {"payload": "offline"}), (keep, {"statusCode": 500, "payload": "<html>"})],
+                        flow={"frigate_facts": json.loads(json.dumps(FACTS))})
+    assert [step["result"] for step in run["results"]] == [None, [None, {"tries": 1}]]
+    assert run["flow"] == {}
 
 
 def test_frigate_facts_are_read_at_start_when_frigate_comes_back_and_every_ten_minutes():
     flows = json.loads(FLOWS.read_text())
     by_id = {node["id"]: node for node in flows}
     keep = named(flows, "keep frigate facts")
+    forget = named(flows, "forget frigate facts")
     [request] = [node for node in flows if node["type"] == "http request" and keep["id"] in sum(node["wires"], [])]
     assert (request["method"], request["url"], request["ret"]) == ("GET", "http://frigate:5000/api/config", "obj")
     sources = [node for node in flows if request["id"] in sum(node.get("wires", []), [])]
-    assert sorted(node["type"] for node in sources) == ["inject", "switch"]
+    assert sorted(node["type"] for node in sources) == ["delay", "inject", "switch"]
     inject = next(node for node in sources if node["type"] == "inject")
     assert (inject["once"], str(inject["onceDelay"]), str(inject["repeat"])) == (True, "10", "600")
     switch = next(node for node in sources if node["type"] == "switch")
-    assert (switch["property"], switch["rules"]) == ("payload", [{"t": "eq", "v": "online", "vt": "str"}])
+    assert (switch["property"], switch["rules"]) == ("payload", [{"t": "eq", "v": "online", "vt": "str"},
+                                                                 {"t": "else"}])
+    assert (switch["outputs"], switch["wires"]) == (2, [[request["id"]], [forget["id"]]])
     [available] = [node for node in flows if switch["id"] in sum(node.get("wires", []), [])]
     assert (available["type"], available["topic"], available["broker"]) == ("mqtt in", "frigate/available",
                                                                            "a5d65dd0e3566daa")
+    delay = next(node for node in sources if node["type"] == "delay")
+    assert (delay["pauseType"], str(delay["timeout"]), delay["timeoutUnits"]) == ("delay", "15", "seconds")
+    assert (keep["outputs"], keep["wires"]) == (2, [[], [delay["id"]]])
+    assert [node["id"] for node in flows if delay["id"] in sum(node.get("wires", []), [])] == [keep["id"]]
+    assert (forget["type"], forget["outputs"], forget["wires"]) == ("function", 1, [[]])
     capture = tab_id(flows, "capture-events")
-    assert {node["z"] for node in (keep, request, inject, switch, available)} == {capture}
-    assert keep["wires"] == [[]]
+    nodes = (keep, request, inject, switch, available, delay, forget)
+    assert {node["z"] for node in nodes} == {capture}
+    group = by_id[keep["g"]]
+    assert group["name"] == "frigate facts" and {node["g"] for node in nodes} == {group["id"]}
+    assert set(group["nodes"]) == {node["id"] for node in nodes}
+    for node in nodes:
+        assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
 
 
 AFTER = {
