@@ -11,6 +11,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
       start_time: 1_793_000_000.2,
       end_time: 1_793_000_003.9,
       direction_calc: 'inbound',
+      direction_source: 'zones_radar',
       speed_calc: 31.5,
       speed_unit: 'mph',
       speed_source: 'radar',

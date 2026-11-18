@@ -71,7 +71,7 @@ CREATE TABLE events (
     provenance TEXT,
     deployment_id TEXT DEFAULT NULL,
     radarName TEXT DEFAULT NULL
-, path_data TEXT, box TEXT, best_box TEXT, best_frame_time REAL, frigate_speed REAL, frigate_speed_unit TEXT, frigate_velocity_angle REAL, speed_unit TEXT, speed_source TEXT, radar_readings INTEGER);
+, path_data TEXT, box TEXT, best_box TEXT, best_frame_time REAL, frigate_speed REAL, frigate_speed_unit TEXT, frigate_velocity_angle REAL, speed_unit TEXT, speed_source TEXT, radar_readings INTEGER, direction_source TEXT);
 
 CREATE TABLE plate_recognizer (
     event_id TEXT PRIMARY KEY,

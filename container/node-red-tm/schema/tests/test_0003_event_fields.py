@@ -7,7 +7,7 @@ from helpers import LATEST_VERSION, SCHEMA_DIR, columns, migrate, query, user_ve
 NEW_COLUMNS = {
     "path_data": "TEXT", "box": "TEXT", "best_box": "TEXT", "best_frame_time": "REAL", "frigate_speed": "REAL",
     "frigate_speed_unit": "TEXT", "frigate_velocity_angle": "REAL", "speed_unit": "TEXT", "speed_source": "TEXT",
-    "radar_readings": "INTEGER",
+    "radar_readings": "INTEGER", "direction_source": "TEXT",
 }
 
 

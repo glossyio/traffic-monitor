@@ -21,18 +21,20 @@ The zones give a direction when the object entered both `zone_near` and `zone_fa
 
 When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, `speed_calc` takes Frigate's, if Frigate made an estimate.
 
-| Zones | Radar readings | `direction_calc` | `speed_calc` |
-|---|---|---|---|
-| A direction | In that direction, or in both directions | The zones' direction | The median in that direction |
-| A direction | Only in the other direction | Empty | Frigate's speed, or empty |
-| No direction | In one direction only | The radar's direction | The median in that direction |
-| No direction | In both directions | Empty | Frigate's speed, or empty |
-| A direction | None, or no enabled radar on the camera | The zones' direction | Frigate's speed, or empty |
-| No direction | None, or no enabled radar on the camera | Empty | Frigate's speed, or empty |
+| Zones | Radar readings | `direction_calc` | `direction_source` | `speed_calc` |
+|---|---|---|---|---|
+| A direction | In that direction, or in both directions | The zones' direction | `zones_radar` | The median in that direction |
+| A direction | Only in the other direction | The zones' direction | `zones_radar_opposite` | Frigate's speed, or empty |
+| A direction | None, or no enabled radar on the camera | The zones' direction | `zones` | Frigate's speed, or empty |
+| No direction | In one direction only | The radar's direction | `radar` | The median in that direction |
+| No direction | In both directions | Empty | Empty | Frigate's speed, or empty |
+| No direction | None, or no enabled radar on the camera | Empty | Empty | Frigate's speed, or empty |
 
-An object that entered no zone has no direction and no speed.
+An object that entered no zone has no direction, and the radar's readings aren't looked at. It has a speed only if Frigate estimated one.
 
-Frigate estimates a speed only for an object that crossed a zone drawn with four corners and the real length of each side, so it makes none unless you set one up; see [Speed without a radar](../configuration/frigate-config.md#speed-without-a-radar). Its figure is always saved in `frigate_speed`, with its unit, whether or not the radar gave a speed, so an event with both has both. When Frigate's speed fills in `speed_calc`, it is converted to the device's speed unit and signed like the radar's: negative outbound, positive inbound or when the direction isn't known. `speed_source` says which one `speed_calc` holds.
+`direction_source` also says how far to trust the direction. `zones_radar` is two sensors agreeing. `zones` and `zones_radar_opposite` come from the camera alone, which followed the object itself; with `zones_radar_opposite`, the radar's readings belonged to something else, such as oncoming traffic. `radar` is the least certain, because its readings can belong to another object than the one the camera saw. If many events on one device have `zones_radar_opposite`, check that `zone_near` and `zone_far` aren't drawn the wrong way round.
+
+Frigate estimates a speed only for an object that crossed a zone drawn with four corners and the real length of each side, so it makes none unless you set one up; see [Speed without a radar](../configuration/frigate-config.md#speed-without-a-radar). Its figure is always saved in `frigate_speed`, with its unit, whether or not the radar gave a speed, so an event with both has both. When Frigate's speed fills in `speed_calc`, it is converted to the device's speed unit and signed like the radar's: negative outbound, positive inbound or when the direction isn't known. `speed_source` says which one `speed_calc` holds. So for every event, `speed_calc` is negative only when `direction_calc` is `outbound`, and when `direction_calc` is empty the speed is Frigate's, positive, and its sign says nothing about the direction.
 
 The device's speed unit is the unit its radar reports, mph unless the radar is set to another. A camera without a radar on a device that has one uses that radar's unit, so one device's speeds are all in one unit. A device without an enabled radar uses Frigate's unit, km/h or mph, which follows Frigate's unit setting.
 
@@ -58,6 +60,7 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `position_changes` | REAL | *Frigate.* How many times the object changed position | A count |
 | `attributes` | TEXT | *Frigate.* Attributes detected on the object, with their best scores | A JSON object, such as `{"face": 0.86}`; usually empty |
 | `direction_calc` | TEXT | Direction of travel relative to the device | `outbound` (away from the device), `inbound` (toward it), or empty. See [Direction and speed](#direction-and-speed). |
+| `direction_source` | TEXT | How `direction_calc` was decided | `zones_radar` (the zones, with radar readings the same way), `zones` (the zones, with no radar reading or no enabled radar), `zones_radar_opposite` (the zones, while the radar saw only the other way), or `radar` (the radar, when the zones gave none); empty when `direction_calc` is |
 | `speed_calc` | REAL | The speed: the radar's, or Frigate's when the radar gave none, in the unit in `speed_unit` | Negative for outbound, positive for inbound or when the direction isn't known; empty when there's no speed |
 | `speed_unit` | TEXT | The unit of `speed_calc`, the device's speed unit | The radar's unit, `mph` unless the radar is set to another; `kph` or `mph` on a device without an enabled radar; empty when there's no speed |
 | `speed_source` | TEXT | Where `speed_calc` came from | `radar` or `frigate`; empty when there's no speed |
@@ -73,6 +76,6 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `frigate_speed_unit` | TEXT | The unit of `frigate_speed`, from Frigate's unit setting | `kph` or `mph`; empty when there's no estimate, or when the device hadn't yet read Frigate's setting |
 | `frigate_velocity_angle` | REAL | *Frigate.* The direction the object was moving across the picture at Frigate's last estimate | Degrees from 0 to 360: 0 toward the right edge of the picture, 90 toward the bottom, 180 toward the left, and 270 toward the top; empty when there's no estimate |
 
-Events recorded by an earlier version of the Traffic Monitor have `speed_unit`, `speed_source`, `radar_readings`, and the columns from `path_data` on empty, and their `speed_calc`, when they have one, is the radar's.
+Events recorded by an earlier version of the Traffic Monitor have `direction_source`, `speed_unit`, `speed_source`, `radar_readings`, and the columns from `path_data` on empty, and their `speed_calc`, when they have one, is the radar's. Their `direction_calc` is empty where the radar saw only the other way, and on a camera without an enabled radar.
 
 The JSON export on the [Data export](../ui/database.md) page gives the JSON columns (`entered_zones`, `attributes`, `provenance`, `path_data`, `box`, and `best_box`) as text, the way the database stores them. Parse them as JSON to use them.

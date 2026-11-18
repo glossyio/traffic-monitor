@@ -46,6 +46,7 @@
         "frigate_velocity_angle",
         "speed_unit",
         "speed_source",
-        "radar_readings"
+        "radar_readings",
+        "direction_source"
     ]
 }

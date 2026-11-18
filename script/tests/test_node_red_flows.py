@@ -2085,7 +2085,7 @@ EVENT_COLUMNS = [
     "id", "camera", "label", "sub_label", "top_score", "frame_time", "start_time", "end_time", "entered_zones",
     "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
     "provenance", "deployment_id", "radarName", "path_data", "box", "best_box", "best_frame_time", "frigate_speed",
-    "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings",
+    "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
 ]
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -2691,10 +2691,13 @@ EVENT = {
 }
 
 
-def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING):
+def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING,
+                 source=MISSING):
     """The message "event finalize output" gets: the event under its camera's key, and what the speed nodes found."""
     found = {"status_radarMatch": speed is not None, "calc_event_direction": direction, "calc_event_speed": speed,
              "calc_radar_readings": readings}
+    if source is not MISSING:
+        found["calc_direction_source"] = source
     msg = {"frigate_event": {**EVENT, **({"radarName": radar} if radar else {})}, "radarEnabled": radar is not None,
            "payload": found, "event_direction_speed": found}
     if fields is not MISSING:
@@ -3086,31 +3089,109 @@ def match(zone_direction, medians, counts=None, radar=True):
     [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
     found = step["result"]["payload"]
     return (found.get("calc_event_direction"), found.get("calc_event_speed"), found["status_radarMatch"],
-            found.get("calc_radar_readings"))
+            found.get("calc_radar_readings"), found.get("calc_direction_source"))
 
 
 @needs_node
 @pytest.mark.parametrize("zones, medians, counts, expected", [
-    ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, ("inbound", 22.5, True, 7)),
-    ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4)),
-    ("inbound", {"outbound": -30.0}, {"outbound": 5}, (None, None, False, None)),
-    (None, {"outbound": -30.0}, {"outbound": 5}, ("outbound", -30.0, True, 5)),
-    (None, {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, (None, None, False, None)),
-    ("outbound", {}, {}, ("outbound", None, False, None)),
-    (None, {}, {}, (None, None, False, None)),
-    ("inbound", {"inbound": 0}, {"inbound": 3}, ("inbound", 0, True, 3)),
-    (None, {"outbound": 0}, {"outbound": 1}, ("outbound", 0, True, 1)),
-    ("inbound", {"inbound": 0, "outbound": -30.0}, {"inbound": 3, "outbound": 2}, ("inbound", 0, True, 3)),
+    ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2},
+     ("inbound", 22.5, True, 7, "zones_radar")),
+    ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4, "zones_radar")),
+    ("inbound", {"outbound": -30.0}, {"outbound": 5}, ("inbound", None, False, None, "zones_radar_opposite")),
+    (None, {"outbound": -30.0}, {"outbound": 5}, ("outbound", -30.0, True, 5, "radar")),
+    (None, {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, (None, None, False, None, None)),
+    ("outbound", {}, {}, ("outbound", None, False, None, "zones")),
+    (None, {}, {}, (None, None, False, None, None)),
+    ("inbound", {"inbound": 0}, {"inbound": 3}, ("inbound", 0, True, 3, "zones_radar")),
+    (None, {"outbound": 0}, {"outbound": 1}, ("outbound", 0, True, 1, "radar")),
+    ("inbound", {"inbound": 0, "outbound": -30.0}, {"inbound": 3, "outbound": 2}, ("inbound", 0, True, 3, "zones_radar")),
+    # a reading with no direction is grouped under "null" by "calculate median per direction"
+    ("outbound", {"inbound": 22.5, "null": 3.0}, {"inbound": 4, "null": 1},
+     ("outbound", None, False, None, "zones_radar_opposite")),
 ], ids=["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
-        "zero-match", "zero-assigned", "zero-of-two"])
+        "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"])
 def test_direction_and_speed_with_a_radar(zones, medians, counts, expected):
     assert match(zones, medians, counts) == expected
 
 
 @needs_node
+def test_the_statuses_stay_when_the_radar_saw_only_the_other_direction():
+    event = {"id": "1.0-abc", "calc_zone_direction": "inbound"}
+    found = {}
+    for medians in ({"outbound": -30.0}, {"outbound": -30.0, "null": 3.0}):
+        msg = {"frigate_event": event, "radarEnabled": True, "payload": medians, "radar_reading_counts": {}}
+        [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+        found[len(medians)] = step["result"]["payload"]
+    assert "status_match_event_radar_direction" not in found[1] and found[1]["status_radarMatch"] is False
+    assert found[2]["status_match_event_radar_direction"] == "radar_speed_direction_mismatch"
+
+
+@needs_node
 @pytest.mark.parametrize("zones", ["inbound", "outbound", None])
 def test_a_camera_without_a_radar_gets_its_direction_from_the_zones(zones):
-    assert match(zones, None, radar=False) == (zones, None, False, None)
+    assert match(zones, None, radar=False) == (zones, None, False, None, "zones" if zones else None)
+
+
+NO_ZONE = "entered no zone"
+DIRECTION_TABLE = [
+    # zones' direction (or NO_ZONE), radar medians (None: no enabled radar)
+    #   -> direction_calc, direction_source, speed_calc, speed_source; Frigate's speed is 38.6 kph, 23.98 mph
+    ("outbound", {"outbound": -30.0, "inbound": 20.0}, ("outbound", "zones_radar", -30.0, "radar")),
+    ("inbound", {"inbound": 22.5}, ("inbound", "zones_radar", 22.5, "radar")),
+    ("outbound", {"inbound": 22.5}, ("outbound", "zones_radar_opposite", -23.98, "frigate")),
+    ("inbound", {"outbound": -30.0}, ("inbound", "zones_radar_opposite", 23.98, "frigate")),
+    ("outbound", {}, ("outbound", "zones", -23.98, "frigate")),
+    ("inbound", None, ("inbound", "zones", 23.98, "frigate")),
+    ("outbound", None, ("outbound", "zones", -23.98, "frigate")),
+    (None, {"outbound": -30.0}, ("outbound", "radar", -30.0, "radar")),
+    (None, {"inbound": 0}, ("inbound", "radar", 0, "radar")),
+    (None, {"inbound": 22.5, "outbound": -30.0}, (None, None, 23.98, "frigate")),
+    (None, {}, (None, None, 23.98, "frigate")),
+    (None, None, (None, None, 23.98, "frigate")),
+    (NO_ZONE, None, (None, None, 23.98, "frigate")),
+]
+DIRECTION_IDS = ["zones-radar-of-two", "zones-radar", "opposite-outbound", "opposite-inbound", "zones-radar-none",
+                 "zones-no-radar-inbound", "zones-no-radar-outbound", "radar", "radar-zero", "no-direction-two",
+                 "no-direction-none", "no-direction-no-radar", "no-zone"]
+
+
+def direction_and_speed(zones, medians):
+    """The match node (or, for an object that entered no zone, the skip node), then "event finalize output"."""
+    radar = medians is not None
+    event = {**EVENT, **({"radarName": "TM_RADAR_SERIAL_PORT_00"} if radar else {}),
+             **({"calc_zone_direction": zones} if zones not in (None, NO_ZONE) else {})}
+    msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
+           "radar_reading_counts": {direction: 3 for direction in (medians or {})}}
+    node = named(json.loads(FLOWS.read_text()), "skip camera direction calc AND radar lookup") if zones == NO_ZONE \
+        else node_by_id(MATCH)
+    [step] = run_functions([(node, msg)])["results"]
+    found = step["result"]["payload"]
+    payload, step, _ = finalize({**step["result"], "event_direction_speed": found, "frigate_fields": FIELDS})
+    assert step["logged"] == []
+    return payload
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, expected", DIRECTION_TABLE, ids=DIRECTION_IDS)
+def test_direction_source_says_how_the_direction_was_decided(zones, medians, expected):
+    payload = direction_and_speed(zones, medians)
+    assert (payload["direction_calc"], payload["direction_source"], payload["speed_calc"],
+            payload["speed_source"]) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, expected", DIRECTION_TABLE, ids=DIRECTION_IDS)
+def test_speed_calc_is_negative_only_when_the_direction_is_outbound(zones, medians, expected):
+    """One rule for every event: a negative speed_calc means outbound, and without a direction the speed is
+    Frigate's, positive, and its sign says nothing."""
+    payload = direction_and_speed(zones, medians)
+    speed, direction = payload["speed_calc"], payload["direction_calc"]
+    if speed:
+        assert (speed < 0) == (direction == "outbound")
+    if direction is None:
+        assert payload["speed_source"] in (None, "frigate") and (speed is None or speed >= 0)
+    if payload["speed_source"] == "radar":
+        assert direction is not None
 
 
 @needs_node
@@ -3202,6 +3283,19 @@ def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
 
 
 @needs_node
+@pytest.mark.parametrize("direction, source, expected", [
+    ("inbound", "zones_radar", "zones_radar"), ("outbound", "zones", "zones"),
+    ("outbound", "zones_radar_opposite", "zones_radar_opposite"), ("inbound", "radar", "radar"),
+    (None, "zones", None), ("inbound", "frigate", None), ("inbound", "", None), ("inbound", None, None),
+    ("inbound", MISSING, None), ("inbound", ["zones"], None),
+], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
+def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
+    assert payload["direction_source"] == expected and list(payload)[-1] == "direction_source"
+    assert step["logged"] == []
+
+
+@needs_node
 def test_a_radar_speed_of_zero_is_saved():
     payload, _, _ = finalize(finalize_msg("inbound", 0, 3, fields=FIELDS))
     assert speed_of(payload) == {"speed_calc": 0, "speed_unit": "mph", "speed_source": "radar", "radar_readings": 3}
@@ -3277,9 +3371,9 @@ def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
     con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
     row = con.execute("SELECT camera, sub_label, direction_calc, speed_calc, speed_unit, speed_source, radar_readings, "
                       "frigate_speed, frigate_speed_unit, json_array_length(path_data), json_extract(box, '$[0]'), "
-                      "best_frame_time, radarName FROM events").fetchone()
+                      "best_frame_time, radarName, direction_source FROM events").fetchone()
     assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
-                   1761800002.1, None)
+                   1761800002.1, None, "zones")
     assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
 
 
