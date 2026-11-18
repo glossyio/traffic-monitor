@@ -2751,3 +2751,55 @@ def test_event_params_keep_a_missing_json_column_empty(column, absent):
     payload = {name: None for name in EVENT_COLUMNS if not (absent and name == column)}
     [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
     assert step["result"]["params"][f"${column}"] is None
+
+
+SET_FRIGATE_EVENT = "76911cc7f28e7da2"  # capture-events: set frigate_event from payload.after
+VETTED = ["amazon", "an_post", "canada_post", "dhl", "dpd", "fedex", "gls", "nzpost", "postnl", "postnord",
+          "purolator", "royal_mail", "ups", "usps"]
+
+
+def vet(sub_label):
+    after = {"camera": "oak_ave_wide", "id": "1.0-abc", "sub_label": sub_label}
+    msg = {"frigate_event": dict(after), "payload": {"type": "end", "before": dict(after), "after": dict(after)}}
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "vet sub_label"), msg)])["results"]
+    return step
+
+
+@needs_node
+@pytest.mark.parametrize("given, kept", [
+    (["amazon", 0.91], "amazon"), ("ups", "ups"), (["royal_mail", 0.5], "royal_mail"),
+    (["Jane Doe", 0.97], None), ("ABC123", None), (["Amazon", 0.9], None), (["amazon ", 0.9], None),
+    (["my_custom_class", 0.8], None), (None, None), ([], None), ([["amazon"], 0.9], None),
+    ({"text": "amazon"}, None), (42, None), ("", None),
+])
+def test_only_a_vetted_sub_label_is_kept(given, kept):
+    step = vet(given)
+    result = step["result"]
+    assert result["frigate_event"]["sub_label"] == kept
+    assert result["payload"]["after"]["sub_label"] == kept and result["payload"]["before"]["sub_label"] == kept
+    assert step["logged"] == []
+    if kept is None and given:
+        assert "Jane Doe" not in json.dumps(step) and "ABC123" not in json.dumps(step)
+
+
+@needs_node
+def test_vetting_survives_a_message_without_before_or_after():
+    node = named(json.loads(FLOWS.read_text()), "vet sub_label")
+    for payload in ({}, {"before": None, "after": None}, "text", None):
+        [step] = run_functions([(node, {"frigate_event": {"sub_label": ["Jane Doe", 0.9]}, "payload": payload})])["results"]
+        assert step["result"]["frigate_event"]["sub_label"] is None
+
+
+def test_the_vetted_list_is_frigates_logo_labels():
+    func = named(json.loads(FLOWS.read_text()), "vet sub_label")["func"]
+    assert "const VETTED = " + json.dumps(VETTED) + ";" in func
+
+
+def test_every_event_is_vetted_before_any_other_node_reads_it():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    vetting = named(flows, "vet sub_label")
+    assert by_id[SET_FRIGATE_EVENT]["wires"] == [[vetting["id"]]]
+    assert (vetting["type"], vetting["outputs"], vetting["z"]) == ("function", 1, tab_id(flows, "capture-events"))
+    assert [node["id"] for node in flows if vetting["id"] in sum(node.get("wires", []), [])] == [SET_FRIGATE_EVENT]
+    assert APPEND_CONFIG in {node["id"] for node in reachable(by_id, [vetting["id"]])}
