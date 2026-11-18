@@ -9,7 +9,7 @@ A camera that was set up by the installer and never renamed works without it. Us
 Each camera has two names:
 
 - **Frigate's name** is the one in Frigate's configuration, such as `oak_ave_wide`. Frigate uses it for the camera's streams, zones, and recordings, and for [Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#better-models). It can say where the camera is: an operator may name a camera after its street. It stays on the device.
-- **The name in bold** on the Cameras page is the camera's entry in [`config.yml`](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras). It's the name saved with every event and the name the device shares: in the database, in the MQTT messages `tm/event` and `tm/events`, in what a [ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md) server receives, and in what Plate Recognizer receives.
+- **The name in bold** on the Cameras page is the camera's entry in [`config.yml`](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras). It's the name saved with every event and the name the device shares: in the database, in the MQTT messages `tm/event` and `tm/events`, in what a [server you share data with](https://docs.trafficmonitor.ai/dev/use/sharing/index.md) receives, and in what Plate Recognizer receives.
 
 For a new camera, the page makes the second name for you: `camera_` and a number, then six random characters from 0 to 9 and a to f, such as `camera_1_3fa9c2`. The number tells two cameras apart when you read the page. The random part keeps the name from being used twice on a device, so records from two different cameras never share a name. You can't type one yourself, because a typed name can hold a street again.
 
@@ -104,12 +104,11 @@ To rename a zone, choose **Edit its zones in Frigate** and change its name there
 
 ## What still carries Frigate's name
 
-The Traffic Monitor keeps Frigate's name out of what it saves and shares. These places are Frigate's own, or hold the device's settings as they are, and still carry the name:
+The Traffic Monitor keeps Frigate's name out of what it saves and shares. These places still carry the name:
 
 - **Frigate's own database, and its recordings and snapshots.** Frigate keeps events under its own camera names.
 - **Frigate's `frigate/events` messages** on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md). Anything subscribed to the broker sees them. Frigate publishes them, not the Traffic Monitor.
 - **Frigate+.** The name identifies the camera for the scene conditions and annotations you submit.
-- **The Backup button.** With ThingsBoard connected, the **Backup & Restore** section of the legacy dashboard uploads Frigate's whole configuration, camera names included, when you press it. The copy of `config.yml` that goes to ThingsBoard leaves out each entry's `frigate_camera` setting.
 - **Records saved before a switch.** A device whose entry was named by hand has saved that name with its records, and keeps it there after you [use a neutral camera name](#use-a-neutral-camera-name).
 
 The Status page shows Frigate's camera names to anyone who is logged in, as Frigate does. The [diagnostics file](https://docs.trafficmonitor.ai/dev/use/device-health/#download-diagnostics) replaces them before you send it to someone; that section lists its limits.

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The device's MQTT broker and topics, the daily counts it publishes, and the optional ThingsBoard upload with config backup.">
+        <meta name="description" content="The device's MQTT broker and topics, the daily counts it publishes, and the optional ThingsBoard upload.">
       
       
       
@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -1018,6 +1020,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/sharing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1037,10 +1067,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
   
   
@@ -1058,8 +1088,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1691,23 +1721,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="ThingsBoard">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#config-backup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Config backup
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -2228,23 +2241,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="ThingsBoard">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#config-backup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Config backup
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -2278,7 +2274,7 @@
   
   
   <h1 id="mqtt-and-thingsboard">MQTT and ThingsBoard<a class="headerlink" href="#mqtt-and-thingsboard" title="Permanent link">&para;</a></h1>
-<p class="tm-description">The device&#39;s MQTT broker and topics, the daily counts it publishes, and the optional ThingsBoard upload with config backup.</p>
+<p class="tm-description">The device&#39;s MQTT broker and topics, the daily counts it publishes, and the optional ThingsBoard upload.</p>
 <p>The MQTT broker is on by default and accepts connections only from the device itself. The ThingsBoard upload is off until you turn it on.</p>
 <h2 id="mqtt">MQTT<a class="headerlink" href="#mqtt" title="Permanent link">&para;</a></h2>
 <p>Node-RED hosts an MQTT broker on the device at port <code>1883</code>. Frigate, the air quality sensor, and Node-RED connect to it on the device. Other devices on your network, such as Home Assistant or a display board that shows the day's counts, can connect once you give the broker a login; see <a href="#connect-from-other-devices">Connect from other devices</a>. Settings are in <a href="../../configuration/environment/">node-red-tm.env</a>.</p>
@@ -2376,16 +2372,14 @@
 <p>The login crosses the network unencrypted, and anyone who has it can read every topic and publish false data. Open MQTT only on a network you trust.</p>
 </div>
 <h2 id="thingsboard">ThingsBoard<a class="headerlink" href="#thingsboard" title="Permanent link">&para;</a></h2>
-<p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on in the <code>thingsboard</code> section of <a href="../../configuration/node-red-config/#thingsboard">config.yml</a> with the server's hostname, and enter the device's access token on the control app's <a href="../../use/device-health/#tokens-and-keys">Device page</a>. Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.</p>
+<p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on, and choose what is uploaded, on the control app's Sharing page; see <a href="../../use/sharing/">Share data</a>. The page sets the server and the device's access token. The <a href="../../configuration/node-red-config/#thingsboard"><code>thingsboard</code> section</a> of config.yml holds the server's address.</p>
 <p>Once connected, the device sends over ThingsBoard's HTTP API:</p>
 <ul>
 <li>Each <a href="../events-payload/">event</a> as telemetry, with <code>ts</code> set to the event's <code>frame_time</code> in milliseconds and <code>values</code> holding every column of the event.</li>
 <li>Each <a href="../radar-payload/">radar</a> and <a href="../air-quality-aq-payload/">air quality</a> reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.</li>
 <li>The device's system metrics as telemetry, every five minutes.</li>
-<li>The deployment location, radar information, and the Traffic Monitor settings as device attributes.</li>
+<li>The deployment location and radar information as device attributes.</li>
 </ul>
-<h3 id="config-backup">Config backup<a class="headerlink" href="#config-backup" title="Permanent link">&para;</a></h3>
-<p>With ThingsBoard connected, the <strong>Backup &amp; Restore</strong> section of the legacy dashboard at <code>http://&lt;device&gt;/ui/</code> saves Frigate's config as an attribute of the device in ThingsBoard.</p>
   
 
 

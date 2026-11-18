@@ -24,7 +24,7 @@ Power it on and follow [First-time setup](https://docs.trafficmonitor.ai/dev/set
 
 ## 4. Use the data
 
-The device counts around the clock and starts again by itself after a power cut. Watch the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md), review detections in Frigate, [export the data](https://docs.trafficmonitor.ai/dev/ui/database/index.md), or send it to [ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
+The device counts around the clock and starts again by itself after a power cut. Watch the [Monitoring dashboard](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md), review detections in Frigate, [export the data](https://docs.trafficmonitor.ai/dev/ui/database/index.md), or [share it with a server](https://docs.trafficmonitor.ai/dev/use/sharing/index.md).
 
 Some operators pair the device with a display that shows the day's counts. Share what you build in [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell) or on the [Zulip chat](https://trafficmonitor.zulipchat.com/).
 

@@ -1,6 +1,6 @@
 # Control app and login
 
-The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](https://docs.trafficmonitor.ai/dev/use/system-admin/#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). Its Cameras page keeps each camera's settings in step with Frigate; see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](https://docs.trafficmonitor.ai/dev/use/system-admin/#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). Its Cameras page keeps each camera's settings in step with Frigate; see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md). Its Sharing page chooses whether the device uploads its data to a server and how much of its location goes with it; see [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 What the login protects
 
@@ -8,7 +8,7 @@ The login keeps people on your network out of the apps. The device uses plain HT
 
 ## Claim the device
 
-A device that has no administrator yet sends every page to setup. That happens on a new device, after an update from a version without the login, and after [`reset-admin`](#if-the-administrators-password-is-lost). Setup has four steps: a welcome page, the license agreement, the administrator account, and the system password.
+A device that has no administrator yet sends every page to setup. That happens on a new device, after an update from a version without the login, and after [`reset-admin`](#if-the-administrators-password-is-lost). Setup has five steps: a welcome page, the license agreement, the administrator account, the system password, and sharing.
 
 You need the **setup code**, eight letters and digits written as `XXXX-XXXX`. It comes from one of two places:
 
@@ -30,6 +30,7 @@ To claim the device:
 1. Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.
 1. Choose **Claim this device**. You're logged in as the administrator.
 1. Set a new [system password](#the-system-password), or choose **Skip for now**.
+1. Choose **Not now**, or, on a device that already has a ThingsBoard access token, set up [sharing](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). Nothing is shared unless you turn it on, and the Sharing page is there later.
 
 Step 3 of setup creates the administrator account
 
@@ -67,6 +68,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Detection** page                                                                       | Yes           | Read only; see [The Detection page](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page) |
 | The **Cameras** page                                                                         | Yes           | No                                                                                                        |
 | The **Location** page                                                                        | Yes           | No                                                                                                        |
+| The **Sharing** page                                                                         | Yes           | Read only; see [What viewers see](https://docs.trafficmonitor.ai/dev/use/device-health/#what-viewers-see) |
 
 A viewer who opens an administrator's app from a link sees a page that says so, with a way back to the home page.
 

@@ -773,6 +773,8 @@
       
         
       
+        
+      
     
     
     
@@ -1178,6 +1180,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../sharing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1197,10 +1227,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
   
   
@@ -1218,8 +1248,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2365,13 +2395,13 @@
   
   <h1 id="control-app-and-login">Control app and login<a class="headerlink" href="#control-app-and-login" title="Permanent link">&para;</a></h1>
 <p class="tm-description">Claim a Traffic Monitor with its setup code, log in, add viewer accounts, change passwords, and get back in when the login or the control app fails.</p>
-<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. <a href="../system-admin/#cockpit">Cockpit</a> has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see <a href="../device-health/">Check and fix the device</a>. Its Detection page shows the object detection model and lets the administrator change it; see <a href="../detection/">Choose the detection model</a>. Its Cameras page keeps each camera's settings in step with Frigate; see <a href="../cameras/">Cameras</a>. Its Location page records where the device is and how precisely the database stores it; see <a href="../location/">Places and location</a>. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
+<p>The device's <a href="../home-page/">home page</a> is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. <a href="../system-admin/#cockpit">Cockpit</a> has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see <a href="../device-health/">Check and fix the device</a>. Its Detection page shows the object detection model and lets the administrator change it; see <a href="../detection/">Choose the detection model</a>. Its Cameras page keeps each camera's settings in step with Frigate; see <a href="../cameras/">Cameras</a>. Its Location page records where the device is and how precisely the database stores it; see <a href="../location/">Places and location</a>. Its Sharing page chooses whether the device uploads its data to a server and how much of its location goes with it; see <a href="../sharing/">Share data</a>. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the <strong>system password</strong>.</p>
 <div class="admonition info">
 <p class="admonition-title">What the login protects</p>
 <p>The login keeps people on your network out of the apps. The device uses plain HTTP, so passwords and images cross your network unencrypted. Use the device on a network you trust.</p>
 </div>
 <h2 id="claim-the-device">Claim the device<a class="headerlink" href="#claim-the-device" title="Permanent link">&para;</a></h2>
-<p>A device that has no administrator yet sends every page to setup. That happens on a new device, after an update from a version without the login, and after <a href="#if-the-administrators-password-is-lost"><code>reset-admin</code></a>. Setup has four steps: a welcome page, the license agreement, the administrator account, and the system password.</p>
+<p>A device that has no administrator yet sends every page to setup. That happens on a new device, after an update from a version without the login, and after <a href="#if-the-administrators-password-is-lost"><code>reset-admin</code></a>. Setup has five steps: a welcome page, the license agreement, the administrator account, the system password, and sharing.</p>
 <p>You need the <strong>setup code</strong>, eight letters and digits written as <code>XXXX-XXXX</code>. It comes from one of two places:</p>
 <ul>
 <li><strong>A pre-built unit:</strong> the card that came with the device.</li>
@@ -2390,6 +2420,7 @@ to create the administrator account. The code works once.
 <li>Enter the setup code, then a username and password for the administrator account. Usernames are 3 to 32 characters: lowercase letters, digits, dots, dashes, and underscores. Passwords are at least 10 characters.</li>
 <li>Choose <strong>Claim this device</strong>. You're logged in as the administrator.</li>
 <li>Set a new <a href="#the-system-password">system password</a>, or choose <strong>Skip for now</strong>.</li>
+<li>Choose <strong>Not now</strong>, or, on a device that already has a ThingsBoard access token, set up <a href="../sharing/">sharing</a>. Nothing is shared unless you turn it on, and the Sharing page is there later.</li>
 </ol>
 <figure>
   <img alt="Setup step 3 on a phone, with fields for the setup code, username, password, and password confirmation, and a Claim this device button" src="../../assets/images/control-app-setup-account.png" width="300" />
@@ -2467,6 +2498,11 @@ to create the administrator account. The code works once.
 <td>The <strong>Location</strong> page</td>
 <td>Yes</td>
 <td>No</td>
+</tr>
+<tr>
+<td>The <strong>Sharing</strong> page</td>
+<td>Yes</td>
+<td>Read only; see <a href="../device-health/#what-viewers-see">What viewers see</a></td>
 </tr>
 </tbody>
 </table>

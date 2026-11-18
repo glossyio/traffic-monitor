@@ -66,15 +66,11 @@ The login crosses the network unencrypted, and anyone who has it can read every 
 
 ## ThingsBoard
 
-The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on in the `thingsboard` section of [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) with the server's hostname, and enter the device's access token on the control app's [Device page](https://docs.trafficmonitor.ai/dev/use/device-health/#tokens-and-keys). Saving the token restarts Node-RED, which takes about thirty seconds. The device picks up a change to the file when you save it.
+The device can upload its data to a [ThingsBoard](https://thingsboard.io/) server, which gives you dashboards and storage for a fleet of devices. Turn it on, and choose what is uploaded, on the control app's Sharing page; see [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). The page sets the server and the device's access token. The [`thingsboard` section](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#thingsboard) of config.yml holds the server's address.
 
 Once connected, the device sends over ThingsBoard's HTTP API:
 
 - Each [event](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md) as telemetry, with `ts` set to the event's `frame_time` in milliseconds and `values` holding every column of the event.
 - Each [radar](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md) and [air quality](https://docs.trafficmonitor.ai/dev/data-and-payloads/air-quality-aq-payload/index.md) reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.
 - The device's system metrics as telemetry, every five minutes.
-- The deployment location, radar information, and the Traffic Monitor settings as device attributes.
-
-### Config backup
-
-With ThingsBoard connected, the **Backup & Restore** section of the legacy dashboard at `http://<device>/ui/` saves Frigate's config as an attribute of the device in ThingsBoard.
+- The deployment location and radar information as device attributes.

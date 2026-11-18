@@ -14,7 +14,7 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, whether the device shares its data with a [ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md) server, and the way each sensor faces. Then come the list of places and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), and the way each sensor faces. Then come the list of places, the [exact locations](#export-the-exact-locations), and, last, the [precision](#choose-the-precision).
 
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 
@@ -91,6 +91,12 @@ Open the place and choose **Delete**, then confirm. A planned place is removed f
 
 The place in use can't be deleted. Deploy another place first.
 
+## Export the exact locations
+
+**Export exact locations**, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.
+
+The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id.
+
 ## Choose the precision
 
 **Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:
@@ -101,7 +107,7 @@ The place in use can't be deleted. Deploy another place first.
 | **About 10 km** (45.5, -122.7)               | One decimal place, about a city          |
 | **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
 
-The exact location is never stored in the database. It stays on this device, and a later update will let you choose to export the database with each place's exact location, for analysis and mapping. Choose one and **Save**.
+The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](https://docs.trafficmonitor.ai/dev/use/sharing/index.md) or [export it](#export-the-exact-locations). Choose one and **Save**.
 
 - **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
 - **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.
@@ -111,6 +117,7 @@ The exact location is never stored in the database. It stays on this device, and
 
 - A place's description, and the reasons you give for corrections, never leave the device.
 - A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it.
+- Data you [share](https://docs.trafficmonitor.ai/dev/use/sharing/index.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations) goes where you send it.
 - A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
 
 To change these values in `config.yml` by hand, see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).

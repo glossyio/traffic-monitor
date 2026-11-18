@@ -771,6 +771,8 @@
       
         
       
+        
+      
     
     
     
@@ -1018,6 +1020,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../use/sharing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1037,10 +1067,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
   
   
@@ -1058,8 +1088,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2206,6 +2236,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-sharing-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Sharing module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-cameras-module" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2518,6 +2559,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-sharing-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Sharing module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-cameras-module" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2655,9 +2707,9 @@
 <p><code>tm-control.service</code> runs on the host, not in the pod, so the login keeps working when Podman doesn't. It runs as the code owner (default <code>tmadmin</code>), never as root, in a systemd sandbox, and listens on <code>127.0.0.1:8090</code> only. nginx is the only way in from the network.</p>
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
-<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret, and the hotspot's password. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token and the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job. The hotspot's password, <code>hotspot_password</code>, is in neither list: <code>tm-hotspot-setup</code> creates it, and writes it again when it adopts a hand-made profile; otherwise only the <code>network</code> job changes it. tm-control reads it (<code>read_hotspot_password</code> in <code>core/secrets.py</code>) for one route, <code>GET /network/hotspot/password</code>, which answers admins only.</li>
-<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read.</li>
-<li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, and the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
+<li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret, and the hotspot's password. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token on the Sharing page, the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job. The hotspot's password, <code>hotspot_password</code>, is in neither list: <code>tm-hotspot-setup</code> creates it, and writes it again when it adopts a hand-made profile; otherwise only the <code>network</code> job changes it. tm-control reads it (<code>read_hotspot_password</code> in <code>core/secrets.py</code>) for one route, <code>GET /network/hotspot/password</code>, which answers admins only.</li>
+<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read, and <code>sharing</code>, the maintainer's upload server and whether the public map choice is live (<code>maintainer_host</code> and <code>public_map_live</code>, from the role's <code>tmsetup_sharing_maintainer_host</code> and <code>tmsetup_sharing_public_map_live</code>), which the Sharing page and its checks read.</li>
+<li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>), and the Sharing page's consents (<code>sharing_consents</code>, migration 4). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
 <p>While the device is unclaimed, the installer keeps the setup code in a root-only file, <code>/etc/traffic-monitor/setup-code</code>, and hands it to <code>tm-control set-setup-code</code> on every run, which stores only its hash. The installer's command-line steps run as the code owner, and <code>sudo tm-control reset-admin</code> drops to that user after writing a new code file, so root never writes the database.</p>
 <h2 id="the-login-check">The login check<a class="headerlink" href="#the-login-check" title="Permanent link">&para;</a></h2>
@@ -2744,7 +2796,7 @@
                  nodered, go2rtc), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, network, secrets, system, time, detection, cameras, location
+                 hardware, network, secrets, system, time, detection, cameras, location, sharing
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
@@ -2832,7 +2884,7 @@
 <li>Add the check to <code>tests/fixtures/status_fake.json</code> if fake mode should show a new status or kind of fix.</li>
 </ol>
 <h3 id="node-reds-internal-status">Node-RED's internal status<a class="headerlink" href="#node-reds-internal-status" title="Permanent link">&para;</a></h3>
-<p>Node-RED answers <code>GET /tm-internal/status</code> on <code>127.0.0.1:1880</code> with its uptime, the errors from its last <code>config.yml</code> load, the database's schema version, and each radar's port and last reading. A flow on the <code>init-config</code> tab serves it. It checks the <code>X-TM-Internal-Token</code> header against <code>TM_INTERNAL_TOKEN</code> in <code>node-red-tm.env</code>, which the installer fills from the <code>node_red_internal_token</code> secret on every run, and refuses every request when that variable is unset or empty. <code>adapters/nodered.py</code> reads it, and calls the Location module's endpoints on the same port with the same token (see <a href="#the-location-module">The Location module</a>). nginx answers 404 for <code>/nr/tm-internal/</code> in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: <code>script/tests/test_node_red_flows.py</code> and <code>tests/fixtures/nodered_status.json</code> pin them.</p>
+<p>Node-RED answers <code>GET /tm-internal/status</code> on <code>127.0.0.1:1880</code> with its uptime, the errors from its last <code>config.yml</code> load, the database's schema version, each radar's port and last reading, and an <code>upload</code> section (see <a href="#the-sharing-module">The Sharing module</a>). A flow on the <code>init-config</code> tab serves it. It checks the <code>X-TM-Internal-Token</code> header against <code>TM_INTERNAL_TOKEN</code> in <code>node-red-tm.env</code>, which the installer fills from the <code>node_red_internal_token</code> secret on every run, and refuses every request when that variable is unset or empty. <code>adapters/nodered.py</code> reads it, and calls the Location module's endpoints on the same port with the same token (see <a href="#the-location-module">The Location module</a>). nginx answers 404 for <code>/nr/tm-internal/</code> in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: <code>script/tests/test_node_red_flows.py</code> and <code>tests/fixtures/nodered_status.json</code> pin them.</p>
 <h3 id="the-detection-module">The Detection module<a class="headerlink" href="#the-detection-module" title="Permanent link">&para;</a></h3>
 <p>The <code>detection</code> module serves the <a href="../../use/detection/">Detection page</a>. It reads Frigate's running config and <code>config.yml</code>, and the files in Frigate's <code>model_cache</code>. Its routes, under <code>/api/v1/models</code>:</p>
 <table>
@@ -2993,6 +3045,50 @@
 </tbody>
 </table>
 <p><code>tm-control migrate --node-red-config</code>, run by the installer, also brings <code>deployment:</code> up to date: it adds <code>database_precision: '2'</code> where it's missing, and removes <code>lat</code> and <code>lon</code> from a sensor's own <code>deployment:</code> block. The Location check (<code>location</code> in <code>modules/apps/contracts.py</code>) checks the same keys at run time.</p>
+<h3 id="the-sharing-module">The Sharing module<a class="headerlink" href="#the-sharing-module" title="Permanent link">&para;</a></h3>
+<p>The <code>sharing</code> module serves the <a href="../../use/sharing/">Sharing page</a>. Its routes sit under <code>/api/v1/sharing</code>; any signed-in user can read, and only an admin can write. A viewer's answer has no host for an operator's own server and no token state.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /sharing</code></td>
+<td>Where the upload goes, what is recorded as chosen for that server, whether the notice in force is the one the choice was made under, whether the public map is live, whether the place in use has a location, and how the server last answered. Runs the follow step first.</td>
+</tr>
+<tr>
+<td><code>PUT /sharing</code></td>
+<td>Admins. Saves the server and the three choices: <code>config.yml</code> first (the <code>thingsboard:</code> and <code>sharing:</code> blocks), the consent rows second. A refused save records nothing.</td>
+</tr>
+<tr>
+<td><code>GET /sharing/notice</code></td>
+<td>The sharing notice and its version.</td>
+</tr>
+<tr>
+<td><code>POST /sharing/reviewed</code></td>
+<td>Admins. Clears the review that an upload found on asks for.</td>
+</tr>
+</tbody>
+</table>
+<p>The rules:</p>
+<ul>
+<li><code>consents.py</code> keeps one row per change in <code>sharing_consents</code> (<code>state.sqlite</code>, migration 4). A <em>target</em> is <code>maintainer</code> or <code>own:&lt;host&gt;</code>; the latest row for a target and a choice is the answer. A grant records the notice version it was given under (<code>own-server</code> for an operator's own server, <code>pre-consent</code> for an upload found on). Rows are never deleted, and the order is the row id, because a unit's clock can step back. The host is part of a target key and stays in the database.</li>
+<li><code>follow.py</code> keeps <code>config.yml</code>'s <code>sharing:</code> block equal to the rows. Node-RED reads the block and never <code>state.sqlite</code>, so a hand edit of it grants nothing: with the upload off, every choice for the target is withdrawn and the review flag is cleared; with it on and no Share data recorded (a unit upgraded with the upload on), it is recorded as granted before consent existed and the review flag is set; every choice for any other server is withdrawn. A file with no block means the rounded location only: a save writes the block before its rows, so a granted exact location or public map next to no block is withdrawn (the file was replaced or the block deleted), never restored. Then the block is rewritten to what the rows say when it says something else, or written when it is missing and the upload is on, and Node-RED is told. It runs inside <code>reconcile.ensure</code> and <code>reconcile.for_status_report</code>, and at the start of <code>GET</code> and <code>PUT /sharing</code>, under <code>app.state.reconcile_lock</code>.</li>
+<li>A save is judged against the store after the follow step, so a hand edit since the page was read counts. The notice's version is needed only for the maintainer's server, with the upload on, when the save turns Share data on or grants a choice that isn't granted yet; while Share data is already granted under the current notice, a save can add a choice without it. Withdrawing never needs it, and the exact location needs <code>https</code>. The public map is refused for an own server and until the manifest says it is live.</li>
+<li><code>server.py</code> turns the <code>upload</code> section of Node-RED's <code>/tm-internal/status</code> (<code>enabled</code>, <code>last_ok_at</code>, <code>last_failure_at</code>, <code>last_failure</code>) into the page's state: off, waiting, ok, stale (no accepted upload for 900 seconds), or the last failure's kind (<code>unreachable</code>, <code>refused</code>, <code>rejected</code>, <code>server_error</code>) while it is newer than the last accepted upload; unknown without the section. tm-control never contacts the server: Node-RED's "record upload result" node on the <code>thingsboard</code> tab keeps the last answer from the status code, and never the URL, which holds the token.</li>
+<li>The Status page's <code>config.sharing</code> check (Configuration group) and <code>apps.sharing_server</code> check (Apps group) read the same things. The first warns for a review that is needed, for a notice nobody has read or that has changed, and for a <code>sharing:</code> value the device ignores; the second words the server's state. Neither shows the host, a notice version, or a note.</li>
+<li>The host, the token, coordinates, and notes are never logged, audited, or put in an error message. A <code>sharing.update</code> audit row lists the names of the fields that changed, such as <code>enabled,exact_location</code>. <code>tm-control migrate --node-red-config</code> changes the old placeholder host <code>tb.server.com</code> to the maintainer's while the upload is off.</li>
+</ul>
+<p>The upload gate is a function node on the <code>thingsboard</code> tab, after the rate limit and just before the request is built, so each message is judged under the config it is sent with. Only these leave the unit:</p>
+<ul>
+<li>Telemetry keys <code>event</code>, <code>radar</code>, <code>airquality</code>, <code>system_metrics</code>, and <code>deployments</code>. Deployment rows are re-rounded to the coarser of their own <code>location_precision</code> and the unit's <code>database_precision</code>.</li>
+<li>Attribute keys <code>deployments</code>, <code>radarinfo</code>, and six <code>sysinfo_*</code> keys (<code>sysinfo_tmVersion</code>, <code>sysinfo_osHostname</code>, <code>sysinfo_osRelease</code>, <code>sysinfo_osTimeZone</code>, <code>sysinfo_deviceName</code>, <code>sysinfo_frigateVersion</code>).</li>
+<li>Three attributes added to the <code>deployments</code> one: <code>consents</code> (what the page chose, and the target and notice version, which it reports only to the server they were chosen for and as <code>null</code> to any other), <code>exact_location</code> (the place's id and its coordinates to five places, only with the consent, a <code>sharing.host</code> that matches <code>thingsboard.host</code>, an <code>https</code> URL, and a place with a location, else empty), and <code>public_map</code> (the id and a point to three places, for the maintainer's server only).</li>
+</ul>
+<p>The gate sends nothing while the upload is off, so a message that waited in the rate limit while Share data was turned off is dropped rather than sent. It also fails closed on shapes it can't read: a <code>deployments</code> value that isn't a mapping is left out, telemetry <code>deployments</code> keeps only its <code>updatedDeployment</code> and <code>currentDeployment</code> lists and only when each is an array, and a row that isn't a mapping is dropped. A key or shape that isn't listed is left out and named once per config load, never with its value. Nothing uploads <code>config.yml</code> or Frigate's configuration. <code>script/tests/test_node_red_flows.py</code> pins the gate, the lists, and the <code>upload</code> section.</p>
 <h3 id="the-cameras-module">The Cameras module<a class="headerlink" href="#the-cameras-module" title="Permanent link">&para;</a></h3>
 <p>The <code>cameras</code> module serves the <a href="../../use/cameras/">Cameras page</a>. It's for admins only, like the Location page, because it's a settings page: every route under <code>/api/v1/cameras</code> takes <code>require_admin</code>. It owns the <code>sensors.cameras</code> entries in Node-RED's <code>config.yml</code> and writes no other config file, so never Frigate's. The other things it changes are the places' bearings (<code>survey_bearings</code> in <code>state.sqlite</code>) when an entry is re-keyed, and Frigate's detection switch for a camera, through Frigate's API, which changes no file of Frigate's that tm-control writes. It never opens <code>tmdb.sqlite</code>.</p>
 <p>An entry's key is the camera's neutral name, the one the flows record and share. Its optional <code>frigate_camera</code> is Frigate's name for it, and without one the key is Frigate's name too, so installs that never used the page need no migration. <code>names.py</code> makes the keys, <code>camera_&lt;N&gt;_&lt;6 hex&gt;</code>, from <code>secrets.token_hex(3)</code> and redraws a token a neutral name in the file already ends with. The module never logs, audits, or puts in an error message Frigate's name: audit rows carry the neutral name.</p>
@@ -3041,7 +3137,7 @@
 <li><code>NodeRedConfig</code>'s camera methods (<code>add_camera</code>, <code>set_camera</code>, <code>point_camera</code>, <code>rename_camera</code>, <code>remove_camera</code>) edit through <code>RoundTripFile</code>, as the deployment edits do, so comments, order, and quoting stay. <code>set_camera</code>, <code>point_camera</code>, and <code>rename_camera</code> refuse an entry that carries a YAML anchor or is shared with another entry through an alias (<code>main_st: &amp;cam</code>, then <code>oak_ave_wide: *cam</code>), because the edit would change both; the API answers 500 <code>config_error</code>, as for any file it can't edit.</li>
 <li>Copy diagnostics replaces every Frigate camera name that differs from its entry's key, and every Frigate camera no entry points at, Off ones included (it doesn't use <code>compare</code>'s rows, which leave those out), with <code>redact_words</code> (whole words, longest first; a percent escape before a name, or one that was encoded once more (<code>%252C</code>), counts as an edge, so every name in a login redirect's <code>next=</code> is replaced too), the way it replaces a secret. It reads the names from the file, Frigate's running config, Frigate's config file (<code>adapters.frigate.config_file</code>, which still names a camera while Frigate is down or in safe mode; a file that can't be read is skipped), and the <code>config.yml</code> backups beside the file. It also replaces the query string after every <code>config/set?</code> and after its percent-encoded form, which a login redirect's <code>next=</code> carries (<code>_CONFIG_SET</code> in <code>diagnostics.py</code>), because nginx's access log and Frigate's journal keep the request line, and the zone editor's holds a zone's key and the name typed for it. <code>check_groups</code> text may name Frigate's cameras, because the Status page is behind the login.</li>
 </ul>
-<p>Node-RED gets the mapping from "init config defaults" (the <code>init-config</code> tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: <code>frigate_cameras</code>, a map from Frigate's name to the key; <code>camera_labels</code>, each key's label for the dashboard pickers, <code>&lt;key&gt; (&lt;Frigate's name&gt;)</code> when the two differ; and <code>tm_warned</code>, which is reset on every load so a warning is logged once per config load: one for events from cameras no entry points at, which names none of them, and one for each radar name a camera is paired with that <code>config.yml</code> lacks. They're their own globals, not part of <code>global.config</code>, because <code>config_tm</code> uploads the config, and "init config defaults" takes <code>frigate_camera</code> out of each entry before the config is stored: in Node-RED, Frigate's name lives only in <code>frigate_cameras</code> and <code>camera_labels</code>. "append config" looks each event's camera up in <code>frigate_cameras</code> and sets it to the key before anything reads it, so the <code>events</code> row, <code>tm/event</code> and <code>tm/events</code>, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a <code>camera_radar</code> that names no radar records the event without one.</p>
+<p>Node-RED gets the mapping from "init config defaults" (the <code>init-config</code> tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: <code>frigate_cameras</code>, a map from Frigate's name to the key; <code>camera_labels</code>, each key's label for the dashboard pickers, <code>&lt;key&gt; (&lt;Frigate's name&gt;)</code> when the two differ; and <code>tm_warned</code>, which is reset on every load so a warning is logged once per config load: one for events from cameras no entry points at, which names none of them, and one for each radar name a camera is paired with that <code>config.yml</code> lacks. They're their own globals, not part of <code>global.config</code>, because "init config defaults" takes <code>frigate_camera</code> out of each entry before the config is stored: in Node-RED, Frigate's name lives only in <code>frigate_cameras</code> and <code>camera_labels</code>. "append config" looks each event's camera up in <code>frigate_cameras</code> and sets it to the key before anything reads it, so the <code>events</code> row, <code>tm/event</code> and <code>tm/events</code>, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a <code>camera_radar</code> that names no radar records the event without one.</p>
 <h3 id="the-network-module-and-the-hotspot">The Network module and the hotspot<a class="headerlink" href="#the-network-module-and-the-hotspot" title="Permanent link">&para;</a></h3>
 <p>The <code>network</code> module adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>) and the Network page's routes. Both read the unit's network through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
 <p>The routes are in <code>modules/network/router.py</code>:</p>
