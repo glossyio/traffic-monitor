@@ -2287,7 +2287,8 @@
 <ol>
 <li>Log in to the device as the administrator, then open the Node-RED editor at <code>http://&lt;device&gt;/nr/</code>. The editor has no login of its own.</li>
 <li>Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.</li>
-<li>Point the project's flow and package files at <code>container/node-red-tm/data/flows.json</code> and <code>package.json</code>, so your edits land in the repository's files.</li>
+<li>In the project's settings, set the package file to <code>container/node-red-tm/data/package.json</code>. Node-RED finds the flow and credentials files beside it, so your edits land in the repository's files.</li>
+<li>Switch to the branch the device was installed from, such as <code>dev</code>. A clone starts on your fork's default branch, and flows from another version may not match the rest of the device.</li>
 <li>Commit your changes to a branch of your fork.</li>
 <li>Open a pull request, following <a href="../contributing/">Contributing</a>.</li>
 </ol>

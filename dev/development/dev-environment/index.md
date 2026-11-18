@@ -16,7 +16,8 @@ To develop on a device:
 
 1. Log in to the device as the administrator, then open the Node-RED editor at `http://<device>/nr/`. The editor has no login of its own.
 1. Create a new project and clone your fork of the repository. This replaces the flows on the device, so save any changes first.
-1. Point the project's flow and package files at `container/node-red-tm/data/flows.json` and `package.json`, so your edits land in the repository's files.
+1. In the project's settings, set the package file to `container/node-red-tm/data/package.json`. Node-RED finds the flow and credentials files beside it, so your edits land in the repository's files.
+1. Switch to the branch the device was installed from, such as `dev`. A clone starts on your fork's default branch, and flows from another version may not match the rest of the device.
 1. Commit your changes to a branch of your fork.
 1. Open a pull request, following [Contributing](https://docs.trafficmonitor.ai/dev/development/contributing/index.md).
 
