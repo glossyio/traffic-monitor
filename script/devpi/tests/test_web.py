@@ -4,6 +4,7 @@ The checks that log in (tm-control M2 and M3) skip until the inventory has the u
 They make their own viewer account, tmdev-viewer-<random>, and delete it afterwards.
 """
 
+import io
 import json
 import re
 import secrets
@@ -11,6 +12,7 @@ import shlex
 import socket
 import time
 import urllib.parse
+import zipfile
 
 import pytest
 import yaml
@@ -834,6 +836,60 @@ def test_cameras_page_agrees_with_the_status_check(address, admin_session):
     )
 
 
+JPEG_START = b"\xff\xd8\xff"
+
+
+def test_a_reference_picture_is_a_zip_of_four_files(address, admin_session, expect):
+    """For the first entry whose camera is on in Frigate: a take holds two JPEGs that answer as no-store pictures, the
+    package without the location is a zip of the four files under the answer's stem, and its data file has no location,
+    the entry's key as the camera, and not Frigate's name for it. After DELETE the pictures are gone.
+
+    pii_free units only, because this process receives the pictures' bytes. It reads their status, type, headers, and
+    length, and never writes, prints, or opens them; a failure names statuses, lengths, and keys only."""
+    require_pii_free(expect)
+    answer = request_from_this_machine(address, f"{API}/cameras", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/cameras with the admin session answered HTTP {answer.status}"
+    rows = [row for row in state.get("rows", []) if row.get("name") and row.get("in_frigate") == "on"
+            and row.get("duplicate_of") is None]
+    if not rows:
+        pytest.skip("no entry whose camera is on in Frigate")
+    key, frigate_name = rows[0]["name"], rows[0]["frigate_camera"]
+    base = f"{API}/cameras/{urllib.parse.quote(key, safe='')}/reference"
+    taken = request_from_this_machine(address, base, "POST", admin_session, {})
+    found = taken.json() if taken.status == 200 else None
+    assert isinstance(found, dict), f"POST {base} answered HTTP {taken.status}"
+    held = f"{base}/{found['ticket']}"
+    try:
+        for picture in ("clean.jpg", "zones.jpg"):
+            shown = request_from_this_machine(address, f"{held}/{picture}", cookie=admin_session)
+            facts = (shown.status, shown.headers.get("Content-Type"), shown.headers.get("Cache-Control"),
+                     shown.body[:3] == JPEG_START)
+            assert facts == (200, "image/jpeg", "no-store", True), (
+                f"{key}'s {picture}: (status, type, cache, starts as a JPEG) {facts}, {len(shown.body)} bytes")
+        package = request_from_this_machine(address, f"{held}/package?location=false", cookie=admin_session)
+        assert (package.status, package.headers.get("Content-Type")) == (200, "application/zip"), (
+            f"{key}'s package: HTTP {package.status}, {package.headers.get('Content-Type')}")
+        stem = found["stem"]
+        with zipfile.ZipFile(io.BytesIO(package.body)) as archive:
+            names = sorted(archive.namelist())
+            text = archive.read(f"{stem}.json").decode("utf-8") if f"{stem}.json" in names else ""
+        wanted = sorted(f"{stem}{end}" for end in ("_clean.jpg", "_zones.jpg", ".json", "_zones.svg"))
+        assert names == wanted, f"{key}'s zip holds {names}, not {wanted}"
+        data = json.loads(text)
+        assert (data.get("location"), data.get("camera")) == (None, key), (
+            f"{key}'s data file: location is {'set' if data.get('location') else data.get('location')}, "
+            f"camera is {data.get('camera')}")
+        names_frigates_camera = frigate_name != key and frigate_name in text
+        del text
+        assert not names_frigates_camera, f"{key}'s data file holds Frigate's name for the camera"
+    finally:
+        dropped = request_from_this_machine(address, held, "DELETE", admin_session)
+    assert dropped.status == 204, f"DELETE {base}/<ticket> answered HTTP {dropped.status}"
+    gone = request_from_this_machine(address, f"{held}/clean.jpg", cookie=admin_session)
+    assert gone.status == 404, f"{key}'s clean.jpg after DELETE answered HTTP {gone.status}"
+
+
 NETWORK_CHECKS = ["network.hotspot", "network.wifi", "network.internet", "network.wifi_country"]
 
 
@@ -863,6 +919,10 @@ VIEWER_ACTIONS = [
     ("POST", f"{API}/cameras/picam_h265/neutral-name", 403),
     ("DELETE", f"{API}/cameras/picam_h265", 403),
     ("PUT", f"{API}/cameras/picam_h265/frigate-detection", 403),
+    ("POST", f"{API}/cameras/picam_h265/reference", 403),
+    ("GET", f"{API}/cameras/picam_h265/reference/made-up-ticket/clean.jpg", 403),
+    ("GET", f"{API}/cameras/picam_h265/reference/made-up-ticket/package?location=false", 403),
+    ("DELETE", f"{API}/cameras/picam_h265/reference/made-up-ticket", 403),
     ("GET", f"{API}/status", 200),
     ("GET", f"{API}/services", 200),
     ("GET", f"{API}/system/info", 200),
@@ -872,6 +932,8 @@ VIEWER_ACTIONS = [
 GUARDED_ACTIONS = {
     f"{API}/system/reboot", f"{API}/system/power-off", f"{API}/cameras/picam_h265/neutral-name",
     f"{API}/cameras/picam_h265/frigate-detection",
+    # Let through, it would hold a picture of the street in the control app's memory
+    f"{API}/cameras/picam_h265/reference",
 }
 
 
@@ -889,9 +951,10 @@ def test_viewer_gets_403_on_every_action(address, viewer_session, method, path, 
     anything runs. Each write sends an empty change, so POST /time would change nothing even if it were let through,
     and DELETE /cameras/picam_h265 is refused for a camera Frigate has.
 
-    A viewer's reboot, power-off, neutral name, or Frigate detection switch is sent only after a harmless action, a
-    re-scan, was refused as admin-only: if require_admin ever let viewers through, the Pi would reboot, power off until
-    someone power-cycles it, re-key its camera, or switch Frigate's detection.
+    A viewer's reboot, power-off, neutral name, Frigate detection switch, or reference picture is sent only after a
+    harmless action, a re-scan, was refused as admin-only: if require_admin ever let viewers through, the Pi would
+    reboot, power off until someone power-cycles it, re-key its camera, switch Frigate's detection, or hold a picture of
+    the street.
     """
     if path in GUARDED_ACTIONS:
         guard = admin_refusal(request_from_this_machine(address, f"{API}/status/rescan", "POST", viewer_session, {}))
