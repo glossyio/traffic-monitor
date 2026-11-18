@@ -1101,7 +1101,7 @@ An older device may have kept a token in `config.yml` or in the add-on's env fil
 
 ### Download diagnostics
 
-When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with `<redacted>`. So are the names Frigate uses for cameras whenever they differ from the camera's name in `config.yml`, because the name in `config.yml` is the one the device records and shares, and Frigate's own name stays on the device. What a saved change to Frigate's settings held, such as a zone's name, is replaced too. The file names the device and holds its serial number.
+When you ask for help, send the diagnostics with your question. It's a text file with the device's facts, its date and time settings, every status check, the services' states, what the installer installed and found, and the last 50 lines of each service's log. Passwords, keys, tokens, and the setup code are replaced with `<redacted>`. So are the names Frigate uses for cameras whenever they differ from the camera's name in `config.yml`, because the name in `config.yml` is the one the device records and shares, and Frigate's own name stays on the device. What a saved change to Frigate's settings held, such as a zone's name, is replaced too. The file still holds the device's name and serial number, the names of its Wi-Fi network and hotspot, and the user name it was installed under; replace any you don't want to share.
 
 - **Download diagnostics** saves the file.
 - **Copy** puts the text on the clipboard, ready to paste into a message. If the browser doesn't allow it, the page shows the text in a box, already selected, for you to copy.
@@ -2848,12 +2848,16 @@ The [discussions board](https://github.com/glossyio/traffic-monitor/discussions)
 
 ## GitHub issues
 
-Open an [issue](https://github.com/glossyio/traffic-monitor/issues) for a specific bug, a feature request, or a technical question that the discussions haven't answered. Include enough detail for someone else to reproduce or understand it.
+Open an [issue](https://github.com/glossyio/traffic-monitor/issues) for a specific bug, or for a feature request with an idea of how it should work. A feature idea with no design yet goes to Ideas, above. Include enough detail for someone else to reproduce or understand it.
 
-- 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
-- 💡 [Feature request](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=)
+- 🐞 [Bug report](https://github.com/glossyio/traffic-monitor/issues/new?template=bug_report.md)
+- 💡 [Feature request](https://github.com/glossyio/traffic-monitor/issues/new?template=feature_request.md)
 
 An issue may be closed without a full resolution, for example as a duplicate, after inactivity, or because the work is tracked elsewhere. That isn't a lack of interest; comment or reopen if it still matters.
+
+## Report a security problem
+
+If you find a way for someone to get into a Traffic Monitor, read its data, or take it over without permission, report it privately through the repository's [security page](https://github.com/glossyio/traffic-monitor/security), not in an issue, a discussion, or the chat. [SECURITY.md](https://github.com/glossyio/traffic-monitor/blob/main/SECURITY.md) says what to include.
 # Development
 
 # Contributing
@@ -2862,11 +2866,13 @@ Thank you for your interest in getting involved! We welcome all skill levels and
 
 Contributions can include any of the following plus more!
 
-- 💡 [Feature requests](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) and use case ideas
-- 🐞 [Bug reports](https://github.com/glossyio/traffic-monitor/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
+- 💡 [Ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas) and use cases, and [feature requests](https://github.com/glossyio/traffic-monitor/issues/new?template=feature_request.md) with an idea of how they should work
+- 🐞 [Bug reports](https://github.com/glossyio/traffic-monitor/issues/new?template=bug_report.md)
 - 👩‍💻 [Code contributions](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md), see Contributing
-- 👍 Comment on or thumbs-up [milestones](https://github.com/glossyio/traffic-monitor/milestones) or [issues](https://github.com/glossyio/traffic-monitor/issues)
+- 👍 Comment on or thumbs-up [ideas](https://github.com/glossyio/traffic-monitor/discussions/categories/ideas) or [issues](https://github.com/glossyio/traffic-monitor/issues)
 - 💬 Questions, comments, and videos/images of your deployments on our [Traffic Monitor Zulip Chat](https://trafficmonitor.zulipchat.com/)!
+
+Issues labeled `help wanted` or `good first issue` are open to anyone, and small fixes are welcome any time. For anything else, comment on the issue first. [How we track work](https://github.com/glossyio/traffic-monitor/blob/main/CONTRIBUTING.md#how-we-track-work) in CONTRIBUTING.md explains the issue types and fields. Report security problems privately, as [Get support](https://docs.trafficmonitor.ai/dev/help-and-faq/where-can-i-get-support/#report-a-security-problem) describes.
 
 We foster a safe and welcoming community, review [our Code of Conduct](https://github.com/glossyio/traffic-monitor?tab=coc-ov-file#readme).
 
