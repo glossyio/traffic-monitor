@@ -36,6 +36,16 @@
         "speed_calc",
         "provenance",
         "deployment_id",
-        "radarName"
+        "radarName",
+        "path_data",
+        "box",
+        "best_box",
+        "best_frame_time",
+        "frigate_speed",
+        "frigate_speed_unit",
+        "frigate_velocity_angle",
+        "speed_unit",
+        "speed_source",
+        "radar_readings"
     ]
 }

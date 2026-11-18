@@ -2083,7 +2083,8 @@ UPLOAD_LISTS = FLOWS.parent / "upload-lists.json"
 EVENT_COLUMNS = [
     "id", "camera", "label", "sub_label", "top_score", "frame_time", "start_time", "end_time", "entered_zones",
     "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
-    "provenance", "deployment_id", "radarName",
+    "provenance", "deployment_id", "radarName", "path_data", "box", "best_box", "best_frame_time", "frigate_speed",
+    "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings",
 ]
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -2679,7 +2680,7 @@ def test_upload_result_wiring():
 FINALIZE = "a8aeffd2e5bc17f2"  # capture-events: event finalize output
 EVENT_PARAMS = "a96d834e3571c549"  # capture-events: write params for events insert
 EVENT_INSERT = "61d6a19c99c60e0b"  # capture-events: tmdb.events, Prepared Statement
-JSON_COLUMNS = {"entered_zones", "attributes", "provenance"}
+JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box"}
 SCHEMA_SQL = FLOWS.parents[1] / "schema" / "schema.sql"
 EVENT = {
     "id": "1761800000.123456-abc123", "camera": "camera_1_3fa9c2", "label": "car", "sub_label": None,
@@ -3055,3 +3056,148 @@ def test_the_last_unit_each_radar_reported_is_remembered():
     assert run["results"][0]["result"]["params"] == {
         "$time": 1761800000.5, "$unit": "mph", "$direction": "inbound", "$velocity": 21.3,
         "$radarName": "TM_RADAR_SERIAL_PORT_00", "$deployment_id": "1761800000000-0a1b2c3d-d"}
+
+
+RADARS_ON = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True}}
+NO_SPEED = {"speed_calc": None, "speed_unit": None, "speed_source": None, "radar_readings": None}
+
+
+def finalize(msg, radars=None, units=None):
+    context = {"config": {"sensors": {"radars": RADARS_ON if radars is None else radars}},
+               "radar_units": units or {}, "tm_warned": {}}
+    run = run_functions([(node_by_id(FINALIZE), msg)], context=context)
+    [step] = run["results"]
+    payload = step["result"]["payload"]
+    return {key: payload.get(key) for key in step["keys"]}, step, run["global"]
+
+
+def speed_of(payload):
+    return {key: payload[key] for key in NO_SPEED}
+
+
+@needs_node
+def test_a_radar_speed_is_saved_with_frigates_beside_it():
+    payload, step, _ = finalize(finalize_msg("inbound", 22.5, 7, fields=FIELDS), units={"TM_RADAR_SERIAL_PORT_00": "mph"})
+    assert list(payload) == EVENT_COLUMNS and step["logged"] == []
+    assert speed_of(payload) == {"speed_calc": 22.5, "speed_unit": "mph", "speed_source": "radar", "radar_readings": 7}
+    assert {key: payload[key] for key in FIELDS} == FIELDS
+    assert payload["direction_calc"] == "inbound" and payload["provenance"] == ["frigate", "radar"]
+
+
+@needs_node
+@pytest.mark.parametrize("direction, units, expected", [
+    ("outbound", {}, {"speed_calc": -23.98, "speed_unit": "mph"}),
+    ("inbound", {}, {"speed_calc": 23.98, "speed_unit": "mph"}),
+    (None, {}, {"speed_calc": 23.98, "speed_unit": "mph"}),
+    ("outbound", {"TM_RADAR_SERIAL_PORT_00": "mps"}, {"speed_calc": -10.72, "speed_unit": "mps"}),
+])
+def test_frigates_speed_fills_in_when_the_radar_gave_none(direction, units, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS), units=units)
+    assert speed_of(payload) == {**expected, "speed_source": "frigate", "radar_readings": None}
+    assert payload["frigate_speed"] == 38.6 and payload["frigate_speed_unit"] == "kph"
+    assert payload["provenance"] == ["frigate"] and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("radars", [{}, {"TM_RADAR_SERIAL_PORT_00": {"enabled": False}},
+                                    {"TM_RADAR_SERIAL_PORT_00": None}, "text"],
+                         ids=["none", "disabled", "empty-entry", "not-a-mapping"])
+def test_a_device_without_a_radar_keeps_frigates_unit(radars):
+    msg = finalize_msg("outbound", None, None, radar=None, fields=FIELDS)
+    payload, _, _ = finalize(msg, radars=radars)
+    assert speed_of(payload) == {"speed_calc": -38.6, "speed_unit": "kph", "speed_source": "frigate",
+                                 "radar_readings": None}
+    assert payload["radarName"] is None
+
+
+@needs_node
+def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
+    """One device's speed_calc stays in one unit."""
+    imperial = {**FIELDS, "frigate_speed": 30.0, "frigate_speed_unit": "mph"}
+    msg = finalize_msg("inbound", None, None, radar=None, fields=imperial)
+    radars = {"TM_RADAR_SERIAL_PORT_01": {"enabled": True}, "TM_RADAR_SERIAL_PORT_00": {"enabled": False}}
+    payload, _, _ = finalize(msg, radars=radars, units={"TM_RADAR_SERIAL_PORT_01": "kmph"})
+    assert speed_of(payload) == {"speed_calc": 48.28, "speed_unit": "kmph", "speed_source": "frigate",
+                                 "radar_readings": None}
+
+
+@needs_node
+def test_a_radar_speed_of_zero_is_saved():
+    payload, _, _ = finalize(finalize_msg("inbound", 0, 3, fields=FIELDS))
+    assert speed_of(payload) == {"speed_calc": 0, "speed_unit": "mph", "speed_source": "radar", "radar_readings": 3}
+
+
+@needs_node
+@pytest.mark.parametrize("fields", [
+    {**FIELDS, "frigate_speed_unit": None}, {**FIELDS, "frigate_speed": None, "frigate_speed_unit": None,
+                                             "frigate_velocity_angle": None}, NO_FIELDS, MISSING, None, "text",
+], ids=["unit-not-read", "no-estimate", "nothing", "missing", "null", "text"])
+def test_no_speed_without_a_radar_speed_or_a_usable_frigate_speed(fields):
+    payload, step, _ = finalize(finalize_msg("inbound", None, None, fields=fields))
+    assert speed_of(payload) == NO_SPEED and step["logged"] == []
+    assert list(payload) == EVENT_COLUMNS
+    expected = fields if isinstance(fields, dict) else NO_FIELDS
+    assert {key: payload[key] for key in FIELDS} == expected
+
+
+@needs_node
+def test_a_radar_unit_the_flow_cannot_convert_to_gets_no_fallback_and_one_warning():
+    msg = finalize_msg("inbound", None, None, fields=FIELDS)
+    context = {"config": {"sensors": {"radars": RADARS_ON}}, "radar_units": {"TM_RADAR_SERIAL_PORT_00": "furlongs"},
+               "tm_warned": {}}
+    run = run_functions([(node_by_id(FINALIZE), msg), (node_by_id(FINALIZE), msg)], context=context)
+    for step in run["results"]:
+        assert step["result"]["payload"].get("speed_calc") is None
+        assert step["result"]["payload"].get("speed_source") is None
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["Frigate's speed wasn't used for speed_calc: this flow can't convert to the radar's unit furlongs."]
+    assert run["global"]["tm_warned"] == {"speed_unit:furlongs": True}
+
+
+@needs_node
+def test_event_params_turn_the_new_lists_into_json_text():
+    payload, _, _ = finalize(finalize_msg("inbound", 22.5, 7, fields=FIELDS))
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert json.loads(params["$path_data"]) == FIELDS["path_data"]
+    assert params["$box"] == "[0.75,0.5,0.25,0.25]" and params["$best_box"] == "[0.25,0.25,0.25,0.25]"
+    assert params["$radar_readings"] == 7 and params["$speed_source"] == "radar"
+
+
+def run_chain(names_or_ids, msg, context, flow):
+    """Run nodes one after another, each on the message the one before returned; None if one of them drops it."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for name in names_or_ids:
+        node = by_id.get(name) or named(flows, name)
+        run = run_functions([(node, msg)], context=context, flow=flow)
+        msg, context, flow = run["results"][0]["result"], run["global"], run["flow"]
+        if msg is None:
+            return None
+    return msg
+
+
+@needs_node
+def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
+    """The whole chain of function nodes, then the node's own INSERT against the migrated schema."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    config["sensors"]["radars"] = {}
+    _, context = load_config(config)
+    after = {**AFTER, "sub_label": ["Jane Doe", 0.97], "entered_zones": ["zone_near", "zone_far"], "top_score": 0.91,
+             "score": 0.88, "area": 57600, "ratio": 1.78, "motionless_count": 0, "position_changes": 3,
+             "attributes": {}}
+    msg = {"frigate_event": after, "payload": {"type": "end", "before": dict(after), "after": after}}
+    msg = run_chain(["vet sub_label", "frigate fields", APPEND_CONFIG,
+                     "calculate direction based on frigate event zones", MATCH], msg, context,
+                    {"frigate_facts": METRIC})
+    msg = {**msg, "event_direction_speed": msg["payload"]}
+    msg = run_chain([FINALIZE, EVENT_PARAMS], msg, context, {})
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
+    row = con.execute("SELECT camera, sub_label, direction_calc, speed_calc, speed_unit, speed_source, radar_readings, "
+                      "frigate_speed, frigate_speed_unit, json_array_length(path_data), json_extract(box, '$[0]'), "
+                      "best_frame_time, radarName FROM events").fetchone()
+    assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
+                   1761800002.1, None)
+    assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
