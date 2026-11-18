@@ -612,6 +612,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Places
+         * @description The places as a CSV with their exact coordinates (five decimals, empty for a place with none) and no
+         *     description, for an admin to keep or hand to the server's operator. The audit row holds the row count only.
+         */
+        get: operations["export_places_api_v1_surveys_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/surveys/import": {
         parameters: {
             query?: never;
@@ -758,6 +779,69 @@ export interface paths {
          *     Node-RED doesn't answer (decision 12).
          */
         post: operations["correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sharing
+         * @description Where the upload goes and what is shared, after config.yml is followed. Node-RED not answering isn't an error:
+         *     the server's state is unknown.
+         */
+        get: operations["get_sharing_api_v1_sharing_get"];
+        /**
+         * Save Sharing
+         * @description Save the server and the choices: config.yml first, the consent rows second. Changing the server withdraws
+         *     every choice recorded for any other one.
+         */
+        put: operations["save_sharing_api_v1_sharing_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sharing/notice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Notice */
+        get: operations["get_notice_api_v1_sharing_notice_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sharing/reviewed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Reviewed
+         * @description The admin reviewed an upload found on (the Status page's "Review sharing").
+         */
+        post: operations["mark_reviewed_api_v1_sharing_reviewed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1447,6 +1531,18 @@ export interface components {
             /** Eula Version */
             eula_version: string;
         };
+        /**
+         * ConsentOut
+         * @description The latest row recorded for a choice and the server the upload goes to; granted false with no row.
+         */
+        ConsentOut: {
+            /** Granted */
+            granted: boolean;
+            /** At */
+            at: string | null;
+            /** Notice Version */
+            notice_version: string | null;
+        };
         /** Credentials */
         Credentials: {
             /** Username */
@@ -1855,6 +1951,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** NoticeOut */
+        NoticeOut: {
+            /** Version */
+            version: string;
+            /** Markdown */
+            markdown: string;
+        };
         /** Ntp */
         Ntp: {
             /** Enabled */
@@ -1891,7 +1994,7 @@ export interface components {
              * Sharing
              * @enum {string}
              */
-            sharing: "data" | "none";
+            sharing: "none" | "data" | "exact";
             /** Surveys */
             surveys: components["schemas"]["SurveyOut"][];
             unassigned: components["schemas"]["Unassigned"] | null;
@@ -2001,6 +2104,16 @@ export interface components {
             /** Secrets */
             secrets: components["schemas"]["SecretState"][];
         };
+        /** ServerStatus */
+        ServerStatus: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "off" | "waiting" | "ok" | "stale" | "unreachable" | "refused" | "rejected" | "server_error" | "unknown";
+            /** At */
+            at: string | null;
+        };
         /** Service */
         Service: {
             /** Unit */
@@ -2017,6 +2130,75 @@ export interface components {
             restarts: number;
             /** Restartable */
             restartable: boolean;
+        };
+        /** SharingIn */
+        SharingIn: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "maintainer" | "own";
+            /** Host */
+            host?: string | null;
+            /**
+             * Protocol
+             * @default https
+             * @enum {string}
+             */
+            protocol: "http" | "https";
+            /** Port */
+            port?: number | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Exact Location */
+            exact_location: boolean;
+            /**
+             * Public Map
+             * @enum {string}
+             */
+            public_map: "none" | "rounded_point";
+            /** Notice Version */
+            notice_version?: string | null;
+        };
+        /** SharingState */
+        SharingState: {
+            /** Enabled */
+            enabled: boolean;
+            /** Target */
+            target: ("maintainer" | "own") | null;
+            /** Host */
+            host: string | null;
+            /**
+             * Protocol
+             * @enum {string}
+             */
+            protocol: "http" | "https";
+            /** Port */
+            port: number | null;
+            /** Maintainer Host */
+            maintainer_host: string;
+            token: components["schemas"]["SecretState"] | null;
+            share_data: components["schemas"]["ConsentOut"];
+            exact_location: components["schemas"]["ConsentOut"];
+            public_map: components["schemas"]["ConsentOut"];
+            /** Public Map Live */
+            public_map_live: boolean;
+            /** Notice Version */
+            notice_version: string;
+            /** Notice Current */
+            notice_current: boolean;
+            /** Review Needed */
+            review_needed: boolean;
+            /** Has Location */
+            has_location: boolean;
+            /**
+             * Precision
+             * @enum {string}
+             */
+            precision: "none" | "1" | "2";
+            /** Writable */
+            writable: boolean;
+            server: components["schemas"]["ServerStatus"];
         };
         /**
          * SidecarForm
@@ -3180,6 +3362,24 @@ export interface operations {
             };
         };
     };
+    export_places_api_v1_surveys_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     import_places_api_v1_surveys_import_post: {
         parameters: {
             query?: never;
@@ -3442,6 +3642,97 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_sharing_api_v1_sharing_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharingState"];
+                };
+            };
+        };
+    };
+    save_sharing_api_v1_sharing_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharingState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_notice_api_v1_sharing_notice_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+        };
+    };
+    mark_reviewed_api_v1_sharing_reviewed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

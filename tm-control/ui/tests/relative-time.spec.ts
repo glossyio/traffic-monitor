@@ -1,6 +1,6 @@
 // How long ago something happened, and how long something lasts, in words.
 import { describe, expect, it } from 'vitest'
-import { ago, duration } from '../src/components/relative-time'
+import { ago, agoAt, duration } from '../src/components/relative-time'
 
 describe('ago', () => {
   it.each([
@@ -31,5 +31,23 @@ describe('duration', () => {
     [-180, '3 minutes'],
   ])('reads %d seconds as "%s"', (seconds, words) => {
     expect(duration(seconds)).toBe(words)
+  })
+})
+
+describe('agoAt', () => {
+  const now = Date.parse('2026-11-13T12:00:00Z')
+
+  it('reads an ISO time as how long ago it was', () => {
+    expect(agoAt('2026-11-13T11:55:00Z', now)).toBe('5 minutes ago')
+    expect(agoAt('2026-11-10T12:00:00+00:00', now)).toBe('3 days ago')
+  })
+
+  it('never reads a time in the future as negative', () => {
+    expect(agoAt('2026-11-13T12:00:30Z', now)).toBe('just now')
+  })
+
+  it('says so when there is no time to read', () => {
+    expect(agoAt(null, now)).toBe('at an unknown time')
+    expect(agoAt('not a time', now)).toBe('at an unknown time')
   })
 })

@@ -8,7 +8,7 @@ print only counts, timestamps, sensor names, and survey ids.
 import re
 
 import pytest
-from devpi_checks import db_query, pi_now, places_state, require_pii_free, session
+from devpi_checks import db_query, pi_now, places_state, read_root_file, require_pii_free, session
 
 MAX_RADAR_AGE_SECONDS = 15 * 60
 MAX_EVENT_AGE_SECONDS = 60 * 60
@@ -122,3 +122,12 @@ def test_open_deployments_name_a_known_place(host, codedir, address, admin_sessi
                                                         "WHERE survey_id IS NOT NULL AND entryEndDateTime IS NULL")}
     known = {place.get("id") for place in places_state(address, admin_session)["surveys"]}
     assert used <= known, f"open deployment rows name survey ids GET /surveys doesn't list: {sorted(used - known)}"
+
+
+def test_no_upload_node_sends_the_settings(host, codedir):
+    """The deployed flows.json has no config_tm, the name the old upload sent the whole config.yml under, so no node on
+    the unit can send the settings to the server. Only the answer is kept, not the file."""
+    flows = read_root_file(host, f"{codedir}/node-red-tm/data/flows.json")
+    found = "config_tm" in flows
+    del flows
+    assert not found, "the deployed flows.json still mentions config_tm (run tmsetup.sh -t node-red-tm)"

@@ -3,7 +3,7 @@
 GET lists the places (after reconcile.ensure has brought the store and config.yml into step). An admin can plan a
 place (POST), edit or delete one, deploy one (write it and its bearings into Node-RED's config.yml, then wait for
 Node-RED to start the deployments), correct a used place's location or one deployment's bearing, change the precision
-tmdb stores coordinates at, and import planned places from CSV.
+tmdb stores coordinates at, export the places with their exact coordinates, and import planned places from CSV.
 
 Every write to config.yml or the places store holds app.state.reconcile_lock, so a GET's reconcile never sees half of
 one. config.yml is written before the store, so a refused or failed save leaves both as they were. No coordinate,
@@ -80,7 +80,7 @@ class PlacesState(BaseModel):
     precision: Literal["none", "1", "2"]
     in_use: str | None
     sensors: list[Bearing]  # the enabled sensors in config.yml, each with its bearing there
-    sharing: Literal["data", "none"]
+    sharing: Literal["none", "data", "exact"]  # what the upload sends: nothing, data, or data and the exact location
     surveys: list[SurveyOut]
     unassigned: Unassigned | None
     reconcile: Literal["done", "waiting_nodered", "config_unreadable"]
@@ -338,7 +338,7 @@ def _description(value: str | None) -> str | None:
     return text or None
 
 
-# Routes. The fixed paths (precision, import) come before any /{survey_id} path that could take them.
+# Routes. The fixed paths (precision, export, import) come before any /{survey_id} path that could take them.
 
 
 @router.get("", response_model=PlacesState)
@@ -383,6 +383,40 @@ def set_precision(body: PrecisionIn, request: Request, admin: User = Depends(req
                 error, "config.yml now has the new precision, but the stored rows weren't changed."
             ) from None
     return _state(request, admin)
+
+
+@router.get("/export", response_class=Response)
+def export_places(request: Request, admin: User = Depends(require_admin)):
+    """The places as a CSV with their exact coordinates (five decimals, empty for a place with none) and no
+    description, for an admin to keep or hand to the server's operator. The audit row holds the row count only."""
+    app_state = request.app.state
+    try:
+        reconcile.ensure(app_state, admin.id)
+    except ConfigError as error:
+        raise config_error(error) from None
+    text = io.StringIO()
+    writer = csv.writer(text, lineterminator="\r\n")
+    writer.writerow(["survey_id", "lat", "lon", "status", "created_at", "updated_at"])
+    count = 0
+    for place in Places(app_state.state).list():
+        writer.writerow([
+            place.id,
+            "" if place.lat is None else f"{place.lat:.5f}",
+            "" if place.lon is None else f"{place.lon:.5f}",
+            place.status,
+            place.created_at,
+            place.updated_at,
+        ])
+        count += 1
+    Audit(app_state.state).record(admin.id, "survey.export", str(count))
+    return Response(
+        text.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="traffic-monitor-places.csv"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.post("/import", response_model=ImportOut)

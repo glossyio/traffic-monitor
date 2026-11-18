@@ -108,7 +108,7 @@ The panel titled **API key** holds the key. The Status page's **Set the key** op
 * **Remove** asks first, then empties the key. Without a key, snapshots can't be submitted to Frigate+. A Frigate+ model whose files are on the device keeps running; one that isn't downloaded yet [stops Frigate](../configuration/frigate-config.md#if-frigate-stops-over-a-model) until the key is set again, and the Status page's Frigate+ check says so.
 * Saving or removing restarts Frigate, which takes about a minute. The device counts nothing meanwhile.
 
-The ThingsBoard and Plate Recognizer keys are on the [Device page](device-health.md#tokens-and-keys).
+The ThingsBoard token is on the [Sharing page](sharing.md#set-the-access-token), and the Plate Recognizer keys are on the [Device page](device-health.md#tokens-and-keys).
 
 ### Use a model by its ID
 

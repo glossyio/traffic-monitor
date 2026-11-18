@@ -115,23 +115,25 @@ def _start(request: Request, admin: User, name: str, value: str, action: str) ->
     return {"id": job.id}
 
 
+def secret_state(app_state, name: str) -> SecretState:
+    """What GET /secrets says about one entered secret (the Sharing page shows the ThingsBoard token's)."""
+    secret = ENTERED[name]
+    is_set = app_state.secrets.is_set(name)
+    return SecretState(
+        name=name,
+        title=secret.title,
+        set=is_set,
+        ends_with=app_state.secrets.ends_with(name) if secret.shows_ending and is_set else None,
+        restarts=list(secret.restarts),
+    )
+
+
 @router.get("", response_model=SecretsState)
 def get_secrets(request: Request, admin: User = Depends(require_admin)):
     app_state = request.app.state
-    secrets = app_state.secrets
-    states = []
-    for name, secret in ENTERED.items():
-        if not _available(app_state, secret):
-            continue
-        is_set = secrets.is_set(name)
-        states.append(SecretState(
-            name=name,
-            title=secret.title,
-            set=is_set,
-            ends_with=secrets.ends_with(name) if secret.shows_ending and is_set else None,
-            restarts=list(secret.restarts),
-        ))
-    return SecretsState(secrets=states)
+    return SecretsState(secrets=[
+        secret_state(app_state, name) for name, secret in ENTERED.items() if _available(app_state, secret)
+    ])
 
 
 @router.post("/{name}", status_code=202)

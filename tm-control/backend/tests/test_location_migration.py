@@ -164,13 +164,148 @@ def test_migrate_never_opens_the_state_database(config_yml, secrets_dir, monkeyp
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
 
 
-def test_importing_migrate_does_not_import_the_modules_package():
-    """Migrate runs as root after the secret files are written; an import failure in any module must not reach it."""
+def test_importing_migrate_does_not_import_the_modules_package_or_the_web_dependencies():
+    """Migrate runs as root after the secret files are written; an import failure in any module, or in the web
+    dependencies (pydantic comes in with the manifest), must not reach it."""
     code = "\n".join([
         "import sys, tm_control.core.migrate",
-        "sys.exit(any(name.startswith('tm_control.modules') for name in sys.modules))",
+        "forbidden = ('tm_control.modules', 'tm_control.core.manifest', 'pydantic', 'fastapi')",
+        "sys.exit(any(name == f or name.startswith(f + '.') for name in sys.modules for f in forbidden))",
     ])
     package_root = Path(migrate.__file__).resolve().parents[2]
     env = {**os.environ, "PYTHONPATH": str(package_root)}
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env)
     assert done.returncode == 0, done.stderr
+
+
+# The placeholder host the old template shipped: a unit that never set a server shouldn't show it as "your own".
+PLACEHOLDER_HOST = "tb.server.com"
+OTHER_HOST = "tb.example.invalid"
+
+
+def host_config(tmp_path, host="tb.server.com", enabled="false", comment=""):
+    path = tmp_path / "config.yml"
+    path.write_text(
+        f"thingsboard:\n    enabled: {enabled}\n    host: {host}{comment}\n    protocol: https\n\n"
+        "deployment:\n    lat: 45.0\n    lon: -122.0\n    bearing: 'n'\n    database_precision: '2'\n"
+    )
+    return path
+
+
+def test_migrates_maintainer_host_is_the_manifests_default_and_the_roles():
+    """Migrate keeps its own copy (it may not import the manifest, which needs pydantic); this keeps the three equal."""
+    from tm_control.core.manifest import SharingInfo
+
+    role = Path(__file__).resolve().parents[3] / "script/ansible/roles/tmsetup/vars/main.yml"
+    roles_host = YAML(typ="safe", pure=True).load(role.read_text())["tmsetup_sharing_maintainer_host"]
+    assert migrate.MAINTAINER_HOST == SharingInfo().maintainer_host == roles_host
+
+
+@pytest.mark.parametrize("value", ["tb.server.com", "'tb.server.com'", '"TB.Server.com"', "HTTPS://TB.SERVER.COM/",
+                                   "'http://tb.server.com/'"])
+def test_migrate_points_the_placeholder_host_at_the_maintainers_while_the_upload_is_off(
+        tmp_path, secrets_dir, capsys, value):
+    from tm_control.core.manifest import SharingInfo
+
+    config = host_config(tmp_path, host=value)
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+
+    (backup,) = backups(config)
+    assert backup.read_text() == original
+    assert config.read_text() == original.replace(f"host: {value}\n", f"host: {_quoted_like(value)}\n")
+    assert data(config.read_text())["thingsboard"]["host"] == SharingInfo().maintainer_host
+    printed = output(capsys)
+    assert printed == f"tm-control migrate: {config}: rewrote thingsboard.host (backup: {backup})\n"
+
+
+def _quoted_like(value):
+    from tm_control.core.manifest import SharingInfo
+
+    host = SharingInfo().maintainer_host
+    stripped = value.strip()
+    return f"{stripped[0]}{host}{stripped[0]}" if stripped[0] in "'\"" else host
+
+
+def test_migrate_keeps_a_comment_beside_the_rewritten_host(tmp_path, secrets_dir):
+    config = host_config(tmp_path, host="'tb.server.com'", comment="  # the server")
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    (line,) = [l for l in config.read_text().splitlines() if l.startswith("    host:")]
+    assert line.startswith("    host: 'tb.roadwaybiome.com'") and line.endswith("# the server")
+
+
+def test_migrate_leaves_the_placeholder_host_alone_when_the_upload_is_on(tmp_path, secrets_dir, capsys):
+    config = host_config(tmp_path, enabled="true")  # its owner chose it
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert config.read_text() == original
+    assert backups(config) == []
+    assert output(capsys) == f"tm-control migrate: {config}: up to date\n"
+
+
+def test_migrate_counts_a_string_enabled_as_off_and_rewrites_the_placeholder_host(tmp_path, secrets_dir):
+    config = host_config(tmp_path, enabled="'true'")  # a string, not the boolean true: Node-RED doesn't upload
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert data(config.read_text())["thingsboard"]["host"] == "tb.roadwaybiome.com"
+    assert "enabled: 'true'" in config.read_text()
+
+
+def test_migrate_rewrites_the_placeholder_host_when_there_is_no_enabled_key(tmp_path, secrets_dir):
+    config = host_config(tmp_path)
+    config.write_text(config.read_text().replace("    enabled: false\n", ""))
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert data(config.read_text())["thingsboard"]["host"] == "tb.roadwaybiome.com"
+
+
+@pytest.mark.parametrize("host", [OTHER_HOST, "tb.server.com.example.invalid", "tb.server.com:8080", "", "~"])
+def test_migrate_leaves_any_other_host_alone(tmp_path, secrets_dir, capsys, host):
+    config = host_config(tmp_path, host=host)
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert config.read_text() == original
+    assert backups(config) == []
+    assert output(capsys) == f"tm-control migrate: {config}: up to date\n"
+
+
+def test_migrate_leaves_a_config_without_a_host_alone(tmp_path, secrets_dir, capsys):
+    config = tmp_path / "config.yml"
+    config.write_text("thingsboard:\n    enabled: false\n\ndeployment:\n    bearing: 'n'\n    database_precision: '2'\n")
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert config.read_text() == original
+    assert output(capsys) == f"tm-control migrate: {config}: up to date\n"
+
+
+def test_a_second_run_has_nothing_to_do_for_the_host(tmp_path, secrets_dir, capsys):
+    config = host_config(tmp_path)
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    capsys.readouterr()
+    after_first = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir) == 0
+    assert config.read_text() == after_first
+    assert len(backups(config)) == 1
+    assert output(capsys) == f"tm-control migrate: {config}: up to date\n"
+
+
+def test_migrate_dry_run_reports_the_host_step_and_writes_nothing(tmp_path, secrets_dir, capsys):
+    config = host_config(tmp_path)
+    original = config.read_text()
+    assert migrate.run_node_red(config, secrets_dir, dry_run=True) == 0
+    assert config.read_text() == original
+    assert backups(config) == []
+    assert output(capsys) == f"tm-control migrate: {config}: would rewrite thingsboard.host\n"
+
+
+def test_migrate_prints_no_host_value(tmp_path, secrets_dir, capsys):
+    config = host_config(tmp_path, host="HTTPS://TB.SERVER.COM/")
+    for dry_run in (True, False):
+        migrate.run_node_red(config, secrets_dir, dry_run=dry_run)
+    printed = output(capsys).lower()
+    assert "server.com" not in printed and "roadwaybiome" not in printed
+
+
+def test_the_migrate_host_rule_matches_the_sharing_normaliser():
+    from tm_control.modules.sharing.consents import normalize_host
+
+    for value in ["tb.server.com", " HTTPS://TB.SERVER.COM/ ", "http://tb.server.com", "tb.server.com//", "x", "", None, 5]:
+        assert migrate._normalized_host(value) == normalize_host(value)

@@ -1,7 +1,7 @@
 // First run: welcome, license, the claim form, and the optional system password, against a fake API.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ADMIN, apiError, fakeApi, json, session, status } from './fake-api'
+import { ADMIN, SHARING_STATE, apiError, fakeApi, json, session, sharingState, status } from './fake-api'
 import { button, click, field, mountApp } from './mount'
 
 const PASSWORD = 'owner pass 12'
@@ -174,7 +174,9 @@ describe('setup', () => {
     await fillClaimForm(wrapper)
     await click(wrapper, 'Claim this device')
     await click(wrapper, 'Skip for now')
-    expect(router.currentRoute.value.fullPath).toBe('/')
+    expect(wrapper.find('h1').text()).toBe('Sharing')
+    await click(wrapper, 'Not now')
+    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
     expect(api.sent.some((r) => r.path === '/api/v1/system/password')).toBe(false)
   })
 
@@ -204,8 +206,9 @@ describe('setup', () => {
     await flushPromises()
     expect(polls).toBe(2)
     expect(wrapper.text()).toContain('System password set.')
-    await click(wrapper, 'Go to the home page')
-    expect(router.currentRoute.value.fullPath).toBe('/')
+    await click(wrapper, 'Continue')
+    await click(wrapper, 'Not now')
+    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
   })
 
   it('says plainly that the system password was not set when the job fails', async () => {
@@ -266,8 +269,9 @@ describe('setup', () => {
     await vi.advanceTimersByTimeAsync(10_000)
     expect(job.polls).toBe(polls)
 
-    await click(wrapper, 'Go to the home page')
-    expect(router.currentRoute.value.fullPath).toBe('/')
+    await click(wrapper, 'Continue')
+    await click(wrapper, 'Not now')
+    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
   })
 
   it('names the system account when the job never reports a result', async () => {
@@ -288,5 +292,100 @@ describe('setup', () => {
     const polls = job.polls
     await vi.advanceTimersByTimeAsync(10_000)
     expect(job.polls).toBe(polls)
+  })
+
+  describe('the Sharing step', () => {
+    const SHARING = 'GET /api/v1/sharing'
+    const SAVE = 'PUT /api/v1/sharing'
+    const INTRO =
+      'This device shares nothing unless you turn it on. You can send its counts and speeds to Traffic Monitor\'s ' +
+      'server or to your own, and choose how much of its location goes with them. You can do this now or later on ' +
+      'the Sharing page.'
+    const WITH_TOKEN = sharingState({
+      token: { ...SHARING_STATE.token!, set: true, ends_with: '0001' },
+    })
+
+    async function toSharingStep(wrapper: VueWrapper) {
+      await fillClaimForm(wrapper)
+      await click(wrapper, 'Claim this device')
+      await click(wrapper, 'Skip for now')
+    }
+
+    it('has five steps, the last one Sharing, after the system password is set or skipped', async () => {
+      unclaimedDevice({ [SHARING]: sharingState() })
+      const { wrapper } = await mountApp('/setup')
+      await fillClaimForm(wrapper)
+      expect(wrapper.text()).toContain('Step 3 of 5: Administrator account')
+      await click(wrapper, 'Claim this device')
+      expect(wrapper.text()).toContain('Step 4 of 5: System password')
+      await click(wrapper, 'Skip for now')
+      expect(wrapper.text()).toContain('Step 5 of 5: Sharing')
+      expect(wrapper.find('h1').text()).toBe('Sharing')
+    })
+
+    it('moves the keyboard focus to the Sharing heading', async () => {
+      unclaimedDevice({ [SHARING]: sharingState() })
+      const { wrapper } = await mountApp('/setup')
+      await toSharingStep(wrapper)
+      expect(document.activeElement?.textContent?.trim()).toBe('Sharing')
+    })
+
+    it('says what sharing is and offers only Not now when no token is set', async () => {
+      unclaimedDevice({ [SHARING]: sharingState() })
+      const { wrapper, router } = await mountApp('/setup')
+      await toSharingStep(wrapper)
+      expect(wrapper.text().replace(/\s+/g, ' ')).toContain(INTRO)
+      expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+      await click(wrapper, 'Not now')
+      await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
+    })
+
+    it('shows the form when a token is set, and "Save and finish" sends the choices and goes home', async () => {
+      const api = unclaimedDevice({
+        [SHARING]: WITH_TOKEN,
+        [SAVE]: () => json(200, { ...WITH_TOKEN, enabled: true }),
+        'GET /api/v1/sharing/notice': { version: '1', markdown: 'Placeholder notice.' },
+      })
+      const { wrapper, router } = await mountApp('/setup')
+      await toSharingStep(wrapper)
+      expect(wrapper.text().replace(/\s+/g, ' ')).toContain(INTRO)
+      await field(wrapper, 'Share data').setValue(true)
+      await field(wrapper, "I've read the notice").setValue(true)
+      await click(wrapper, 'Save and finish')
+      const put = api.sent.find((r) => r.method === 'PUT' && r.path === '/api/v1/sharing')
+      expect(put?.body).toMatchObject({ target: 'maintainer', enabled: true, exact_location: false, notice_version: '1' })
+      await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
+    })
+
+    it('stays on the step when the save fails, reads the state again, and Not now still goes home', async () => {
+      let reads = 0
+      unclaimedDevice({
+        [SHARING]: () => {
+          reads += 1
+          return json(200, WITH_TOKEN)
+        },
+        [SAVE]: apiError(409, 'config_changed', 'The settings file changed.'),
+      })
+      const { wrapper, router } = await mountApp('/setup')
+      await toSharingStep(wrapper)
+      await field(wrapper, 'Share data').setValue(true)
+      await field(wrapper, "I've read the notice").setValue(true)
+      await click(wrapper, 'Save and finish')
+      expect(router.currentRoute.value.fullPath).toBe('/setup')
+      expect(wrapper.text()).toContain('The settings file changed.')
+      expect(reads).toBe(2) // the step read the state again, as the form asked
+      await click(wrapper, 'Not now')
+      await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
+    })
+
+    it('shows the paragraph and Not now when the state cannot be read', async () => {
+      unclaimedDevice({ [SHARING]: apiError(500, 'error', 'The device answered with an error.') })
+      const { wrapper, router } = await mountApp('/setup')
+      await toSharingStep(wrapper)
+      expect(wrapper.text().replace(/\s+/g, ' ')).toContain(INTRO)
+      expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+      await click(wrapper, 'Not now')
+      await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/'))
+    })
   })
 })

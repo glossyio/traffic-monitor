@@ -305,3 +305,49 @@ export const JOIN_COUNTDOWN: JoinState = {
 export function joinState(changes: Partial<JoinState>): JoinState {
   return { ...JOIN_COUNTDOWN, ...changes }
 }
+
+// GET /sharing: a new device that has never been asked, with a place in use that has a location and a maintainer's
+// server it could upload to. An admin sees the token's state; a viewer's `token` is null (see viewerSharing).
+export type SharingState = components['schemas']['SharingState']
+export const SHARING_NONE = { granted: false, at: null, notice_version: null }
+export const SHARING_STATE: SharingState = {
+  enabled: false,
+  target: null,
+  host: null,
+  protocol: 'https',
+  port: null,
+  maintainer_host: 'tb.example.invalid',
+  token: {
+    name: 'thingsboard_access_token',
+    title: 'ThingsBoard access token',
+    set: false,
+    ends_with: null,
+    restarts: ['node-red-tm.service'],
+  },
+  share_data: SHARING_NONE,
+  exact_location: SHARING_NONE,
+  public_map: SHARING_NONE,
+  public_map_live: false,
+  notice_version: '1',
+  notice_current: false,
+  review_needed: false,
+  has_location: true,
+  precision: '1',
+  writable: true,
+  server: { state: 'off', at: null },
+}
+
+export function sharingState(changes: Partial<SharingState> = {}): SharingState {
+  return { ...SHARING_STATE, ...changes }
+}
+
+// A device sharing data with the maintainer's server under the current notice, with the token set
+export const SHARING_ON: SharingState = sharingState({
+  enabled: true,
+  target: 'maintainer',
+  host: 'tb.example.invalid',
+  token: { ...SHARING_STATE.token!, set: true, ends_with: '0001' },
+  share_data: { granted: true, at: '2026-11-01T12:00:00+00:00', notice_version: '1' },
+  notice_current: true,
+  server: { state: 'waiting', at: null },
+})

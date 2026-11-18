@@ -39,6 +39,14 @@ class NetworkInfo:
     hotspot_address: str = "10.42.0.1"
 
 
+@dataclass(frozen=True)
+class SharingInfo:
+    """The maintainer's upload server (tmsetup_sharing_maintainer_host) and whether the public map choice is live."""
+
+    maintainer_host: str = "tb.roadwaybiome.com"
+    public_map_live: bool = False
+
+
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -50,6 +58,7 @@ class Manifest(BaseModel):
     options: dict[str, bool]
     frigate: FrigateInfo = FrigateInfo()
     network: NetworkInfo = NetworkInfo()
+    sharing: SharingInfo = SharingInfo()
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage

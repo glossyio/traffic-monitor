@@ -4,7 +4,8 @@
   Each starts the set-secret root job, which restarts the apps that read the value; the form waits for it and says how
   it went. The value is never shown back: the field starts empty and is emptied once the device has it. Emits
   `changed` when a job has finished, so the page can load the secrets' state again. With `hideTitle`, the heading
-  and the state line are left out, for a page whose own heading says them.
+  and the state line are left out, for a page whose own heading says them. `saveText` names the Save button
+  ("Save token"), for a page that has a Save of its own beside it.
 -->
 <script setup lang="ts">
 import { mdiEye, mdiEyeOff } from '@mdi/js'
@@ -17,7 +18,7 @@ import { followJob } from './jobs'
 
 type SecretState = components['schemas']['SecretState']
 
-const props = defineProps<{ secret: SecretState; hideTitle?: boolean }>()
+const props = defineProps<{ secret: SecretState; hideTitle?: boolean; saveText?: string }>()
 const emit = defineEmits<{ changed: [] }>()
 
 // The set-secret job can wait out two restarts of up to two minutes each, longer than setup's two minutes
@@ -175,7 +176,7 @@ const unknown = {
           :loading="running === 'save'"
           :disabled="running !== null"
         >
-          Save
+          {{ saveText ?? 'Save' }}
         </v-btn>
         <v-btn
           v-if="secret.set"

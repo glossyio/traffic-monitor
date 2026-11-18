@@ -57,17 +57,19 @@ class Report(BaseModel):
 
 class Context:
     """What the check functions of one report share: the app's settings, manifest, and secrets, the state database (None
-    where a check has no use for it), and probe results.
+    where a check has no use for it), the sharing notice's current version (None where a check has no use for it), and
+    probe results.
 
     `probe(key, fn)` runs fn once per report (a command's output, an app's status) for every check that asks for
     the same key; `probes` holds the results.
     """
 
-    def __init__(self, settings, manifest, secrets, state=None):
+    def __init__(self, settings, manifest, secrets, state=None, notice_version=None):
         self.settings = settings
         self.manifest = manifest
         self.secrets = secrets
         self.state = state
+        self.notice_version = notice_version
         self.probes: dict[str, Any] = {}
         self._errors: dict[str, Exception] = {}
         self._locks: dict[str, threading.Lock] = {}

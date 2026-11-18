@@ -51,10 +51,11 @@ def test_cameras_match(apps):
     checks = config_group(apps)
     assert list(checks) == [
         "config.cameras", "config.zones", "config.zone_names", "config.radars", "config.deployment",
-        "config.thingsboard", "config.frigate_plus",
+        "config.thingsboard", "config.sharing", "config.frigate_plus",
     ]
     assert [c.title for c in checks.values()] == [
-        "Cameras in config.yml", "Zones", "Zone names", "Radar names", "Location", "ThingsBoard upload", "Frigate+",
+        "Cameras in config.yml", "Zones", "Zone names", "Radar names", "Location", "ThingsBoard upload", "Sharing",
+        "Frigate+",
     ]
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
@@ -656,7 +657,7 @@ def test_thingsboard_on_without_a_token_is_a_warning_with_a_link(apps):
     check = thingsboard_check(apps)
     assert check.status == "warn" and check.detail == MISSING_TOKEN
     assert check.fix is not None
-    assert (check.fix.kind, check.fix.text, check.fix.href) == ("link", "Set the token", "/device#tokens-and-keys")
+    assert (check.fix.kind, check.fix.text, check.fix.href) == ("link", "Set the token", "/sharing#token")
 
 
 def test_thingsboard_on_with_a_token_is_ok(apps):
@@ -675,14 +676,16 @@ def _put(data, key, value):
     section[child] = value
 
 
-@pytest.mark.parametrize("key", ["thingsboard.access_token", "addons.plate_recognizer.token"])
+@pytest.mark.parametrize(
+    "key, page", [("thingsboard.access_token", "Sharing"), ("addons.plate_recognizer.token", "Device")]
+)
 @pytest.mark.parametrize("value", ["tb-placeholder-9", None, ""])
-def test_a_secret_left_in_config_yml_is_a_warning(apps, key, value):
+def test_a_secret_left_in_config_yml_is_a_warning(apps, key, page, value):
     apps.edit_config_yml(lambda data: _put(data, key, value))
     check = thingsboard_check(apps)
     assert check.status == "warn"
     assert check.detail == (
-        f"config.yml still holds {key}, which nothing reads. Remove it; the value is set on the Device page."
+        f"config.yml still holds {key}, which nothing reads. Remove it; the value is set on the {page} page."
     )
     assert "placeholder" not in check.detail and check.fix is None
 
@@ -724,9 +727,9 @@ def test_two_warnings_are_joined_in_one_detail(apps):
     assert check.status == "warn"
     assert check.detail == (
         "config.yml still holds thingsboard.access_token, which nothing reads. Remove it; the value is set on the "
-        f"Device page. {MISSING_TOKEN}"
+        f"Sharing page. {MISSING_TOKEN}"
     )
-    assert check.fix is not None and check.fix.href == "/device#tokens-and-keys"  # kept, since the missing token is among them
+    assert check.fix is not None and check.fix.href == "/sharing#token"  # kept, since the missing token is among them
     assert "placeholder" not in check.detail
 
 
@@ -736,6 +739,240 @@ def test_errors_outrank_warnings(apps):
     assert check.status == "error"
     assert "thingsboard.enabled" in check.detail and "thingsboard.protocol" in check.detail
     assert check.fix is None
+
+
+# Sharing. The fixture's host is the maintainer's (its manifest), so a host of any other name is an operator's own
+# server.
+
+NOTICE = "2026-11"
+OWN_HOST = "other.example.invalid"
+NOT_SHARING = "Not sharing."
+SHARING_DATA = "Sharing data, with the location as the database stores it."
+SHARING_EXACT = "Sharing data and the exact location."
+PUBLIC_MAP = " The public map is on."
+REVIEW = (
+    "This device's upload was turned on without a choice on the Sharing page. It shares data with the location as the "
+    "database stores it. Review the choices."
+)
+NOTICE_CHANGED = "The sharing notice has changed. Read it and save your choices again."
+NOTICE_UNREAD = "No one has read the sharing notice yet. Read it and save your choices again."
+IGNORED = "config.yml's sharing block has a value the device ignores. Save the Sharing page to rewrite it."
+REVIEW_LINK = Fix(kind="link", href="/sharing", text="Review sharing")
+
+
+def sharing_check(apps, state=None, notice_version=NOTICE):
+    group = run_group(contracts.GROUP, apps.context(state, notice_version))
+    check = {c.id: c for c in group.checks}["config.sharing"]
+    assert check.title == "Sharing"
+    assert HOST not in check.detail and OWN_HOST not in check.detail and NOTICE not in check.detail
+    assert "example.invalid" not in check.detail and "2026" not in check.detail
+    return check
+
+
+def share_with(apps, server=HOST, **block):
+    """The upload on for `server` over https, and a sharing block with `block`'s keys over the page's own."""
+    values = {"target": "maintainer" if server == HOST else "own", "host": server, "exact_location": False,
+              "public_map": "none", "notice_version": NOTICE}
+
+    def edit(data):
+        data["thingsboard"].update(enabled=True, host=server, protocol="https")
+        data["sharing"] = values | block
+
+    apps.edit_config_yml(edit)
+
+
+def grant(state, host=HOST, version=NOTICE):
+    from tm_control.modules.sharing.consents import Consents, target_key
+
+    Consents(state).record(target_key(host, HOST), "share_data", True, version, None)
+
+
+def test_sharing_check_when_the_upload_is_off_is_ok(apps):
+    check = sharing_check(apps)
+    assert (check.status, check.detail, check.fix) == ("ok", NOT_SHARING, None)
+
+
+@pytest.mark.parametrize(
+    "block, text",
+    [
+        (None, SHARING_DATA),
+        ({}, SHARING_DATA),
+        ({"exact_location": True}, SHARING_EXACT),
+        ({"public_map": "rounded_point"}, SHARING_DATA + PUBLIC_MAP),
+        ({"exact_location": True, "public_map": "rounded_point"}, SHARING_EXACT + PUBLIC_MAP),
+        # the exact location counts only for the server the upload goes to
+        ({"exact_location": True, "host": "tb.elsewhere.invalid", "target": "own"}, SHARING_DATA),
+        ({"exact_location": True, "host": "HTTPS://TB.EXAMPLE.INVALID/"}, SHARING_EXACT),  # normalised, not ignored
+        # the map is on only where the gate sends the point: the maintainer's server, chosen for that host
+        ({"public_map": "rounded_point", "target": "own"}, SHARING_DATA),
+        ({"public_map": "rounded_point", "host": "tb.elsewhere.invalid"}, SHARING_DATA),
+        ({"exact_location": True, "public_map": "rounded_point", "host": "tb.elsewhere.invalid", "target": "own"},
+         SHARING_DATA),
+    ],
+)
+def test_sharing_check_says_what_is_shared(apps, block, text):
+    share_with(apps, **(block or {}))
+    if block is None:
+        apps.edit_config_yml(lambda data: data.pop("sharing"))
+    check = sharing_check(apps)
+    assert (check.status, check.detail, check.fix) == ("ok", text, None)
+
+
+@pytest.mark.parametrize("scheme, protocol", [("", "http"), ("http://", "https"), ("HTTP://", "https")])
+def test_sharing_check_does_not_call_the_exact_location_shared_over_http(apps, scheme, protocol):
+    share_with(apps, exact_location=True, public_map="rounded_point")
+
+    def edit(data):
+        data["thingsboard"].update(host=scheme + HOST, protocol=protocol)
+
+    apps.edit_config_yml(edit)
+    check = sharing_check(apps)
+    assert (check.status, check.detail) == ("ok", SHARING_DATA + PUBLIC_MAP)
+
+
+def test_sharing_check_asks_for_a_review(apps, state):
+    from tm_control.modules.sharing.consents import PRE_CONSENT, Consents
+
+    share_with(apps, notice_version=None)
+    grant(state, version=PRE_CONSENT)
+    Consents(state).set_review_needed(True)
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", REVIEW, REVIEW_LINK)
+    # An own server needs no notice, so only the flag warns
+    share_with(apps, OWN_HOST, notice_version=None)
+    grant(state, OWN_HOST, "own-server")
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", REVIEW, REVIEW_LINK)
+    Consents(state).set_review_needed(False)
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("ok", SHARING_DATA, None)
+
+
+def test_sharing_check_notices_a_new_notice_version(apps, state):
+    from tm_control.modules.sharing.consents import PRE_CONSENT, Consents
+
+    share_with(apps)
+    grant(state, version="2026-01")
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_CHANGED, REVIEW_LINK)
+    grant(state)  # the notice was read and the choices saved again
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("ok", SHARING_DATA, None)
+    # Controller ruling: clearing the review flag doesn't count as reading the notice, so a pre-consent unit keeps
+    # warning until the choices are saved, and a unit's own server never does
+    grant(state, version=PRE_CONSENT)
+    Consents(state).set_review_needed(False)
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_UNREAD, REVIEW_LINK)
+    share_with(apps, OWN_HOST, notice_version=None)
+    grant(state, OWN_HOST, "own-server")
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("ok", SHARING_DATA, None)
+
+
+def test_sharing_check_says_no_one_has_read_the_notice_when_no_share_is_recorded(apps, state):
+    share_with(apps)  # the upload is on for the maintainer's server and nothing was ever granted
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", NOTICE_UNREAD, REVIEW_LINK)
+
+
+def test_sharing_check_review_flag_comes_before_the_unread_notice(apps, state):
+    from tm_control.modules.sharing.consents import PRE_CONSENT, Consents
+
+    share_with(apps)
+    grant(state, version=PRE_CONSENT)
+    Consents(state).set_review_needed(True)
+    check = sharing_check(apps, state)
+    assert (check.status, check.detail, check.fix) == ("warn", REVIEW, REVIEW_LINK)
+
+
+def test_sharing_check_without_a_state_or_a_notice_skips_the_recorded_parts(apps, state):
+    from tm_control.modules.sharing.consents import PRE_CONSENT, Consents
+
+    share_with(apps)
+    grant(state, version=PRE_CONSENT)
+    Consents(state).set_review_needed(True)
+    assert sharing_check(apps).status == "ok"  # no state
+    check = sharing_check(apps, state, notice_version=None)  # the flag still counts, the version can't be judged
+    assert check.detail == REVIEW
+    Consents(state).set_review_needed(False)
+    assert sharing_check(apps, state, notice_version=None).status == "ok"
+
+
+def test_sharing_check_with_the_upload_off_ignores_the_notice(apps, state):
+    share_with(apps, notice_version=None)
+    apps.edit_config_yml(lambda data: data["thingsboard"].update(enabled=False))
+    grant(state, version="2026-01")
+    assert sharing_check(apps, state).detail == NOT_SHARING
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"exact_location": "true"},
+        {"exact_location": 1},
+        {"public_map": "block"},
+        {"public_map": True},
+        {"target": "everyone"},
+        {"host": 5},
+        {"notice_version": 2026},
+        {"exact_location": True, "colour": "red"},  # a key the device doesn't know
+    ],
+)
+def test_sharing_check_flags_an_ignored_value(apps, block):
+    share_with(apps, **block)
+    check = sharing_check(apps)
+    assert (check.status, check.detail, check.fix) == ("warn", IGNORED, REVIEW_LINK)
+
+
+@pytest.mark.parametrize("value", ["a block", ["a", "list"], 7, True])
+def test_sharing_check_flags_a_block_that_is_not_a_mapping(apps, value):
+    apps.edit_config_yml(lambda data: data.update(sharing=value))
+    check = sharing_check(apps)
+    assert (check.status, check.detail) == ("warn", IGNORED)
+
+
+@pytest.mark.parametrize("value", [None, {}])
+def test_sharing_check_accepts_an_empty_block(apps, value):
+    apps.edit_config_yml(lambda data: data.update(sharing=value))
+    assert sharing_check(apps).status == "ok"
+
+
+def test_sharing_check_adds_an_ignored_value_to_a_review(apps, state):
+    from tm_control.modules.sharing.consents import Consents
+
+    share_with(apps, OWN_HOST, exact_location="yes")
+    grant(state, OWN_HOST, "own-server")
+    Consents(state).set_review_needed(True)
+    assert sharing_check(apps, state).detail == f"{REVIEW} {IGNORED}"
+
+
+@pytest.mark.parametrize("edit", [lambda data: data.pop("thingsboard"), lambda data: data.pop("sharing", None)])
+def test_sharing_check_when_nothing_is_set_is_ok(apps, edit):
+    apps.edit_config_yml(edit)
+    assert sharing_check(apps).detail == NOT_SHARING
+
+
+def test_sharing_check_when_config_yml_is_missing_is_unknown(apps):
+    apps.config_yml.unlink()
+    check = sharing_check(apps)
+    assert (check.status, check.fix) == ("unknown", None)
+    assert check.detail == "config.yml is missing, so its sharing settings can't be checked."
+
+
+def test_sharing_check_shows_no_host(apps, state):
+    share_with(apps, OWN_HOST, exact_location="maybe")
+    grant(state, OWN_HOST, "own-server")
+    for notice_version in (None, NOTICE):
+        check = sharing_check(apps, state, notice_version)  # asserts that no host and no version is in the text
+        assert check.status == "warn"
+
+
+def test_the_token_link_goes_to_the_sharing_page(apps):
+    apps.edit_config_yml(lambda data: data["thingsboard"].update(enabled=True, access_token="tb-placeholder-12"))
+    check = thingsboard_check(apps)
+    assert check.fix == Fix(kind="link", text="Set the token", href="/sharing#token")
+    assert "Sharing page" in check.detail and "Device page" not in check.detail
 
 
 # Frigate+

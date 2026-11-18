@@ -84,6 +84,13 @@ describe('an entered secret', () => {
     expect(field(wrapper, 'ThingsBoard access token').exists()).toBe(true)
   })
 
+  it('names its Save button when asked, and says Save otherwise', () => {
+    const named = mountAlone(EnteredSecret, { secret: UNSET, saveText: 'Save token' })
+    expect(button(named, 'Save token').exists()).toBe(true)
+    expect(named.findAll('button').some((b) => b.text().trim() === 'Save')).toBe(false)
+    expect(button(mountAlone(EnteredSecret, { secret: UNSET }), 'Save').exists()).toBe(true)
+  })
+
   it('shows the ending of a set token and the Remove button', async () => {
     fakeApi({})
     const wrapper = await mountSecret(TOKEN)

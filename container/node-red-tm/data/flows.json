@@ -523,12 +523,13 @@
             "21944450ecc08385",
             "93aa421659d2c20b",
             "9b8c2bcc16a637fd",
-            "43087a735f896849"
+            "43087a735f896849",
+            "ae3349867027d005"
         ],
         "x": 1374,
-        "y": 93,
+        "y": 73,
         "w": 1118,
-        "h": 188
+        "h": 208
     },
     {
         "id": "da1c8c74261a93a4",
@@ -659,27 +660,6 @@
         "y": 1379,
         "w": 1418,
         "h": 848
-    },
-    {
-        "id": "23636f4163fa6e3b",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "name": "backup and restore",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "b781cb3d6df38fed",
-            "a38a90c36a0abfc3",
-            "0372cefb5e2ec968",
-            "cad1724850f8df3d",
-            "fb62ca91f138ab87",
-            "2a5881f8fd7df9ff"
-        ],
-        "x": 114,
-        "y": 1599,
-        "w": 1398,
-        "h": 368
     },
     {
         "id": "3c299af3b0814ea5",
@@ -1362,12 +1342,8 @@
         "nodes": [
             "d367cb76b239682f",
             "e507fdc9cbf67095",
-            "0b62cae60d488c85",
-            "4af0d78e8bc39647",
             "66bace5cf805a4fb",
-            "22f397ac5c294b6e",
-            "c49d311e5668de52",
-            "9941048ea93dc79c"
+            "22f397ac5c294b6e"
         ],
         "x": 134,
         "y": 1079,
@@ -1436,47 +1412,6 @@
         "y": 2499,
         "w": 882,
         "h": 122
-    },
-    {
-        "id": "b781cb3d6df38fed",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "backup TM configuration to Thingsboard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "f49c1d345cdfef57",
-            "7c96d66a8330a4fc",
-            "4d376b9ae709214b"
-        ],
-        "x": 614,
-        "y": 1639,
-        "w": 702,
-        "h": 82
-    },
-    {
-        "id": "a38a90c36a0abfc3",
-        "type": "group",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "restore TM Frigate config from ThingsBoard",
-        "style": {
-            "label": true
-        },
-        "nodes": [
-            "56cafb11de5348b2",
-            "25515211bb8cecb4",
-            "64467a90df93e582",
-            "7555653f37b1cd50",
-            "0d394a2d73d138d6",
-            "5b7fe362e2e6b35d"
-        ],
-        "x": 614,
-        "y": 1739,
-        "w": 872,
-        "h": 202
     },
     {
         "id": "f5d2d92d50d18ce2",
@@ -2051,17 +1986,6 @@
         "responsetimeout": "500"
     },
     {
-        "id": "941fb260d6cfb5a2",
-        "type": "ui_group",
-        "name": "Backup & Restore",
-        "tab": "0fd9a947334c7d0f",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "202181a361213d6d",
         "type": "ui_group",
         "name": "Sensor Selector",
@@ -2568,7 +2492,7 @@
         "z": "3dae026ab340962a",
         "g": "4bbb9e24b5507a00",
         "name": "init config defaults",
-        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  const host = msg.payload.thingsboard.host;\n  if (typeof host === \"undefined\" || host === null || String(host).trim() === '') {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`, msg);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (scheme, domain, port): a host that already has a scheme keeps it, else protocol's, https by default\n    const protocol = msg.payload.thingsboard.protocol || 'https';\n    const base = /^https?:\\/\\//i.test(host) ? host : `${protocol}://${host}`;\n    msg.payload.thingsboard.url = `${base}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //the access token is an entered secret, set on the control app's Device page and passed in node-red-tm.env\n  const token = env.get(\"TM_THINGSBOARD_ACCESS_TOKEN\") || \"\";\n  if (msg.payload.thingsboard.enabled === true && token === \"\") {\n    node.warn(\"Node-RED config.yml enables ThingsBoard, but TM_THINGSBOARD_ACCESS_TOKEN is not set in node-red-tm.env. Set the token on the control app's Device page. Disabling ThingsBoard.\");\n    msg.payload.thingsboard.enabled = false;\n  }\n}\n\n\n//deployment\n//check deployment entries for valid values\n//blank (missing, null, or '') lat and lon mean no location yet\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  msg.payload.deployment[key] = (typeof value === \"undefined\" || value === null) ? '' : value;\n}\n//a blank (missing, null, or '') bearing means none yet\nif (typeof msg.payload.deployment.bearing === \"undefined\" || msg.payload.deployment.bearing === null) {\n  msg.payload.deployment.bearing = '';\n}\n\n//check for numeric (decimal) lon and lat; a number quoted in YAML is allowed and rounded later\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  const numeric = typeof value === \"number\" || (typeof value === \"string\" && value.trim() !== '');\n  if (value !== '' && !(numeric && Number.isFinite(Number(value)))) {\n    node.error(`Node-RED config.yml top-level deployment.${key} is not a valid type; needs to be numeric`);\n  }\n}\n\n//survey_id: names the place, written by the Location page; missing or empty means no survey\nconst survey_id = msg.payload.deployment.survey_id;\nif (typeof survey_id === \"undefined\" || survey_id === null || survey_id === '') {\n  msg.payload.deployment.survey_id = null;\n} else if (/^[0-9a-f]{8}-si$/.test(String(survey_id).toLowerCase())) {\n  msg.payload.deployment.survey_id = String(survey_id).toLowerCase();\n} else {\n  node.error(`Node-RED config.yml key deployment.survey_id is not a survey id (8 hex characters and -si); ignoring it`);\n  msg.payload.deployment.survey_id = null;\n}\n\n//database_precision: decimal places of lat and lon stored in the database; missing or invalid: '2' (about 1 km)\nconst precision_values = ['none', '1', '2'];\nconst precision_given = msg.payload.deployment.database_precision;\nconst database_precision = (typeof precision_given === \"undefined\" || precision_given === null || precision_given === '') ? '2' : String(precision_given);\nif (precision_values.includes(database_precision)) {\n  msg.payload.deployment.database_precision = database_precision;\n} else {\n  node.error(`Node-RED config.yml key deployment.database_precision is not a valid value; needs to be one of ${precision_values}; using '2'`);\n  msg.payload.deployment.database_precision = '2';\n}\n\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow a blank bearing (made '' above); lower-case a valid one\nif (msg.payload.deployment.bearing !== '') {\n  const bearing = msg.payload.deployment.bearing;\n  if (typeof bearing === \"string\" && bearing_values.includes(bearing.toLowerCase())) {\n    msg.payload.deployment.bearing = bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors || {})) {\n    //an entry with nothing under it is a sensor that is off\n    if (sensor === null || typeof sensor !== \"object\") {\n      continue;\n    }\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        const sensorBearing = sensorDeployment.bearing;\n        if (typeof sensorBearing === \"undefined\" || sensorBearing === null || sensorBearing === '') {\n          sensorDeployment.bearing = '';\n        } else if (typeof sensorBearing !== \"string\" || !bearing_values.includes(sensorBearing.toLowerCase())) {\n          node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n          sensorDeployment.bearing = '';\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\n//cameras: the sensors.cameras key is what is recorded and shared; frigate_camera, when it is a non-empty string, is\n//Frigate's name for the camera and stays on the device. capture-events maps Frigate's name to the key with\n//frigate_cameras, and the camera pickers label each key with camera_labels. Both are globals of their own, and\n//frigate_camera is taken out of config below, because config is uploaded. Frigate's name never goes in a log line.\nconst frigate_cameras = {};\nconst camera_labels = {};\nfor (const [cameraName, entry] of Object.entries(msg.payload.sensors.cameras || {})) {\n  const camera = (entry !== null && typeof entry === \"object\") ? entry : {};\n  const frigateName = (typeof camera.frigate_camera === \"string\" && camera.frigate_camera !== '') ? camera.frigate_camera : cameraName;\n  if (Object.prototype.hasOwnProperty.call(frigate_cameras, frigateName)) {\n    node.error(`Node-RED config.yml: sensors.cameras.${cameraName} names the same Frigate camera as sensors.cameras.${frigate_cameras[frigateName]}; ignoring ${cameraName}.`, msg);\n    continue;\n  }\n  frigate_cameras[frigateName] = cameraName;\n  camera_labels[cameraName] = frigateName === cameraName ? cameraName : `${cameraName} (${frigateName})`;\n}\n\n//Frigate's names live only in the two maps: config (this payload) doesn't keep them\nfor (const entry of Object.values(msg.payload.sensors.cameras || {})) {\n  if (entry !== null && typeof entry === \"object\") {\n    delete entry.frigate_camera;\n  }\n}\n\n//set last, so that a load that fails above keeps the previous ones; tm_warned holds the warnings given since this load\nglobal.set(\"frigate_cameras\", frigate_cameras);\nglobal.set(\"camera_labels\", camera_labels);\nglobal.set(\"tm_warned\", {});\n\nreturn msg;",
+        "func": "const opt_api_commands_array_default = [\"^/+0.00\\n\", \"^/-0.00\\n\"]\n\n//thingsboard\n// default to enabled: false\nif (typeof msg.payload.thingsboard.enabled !== \"undefined\") {\n  msg.payload.thingsboard.enabled = msg.payload.thingsboard.enabled === true ? true : false;\n} else { msg.payload.thingsboard.enabled = false; }\n\nif (msg.payload.thingsboard.enabled === true) {\n  const host = msg.payload.thingsboard.host;\n  if (typeof host === \"undefined\" || host === null || String(host).trim() === '') {\n    node.error(`Node-RED config.yml key thingsboard.host needs to be populated when thingsboard is enabled. Disabling ThingsBoard.`, msg);\n    // and disable thingsboard\n    msg.payload.thingsboard.enabled = false;\n  }\n  else {\n    //assign TB url (scheme, domain, port): a host that already has a scheme keeps it, else protocol's, https by default\n    const protocol = msg.payload.thingsboard.protocol || 'https';\n    const base = /^https?:\\/\\//i.test(host) ? host : `${protocol}://${host}`;\n    msg.payload.thingsboard.url = `${base}${msg.payload.thingsboard.port ? ':' + msg.payload.thingsboard.port : ''}`\n  }  \n  //check protocol http can be http or https\n  if (typeof msg.payload.thingsboard.protocol !== \"undefined\") {\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('https') ? 'http' : msg.payload.thingsboard.protocol;\n    msg.payload.thingsboard.protocol = msg.payload.thingsboard.protocol.includes('mqtts') ? 'mqtt' : msg.payload.thingsboard.protocol;\n  }\n  //the access token is an entered secret, set on the control app's Sharing page and passed in node-red-tm.env\n  const token = env.get(\"TM_THINGSBOARD_ACCESS_TOKEN\") || \"\";\n  if (msg.payload.thingsboard.enabled === true && token === \"\") {\n    node.warn(\"Node-RED config.yml enables ThingsBoard, but TM_THINGSBOARD_ACCESS_TOKEN is not set in node-red-tm.env. Set the token on the control app's Sharing page. Disabling ThingsBoard.\");\n    msg.payload.thingsboard.enabled = false;\n  }\n}\n\n\n//sharing: what the Sharing page chose to share with the ThingsBoard server, and the server it was chosen for (host,\n//by the host rule the control app uses: trim, lower-case, no leading http:// or https://, no trailing /). A missing\n//block, or one that isn't a mapping, chooses nothing; a value that isn't one of a key's values is that key's off value\nfunction sharingHost(value) {\n  if (typeof value !== \"string\") {\n    return null;\n  }\n  const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n  return host === '' ? null : host;\n}\nconst sharing_given = msg.payload.sharing;\nconst sharing = (sharing_given !== null && typeof sharing_given === \"object\" && !Array.isArray(sharing_given)) ? sharing_given : {};\nmsg.payload.sharing = {\n  target: (sharing.target === \"maintainer\" || sharing.target === \"own\") ? sharing.target : null,\n  host: sharingHost(sharing.host),\n  exact_location: sharing.exact_location === true,\n  public_map: sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\",\n  notice_version: (typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null,\n};\n\n\n//deployment\n//check deployment entries for valid values\n//blank (missing, null, or '') lat and lon mean no location yet\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  msg.payload.deployment[key] = (typeof value === \"undefined\" || value === null) ? '' : value;\n}\n//a blank (missing, null, or '') bearing means none yet\nif (typeof msg.payload.deployment.bearing === \"undefined\" || msg.payload.deployment.bearing === null) {\n  msg.payload.deployment.bearing = '';\n}\n\n//check for numeric (decimal) lon and lat; a number quoted in YAML is allowed and rounded later\nfor (const key of ['lat', 'lon']) {\n  const value = msg.payload.deployment[key];\n  const numeric = typeof value === \"number\" || (typeof value === \"string\" && value.trim() !== '');\n  if (value !== '' && !(numeric && Number.isFinite(Number(value)))) {\n    node.error(`Node-RED config.yml top-level deployment.${key} is not a valid type; needs to be numeric`);\n  }\n}\n\n//survey_id: names the place, written by the Location page; missing or empty means no survey\nconst survey_id = msg.payload.deployment.survey_id;\nif (typeof survey_id === \"undefined\" || survey_id === null || survey_id === '') {\n  msg.payload.deployment.survey_id = null;\n} else if (/^[0-9a-f]{8}-si$/.test(String(survey_id).toLowerCase())) {\n  msg.payload.deployment.survey_id = String(survey_id).toLowerCase();\n} else {\n  node.error(`Node-RED config.yml key deployment.survey_id is not a survey id (8 hex characters and -si); ignoring it`);\n  msg.payload.deployment.survey_id = null;\n}\n\n//database_precision: decimal places of lat and lon stored in the database; missing or invalid: '2' (about 1 km)\nconst precision_values = ['none', '1', '2'];\nconst precision_given = msg.payload.deployment.database_precision;\nconst database_precision = (typeof precision_given === \"undefined\" || precision_given === null || precision_given === '') ? '2' : String(precision_given);\nif (precision_values.includes(database_precision)) {\n  msg.payload.deployment.database_precision = database_precision;\n} else {\n  node.error(`Node-RED config.yml key deployment.database_precision is not a valid value; needs to be one of ${precision_values}; using '2'`);\n  msg.payload.deployment.database_precision = '2';\n}\n\nconst bearing_values = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];\n//allow a blank bearing (made '' above); lower-case a valid one\nif (msg.payload.deployment.bearing !== '') {\n  const bearing = msg.payload.deployment.bearing;\n  if (typeof bearing === \"string\" && bearing_values.includes(bearing.toLowerCase())) {\n    msg.payload.deployment.bearing = bearing.toLowerCase();\n  }\n  else {\n    node.error(`Node-RED config.yml top-level deployment.bearing is not a valid value; needs to be one of ${bearing_values}`);\n  }\n}\n\n// go through each of the sensors that have no deployment object and copy the top-level deployment object into them\n// do not overwrite any existing sensor deployment properties\nfor (const [sensorType, sensors] of Object.entries(msg.payload.sensors)) {\n  for (const [sensorName, sensor] of Object.entries(sensors || {})) {\n    //an entry with nothing under it is a sensor that is off\n    if (sensor === null || typeof sensor !== \"object\") {\n      continue;\n    }\n    if (sensor.hasOwnProperty('enabled') && sensor.enabled === true) {\n      if (sensor.hasOwnProperty('deployment')) {\n        const sensorDeployment = sensor.deployment;\n        const topLevelDeployment = msg.payload.deployment;\n        for (const [prop, value] of Object.entries(topLevelDeployment)) {\n          if (!sensorDeployment.hasOwnProperty(prop)) {\n            sensorDeployment[prop] = value;\n          }\n        }\n        const sensorBearing = sensorDeployment.bearing;\n        if (typeof sensorBearing === \"undefined\" || sensorBearing === null || sensorBearing === '') {\n          sensorDeployment.bearing = '';\n        } else if (typeof sensorBearing !== \"string\" || !bearing_values.includes(sensorBearing.toLowerCase())) {\n          node.error(`Invalid bearing value '${sensorDeployment.bearing}' for sensor '${sensorType}.${sensorName}'. Using default value ''.`, msg);\n          sensorDeployment.bearing = '';\n        }\n      } else {\n        msg.payload.sensors[sensorType][sensorName].deployment = { ...msg.payload.deployment };\n      }\n    }\n    // set sensors.radars -specific defaults\n    if (sensorType == 'radars') {\n\n      // Parse opt_api_commands_array if it's a string representation of an array\n      let parsedCommands = [];\n\n      if (typeof sensor.opt_api_commands_array === 'string') {\n        try {\n          parsedCommands = JSON.parse(sensor.opt_api_commands_array);\n          \n          if (!Array.isArray(parsedCommands)) {\n            parsedCommands = opt_api_commands_array_default;\n          }\n\n        } catch (e) {\n          console.error(`Failed to parse opt_api_commands_array for ${sensorType}.${sensorName}:`, e);\n          // Fallback: use empty array if parsing fails\n          \n          parsedCommands = opt_api_commands_array_default;\n        }\n      } \n\n      // create radar initial setup commands array\n      //  hardcoded values are common among all radars, may be overridden by config entry\n      //  datetime (C=) and timezone (CZ) will be automatically calculated \n      sensor.api_commands = [\n        \"OJ\", \"US\", \"F2\", \"S2\", \"K+\", \"IG\", \"ON\",\"OU\", \"OT\", \"Oh\", \"Oc\",\n        \"@O\", \"@|300\\n\",\n        \"OM\", \"M>20\\n\", \n        \"OS\", \"R>5\\n\", \n        \"O3\",\n        ...parsedCommands,\n      ]\n\n    }\n  }\n}\n\n//cameras: the sensors.cameras key is what is recorded and shared; frigate_camera, when it is a non-empty string, is\n//Frigate's name for the camera and stays on the device. capture-events maps Frigate's name to the key with\n//frigate_cameras, and the camera pickers label each key with camera_labels. Both are globals of their own, and\n//frigate_camera is taken out of config below, so no flow that reads config can pass Frigate's names on. Frigate's name never goes in a log line.\nconst frigate_cameras = {};\nconst camera_labels = {};\nfor (const [cameraName, entry] of Object.entries(msg.payload.sensors.cameras || {})) {\n  const camera = (entry !== null && typeof entry === \"object\") ? entry : {};\n  const frigateName = (typeof camera.frigate_camera === \"string\" && camera.frigate_camera !== '') ? camera.frigate_camera : cameraName;\n  if (Object.prototype.hasOwnProperty.call(frigate_cameras, frigateName)) {\n    node.error(`Node-RED config.yml: sensors.cameras.${cameraName} names the same Frigate camera as sensors.cameras.${frigate_cameras[frigateName]}; ignoring ${cameraName}.`, msg);\n    continue;\n  }\n  frigate_cameras[frigateName] = cameraName;\n  camera_labels[cameraName] = frigateName === cameraName ? cameraName : `${cameraName} (${frigateName})`;\n}\n\n//Frigate's names live only in the two maps: config (this payload) doesn't keep them\nfor (const entry of Object.values(msg.payload.sensors.cameras || {})) {\n  if (entry !== null && typeof entry === \"object\") {\n    delete entry.frigate_camera;\n  }\n}\n\n//set last, so that a load that fails above keeps the previous ones; tm_warned holds the warnings given since this load\nglobal.set(\"frigate_cameras\", frigate_cameras);\nglobal.set(\"camera_labels\", camera_labels);\nglobal.set(\"tm_warned\", {});\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -2906,7 +2830,6 @@
         "name": "init-config link out",
         "mode": "link",
         "links": [
-            "c49d311e5668de52",
             "a6b986e24a80c93b"
         ],
         "x": 865,
@@ -2994,7 +2917,7 @@
         "z": "3dae026ab340962a",
         "g": "d9d94c0d493873b9",
         "name": "tm-internal: build status",
-        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n};\nreturn msg;",
+        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst upload = status.upload || {};\nconst thingsboard = (global.get(\"config\") || {}).thingsboard || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n    // enabled after init config defaults (off without a host or a token); the rest since the last config load\n    upload: {\n        enabled: thingsboard.enabled === true,\n        last_ok_at: upload.last_ok_at || null,\n        last_failure_at: upload.last_failure_at || null,\n        last_failure: upload.last_failure || null,\n    },\n};\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3136,7 +3059,7 @@
         "z": "3dae026ab340962a",
         "g": "d9d94c0d493873b9",
         "name": "tm-internal: config loaded",
-        "func": "// After each load of config.yml that set global.config: which radars it enables, and which survey the device\n// records and how finely. Never the coordinates: the status page shows the survey, not where the device is.\nconst config = global.get(\"config\") || {};\nconst deployment = config.deployment || {};\nconst value = (v) => (v === undefined || v === \"\" ? null : v);\nglobal.set(\"tm_status.deployment\", {\n    survey_id: value(deployment.survey_id),\n    database_precision: value(deployment.database_precision),\n});\nconst radars = global.get(\"tm_status.radars\") || {};\nconst configured = (config.sensors && config.sensors.radars) || {};\nfor (const name of Object.keys(radars)) {\n    radars[name].enabled = false;\n}\nfor (const [name, radar] of Object.entries(configured)) {\n    radars[name] = Object.assign({}, radars[name], { enabled: Boolean(radar) && radar.enabled === true });\n}\nglobal.set(\"tm_status.radars\", radars);\nreturn null;",
+        "func": "// After each load of config.yml that set global.config: which radars it enables, and which survey the device\n// records and how finely. Never the coordinates: the status page shows the survey, not where the device is.\nconst config = global.get(\"config\") || {};\nconst deployment = config.deployment || {};\nconst value = (v) => (v === undefined || v === \"\" ? null : v);\nglobal.set(\"tm_status.deployment\", {\n    survey_id: value(deployment.survey_id),\n    database_precision: value(deployment.database_precision),\n});\nconst radars = global.get(\"tm_status.radars\") || {};\nconst configured = (config.sensors && config.sensors.radars) || {};\nfor (const name of Object.keys(radars)) {\n    radars[name].enabled = false;\n}\nfor (const [name, radar] of Object.entries(configured)) {\n    radars[name] = Object.assign({}, radars[name], { enabled: Boolean(radar) && radar.enabled === true });\n}\nglobal.set(\"tm_status.radars\", radars);\n// The upload's results were about the last load's server and token: \"record upload result\" fills them again\nglobal.set(\"tm_status.upload\", { last_ok_at: null, last_failure_at: null, last_failure: null });\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7296,9 +7219,47 @@
         "y": 160,
         "wires": [
             [
-                "df6ac2f42ac6d8c7"
+                "df6ac2f42ac6d8c7",
+                "bdf528df320bdff6"
             ]
         ]
+    },
+    {
+        "id": "ae3349867027d005",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "694f0242d0985c69",
+        "name": "upload gate",
+        "func": "// Every ThingsBoard upload passes here, after the rate limit and just before the URL is built, so each message is\n// judged under the config it is sent with. Only the kinds of data listed below leave the unit; deployment rows go\n// out at the precision tmdb stores them; and the deployments attribute carries what the Sharing page chose, for the\n// server it was chosen for. A key that isn't listed is left out and named once per config load, never with its value.\nconst TELEMETRY = [\"event\", \"radar\", \"airquality\", \"system_metrics\", \"deployments\"];\nconst ATTRIBUTES = [\"deployments\", \"radarinfo\", \"sysinfo_tmVersion\", \"sysinfo_osHostname\", \"sysinfo_osRelease\", \"sysinfo_osTimeZone\", \"sysinfo_deviceName\", \"sysinfo_frigateVersion\"];\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst config = global.get(\"config\") || {};\n// a message that waited in the rate limit while the upload was turned off goes no further\nif (!isMapping(config.thingsboard) || config.thingsboard.enabled !== true) {\n    return null;\n}\nconst place = isMapping(config.deployment) ? config.deployment : {};\nconst sharing = isMapping(config.sharing) ? config.sharing : {};\nconst thingsboard = isMapping(config.thingsboard) ? config.thingsboard : {};\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nfunction leftOut(key) {\n    warnOnce(`upload:${key}`, `ThingsBoard upload: left out ${key}, which isn't on the list of what is shared.`);\n}\n\n// the host rule, the same as init config defaults' and the control app's: trim, lower-case, no leading http:// or\n// https://, no trailing /\nfunction normaliseHost(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n    return host === \"\" ? null : host;\n}\n\n// half away from zero, as the deployment engine and SQLite's ROUND (toFixed rounds the magnitude)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\n// a number, or a number quoted in YAML or rendered by a template; anything else is null\nfunction numberOf(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    return null;\n}\n\n// the places tmdb stores for this unit: none stores no location; anything else is 2, as init config defaults\nconst PRECISION = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst unitPlaces = Object.prototype.hasOwnProperty.call(PRECISION, place.database_precision) ? PRECISION[place.database_precision] : 2;\n\n// a row's places: the coarser of its own location_precision and the unit's database_precision; a row without one is\n// at the unit's, and null or none (either side) means no location\nfunction rowPlaces(row) {\n    if (row.location_precision === undefined) {\n        return unitPlaces;\n    }\n    const own = (row.location_precision === null || row.location_precision === \"none\") ? null : numberOf(row.location_precision);\n    if (unitPlaces === null || own === null || !Number.isInteger(own) || own < 0) {\n        return null;\n    }\n    return Math.min(own, unitPlaces);\n}\n\n// a coordinate at these places: a string stays a string, an empty one stays empty\nfunction coordinate(value, places) {\n    if (value === '') {\n        return '';\n    }\n    const number = numberOf(value);\n    if (places === null || number === null) {\n        return null;\n    }\n    const rounded = round(number, places);\n    return typeof value === \"string\" ? String(rounded) : rounded;\n}\n\nfunction reRound(row) {\n    if (!isMapping(row)) {\n        return;\n    }\n    const places = rowPlaces(row);\n    for (const key of [\"lat\", \"lon\"]) {\n        if (key in row) {\n            row[key] = coordinate(row[key], places);\n        }\n    }\n}\n\n// the rows of a list that are mappings, re-rounded; anything else in the list is left out\nfunction rowsOf(list) {\n    const rows = list.filter(isMapping);\n    if (rows.length !== list.length) {\n        warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n    }\n    rows.forEach(reRound);\n    return rows;\n}\n\n// telemetry deployments: a mapping with only the two lists, each an array of rows; null when none is left\nfunction telemetryDeployments(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"updatedDeployment\", \"currentDeployment\"].includes(key)) {\n            leftOut(`deployments.${key}`);\n        } else if (Array.isArray(list)) {\n            kept[key] = rowsOf(list);\n        } else {\n            warnOnce(`upload:deployments.${key}`, `ThingsBoard upload: left out deployments.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a telemetry item ({ts, values}) with only the listed values, or null when none is left\nfunction telemetryItem(item) {\n    if (!isMapping(item) || !isMapping(item.values)) {\n        warnOnce(\"upload:telemetry\", \"ThingsBoard upload: left out telemetry that isn't {ts, values}.\");\n        return null;\n    }\n    const values = {};\n    for (const [key, value] of Object.entries(item.values)) {\n        if (TELEMETRY.includes(key)) {\n            values[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(values).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in values) {\n        const deployments = telemetryDeployments(values.deployments);\n        if (deployments === null) {\n            delete values.deployments;\n        } else {\n            values.deployments = deployments;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    return \"ts\" in item ? { ts: item.ts, values } : { values };\n}\n\n// What the Sharing page chose, sent with the deployments attribute. The two choices count only for the server they\n// were made for (sharing.host); the exact location goes only over https.\nfunction chosen() {\n    const host = normaliseHost(thingsboard.host);\n    const counts = host !== null && normaliseHost(sharing.host) === host;\n    const exact = counts && sharing.exact_location === true;\n    const publicMap = counts && sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\";\n    // the attribute describes the server it is sent to: the target and notice version are for the host they were chosen for\n    const target = (counts && (sharing.target === \"maintainer\" || sharing.target === \"own\")) ? sharing.target : null;\n    const notice_version = (counts && typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null;\n    const survey_id = (typeof place.survey_id === \"string\" && place.survey_id !== '') ? place.survey_id : null;\n    const lat = numberOf(place.lat);\n    const lon = numberOf(place.lon);\n    const point = lat !== null && lon !== null;\n    const https = typeof thingsboard.url === \"string\" && /^https:\\/\\//i.test(thingsboard.url);\n    return {\n        consents: { share_data: true, exact_location: exact, public_map: publicMap, notice_version, target },\n        exact_location: (exact && https && survey_id !== null && point)\n            ? { survey_id, lat: round(lat, 5), lon: round(lon, 5) } : {},\n        public_map: (publicMap === \"rounded_point\" && target === \"maintainer\" && point)\n            ? { survey_id, mode: \"rounded_point\", lat: round(lat, 3), lon: round(lon, 3) } : {},\n    };\n}\n\n// client attributes with only the listed keys, or null when none is left\nfunction attributes(payload) {\n    if (!isMapping(payload)) {\n        warnOnce(\"upload:attributes\", \"ThingsBoard upload: left out attributes that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, value] of Object.entries(payload)) {\n        if (ATTRIBUTES.includes(key)) {\n            kept[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(kept).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in kept) {\n        // one row per sensor; deploymentTopLevel names the survey and holds no coordinates\n        if (isMapping(kept.deployments)) {\n            const rows = {};\n            for (const [name, row] of Object.entries(kept.deployments)) {\n                if (isMapping(row)) {\n                    rows[name] = row;\n                } else {\n                    warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n                }\n            }\n            for (const [name, row] of Object.entries(rows)) {\n                if (name !== \"deploymentTopLevel\") {\n                    reRound(row);\n                }\n            }\n            kept.deployments = rows;\n            Object.assign(kept, chosen());\n        } else {\n            warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n            delete kept.deployments;\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a copy, so the rows other nodes hold aren't re-rounded under them (function nodes have no structuredClone)\nfunction copy(value) {\n    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));\n}\n\n// a new message with only the type and the payload: nothing else an upstream node left on msg reaches the request\nif (msg.type === \"telemetry\") {\n    const many = Array.isArray(msg.payload);\n    const items = copy(many ? msg.payload : [msg.payload]).map(telemetryItem).filter((item) => item !== null);\n    if (items.length === 0) {\n        return null;\n    }\n    return { type: \"telemetry\", payload: many ? items : items[0] };\n}\nif (msg.type === \"attributes\") {\n    const kept = attributes(copy(msg.payload));\n    return kept === null ? null : { type: \"attributes\", payload: kept };\n}\nwarnOnce(\"upload:type\", \"ThingsBoard upload: left out a message that is neither telemetry nor attributes.\");\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1680,
+        "y": 120,
+        "wires": [
+            [
+                "9b8c2bcc16a637fd"
+            ]
+        ]
+    },
+    {
+        "id": "bdf528df320bdff6",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "name": "record upload result",
+        "func": "// How the ThingsBoard server answered the last upload, for the control app's status page (GET /tm-internal/status).\n// Fed by \"tb post http api\" and by this tab's catch node. It reads the status code and, from the catch node, only\n// the id of the node the error came from: the request's URL holds the access token, and the answer and an error's\n// text can quote it. It logs nothing.\nconst UPLOAD = \"677a57bbf3619854\";  // tb post http api\n\nlet failure = null;\nif (Object.prototype.hasOwnProperty.call(msg, \"error\")) {\n    // the catch node: only an error from the upload counts, and it means the server wasn't reached\n    const source = (msg.error !== null && typeof msg.error === \"object\") ? msg.error.source : null;\n    if (source === null || typeof source !== \"object\" || source.id !== UPLOAD) {\n        return null;\n    }\n    failure = \"unreachable\";\n} else {\n    // a request that got no answer has an error code (ECONNREFUSED) or nothing here\n    const code = msg.statusCode;\n    if (typeof code !== \"number\" || !Number.isFinite(code)) {\n        failure = \"unreachable\";\n    } else if (code >= 200 && code <= 299) {\n        failure = null;\n    } else if (code === 401 || code === 403) {\n        failure = \"refused\";\n    } else if (code >= 400 && code <= 499) {\n        failure = \"rejected\";\n    } else {\n        failure = \"server_error\";\n    }\n}\n\nconst stored = global.get(\"tm_status.upload\") || {};\nconst upload = {\n    last_ok_at: stored.last_ok_at || null,\n    last_failure_at: stored.last_failure_at || null,\n    last_failure: stored.last_failure || null,\n};\nconst now = new Date().toISOString();\nif (failure === null) {\n    upload.last_ok_at = now;\n} else {\n    upload.last_failure_at = now;\n    upload.last_failure = failure;\n}\nglobal.set(\"tm_status.upload\", upload);\nreturn null;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2350,
+        "y": 320,
+        "wires": []
     },
     {
         "id": "df6ac2f42ac6d8c7",
@@ -7346,7 +7307,8 @@
         "y": 40,
         "wires": [
             [
-                "5fc376fb123914c0"
+                "5fc376fb123914c0",
+                "bdf528df320bdff6"
             ]
         ]
     },
@@ -7517,7 +7479,7 @@
         "y": 200,
         "wires": [
             [
-                "9b8c2bcc16a637fd"
+                "ae3349867027d005"
             ]
         ]
     },
@@ -8024,7 +7986,7 @@
         "z": "f7932be9acc7391c",
         "g": "f034ca2ecdf9a2f6",
         "name": "format system info client-side attributes",
-        "func": "const newPayload = {\n    sysinfo_tmVersion: msg.payload.tmVersion,\n    sysinfo_osHostname: msg.payload.osHostname,\n    sysinfo_osRelease: msg.payload.osRelease,\n    sysinfo_osTimeZone: msg.payload.osTimeZone,\n    sysinfo_deviceName: msg.payload.deviceName,\n    sysinfo_frigateVersion: msg.payload.frigateVersion,\n    sysinfo_ssid: msg.payload.ssid,\n    sysinfo_ipv4Address: msg.payload.ipv4Address\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
+        "func": "const newPayload = {\n    sysinfo_tmVersion: msg.payload.tmVersion,\n    sysinfo_osHostname: msg.payload.osHostname,\n    sysinfo_osRelease: msg.payload.osRelease,\n    sysinfo_osTimeZone: msg.payload.osTimeZone,\n    sysinfo_deviceName: msg.payload.deviceName,\n    sysinfo_frigateVersion: msg.payload.frigateVersion\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -8033,44 +7995,6 @@
         "libs": [],
         "x": 410,
         "y": 1120,
-        "wires": [
-            [
-                "75f7976086cc9838"
-            ]
-        ]
-    },
-    {
-        "id": "4af0d78e8bc39647",
-        "type": "link in",
-        "z": "f7932be9acc7391c",
-        "g": "f034ca2ecdf9a2f6",
-        "name": "backup link in",
-        "links": [
-            "7c96d66a8330a4fc"
-        ],
-        "x": 175,
-        "y": 1180,
-        "wires": [
-            [
-                "0b62cae60d488c85"
-            ]
-        ]
-    },
-    {
-        "id": "0b62cae60d488c85",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "f034ca2ecdf9a2f6",
-        "name": "format config backup client-side attribute",
-        "func": "const newPayload = {\n    backup_config: msg.payload\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 420,
-        "y": 1180,
         "wires": [
             [
                 "75f7976086cc9838"
@@ -8145,366 +8069,6 @@
             [
                 "8c521232f464d27a"
             ]
-        ]
-    },
-    {
-        "id": "c49d311e5668de52",
-        "type": "link in",
-        "z": "f7932be9acc7391c",
-        "g": "f034ca2ecdf9a2f6",
-        "name": "init-config device attributes link in",
-        "links": [
-            "2fa46892748adc43"
-        ],
-        "x": 175,
-        "y": 1300,
-        "wires": [
-            [
-                "9941048ea93dc79c"
-            ]
-        ]
-    },
-    {
-        "id": "9941048ea93dc79c",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "f034ca2ecdf9a2f6",
-        "name": "format init-config client-side attributes",
-        "func": "// A copy goes to ThingsBoard: Frigate's camera names stay on the device. \"init config defaults\" already takes\n// frigate_camera out of the config; this strips it again, so a name can't reach ThingsBoard if that changes\nconst copy = JSON.parse(JSON.stringify(msg.payload));\nfor (const camera of Object.values(copy?.sensors?.cameras ?? {})) {\n    if (camera && typeof camera === \"object\") {\n        delete camera.frigate_camera;\n    }\n}\n\nconst newPayload = {\n    config_tm: copy\n}\n\nmsg.payload = newPayload;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 410,
-        "y": 1300,
-        "wires": [
-            [
-                "75f7976086cc9838"
-            ]
-        ]
-    },
-    {
-        "id": "f49c1d345cdfef57",
-        "type": "change",
-        "z": "f7932be9acc7391c",
-        "g": "b781cb3d6df38fed",
-        "name": "set up backup payload for TB",
-        "rules": [
-            {
-                "t": "move",
-                "p": "payload",
-                "pt": "msg",
-                "to": "payload.frigate_config",
-                "tot": "msg"
-            },
-            {
-                "t": "set",
-                "p": "payload.dateTime",
-                "pt": "msg",
-                "to": "",
-                "tot": "date"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 1060,
-        "y": 1680,
-        "wires": [
-            [
-                "7c96d66a8330a4fc"
-            ]
-        ]
-    },
-    {
-        "id": "7c96d66a8330a4fc",
-        "type": "link out",
-        "z": "f7932be9acc7391c",
-        "g": "b781cb3d6df38fed",
-        "name": "backup link out",
-        "mode": "link",
-        "links": [
-            "4af0d78e8bc39647"
-        ],
-        "x": 1275,
-        "y": 1680,
-        "wires": []
-    },
-    {
-        "id": "4d376b9ae709214b",
-        "type": "http request",
-        "z": "f7932be9acc7391c",
-        "g": "b781cb3d6df38fed",
-        "name": "fetch frigate /api/config/raw",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/config/raw",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "application/json",
-                "valueValue": ""
-            }
-        ],
-        "x": 760,
-        "y": 1680,
-        "wires": [
-            [
-                "f49c1d345cdfef57"
-            ]
-        ]
-    },
-    {
-        "id": "56cafb11de5348b2",
-        "type": "http request",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "name": "read config file from ThingsBoard",
-        "method": "GET",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 780,
-        "y": 1780,
-        "wires": [
-            [
-                "7555653f37b1cd50"
-            ]
-        ]
-    },
-    {
-        "id": "25515211bb8cecb4",
-        "type": "http request",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "name": "validate Frigate config, save and restart",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "http://frigate:5000/api/config/save?save_option=restart",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [
-            {
-                "keyType": "Content-Type",
-                "keyValue": "",
-                "valueType": "text/plain",
-                "valueValue": ""
-            }
-        ],
-        "x": 1240,
-        "y": 1820,
-        "wires": [
-            [
-                "64467a90df93e582"
-            ]
-        ]
-    },
-    {
-        "id": "64467a90df93e582",
-        "type": "switch",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "name": "handle validation error",
-        "property": "statusCode",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "400",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 1320,
-        "y": 1860,
-        "wires": [
-            [
-                "5b7fe362e2e6b35d"
-            ]
-        ]
-    },
-    {
-        "id": "7555653f37b1cd50",
-        "type": "json",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "name": "",
-        "property": "payload",
-        "action": "",
-        "pretty": false,
-        "x": 990,
-        "y": 1780,
-        "wires": [
-            [
-                "0d394a2d73d138d6"
-            ]
-        ]
-    },
-    {
-        "id": "0d394a2d73d138d6",
-        "type": "function",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "name": "extract frigate config portion for validation",
-        "func": "let newMsg = {};\n\n//put the backed up YAML config into a JSON object to send to validate\nnewMsg.payload = msg.payload.client.backup.frigate;\n\nreturn newMsg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1220,
-        "y": 1780,
-        "wires": [
-            [
-                "25515211bb8cecb4"
-            ]
-        ]
-    },
-    {
-        "id": "5b7fe362e2e6b35d",
-        "type": "ui_toast",
-        "z": "f7932be9acc7391c",
-        "g": "a38a90c36a0abfc3",
-        "position": "top right",
-        "displayTime": "3",
-        "highlight": "",
-        "sendall": true,
-        "outputs": 0,
-        "ok": "OK",
-        "cancel": "",
-        "raw": false,
-        "className": "",
-        "topic": "Frigate Config Restore Validation Error",
-        "name": "show frigate validation error",
-        "x": 1340,
-        "y": 1900,
-        "wires": []
-    },
-    {
-        "id": "0372cefb5e2ec968",
-        "type": "ui_button",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "",
-        "group": "941fb260d6cfb5a2",
-        "order": 3,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Restore TM Configuration",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 250,
-        "y": 1720,
-        "wires": [
-            [
-                "2a5881f8fd7df9ff"
-            ]
-        ]
-    },
-    {
-        "id": "2a5881f8fd7df9ff",
-        "type": "template",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "backup read msg.url",
-        "field": "url",
-        "fieldType": "msg",
-        "format": "handlebars",
-        "syntax": "mustache",
-        "template": "{{{global.config.thingsboard.url}}}/api/v1/{{{env.TM_THINGSBOARD_ACCESS_TOKEN}}}/attributes?clientKeys=backup",
-        "output": "str",
-        "x": 470,
-        "y": 1720,
-        "wires": [
-            [
-                "56cafb11de5348b2"
-            ]
-        ]
-    },
-    {
-        "id": "cad1724850f8df3d",
-        "type": "ui_button",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "name": "",
-        "group": "941fb260d6cfb5a2",
-        "order": 2,
-        "width": 0,
-        "height": 0,
-        "passthru": false,
-        "label": "Backup TM Configuration",
-        "tooltip": "",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "",
-        "payload": "",
-        "payloadType": "str",
-        "topic": "topic",
-        "topicType": "msg",
-        "x": 250,
-        "y": 1680,
-        "wires": [
-            [
-                "4d376b9ae709214b"
-            ]
-        ]
-    },
-    {
-        "id": "fb62ca91f138ab87",
-        "type": "ui_template",
-        "z": "f7932be9acc7391c",
-        "g": "23636f4163fa6e3b",
-        "group": "941fb260d6cfb5a2",
-        "name": "backup and restore instructions",
-        "order": 1,
-        "width": 0,
-        "height": 0,
-        "format": "<p>Backup and Restore functionality allow you to save settings to ThingsBoard as client-side attributes for returning your traffic monitor to the saved configuration.</p>\n<p>Backup and Restore works for the following configs:</p>\n<ul>\n    <li>Frigate config.yml</li>\n</ul>\n<p>Only one (1) backup is valid at a time.</p>",
-        "storeOutMessages": true,
-        "fwdInMessages": false,
-        "resendOnRefresh": false,
-        "templateScope": "local",
-        "className": "",
-        "x": 270,
-        "y": 1640,
-        "wires": [
-            []
         ]
     },
     {

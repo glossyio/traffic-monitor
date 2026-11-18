@@ -22,12 +22,14 @@ from tm_control.modules.detection.inventory import MODEL_FILE_MAX
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.reconcile import backup_dir
 from tm_control.modules.setup.eula import load_eula
+from tm_control.modules.sharing.notice import load_notice
 
 API_PREFIX = "/api/v1"
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the app. A bad state, secret, manifest, or EULA fails it at startup, not on the first request."""
+    """Build the app. A bad state, secret, manifest, EULA, or sharing notice fails it at startup, not on the first
+    request."""
     settings = settings or Settings.from_env()
     settings.state_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     state = State(settings.state_dir / "state.sqlite")
@@ -40,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             secrets.read(name)
     manifest = load_manifest(settings.manifest_path)
     eula = load_eula(settings.eula_path)
+    notice = load_notice()
 
     # The interactive docs only in fake mode; `app.openapi()` works either way.
     app = FastAPI(
@@ -54,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.secrets = secrets
     app.state.manifest = manifest
     app.state.eula = eula
+    app.state.notice = notice  # the sharing notice
     app.state.sessions = Sessions(secrets.session_key)
     app.state.nr_token = NodeRedToken(secrets.node_red_token_key)
     app.state.login_backoff = Backoff()
@@ -79,7 +83,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Each report reconciles the places first (decision 5), so the Location check reads the result.
     app.state.status = StatusCache(
         check_groups,
-        lambda: Context(app.state.settings, app.state.manifest, app.state.secrets, app.state.state),
+        lambda: Context(
+            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version
+        ),
         prepare=lambda: reconcile.for_status_report(app.state),
     )
     install_error_handlers(app)

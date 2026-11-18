@@ -1,8 +1,9 @@
 // The Location page: the place in use, the precision, and the list of places, for admins only.
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
+import * as download from '../src/components/download'
 import { button, click, clickInDialog, dialogButtons, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type PlacesState = components['schemas']['PlacesState']
@@ -152,6 +153,88 @@ describe('the Location page', () => {
     expect(text).toContain('Not set')
   })
 
+  it('says what is shared on the place in use: nothing, data, or data and the exact location', async () => {
+    const sharing = async (state: PlacesState['sharing']) => {
+      signedIn(ADMIN, { [SURVEYS]: { ...PLACES, sharing: state } })
+      const { wrapper } = await mountApp('/location')
+      const line = wrapper.find('.v-card').findAll('.text-body-2').find((d) => d.text() === 'Sharing')
+      const value = line?.element.nextElementSibling?.textContent?.trim()
+      wrapper.unmount()
+      return value
+    }
+    expect(await sharing('none')).toBe('Not sharing')
+    expect(await sharing('data')).toBe('Sharing: data')
+    expect(await sharing('exact')).toBe('Sharing: data and the exact location')
+  })
+
+  describe('Exact locations', () => {
+    afterEach(() => vi.restoreAllMocks())
+    const EXPORT = 'GET /api/v1/surveys/export'
+    const CSV = 'id,lat,lon\na1b2c3d4-si,45.52252,-122.69120\n'
+    const csvFile = () =>
+      new Response(CSV, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="traffic-monitor-places.csv"',
+        },
+      })
+
+    it('sits below Places and says what the file is', async () => {
+      signedIn(ADMIN, { [SURVEYS]: PLACES })
+      const { wrapper } = await mountApp('/location')
+      const headings = wrapper.findAll('section > h2').map((h) => h.text())
+      expect(headings).toEqual(['Places', 'Exact locations', 'Precision'])
+      const note = wrapper.findAll('section > h2')[1].element.nextElementSibling as HTMLElement
+      expect(note.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        "The database keeps a rounded location. This file lists each place's exact one, by place id.",
+      )
+      expect(button(wrapper, 'Export exact locations')).toBeDefined()
+    })
+
+    it('asks first, and fetches nothing until the admin confirms', async () => {
+      const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [EXPORT]: csvFile })
+      const save = vi.spyOn(download, 'saveBlob').mockImplementation(() => {})
+      const { wrapper } = await mountApp('/location')
+      await click(wrapper, 'Export exact locations')
+      expect(dialogText()).toContain(
+        'This file says exactly where the device has been. Anyone you give it to can match it to the database by place id.',
+      )
+      expect(api.sent.some((r) => r.path === '/api/v1/surveys/export')).toBe(false)
+      expect(save).not.toHaveBeenCalled()
+
+      await clickInDialog('Export')
+      expect(api.sent.filter((r) => r.path === '/api/v1/surveys/export')).toHaveLength(1)
+      expect(save).toHaveBeenCalledTimes(1)
+      const [blob, name] = save.mock.calls[0]
+      expect(name).toBe('traffic-monitor-places.csv')
+      expect(await (blob as Blob).text()).toBe(CSV)
+    })
+
+    it('fetches nothing when the admin cancels', async () => {
+      const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [EXPORT]: csvFile })
+      const save = vi.spyOn(download, 'saveBlob').mockImplementation(() => {})
+      const { wrapper } = await mountApp('/location')
+      await click(wrapper, 'Export exact locations')
+      await clickInDialog('Cancel')
+      expect(api.sent.some((r) => r.path === '/api/v1/surveys/export')).toBe(false)
+      expect(save).not.toHaveBeenCalled()
+    })
+
+    it("shows the API's message and saves nothing when the export fails", async () => {
+      signedIn(ADMIN, {
+        [SURVEYS]: PLACES,
+        [EXPORT]: apiError(500, 'error', 'The places could not be read.'),
+      })
+      const save = vi.spyOn(download, 'saveBlob').mockImplementation(() => {})
+      const { wrapper } = await mountApp('/location')
+      await click(wrapper, 'Export exact locations')
+      await clickInDialog('Export')
+      expect(wrapper.text()).toContain('The places could not be read.')
+      expect(save).not.toHaveBeenCalled()
+    })
+  })
+
   it('lists the places in use, planned, then used, and marks the imported one', async () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
@@ -226,14 +309,14 @@ describe('the Location page', () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
     const sections = wrapper.findAll('section > h2')
-    expect(sections.map((h) => h.text())).toEqual(['Places', 'Precision'])
-    expect(sections[1].classes()).toEqual(sections[0].classes())
+    expect(sections.map((h) => h.text())).toEqual(['Places', 'Exact locations', 'Precision'])
+    expect(sections[2].classes()).toEqual(sections[0].classes())
 
-    const note = sections[1].element.nextElementSibling as HTMLElement
+    const note = sections[2].element.nextElementSibling as HTMLElement
     expect(note.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       "To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A " +
         'shared copy of the database holds only the rounded location. This device keeps the exact location you enter, ' +
-        "outside the database. A later update will let you choose to export the database with each place's exact " +
+        "outside the database. A later update will let you export a copy of the database with each place's exact " +
         'location, for analysis and mapping.',
     )
     const card = wrapper.find('.v-card').element

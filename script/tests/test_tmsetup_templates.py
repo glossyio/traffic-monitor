@@ -696,10 +696,10 @@ def frigate_plus_lines(key):
 
 
 def test_frigate_env_renders_the_frigate_plus_key_from_the_secrets():
-    """The key is set on the Device page and kept in the secrets, so -f writes it back rather than blanking it."""
+    """The key is set on the Detection page and kept in the secrets, so -f writes it back rather than blanking it."""
     comment, line = frigate_plus_lines(PLACEHOLDER_KEY)
     assert line == f"PLUS_API_KEY={PLACEHOLDER_KEY}"
-    assert comment.startswith("#") and "Device page" in comment
+    assert comment.startswith("#") and "Detection page" in comment
     assert frigate_plus_lines("")[1] == "PLUS_API_KEY="
 
 
@@ -798,9 +798,10 @@ def test_node_red_env_template_has_the_internal_token():
 def test_node_red_env_template_carries_the_entered_tokens():
     """The flows read both tokens from the environment; their values come from the secrets directory."""
     lines = render_node_red_env(NO_LOGIN).splitlines()
-    for line in ("TM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001", "TM_PLATE_RECOGNIZER_TOKEN=pr-placeholder-0002"):
+    for line, page in (("TM_THINGSBOARD_ACCESS_TOKEN=tb-placeholder-0001", "Sharing page"),
+                       ("TM_PLATE_RECOGNIZER_TOKEN=pr-placeholder-0002", "Device page")):
         index = lines.index(line)
-        assert lines[index - 1].startswith("# ") and "Device page" in lines[index - 1]
+        assert lines[index - 1].startswith("# ") and page in lines[index - 1]
 
 
 def test_plate_recognizer_env_template_renders_from_the_secrets():
@@ -813,13 +814,25 @@ def test_plate_recognizer_env_template_renders_from_the_secrets():
 
 
 def test_node_red_config_template_has_no_secret_key():
-    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Device page."""
+    """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Sharing page."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
               "tmsetup_bearing": "n"}
     text = render("container/node-red-tm/config/config.yml.j2", **values)
     assert "access_token" not in text
     assert "addons" not in text
     assert set(yaml.safe_load(text)["thingsboard"]) == {"enabled", "host", "protocol"}
+
+
+def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_page():
+    text = render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml"))
+    config = yaml.safe_load(text)
+    assert set(config) == {"thingsboard", "deployment", "sensors"}
+    assert config["thingsboard"]["enabled"] is False
+    assert config["thingsboard"]["host"] == "tb.roadwaybiome.com"
+    comments = [line for line in text.splitlines() if line.strip().startswith("#")]
+    assert comments[0].strip() == ("# The access token isn't kept in this file. Set it, and choose what's shared, "
+                                   "on the control app's Sharing page.")
+    assert not any("Device page" in line for line in text.splitlines())
 
 
 def test_node_red_config_template_has_no_time_section():

@@ -51,6 +51,21 @@ def test_status_and_eula_are_open(client):
     assert r.status_code == 200 and r.json()["version"] == "1" and "placeholder" in r.json()["markdown"]
 
 
+def test_the_eula_and_the_sharing_notice_load_with_their_own_markers(client, settings, tmp_path):
+    from tm_control.modules.setup.eula import load_eula, load_versioned
+    from tm_control.modules.sharing.notice import NOTICE_PATH, load_notice
+
+    assert load_eula(settings.eula_path) == client.app.state.eula
+    assert client.app.state.eula.version == "1"
+    notice = client.app.state.notice
+    assert notice == load_notice() == load_versioned(NOTICE_PATH, "notice")
+    assert notice.version == "2026-11" and notice.markdown.startswith("# Sharing with Traffic Monitor's server")
+    with pytest.raises(ValueError, match="notice-version"):
+        load_versioned(settings.eula_path, "notice")  # the EULA's marker isn't the notice's
+    with pytest.raises(ValueError, match="eula-version"):
+        load_eula(NOTICE_PATH)
+
+
 def test_status_gives_the_theme_before_anyone_logs_in(client):
     """The setup and login pages use the device's colors, so the open status carries the manifest's theme."""
     assert COOKIE_NAME not in client.cookies

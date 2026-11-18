@@ -56,7 +56,12 @@ const stored = computed(() => {
   return formatStored(lat, lon, places)
 })
 
-const sharingLine = sharing === 'data' ? 'Sharing: data, rounded location' : 'Not sharing'
+const SHARING_LINES = {
+  none: 'Not sharing',
+  data: 'Sharing: data, rounded location',
+  exact: 'Sharing: data and the exact location',
+}
+const sharingLine = SHARING_LINES[sharing]
 
 const deploying = ref(false)
 const error = ref('')

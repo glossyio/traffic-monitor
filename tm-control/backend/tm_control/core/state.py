@@ -78,6 +78,20 @@ MIGRATIONS = [
     );
     CREATE INDEX survey_corrections_survey ON survey_corrections (survey_id);
     """,
+    # What the owner agreed to share, one row per change (design: the Sharing page). The latest row per target and
+    # consent is the answer; older rows are the history. A deleted user leaves the row with no user.
+    """
+    CREATE TABLE sharing_consents (
+        id INTEGER PRIMARY KEY,
+        target TEXT NOT NULL,  -- 'maintainer' | 'own:<host>'
+        consent TEXT NOT NULL CHECK (consent IN ('share_data', 'exact_location', 'public_map')),
+        granted INTEGER NOT NULL CHECK (granted IN (0, 1)),
+        notice_version TEXT NOT NULL,  -- the notice's version, 'own-server', or 'pre-consent'
+        at TEXT NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        note TEXT
+    );
+    """,
 ]
 
 

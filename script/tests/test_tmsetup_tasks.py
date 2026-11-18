@@ -1244,3 +1244,12 @@ def test_the_setup_code_notice_points_at_the_card():
     msg = " ".join(notice["ansible.builtin.debug"]["msg"].split())
     assert msg.endswith("The code works once. For the device's hotspot name and password, run sudo tm-control card on it.")
     assert "hotspot_password" not in msg and "tmsetup_secrets" not in msg
+
+
+def test_the_default_upload_host_is_the_maintainers_server():
+    """The role's two values for the maintainer's server agree, and neither is the old placeholder."""
+    defaults = load_role_yaml("defaults/main.yml")
+    role_vars = load_role_yaml("vars/main.yml")
+    assert defaults["tmsetup_thingsboard_server"] == role_vars["tmsetup_sharing_maintainer_host"]
+    assert defaults["tmsetup_thingsboard_server"] != "tb.server.com"
+    assert role_vars["tmsetup_sharing_public_map_live"] is False

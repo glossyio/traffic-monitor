@@ -1100,6 +1100,21 @@
         }
       }
     },
+    "/api/v1/surveys/export": {
+      "get": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Export Places",
+        "description": "The places as a CSV with their exact coordinates (five decimals, empty for a place with none) and no\ndescription, for an admin to keep or hand to the server's operator. The audit row holds the row count only.",
+        "operationId": "export_places_api_v1_surveys_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
     "/api/v1/surveys/import": {
       "post": {
         "tags": [
@@ -1479,6 +1494,104 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/sharing": {
+      "get": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Get Sharing",
+        "description": "Where the upload goes and what is shared, after config.yml is followed. Node-RED not answering isn't an error:\nthe server's state is unknown.",
+        "operationId": "get_sharing_api_v1_sharing_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharingState"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Save Sharing",
+        "description": "Save the server and the choices: config.yml first, the consent rows second. Changing the server withdraws\nevery choice recorded for any other one.",
+        "operationId": "save_sharing_api_v1_sharing_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharingState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sharing/notice": {
+      "get": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Get Notice",
+        "operationId": "get_notice_api_v1_sharing_notice_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoticeOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sharing/reviewed": {
+      "post": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Mark Reviewed",
+        "description": "The admin reviewed an upload found on (the Status page's \"Review sharing\").",
+        "operationId": "mark_reviewed_api_v1_sharing_reviewed_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           }
         }
       }
@@ -2956,6 +3069,44 @@
         ],
         "title": "Claim"
       },
+      "ConsentOut": {
+        "properties": {
+          "granted": {
+            "type": "boolean",
+            "title": "Granted"
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "notice_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "granted",
+          "at",
+          "notice_version"
+        ],
+        "title": "ConsentOut",
+        "description": "The latest row recorded for a choice and the server the upload goes to; granted false with no row."
+      },
       "Credentials": {
         "properties": {
           "username": {
@@ -4371,6 +4522,24 @@
         ],
         "title": "NewUser"
       },
+      "NoticeOut": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "markdown": {
+            "type": "string",
+            "title": "Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "markdown"
+        ],
+        "title": "NoticeOut"
+      },
       "Ntp": {
         "properties": {
           "enabled": {
@@ -4463,8 +4632,9 @@
           "sharing": {
             "type": "string",
             "enum": [
+              "none",
               "data",
-              "none"
+              "exact"
             ],
             "title": "Sharing"
           },
@@ -4809,6 +4979,42 @@
         ],
         "title": "SecretsState"
       },
+      "ServerStatus": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "off",
+              "waiting",
+              "ok",
+              "stale",
+              "unreachable",
+              "refused",
+              "rejected",
+              "server_error",
+              "unknown"
+            ],
+            "title": "State"
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "at"
+        ],
+        "title": "ServerStatus"
+      },
       "Service": {
         "properties": {
           "unit": {
@@ -4858,6 +5064,222 @@
           "restartable"
         ],
         "title": "Service"
+      },
+      "SharingIn": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "maintainer",
+              "own"
+            ],
+            "title": "Target"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 253
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "https"
+            ],
+            "title": "Protocol",
+            "default": "https"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 65535.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "exact_location": {
+            "type": "boolean",
+            "title": "Exact Location"
+          },
+          "public_map": {
+            "type": "string",
+            "enum": [
+              "none",
+              "rounded_point"
+            ],
+            "title": "Public Map"
+          },
+          "notice_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target",
+          "enabled",
+          "exact_location",
+          "public_map"
+        ],
+        "title": "SharingIn"
+      },
+      "SharingState": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "maintainer",
+                  "own"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "http",
+              "https"
+            ],
+            "title": "Protocol"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port"
+          },
+          "maintainer_host": {
+            "type": "string",
+            "title": "Maintainer Host"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SecretState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "share_data": {
+            "$ref": "#/components/schemas/ConsentOut"
+          },
+          "exact_location": {
+            "$ref": "#/components/schemas/ConsentOut"
+          },
+          "public_map": {
+            "$ref": "#/components/schemas/ConsentOut"
+          },
+          "public_map_live": {
+            "type": "boolean",
+            "title": "Public Map Live"
+          },
+          "notice_version": {
+            "type": "string",
+            "title": "Notice Version"
+          },
+          "notice_current": {
+            "type": "boolean",
+            "title": "Notice Current"
+          },
+          "review_needed": {
+            "type": "boolean",
+            "title": "Review Needed"
+          },
+          "has_location": {
+            "type": "boolean",
+            "title": "Has Location"
+          },
+          "precision": {
+            "type": "string",
+            "enum": [
+              "none",
+              "1",
+              "2"
+            ],
+            "title": "Precision"
+          },
+          "writable": {
+            "type": "boolean",
+            "title": "Writable"
+          },
+          "server": {
+            "$ref": "#/components/schemas/ServerStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "target",
+          "host",
+          "protocol",
+          "port",
+          "maintainer_host",
+          "token",
+          "share_data",
+          "exact_location",
+          "public_map",
+          "public_map_live",
+          "notice_version",
+          "notice_current",
+          "review_needed",
+          "has_location",
+          "precision",
+          "writable",
+          "server"
+        ],
+        "title": "SharingState"
       },
       "SidecarForm": {
         "properties": {

@@ -105,6 +105,20 @@ def test_an_older_manifest_without_network_loads_the_defaults(tmp_path):
     assert (network.wifi_device, network.hotspot_profile, network.hotspot_address) == ("wlan0", "tm-hotspot", "10.42.0.1")
 
 
+def test_the_fixture_manifest_names_the_sharing_values():
+    sharing = load_manifest(FIXTURES / "manifest.json").sharing
+    assert (sharing.maintainer_host, sharing.public_map_live) == ("tb.example.invalid", False)
+
+
+def test_an_older_manifest_without_sharing_loads_the_defaults(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["sharing"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    sharing = load_manifest(path).sharing
+    assert (sharing.maintainer_host, sharing.public_map_live) == ("tb.roadwaybiome.com", False)
+
+
 def test_the_fixture_manifest_names_the_coral_model():
     manifest = load_manifest(FIXTURES / "manifest.json")
     assert list(manifest.frigate.coral_model) == ["model_type", "width", "height", "path", "labelmap_path"]

@@ -31,9 +31,11 @@ def audit_actions(settings):
         con.close()
 
 
-def test_status_module_comes_right_after_jobs_secrets_detection_location_and_cameras():
+def test_status_module_comes_right_after_jobs_secrets_detection_location_sharing_and_cameras():
     ids = [m.id for m in MODULES]
-    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 6] == ["secrets", "detection", "location", "cameras", "status"]
+    assert ids[ids.index("jobs") + 1:ids.index("jobs") + 7] == [
+        "secrets", "detection", "location", "sharing", "cameras", "status",
+    ]
 
 
 def test_status_needs_a_session(claimed_client):

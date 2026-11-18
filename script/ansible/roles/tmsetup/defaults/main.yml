@@ -46,7 +46,9 @@ tmsetup_radar_paths:
   - /dev/ttyACM2
   - /dev/ttyACM3
 
-tmsetup_thingsboard_server: 'tb.server.com'
+# The maintainer's server, as tmsetup_sharing_maintainer_host in vars/main.yml (a literal here, so the template
+# tests render from the defaults alone)
+tmsetup_thingsboard_server: 'tb.roadwaybiome.com'
 tmsetup_thingsboard_protocol: 'https'
 tmsetup_thingsboard_port: '443'
 

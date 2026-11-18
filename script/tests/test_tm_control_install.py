@@ -118,6 +118,18 @@ def test_the_manifest_carries_the_hotspot_values():
     assert (parsed.wifi_device, parsed.hotspot_profile, parsed.hotspot_address) == ("wlan0", "tm-hotspot", "10.42.0.1")
 
 
+def test_the_manifest_carries_the_sharing_values():
+    role_vars = load_role_yaml("vars/main.yml")
+    sharing = collected_manifest()["sharing"]
+    assert sharing == {
+        "maintainer_host": role_vars["tmsetup_sharing_maintainer_host"],
+        "public_map_live": role_vars["tmsetup_sharing_public_map_live"],
+    }
+    assert json.loads(rendered_manifest())["sharing"] == sharing
+    parsed = Manifest.model_validate(json.loads(rendered_manifest())).sharing
+    assert (parsed.maintainer_host, parsed.public_map_live) == ("tb.roadwaybiome.com", False)
+
+
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
 

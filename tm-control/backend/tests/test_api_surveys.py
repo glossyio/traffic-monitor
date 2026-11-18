@@ -131,6 +131,22 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
     assert file_data(admin)["deployment"]["survey_id"] == place["id"]
 
 
+def test_places_say_what_is_shared(admin):
+    """sharing is none with the upload off, data with it on, and exact with the exact location chosen for its server."""
+    from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
+
+    admin.app.state.secrets.entered[THINGSBOARD_ACCESS_TOKEN] = "tb-placeholder-0001"
+    version = admin.app.state.notice.version
+    choice = {"target": "maintainer", "enabled": True, "exact_location": False, "public_map": "none",
+              "notice_version": version}
+    assert places(admin)["sharing"] == "none"
+    assert admin.put("/api/v1/sharing", json=choice, headers=ORIGIN).status_code == 200
+    assert places(admin)["sharing"] == "data"
+    choice["exact_location"] = True
+    assert admin.put("/api/v1/sharing", json=choice, headers=ORIGIN).status_code == 200
+    assert places(admin)["sharing"] == "exact"
+
+
 def test_create_a_planned_place_and_list_order(admin):
     in_use = first_place(admin)
     first = create(admin, "First planned", bearings=[bearing(CAMERA, " E ")])
@@ -803,3 +819,48 @@ def test_the_fake_engine_closes_a_removed_sensors_row(admin):
     path.write_text(path.read_text().replace(off, "        TM_RADAR_SERIAL_PORT_00:\n            enabled: false\n"))
     admin.app.state.nodered.after_config_write()
     assert rows(admin, in_use) == list(after.values())
+
+
+# The exact-locations file
+
+
+def export(client):
+    return client.get("/api/v1/surveys/export")
+
+
+def test_export_is_admin_only_and_has_no_description(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    place = create(claimed_client, MAIN_ST, lat=45.52252, lon=-122.69120)
+    r = export(claimed_client)
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "text/csv; charset=utf-8"
+    assert r.headers["content-disposition"] == 'attachment; filename="traffic-monitor-places.csv"'
+    lines = r.text.splitlines()
+    assert lines[0] == "survey_id,lat,lon,status,created_at,updated_at"
+    assert len(lines) == 1 + len(places(claimed_client)["surveys"])
+    mine = next(line for line in lines if line.startswith(place["id"] + ","))
+    assert mine.startswith(f"{place['id']},45.52252,-122.69120,planned,")
+    assert len(mine.split(",")) == 6
+    assert "Main St" not in r.text and MAIN_ST not in r.text
+    assert ("survey.export", str(len(lines) - 1)) in audit_rows(claimed_client)
+    assert "45.52252" not in str([detail for _, detail in audit_rows(claimed_client)])
+
+    claimed_client.cookies.clear()
+    assert export(claimed_client).status_code == 401
+    Users(claimed_client.app.state.state).create(*VIEWER, "viewer")
+    login(claimed_client, *VIEWER)
+    assert export(claimed_client).status_code == 403
+
+
+def test_export_lists_the_places_in_the_lists_order(admin):
+    create(admin, "First", lat=45.1, lon=-122.2)
+    create(admin, "Second", lat=45.3, lon=-122.4)
+    listed = [place["id"] for place in places(admin)["surveys"]]
+    body = export(admin).text.splitlines()[1:]
+    assert [line.split(",")[0] for line in body] == listed
+
+
+def test_export_writes_an_empty_pair_for_no_location(admin):
+    place = create(admin, "Somewhere", lat=None, lon=None)
+    line = next(line for line in export(admin).text.splitlines() if line.startswith(place["id"] + ","))
+    assert line.startswith(f"{place['id']},,,planned,")

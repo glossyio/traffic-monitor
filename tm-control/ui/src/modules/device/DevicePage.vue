@@ -1,7 +1,8 @@
 <!--
   The Device page (GET /system/info): the device card, the software versions, and for admins the tokens and keys
-  (GET /secrets, one EnteredSecret form each but the Frigate+ key's, which is on the Detection page, in a section that
-  opens when tapped or when the link names it), the diagnostics file (GET /system/diagnostics), and the power buttons
+  (GET /secrets, one EnteredSecret form each but the Frigate+ key's, which is on the Detection page, and the
+  ThingsBoard token's, which is on the Sharing page, in a section that opens when tapped or when the link names it),
+  the diagnostics file (GET /system/diagnostics), and the power buttons
   (POST /system/reboot and /system/power-off, each after a confirmation). Viewers see the card and the versions only.
   The card also sums up the network (GET /network), when that can be read.
 -->
@@ -54,8 +55,8 @@ async function loadNetwork() {
 }
 
 // The tokens and keys (admins only: the API refuses viewers), loaded again after each save or remove. The section
-// starts closed, unless the link that opened the page names it (the Status page's "Set the token"); then it starts
-// open, and the page scrolls to it once the device has answered.
+// starts closed, unless the link that opened the page names it (#tokens-and-keys); then it starts open, and the page
+// scrolls to it once the device has answered.
 const SECRETS_ID = 'tokens-and-keys'
 const linkedToSecrets = route.hash === `#${SECRETS_ID}`
 const secretsOpen = ref<string | null>(linkedToSecrets ? SECRETS_ID : null)
@@ -66,8 +67,9 @@ async function loadSecrets() {
   secretsError.value = ''
   try {
     const { data } = await api.GET('/api/v1/secrets')
-    // The Frigate+ key's form is on the Detection page
-    secrets.value = (data?.secrets ?? []).filter((secret) => secret.name !== 'frigate_plus_api_key')
+    // The Frigate+ key's form is on the Detection page, and the ThingsBoard token's is on the Sharing page
+    const elsewhere = ['frigate_plus_api_key', 'thingsboard_access_token']
+    secrets.value = (data?.secrets ?? []).filter((secret) => !elsewhere.includes(secret.name))
   } catch (error) {
     secretsError.value = messageOf(error)
   }
@@ -322,6 +324,8 @@ async function powerAction() {
                 <p class="text-body-1 mt-8">
                   The Frigate+ API key is on the
                   <router-link to="/detection#frigate-plus" class="text-primary">Detection page</router-link>.
+                  The ThingsBoard token is on the
+                  <router-link to="/sharing" class="text-primary">Sharing page</router-link>.
                 </p>
               </v-expansion-panel-text>
             </v-expansion-panel>

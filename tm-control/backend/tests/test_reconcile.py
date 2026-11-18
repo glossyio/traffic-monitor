@@ -14,6 +14,8 @@ from tm_control.core.manifest import load_manifest
 from tm_control.core.state import State
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.places import Bearing, Places
+from tm_control.modules.sharing import follow
+from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents
 
 FIXTURES = Path(__file__).parent / "fixtures"
 FIXTURE_POINT = "lat: 45.0\n    lon: -122.0\n"
@@ -35,6 +37,7 @@ class StubNodeRed:
         self.calls = []
         self.corrections = []
         self.correction_error = None
+        self.config_writes = 0  # calls to after_config_write
 
     def _call(self, name, *args):
         self.calls.append((name, *args))
@@ -58,6 +61,9 @@ class StubNodeRed:
         if self.correction_error is not None:
             raise self.correction_error
         self.corrections.append((survey_id, lat, lon))
+
+    def after_config_write(self):
+        self.config_writes += 1
 
     def named(self, name):
         return [call for call in self.calls if call[0] == name]
@@ -767,3 +773,27 @@ def test_a_failed_import_is_finished_on_the_next_run(unit, monkeypatch):
     assert sorted(place.id for place in places.list()) == [FIRST, SECOND]  # no duplicate from the file
     assert (places.in_use().id, places.get(SECOND).status) == (FIRST, "used")
     assert file_deployment(unit)["survey_id"] == FIRST
+
+
+def test_ensure_runs_the_sharing_follow_while_node_red_is_down(unit):
+    edit(unit, "    enabled: false\n    host:", "    enabled: true\n    host:")  # an upgraded unit's upload, on
+    unit.nodered.down = True
+    assert reconcile.ensure(unit).state == "waiting_nodered"
+    share = Consents(unit.state).latest(MAINTAINER)["share_data"]
+    assert (share.granted, share.notice_version, share.user_id) == (True, PRE_CONSENT, None)
+
+
+def test_a_status_report_runs_the_sharing_follow_and_logs_its_error_by_class_name(unit, monkeypatch, caplog):
+    calls = []
+
+    def broken(app_state):
+        calls.append(app_state)
+        raise RuntimeError("synthetic-follow-detail")
+
+    monkeypatch.setattr(follow, "run", broken)
+    with caplog.at_level(logging.WARNING, logger=reconcile.__name__):
+        reconcile.for_status_report(unit)
+    assert calls == [unit]
+    assert Places(unit.state).in_use() is not None  # the places part ran first
+    assert "RuntimeError" in caplog.text and "synthetic-follow-detail" not in caplog.text
+    assert unit.reconcile_lock.acquire(blocking=False)  # released

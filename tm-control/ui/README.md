@@ -121,13 +121,16 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
-  (`EnteredSecret.vue`, the Device page's tokens and keys and the Detection page's Frigate+ key), copying text
+  (`EnteredSecret.vue`, the Device page's tokens and keys, the Detection page's Frigate+ key, and the Sharing page's token), copying text
   (`clipboard.ts`, the diagnostics and the label lists; `CopyButton.vue`, an icon button that copies one value), and
   saving a file (`download.ts`, the diagnostics and the model packages and files).
 - The `network` module is the Network page (`NetworkPage.vue`), the hotspot's settings for admins
   (`HotspotSettings.vue`, its name-or-password dialog `HotspotField.vue`, and `rules.ts`, the name and password rules),
   `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
   internet that the Device page's card reuses.
+- The `sharing` module is the Sharing page (`SharingPage.vue`: the summary card, the review alert, and the polling after
+  a save), its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three
+  sample payloads the "See an example" buttons show.
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
 
 ## Design notes
@@ -185,12 +188,12 @@ Pages before login (setup, login, the license pages) have no menu: one column, a
 a small `tm-01 | Traffic Monitor` line, as in the app bar, above the page title. Pages after login have the app bar and a menu drawer that stays
 open from the `md` breakpoint (960 px) up and slides in below it. Content is left-aligned and at most 760 px wide.
 
-Setup (one page, four steps):
+Setup (one page, five steps):
 
 ```text
 +--------------------------------+
 | Traffic Monitor                |
-| Step 3 of 4                    |
+| Step 3 of 5                    |
 | [=========-----]               |
 |                                |
 | Create the administrator       |
@@ -205,6 +208,12 @@ Setup (one page, four steps):
 | [Back]      [Claim this device]|
 +--------------------------------+
 ```
+
+The fifth step is Sharing. The paragraph (nothing is shared unless the admin turns it on) is always there. When the
+ThingsBoard token is already set (an upgraded device that had one), the Sharing page's own form (`SharingForm` with
+`firstRun`, whose button reads "Save and finish") sits under it; without a token there is no form, since the token
+is entered on the Sharing page later. "Not now" ends setup either way. If the state can't be read, the step is the
+paragraph and "Not now".
 
 Home (desktop; on a phone the drawer hides behind the menu button and the tiles stack):
 
@@ -371,9 +380,9 @@ Device:
 | +------------------------------+ |
 |   opened:                        |
 |   Credentials this device ...    |
-|   ThingsBoard access token       |
+|   Plate Recognizer API token     |
 |   Set, ending in 0001.           |
-|   [ ThingsBoard access token (o)]|
+|   [ Plate Recognizer token   (o)]|
 |   [Save] [Remove]                |
 | Diagnostics                 (h6) |
 | [Download diagnostics] [Copy]    |
@@ -391,13 +400,13 @@ Device:
   box, already selected, with "Copy the text from the box below." A later Copy or Download hides the box again.
   Selecting sets the range as well as calling `select()`, which iOS Safari ignores on a read-only textarea.
 - Tokens and keys is for admins only, between Software and Diagnostics: one form per secret `GET /secrets` lists,
-  but the Frigate+ API key, whose form is on the Detection page. The ThingsBoard access token appears on every
-  device; the Plate Recognizer token and license key appear only on a device with the add-on. The section ends with
-  "The Frigate+ API key is on the Detection page.", the last words a link to `/detection#frigate-plus`, so an admin
-  who looks for the key here finds it. It's one expansion panel,
-  closed when the page opens. The Status page's "Set the token" links to `/device#tokens-and-keys`, which opens it and scrolls to
-  it. The page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns
-  about a missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
+  but the Frigate+ API key, whose form is on the Detection page, and the ThingsBoard access token, whose form is on
+  the Sharing page. The Plate Recognizer token and license key appear only on a device with the add-on. The section
+  ends with "The Frigate+ API key is on the Detection page. The ThingsBoard token is on the Sharing page.", each
+  last phrase a link (`/detection#frigate-plus`, `/sharing`), so an admin who looks for either here finds it. It's
+  one expansion panel, closed when the page opens; a link to `/device#tokens-and-keys` opens it and scrolls to it. The
+  page shows no problem there, so closing it hides nothing a person needs to see: the Status page warns about a
+  missing token. The panel's title, a button, sits inside the `h2`, so the heading stays a heading for
   screen readers. Each form is a small heading
   with the secret's name, a line saying whether it's set ("Set, ending in 0001.", "Set." when the device shows no
   ending, "Not set."), a field that is always empty when the page loads, Save, and Remove when there's something to
@@ -828,6 +837,11 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
+- "Exact locations" sits between the places and the precision: one sentence and one button, "Export exact locations".
+  The button asks first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error colour,
+  because the file is not destroyed, only handed out. The file comes from `GET /surveys/export` and is saved with
+  `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's line
+  say "Sharing: data and the exact location" when the exact location is on.
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
@@ -1374,6 +1388,79 @@ page network, the page that lost the unit, a very long name) were checked with t
   never shows back, but this password is one the person must read and hand to every phone.
 - A refresh timer: an address changes when the unit changes network, and the person has just done that; the page loads
   when opened, and "Try again" reloads it.
+
+### Sharing
+
+The page says what the device uploads and to which server, for everyone signed in, and lets an admin change it. It is
+built from conventional Vuetify parts and no CSS beyond spacing (and one `scroll-margin-top`, as the Device page has,
+so the Status page's "Check the token" link doesn't land under the app bar).
+
+- **Where the state lives.** `SharingPage` reads `GET /sharing` and holds the answer. It passes it to `SharingForm`
+  as a prop. The form copies it into its own fields (server, host, protocol, port, three boxes, "I've read the
+  notice") and sends them with `PUT /sharing`; the API's answer goes back up as `saved` and replaces the page's copy.
+  The form starts its fields again from the state only when the saved choices change, not when the token's state or
+  the server's answer does, so a host typed before the token job finishes isn't lost.
+- **The rules for the boxes are in one place, `SharingForm`.** Each box is its own `ConsentBox`, never ticked unless
+  the saved state says so, never bundled. A box that can't be ticked says why in a line under it ("Set the access
+  token first.", "Turn on Share data first.", "The exact location is only sent over https.", "Not live yet."). A box
+  that is already ticked is never disabled, so a choice can always be withdrawn where it was given: untick it and save.
+  Unticking Share data unticks the other two. Changing the server unticks the exact location and the map (the choices
+  were made for the old server) and asks first, in a dialog, when either was on.
+- **The notice** ("I've read the notice") is for the maintainer's server only. It is needed when the save adds
+  something to what is shared: Share data turned on, the server just changed to the maintainer's, or a choice newly
+  ticked while the notice has changed since it was read; Save stays disabled until it is ticked. A save that only keeps
+  or withdraws choices never needs it, so an admin can withdraw under a changed notice without reading it. While the
+  notice has changed and Share data is on, the box is offered anyway (never pre-ticked), because ticking it is how
+  the grants are recorded under the new version and the Status warning clears. The page sends a notice version only
+  with the box shown and ticked.
+- **The summary card** is the saved state, not the form: it says what is shared, with which server, how the server
+  last answered (in the Status check's words, shorter), and, while sharing is on, which location is sent. Viewers see
+  the card and one sentence. After a save that leaves the upload on, the page reads the state again every 5 seconds
+  for up to a minute while the server's answer is `waiting` or `unknown`.
+- **Two Save buttons.** The token has its own (`EnteredSecret`'s `saveText`, "Save token"; it saves the token through
+  the secrets API and restarts Node-RED), and the form has "Save" for the server and the choices. The token's form
+  also sits in a bordered sheet so the two read as separate.
+- **Polling is quiet.** A failed check while the page waits for the first upload stops the checking and shows nothing,
+  because the form above still works; only the page's first read shows an error.
+
+#### What the screenshot review changed
+
+The page was checked in fake mode at 375 px and 1366 px wide, as an admin (a new device, the token set, Share data and
+the exact location ticked with their examples open, the saved state, the own-server fields, and the question about
+changing the server) and as a viewer.
+
+- The card was titled "What this device shares", the same as the section of boxes below it. It is "Saved settings"
+  now, which also says that it shows what is saved, not what is ticked.
+- The token's field and its Save sat in the page's flow, so the token's Save and the form's Save read as one pair. The
+  token is in a bordered sheet, and its button reads "Save token".
+- The Protocol drop-down had Vuetify's underlined style next to the outlined text fields. It is outlined.
+- "I've read the notice" was 8 px left of the other checkboxes (a negative margin copied from the license page). It
+  lines up with them now.
+- The "Saved." line disappeared at once when the saved state came back with a normalised value (the form started again
+  from it and counted that as an edit). It waits for the form to settle.
+- Looked at and kept: the reason line under a disabled box is in normal text, not the secondary color, because it is
+  the instruction a person needs; the boxes' text wraps to five lines at 375 px, which keeps the words the plan asks for.
+- Looked at and kept: a viewer sees the card and one sentence, with no empty space where the form would be.
+
+The first-run step and the Location page's "Exact locations" were checked the same way, in fake mode at 375 px and
+1366 px wide (setup with and without a token; the section and its confirmation on the Location page). What changed:
+
+- With no token, "Not now" was a text button with the text button's inner padding, so it sat 20 px right of the
+  paragraph above it, as the only thing on the step. It is a filled button then, and an outlined one under the form's
+  "Save and finish", so the two never look alike.
+- Looked at and kept: the Location page's Precision paragraph still says a later update will export the database with
+  each place's exact location. The new file lists the places, not the database, so the sentence is still true.
+- Looked at and kept: the export confirmation uses the primary colour, not the error colour used for deletes.
+
+#### Defaults rejected
+
+- Switches instead of checkboxes: a switch reads as taking effect at once, and nothing here does until Save.
+- One "I agree" box for all three choices: each choice has its own box, with its own example and its own withdrawal.
+- A tooltip for each example: a phone has no hover. The example opens under the box, in the page's flow.
+- The notice in a dialog: a long text in a dialog scrolls twice on a phone. It opens in place, in the license page's
+  box.
+- Polling for as long as the page is open: the first upload takes a minute at most, and a page left open on a unit
+  with the server down would ask every 5 seconds for ever.
 
 ### The home button
 

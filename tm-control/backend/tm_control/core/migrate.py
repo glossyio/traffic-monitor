@@ -334,7 +334,7 @@ def run(frigate_config, dry_run=False):
 # the Frigate+ API key into frigate.env. tmsetup runs these steps as root, before it renders any of those files, so
 # that -f can't throw away a value's only copy. Each key path, the secret file it moves to, and whether mappings it
 # leaves empty go too.
-# Only a value that meets its secret's pattern (core/secrets.py) moves, as through the Device page: a value the env
+# Only a value that meets its secret's pattern (core/secrets.py) moves, as when it's entered in the control app: a value the env
 # line or the upload URL can't carry never reaches an env file.
 CONFIG_SECRETS = (
     (("thingsboard", "access_token"), THINGSBOARD_ACCESS_TOKEN, False),
@@ -350,7 +350,25 @@ FRIGATE_ENV_SECRETS = (("PLUS_API_KEY", FRIGATE_PLUS_API_KEY),)
 # (_unquoted), so "" is no key and "<key>" moves as the bare key.
 FRIGATE_ENV_PLACEHOLDERS = {""}
 SECRET_FILE_MODE = 0o640  # as tasks/secrets.yml creates them, root:<code group>
-CONFIG_REMEDY = "Enter it on the control app's Device page and delete the key."
+# The page where each entered secret is set; a remedy names it. Keep in step with FORMER_SECRET_PAGES in
+# modules/apps/contracts.py and the pages themselves.
+SECRET_PAGES = {
+    THINGSBOARD_ACCESS_TOKEN: "Sharing",
+    FRIGATE_PLUS_API_KEY: "Detection",
+    PLATE_RECOGNIZER_TOKEN: "Device",
+    PLATE_RECOGNIZER_LICENSE_KEY: "Device",
+}
+
+
+def _enter_on(name):
+    return f"Enter it on the control app's {SECRET_PAGES[name]} page"
+
+
+# The maintainer's upload server. Migrate may not import core/manifest.py (SharingInfo's default), which needs
+# pydantic; a test keeps this equal to it and to the role's tmsetup_sharing_maintainer_host.
+MAINTAINER_HOST = "tb.roadwaybiome.com"
+# The host the old config.yml.j2 shipped as a placeholder; a unit that never changed it never chose it.
+PLACEHOLDER_HOST = "tb.server.com"
 # A number's text as YAML wrote it, up to whatever ends a plain scalar in block or flow style.
 _PLAIN_SCALAR = re.compile(r"[^\s,\[\]{}#]+")
 
@@ -561,6 +579,39 @@ def _remove_sensor_coordinates(config, path, own):
         _delete(config, (*path, "deployment"), False)
 
 
+def _normalized_host(value):
+    """A thingsboard.host as Node-RED compares it (modules/sharing/consents.py's normalize_host, which this module
+    can't import: it pulls in the web dependencies, and migrate must run without them): trimmed, lower-case, without a
+    leading http:// or https:// and without one trailing slash. None for a blank or non-string value."""
+    if not isinstance(value, str):
+        return None
+    host = value.strip().lower()
+    for scheme in ("http://", "https://"):
+        if host.startswith(scheme):
+            host = host[len(scheme):]
+            break
+    if host.endswith("/"):
+        host = host[:-1]
+    return host or None
+
+
+def _placeholder_host_section(data):
+    """The thingsboard mapping when its host is the old placeholder and the upload isn't on; else None."""
+    section = data.get("thingsboard") if isinstance(data, dict) else None
+    if not isinstance(section, dict) or _normalized_host(section.get("host")) != PLACEHOLDER_HOST:
+        return None
+    return None if section.get("enabled") is True else section
+
+
+def _requoted(old, host):
+    """The new host in the quoting the old value had."""
+    if isinstance(old, SingleQuotedScalarString):
+        return SingleQuotedScalarString(host)
+    if isinstance(old, DoubleQuotedScalarString):
+        return DoubleQuotedScalarString(host)
+    return host
+
+
 def _warn_secret(path, message):
     print(f"{PREFIX} WARNING {path}: {message}", file=sys.stderr)
 
@@ -613,10 +664,13 @@ def _run_node_red(config_path, secrets_dir, dry_run):
             continue
         text = _token_text(mapping, key, document.loaded_text)
         if text is None:
-            _warn_secret(config_path, f"{dotted} isn't text; left as it is. {CONFIG_REMEDY}")
+            _warn_secret(config_path, f"{dotted} isn't text; left as it is. {_enter_on(name)} and delete the key.")
             continue
         if not is_valid_value(name, text):
-            _warn_secret(config_path, f"{dotted} isn't {VALUE_RULES[name]}; left as it is. {CONFIG_REMEDY}")
+            _warn_secret(
+                config_path,
+                f"{dotted} isn't {VALUE_RULES[name]}; left as it is. {_enter_on(name)} and delete the key.",
+            )
             continue
         try:
             current = _read_secret(secrets_dir, name)
@@ -646,6 +700,9 @@ def _run_node_red(config_path, secrets_dir, dry_run):
     add_precision = isinstance(deployment, dict) and bool(deployment) and "database_precision" not in deployment
     if add_precision:
         steps.append(("add deployment.database_precision", "added deployment.database_precision"))
+    placeholder_host = _placeholder_host_section(document.data)
+    if placeholder_host is not None:
+        steps.append(("rewrite thingsboard.host", "rewrote thingsboard.host"))
     sensor_coordinates = _sensor_coordinates(document.data)
     for path, _ in sensor_coordinates:
         dotted = ".".join(str(part) for part in path)
@@ -672,6 +729,8 @@ def _run_node_red(config_path, secrets_dir, dry_run):
         # After survey_id, as config.yml.j2 orders them; else after bearing.
         after = "survey_id" if "survey_id" in deployment else "bearing"
         put_after(deployment, "database_precision", SingleQuotedScalarString("2"), after)  # the default, about 1 km
+    if placeholder_host is not None:
+        placeholder_host["host"] = _requoted(placeholder_host["host"], MAINTAINER_HOST)
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
     try:
@@ -798,7 +857,7 @@ def _run_env(env_path, secrets_dir, dry_run, entries, placeholders, normalise=No
             _warn_secret(
                 env_path,
                 f"{key} isn't {VALUE_RULES[name]}, so it wasn't moved, and tmsetup writes the secrets file's "
-                f"value into this file. Enter it on the control app's Device page; {kept}.",
+                f"value into this file. {_enter_on(name)}; {kept}.",
             )
     if not moves:
         print(f"{PREFIX} {env_path}: up to date")

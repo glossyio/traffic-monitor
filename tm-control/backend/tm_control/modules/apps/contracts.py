@@ -1,12 +1,12 @@
 """The configuration check group: the names that Frigate's config and Node-RED's config.yml must agree on, which
 fail silently when they don't (CLAUDE.md, "Cross-component name contracts"), the deployment's location values, the
-ThingsBoard upload's settings, and whether the Frigate+ key and model are paired.
+ThingsBoard upload's settings, what the unit shares, and whether the Frigate+ key and model are paired.
 
 Details name cameras, the zones the flows expect, radars, config.yml keys, and a Frigate+ model's id, never another
-config value. Other zone names, which an operator typed, are counted and never quoted, because details go into Copy
-diagnostics. Log lines are quoted only as checks.validation_messages and checks.traceback_last_line give them, redacted:
-Frigate's validation messages when it starts in safe mode, and the last exception in its journal whenever Frigate
-doesn't answer.
+config value (the Sharing check never names the server or a notice version). Other zone names, which an operator typed,
+are counted and never quoted, because details go into Copy diagnostics. Log lines are quoted only as
+checks.validation_messages and checks.traceback_last_line give them, redacted: Frigate's validation messages when it
+starts in safe mode, and the last exception in its journal whenever Frigate doesn't answer.
 """
 
 import os
@@ -19,9 +19,17 @@ from tm_control.core.checks import Check, CheckGroup, Context, Fix
 from tm_control.core.secrets import FRIGATE_PLUS_API_KEY, THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.checks import REFUSED_KEY, listed, quoted, traceback_last_line, validation_messages
-from tm_control.modules.location.config import camera_entries, read_deployment
+from tm_control.modules.location.config import (
+    camera_entries,
+    read_deployment,
+    read_sharing,
+    sends_public_map,
+    sharing_ignored,
+    sharing_kind,
+)
 from tm_control.modules.location.coordinates import exact
 from tm_control.modules.location.places import Places
+from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents, target_key
 
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
@@ -343,6 +351,8 @@ def location(context: Context) -> list[Check]:
 
 # config.yml keys that held a secret before the secrets moved to their own files. Nothing reads them now.
 FORMER_SECRET_KEYS = (("thingsboard", "access_token"), ("addons", "plate_recognizer", "token"))
+# The page where each of them is set now
+FORMER_SECRET_PAGES = {("thingsboard", "access_token"): "Sharing", ("addons", "plate_recognizer", "token"): "Device"}
 THINGSBOARD_PROTOCOLS = ("http", "https")  # what the flows upload with; init-config turns https into http
 
 
@@ -381,8 +391,8 @@ def thingsboard(context: Context) -> list[Check]:
         return check("error", " ".join(errors))
 
     warnings = [
-        f"config.yml still holds {'.'.join(path)}, which nothing reads. Remove it; the value is set on the Device "
-        "page."
+        f"config.yml still holds {'.'.join(path)}, which nothing reads. Remove it; the value is set on the "
+        f"{FORMER_SECRET_PAGES[path]} page."
         for path in FORMER_SECRET_KEYS
         if _has_key(read.data, path)
     ]
@@ -393,9 +403,73 @@ def thingsboard(context: Context) -> list[Check]:
         warnings.append("thingsboard.host starts with a scheme, so the protocol key is ignored for it. Put only the "
                         "hostname in host.")
     if warnings:
-        fix = Fix(kind="link", text="Set the token", href="/device#tokens-and-keys") if missing_token else None
+        fix = Fix(kind="link", text="Set the token", href="/sharing#token") if missing_token else None
         return check("warn", " ".join(warnings), fix)
     return check("ok", "The upload is on, with a token set." if on else "The upload is off.")
+
+
+# Sharing
+
+SHARING_LINK = Fix(kind="link", href="/sharing", text="Review sharing")
+SHARING_REVIEW = (
+    "This device's upload was turned on without a choice on the Sharing page. It shares data with the location as the "
+    "database stores it. Review the choices."
+)
+SHARING_NOTICE = "The sharing notice has changed. Read it and save your choices again."
+SHARING_NOTICE_UNREAD = "No one has read the sharing notice yet. Read it and save your choices again."
+SHARING_IGNORED = "config.yml's sharing block has a value the device ignores. Save the Sharing page to rewrite it."
+SHARING_WORDS = {
+    "none": "Not sharing.",
+    "data": "Sharing data, with the location as the database stores it.",
+    "exact": "Sharing data and the exact location.",
+}
+
+
+def _notice_warning(context: Context, upload, consents: Consents) -> str | None:
+    """The warning for a unit whose upload is on for the maintainer's server and whose latest granted Share data isn't
+    under the current notice; None when it is, or when this check doesn't apply. A pre-consent share, or none at all,
+    means no one has read the notice yet; an older version means it changed. A pre-consent share is never under the
+    current notice: reviewing a share found on doesn't read it, so only saving the page clears this."""
+    if context.notice_version is None or not upload.enabled:
+        return None
+    if target_key(upload.host, context.manifest.sharing.maintainer_host) != MAINTAINER:
+        return None
+    share = consents.latest(MAINTAINER).get("share_data")
+    if share is None or not share.granted or share.notice_version == PRE_CONSENT:
+        return SHARING_NOTICE_UNREAD
+    return SHARING_NOTICE if share.notice_version != context.notice_version else None
+
+
+def sharing(context: Context) -> list[Check]:
+    """What the unit shares with the server it uploads to, and whether the Sharing page needs a look: the share began
+    before the choices were recorded (the review flag), the maintainer's notice has changed since the choice, or
+    config.yml's sharing block holds a value the device ignores. Never shows the server, a notice version, or a
+    note. Without the state database the flag and the notice are skipped."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="config.sharing", title="Sharing", status=status, detail=detail, fix=fix)]
+
+    read = probes.config_yml(context)
+    shared = read_sharing(read)
+    if shared is None:
+        return check("unknown", f"{CONFIG_YML_PROBLEM[read.problem]}, so its sharing settings can't be checked.")
+    upload, block = shared
+    warnings = []
+    if context.state is not None:
+        consents = Consents(context.state)
+        if consents.review_needed():
+            warnings.append(SHARING_REVIEW)
+        elif notice := _notice_warning(context, upload, consents):
+            warnings.append(notice)
+    if sharing_ignored(read.data):
+        warnings.append(SHARING_IGNORED)
+    if warnings:
+        return check("warn", " ".join(warnings), SHARING_LINK)
+    kind = sharing_kind(upload, block)
+    detail = SHARING_WORDS[kind]
+    if sends_public_map(upload, block):
+        detail += " The public map is on."
+    return check("ok", detail)
 
 
 # Frigate+
@@ -542,5 +616,7 @@ def frigate_plus(context: Context) -> list[Check]:
 
 
 GROUP = CheckGroup(
-    "config", "Configuration", [cameras_in_config, zones, zone_names, radar_names, location, thingsboard, frigate_plus]
+    "config",
+    "Configuration",
+    [cameras_in_config, zones, zone_names, radar_names, location, thingsboard, sharing, frigate_plus],
 )
