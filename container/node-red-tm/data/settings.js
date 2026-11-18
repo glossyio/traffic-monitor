@@ -72,6 +72,12 @@ module.exports = {
     ui: false,
   },
 
+  // The installer pins Node-RED's version, so the editor doesn't ask to send usage data for update notices.
+  telemetry: {
+    enabled: false,
+    updateNotification: false,
+  },
+
   logging: {
     console: {
       level: "info",

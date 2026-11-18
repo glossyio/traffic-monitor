@@ -14,8 +14,8 @@
     },
     "node-red": {
         "settings": {
-            "flowFile": "/data/flows.json",
-            "credentialsFile": "/data/flows_cred.json"
+            "flowFile": "flows.json",
+            "credentialsFile": "flows_cred.json"
         }
     },
     "scripts": {

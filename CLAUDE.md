@@ -170,7 +170,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
 - verify's status codes and `X-TM-*` headers are a contract with `container/revproxy/tm/snippets/auth-*.conf.j2` and the location files that read the `$tm_*` variables. Its download-link answer is a contract with `tm-control-auth.conf.j2` (`X-Forwarded-For`) and the two Dashboard download templates in `flows.json` (`26223a9168dd0050`, `70073189458c7166`), which `script/tests/test_node_red_flows.py` pins.
 
 **Editing `flows.json`:**
-- The documented workflow is the Node-RED editor's Projects feature (`docs/development/dev-environment.md`), but direct edits work too.
+- The documented workflow is the Node-RED editor's Projects feature (`docs/development/dev-environment.md`), but direct edits work too. Projects reads `flowFile` and `credentialsFile` in `data/package.json` as names relative to that file's folder (nothing else reads them); a path there loads no flows (#276, `script/tests/test_node_red_project.py`).
 - Function code is a JSON-escaped string in each node's `func`. Nodes connect through `wires`. Across tabs they connect through `link in`/`link out` nodes, whose `links` arrays hold node ids.
 - Edit programmatically and re-serialize the way Node-RED does, to keep diffs minimal. Either of these reproduces the current file byte-for-byte:
   - JS `JSON.stringify(flows, null, 4)`, with no trailing newline.
