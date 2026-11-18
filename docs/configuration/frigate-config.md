@@ -47,6 +47,14 @@ The Pi camera is set up to produce two streams. Frigate uses `picam_h265_detect`
 
 To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Frigate fills in the `{…}` values from `frigate.env`. Then redraw the [zones](../setup-guide.md#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
 
+## Speed without a radar
+
+Frigate can estimate the speed of an object that crosses a zone set up for it: a zone with exactly four corners, with the real length of each side entered under `distances`. Frigate's [speed estimation](https://docs.frigate.video/configuration/zones/#speed-estimation) page shows how to draw one. Without such a zone, Frigate makes no estimate.
+
+Frigate's unit setting, `ui: unit_system:`, decides the units: with `metric` the side lengths are in metres and the speed in km/h, and with `imperial` they're in feet and the speed in mph. The device reads the setting from Frigate when either of them starts and every ten minutes, so for up to ten minutes after you change it, events can still carry the old unit.
+
+The device saves Frigate's estimate with each event, with its unit and the direction it was moving across the picture, whether or not the radar gave a speed. When the radar gave none, or the camera has no radar, the event's speed is Frigate's, converted to the device's speed unit. [Direction and speed](../data-and-payloads/events-payload.md#direction-and-speed) has the rules. The estimate is rougher than a radar's: it depends on how well the zone's corners and lengths match the road, and it is an average of Frigate's last few estimates for the object.
+
 ## Recordings and snapshots
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](../data-and-payloads/data-overview.md) describes what the device stores.

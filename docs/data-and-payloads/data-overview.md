@@ -16,7 +16,7 @@ The Traffic Monitor is a data collection tool. Everything it collects is process
 
 ## Privacy
 
-We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is [de-identified](https://en.wikipedia.org/wiki/De-identification): it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.
+We believe in [open data](https://en.wikipedia.org/wiki/Open_data): anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is [de-identified](https://en.wikipedia.org/wiki/De-identification): it records what passed (a label), when, how fast, the path it took across the camera's picture, and which zones it went through, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.
 
 Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). To keep them longer, raise the retention there, and treat the device as holding images of people.
 
@@ -27,7 +27,7 @@ With the default settings, the database is de-identified: it holds no images, pl
 The database stops being de-identified if you:
 
 * Install the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on. Plate numbers go into the `plate_recognizer` table. Don't share a database from a device that has ever had the add-on on.
-* Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.
+* Keep a database that an earlier version of the Traffic Monitor recorded while Frigate's face recognition or license plate recognition was on. The `sub_label` column keeps only delivery companies' logos, so a recognized person's or a known plate's name isn't saved, but rows recorded earlier can still hold one.
 * Write identifying details into operator comments.
 * Keep the copy of the database that an upgrade leaves in `db/backup/`. It can hold the exact coordinates from before they were rounded (see [deployment](#deployment)), so don't share it.
 
@@ -41,7 +41,7 @@ Tables for sensors the device doesn't have stay empty.
 
 | Table | Contents | Could identify a person? |
 |---|---|---|
-| `events` | One row per object the camera detected, with direction and speed. See [Events](events-payload.md). | Only through Frigate sub-labels or attributes, if you turn those on |
+| `events` | One row per object the camera detected, with its path, direction, and speed. See [Events](events-payload.md). | No, except rows an earlier version recorded with a recognized person's or plate's name in `sub_label` |
 | `radar_dov` | Detected object velocity readings from the radar | No |
 | `radar_timed_speed_counts` | Counts and average speeds the radar reports every 300 seconds | No |
 | `radar_raw_speed_magnitude` | Raw speed and magnitude readings, three per sample | No |
