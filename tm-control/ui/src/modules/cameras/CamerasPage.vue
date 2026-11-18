@@ -6,9 +6,9 @@
   plates (PUT /cameras/{name}); a new Frigate camera's header (Add as new) opens it to add an entry (POST /cameras).
   The row's marks and its other buttons stay below, open or not. Every write answers with the whole new state, which
   replaces the page's. While Frigate isn't answering, or is in safe mode, its cameras can't be compared: a line says
-  so, the settings stay editable. The actions that need the comparison (Point at this, Add as new, Use a neutral name,
-  Remove) are offered only while `state.frigate` is "ok"; each confirms first, except Add as new. A refused action
-  shows the API's message above the list, and a 409 or 404 loads the list again.
+  so, the settings stay editable. The actions that need the comparison (Point at this, Add as new, Use a neutral
+  camera name, Remove) are offered only while `state.frigate` is "ok"; each confirms first, except Add as new. A
+  refused action shows the API's message above the list, and a 409 or 404 loads the list again.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
@@ -16,7 +16,7 @@ import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import CameraEdit, { type CameraSettings } from './CameraEdit.vue'
-import { issueBoxes, pointChoices, rowState, zonesText, type CameraRow } from './rows'
+import { issueBoxes, otherZonesText, pointChoices, rowState, zoneNote, zonesText, type CameraRow } from './rows'
 
 type CamerasState = components['schemas']['CamerasState']
 
@@ -93,6 +93,15 @@ function frigateLine(row: CameraRow) {
   return zonesText(row)
 }
 
+// The camera's other zones and the note about their names, unless Frigate can't be compared
+function otherZones(row: CameraRow) {
+  return rowState(row) === 'unknown' ? '' : otherZonesText(row)
+}
+
+function noteOf(row: CameraRow) {
+  return rowState(row) === 'unknown' ? null : zoneNote(row)
+}
+
 // An action that sends a request needs Frigate's cameras to compare, so it is offered only while Frigate answers
 const compared = computed(() => state.value?.frigate === 'ok')
 
@@ -103,7 +112,13 @@ function opens(row: CameraRow) {
 
 // Whether a row has anything under its header: marks, its zones, or buttons for what to do with it
 function hasBody(row: CameraRow) {
-  return issueBoxes(row).length > 0 || frigateLine(row) !== '' || actions(row).length > 0
+  return (
+    issueBoxes(row).length > 0 ||
+    noteOf(row) !== null ||
+    frigateLine(row) !== '' ||
+    otherZones(row) !== '' ||
+    actions(row).length > 0
+  )
 }
 
 // The buttons under a row's header, each with what it does; none while Frigate can't be compared
@@ -115,7 +130,8 @@ function actions(row: CameraRow) {
     list.push({ text: `Point ${entry.name} at this`, color: 'primary', variant: 'outlined', pending })
   }
   if (row.name !== null && row.neutral === false) {
-    list.push({ text: 'Use a neutral name', color: 'primary', variant: 'text', pending: { kind: 'neutral', name: row.name } })
+    const pending = { kind: 'neutral' as const, name: row.name }
+    list.push({ text: 'Use a neutral camera name', color: 'primary', variant: 'text', pending })
   }
   if (row.name !== null && (rowState(row) === 'gone' || rowState(row) === 'duplicate')) {
     list.push({ text: 'Remove', color: 'error', variant: 'text', pending: { kind: 'remove', name: row.name } })
@@ -168,12 +184,12 @@ const confirmWords = computed(() => {
   }
   if (what?.kind === 'neutral') {
     return {
-      title: `Use a neutral name for ${what.name}?`,
+      title: `Use a neutral camera name for ${what.name}?`,
       text:
         `New records will be saved under a name like camera_1_3fa9c2 instead of ${what.name}. ` +
         `Records already saved keep the name ${what.name}, and the dashboards' charts start again under the new name. ` +
         'A new deployment starts for this camera.',
-      confirmText: 'Use a neutral name',
+      confirmText: 'Use a neutral camera name',
       color: 'primary',
     }
   }
@@ -347,7 +363,12 @@ async function save(settings: CameraSettings, detect: boolean | null) {
               {{ box.text }}
               <a v-if="box.link" :href="box.link.href" class="d-inline-block">{{ box.link.text }}</a>
             </v-alert>
+            <v-alert v-if="noteOf(row)" variant="tonal" density="compact" class="mb-2 text-body-2" data-zone-note>
+              {{ noteOf(row)?.text }}
+              <a :href="noteOf(row)?.link.href" class="d-inline-block">{{ noteOf(row)?.link.text }}</a>
+            </v-alert>
             <div v-if="frigateLine(row)" class="text-body-2 text-secondary">{{ frigateLine(row) }}</div>
+            <div v-if="otherZones(row)" class="text-body-2 text-secondary" data-other-zones>{{ otherZones(row) }}</div>
             <div v-if="actions(row).length" class="d-flex flex-wrap ga-2 mt-2" data-actions>
               <v-btn
                 v-for="action in actions(row)"

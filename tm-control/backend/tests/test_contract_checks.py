@@ -50,11 +50,11 @@ def config_group_with(apps, preset: dict):
 def test_cameras_match(apps):
     checks = config_group(apps)
     assert list(checks) == [
-        "config.cameras", "config.zones", "config.radars", "config.deployment", "config.thingsboard",
-        "config.frigate_plus",
+        "config.cameras", "config.zones", "config.zone_names", "config.radars", "config.deployment",
+        "config.thingsboard", "config.frigate_plus",
     ]
     assert [c.title for c in checks.values()] == [
-        "Cameras in config.yml", "Zones", "Radar names", "Location", "ThingsBoard upload", "Frigate+",
+        "Cameras in config.yml", "Zones", "Zone names", "Radar names", "Location", "ThingsBoard upload", "Frigate+",
     ]
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
@@ -196,6 +196,9 @@ def test_cameras_and_zones_are_unknown_when_frigate_is_down(apps):
     checks = config_group(apps)
     assert checks["config.cameras"].status == "unknown"
     assert checks["config.zones"].status == "unknown"
+    assert (checks["config.zone_names"].status, checks["config.zone_names"].detail) == (
+        "unknown", "Frigate isn't answering, so the zone names can't be checked."
+    )
     assert checks["config.radars"].status == "ok"
     assert checks["config.deployment"].status == "ok"
     assert checks["config.thingsboard"].status == "ok"
@@ -216,6 +219,11 @@ def test_cameras_and_zones_are_unknown_in_safe_mode(apps):
         "Frigate is in safe mode, with no cameras, so the cameras' zones can't be checked; see the Frigate check under "
         "Apps.",
     )
+    assert (checks["config.zone_names"].status, checks["config.zone_names"].detail) == (
+        "unknown",
+        "Frigate is in safe mode, with no cameras, so the zone names can't be checked; see the Frigate check under "
+        "Apps.",
+    )
     assert checks["config.frigate_plus"].detail == "Frigate+ isn't in use."
 
 
@@ -231,6 +239,9 @@ def test_every_check_is_unknown_when_config_yml_has_a_yaml_error(apps):
         "config.yml has a YAML error, so its cameras can't be compared with Frigate's."
     )
     assert checks["config.zones"].detail == "config.yml has a YAML error, so the cameras' zones can't be checked."
+    assert checks["config.zone_names"].detail == (
+        f"{contracts.CONFIG_YML_PROBLEM['invalid']}, so the zone names can't be checked."
+    )
     assert all("unclosed" not in c.detail for c in checks.values())
 
 
@@ -322,6 +333,59 @@ def test_zones_of_a_camera_disabled_in_config_yml_arent_checked(apps):
     apps.edit_config_yml(disable)
     apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].clear())
     assert config_group(apps)["config.zones"].status == "ok"
+
+
+def add_zones(apps, *names, camera="picam_h265"):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"][camera]["zones"].update(dict.fromkeys(names, {})))
+
+
+def test_zone_names_of_known_and_unknown_words_are_fine(apps):
+    add_zones(apps, "zone_lane_bus", "zone_maple")
+    check = config_group(apps)["config.zone_names"]
+    assert (check.title, check.status, check.fix) == ("Zone names", "ok", None)
+    assert check.detail == "No zone name looks like an address or a person's name."
+
+
+def test_a_zone_name_like_an_address_is_a_warning_that_doesnt_quote_it(apps):
+    add_zones(apps, "zone_1420_oak_st")
+    check = config_group(apps)["config.zone_names"]
+    assert check.status == "warn" and check.fix == contracts.CAMERAS_LINK
+    assert check.detail == (
+        "1 zone name on camera picam_h265 looks like an address or a person's name. A zone's name is saved with "
+        "every event that enters it and shared with the data. The Cameras page shows which; rename it in Frigate."
+    )
+
+
+def test_twenty_zone_names_are_one_count(apps):
+    add_zones(apps, "zone_main_st", "zone_first_ave", *[f"zone_{number}00_elm_st" for number in range(1, 19)])
+    detail = config_group(apps)["config.zone_names"].detail
+    assert detail.startswith("20 zone names on camera picam_h265 look like an address or a person's name.")
+    assert detail.endswith("The Cameras page shows which; rename them in Frigate.")
+    assert "elm" not in detail and "main_st" not in detail and "first_ave" not in detail
+
+
+def test_zone_names_of_several_cameras_are_one_count_naming_each_camera(apps):
+    def edit(config):
+        picam = config["cameras"]["picam_h265"]
+        picam["zones"]["zone_main_st"] = {}
+        config["cameras"]["oak_ave_tele"] = dict(picam, zones=dict(picam["zones"]))
+
+    apps.edit_json(FRIGATE_CONFIG, edit)
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"].update(
+        {NEUTRAL: {"frigate_camera": "oak_ave_tele", "enabled": True}}
+    ))
+    check = config_group(apps)["config.zone_names"]
+    assert check.status == "warn" and check.fix == contracts.CAMERAS_LINK
+    # The dump in edit_config_yml sorts keys, so the neutral name comes first in the file
+    cameras = apps_checks.listed([f"{NEUTRAL} (oak_ave_tele)", "picam_h265"])
+    assert check.detail.startswith(f"2 zone names on cameras {cameras} look like an address or a person's name.")
+    assert "main_st" not in check.detail
+
+
+def test_zone_names_of_a_camera_disabled_in_config_yml_arent_checked(apps):
+    add_zones(apps, "zone_1420_oak_st")
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(enabled=False))
+    assert config_group(apps)["config.zone_names"].status == "ok"
 
 
 def test_radar_name_must_be_an_env_name(apps):
@@ -1134,3 +1198,14 @@ def test_frigate_stopping_for_its_own_restart_is_unknown(apps):
     assert (check.status, check.detail) == unknown
     check = frigate_plus_check(apps, **frigate_stopped(apps, shutdown_tail()))
     assert (check.status, check.detail) == unknown
+
+
+def test_a_zone_key_frigate_made_up_isnt_checked_or_quoted(apps):
+    apps.edit_json(FRIGATE_CONFIG, lambda config: config["cameras"]["picam_h265"]["zones"].update(
+        {"zone_a6669b83": {"friendly_name": "Main St."}}
+    ))
+    assert config_group(apps)["config.zone_names"].status == "ok"
+    add_zones(apps, "zone_1420_oak_st")
+    detail = config_group(apps)["config.zone_names"].detail
+    assert detail.startswith("1 zone name on camera picam_h265 looks like an address or a person's name.")
+    assert "Main" not in detail and "a6669b83" not in detail

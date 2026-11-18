@@ -191,10 +191,22 @@ export function cameraRow(changes: Partial<CameraRow> = {}): CameraRow {
     plate_recognizer: null,
     zones_missing: [],
     zones_off: [],
+    zone_names: [],
     issues: [],
     ...changes,
   }
 }
+
+// A camera's other zones, one of each kind: known words, unknown words, and a name like an address
+export const ZONE_NAMES = [
+  { name: 'zone_lane_bus', check: null, friendly_name: null },
+  { name: 'zone_maple', check: 'unknown_word' as const, friendly_name: null },
+  { name: 'zone_nord', check: 'unknown_word' as const, friendly_name: null },
+  { name: 'zone_1420_oak_st', check: 'pattern' as const, friendly_name: null },
+]
+
+// A zone key Frigate's zone editor made up from a name it couldn't use as a key: not checked, Frigate's name beside it
+export const MADE_UP_ZONE = { name: 'zone_a9bacc03', check: null, friendly_name: 'Bus lane (north)' }
 
 // A Frigate camera that no entry points at
 export function newRow(frigate_camera = 'oak_ave_tele', changes: Partial<CameraRow> = {}): CameraRow {

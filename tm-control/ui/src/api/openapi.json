@@ -2580,7 +2580,8 @@
               "capture_off",
               "detect_off",
               "zones",
-              "radar"
+              "radar",
+              "zone_names"
             ],
             "title": "Code"
           }
@@ -2764,6 +2765,20 @@
             ],
             "title": "Zones Off"
           },
+          "zone_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ZoneName"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Names"
+          },
           "issues": {
             "items": {
               "$ref": "#/components/schemas/CameraIssue"
@@ -2785,7 +2800,8 @@
           "camera_radar",
           "plate_recognizer",
           "zones_missing",
-          "zones_off"
+          "zones_off",
+          "zone_names"
         ],
         "title": "CameraRow"
       },
@@ -5718,6 +5734,48 @@
           "join"
         ],
         "title": "WifiNetworks"
+      },
+      "ZoneName": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "check": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "unknown_word",
+                  "pattern"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check"
+          },
+          "friendly_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Friendly Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "check",
+          "friendly_name"
+        ],
+        "title": "ZoneName",
+        "description": "One of a camera's zones other than the four the flows read, saved by its key with every event that enters it."
       }
     }
   }

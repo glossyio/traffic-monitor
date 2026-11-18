@@ -1345,7 +1345,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar";
+            code: "not_paired" | "duplicate" | "gone" | "camera_off" | "capture_off" | "detect_off" | "zones" | "radar" | "zone_names";
         };
         /** CameraPoint */
         CameraPoint: {
@@ -1390,6 +1390,8 @@ export interface components {
             zones_missing: string[] | null;
             /** Zones Off */
             zones_off: string[] | null;
+            /** Zone Names */
+            zone_names: components["schemas"]["ZoneName"][] | null;
             /**
              * Issues
              * @default []
@@ -2258,6 +2260,18 @@ export interface components {
             /** Scanned Seconds Ago */
             scanned_seconds_ago: number | null;
             join: components["schemas"]["JoinState"] | null;
+        };
+        /**
+         * ZoneName
+         * @description One of a camera's zones other than the four the flows read, saved by its key with every event that enters it.
+         */
+        ZoneName: {
+            /** Name */
+            name: string;
+            /** Check */
+            check: ("unknown_word" | "pattern") | null;
+            /** Friendly Name */
+            friendly_name: string | null;
         };
     };
     responses: never;
