@@ -2990,3 +2990,68 @@ def test_frigate_fields_are_worked_out_while_frigates_name_is_on_the_event():
     fields, vetting = named(flows, "frigate fields"), named(flows, "vet sub_label")
     assert vetting["wires"] == [[fields["id"]]] and fields["wires"] == [[APPEND_CONFIG]]
     assert [node["id"] for node in flows if APPEND_CONFIG in sum(node.get("wires", []), [])] == [fields["id"]]
+
+
+MEDIAN = "c123fc5ed5e14e8a"  # capture-events: calculate median per direction
+MATCH = "673e45159a2dfccf"  # capture-events: match radar speed to event, assign direction
+DOV_PARAMS = "1acba66197b7b0fa"  # capture-radar: write params for radar_dov insert
+FRIGATE_MESSAGE = {"type": "end", "before": {"id": "1.0-abc"}, "after": {"id": "1.0-abc"}}
+
+
+def match(zone_direction, medians, counts=None, radar=True):
+    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+    msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
+           "radar_reading_counts": counts or {}}
+    [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+    found = step["result"]["payload"]
+    return (found.get("calc_event_direction"), found.get("calc_event_speed"), found["status_radarMatch"],
+            found.get("calc_radar_readings"))
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, counts, expected", [
+    ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, ("inbound", 22.5, True, 7)),
+    ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4)),
+    ("inbound", {"outbound": -30.0}, {"outbound": 5}, (None, None, False, None)),
+    (None, {"outbound": -30.0}, {"outbound": 5}, ("outbound", -30.0, True, 5)),
+    (None, {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, (None, None, False, None)),
+    ("outbound", {}, {}, ("outbound", None, False, None)),
+    (None, {}, {}, (None, None, False, None)),
+    ("inbound", {"inbound": 0}, {"inbound": 3}, ("inbound", 0, True, 3)),
+    (None, {"outbound": 0}, {"outbound": 1}, ("outbound", 0, True, 1)),
+    ("inbound", {"inbound": 0, "outbound": -30.0}, {"inbound": 3, "outbound": 2}, ("inbound", 0, True, 3)),
+], ids=["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
+        "zero-match", "zero-assigned", "zero-of-two"])
+def test_direction_and_speed_with_a_radar(zones, medians, counts, expected):
+    assert match(zones, medians, counts) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("zones", ["inbound", "outbound", None])
+def test_a_camera_without_a_radar_gets_its_direction_from_the_zones(zones):
+    assert match(zones, None, radar=False) == (zones, None, False, None)
+
+
+@needs_node
+def test_medians_come_with_the_number_of_readings():
+    rows = [{"direction": "inbound", "velocity": value, "unit": "mph"} for value in (21.0, 22.0, 26.0)]
+    rows += [{"direction": "outbound", "velocity": value, "unit": "mph"} for value in (-30.0, -32.0)]
+    [step] = run_functions([(node_by_id(MEDIAN), {"payload": rows})])["results"]
+    assert step["result"]["payload"] == {"inbound": 22.0, "outbound": -31.0}
+    assert step["result"]["radar_reading_counts"] == {"inbound": 3, "outbound": 2}
+    [step] = run_functions([(node_by_id(MEDIAN), {"payload": []})])["results"]
+    assert step["result"]["payload"] == {} and step["result"]["radar_reading_counts"] == {}
+
+
+@needs_node
+def test_the_last_unit_each_radar_reported_is_remembered():
+    reading = {"time": 1761800000.5, "unit": "mph", "direction": "inbound", "DetectedObjectVelocity": 21.3,
+               "radarName": "TM_RADAR_SERIAL_PORT_00", "deployment_id": "1761800000000-0a1b2c3d-d"}
+    other = {**reading, "radarName": "TM_RADAR_SERIAL_PORT_01", "unit": "kmph"}
+    no_unit = {key: value for key, value in reading.items() if key != "unit"}
+    node = node_by_id(DOV_PARAMS)
+    run = run_functions([(node, {"payload": dict(reading)}), (node, {"payload": other}), (node, {"payload": no_unit})])
+    assert run["global"]["radar_units"] == {"TM_RADAR_SERIAL_PORT_00": "mph", "TM_RADAR_SERIAL_PORT_01": "kmph"}
+    assert run["results"][0]["result"]["params"] == {
+        "$time": 1761800000.5, "$unit": "mph", "$direction": "inbound", "$velocity": 21.3,
+        "$radarName": "TM_RADAR_SERIAL_PORT_00", "$deployment_id": "1761800000000-0a1b2c3d-d"}
