@@ -211,6 +211,138 @@
         "h": 302
     },
     {
+        "id": "b6f20d4e8a1c7395",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate facts",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3a8e5c1f70d2b946",
+            "e17b4d90c6a3f528",
+            "9d4f2a6b18e07c35",
+            "c58a1e3d7f96b024",
+            "71e3b9c5a2d4f806"
+        ],
+        "x": 954,
+        "y": 79,
+        "w": 852,
+        "h": 122
+    },
+    {
+        "id": "3a8e5c1f70d2b946",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "read frigate facts",
+        "props": [],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "10",
+        "topic": "",
+        "x": 1100,
+        "y": 120,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ]
+        ]
+    },
+    {
+        "id": "e17b4d90c6a3f528",
+        "type": "mqtt in",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "",
+        "topic": "frigate/available",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 1100,
+        "y": 160,
+        "wires": [
+            [
+                "9d4f2a6b18e07c35"
+            ]
+        ]
+    },
+    {
+        "id": "9d4f2a6b18e07c35",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "frigate is online",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "online",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 1310,
+        "y": 160,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ]
+        ]
+    },
+    {
+        "id": "c58a1e3d7f96b024",
+        "type": "http request",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "frigate api/config",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1500,
+        "y": 140,
+        "wires": [
+            [
+                "71e3b9c5a2d4f806"
+            ]
+        ]
+    },
+    {
+        "id": "71e3b9c5a2d4f806",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "keep frigate facts",
+        "func": "// Two facts from Frigate's config, kept in memory for \"frigate fields\": each camera's detect width and height, which\n// turn a box in pixels into fractions of the frame, and ui.unit_system, which names the unit of Frigate's speed\n// estimate. Nothing else reads them. The keys of detect are Frigate's camera names; they stay in this flow context.\n// An answer that can't be read keeps the last facts and logs nothing: Frigate restarting is normal.\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction isSize(value) {\n    return typeof value === \"number\" && Number.isFinite(value) && value > 0;\n}\n\nif (msg.statusCode !== 200 || !isMapping(msg.payload) || !isMapping(msg.payload.cameras)) {\n    return null;\n}\nconst ui = isMapping(msg.payload.ui) ? msg.payload.ui : {};\nconst unit_system = (ui.unit_system === \"metric\" || ui.unit_system === \"imperial\") ? ui.unit_system : null;\nconst detect = {};\nfor (const [name, camera] of Object.entries(msg.payload.cameras)) {\n    const size = (isMapping(camera) && isMapping(camera.detect)) ? camera.detect : {};\n    if (isSize(size.width) && isSize(size.height)) {\n        detect[name] = { width: size.width, height: size.height };\n    }\n}\nflow.set(\"frigate_facts\", { unit_system, detect });\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1700,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "71c085648c20e329",
         "type": "group",
         "z": "9269520ddb532b00",

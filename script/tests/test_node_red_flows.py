@@ -1951,15 +1951,15 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 
 
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
-    """Nodes that call Frigate's API (frigate:5000): version, events/summary, and the thumbnail and snapshot of an
-    event id. None puts a camera name in its URL. Frigate's summary lists every camera
+    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts), and the
+    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
     by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
     (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
     camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
     frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
-    assert len(calls) == 4 and not [node["id"] for node in calls if "camera" in node["url"]]
+    assert len(calls) == 5 and not [node["id"] for node in calls if "camera" in node["url"]]
     selects = [node["id"] for node in flows
                if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
     assert selects == [SUMMARY]
@@ -2803,3 +2803,72 @@ def test_every_event_is_vetted_before_any_other_node_reads_it():
     assert (vetting["type"], vetting["outputs"], vetting["z"]) == ("function", 1, tab_id(flows, "capture-events"))
     assert [node["id"] for node in flows if vetting["id"] in sum(node.get("wires", []), [])] == [SET_FRIGATE_EVENT]
     assert APPEND_CONFIG in {node["id"] for node in reachable(by_id, [vetting["id"]])}
+
+
+FRIGATE_CONFIG = {
+    "ui": {"unit_system": "imperial", "timezone": None},
+    "cameras": {
+        "oak_ave_wide": {"detect": {"width": 1280, "height": 720, "fps": 10}, "zones": {}},
+        "side_gate": {"detect": {"width": 1920, "height": 1080}},
+        "no_size": {"detect": {"width": 0, "height": None}},
+        "text_size": {"detect": {"width": "1280", "height": "720"}},
+        "odd": "text",
+    },
+}
+FACTS = {"unit_system": "imperial", "detect": {"oak_ave_wide": {"width": 1280, "height": 720},
+                                                "side_gate": {"width": 1920, "height": 1080}}}
+
+
+def keep_facts(msg, flow=None):
+    node = named(json.loads(FLOWS.read_text()), "keep frigate facts")
+    run = run_functions([(node, msg)], flow={} if flow is None else flow)
+    return run["results"][0], run["flow"]
+
+
+@needs_node
+def test_frigate_facts_are_kept():
+    step, flow = keep_facts({"statusCode": 200, "payload": FRIGATE_CONFIG})
+    assert flow == {"frigate_facts": FACTS}
+    assert step["result"] is None and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("ui, expected", [
+    ({"unit_system": "metric"}, "metric"), ({"unit_system": "imperial"}, "imperial"), ({"unit_system": "Metric"}, None),
+    ({"unit_system": None}, None), ({}, None), (None, None), ("metric", None),
+])
+def test_the_unit_system_is_one_of_frigates_two_or_unknown(ui, expected):
+    _, flow = keep_facts({"statusCode": 200, "payload": {**FRIGATE_CONFIG, "ui": ui}})
+    assert flow["frigate_facts"]["unit_system"] == expected
+
+
+@needs_node
+@pytest.mark.parametrize("msg", [
+    {"statusCode": 500, "payload": FRIGATE_CONFIG}, {"statusCode": 200, "payload": "<html>"},
+    {"statusCode": 200, "payload": None}, {"statusCode": 200, "payload": []}, {"payload": FRIGATE_CONFIG},
+    {"statusCode": 200, "payload": {"ui": {"unit_system": "metric"}}},
+], ids=["error", "text", "null", "list", "no-status", "no-cameras"])
+def test_an_answer_that_cannot_be_read_keeps_the_last_facts(msg):
+    before = {"frigate_facts": {"unit_system": "metric", "detect": {"oak_ave_wide": {"width": 640, "height": 360}}}}
+    step, flow = keep_facts(msg, flow=json.loads(json.dumps(before)))
+    assert flow == before and step["result"] is None and step["logged"] == []
+
+
+def test_frigate_facts_are_read_at_start_when_frigate_comes_back_and_every_ten_minutes():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate facts")
+    [request] = [node for node in flows if node["type"] == "http request" and keep["id"] in sum(node["wires"], [])]
+    assert (request["method"], request["url"], request["ret"]) == ("GET", "http://frigate:5000/api/config", "obj")
+    sources = [node for node in flows if request["id"] in sum(node.get("wires", []), [])]
+    assert sorted(node["type"] for node in sources) == ["inject", "switch"]
+    inject = next(node for node in sources if node["type"] == "inject")
+    assert (inject["once"], str(inject["onceDelay"]), str(inject["repeat"])) == (True, "10", "600")
+    switch = next(node for node in sources if node["type"] == "switch")
+    assert (switch["property"], switch["rules"]) == ("payload", [{"t": "eq", "v": "online", "vt": "str"}])
+    [available] = [node for node in flows if switch["id"] in sum(node.get("wires", []), [])]
+    assert (available["type"], available["topic"], available["broker"]) == ("mqtt in", "frigate/available",
+                                                                           "a5d65dd0e3566daa")
+    capture = tab_id(flows, "capture-events")
+    assert {node["z"] for node in (keep, request, inject, switch, available)} == {capture}
+    assert keep["wires"] == [[]]
