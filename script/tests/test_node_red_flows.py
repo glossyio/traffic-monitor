@@ -2872,3 +2872,121 @@ def test_frigate_facts_are_read_at_start_when_frigate_comes_back_and_every_ten_m
     capture = tab_id(flows, "capture-events")
     assert {node["z"] for node in (keep, request, inject, switch, available)} == {capture}
     assert keep["wires"] == [[]]
+
+
+AFTER = {
+    "id": "1761800000.123456-abc123", "camera": "oak_ave_wide", "label": "car", "sub_label": None,
+    "frame_time": 1761800004.2, "start_time": 1761800000.1, "end_time": 1761800004.3,
+    "box": [960, 360, 1280, 540], "snapshot": {"frame_time": 1761800002.1, "box": [320, 180, 640, 360], "score": 0.9},
+    "average_estimated_speed": 38.6, "velocity_angle": 172.4, "entered_zones": ["zone_near", "zone_far"],
+    "path_data": [[[0.25, 0.5], 1761800000.1], [[0.5, 0.52], 1761800002.1], [[0.8751, 0.55], 1761800004.2]],
+}
+METRIC = {"unit_system": "metric", "detect": {"oak_ave_wide": {"width": 1280, "height": 720}}}
+FIELDS = {
+    "path_data": AFTER["path_data"], "box": [0.75, 0.5, 0.25, 0.25], "best_box": [0.25, 0.25, 0.25, 0.25],
+    "best_frame_time": 1761800002.1, "frigate_speed": 38.6, "frigate_speed_unit": "kph",
+    "frigate_velocity_angle": 172.4,
+}
+NO_FIELDS = dict.fromkeys(FIELDS)
+
+
+def frigate_fields(facts=METRIC, **changes):
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    msg = {"frigate_event": {**AFTER, **changes}, "payload": {"type": "end"}}
+    [step] = run_functions([(node, msg)], flow={} if facts is None else {"frigate_facts": facts})["results"]
+    assert step["logged"] == []
+    assert step["result"]["frigate_event"] == msg["frigate_event"]  # the event itself is left alone
+    return step["result"]["frigate_fields"]
+
+
+@needs_node
+def test_frigate_fields_from_an_end_message():
+    fields = frigate_fields()
+    assert fields == FIELDS and list(fields) == list(FIELDS)
+    assert "oak_ave_wide" not in json.dumps(fields)
+
+
+@needs_node
+@pytest.mark.parametrize("facts", [None, {"unit_system": None, "detect": {}},
+                                   {"unit_system": "metric", "detect": {"another_camera": {"width": 1280, "height": 720}}}],
+                         ids=["not-read-yet", "empty", "another-camera"])
+def test_without_the_cameras_facts_there_are_no_boxes(facts):
+    fields = frigate_fields(facts)
+    assert fields["box"] is None and fields["best_box"] is None
+    assert fields["path_data"] == AFTER["path_data"] and fields["best_frame_time"] == 1761800002.1
+    assert fields["frigate_speed"] == 38.6 and fields["frigate_velocity_angle"] == 172.4
+    assert fields["frigate_speed_unit"] == ("kph" if facts and facts["unit_system"] else None)
+
+
+@needs_node
+def test_imperial_is_mph():
+    assert frigate_fields({**METRIC, "unit_system": "imperial"})["frigate_speed_unit"] == "mph"
+
+
+@needs_node
+@pytest.mark.parametrize("speed", [0, 0.0, -3.2, None, "38", MISSING])
+def test_frigates_zero_is_no_estimate(speed):
+    after = dict(AFTER)
+    if speed is MISSING:
+        del after["average_estimated_speed"]
+    else:
+        after["average_estimated_speed"] = speed
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    [step] = run_functions([(node, {"frigate_event": after})], flow={"frigate_facts": METRIC})["results"]
+    fields = step["result"]["frigate_fields"]
+    assert (fields["frigate_speed"], fields["frigate_speed_unit"], fields["frigate_velocity_angle"]) == (None, None, None)
+    assert fields["box"] == FIELDS["box"]
+
+
+@needs_node
+def test_a_long_path_keeps_a_hundred_points_first_and_last():
+    path = [[[round(index / 250, 4), 0.5], 1761800000.0 + index] for index in range(250)]
+    kept = frigate_fields(path_data=path)["path_data"]
+    assert kept == [path[int(index * 249 / 99 + 0.5)] for index in range(100)]
+    assert kept[0] == path[0] and kept[-1] == path[-1]
+    assert frigate_fields(path_data=path[:100])["path_data"] == path[:100]
+    assert len(frigate_fields(path_data=path[:101])["path_data"]) == 100
+
+
+@needs_node
+def test_a_path_holds_numbers_only():
+    good = AFTER["path_data"]
+    mixed = [good[0], [[0.1, 0.2], "t"], ["x"], [[0.1], 1.0], [[None, 0.2], 1.0], {"a": 1}, "Jane Doe", good[1],
+             [[0.1, 0.2, 0.3], 1.0], [[0.1, 0.2], 1.0, 2.0], good[2]]
+    assert frigate_fields(path_data=mixed)["path_data"] == good
+    for path in ("Jane Doe", None, {}, [], [["x"]], 7):
+        assert frigate_fields(path_data=path)["path_data"] is None
+
+
+@needs_node
+@pytest.mark.parametrize("box", [[960, 360, 1280], [960, 360, 1280, "540"], [1280, 360, 960, 540], None, "box",
+                                 [960, 360, 1280, 540, 1], [960, 360, 1280, None]])
+def test_a_box_that_is_not_four_numbers_in_order_is_empty(box):
+    fields = frigate_fields(box=box, snapshot={"frame_time": "soon", "box": box})
+    assert (fields["box"], fields["best_box"], fields["best_frame_time"]) == (None, None, None)
+
+
+@needs_node
+@pytest.mark.parametrize("snapshot", [None, "text", {}, MISSING])
+def test_an_event_without_a_best_frame(snapshot):
+    after = {key: value for key, value in AFTER.items() if key != "snapshot"}
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    event = after if snapshot is MISSING else {**after, "snapshot": snapshot}
+    [step] = run_functions([(node, {"frigate_event": event})], flow={"frigate_facts": METRIC})["results"]
+    fields = step["result"]["frigate_fields"]
+    assert (fields["best_box"], fields["best_frame_time"], fields["box"]) == (None, None, FIELDS["box"])
+
+
+@needs_node
+def test_frigate_fields_survive_an_event_that_is_not_a_mapping():
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    for event in (None, "text", []):
+        [step] = run_functions([(node, {"frigate_event": event})], flow={"frigate_facts": METRIC})["results"]
+        assert step["result"]["frigate_fields"] == NO_FIELDS
+
+
+def test_frigate_fields_are_worked_out_while_frigates_name_is_on_the_event():
+    flows = json.loads(FLOWS.read_text())
+    fields, vetting = named(flows, "frigate fields"), named(flows, "vet sub_label")
+    assert vetting["wires"] == [[fields["id"]]] and fields["wires"] == [[APPEND_CONFIG]]
+    assert [node["id"] for node in flows if APPEND_CONFIG in sum(node.get("wires", []), [])] == [fields["id"]]
