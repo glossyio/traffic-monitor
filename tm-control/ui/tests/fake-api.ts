@@ -34,7 +34,9 @@ export function apiError(status: number, code: string, message: string): Respons
 // `answers` maps "METHOD /path" to a body (sent as 200), a Response, or a function of the request.
 export function fakeApi(answers: Record<string, Answer>) {
   const sent: Sent[] = []
-  const fetch = vi.fn(async (request: Request) => {
+  // The API client sends a Request; the home button's script sends a path and its options
+  const fetch = vi.fn(async (input: Request | string, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(new URL(input, window.location.href), init)
     const path = new URL(request.url).pathname
     sent.push({ method: request.method, path, body: await bodyOf(request) })
     const answer = answers[`${request.method} ${path}`]
@@ -51,8 +53,13 @@ export const THEME = {
   colors: { background: '#0C1120', header_text: '#3a82ff', body_text: '#f8fafc', link_hover_text: '#8895a7' },
 }
 
-export function status(claimed: boolean, accepted = claimed, hotspot: { local_name: string } | null = null) {
-  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot }
+export function status(
+  claimed: boolean,
+  accepted = claimed,
+  hotspot: { local_name: string } | null = null,
+  hostname: unknown = 'tm-01',
+) {
+  return { claimed, eula: { version: '1', accepted }, theme: THEME, hotspot, hostname }
 }
 
 export const ADMIN = { id: 1, username: 'owner', role: 'admin', created_at: '2026-10-27T12:00:00+00:00' }

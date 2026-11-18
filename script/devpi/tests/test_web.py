@@ -502,9 +502,78 @@ VIEWER_STATUSES = [("/nr/", 403), ("/feeds/", 403), ("/storefiles?files=x", 403)
 
 @pytest.mark.parametrize("path, expected", VIEWER_STATUSES, ids=[path for path, _ in VIEWER_STATUSES])
 def test_viewer_gets_403_on_admin_paths(address, viewer_session, path, expected):
-    """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list."""
+    """A viewer opens the dashboards and Frigate, and gets 403 on the admin apps and on tm-control's user list.
+
+    The request sends no Accept header, as a script would; a page load gets the admin-only page instead
+    (test_a_viewers_page_load_on_an_admin_app_goes_to_the_admin_only_page).
+    """
     status = status_from_this_machine(address, path, cookie=viewer_session)
     assert status == expected, f"{path} with a viewer session answered {status}"
+
+
+SCRIPT_LINE = b'<script src="/home-button.js" defer></script></head>'
+PAGE = {"Accept": "text/html,application/xhtml+xml", "Accept-Encoding": "gzip"}
+APP_PAGES = ["/dashboard/", "/frigate/", "/ui/", "/nr/", "/feeds/", "/feeds/stream.html"]
+
+
+@pytest.mark.parametrize("path", APP_PAGES)
+def test_app_pages_carry_the_home_button(address, admin_session, path):
+    """nginx adds the script line to each app's page, once, and serves the page uncompressed to do it. No app may
+    send a Content-Security-Policy, which could block the script."""
+    answer = request_from_this_machine(address, path, cookie=admin_session, headers=PAGE)
+    found = (answer.status, answer.headers.get("Content-Encoding"), answer.body.count(SCRIPT_LINE),
+             answer.headers.get("Content-Security-Policy"))
+    assert found == (200, None, 1, None), f"{path}: (status, Content-Encoding, script lines, Content-Security-Policy)"
+
+
+def test_the_editors_node_html_gets_no_script_line(address, admin_session):
+    """The Node-RED editor fetches its nodes' HTML with Accept: text/html. A node package whose editor HTML holds a
+    literal </head> would get the line there; none does today."""
+    answer = request_from_this_machine(address, "/nr/nodes", cookie=admin_session, headers=PAGE)
+    found = (answer.status, answer.body.count(SCRIPT_LINE))
+    assert found == (200, 0), "/nr/nodes: (status, script lines)"
+
+
+def test_what_isnt_a_page_load_stays_compressed(address, admin_session):
+    """The Dashboard compresses its page when asked; a request that isn't a page load must still get that."""
+    answer = request_from_this_machine(address, "/dashboard/", cookie=admin_session,
+                                       headers={"Accept": "*/*", "Accept-Encoding": "gzip"})
+    found = (answer.status, answer.headers.get("Content-Encoding"))
+    assert found == (200, "gzip"), "/dashboard/: (status, Content-Encoding)"
+
+
+def test_home_button_script_is_served_without_a_login(address):
+    """/home-button.js loads with no session, as JavaScript, is never served stale, and fits its size limit."""
+    answer = request_from_this_machine(address, "/home-button.js")
+    kind = (answer.headers.get("Content-Type") or "").split(";")[0]
+    found = (answer.status, kind, answer.headers.get("Cache-Control"), len(answer.body) <= 10240)
+    assert found == (200, "application/javascript", "no-cache", True), \
+        "/home-button.js: (status, type, Cache-Control, within 10240 bytes)"
+
+
+def test_setup_status_names_the_unit_without_a_login(host, address):
+    """The login, setup, and license pages put the unit's name in the tab and the title. Only whether it matches
+    comes back, so no device name reaches the output."""
+    answer = request_from_this_machine(address, f"{API}/setup/status")
+    body = answer.json() if answer.status == 200 else {}
+    same = isinstance(body, dict) and body.get("hostname") == host.run("hostname").stdout.strip()
+    assert (answer.status, same) == (200, True), "GET /setup/status without a session: (status, names this unit)"
+
+
+def test_the_favicon_is_served_without_a_login(address):
+    """The control app's tab icon. Vite copies public/ files with their own mode, and the sources arrive with no
+    world read, so a file nginx's worker can't read answers 403 and the browser shows another app's icon."""
+    answer = request_from_this_machine(address, "/favicon.svg")
+    kind = (answer.headers.get("Content-Type") or "").split(";")[0]
+    assert (answer.status, kind) == (200, "image/svg+xml"), "/favicon.svg: (status, type)"
+
+
+@pytest.mark.parametrize("path", ["/nr/", "/feeds/", "/storefiles?files=x"])
+def test_a_viewers_page_load_on_an_admin_app_goes_to_the_admin_only_page(address, viewer_session, path):
+    """A viewer who opens an admin app in a browser lands on /admin-only, not on a bare 403."""
+    answer = request_from_this_machine(address, path, cookie=viewer_session, headers={"Accept": "text/html"})
+    found = (answer.status, answer.headers.get("Location"))
+    assert found == (302, "/admin-only"), f"{path}: (status, Location)"
 
 
 COCKPIT_PORT = 9090

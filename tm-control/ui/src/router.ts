@@ -11,6 +11,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     adminOnly?: boolean // only admins may open it
     bare?: boolean // shown without the menu, before login or while the license is outstanding
+    title?: string // the page's name in the tab, for a page with no entry in the menu
   }
 }
 
@@ -35,6 +36,7 @@ export function redirectFor(to: RouteLocationNormalized, access: Access): RouteL
     return to.path === page ? true : page
   }
   if (to.path === '/welcome' || to.path === '/waiting') return '/'
+  if (to.path === '/admin-only' && access.user.role === 'admin') return '/'
   if (to.meta.adminOnly && access.user.role !== 'admin') return '/'
   return true
 }

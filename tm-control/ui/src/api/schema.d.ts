@@ -58,7 +58,8 @@ export interface paths {
          *     Only nginx's internal /_auth locations call verify, and only they set X-TM-Required-Role (viewer or admin);
          *     nginx refuses the path from the network and clears the header on /api/. Any other call gets 404 and no identity.
          *     401 with X-TM-Redirect sends the browser to /setup, /login?next=..., /welcome (an admin, while a new license
-         *     agreement waits), or /waiting (a viewer, meanwhile). 403 is forbidden.
+         *     agreement waits), /waiting (a viewer, meanwhile), or /admin-only (a viewer's page load, an Accept that names
+         *     text/html, on an admin path). Anything else a viewer asks of an admin path is 403, forbidden.
          *     200 carries X-TM-User, X-TM-Role, X-TM-Frigate-Secret, and for admins X-TM-NR-Token.
          *     Without a session, a good download link (POST /download-link) passes once: 200 with X-TM-User and X-TM-Role only,
          *     no other secret and no cookie. A login redirect's next= leaves the link's token out.
@@ -155,8 +156,9 @@ export interface paths {
         };
         /**
          * Status
-         * @description Also the device's home-page theme, so the setup and login pages use its colors before anyone logs in, and, when
-         *     the page came over the hotspot (nginx sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
+         * @description Also the device's home-page theme and its name, so the setup, login, and license pages use its colors and name
+         *     the unit before anyone logs in (mDNS announces the name anyway), and, when the page came over the hotspot (nginx
+         *     sets X-TM-Hotspot to exactly 1), the name an iPhone can open outside it.
          */
         get: operations["status_api_v1_setup_status_get"];
         put?: never;

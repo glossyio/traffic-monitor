@@ -31,7 +31,14 @@ PYTHONPATH=tm-control/backend python -m tm_control dump-openapi > tm-control/ui/
 cd tm-control/ui && npm run api:generate
 ```
 
-`npm run build` writes the site to `dist/`, and `npm test` runs the Vitest tests in `tests/`. To use the same Node
+To try the home button that nginx adds to each app's page, open `http://localhost:5173/home-button-demo.html` while
+`npm run dev` runs. It's a stand-in app page with the button on it; add `?app=nr` (or `dashboard`, `ui`, `feeds`) to
+try another app's spot. Drag it to either side, drop it at an edge to tuck it, and reload to see that it stays where
+you left it. Logged in on the same address, it shows the fake device's name and puts it in the tab's title; without
+the backend or a login, it's the icon alone. The build leaves this page out.
+
+`npm run build` writes the site to `dist/`, and the home button's script beside it as `dist/home-button.js` (the
+build fails if that grows past 10 240 bytes). `npm test` runs the Vitest tests in `tests/`. To use the same Node
 as the device's build, run them in the pinned image:
 
 ```bash
@@ -48,7 +55,23 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
   outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
-- `src/stores/session.ts` is the only store: the setup status and the logged-in user.
+- `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
+  `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
+  stage makes `dist/` readable for nginx (`chmod -R a+rX`).
+- `src/stores/session.ts` is the only store: the setup status, the logged-in user, and the device's hostname, which
+  comes with `GET /setup/status`, so the pages before login have it too, and stays when the session ends.
+- `src/title.ts` builds the tab's title (`tm-01 · Status | Traffic Monitor` with a page name, `tm-01 | Traffic Monitor`
+  on setup, login, and the license pages, and `Traffic Monitor` when the name is unknown, as on the error page). A page's name comes from its menu entry, or from `meta.title` in its route where it
+  has none (the page for a viewer who opened an administrator's app, for one).
+- `src/colors.ts` holds the default colors and the check for a device's own. It imports nothing, so the home button's
+  script can use it without pulling in Vuetify; `src/theme.ts` re-exports `DEFAULT_COLORS`.
+- `src/home-button/` is the home button nginx adds to each proxied app's page. `place.ts` is its logic as plain
+  functions (which app a path belongs to, where a drop settles, what the browser remembers, the title's prefix),
+  `main.ts` draws the button and handles the pointer and keyboard, and `entry.ts` starts it. It imports no Vue,
+  Vuetify, or Pinia, and nothing that does, because it runs on other programs' pages and has to stay small.
+  `vite.home-button.config.ts` is a second Vite build that turns `entry.ts` into one file, `dist/home-button.js`, after
+  the main build, without emptying `dist/`. It fails the build when the file is over 10 240 bytes. The demo page
+  `home-button-demo.html` is used by `npm run dev` only and isn't built.
 - `src/api/client.ts` is the API client. `schema.d.ts` is generated from `openapi.json`; don't edit either by hand.
   The status, services, system info, and time endpoints declare their responses, so their types come from
   `schema.d.ts`. The older endpoints don't yet, and `types.ts` describes their bodies.
@@ -152,7 +175,7 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 ### Layout
 
 Pages before login (setup, login, the license pages) have no menu: one column, at most 480 px wide, centered, with
-a small "Traffic Monitor" name above the page title. Pages after login have the app bar and a menu drawer that stays
+a small `tm-01 | Traffic Monitor` line, as in the app bar, above the page title. Pages after login have the app bar and a menu drawer that stays
 open from the `md` breakpoint (960 px) up and slides in below it. Content is left-aligned and at most 760 px wide.
 
 Setup (one page, four steps):
@@ -1344,3 +1367,48 @@ page network, the page that lost the unit, a very long name) were checked with t
   never shows back, but this password is one the person must read and hand to every phone.
 - A refresh timer: an address changes when the unit changes network, and the person has just done that; the page loads
   when opened, and "Try again" reloads it.
+
+### The home button
+
+The apps nginx proxies (Dashboard 2.0, the legacy dashboard, Frigate, the Node-RED editor, and the camera feeds) have
+no way back to the control app, and in a phone's sign-in window there's no address bar to retype it in. So nginx adds
+one script line to each app's page, and the script draws a button that links to `/`. The nginx side is described in
+[tm-control](../../docs/development/tm-control.md#the-home-button).
+
+- **Size.** A round button 40 px across, with a touch target of 46 px (the link's own box plus 3 px on each side that
+  take the press). A window under 600 px wide is narrow, and there the button is the icon alone; wider, it's a pill
+  with the icon and the device's name, cut with an ellipsis when the name is long. Resting at 60% opacity, it goes solid
+  on hover, focus, or touch. It stays 8 px inside the window and clear of a phone's notch and home bar.
+- **Two edges.** A drag (a movement of more than 8 px; less is a press, which goes home) ends with the button on the
+  left or right edge, whichever is nearer, at the height it was dropped. A button that can rest anywhere
+  tends to end up over the middle of a page, and the tuck needs an edge to go to anyway. Its starting spot is the
+  bottom right in every app, except Frigate on a narrow screen, where it starts higher on the right edge so it clears
+  Frigate's bottom bar.
+- **Tuck instead of remove.** Dropping the button within 12 px of an edge, or pressing Escape while it has focus,
+  shrinks it to a thin handle that stays on the edge. Pressing the handle brings the button back. There's no setting that
+  removes it for good, because once it's gone there is nowhere inside another program's page to offer "show it again".
+  Each app's side, height, and tucked state are kept in one `localStorage` entry, `tm-home-button`, keyed by the
+  app's path (`dashboard`, `frigate`, `ui`, `nr`, `feeds`). Storage that is missing, refuses writes, or holds something
+  unusable means the defaults, quietly.
+- **Shadow root.** The button lives in a shadow root, so an app's styles can't change it and its styles can't leak
+  into the app. A page that is embedded in another page (a stream inside a dashboard) gets no button, and nothing is
+  drawn when printing. The icon is the house from `@mdi/js`; the project's logo, which is the control app's favicon,
+  doesn't read as "home" at 20 px.
+- **Colors.** The device's `background`, `header_text`, and `body_text` colors (the last for the name), with the control
+  app's defaults until the device answers (or if it doesn't).
+- **The name.** The script asks `GET /api/v1/system/device` after it draws the button. With an answer, the button shows
+  the name and the tab's title becomes `tm-01 · <the app's own title>`, kept in place when the app changes its title
+  (Frigate does on every view). Without one, the button is the icon alone and the title is untouched.
+- **After a drag.** The click that ends a drag is swallowed once, and only if it comes straight away (Enter on the
+  focused link makes a click of its own, later). A hover with no button down cancels a drag whose release was missed.
+
+What was considered and rejected:
+
+- A full-width bar on top of every app. Frigate and the Node-RED editor size themselves to the full window, so a bar
+  pushes their bottom edge off the screen. Avoiding that means wrapping each app in a frame, which hides the app's real
+  address; bookmarks, the return-after-login link, and the sign-in window's downloads all depend on it.
+- Each app's own hooks. The Node-RED editor can load an extra script and the dashboards can carry a link, but Frigate
+  and go2rtc offer nothing: three mechanisms, a change to the flows, and two apps still without a way home.
+- A service worker that adds the button in the browser. Service workers need HTTPS, and the device serves plain HTTP.
+- The device's name written into the page by nginx, which is one more copy made at install and stale after a rename.
+- A hand-written script beside nginx's static files: no type check, and its tests would need a setup of their own.

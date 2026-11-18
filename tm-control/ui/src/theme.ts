@@ -3,21 +3,12 @@
 import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import 'vuetify/styles'
+import { colorOf, DEFAULT_COLORS, type ColorName } from './colors'
 
-// The role's defaults, for a device that sends none
-export const DEFAULT_COLORS = {
-  background: '#0C1120',
-  header_text: '#3a82ff',
-  body_text: '#f8fafc',
-  link_hover_text: '#8895a7',
-}
-
-type ColorName = keyof typeof DEFAULT_COLORS
+export { DEFAULT_COLORS }
 
 // Vuetify's dark-theme error color, set here so its button text can be chosen to match
 const ERROR = '#CF6679'
-
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
 
 function channels(hex: string): number[] {
   return [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))
@@ -46,10 +37,7 @@ function mix(base: string, other: string, amount: number): string {
 }
 
 export function buildTheme(colors: Partial<Record<string, string>> | undefined): ThemeDefinition {
-  const color = (name: ColorName) => {
-    const value = colors?.[name]
-    return value && HEX_COLOR.test(value) ? value : DEFAULT_COLORS[name]
-  }
+  const color = (name: ColorName) => colorOf(colors, name)
   const background = color('background')
   const primary = color('header_text')
   const text = color('body_text')

@@ -216,8 +216,39 @@ def test_redirects_keep_the_port_the_browser_used():
 
 def test_snippets_are_listed():
     assert load_role_yaml("vars/main.yml")["tmsetup_revproxy_snippets"] == [
-        "proxy-common.conf", "auth-viewer.conf", "auth-admin.conf",
+        "proxy-common.conf", "auth-viewer.conf", "auth-admin.conf", "home-button.conf",
     ]
+
+
+HOME_BUTTON = "include /etc/nginx/tm/snippets/home-button.conf;"
+PAGE_LOCATIONS = ["dashboard.conf", "frigate.conf", "go2rtc.conf", "legacy-ui.conf", "nodered.conf"]
+
+
+@pytest.mark.parametrize("name", LOCATIONS)
+def test_only_the_apps_with_pages_get_the_home_button(name):
+    assert location(name).count(HOME_BUTTON) == (1 if name in PAGE_LOCATIONS else 0)
+
+
+def test_home_button_snippet_adds_one_script_line_and_no_header():
+    lines = [line.strip() for line in snippet("home-button.conf").splitlines()]
+    assert "sub_filter '</head>' '<script src=\"/home-button.js\" defer></script></head>';" in lines
+    assert "sub_filter_once on;" in lines
+    assert "proxy_set_header Accept-Encoding $tm_page_encoding;" in lines
+    assert "proxy_set_header If-None-Match $tm_page_if_none_match;" in lines
+    assert "proxy_set_header If-Modified-Since $tm_page_if_modified_since;" in lines
+    assert not [line for line in lines if line.startswith("add_header")]
+
+
+@pytest.mark.parametrize("variable, browser_value", [
+    ("tm_page_encoding", "$http_accept_encoding"),
+    ("tm_page_if_none_match", "$http_if_none_match"),
+    ("tm_page_if_modified_since", "$http_if_modified_since"),
+])
+def test_only_a_page_load_drops_the_browser_header(variable, browser_value):
+    """A page load asks for an uncompressed, whole answer (no 304), so the script line can be added."""
+    lines = [line.strip() for line in nginx_main_conf().splitlines()]
+    start = lines.index(f"map $http_accept ${variable} {{")
+    assert lines[start + 1:start + 4] == [f"default {browser_value};", '"~*text/html" "";', "}"]
 
 
 @pytest.mark.parametrize("name", ["auth-viewer.conf", "auth-admin.conf"])
@@ -273,7 +304,7 @@ def test_verify_is_told_the_browsers_address_and_nothing_the_client_sent(name):
 def test_failed_logins_redirect_and_the_rescue_page_is_internal():
     conf = location("tm-control-auth.conf")
     assert "location @tm_login { return 302 $tm_redirect; }" in conf
-    assert "location = /unavailable.html { internal; root /usr/share/nginx/html; }" in conf
+    assert "location = /unavailable.html { internal; root /usr/share/nginx/html; ssi on; }" in conf
 
 
 def test_verify_is_unreachable_from_the_network():
@@ -341,13 +372,11 @@ def test_unavailable_page_names_cockpit_and_the_service():
         "container/revproxy/html/unavailable.html.j2",
         tmsetup_homepage_colors=load_role_yaml("defaults/main.yml")["tmsetup_homepage_colors"],
         tmsetup_homepage_font="Helvetica",
-        ansible_facts={"hostname": "tm"},
     )
-    assert '<a href="http://tm.local:9090/">' in page
-    assert "or the device's IP address with port 9090" in page
-    assert "tm-control.service" in page
-    assert "sudo systemctl restart tm-control.service" in page
-    assert "<script" not in page
+    assert '<a href="http://<!--# echo var="host" -->:9090/">http://<!--# echo var="host" -->:9090/</a>' in page
+    assert "<title>Traffic Monitor unavailable</title>" in page
+    assert "tm-control.service" in page and "sudo systemctl restart tm-control.service" in page
+    assert "<script" not in page and ".local" not in page
 
 
 @pytest.mark.parametrize("name", LOCATIONS)
@@ -1040,9 +1069,17 @@ def test_revproxy_image_builds_the_ui_from_a_pinned_node_image():
     copy_packages = lines.index("COPY ui/package.json ui/package-lock.json ./")
     npm_ci = lines.index("RUN npm ci --no-audit --no-fund")
     copy_sources = lines.index("COPY ui/ ./")
-    assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build")
+    assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build && chmod -R a+rX dist")
     assert [line for line in lines if line.startswith("FROM ")][-1] == "FROM docker.io/nginx:1.31.0"
     assert lines[-1] == "COPY --from=ui /ui/dist /usr/share/nginx/ui"
+
+
+def test_revproxy_image_makes_the_built_ui_readable_by_nginx():
+    """The sources arrive with no world read (the unarchive task's o=), Vite copies public/ files with their own mode,
+    and nginx's worker isn't root: without this, /favicon.svg answers 403."""
+    lines = revproxy_containerfile()
+    assert lines.index("RUN npm run build && chmod -R a+rX dist") < lines.index(
+        "COPY --from=ui /ui/dist /usr/share/nginx/ui")
 
 
 def test_revproxy_image_puts_the_ui_where_its_location_serves_it():
