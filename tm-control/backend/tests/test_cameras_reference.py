@@ -155,6 +155,13 @@ def test_the_svg_names_the_caption_in_its_title_and_strip():
     assert any(node.text == "a caption" for node in root.iter("{http://www.w3.org/2000/svg}text"))
 
 
+def test_zone_names_on_the_picture_are_not_bold():
+    """Bold names with their white halo ran together on a real picture; the corner letters stay bold."""
+    root = drawing([RADAR_FACTS])
+    [name] = [node for node in root.iter("{http://www.w3.org/2000/svg}text") if node.text == "zone_radar"]
+    assert name.get("class") == "halo" and name.get("font-weight") is None
+
+
 def test_a_key_with_markup_stays_text():
     key = '<script>alert(1)</script>&"\'é'
     root = drawing([RADAR_FACTS.model_copy(update={"key": key})])

@@ -84,8 +84,8 @@ def reference_svg(clean: bytes, width: int, height: int, zones: list[ZoneFacts],
             ny += 34 * s
         names.append((cx, ny))
         out.append(
-            f'<text class="halo" x="{_px(cx)}" y="{_px(ny)}" font-size="{_px(26 * s)}" font-weight="bold" '
-            f'text-anchor="middle" dominant-baseline="central" fill="{color}">{escape(zone.key)}</text>'
+            f'<text class="halo" x="{_px(cx)}" y="{_px(ny)}" font-size="{_px(26 * s)}" text-anchor="middle" '
+            f'dominant-baseline="central" fill="{color}">{escape(zone.key)}</text>'
         )
 
     out.append(f'<rect x="0" y="{height}" width="{width}" height="{_px(strip)}" fill="#fff"/>')
