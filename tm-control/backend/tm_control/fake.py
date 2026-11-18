@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from tm_control.adapters import frigate
 from tm_control.adapters.command import CommandResult
 from tm_control.adapters.nodered import NodeRed, NodeRedError, config_file_path
 from tm_control.adapters.yamlfile import ConfigRead
@@ -34,6 +35,7 @@ FAKE_PLUS_ID = "0123456789abcdef0123456789abcdef"  # the fixture sidecar's model
 FAKE_FETCHABLE_ID = "fedcba9876543210fedcba9876543210"  # the one Frigate+ model ID the fake Frigate can download
 FAKE_FETCH_SECONDS = 5  # how long the fake Frigate takes to download it, or to refuse another ID
 FAKE_FETCH_REFUSED = "Frigate refused the model: Exception: Model not found"
+FAKE_FRIGATE_VERSION = "0.18.2-fake"
 STATE_FILES = ("state.sqlite", "state.sqlite-wal", "state.sqlite-shm")
 
 # Fake mode's unit states, as systemd.show_units returns them; the others run, so the Services list shows a running,
@@ -192,6 +194,29 @@ def frigate_answer(settings: Settings) -> tuple[dict, ConfigRead]:
         if camera in config["cameras"] and isinstance(on, bool):
             config["cameras"][camera].setdefault("detect", {})["enabled"] = on
     return copy.deepcopy(config), ConfigRead(None, "missing")
+
+
+def frigate_stats(settings: Settings) -> dict:
+    """The fake Frigate's /api/stats: the fixture's, with the first camera's numbers for every camera it has."""
+    stats = json.loads((FAKE_FIXTURES / "frigate_api_stats.json").read_text())
+    first = next(iter(stats["cameras"].values()))
+    stats["cameras"] = {name: dict(first) for name in frigate_answer(settings)[0]["cameras"]}
+    return stats
+
+
+def frigate_frame(settings: Settings, camera: str, zones: bool) -> frigate.Frame | None:
+    """Fake mode's stand-in for frigate.latest_frame: a drawing of a road, never a photograph (reference_clean.jpg,
+    or reference_zones.jpg with the fixture's four zones outlined), never an older frame; None for a camera the fake
+    Frigate doesn't have."""
+    if camera not in frigate_answer(settings)[0]["cameras"]:
+        return None
+    name = "reference_zones.jpg" if zones else "reference_clean.jpg"
+    return frigate.Frame((FAKE_FIXTURES / name).read_bytes(), False)
+
+
+def frigate_people(settings: Settings, camera: str) -> int | None:
+    """Fake mode's stand-in for frigate.people_tracked: nobody is in view."""
+    return 0
 
 
 def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:

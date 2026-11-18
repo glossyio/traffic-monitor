@@ -954,6 +954,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras/{name}/reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take Reference
+         * @description Take the camera's current frame from Frigate, plain and with its zone outlines, and hold both in memory.
+         */
+        post: operations["take_reference_api_v1_cameras__name__reference_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/reference/{ticket}/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reference Package
+         * @description The zip of the pictures shown, the data file (with the place's point when location is true and there is one),
+         *     and the drawing.
+         */
+        get: operations["reference_package_api_v1_cameras__name__reference__ticket__package_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/reference/{ticket}/{picture}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reference Picture
+         * @description One of the pictures held: the camera's view, or the same view with Frigate's zone outlines.
+         */
+        get: operations["reference_picture_api_v1_cameras__name__reference__ticket___picture__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{name}/reference/{ticket}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Drop Reference
+         * @description Forget the pictures before their time is up, whether or not they were still held.
+         */
+        delete: operations["drop_reference_api_v1_cameras__name__reference__ticket__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -1543,6 +1624,15 @@ export interface components {
             /** Notice Version */
             notice_version: string | null;
         };
+        /** Corner */
+        Corner: {
+            /** Letter */
+            letter: string;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
         /** Credentials */
         Credentials: {
             /** Username */
@@ -2039,6 +2129,39 @@ export interface components {
              */
             round_stored: boolean;
         };
+        /** ReferenceOut */
+        ReferenceOut: {
+            /** Ticket */
+            ticket: string;
+            /** Expires In */
+            expires_in: number;
+            /** Stem */
+            stem: string;
+            /** Camera */
+            camera: string;
+            /** Survey Id */
+            survey_id: string | null;
+            /** Taken At */
+            taken_at: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "m" | "ft";
+            /** Zones */
+            zones: components["schemas"]["ZoneFacts"][];
+            /**
+             * People
+             * @enum {string}
+             */
+            people: "none" | "seen" | "not_checked";
+            /** Has Location */
+            has_location: boolean;
+        };
         /** Report */
         Report: {
             /** Generated At */
@@ -2199,6 +2322,15 @@ export interface components {
             /** Writable */
             writable: boolean;
             server: components["schemas"]["ServerStatus"];
+        };
+        /** Side */
+        Side: {
+            /** Start */
+            start: string;
+            /** End */
+            end: string;
+            /** Length */
+            length: number;
         };
         /**
          * SidecarForm
@@ -2442,6 +2574,35 @@ export interface components {
             /** Scanned Seconds Ago */
             scanned_seconds_ago: number | null;
             join: components["schemas"]["JoinState"] | null;
+        };
+        /** ZoneFacts */
+        ZoneFacts: {
+            /** Key */
+            key: string;
+            /** Color */
+            color: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /** Drawn */
+            drawn: boolean;
+            /** Corners */
+            corners: components["schemas"]["Corner"][];
+            /** Distances */
+            distances: number[];
+            /** Sides */
+            sides: components["schemas"]["Side"][];
+            /** Inertia */
+            inertia: number | null;
+            /** Loitering Time */
+            loitering_time: number | null;
+            /** Speed Threshold */
+            speed_threshold: number | null;
+            /** Objects */
+            objects: string[];
+            /** Filters */
+            filters: {
+                [key: string]: unknown;
+            };
         };
         /**
          * ZoneName
@@ -3944,6 +4105,134 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CamerasState"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_reference_api_v1_cameras__name__reference_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_package_api_v1_cameras__name__reference__ticket__package_get: {
+        parameters: {
+            query: {
+                location: boolean;
+            };
+            header?: never;
+            path: {
+                name: string;
+                ticket: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The zip */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_picture_api_v1_cameras__name__reference__ticket___picture__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                ticket: string;
+                picture: "clean.jpg" | "zones.jpg";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The picture */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drop_reference_api_v1_cameras__name__reference__ticket__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                ticket: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

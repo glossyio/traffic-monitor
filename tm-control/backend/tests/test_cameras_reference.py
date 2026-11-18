@@ -82,7 +82,6 @@ def test_jpeg_size(data, size):
     assert jpeg_size(data) == size
 
 
-@pytest.mark.xfail(strict=True, reason="the two drawn fixtures come with the routes")
 def test_jpeg_size_reads_the_two_drawn_fixtures():
     for name in ("reference_clean.jpg", "reference_zones.jpg"):
         assert jpeg_size((FIXTURES / name).read_bytes()) == (1536, 864)

@@ -54,3 +54,17 @@ def test_surveys_paths_are_declared_with_their_answers(settings):
         assert status in responses, (path, method)
         if status != "204":
             assert "$ref" in str(responses[status]["content"]["application/json"]["schema"]), (path, method)
+
+
+def test_reference_paths_are_declared_with_their_answers(settings):
+    """The Cameras page's reference picture: the take answers its model, the pictures and the zip are binary."""
+    paths = create_app(settings).openapi()["paths"]
+    prefix = "/api/v1/cameras/{name}/reference"
+    take = paths[prefix]["post"]["responses"]
+    assert "$ref" in str(take["200"]["content"]["application/json"]["schema"])
+    binary = {"type": "string", "format": "binary"}
+    picture = paths[prefix + "/{ticket}/{picture}"]["get"]["responses"]["200"]["content"]
+    assert picture["image/jpeg"]["schema"] == binary
+    package = paths[prefix + "/{ticket}/package"]["get"]["responses"]["200"]["content"]
+    assert package["application/zip"]["schema"] == binary
+    assert "204" in paths[prefix + "/{ticket}"]["delete"]["responses"]
