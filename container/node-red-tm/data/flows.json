@@ -1706,7 +1706,8 @@
             "124187c87da361b7",
             "6cc07083089915f1",
             "b16092a266eea7ef",
-            "aqi_chart"
+            "aqi_chart",
+            "f3442a05bcca802b"
         ],
         "x": 94,
         "y": 299,
@@ -16076,7 +16077,7 @@
         "z": "aqi_tab",
         "g": "1b324a496646fe64",
         "name": "query airquality, for every entry",
-        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    entryDateTime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    entryDateTime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime DESC;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -16104,7 +16105,7 @@
         "width": "3",
         "height": "2",
         "head": "",
-        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"aqi-banner\" :style=\"{ background: msg.payload.color, color: msg.payload.text }\">\n    <div class=\"aqi-num\">{{ msg.payload.aqi }}</div>\n    <div class=\"aqi-cat\">{{ msg.payload.category }}</div>\n    <div class=\"aqi-pm\">PM01: <b>{{ msg.payload.pm01 }}</b>, PM2.5: <b>{{ msg.payload.pm25 }}</b>, PM10: <b>{{ msg.payload.pm10 }}</b>µg/m³</div>\n  </div>\n  <div v-else class=\"aqi-banner\" style=\"background:#999;color:#fff\">Waiting for data…</div>\n</template>\n\n<style>\n.aqi-banner { border-radius: 8px; padding: 16px; text-align: center; transition: background .5s; }\n.aqi-num { font-size: 4rem; font-weight: 700; line-height: 1; }\n.aqi-cat { font-size: 1.4rem; font-weight: 600; margin-top: 4px; }\n.aqi-pm { font-size: .9rem; margin-top: 8px; opacity: .8; }\n</style>",
+        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"aqi-banner\" :style=\"{ background: msg.payload.color, color: msg.payload.text }\">\n    <div class=\"aqi-num\">{{ msg.payload.aqi }}</div>\n    <div class=\"aqi-cat\">{{ msg.payload.category }}</div>\n    <div class=\"aqi-pm\">PM01: <b>{{ msg.payload.pm01 }}</b>, PM2.5: <b>{{ msg.payload.pm25 }}</b>, PM10: <b>{{ msg.payload.pm10 }}</b> µg/m³</div>\n    <div class=\"aqi-pm\">at {{new Date(msg.payload.entryDateTime * 1000).toLocaleString()}}</div>\n  </div>\n  <div v-else class=\"aqi-banner\" style=\"background:#999;color:#fff\">Waiting for data…</div>\n</template>\n\n<style>\n.aqi-banner { border-radius: 8px; padding: 16px; text-align: center; transition: background .5s; }\n.aqi-num { font-size: 4rem; font-weight: 700; line-height: 1; }\n.aqi-cat { font-size: 1.4rem; font-weight: 600; margin-top: 4px; }\n.aqi-pm { font-size: .9rem; margin-top: 8px; opacity: .8; line-height: 70%;}\n</style>",
         "storeOutMessages": true,
         "passthru": true,
         "resendOnRefresh": true,
@@ -16224,7 +16225,7 @@
         "z": "aqi_tab",
         "g": "1b324a496646fe64",
         "name": "Compute latest US EPA AQI",
-        "func": "// compute current AQI\n\nif (msg.payload.length <= 0) {\n    return [\n        {payload: null},\n        {payload: null},\n        {payload: {entryDateTime: null, aqi: null}}];\n}\n\nconst firstReading = msg.payload[0];\nconst AQI = aqiFromPM(firstReading.pm025);\n\nconst aqis = [];\nfor (let index = 0; index < msg.payload.length; index++) {\n    const reading = msg.payload[index];\n    aqis.push({ entryDateTime: 1000 * reading.entryDateTime, \n                aqi: aqiFromPM(reading.pm025)\n              });\n} \n\nconst CATS = [\n    { max: 50, name: \"Good\", color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\", color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\", color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\", color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\", color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => AQI <= c.max) || CATS[CATS.length - 1];\n\nreturn [\n    {payload: {AQI, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n        pm01: firstReading.pm01, pm25: firstReading.pm025,  pm10: firstReading.pm10}},\n    {payload: AQI},\n    {payload: aqis}\n    ];\n\nreturn newmsg;\n\n/* PurpleAir code for computing the US EPA PM 2.5 AQI via linear interpolation\n   code taken from https://community.purpleair.com/t/how-to-calculate-the-us-epa-pm2-5-aqi/877/14\n*/\nfunction aqiFromPM(pm) {\n    if (isNaN(pm)) return \"-\";\n    if (pm == undefined) return \"-\";\n    if (pm < 0) return pm;\n    if (pm > 1000) return \"-\";\n    /*                                  AQI         RAW PM2.5\n    Good                               0 - 50   |   0.0 – 12.0\n    Moderate                          51 - 100  |  12.1 – 35.4\n    Unhealthy for Sensitive Groups   101 – 150  |  35.5 – 55.4\n    Unhealthy                        151 – 200  |  55.5 – 150.4\n    Very Unhealthy                   201 – 300  |  150.5 – 250.4\n    Hazardous                        301 – 400  |  250.5 – 350.4\n    Hazardous                        401 – 500  |  350.5 – 500.4\n    */\n    if (pm > 350.5) {\n        return calcAQI(pm, 500, 401, 500.4, 350.5); //Hazardous\n    } else if (pm > 250.5) {\n        return calcAQI(pm, 400, 301, 350.4, 250.5); //Hazardous\n    } else if (pm > 150.5) {\n        return calcAQI(pm, 300, 201, 250.4, 150.5); //Very Unhealthy\n    } else if (pm > 55.5) {\n        return calcAQI(pm, 200, 151, 150.4, 55.5); //Unhealthy\n    } else if (pm > 35.5) {\n        return calcAQI(pm, 150, 101, 55.4, 35.5); //Unhealthy for Sensitive Groups\n    } else if (pm > 12.1) {\n        return calcAQI(pm, 100, 51, 35.4, 12.1); //Moderate\n    } else if (pm >= 0) {\n        return calcAQI(pm, 50, 0, 12, 0); //Good\n    } else {\n        return undefined;\n    }\n}\n\n// Cp - PM 2.5 concentration (ug/m**3)\n// Ih, Il - AQI breakpoints for BPh, BPl\n// BPH, BPl - concentration breakbounts bracketing Cp\nfunction calcAQI(Cp, Ih, Il, BPh, BPl) {\n    var a = (Ih - Il);\n    var b = (BPh - BPl);\n    var c = (Cp - BPl);\n    return Math.round((a / b) * c + Il);\n}\n",
+        "func": "// compute current AQI\n\nif (msg.payload.length <= 0) {\n    return [\n        {payload: null},\n        {payload: null},\n        {payload: {entryDateTime: null, aqi: null}}];\n}\n\nconst firstReading = msg.payload[0];\nconst AQI = aqiFromPM(firstReading.pm025);\n\nconst aqis = [];\nfor (let index = 0; index < msg.payload.length; index++) {\n    const reading = msg.payload[index];\n    aqis.push({ entryDateTime: 1000 * reading.entryDateTime, \n                aqi: aqiFromPM(reading.pm025)\n              });\n} \n\nconst CATS = [\n    { max: 50, name: \"Good\", color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\", color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\", color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\", color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\", color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => AQI <= c.max) || CATS[CATS.length - 1];\n\nreturn [\n    {payload: {AQI, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n        pm01: firstReading.pm01, pm25: firstReading.pm025,  pm10: firstReading.pm10, entryDateTime: firstReading.entryDateTime}},\n    {payload: AQI},\n    {payload: aqis}\n    ];\n\nreturn newmsg;\n\n/* PurpleAir code for computing the US EPA PM 2.5 AQI via linear interpolation\n   code taken from https://community.purpleair.com/t/how-to-calculate-the-us-epa-pm2-5-aqi/877/14\n*/\nfunction aqiFromPM(pm) {\n    if (isNaN(pm)) return \"-\";\n    if (pm == undefined) return \"-\";\n    if (pm < 0) return pm;\n    if (pm > 1000) return \"-\";\n    /*                                  AQI         RAW PM2.5\n    Good                               0 - 50   |   0.0 – 12.0\n    Moderate                          51 - 100  |  12.1 – 35.4\n    Unhealthy for Sensitive Groups   101 – 150  |  35.5 – 55.4\n    Unhealthy                        151 – 200  |  55.5 – 150.4\n    Very Unhealthy                   201 – 300  |  150.5 – 250.4\n    Hazardous                        301 – 400  |  250.5 – 350.4\n    Hazardous                        401 – 500  |  350.5 – 500.4\n    */\n    if (pm > 350.5) {\n        return calcAQI(pm, 500, 401, 500.4, 350.5); //Hazardous\n    } else if (pm > 250.5) {\n        return calcAQI(pm, 400, 301, 350.4, 250.5); //Hazardous\n    } else if (pm > 150.5) {\n        return calcAQI(pm, 300, 201, 250.4, 150.5); //Very Unhealthy\n    } else if (pm > 55.5) {\n        return calcAQI(pm, 200, 151, 150.4, 55.5); //Unhealthy\n    } else if (pm > 35.5) {\n        return calcAQI(pm, 150, 101, 55.4, 35.5); //Unhealthy for Sensitive Groups\n    } else if (pm > 12.1) {\n        return calcAQI(pm, 100, 51, 35.4, 12.1); //Moderate\n    } else if (pm >= 0) {\n        return calcAQI(pm, 50, 0, 12, 0); //Good\n    } else {\n        return undefined;\n    }\n}\n\n// Cp - PM 2.5 concentration (ug/m**3)\n// Ih, Il - AQI breakpoints for BPh, BPl\n// BPH, BPl - concentration breakbounts bracketing Cp\nfunction calcAQI(Cp, Ih, Il, BPh, BPl) {\n    var a = (Ih - Il);\n    var b = (BPh - BPl);\n    var c = (Cp - BPl);\n    return Math.round((a / b) * c + Il);\n}\n",
         "outputs": 3,
         "timeout": 0,
         "noerr": 0,
@@ -16241,7 +16242,8 @@
                 "aqi_gauge"
             ],
             [
-                "aqi_chart"
+                "aqi_chart",
+                "f3442a05bcca802b"
             ]
         ]
     },
@@ -16374,6 +16376,23 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "f3442a05bcca802b",
+        "type": "debug",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 500,
+        "wires": []
     },
     {
         "id": "aqi_pmchart",
