@@ -15635,12 +15635,17 @@
         },
         "nodes": [
             "1c84b05d58e12d41",
-            "c8bdd25e20610818"
+            "c8bdd25e20610818",
+            "e2a5c9f31bf63164",
+            "669fd305a6d19ac3",
+            "1d36b14c5d10b13a",
+            "ddbdf776eb14316b",
+            "c7cdca42234df7eb"
         ],
         "x": 14,
         "y": 1061,
-        "w": 522,
-        "h": 82
+        "w": 722,
+        "h": 200
     },
     {
         "id": "1c84b05d58e12d41",
@@ -15682,5 +15687,100 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "e2a5c9f31bf63164",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "every 5 minutes",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/5 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 1180,
+        "wires": [
+            [
+                "669fd305a6d19ac3"
+            ]
+        ]
+    },
+    {
+        "id": "669fd305a6d19ac3",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "watch rows",
+        "func": "// Closes the five-minute window \"keep frigate stats\" has been filling and writes one row per sensor that\n// config.yml lists: a camera row (what Frigate's stats reports added up to) and a radar row (the facts the\n// Status page reads: port open, last reading). The radar facts are the Status page's, taken at the mark.\n// A row says what the sensor did in the window, so no row is written when the window wasn't seen whole.\n\n// The window has to be about five minutes long. These limits keep out the first mark after a start (a short\n// window), a missed mark (a long one), and a clock that jumped (a negative or a huge one).\nconst WINDOW_MIN_MS = 295000;\nconst WINDOW_MAX_MS = 305000;\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\nfunction round2(value) {\n    return Math.round(value * 100) / 100;\n}\n\nconst now = typeof msg.payload === \"number\" ? msg.payload : Date.now();\nconst time = Math.round(now / 300000) * 300;\n\nconst window = flow.get(\"watch_window\");\nflow.set(\"watch_window\", { since: now, messages: 0, cameras: {} });\n\nif (!isMapping(window) || !Number.isFinite(window.since)) {\n    return null;\n}\nconst age = now - window.since;\nif (age < WINDOW_MIN_MS || age > WINDOW_MAX_MS) {\n    return null;\n}\n\nconst config = global.get(\"config\");\nconst sensors = isMapping(config) ? config.sensors : undefined;\nif (!isMapping(sensors)) {\n    return null;\n}\n\nfunction enabled(entry) {\n    return isMapping(entry) && entry.enabled === true ? 1 : 0;\n}\n\nfunction deploymentId(entry) {\n    const id = isMapping(entry) && isMapping(entry.deployment) ? entry.deployment.id : undefined;\n    return typeof id === \"string\" && id !== \"\" ? id : null;\n}\n\nconst sums = isMapping(window.cameras) ? window.cameras : {};\nconst answered = Number.isFinite(window.messages) && window.messages > 0 ? 1 : 0;\nconst cameraRows = [];\nif (isMapping(sensors.cameras)) {\n    for (const [key, entry] of Object.entries(sensors.cameras)) {\n        const mine = has(sums, key) && isMapping(sums[key]) ? sums[key] : null;\n        const seen = mine !== null && Number.isFinite(mine.messages) && mine.messages > 0 && answered === 1;\n        cameraRows.push({\n            time: time,\n            camera: key,\n            enabled: enabled(entry),\n            deployment_id: deploymentId(entry),\n            frigate_answered: answered,\n            stats_messages: seen ? mine.messages : 0,\n            camera_fps: seen ? round2(mine.camera_fps / mine.messages) : null,\n            process_fps: seen ? round2(mine.process_fps / mine.messages) : null,\n            skipped_fps: seen ? round2(mine.skipped_fps / mine.messages) : null,\n            detection_fps: seen ? round2(mine.detection_fps / mine.messages) : null,\n            detection_enabled: seen ? (mine.detection_off === 0 ? 1 : 0) : null\n        });\n    }\n}\n\nconst status = global.get(\"tm_status.radars\");\nconst radarRows = [];\nif (isMapping(sensors.radars)) {\n    for (const [name, entry] of Object.entries(sensors.radars)) {\n        const fact = isMapping(status) && has(status, name) && isMapping(status[name]) ? status[name] : {};\n        const read = typeof fact.last_reading_at === \"string\" ? Date.parse(fact.last_reading_at) / 1000 : NaN;\n        radarRows.push({\n            time: time,\n            radar: name,\n            enabled: enabled(entry),\n            deployment_id: deploymentId(entry),\n            port_open: fact.port_open === true ? 1 : 0,\n            last_reading_at: Number.isFinite(read) ? read : null\n        });\n    }\n}\n\nif (cameraRows.length === 0 && radarRows.length === 0) {\n    return null;\n}\n\nfunction toMessage(row) {\n    const params = {};\n    for (const [column, value] of Object.entries(row)) {\n        params[\"$\" + column] = value;\n    }\n    return { payload: row, params: params };\n}\n\nreturn [\n    cameraRows.length > 0 ? cameraRows.map(toMessage) : null,\n    radarRows.length > 0 ? radarRows.map(toMessage) : null,\n    { payload: { time: time, cameras: cameraRows, radars: radarRows } }\n];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 1180,
+        "wires": [
+            [
+                "1d36b14c5d10b13a"
+            ],
+            [
+                "ddbdf776eb14316b"
+            ],
+            [
+                "c7cdca42234df7eb"
+            ]
+        ]
+    },
+    {
+        "id": "1d36b14c5d10b13a",
+        "type": "sqlite",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO watch_camera (time, camera, enabled, deployment_id, frigate_answered, stats_messages, camera_fps, process_fps, skipped_fps, detection_fps, detection_enabled) VALUES ($time, $camera, $enabled, $deployment_id, $frigate_answered, $stats_messages, $camera_fps, $process_fps, $skipped_fps, $detection_fps, $detection_enabled);\n",
+        "name": "tmdb.watch_camera, Prepared Statement",
+        "x": 600,
+        "y": 1140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ddbdf776eb14316b",
+        "type": "sqlite",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO watch_radar (time, radar, enabled, deployment_id, port_open, last_reading_at) VALUES ($time, $radar, $enabled, $deployment_id, $port_open, $last_reading_at);\n",
+        "name": "tmdb.watch_radar, Prepared Statement",
+        "x": 600,
+        "y": 1180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c7cdca42234df7eb",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "watch link out",
+        "mode": "link",
+        "links": [],
+        "x": 560,
+        "y": 1220,
+        "wires": []
     }
 ]

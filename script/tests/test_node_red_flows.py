@@ -2107,6 +2107,31 @@ WATCH_CAMERA_COLUMNS = ["time", "camera", "enabled", "deployment_id", "frigate_a
 WATCH_RADAR_COLUMNS = ["time", "radar", "enabled", "deployment_id", "port_open", "last_reading_at"]
 STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
 EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}}
+WATCH_SENSORS = {
+    "cameras": {"camera_1_3fa9c2": {"enabled": True, "deployment": {"id": "1761700000000-0a1b2c3d-d"}},
+                "side_st": {"enabled": False}},
+    "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"id": "1761700000000-4e5f6a7b-d"}},
+               "TM_RADAR_SERIAL_PORT_01": {"enabled": False}},
+}
+WATCH_WINDOW = {"since": TICK_MS - 300000, "messages": 5, "cameras": {"camera_1_3fa9c2": {
+    "messages": 5, "camera_fps": 25.0, "process_fps": 24.5, "skipped_fps": 0.0, "detection_fps": 2.0,
+    "detection_off": 0}}}
+RADAR_STATUS = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "port_open": True,
+                                            "last_reading_at": "2025-10-30T04:54:58.400Z"}}
+NO_NUMBERS = {"stats_messages": 0, "camera_fps": None, "process_fps": None, "skipped_fps": None,
+              "detection_fps": None, "detection_enabled": None}
+CAMERA_ROWS = [
+    {"time": TICK, "camera": "camera_1_3fa9c2", "enabled": 1, "deployment_id": "1761700000000-0a1b2c3d-d",
+     "frigate_answered": 1, "stats_messages": 5, "camera_fps": 5.0, "process_fps": 4.9, "skipped_fps": 0.0,
+     "detection_fps": 0.4, "detection_enabled": 1},
+    {"time": TICK, "camera": "side_st", "enabled": 0, "deployment_id": None, "frigate_answered": 1, **NO_NUMBERS},
+]
+RADAR_ROWS = [
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
+     "port_open": 1, "last_reading_at": 1761800098.4},
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "enabled": 0, "deployment_id": None, "port_open": 0,
+     "last_reading_at": None},
+]
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
     "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
@@ -3486,3 +3511,145 @@ def test_frigate_stats_reach_the_keeper():
     group = by_id[keep["g"]]
     assert group["name"] == "watch log" and group["z"] == keep["z"] == source["z"] == tab_id(flows, "system")
     assert source["g"] == group["id"] and {keep["id"], source["id"]} <= set(group["nodes"])
+
+
+def watch_tick(window=WATCH_WINDOW, config=MISSING, radars=RADAR_STATUS, now=TICK_MS):
+    """Run "watch rows" on one mark. Returns its three outputs (camera messages, radar messages, the upload
+    message), each None when it sent none, and the flow context after."""
+    context = {"tm_status": {"radars": radars}}
+    if config is not None:
+        context["config"] = {"sensors": WATCH_SENSORS} if config is MISSING else config
+    flow = {} if window is None else {"watch_window": copy.deepcopy(window)}
+    node = named(json.loads(FLOWS.read_text()), "watch rows")
+    run = run_functions([(node, {"payload": now})], context=context, flow=flow)
+    [step] = run["results"]
+    assert step["logged"] == []
+    outputs = step["result"] if step["result"] is not None else [None, None, None]
+    return (*outputs, run["flow"])
+
+
+@needs_node
+def test_a_whole_window_gives_a_row_per_sensor():
+    cameras, radars, upload, flow = watch_tick()
+    assert [msg["payload"] for msg in cameras] == CAMERA_ROWS
+    assert [msg["payload"] for msg in radars] == RADAR_ROWS
+    assert [list(msg["payload"]) for msg in cameras] == [WATCH_CAMERA_COLUMNS] * 2
+    assert [list(msg["payload"]) for msg in radars] == [WATCH_RADAR_COLUMNS] * 2
+    for msg in cameras + radars:
+        assert msg["params"] == {f"${name}": value for name, value in msg["payload"].items()}
+    assert upload == {"payload": {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+
+
+@needs_node
+def test_when_frigate_did_not_answer_every_camera_still_has_its_row():
+    cameras, _, _, _ = watch_tick(window=EMPTY_WINDOW)
+    assert [msg["payload"] for msg in cameras] == [
+        {**CAMERA_ROWS[0], "frigate_answered": 0, **NO_NUMBERS}, {**CAMERA_ROWS[1], "frigate_answered": 0}]
+
+
+@needs_node
+def test_frigate_answering_without_the_camera_is_not_frigate_not_answering():
+    cameras, _, _, _ = watch_tick(window={**EMPTY_WINDOW, "messages": 5})
+    assert [(msg["payload"]["frigate_answered"], msg["payload"]["stats_messages"], msg["payload"]["camera_fps"])
+            for msg in cameras] == [(1, 0, None), (1, 0, None)]
+
+
+@needs_node
+def test_detection_off_in_any_report_is_off_for_the_window():
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["cameras"]["camera_1_3fa9c2"]["detection_off"] = 1
+    cameras, _, _, _ = watch_tick(window=window)
+    assert cameras[0]["payload"]["detection_enabled"] == 0
+
+
+@needs_node
+@pytest.mark.parametrize("age, rows", [(295000, True), (300000, True), (305000, True), (120000, False),
+                                       (294000, False), (306000, False), (900000, False), (-3600000, False)])
+def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
+    """Not the first mark after a start, a mark after a missed one, or one after the clock jumped."""
+    cameras, radars, upload, flow = watch_tick(window={**WATCH_WINDOW, "since": TICK_MS - age})
+    assert (cameras is not None, radars is not None, upload is not None) == (rows, rows, rows)
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+
+
+@needs_node
+@pytest.mark.parametrize("window, config", [
+    (None, MISSING), (WATCH_WINDOW, None), (WATCH_WINDOW, {}), (WATCH_WINDOW, {"sensors": "broken"}),
+    (WATCH_WINDOW, {"sensors": {"cameras": None, "radars": []}}),
+], ids=["first-mark", "no-config", "no-sensors", "sensors-text", "nothing-listed"])
+def test_no_rows_without_a_window_or_sensors(window, config):
+    cameras, radars, upload, flow = watch_tick(window=window, config=config)
+    assert (cameras, radars, upload) == (None, None, None)
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+
+
+@needs_node
+def test_rows_follow_config_yml_as_it_is_at_the_mark():
+    """A camera that left config.yml gets no row; an entry with nothing under it is a camera that is off."""
+    config = {"sensors": {"cameras": {"new_key": None}, "radars": {}}}
+    cameras, radars, upload, _ = watch_tick(config=config)
+    assert [msg["payload"] for msg in cameras] == [
+        {"time": TICK, "camera": "new_key", "enabled": 0, "deployment_id": None, "frigate_answered": 1, **NO_NUMBERS}]
+    assert radars is None
+    assert upload["payload"] == {"time": TICK, "cameras": [cameras[0]["payload"]], "radars": []}
+
+
+@needs_node
+@pytest.mark.parametrize("now", [TICK_MS - 40, TICK_MS + 40, TICK_MS + 2000])
+def test_the_time_is_the_five_minute_mark(now):
+    cameras, _, _, _ = watch_tick(window={**WATCH_WINDOW, "since": now - 300000}, now=now)
+    assert cameras[0]["payload"]["time"] == TICK
+
+
+@needs_node
+@pytest.mark.parametrize("status", [None, {}, {"TM_RADAR_SERIAL_PORT_00": {"port_open": "yes",
+                                                                           "last_reading_at": "not a time"}}])
+def test_a_radar_the_status_knows_nothing_about_is_not_open(status):
+    _, radars, _, _ = watch_tick(radars=status)
+    assert [(msg["payload"]["port_open"], msg["payload"]["last_reading_at"]) for msg in radars] == [(0, None)] * 2
+
+
+def watch_insert(table):
+    """The INSERT for a watch table: its node, its columns, and the parameter each one takes."""
+    [node] = [node for node in json.loads(FLOWS.read_text())
+              if node["type"] == "sqlite" and f"INSERT INTO {table} " in node.get("sql", "")]
+    match = re.fullmatch(rf"\s*INSERT INTO {table} \(([^)]*)\)\s*VALUES \((.*)\);\s*", node["sql"], re.DOTALL)
+    return node, [name.strip() for name in match[1].split(",")], [value.strip() for value in match[2].split(",")]
+
+
+WATCH_TABLES = {"watch_camera": WATCH_CAMERA_COLUMNS, "watch_radar": WATCH_RADAR_COLUMNS}
+
+
+def test_watch_fields_agree():
+    """For each table, one list of fields in one order: what "watch rows" builds (checked above), what the INSERT
+    names, what its parameters are, and what the table has."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for table, columns in WATCH_TABLES.items():
+        node, names, values = watch_insert(table)
+        assert names == columns and values == [f"${name}" for name in columns]
+        assert (node["sqlquery"], node["mydb"]) == ("prepared", TMDB)
+        assert [row[1] for row in con.execute(f"PRAGMA table_info({table})")] == columns
+
+
+def test_the_watch_log_is_written_every_five_minutes():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    rows = named(flows, "watch rows")
+    [inject] = [node for node in flows if rows["id"] in sum(node.get("wires", []), [])]
+    assert (inject["type"], inject["crontab"], inject["repeat"], inject["once"], inject["payloadType"]) == (
+        "inject", "*/5 0-23 * * *", "", False, "date")
+    camera_insert, radar_insert = watch_insert("watch_camera")[0], watch_insert("watch_radar")[0]
+    link = named(flows, "watch link out")
+    assert (rows["type"], rows["outputs"], rows["initialize"], rows["finalize"]) == ("function", 3, "", "")
+    assert rows["wires"] == [[camera_insert["id"]], [radar_insert["id"]], [link["id"]]]
+    assert (link["type"], link["mode"]) == ("link out", "link")
+    nodes = (inject, rows, camera_insert, radar_insert, link)
+    group = by_id[rows["g"]]
+    assert group["name"] == "watch log" and {node["g"] for node in nodes} == {group["id"]}
+    assert {node["id"] for node in nodes} <= set(group["nodes"])
+    assert {node["z"] for node in nodes} == {tab_id(flows, "system")}
+    for node_id in group["nodes"]:
+        node = by_id[node_id]
+        assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
