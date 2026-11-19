@@ -1,6 +1,7 @@
 """The API's one error shape, {"error": {"code", "message", "detail"}}, for every error the app returns.
 
-Handlers log the exception class and the request path, never bodies, headers, or cookies.
+Handlers log the exception class and the matched route's path template (the request path when no route matched),
+never the path's values, bodies, headers, or cookies: a path can hold a ticket.
 """
 
 import logging
@@ -41,7 +42,9 @@ def error_response(status, code, message, detail=None, headers=None):
 
 def _log(request, exc, status):
     level = logging.ERROR if status >= 500 else logging.DEBUG
-    log.log(level, "%s %s on %s", status, type(exc).__name__, request.url.path)
+    route = request.scope.get("route")  # FastAPI 0.162: the router's own route, so no /api/v1 prefix
+    path = getattr(route, "path_format", None) or request.url.path
+    log.log(level, "%s %s on %s", status, type(exc).__name__, path)
 
 
 async def _api_error(request, exc: ApiError):

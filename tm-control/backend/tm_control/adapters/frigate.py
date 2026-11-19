@@ -8,7 +8,8 @@ Each API function returns None when Frigate doesn't answer, times out, or answer
 import json
 import re
 from pathlib import Path
-from urllib.parse import quote
+from typing import NamedTuple
+from urllib.parse import quote, urlencode
 
 from tm_control.adapters import httpjson
 from tm_control.adapters.yamlfile import ConfigRead, read_config
@@ -35,6 +36,32 @@ FRESH = {"X-Cache-Bypass": "1"}
 def _object(path: str, headers: dict[str, str] | None = None) -> dict | None:
     status, body = httpjson.get_json(f"{BASE}/{path}", headers)
     return body if status == 200 and isinstance(body, dict) else None
+
+
+FRAME_TIMEOUT = 10  # seconds: a full-size frame at quality 95 is encoded for the request
+JPEG_START = b"\xff\xd8\xff"
+
+
+class Frame(NamedTuple):
+    data: bytes  # a JPEG
+    offline: bool  # Frigate marked it as an older frame (X-Frigate-Offline: true), not the camera's current one
+
+
+def latest_frame(camera: str, zones: bool = False) -> Frame | None:
+    """The camera's current frame from its detect stream, at its own size and JPEG quality 95, with the outline of
+    each zone that is on when zones is true. None for anything but a JPEG.
+
+    A frame older than the camera's retry interval comes with X-Frigate-Offline: true when Frigate has a preview frame
+    to send instead; with none, Frigate sends its own error picture with a 200 and no such header."""
+    query = {"quality": 95} | ({"zones": 1} if zones else {})
+    status, body, headers = httpjson.get_with_headers(
+        f"{BASE}/{quote(camera, safe='')}/latest.jpg?{urlencode(query)}", FRESH, FRAME_TIMEOUT
+    )
+    if status != 200 or body is None or not headers.get("content-type", "").startswith("image/jpeg"):
+        return None
+    if not body.startswith(JPEG_START):
+        return None
+    return Frame(body, headers.get("x-frigate-offline", "").lower() == "true")
 
 
 def config() -> dict | None:

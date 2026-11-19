@@ -230,6 +230,61 @@ export function camerasState(changes: Partial<CamerasState> = {}): CamerasState 
   return { frigate: 'ok', plates: false, rows: [cameraRow()], radars: RADARS, ...changes }
 }
 
+// POST /cameras/{name}/reference: a take of the first camera's pictures, at a place with a point. Its zones are one
+// with side lengths, one with none, one that is off in Frigate, and one with no outline.
+export type ReferenceOut = components['schemas']['ReferenceOut']
+export type ZoneFacts = components['schemas']['ZoneFacts']
+
+export function zoneFacts(changes: Partial<ZoneFacts> = {}): ZoneFacts {
+  return {
+    key: 'zone_radar',
+    color: '#40a05c',
+    enabled: true,
+    drawn: true,
+    corners: [
+      { letter: 'A', x: 0.169, y: 0.489 },
+      { letter: 'B', x: 0.451, y: 0.358 },
+      { letter: 'C', x: 0.821, y: 0.528 },
+      { letter: 'D', x: 0.472, y: 0.796 },
+    ],
+    distances: [12, 7.3, 12, 7.3],
+    sides: [
+      { start: 'A', end: 'B', length: 12 },
+      { start: 'B', end: 'C', length: 7.3 },
+      { start: 'C', end: 'D', length: 12 },
+      { start: 'D', end: 'A', length: 7.3 },
+    ],
+    inertia: 3,
+    loitering_time: 0,
+    speed_threshold: null,
+    objects: ['car'],
+    filters: {},
+    ...changes,
+  }
+}
+
+export function referenceOut(changes: Partial<ReferenceOut> = {}): ReferenceOut {
+  return {
+    ticket: 'made-up-ticket',
+    expires_in: 600,
+    stem: 'tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z',
+    camera: 'camera_1_3fa9c2',
+    survey_id: '3f9a1c2e-si',
+    taken_at: '2026-11-18T18:30:05Z',
+    width: 1536,
+    height: 864,
+    unit: 'm',
+    zones: [
+      zoneFacts(),
+      zoneFacts({ key: 'zone_capture', color: '#7035b0', distances: [], sides: [] }),
+      zoneFacts({ key: 'zone_far', color: '#be8f28', enabled: false, drawn: false, distances: [], sides: [] }),
+      zoneFacts({ key: 'zone_lane_bus', color: null, drawn: false, corners: [], distances: [], sides: [] }),
+    ],
+    has_location: true,
+    ...changes,
+  }
+}
+
 // GET /network: Ethernet connected, and the Wi-Fi radio on the unit's own hotspot
 type NetworkState = components['schemas']['NetworkState']
 export const NETWORK_STATE: NetworkState = {

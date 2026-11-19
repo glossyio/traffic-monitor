@@ -1900,6 +1900,222 @@
         }
       }
     },
+    "/api/v1/cameras/{name}/reference": {
+      "post": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Take Reference",
+        "description": "Take the camera's current frame from Frigate, plain and with its zone outlines, and hold both in memory.",
+        "operationId": "take_reference_api_v1_cameras__name__reference_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/reference/{ticket}/package": {
+      "get": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Reference Package",
+        "description": "The zip of the pictures shown, the data file (with the place's point when location is true and there is one),\nand the drawing.",
+        "operationId": "reference_package_api_v1_cameras__name__reference__ticket__package_get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "title": "Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The zip",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/reference/{ticket}/{picture}": {
+      "get": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Reference Picture",
+        "description": "One of the pictures held: the camera's view, or the same view with Frigate's zone outlines.",
+        "operationId": "reference_picture_api_v1_cameras__name__reference__ticket___picture__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket"
+            }
+          },
+          {
+            "name": "picture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "clean.jpg",
+                "zones.jpg"
+              ],
+              "type": "string",
+              "title": "Picture"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{name}/reference/{ticket}": {
+      "delete": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Drop Reference",
+        "description": "Forget the pictures before their time is up, whether or not they were still held.",
+        "operationId": "drop_reference_api_v1_cameras__name__reference__ticket__delete",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/status": {
       "get": {
         "tags": [
@@ -3106,6 +3322,29 @@
         ],
         "title": "ConsentOut",
         "description": "The latest row recorded for a choice and the server the upload goes to; granted false with no row."
+      },
+      "Corner": {
+        "properties": {
+          "letter": {
+            "type": "string",
+            "title": "Letter"
+          },
+          "x": {
+            "type": "number",
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "title": "Y"
+          }
+        },
+        "type": "object",
+        "required": [
+          "letter",
+          "x",
+          "y"
+        ],
+        "title": "Corner"
       },
       "Credentials": {
         "properties": {
@@ -4752,6 +4991,83 @@
         ],
         "title": "PrecisionIn"
       },
+      "ReferenceOut": {
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "title": "Ticket"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "camera": {
+            "type": "string",
+            "title": "Camera"
+          },
+          "survey_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Survey Id"
+          },
+          "taken_at": {
+            "type": "string",
+            "title": "Taken At"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "m",
+              "ft"
+            ],
+            "title": "Unit"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/ZoneFacts"
+            },
+            "type": "array",
+            "title": "Zones"
+          },
+          "has_location": {
+            "type": "boolean",
+            "title": "Has Location"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket",
+          "expires_in",
+          "stem",
+          "camera",
+          "survey_id",
+          "taken_at",
+          "width",
+          "height",
+          "unit",
+          "zones",
+          "has_location"
+        ],
+        "title": "ReferenceOut"
+      },
       "Report": {
         "properties": {
           "generated_at": {
@@ -5280,6 +5596,29 @@
           "server"
         ],
         "title": "SharingState"
+      },
+      "Side": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "title": "End"
+          },
+          "length": {
+            "type": "number",
+            "title": "Length"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "length"
+        ],
+        "title": "Side"
       },
       "SidecarForm": {
         "properties": {
@@ -6156,6 +6495,127 @@
           "join"
         ],
         "title": "WifiNetworks"
+      },
+      "ZoneFacts": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "drawn": {
+            "type": "boolean",
+            "title": "Drawn"
+          },
+          "corners": {
+            "items": {
+              "$ref": "#/components/schemas/Corner"
+            },
+            "type": "array",
+            "title": "Corners"
+          },
+          "distances": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Distances"
+          },
+          "sides": {
+            "items": {
+              "$ref": "#/components/schemas/Side"
+            },
+            "type": "array",
+            "title": "Sides"
+          },
+          "inertia": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inertia"
+          },
+          "loitering_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loitering Time"
+          },
+          "speed_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Threshold"
+          },
+          "objects": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objects"
+          },
+          "filters": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Filters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "color",
+          "enabled",
+          "drawn",
+          "corners",
+          "distances",
+          "sides",
+          "inertia",
+          "loitering_time",
+          "speed_threshold",
+          "objects",
+          "filters"
+        ],
+        "title": "ZoneFacts"
       },
       "ZoneName": {
         "properties": {

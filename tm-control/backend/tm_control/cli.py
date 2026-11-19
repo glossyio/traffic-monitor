@@ -16,8 +16,10 @@ def serve():
 
     from tm_control.app import create_app
     from tm_control.core.settings import Settings
+    from tm_control.modules.cameras.reference import HideTickets
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("uvicorn.access").addFilter(HideTickets())
     settings = Settings.from_env()
     uvicorn.run(
         create_app(settings),

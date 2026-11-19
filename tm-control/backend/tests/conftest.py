@@ -125,6 +125,7 @@ def device_client(settings, monkeypatch):
     from tm_control.adapters.command import CommandResult
 
     monkeypatch.setattr(httpjson, "get", lambda url, headers=None, timeout=None: (None, None))
+    monkeypatch.setattr(httpjson, "get_with_headers", lambda url, headers=None, timeout=None: (None, None, {}))
     monkeypatch.setattr(httpjson, "post", lambda url, body, content_type, headers=None, timeout=None: (None, None))
     monkeypatch.setattr(mqtt, "run", lambda argv, **kwargs: CommandResult(1, "", "", False))
     monkeypatch.setattr(nodered, "config", lambda codedir: nodered.ConfigRead(None, "missing"))
