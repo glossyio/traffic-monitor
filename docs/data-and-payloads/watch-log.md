@@ -12,7 +12,7 @@ Cameras go in `watch_camera` and radars in `watch_radar`. Both tables are in the
 
 A row covers the five minutes that end at its `time`, which is always a multiple of five minutes on the device's clock. There is a row for every camera and radar listed in [config.yml](../configuration/node-red-config.md#sensorscameras), whether it is enabled or not, so a sensor that was switched off shows up as a row with `enabled` 0 rather than as a gap.
 
-A window with no row means Node-RED didn't see that whole window. That covers the window that a restart, a reboot, or a power cut fell in, and the first five to ten minutes after one. It also covers a window in which the device's clock jumped. Treat a missing window as unknown, not as working or as not working.
+A window with no row means Node-RED didn't see that whole window. That covers every window a restart, a reboot, or a power cut touched, from the one Node-RED stopped in through the one it started in: one window for a quick restart, more for a longer outage. The first row after a start comes at the second five-minute mark, five to ten minutes later. It also covers a window in which the device's clock jumped. Treat a missing window as unknown, not as working or as not working.
 
 ## watch_camera
 
