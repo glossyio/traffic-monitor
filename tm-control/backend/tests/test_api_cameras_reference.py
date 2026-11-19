@@ -337,6 +337,19 @@ def test_audit_rows_carry_the_key_and_no_log_holds_a_ticket_point_or_frigate_nam
         assert "45.52252" not in message and "122.6912" not in message
 
 
+def test_a_500_on_the_package_logs_the_route_not_the_ticket(admin, caplog, monkeypatch):
+    def broken(held, with_location):
+        raise RuntimeError("placeholder-internal-detail")
+
+    monkeypatch.setattr(cameras_router.reference, "package", broken)
+    found = taken(admin)
+    caplog.set_level(logging.DEBUG, logger="tm_control.core.errors")
+    with pytest.raises(RuntimeError):  # the test client re-raises after the handler has logged
+        package(admin, found, location=False)
+    logged = [record.getMessage() for record in caplog.records if record.name == "tm_control.core.errors"]
+    assert logged == ["500 RuntimeError on /cameras/{name}/reference/{ticket}/package"]
+
+
 def test_the_location_box_without_a_point_is_audited_as_saved(admin):
     deploy_new_place(admin, None, None)
     found = taken(admin)
