@@ -171,7 +171,7 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 | `color` | The colour Frigate draws the zone in, as `#rrggbb`, or `null` |
 | `enabled` | Whether the zone is on in Frigate |
 | `drawn` | Whether the zone is outlined in the pictures: it's on and has at least three corners |
-| `corners` | Each corner's `letter` (A, B, C, and on, in the order Frigate stores the corners) and its `x` and `y` as fractions of the frame's width and height, from the top-left corner |
+| `corners` | Each corner's `letter` (A, B, C, and on, in the order Frigate stores the corners) and its `x` and `y` as fractions of the frame's width and height, from the top-left corner, even where Frigate's configuration holds the zone in pixels. A corner past the frame's edge is below 0 or above 1 |
 | `distances` | The side lengths entered in Frigate for speed estimation, in Frigate's order, or `[]` |
 | `sides` | The same lengths by side, in the order Frigate stores the corners, such as `{"start": "A", "end": "B", "length": 12}`; the last side ends at A. `[]` unless there is one length for each corner |
 | `inertia`, `loitering_time`, `speed_threshold`, `objects`, `filters` | The zone's settings in Frigate |

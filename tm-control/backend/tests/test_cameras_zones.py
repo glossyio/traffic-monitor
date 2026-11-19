@@ -31,7 +31,11 @@ def test_frigates_name_for_a_zone_is_never_copied():
 
 @pytest.mark.parametrize("coordinates, corners", [
     (["0.1,0.2", "0.3,0.4", "0.5,0.6"], [(0.1, 0.2), (0.3, 0.4), (0.5, 0.6)]),   # a list
-    ("768,432,1536,432,1536,864", [(0.5, 0.5), (1.0, 0.5), (1.0, 1.0)]),         # pixels
+    # Frigate's API gives fractions, above 1 or below 0 where the zone runs past the frame's edge (a bench unit's
+    # zone_near, whose config.yml has pixel points past the frame)
+    ("1.1,0.804,0.882,0.652,0.279,0.873,0.537,1.137",
+     [(1.1, 0.804), (0.882, 0.652), (0.279, 0.873), (0.537, 1.137)]),
+    ("-0.05,0.2,0.3,0.4,0.5,0.6", [(-0.05, 0.2), (0.3, 0.4), (0.5, 0.6)]),
     ("0.1,0.2,0.3,0.4", []),                                                     # two points
     ("0.1,0.2,0.3,0.4,0.5", []),                                                 # an odd count
     ("0.1,0.2,0.3,nan,0.5,0.6", []), ("a,b,c,d,e,f", []), (None, []), (7, []),
@@ -41,8 +45,9 @@ def test_corners(coordinates, corners):
     assert [(c.x, c.y) for c in zone.corners] == corners and zone.drawn is bool(corners)
 
 
-def test_pixels_without_a_detect_size_give_no_corners():
-    assert zone_facts({"zones": {"z": {"coordinates": "768,432,1536,432,1536,864"}}})[0].corners == []
+def test_corners_need_no_detect_size():
+    corners = zone_facts({"zones": {"z": {"coordinates": "1.1,0.804,0.882,0.652,0.279,0.873"}}})[0].corners
+    assert [(c.x, c.y) for c in corners] == [(1.1, 0.804), (0.882, 0.652), (0.279, 0.873)]
 
 
 def test_a_zone_that_is_off_is_listed_and_not_drawn():

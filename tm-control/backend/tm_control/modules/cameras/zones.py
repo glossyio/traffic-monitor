@@ -100,9 +100,10 @@ def _floats(parts: list) -> list[float] | None:
     return found
 
 
-def _corners(value, size: tuple[int, int] | None) -> list[Corner]:
-    """coordinates as a string "x,y,x,y,..." or a list of "x,y" strings. Fractions of the detect frame; values above 1
-    are pixels, divided by the detect width or height."""
+def _corners(value) -> list[Corner]:
+    """coordinates as a string "x,y,x,y,..." or a list of "x,y" strings, as fractions of the detect frame. Frigate's
+    /api/config gives fractions even for a zone its config.yml holds in pixels; a corner past the frame's edge is below
+    0 or above 1, and is kept as it is."""
     if isinstance(value, str):
         parts = value.split(",")
     elif isinstance(value, list) and all(isinstance(point, str) for point in value):
@@ -112,11 +113,6 @@ def _corners(value, size: tuple[int, int] | None) -> list[Corner]:
     numbers = _floats(parts)
     if numbers is None or len(numbers) % 2 or len(numbers) < 6:
         return []
-    if any(number > 1 for number in numbers):
-        if size is None:
-            return []
-        width, height = size
-        numbers = [number / (width if i % 2 == 0 else height) for i, number in enumerate(numbers)]
     return [Corner(letter=corner_letter(i // 2), x=numbers[i], y=numbers[i + 1]) for i in range(0, len(numbers), 2)]
 
 
@@ -138,10 +134,10 @@ def _sides(corners: list[Corner], distances: list[float]) -> list[Side]:
     ]
 
 
-def _zone(key: str, value, size: tuple[int, int] | None) -> ZoneFacts:
+def _zone(key: str, value) -> ZoneFacts:
     zone = mapping(value)
     enabled = zone.get("enabled") is not False
-    corners = _corners(zone.get("coordinates"), size)
+    corners = _corners(zone.get("coordinates"))
     distances = _distances(zone.get("distances"))
     objects = zone.get("objects")
     return ZoneFacts(
@@ -165,5 +161,4 @@ def zone_facts(camera: Mapping) -> list[ZoneFacts]:
     zones = mapping(camera).get("zones")
     if not isinstance(zones, dict):
         return []
-    size = detect_size(camera)
-    return [_zone(str(key), value, size) for key, value in zones.items()]
+    return [_zone(str(key), value) for key, value in zones.items()]
