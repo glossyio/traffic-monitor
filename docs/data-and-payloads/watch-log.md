@@ -29,7 +29,7 @@ One row for each camera and window. The primary key is `time` and `camera`.
 | `camera_fps` | REAL | Frames per second the camera delivered, averaged over the reports | Empty when `stats_messages` is 0 |
 | `process_fps` | REAL | Frames per second Frigate processed | Empty when `stats_messages` is 0 |
 | `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `stats_messages` is 0 |
-| `detection_fps` | REAL | Frames per second sent to the detector | Empty when `stats_messages` is 0 |
+| `detection_fps` | REAL | Regions per second sent to the detector. Frigate can send several regions of one frame, so this can be higher than `camera_fps`. | Empty when `stats_messages` is 0 |
 | `detection_enabled` | INTEGER | Whether detection was on for the whole window. It is 0 when detection was off in any report of the window. | `1` or `0`; empty when `stats_messages` is 0 |
 
 The four frame rates are means of the reports in the window, rounded to two decimals.
@@ -53,17 +53,26 @@ A radar with nothing passing it sends little, so a recent `last_reading_at` isn'
 
 A camera was watching in a window when `enabled`, `frigate_answered`, and `detection_enabled` are all 1, `stats_messages` is 4 or more, and `camera_fps` is above 0. A radar was watching when `enabled` and `port_open` are both 1.
 
-The other patterns mean:
+What a camera row looks like in each situation:
 
-| Row | What happened |
+| What happened | How the row looks |
 |---|---|
-| `enabled` 0 | The sensor was switched off in `config.yml`. |
-| `frigate_answered` 0 | Frigate sent nothing for the whole window: it was restarting or not responding. There is nothing about any camera. |
-| `frigate_answered` 1 and `stats_messages` 0 | Frigate was running but didn't have this camera, as when its configuration didn't load. |
-| `stats_messages` well under 5 | Frigate answered for only part of the window. |
-| `camera_fps` 0 | The camera's stream was down. |
-| `detection_enabled` 0 | Detection was switched off, in Frigate or on the [Cameras](../use/cameras.md) page, for some or all of the window. |
-| `port_open` 0 | The radar's serial port wasn't open, as when the radar was unplugged. |
+| Watching, with traffic | `detection_enabled` 1, `camera_fps` above 0, `detection_fps` above 0 |
+| Watching, with nothing moving in view | `detection_enabled` 1, `camera_fps` above 0, `detection_fps` 0. Frigate runs the detector only where it sees motion or is tracking an object, so a quiet road gives 0 with detection on. |
+| Camera on, detection switched off in Frigate or on the [Cameras](../use/cameras.md) page for the whole window | `detection_enabled` 0, `camera_fps` above 0, `detection_fps` 0 |
+| Detection switched on or off partway through the window | `detection_enabled` 0. `detection_fps` can be above 0: it's the mean of all the window's reports, including those with detection on. |
+| The camera's stream was down while Frigate ran | `frigate_answered` 1, `camera_fps` 0 |
+| Frigate ran without this camera, as when its configuration didn't load | `frigate_answered` 1, `stats_messages` 0, the frame rates and `detection_enabled` empty |
+| Frigate answered for only part of the window | `stats_messages` well under 5 |
+| Frigate sent nothing for the whole window: it was restarting or not responding | `frigate_answered` 0, `stats_messages` 0, the frame rates and `detection_enabled` empty. There is nothing about any camera. |
+| The camera was switched off in `config.yml` | `enabled` 0, `deployment_id` empty. The other columns still show what Frigate reported. |
+
+What a radar row looks like:
+
+| What happened | How the row looks |
+|---|---|
+| The radar was switched off in `config.yml` | `enabled` 0, `deployment_id` empty |
+| The radar's serial port wasn't open, as when the radar was unplugged | `port_open` 0 |
 
 ## Examples
 
@@ -107,4 +116,38 @@ ORDER BY w.time;
 
 ## Where the watch log goes
 
-The rows are in the database download and in the ThingsBoard upload, as one `watch` value every five minutes; see [MQTT and ThingsBoard](integrations.md#thingsboard). They are not in the JSON export. Each row holds only numbers, sensor names from `config.yml`, and a deployment id, so it can't identify a person.
+The rows are in the database download and in the ThingsBoard upload, as one `watch` value every five minutes; see [MQTT and ThingsBoard](integrations.md#thingsboard). They are not in the JSON export.
+
+A `watch` value holds the window's rows, one list for cameras and one for radars. This one is from a camera that was on with detection switched off:
+
+```json
+{
+    "cameras": [
+        {
+            "time": 1773489600,
+            "camera": "picam_h265",
+            "enabled": 1,
+            "deployment_id": "1773400000000-3f9c2a1b-d",
+            "frigate_answered": 1,
+            "stats_messages": 5,
+            "camera_fps": 10.06,
+            "process_fps": 10.1,
+            "skipped_fps": 0,
+            "detection_fps": 0,
+            "detection_enabled": 0
+        }
+    ],
+    "radars": [
+        {
+            "time": 1773489600,
+            "radar": "TM_RADAR_SERIAL_PORT_00",
+            "enabled": 1,
+            "deployment_id": "1773400000000-8b51e0d7-d",
+            "port_open": 1,
+            "last_reading_at": 1773489595.09
+        }
+    ]
+}
+```
+
+An empty column is `null`. Each row holds only numbers, sensor names from `config.yml`, and a deployment id, so it can't identify a person.
