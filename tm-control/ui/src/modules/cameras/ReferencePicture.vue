@@ -5,8 +5,8 @@
   the location box, and Save the zip. The device doesn't check the pictures for people; the note, shown on both steps,
   makes that the admin's job.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
-  dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored). The
-  dialog starts over each time it opens. A 404 from Save, or a picture that fails to load, means the device no longer
+  dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored), and
+  a take that answers after the dialog closed drops its new pictures at once. The dialog starts over each time it opens. A 404 from Save, or a picture that fails to load, means the device no longer
   holds them: the dialog goes back to its first step and says so. Any other refusal shows the API's message.
 -->
 <script setup lang="ts">
@@ -41,20 +41,28 @@ const expired = ref(false)
 const title = computed(() => `Reference picture of ${props.name}`)
 const legend = computed(() => (reference.value ? legendRows(reference.value) : []))
 
-// Tell the device to forget the pictures it holds for this dialog; its answer doesn't matter
+// Counts each opening and closing, so a take that answers after either knows it is stale
+let session = 0
+
+// Tell the device to forget a ticket's pictures; its answer doesn't matter
+function forget(ticket: string) {
+  void api
+    .DELETE('/api/v1/cameras/{name}/reference/{ticket}', { params: { path: { name: props.name, ticket } } })
+    .catch(() => {})
+}
+
+// Forget the pictures the device holds for this dialog
 function drop() {
   const held = reference.value
   reference.value = null
-  if (!held) return
-  void api
-    .DELETE('/api/v1/cameras/{name}/reference/{ticket}', { params: { path: { name: props.name, ticket: held.ticket } } })
-    .catch(() => {})
+  if (held) forget(held.ticket)
 }
 
 // Each opening starts at the first step; closing drops what the device holds
 watch(
   open,
   (isOpen) => {
+    session += 1
     if (isOpen) {
       reference.value = null
       error.value = ''
@@ -75,15 +83,20 @@ function gone() {
 
 async function take() {
   drop()
+  const started = session
   taking.value = true
   error.value = ''
   expired.value = false
   try {
     const { data } = await api.POST('/api/v1/cameras/{name}/reference', { params: { path: { name: props.name } } })
+    if (session !== started) {
+      forget((data as ReferenceOut).ticket)
+      return
+    }
     reference.value = data as ReferenceOut
     withLocation.value = reference.value.has_location
   } catch (failure) {
-    error.value = messageOf(failure)
+    if (session === started) error.value = messageOf(failure)
   } finally {
     taking.value = false
   }

@@ -211,4 +211,21 @@ describe('Reference picture', () => {
     expect(pictures()).toEqual([])
     expect(buttonsIn(dialog(), 'Take the pictures')).toHaveLength(1)
   })
+
+  it('drops the pictures a take brings back after the dialog closed', async () => {
+    let answer: (response: Response) => void = () => {}
+    const { api, wrapper } = await openPage({
+      [TAKE]: () => new Promise<Response>((resolve) => (answer = resolve)),
+    })
+    await openDialog(wrapper)
+    await takePictures()
+    await clickIn(dialog(), 'Close')
+    expect(api.sent.some((request) => request.method === 'DELETE')).toBe(false)
+    answer(json(200, referenceOut()))
+    await flushPromises()
+    expect(api.sent.at(-1)).toMatchObject({ method: 'DELETE', path: BASE })
+    await openDialog(wrapper)
+    expect(pictures()).toEqual([])
+    expect(buttonsIn(dialog(), 'Take the pictures')).toHaveLength(1)
+  })
 })
