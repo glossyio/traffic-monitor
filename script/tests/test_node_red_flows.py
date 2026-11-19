@@ -1,5 +1,6 @@
 """Check Node-RED's flows.json off-device."""
 
+import copy
 import json
 import re
 import sqlite3
@@ -2099,6 +2100,13 @@ TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
             "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
             "survey_id": "3f9a1c2e-si"}
+TICK = 1761800100  # a five-minute mark
+TICK_MS = TICK * 1000
+WATCH_CAMERA_COLUMNS = ["time", "camera", "enabled", "deployment_id", "frigate_answered", "stats_messages",
+                        "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled"]
+WATCH_RADAR_COLUMNS = ["time", "radar", "enabled", "deployment_id", "port_open", "last_reading_at"]
+STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
+EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}}
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
     "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
@@ -3399,3 +3407,82 @@ def test_the_car_speed_statistics_count_each_source():
     assert list(result)[:3] == ["count", "count_radar", "count_frigate"]
     assert (result["count"], result["count_radar"], result["count_frigate"]) == (5, 3, 2)
     assert result["max_speed"] == 31.0
+
+
+# The watch log: what Frigate's stats reports and the radar facts add up to over five minutes, one row each in
+# watch_camera and watch_radar. "keep frigate stats" adds the reports up; the mark node starts and closes the windows.
+
+
+def camera_stats(camera_fps=5.0, detection_enabled=True, **changes):
+    return {"camera_fps": camera_fps, "process_fps": 4.5, "skipped_fps": 0.0, "detection_fps": 0.5,
+            "detection_enabled": detection_enabled, "pid": 123, "ffmpeg_pid": 456, **changes}
+
+
+def keep_stats(payloads, window=MISSING):
+    """Run "keep frigate stats" on each payload in turn, with one camera that config.yml lists under another key."""
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "keep frigate stats")
+    return run_functions([(node, {"topic": "frigate/stats", "payload": payload}) for payload in payloads],
+                         context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}, "tm_warned": {}}, flow=flow)
+
+
+@needs_node
+def test_reports_are_added_up_under_the_cameras_key():
+    run = keep_stats([
+        {"cameras": {"oak_ave_wide": camera_stats(5.0), "back_lane": camera_stats(9.0)}, "service": {"uptime": 60}},
+        {"cameras": {"oak_ave_wide": camera_stats(4.0, detection_enabled=False)}},
+    ])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 2, "cameras": {"camera_1_3fa9c2": {
+        "messages": 2, "camera_fps": 9.0, "process_fps": 9.0, "skipped_fps": 0.0, "detection_fps": 1.0,
+        "detection_off": 1}}}
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [step["logged"] for step in run["results"]] == [[], []]
+    # Frigate's names, the listed camera's and the unlisted one's, are kept nowhere
+    kept = json.dumps([run["flow"], run["results"]])
+    assert "oak_ave_wide" not in kept and "back_lane" not in kept
+
+
+@needs_node
+def test_a_frigate_with_no_cameras_still_answered():
+    assert keep_stats([{"cameras": {}}])["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 1}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", ["online", None, 7, [], {}, {"cameras": []}, {"cameras": "none"}],
+                         ids=["text", "null", "number", "list", "no-cameras-key", "cameras-list", "cameras-text"])
+def test_a_report_that_cannot_be_read_is_not_counted(payload):
+    run = keep_stats([payload, payload])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW
+    assert [entry for step in run["results"] for entry in step["logged"]] == [["warn", STATS_WARNING, False]]
+    assert run["global"]["tm_warned"] == {"watch:stats": True}
+
+
+@needs_node
+@pytest.mark.parametrize("entry", [
+    None, "busy", camera_stats(camera_fps="5.0"), camera_stats(detection_enabled=1),
+    {key: value for key, value in camera_stats().items() if key != "detection_fps"},
+], ids=["null", "text", "fps-as-text", "detection-as-number", "an-fps-missing"])
+def test_a_camera_entry_that_cannot_be_read_is_left_out(entry):
+    run = keep_stats([{"cameras": {"oak_ave_wide": entry}}])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 1}
+    assert run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_before_the_first_mark_nothing_is_kept():
+    run = keep_stats([{"cameras": {"oak_ave_wide": camera_stats()}}], window=None)
+    assert run["flow"] == {} and run["results"][0]["logged"] == []
+
+
+def test_frigate_stats_reach_the_keeper():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate stats")
+    [source] = [node for node in flows if keep["id"] in sum(node.get("wires", []), [])]
+    assert (source["type"], source["topic"], source["broker"], source["qos"], source["datatype"]) == (
+        "mqtt in", "frigate/stats", "a5d65dd0e3566daa", "0", "auto-detect")
+    assert (keep["type"], keep["outputs"], keep["wires"], keep["initialize"], keep["finalize"]) == (
+        "function", 1, [[]], "", "")
+    group = by_id[keep["g"]]
+    assert group["name"] == "watch log" and group["z"] == keep["z"] == source["z"] == tab_id(flows, "system")
+    assert source["g"] == group["id"] and {keep["id"], source["id"]} <= set(group["nodes"])

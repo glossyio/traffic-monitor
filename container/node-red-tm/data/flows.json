@@ -15624,5 +15624,63 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "42ab4681bb24d9f1",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "watch log",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "1c84b05d58e12d41",
+            "c8bdd25e20610818"
+        ],
+        "x": 14,
+        "y": 1061,
+        "w": 522,
+        "h": 82
+    },
+    {
+        "id": "1c84b05d58e12d41",
+        "type": "mqtt in",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "",
+        "topic": "frigate/stats",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 1100,
+        "wires": [
+            [
+                "c8bdd25e20610818"
+            ]
+        ]
+    },
+    {
+        "id": "c8bdd25e20610818",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "keep frigate stats",
+        "func": "// Adds up Frigate's stats reports (frigate/stats, about one a minute) into the open five-minute window in\n// flow.watch_window, which the mark node starts and closes. Reports are filed under the key config.yml gives\n// each camera, so Frigate's own name is kept nowhere: a camera that config.yml doesn't list is left out.\n// Before the first mark there is no window and nothing is kept.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nconst FPS = [\"camera_fps\", \"process_fps\", \"skipped_fps\", \"detection_fps\"];\n\nconst window = flow.get(\"watch_window\");\nif (!isMapping(window)) {\n    return null;\n}\n\nconst report = msg.payload;\nif (!isMapping(report) || !isMapping(report.cameras)) {\n    warnOnce(\"watch:stats\", \"Watch log: a frigate/stats message couldn't be read, so it wasn't counted.\");\n    return null;\n}\n\nwindow.messages = (Number.isFinite(window.messages) ? window.messages : 0) + 1;\nif (!isMapping(window.cameras)) {\n    window.cameras = {};\n}\n\nconst keys = global.get(\"frigate_cameras\");\nfor (const [name, entry] of Object.entries(report.cameras)) {\n    if (!isMapping(keys) || !has(keys, name) || typeof keys[name] !== \"string\") {\n        continue;\n    }\n    if (!isMapping(entry) || typeof entry.detection_enabled !== \"boolean\"\n        || !FPS.every((field) => typeof entry[field] === \"number\" && Number.isFinite(entry[field]))) {\n        continue;\n    }\n    const key = keys[name];\n    if (!has(window.cameras, key)) {\n        window.cameras[key] = { messages: 0, camera_fps: 0, process_fps: 0, skipped_fps: 0, detection_fps: 0, detection_off: 0 };\n    }\n    const sums = window.cameras[key];\n    sums.messages += 1;\n    for (const field of FPS) {\n        sums[field] += entry[field];\n    }\n    if (entry.detection_enabled === false) {\n        sums.detection_off += 1;\n    }\n}\n\nflow.set(\"watch_window\", window);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 1100,
+        "wires": [
+            []
+        ]
     }
 ]
