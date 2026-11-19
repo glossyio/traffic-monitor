@@ -4,7 +4,8 @@
         "radar",
         "airquality",
         "system_metrics",
-        "deployments"
+        "deployments",
+        "watch"
     ],
     "attributes": [
         "deployments",
@@ -48,5 +49,26 @@
         "speed_source",
         "radar_readings",
         "direction_source"
+    ],
+    "watch_camera": [
+        "time",
+        "camera",
+        "enabled",
+        "deployment_id",
+        "frigate_answered",
+        "stats_messages",
+        "camera_fps",
+        "process_fps",
+        "skipped_fps",
+        "detection_fps",
+        "detection_enabled"
+    ],
+    "watch_radar": [
+        "time",
+        "radar",
+        "enabled",
+        "deployment_id",
+        "port_open",
+        "last_reading_at"
     ]
 }

@@ -2138,6 +2138,7 @@ GATE_TELEMETRY = {
     "airquality": {"entryDateTime": 1761800000, "pm025": 4.0, "sensorName": "aq"},
     "system_metrics": {"time_ms_utc": TS, "cpu_percent": 12.5},
     "deployments": {"updatedDeployment": [{**GATE_ROW, "entryEndDateTime": TS}], "currentDeployment": [GATE_ROW]},
+    "watch": {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]},
 }
 GATE_ATTRIBUTES = {
     "deployments": {
@@ -2550,12 +2551,13 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event"]
-    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments"]
+    assert list(lists) == ["telemetry", "attributes", "event", "watch_camera", "watch_radar"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -2572,7 +2574,10 @@ def test_the_gate_holds_no_list_of_its_own():
     None, {}, [], "event", {"telemetry": ["event"], "attributes": []},
     {"telemetry": "event", "attributes": [], "event": []},
     {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
-], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text"])
+    {key: names for key, names in upload_lists().items() if key != "watch_camera"},
+    {**upload_lists(), "watch_radar": ["time", 7]},
+], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
+        "no-watch-camera-list", "watch-radar-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -2604,6 +2609,65 @@ def test_gate_leaves_out_an_event_it_cannot_read(event):
     assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
     out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}})
     assert out is None
+
+
+WATCH_VALUE = {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]}
+
+
+def watch_item(value):
+    return {"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value}}}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_watch_fields():
+    value = {"cameras": [{**CAMERA_ROWS[0], "surprise": "kept-on-the-unit"}],
+             "radars": [{**RADAR_ROWS[0], "note": "kept-on-the-unit"}], "extra": [1]}
+    run = gate_run([watch_item(value), watch_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TICK_MS, "values": {"watch": WATCH_VALUE}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert sorted(warnings) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("watch.extra", "watch_camera.surprise", "watch_radar.note"))
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+
+
+@needs_node
+@pytest.mark.parametrize("value", [
+    "text", ["cameras"], None, 7, {}, {"extra": []}, {"cameras": "all", "radars": 7}, {"cameras": [], "radars": []},
+    {"cameras": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
+        "no-listed-field"])
+def test_gate_leaves_out_watch_rows_it_cannot_read(value):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value, "radar": radar}}})
+    assert out["payload"] == {"ts": TICK_MS, "values": {"radar": radar}}
+    out, _ = gate(watch_item(value))
+    assert out is None
+
+
+@needs_node
+def test_gate_keeps_the_list_that_has_rows():
+    out, logged = gate(watch_item({"cameras": [CAMERA_ROWS[0], "text"], "radars": []}))
+    assert out["payload"]["values"]["watch"] == {"cameras": [CAMERA_ROWS[0]]}
+    assert logged == [["warn", "ThingsBoard upload: left out watch rows that aren't mappings.", False]]
+
+
+@needs_node
+def test_watch_rows_are_sent_as_one_telemetry_value():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    out, link_in, fmt = named(flows, "watch link out"), named(flows, "watch link in"), named(flows, "format watch telemetry")
+    assert out["links"] == [link_in["id"]] and link_in["links"] == [out["id"]]
+    assert (link_in["type"], link_in["z"], fmt["z"]) == ("link in", tab_id(flows, "thingsboard"), link_in["z"])
+    assert link_in["wires"] == [[fmt["id"]]] and fmt["wires"] == [["8c521232f464d27a"]]
+    group = by_id[fmt["g"]]
+    assert (group["name"], group["g"], link_in["g"]) == ("watch", "2f27e270200485b9", group["id"])
+    payload = {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}
+    [step] = run_functions([(fmt, {"payload": payload, "params": {"$time": TICK}})])["results"]
+    assert step["result"] == {"payload": {"ts": TICK_MS, "values": {"watch": {"cameras": CAMERA_ROWS,
+                                                                              "radars": RADAR_ROWS}}}}
+    assert gate({"type": "telemetry", "payload": step["result"]["payload"]})[0]["payload"] == step["result"]["payload"]
 
 
 def record_node():
@@ -3631,6 +3695,7 @@ def test_watch_fields_agree():
         assert names == columns and values == [f"${name}" for name in columns]
         assert (node["sqlquery"], node["mydb"]) == ("prepared", TMDB)
         assert [row[1] for row in con.execute(f"PRAGMA table_info({table})")] == columns
+        assert upload_lists()[table] == columns
 
 
 def test_the_watch_log_is_written_every_five_minutes():
