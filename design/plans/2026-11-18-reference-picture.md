@@ -869,7 +869,7 @@ git commit   # subject: Document the Cameras page's reference picture
   6. The pictures are gone 10 minutes after a take (404 `reference_expired`), and the journal of `tm-control.service` for the run holds no ticket and no coordinate.
   7. The audit log has `camera.reference` rows with the camera's key only.
   8. The people check. **This turns Frigate's detection on, once, so ask the maintainer first and say it is one time.** With their consent: turn detection on for the bench camera, take once (`people` is `none`, or `seen` if he stands in view), turn detection off, confirm `detect.enabled` is false in `/api/config` sent with `X-Cache-Bypass: 1`, and record that in the check. Without it, record the item as not run.
-- [ ] **Step 4: The public plan copy.** Copy this plan to `design/plans/2026-11-18-reference-picture.md` without the "Private notes" section, and commit it last.
+- [ ] **Step 4: The public plan copy.** Copy this plan to `design/plans/2026-11-18-reference-picture.md`, and commit it last.
 - [ ] **Step 5: Write the text, and stop.** Write, for the maintainer to read before anything is pushed: the PR title and body from `.github/PULL_REQUEST_TEMPLATE.md`, against `dev`, with "Closes #338", with the bench check's id, what item 4 found about Frigate's error picture, and the template's "Docs" and "AI assistance" sections filled in.
 
 ---

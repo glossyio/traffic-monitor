@@ -112,7 +112,7 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 | `<name>.json` | The data file: the place, the camera, when the pictures were taken, and every zone; see [The data file](#the-data-file) |
 | `<name>_zones.svg` | A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it |
 
-The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name in bold, and when the clean picture was taken, in UTC.
+The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name (the one in bold on its row), and when the clean picture was taken, in UTC.
 
 1. On the camera's row, choose **Reference picture**. The dialog says what the picture gives away before any picture is taken.
 2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows both pictures and the camera's zones with their colours and side lengths.
@@ -150,7 +150,7 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 |---|---|
 | `format`, `format_version` | `traffic-monitor-reference` and `1` |
 | `survey_id` | The ID of the place in use, or `null` |
-| `camera` | The camera's name in bold on the Cameras page |
+| `camera` | The camera's name (the one in bold on its row) |
 | `deployment_id` | The camera's open deployment at the place, or `null` |
 | `location` | `{"lat": …, "lon": …}`, the place's exact location, or `null` when the box was cleared or there was no location to include |
 | `pictures` | Each file's name, and for the two pictures `taken_at`, in UTC, such as `2026-11-18T18:30:05Z` |
