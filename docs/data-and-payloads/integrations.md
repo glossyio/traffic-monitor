@@ -14,6 +14,7 @@ Node-RED hosts an MQTT broker on the device at port `1883`. Frigate, the air qua
 |---|---|---|
 | `frigate/events` | Frigate to the Traffic Monitor | Frigate's [event messages](https://docs.frigate.video/integrations/mqtt). The Traffic Monitor records the ones with `type: "end"` as [events](events-payload.md). |
 | `frigate/<camera>/<object>/snapshot` | Frigate to subscribers | A cropped JPEG of each detected object, which can show a person. Frigate publishes it only when the camera's `mqtt` setting is on, and new installs turn it off. The Traffic Monitor doesn't use it. See [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). |
+| `frigate/stats` | Frigate to the Traffic Monitor | Frigate's status report, about once a minute. The Traffic Monitor adds each camera's frame rates and whether detection was on up into the [watch log](watch-log.md). |
 | `aq/<sensor>/readings` | [Air quality sensor](../add-ons/air-quality.md) to the Traffic Monitor | One JSON reading. See [Air quality](air-quality-aq-payload.md). |
 | `tm/events` | The Traffic Monitor to subscribers | Today's cumulative counts, mainly for a display board. Published with QoS 1 and retained, so a new subscriber gets the latest counts at once. See below. |
 
@@ -76,4 +77,5 @@ Once connected, the device sends over ThingsBoard's HTTP API:
 * Each [event](events-payload.md) as telemetry, with `ts` set to the event's `frame_time` in milliseconds and `values.event` holding the event's columns that are on the list of what is shared, [`upload-lists.json`](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/data/upload-lists.json). A column that isn't on the list stays on the device.
 * Each [radar](radar-payload.md) and [air quality](air-quality-aq-payload.md) reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.
 * The device's system metrics as telemetry, every five minutes.
+* The [watch log](watch-log.md) as telemetry, every five minutes: one `watch` value with `cameras` and `radars` lists holding that window's rows, and `ts` set to the end of the window in milliseconds. The fields sent are the `watch_camera` and `watch_radar` lists in `upload-lists.json`, which hold every column of the two tables.
 * The deployment location and radar information as device attributes.

@@ -1,0 +1,108 @@
+---
+description: The two watch log tables, which record every five minutes whether each camera and radar was working, so that a quiet road can be told from a sensor that was off.
+---
+
+# Watch log
+
+An hour with no events looks the same whether the road was empty or nothing was watching it. The watch log tells the two apart. Every five minutes the device writes one row for each camera and one for each radar, saying what that sensor was doing.
+
+Cameras go in `watch_camera` and radars in `watch_radar`. Both tables are in the database, in the [Data export](../ui/database.md) page's database download.
+
+## What a row covers
+
+A row covers the five minutes that end at its `time`, which is always a multiple of five minutes on the device's clock. There is a row for every camera and radar listed in [config.yml](../configuration/node-red-config.md#sensorscameras), whether it is enabled or not, so a sensor that was switched off shows up as a row with `enabled` 0 rather than as a gap.
+
+A window with no row means Node-RED didn't see that whole window. That covers the window that a restart, a reboot, or a power cut fell in, and the first five to ten minutes after one. It also covers a window in which the device's clock jumped. Treat a missing window as unknown, not as working or as not working.
+
+## watch_camera
+
+One row for each camera and window. The primary key is `time` and `camera`.
+
+| Column | Type | Meaning | Values |
+|---|---|---|---|
+| `time` | INTEGER | End of the five-minute window | Unix time in seconds |
+| `camera` | TEXT | The camera's name in `config.yml`, the same name as `events.camera` | |
+| `enabled` | INTEGER | Whether the camera's entry in `config.yml` was enabled | `1` or `0` |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the camera had | Empty if it has none |
+| `frigate_answered` | INTEGER | Whether Frigate sent any status report in the window | `1` or `0` |
+| `stats_messages` | INTEGER | How many of Frigate's reports in the window included this camera. Frigate reports once a minute unless its `mqtt.stats_interval` setting was changed, so 5 is a full window. | 0 or more |
+| `camera_fps` | REAL | Frames per second the camera delivered, averaged over the reports | Empty when `stats_messages` is 0 |
+| `process_fps` | REAL | Frames per second Frigate processed | Empty when `stats_messages` is 0 |
+| `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `stats_messages` is 0 |
+| `detection_fps` | REAL | Frames per second sent to the detector | Empty when `stats_messages` is 0 |
+| `detection_enabled` | INTEGER | Whether detection was on for the whole window. It is 0 when detection was off in any report of the window. | `1` or `0`; empty when `stats_messages` is 0 |
+
+The four frame rates are means of the reports in the window, rounded to two decimals.
+
+## watch_radar
+
+One row for each radar and window. The primary key is `time` and `radar`.
+
+| Column | Type | Meaning | Values |
+|---|---|---|---|
+| `time` | INTEGER | End of the five-minute window | Unix time in seconds |
+| `radar` | TEXT | The radar's name in [config.yml](../configuration/node-red-config.md#sensorsradars), the same as `radarName` in the radar tables | |
+| `enabled` | INTEGER | Whether the radar's entry in `config.yml` was enabled | `1` or `0` |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the radar had | Empty if it has none |
+| `port_open` | INTEGER | Whether the device had the radar's serial port open, as at `time` | `1` or `0` |
+| `last_reading_at` | REAL | When the radar's last reading arrived, as at `time` | Unix time in seconds; empty if none since Node-RED started |
+
+A radar with nothing passing it sends little, so a recent `last_reading_at` isn't needed for the radar to be working.
+
+## How to read it
+
+A camera was watching in a window when `enabled`, `frigate_answered`, and `detection_enabled` are all 1 and `camera_fps` is above 0. A radar was watching when `enabled` and `port_open` are both 1.
+
+The other patterns mean:
+
+| Row | What happened |
+|---|---|
+| `enabled` 0 | The sensor was switched off in `config.yml`. |
+| `frigate_answered` 0 | Frigate was stopped or restarting, so there is nothing about any camera. |
+| `frigate_answered` 1 and `stats_messages` 0 | Frigate was running but didn't have this camera, as when its configuration didn't load. |
+| `camera_fps` 0 | The camera's stream was down. |
+| `detection_enabled` 0 | Detection was switched off, in Frigate or on the [Cameras](../use/cameras.md) page, for some or all of the window. |
+| `port_open` 0 | The radar's serial port wasn't open, as when the radar was unplugged. |
+
+## Examples
+
+These use Python's built-in `sqlite3`, or any SQLite tool. Replace `picam_h265` and the dates with your own.
+
+How many of each hour's twelve windows a camera was watching, for one day in the device's local time. `windows_logged` is how many of the twelve have a row, so you can tell a missing window from one when the camera wasn't watching.
+
+```sql
+SELECT strftime('%Y-%m-%d %H:00', time - 1, 'unixepoch', 'localtime') AS hour,
+       camera,
+       COUNT(*) AS windows_logged,
+       SUM(CASE WHEN enabled = 1 AND frigate_answered = 1
+                 AND detection_enabled = 1 AND camera_fps > 0
+                THEN 1 ELSE 0 END) AS windows_watching
+FROM watch_camera
+WHERE time > CAST(strftime('%s', '2026-03-14', 'utc') AS INTEGER)
+  AND time <= CAST(strftime('%s', '2026-03-15', 'utc') AS INTEGER)
+GROUP BY hour, camera
+ORDER BY hour, camera;
+```
+
+The events in each window, next to whether the camera was watching. An event belongs to the window that its `start_time` falls in, from five minutes before `time` up to and including `time`. A window with no events and a camera that was watching is a quiet road; a window with no events and a camera that wasn't is no information.
+
+```sql
+SELECT w.time,
+       w.camera_fps,
+       w.detection_enabled,
+       COUNT(e.id) AS events
+FROM watch_camera AS w
+LEFT JOIN events AS e
+       ON e.camera = w.camera
+      AND e.start_time > w.time - 300
+      AND e.start_time <= w.time
+WHERE w.camera = 'picam_h265'
+  AND w.time > CAST(strftime('%s', '2026-03-14', 'utc') AS INTEGER)
+  AND w.time <= CAST(strftime('%s', '2026-03-15', 'utc') AS INTEGER)
+GROUP BY w.time
+ORDER BY w.time;
+```
+
+## Where the watch log goes
+
+The rows are in the database download and in the ThingsBoard upload, as one `watch` value every five minutes; see [MQTT and ThingsBoard](integrations.md#thingsboard). They are not in the JSON export. Each row holds only numbers, sensor names from `config.yml`, and a deployment id, so it can't identify a person.
