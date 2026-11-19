@@ -131,3 +131,93 @@ def test_no_upload_node_sends_the_settings(host, codedir):
     found = "config_tm" in flows
     del flows
     assert not found, "the deployed flows.json still mentions config_tm (run tmsetup.sh -t node-red-tm)"
+
+
+WATCH_MARK_SECONDS = 300
+WATCH_MAX_AGE_SECONDS = 400
+# The first mark after a start writes nothing, so the first rows come at the second mark: up to ten minutes
+# after the start, plus the time to write them.
+WATCH_FIRST_ROWS_SECONDS = 11 * 60
+
+
+def node_red_active_seconds(host):
+    """How long node-red-tm.service has been active, from systemd's monotonic stamp against the Pi's uptime,
+    so a jump of the wall clock since the start doesn't change it."""
+    entered = int(host.check_output("systemctl show -p ActiveEnterTimestampMonotonic --value node-red-tm.service"))
+    uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
+    return uptime - entered / 1e6
+
+
+def newest_watch_rows(host, codedir, table, sensor_column, columns):
+    """(time, rows) for the newest window in a watch log table: each row a dict of the columns, keyed by its sensor
+    name. (None, {}) when the table is empty."""
+    selected = ", ".join([sensor_column, *columns])
+    rows = db_query(host, codedir, f"SELECT time, {selected} FROM {table} "
+                                   f"WHERE time = (SELECT MAX(time) FROM {table})")
+    if not rows:
+        return None, {}
+    return rows[0][0], {row[1]: dict(zip(columns, row[2:])) for row in rows}
+
+
+def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red_config, frigate_stats):
+    """The newest watch_camera and watch_radar rows are on a five-minute mark within 400 seconds of now, name each
+    camera and radar config.yml lists, and, for a camera Frigate reports on, say Frigate answered, with its stats
+    messages and detection setting; an expected radar's port is open. Reads only."""
+    active = node_red_active_seconds(host)
+    if active < WATCH_FIRST_ROWS_SECONDS:
+        pytest.skip(f"node-red-tm.service has been active for {active / 60:.0f} minutes; its first watch log rows "
+                    f"come at the second five-minute mark after a start, so check again after 11 minutes")
+    sensors = node_red_config.get("sensors") or {}
+    cameras = sensors.get("cameras") or {}
+    radars = sensors.get("radars") or {}
+    if not cameras and not radars:
+        pytest.skip("config.yml lists no cameras or radars")
+    now = pi_now(host)
+    problems = []
+
+    def check_time(table, newest):
+        if newest is None:
+            problems.append(f"{table} is empty")
+            return False
+        if newest % WATCH_MARK_SECONDS != 0:
+            problems.append(f"the newest {table} time {newest} isn't a multiple of {WATCH_MARK_SECONDS}")
+        if not 0 <= now - newest <= WATCH_MAX_AGE_SECONDS:
+            problems.append(f"the newest {table} time is {now - newest:.0f} seconds before now, "
+                            f"not within {WATCH_MAX_AGE_SECONDS}")
+        return True
+
+    if cameras:
+        newest, rows = newest_watch_rows(host, codedir, "watch_camera", "camera",
+                                         ["frigate_answered", "stats_messages", "detection_enabled"])
+        if check_time("watch_camera", newest):
+            if set(rows) != set(cameras):
+                problems.append(f"the newest watch_camera rows are for cameras {sorted(rows)}, "
+                                f"config.yml's sensors.cameras has {sorted(cameras)}")
+            reported = frigate_stats.get("cameras") or {}
+            for key, entry in cameras.items():
+                row = rows.get(key)
+                frigate_name = (entry or {}).get("frigate_camera") or key
+                if row is None or frigate_name not in reported:
+                    continue
+                if row["frigate_answered"] != 1:
+                    problems.append(f"watch_camera.frigate_answered for camera {key} is {row['frigate_answered']}, "
+                                    f"Frigate reports on it now")
+                if not (row["stats_messages"] or 0) >= 1:
+                    problems.append(f"watch_camera.stats_messages for camera {key} is {row['stats_messages']}, "
+                                    f"Frigate reports on it now")
+                detecting = reported[frigate_name].get("detection_enabled")
+                if detecting is not None and row["detection_enabled"] != int(bool(detecting)):
+                    problems.append(f"watch_camera.detection_enabled for camera {key} is {row['detection_enabled']}, "
+                                    f"Frigate's stats say {int(bool(detecting))} now")
+    if radars:
+        newest, rows = newest_watch_rows(host, codedir, "watch_radar", "radar", ["port_open"])
+        if check_time("watch_radar", newest):
+            if set(rows) != set(radars):
+                problems.append(f"the newest watch_radar rows are for radars {sorted(rows)}, "
+                                f"config.yml's sensors.radars has {sorted(radars)}")
+            for radar in expect["radars"]:
+                row = rows.get(radar["env_name"])
+                if row is not None and row["port_open"] != 1:
+                    problems.append(f"watch_radar.port_open for radar {radar['env_name']} is {row['port_open']}, "
+                                    f"the inventory says it is attached")
+    assert not problems, "; ".join(problems)
