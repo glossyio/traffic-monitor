@@ -5,9 +5,10 @@
   the location box, and Save the zip. The device doesn't check the pictures for people; the note, shown on both steps,
   makes that the admin's job.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
-  dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored), and
-  a take that answers after the dialog closed drops its new pictures at once. The dialog starts over each time it opens. A 404 from Save, or a picture that fails to load, means the device no longer
-  holds them: the dialog goes back to its first step and says so. Any other refusal shows the API's message.
+  dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored),
+  and a take that answers after the dialog closed drops its new pictures at once. The dialog starts over each time it
+  opens. A 404 from Save, or a picture that fails to load, means the device no longer holds them: the dialog goes back
+  to its first step and says so. Any other refusal shows the API's message.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'

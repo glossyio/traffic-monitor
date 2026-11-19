@@ -884,3 +884,10 @@ The bench run (check `20261118T232006Z`, a Raspberry Pi 5 with a Coral PCIe, dep
 - **The SVG's labels are lighter.** Zone names are regular weight (corner letters stay bold), and the white halo behind them is 3 px at a width of 1536.
 - **Frigate's frame when the camera stops sending.** With go2rtc stopped, `latest.jpg` answered 200 with `X-Frigate-Offline: true` and an older 320×180 frame. A take refuses it with 409 `no_picture`; the header, the stats, and the size would each have caught it. Frigate's no-frames error picture wasn't seen, because Frigate still had an older frame.
 - **Android's sign-in window** shows the preview but doesn't save the zip ("Could not download"), as expected. The docs say so.
+
+### After the review (2026-11-19)
+
+- Requirement 9 and the Global Constraints' "Frigate camera name" hold only for an entry whose key differs from Frigate's name. An entry named for its Frigate camera (the installer's `picam_h265`) carries that name in the files' names, the data file, the drawing, and the audit rows. The docs say so and point to Use a neutral camera name.
+- A zone's `filters` keep, per object, only `min_area`, `max_area`, `min_ratio`, `max_ratio`, `threshold`, and `min_score`, and only numbers (requirement 7 said "filters").
+- The error handlers log the route's path template, and the cross-site check's 403 line names no path, so neither writes a ticket.
+- A take that answers after the dialog closed drops its pictures at once.
