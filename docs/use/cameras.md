@@ -171,7 +171,7 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 | `inertia`, `loitering_time`, `speed_threshold`, `objects` | The zone's settings in Frigate |
 | `filters` | For each object with filters in the zone, the ones that are numbers among `min_area`, `max_area`, `min_ratio`, `max_ratio`, `threshold`, and `min_score`. Any other filter is left out |
 
-Frigate's name for the camera, the names you typed for zones in Frigate's editor, and the place's description are never in the data file or the drawing.
+The names you typed for zones in Frigate's editor and the place's description are never in the data file or the drawing. Frigate's name for the camera isn't either, unless the camera's entry uses it as its own name, as the installer's `picam_h265` does: then it's in the files' names, the data file, and the drawing. To keep it out, [use a neutral camera name](#use-a-neutral-camera-name) first.
 
 ## Zone names are saved with your data
 
@@ -193,6 +193,7 @@ The Traffic Monitor keeps Frigate's name out of what it saves and shares. These 
 * **Frigate's own database, and its recordings and snapshots.** Frigate keeps events under its own camera names.
 * **Frigate's `frigate/events` messages** on the device's [MQTT broker](../data-and-payloads/integrations.md). Anything subscribed to the broker sees them. Frigate publishes them, not the Traffic Monitor.
 * **Frigate+.** The name identifies the camera for the scene conditions and annotations you submit.
+* **A reference picture of an entry named for its Frigate camera.** The files' names, the data file, and the drawing carry the entry's name, which is then Frigate's name too. See [Take a reference picture](#take-a-reference-picture).
 * **Records saved before a switch.** A device whose entry was named by hand has saved that name with its records, and keeps it there after you [use a neutral camera name](#use-a-neutral-camera-name).
 
 The Status page shows Frigate's camera names to anyone who is logged in, as Frigate does. The [diagnostics file](device-health.md#download-diagnostics) replaces them before you send it to someone; that section lists its limits.
