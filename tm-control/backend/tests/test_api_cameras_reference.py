@@ -273,6 +273,21 @@ def test_no_answer_is_not_checked(admin, monkeypatch):
     assert taken(admin)["people"] == "not_checked"
 
 
+@pytest.mark.parametrize("record, snapshots, asked", [
+    (False, False, False),  # Frigate saves an event only with a clip or a snapshot, so its events can't show anyone
+    (True, False, True),
+    (False, True, True),
+])
+def test_people_are_asked_about_only_while_frigate_keeps_events(admin, monkeypatch, record, snapshots, asked):
+    calls = people(monkeypatch, 0, 0)
+    config = fake.frigate_answer(admin.app.state.settings)[0]
+    camera = config["cameras"]["picam_h265"]
+    camera["record"]["enabled"], camera["snapshots"]["enabled"] = record, snapshots
+    frigate_says(monkeypatch, config)
+    assert taken(admin)["people"] == ("none" if asked else "not_checked")
+    assert calls == (["picam_h265", "picam_h265"] if asked else [])
+
+
 def test_with_detection_off_people_are_not_asked_about(admin, monkeypatch):
     calls = people(monkeypatch)
     assert fake.set_frigate_detect(admin.app.state.settings, "picam_h265", False)

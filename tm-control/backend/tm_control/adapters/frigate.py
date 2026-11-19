@@ -66,7 +66,9 @@ def latest_frame(camera: str, zones: bool = False) -> Frame | None:
 
 def people_tracked(camera: str) -> int | None:
     """How many people Frigate is tracking on the camera now (up to 5), from its events in progress; None when the
-    answer isn't a list. Frigate tracks only while the camera's detection is on."""
+    answer isn't a list. Frigate tracks only while the camera's detection is on, and saves an event only once it has
+    a clip or a snapshot (should_update_db in its events/maintainer.py), so with recording and snapshots both off the
+    answer is always empty."""
     query = urlencode({"in_progress": 1, "cameras": camera, "labels": "person", "limit": 5})
     status, body, _ = httpjson.get_with_headers(f"{BASE}/events?{query}", FRESH)
     if status != 200 or body is None:

@@ -138,7 +138,7 @@ The dialog opens with this note:
 
 Before and after the pictures, the control app asks Frigate whether it is tracking a person on the camera. If it is, an amber box above the pictures says so. Wait until nobody is in view and take them again; nothing stops you saving.
 
-The check needs **Frigate detection** on for the camera. With it off, as a unit is installed, the dialog says the check couldn't run. The check asks about people only, and Frigate can miss someone, so looking at both pictures is the real check.
+The check needs **Frigate detection** on for the camera, and Frigate's recording or snapshots on too, because Frigate keeps no record of a person it tracks while both are off. Without them, the dialog says the check couldn't run. A unit is installed with detection off. The check asks about people only, and Frigate can miss someone, so looking at both pictures is the real check.
 
 ### When it can't take the pictures
 

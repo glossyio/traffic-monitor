@@ -74,8 +74,8 @@ describe('peopleLine', () => {
     expect(peopleLine('not_checked')).toEqual({
       type: undefined,
       text:
-        "The check for people in view couldn't run, because Frigate's detection is off for this camera or Frigate " +
-        "didn't answer. Look at both pictures yourself.",
+        "The check for people in view couldn't run: Frigate's detection, or both its recording and snapshots, are " +
+        "off for this camera, or Frigate didn't answer. Look at both pictures yourself.",
     })
   })
 })

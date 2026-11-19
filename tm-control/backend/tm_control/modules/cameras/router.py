@@ -378,7 +378,9 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
             return fake.frigate_frame(settings, row.frigate_camera, zones)
         return frigate.latest_frame(row.frigate_camera, zones=zones)
 
-    checked = row.detect is True
+    # Frigate saves an event only once it has a clip or a snapshot, so with both off its events can't show anyone
+    keeps_events = any(probes.mapping(camera.get(part)).get("enabled") is True for part in ("record", "snapshots"))
+    checked = row.detect is True and keeps_events
     before = people() if checked else None
     clean = _live(frame(False), size)
     clean_at = time.time()
