@@ -1672,6 +1672,48 @@
         "h": 82
     },
     {
+        "id": "7ec8ad110314eed8",
+        "type": "group",
+        "z": "aqi_tab",
+        "name": "Environmental Sensor Selection",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "649707b9243e84e4",
+            "9120fd53541025f1",
+            "2dd543160b29b54e",
+            "4362a91571d3d96c"
+        ],
+        "x": 94,
+        "y": 139,
+        "w": 1172,
+        "h": 82
+    },
+    {
+        "id": "1b324a496646fe64",
+        "type": "group",
+        "z": "aqi_tab",
+        "name": "Air Quality",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c1cb5c86b8d96d91",
+            "f8ef7ad8397a859c",
+            "aqi_banner",
+            "aqi_gauge",
+            "124187c87da361b7",
+            "6cc07083089915f1",
+            "b16092a266eea7ef",
+            "aqi_chart"
+        ],
+        "x": 94,
+        "y": 299,
+        "w": 972,
+        "h": 242
+    },
+    {
         "id": "05a58d9ee463c696",
         "type": "junction",
         "z": "1c71c8f26f5b7b19",
@@ -2260,7 +2302,7 @@
                 "cols": "12"
             }
         ],
-        "order": 2,
+        "order": 3,
         "className": "",
         "visible": true,
         "disabled": false
@@ -2338,7 +2380,7 @@
                 "cols": "12"
             }
         ],
-        "order": 3,
+        "order": 4,
         "className": "",
         "visible": "true",
         "disabled": "false"
@@ -2471,7 +2513,7 @@
         "path": "/air-quality",
         "icon": "air",
         "layout": "grid",
-        "theme": "aqi_theme",
+        "theme": "14550b211f0fccc6",
         "breakpoints": [
             {
                 "name": "Default",
@@ -2494,10 +2536,10 @@
                 "cols": "12"
             }
         ],
-        "order": 1,
+        "order": 2,
         "className": "",
-        "visible": "true",
-        "disabled": "false"
+        "visible": true,
+        "disabled": false
     },
     {
         "id": "aqi_grp1",
@@ -2505,10 +2547,10 @@
         "name": "Air Quality Index",
         "page": "aqi_page",
         "width": "6",
-        "height": "1",
+        "height": "10",
         "order": 1,
         "showTitle": true,
-        "className": "",
+        "className": "section-border",
         "visible": "true",
         "disabled": "false",
         "groupType": "default"
@@ -3055,7 +3097,8 @@
         "mode": "link",
         "links": [
             "221dbfa7ced638a7",
-            "2897b873aa552231"
+            "2897b873aa552231",
+            "b86b481f47f920a9"
         ],
         "x": 865,
         "y": 380,
@@ -11844,7 +11887,8 @@
         "z": "28627559bebdc324",
         "name": "sensor selections",
         "links": [
-            "eb7053718706968b"
+            "eb7053718706968b",
+            "22b3ae3d63e840c3"
         ],
         "x": 35,
         "y": 360,
@@ -15895,209 +15939,6 @@
         ]
     },
     {
-        "id": "aqi_comment",
-        "type": "comment",
-        "z": "aqi_tab",
-        "name": "Edit the broker + topic below to match your Enviro+ publisher",
-        "info": "Expects JSON like {\"pm25\":12.3,\"pm10\":20.1,\"temperature\":21.5,\"humidity\":45}.\nThe function node also accepts pm2_5 / pm2.5 / PM2.5 etc.",
-        "x": 320,
-        "y": 260,
-        "wires": []
-    },
-    {
-        "id": "aqi_mqtt",
-        "type": "mqtt in",
-        "z": "aqi_tab",
-        "name": "Enviro+ MQTT",
-        "topic": "enviroplus",
-        "qos": "0",
-        "datatype": "auto-detect",
-        "broker": "aqi_broker",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 160,
-        "y": 340,
-        "wires": [
-            [
-                "aqi_func"
-            ]
-        ]
-    },
-    {
-        "id": "aqi_inject",
-        "type": "inject",
-        "z": "aqi_tab",
-        "name": "Test sample",
-        "props": [
-            {
-                "p": "payload",
-                "v": "{\"pm25\":42.7,\"pm10\":61,\"temperature\":22.4,\"humidity\":48.2}",
-                "vt": "json"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 160,
-        "y": 420,
-        "wires": [
-            [
-                "aqi_func"
-            ]
-        ]
-    },
-    {
-        "id": "aqi_func",
-        "type": "function",
-        "z": "aqi_tab",
-        "name": "Compute US EPA AQI",
-        "func": "// ---- settings ----------------------------------------------------------\nconst WINDOW_MIN = 5;   // rolling average window in minutes (0 = instantaneous)\n// ------------------------------------------------------------------------\n\nlet d = msg.payload;\nif (Buffer.isBuffer(d)) d = d.toString();\nif (typeof d === \"string\") {\n    try { d = JSON.parse(d); } catch (e) { node.warn(\"Payload is not valid JSON\"); return null; }\n}\nif (!d || typeof d !== \"object\") return null;\n\n// Accept a few common key spellings from different Enviro+ publishers\nconst pick = (...keys) => {\n    for (const k of keys) {\n        if (d[k] !== undefined && d[k] !== null && d[k] !== \"\" && !isNaN(Number(d[k]))) return Number(d[k]);\n    }\n    return null;\n};\nconst pm25 = pick(\"pm25\", \"pm2_5\", \"pm2.5\", \"PM2.5\", \"pm_2_5\", \"P2\");\nconst pm10 = pick(\"pm10\", \"PM10\", \"pm_10\", \"P1\");\nconst temp = pick(\"temperature\", \"temp\", \"compensated_temperature\");\nconst hum  = pick(\"humidity\", \"hum\", \"compensated_humidity\");\n\nif (pm25 === null && pm10 === null) {\n    node.warn(\"No pm25/pm10 value found in payload: \" + JSON.stringify(d));\n    return null;\n}\n\n// Rolling average\nconst now = Date.now();\nlet buf = context.get(\"buf\") || [];\nbuf.push({ t: now, pm25, pm10 });\nbuf = buf.filter(x => now - x.t <= WINDOW_MIN * 60000);\ncontext.set(\"buf\", buf);\nconst avg = k => {\n    const v = buf.map(x => x[k]).filter(x => x !== null);\n    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;\n};\nconst a25 = avg(\"pm25\"), a10 = avg(\"pm10\");\n\n// US EPA breakpoints: [concLow, concHigh, aqiLow, aqiHigh]\nconst BP25 = [[0,9.0,0,50],[9.1,35.4,51,100],[35.5,55.4,101,150],[55.5,125.4,151,200],[125.5,225.4,201,300],[225.5,325.4,301,500]];\nconst BP10 = [[0,54,0,50],[55,154,51,100],[155,254,101,150],[255,354,151,200],[355,424,201,300],[425,604,301,500]];\nconst sub = (c, bp) => {\n    if (c === null) return null;\n    for (const [cl, ch, il, ih] of bp) {\n        if (c <= ch) return Math.round((ih - il) / (ch - cl) * (c - cl) + il);\n    }\n    return 500;\n};\nconst i25 = sub(a25 === null ? null : Math.floor(a25 * 10) / 10, BP25);   // PM2.5 truncated to 0.1\nconst i10 = sub(a10 === null ? null : Math.floor(a10), BP10);              // PM10 truncated to 1\n\nlet aqi, dominant;\nif (i10 === null || (i25 !== null && i25 >= i10)) { aqi = i25; dominant = \"PM2.5\"; }\nelse { aqi = i10; dominant = \"PM10\"; }\n\nconst CATS = [\n    { max: 50,  name: \"Good\",                           color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\",                       color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\",                      color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\",                 color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\",                      color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => aqi <= c.max) || CATS[CATS.length - 1];\n\nconst r1 = v => v === null ? null : Math.round(v * 10) / 10;\nreturn [\n    { payload: { aqi, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n                 dominant, pm25: r1(a25), pm10: r1(a10) } },\n    { payload: aqi,       topic: \"AQI\" },\n    a25 === null ? null : { payload: r1(a25), topic: \"PM2.5\" },\n    a10 === null ? null : { payload: r1(a10), topic: \"PM10\" },\n    temp === null ? null : { payload: Math.round(temp * 10) / 10 },\n    hum  === null ? null : { payload: Math.round(hum * 10) / 10 }\n];\n",
-        "outputs": 6,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 380,
-        "wires": [
-            [],
-            [],
-            [],
-            [],
-            [],
-            []
-        ]
-    },
-    {
-        "id": "aqi_banner",
-        "type": "ui-template",
-        "z": "aqi_tab",
-        "group": "aqi_grp1",
-        "page": "",
-        "name": "AQI banner",
-        "order": 1,
-        "width": "6",
-        "height": "3",
-        "head": "",
-        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"aqi-banner\" :style=\"{ background: msg.payload.color, color: msg.payload.text }\">\n    <div class=\"aqi-num\">{{ msg.payload.aqi }}</div>\n    <div class=\"aqi-cat\">{{ msg.payload.category }}</div>\n    <div class=\"aqi-adv\">{{ msg.payload.advice }}</div>\n    <div class=\"aqi-dom\">Driven by {{ msg.payload.dominant }}\n      (PM2.5 {{ msg.payload.pm25 }} / PM10 {{ msg.payload.pm10 }} µg/m³)</div>\n  </div>\n  <div v-else class=\"aqi-banner\" style=\"background:#999;color:#fff\">Waiting for data…</div>\n</template>\n\n<style>\n.aqi-banner { border-radius: 8px; padding: 16px; text-align: center; transition: background .5s; }\n.aqi-num { font-size: 4rem; font-weight: 700; line-height: 1; }\n.aqi-cat { font-size: 1.4rem; font-weight: 600; margin-top: 4px; }\n.aqi-adv { font-size: .95rem; margin-top: 8px; }\n.aqi-dom { font-size: .8rem; margin-top: 8px; opacity: .8; }\n</style>",
-        "storeOutMessages": true,
-        "passthru": true,
-        "resendOnRefresh": true,
-        "templateScope": "local",
-        "className": "",
-        "x": 990,
-        "y": 800,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "aqi_gauge",
-        "type": "ui-gauge",
-        "z": "aqi_tab",
-        "name": "AQI gauge",
-        "group": "aqi_grp1",
-        "order": 2,
-        "width": "6",
-        "height": "4",
-        "gtype": "gauge-half",
-        "gstyle": "needle",
-        "title": "AQI",
-        "units": "",
-        "icon": "",
-        "prefix": "",
-        "suffix": "",
-        "segments": [
-            {
-                "from": 0,
-                "color": "#00e400"
-            },
-            {
-                "from": 51,
-                "color": "#ffff00"
-            },
-            {
-                "from": 101,
-                "color": "#ff7e00"
-            },
-            {
-                "from": 151,
-                "color": "#ff0000"
-            },
-            {
-                "from": 201,
-                "color": "#8f3f97"
-            },
-            {
-                "from": 301,
-                "color": "#7e0023"
-            }
-        ],
-        "min": 0,
-        "max": 500,
-        "sizeThickness": 16,
-        "sizeGap": 4,
-        "sizeKeyThickness": 8,
-        "styleRounded": true,
-        "styleGlow": false,
-        "className": "",
-        "x": 810,
-        "y": 860,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "c1cb5c86b8d96d91",
-        "type": "sqlite",
-        "z": "aqi_tab",
-        "mydb": "2f60c1ab30a6fc8f",
-        "sqlquery": "msg.topic",
-        "sql": "",
-        "name": "",
-        "x": 850,
-        "y": 740,
-        "wires": [
-            [
-                "6cc07083089915f1"
-            ]
-        ]
-    },
-    {
-        "id": "124187c87da361b7",
-        "type": "inject",
-        "z": "aqi_tab",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 160,
-        "y": 820,
-        "wires": [
-            [
-                "f8ef7ad8397a859c"
-            ]
-        ]
-    },
-    {
         "id": "60a2e0251bfdc833",
         "type": "catch",
         "z": "aqi_tab",
@@ -16130,26 +15971,277 @@
         "wires": []
     },
     {
-        "id": "6cc07083089915f1",
+        "id": "649707b9243e84e4",
+        "type": "inject",
+        "z": "aqi_tab",
+        "g": "7ec8ad110314eed8",
+        "name": "trigger: sensor selections, after 5-secs",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 290,
+        "y": 180,
+        "wires": [
+            [
+                "9120fd53541025f1"
+            ]
+        ]
+    },
+    {
+        "id": "9120fd53541025f1",
+        "type": "change",
+        "z": "aqi_tab",
+        "g": "7ec8ad110314eed8",
+        "name": "set airquality_monitors, default to index 0",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "$keys($globalContext(\"config.sensors.airquality_monitors\"))[0]",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "options",
+                "pt": "msg",
+                "to": "[$keys($globalContext(\"config.sensors.airquality_monitors\"))]",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 620,
+        "y": 180,
+        "wires": [
+            [
+                "4362a91571d3d96c"
+            ]
+        ]
+    },
+    {
+        "id": "2dd543160b29b54e",
+        "type": "change",
+        "z": "aqi_tab",
+        "g": "7ec8ad110314eed8",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "aq_selection",
+                "pt": "flow",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1140,
+        "y": 180,
+        "wires": [
+            [
+                "f8ef7ad8397a859c"
+            ]
+        ]
+    },
+    {
+        "id": "c1cb5c86b8d96d91",
+        "type": "sqlite",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "msg.topic",
+        "sql": "",
+        "name": "",
+        "x": 910,
+        "y": 340,
+        "wires": [
+            [
+                "6cc07083089915f1"
+            ]
+        ]
+    },
+    {
+        "id": "f8ef7ad8397a859c",
         "type": "function",
         "z": "aqi_tab",
-        "name": "Compute latest US EPA AQI",
-        "func": "// compute current AQI\n\nif (msg.payload.length <= 0) {\n    msg.payload = [null], null;\n    return msg;\n}\n\nlet firstReading = msg.payload[0];\nlet AQI = aqiFromPM(firstReading.pm025);\n\nconst CATS = [\n    { max: 50, name: \"Good\", color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\", color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\", color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\", color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\", color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => AQI <= c.max) || CATS[CATS.length - 1];\n\nreturn [\n    {payload: {AQI, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n        dominant: null, pm25: firstReading.pm025, r1: null, r1a10: null\n        /*dominant, pm25: r1(a25), pm10: r1(a10)*/}},\n    {payload: AQI}\n    ];\n\nreturn newmsg;\n\n/* PurpleAir code for computing the US EPA PM 2.5 AQI via linear interpolation\n   code taken from https://community.purpleair.com/t/how-to-calculate-the-us-epa-pm2-5-aqi/877/14\n*/\nfunction aqiFromPM(pm) {\n    if (isNaN(pm)) return \"-\";\n    if (pm == undefined) return \"-\";\n    if (pm < 0) return pm;\n    if (pm > 1000) return \"-\";\n    /*                                  AQI         RAW PM2.5\n    Good                               0 - 50   |   0.0 – 12.0\n    Moderate                          51 - 100  |  12.1 – 35.4\n    Unhealthy for Sensitive Groups   101 – 150  |  35.5 – 55.4\n    Unhealthy                        151 – 200  |  55.5 – 150.4\n    Very Unhealthy                   201 – 300  |  150.5 – 250.4\n    Hazardous                        301 – 400  |  250.5 – 350.4\n    Hazardous                        401 – 500  |  350.5 – 500.4\n    */\n    if (pm > 350.5) {\n        return calcAQI(pm, 500, 401, 500.4, 350.5); //Hazardous\n    } else if (pm > 250.5) {\n        return calcAQI(pm, 400, 301, 350.4, 250.5); //Hazardous\n    } else if (pm > 150.5) {\n        return calcAQI(pm, 300, 201, 250.4, 150.5); //Very Unhealthy\n    } else if (pm > 55.5) {\n        return calcAQI(pm, 200, 151, 150.4, 55.5); //Unhealthy\n    } else if (pm > 35.5) {\n        return calcAQI(pm, 150, 101, 55.4, 35.5); //Unhealthy for Sensitive Groups\n    } else if (pm > 12.1) {\n        return calcAQI(pm, 100, 51, 35.4, 12.1); //Moderate\n    } else if (pm >= 0) {\n        return calcAQI(pm, 50, 0, 12, 0); //Good\n    } else {\n        return undefined;\n    }\n}\n\n// Cp - PM 2.5 concentration (ug/m**3)\n// Ih, Il - AQI breakpoints for BPh, BPl\n// BPH, BPl - concentration breakbounts bracketing Cp\nfunction calcAQI(Cp, Ih, Il, BPh, BPl) {\n    var a = (Ih - Il);\n    var b = (BPh - BPl);\n    var c = (Cp - BPl);\n    return Math.round((a / b) * c + Il);\n}\n",
-        "outputs": 2,
+        "g": "1b324a496646fe64",
+        "name": "query airquality, for every entry",
+        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    entryDateTime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = '${flow.get(\"aq_selection\")}'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 440,
-        "y": 840,
+        "x": 610,
+        "y": 340,
         "wires": [
             [
-                "aqi_banner",
-                "11e9e09f2ef502f9"
+                "c1cb5c86b8d96d91"
+            ]
+        ]
+    },
+    {
+        "id": "aqi_banner",
+        "type": "ui-template",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "group": "aqi_grp1",
+        "page": "",
+        "ui": "",
+        "name": "AQI banner",
+        "order": 3,
+        "width": "3",
+        "height": "2",
+        "head": "",
+        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"aqi-banner\" :style=\"{ background: msg.payload.color, color: msg.payload.text }\">\n    <div class=\"aqi-num\">{{ msg.payload.aqi }}</div>\n    <div class=\"aqi-cat\">{{ msg.payload.category }}</div>\n    <div class=\"aqi-pm\">PM01: <b>{{ msg.payload.pm01 }}</b>, PM2.5: <b>{{ msg.payload.pm25 }}</b>, PM10: <b>{{ msg.payload.pm10 }}</b>µg/m³</div>\n  </div>\n  <div v-else class=\"aqi-banner\" style=\"background:#999;color:#fff\">Waiting for data…</div>\n</template>\n\n<style>\n.aqi-banner { border-radius: 8px; padding: 16px; text-align: center; transition: background .5s; }\n.aqi-num { font-size: 4rem; font-weight: 700; line-height: 1; }\n.aqi-cat { font-size: 1.4rem; font-weight: 600; margin-top: 4px; }\n.aqi-pm { font-size: .9rem; margin-top: 8px; opacity: .8; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 870,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aqi_gauge",
+        "type": "ui-gauge",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "name": "AQI gauge",
+        "group": "aqi_grp1",
+        "order": 2,
+        "value": "payload",
+        "valueType": "msg",
+        "width": "3",
+        "height": "3",
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "AQI",
+        "alwaysShowTitle": false,
+        "units": "",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#00e400",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "51",
+                "color": "#ffff00",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "101",
+                "color": "#ff7e00",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "151",
+                "color": "#ff0000",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "201",
+                "color": "#8f3f97",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "301",
+                "color": "#7e0023",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": 0,
+        "max": 500,
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 870,
+        "y": 460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "124187c87da361b7",
+        "type": "inject",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 420,
+        "wires": [
+            [
+                "f8ef7ad8397a859c"
+            ]
+        ]
+    },
+    {
+        "id": "6cc07083089915f1",
+        "type": "function",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
+        "name": "Compute latest US EPA AQI",
+        "func": "// compute current AQI\n\nif (msg.payload.length <= 0) {\n    return [\n        {payload: null},\n        {payload: null},\n        {payload: {entryDateTime: null, aqi: null}}];\n}\n\nconst firstReading = msg.payload[0];\nconst AQI = aqiFromPM(firstReading.pm025);\n\nconst aqis = [];\nfor (let index = 0; index < msg.payload.length; index++) {\n    const reading = msg.payload[index];\n    aqis.push({ entryDateTime: 1000 * reading.entryDateTime, \n                aqi: aqiFromPM(reading.pm025)\n              });\n} \n\nconst CATS = [\n    { max: 50, name: \"Good\", color: \"#00e400\", text: \"#000000\", advice: \"Air quality is satisfactory. Enjoy normal activities.\" },\n    { max: 100, name: \"Moderate\", color: \"#ffff00\", text: \"#000000\", advice: \"Acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.\" },\n    { max: 150, name: \"Unhealthy for Sensitive Groups\", color: \"#ff7e00\", text: \"#000000\", advice: \"Sensitive groups should reduce prolonged or heavy exertion.\" },\n    { max: 200, name: \"Unhealthy\", color: \"#ff0000\", text: \"#ffffff\", advice: \"Everyone may begin to feel effects. Limit prolonged exertion.\" },\n    { max: 300, name: \"Very Unhealthy\", color: \"#8f3f97\", text: \"#ffffff\", advice: \"Health alert. Avoid prolonged exertion; consider an air purifier / closing windows.\" },\n    { max: 500, name: \"Hazardous\", color: \"#7e0023\", text: \"#ffffff\", advice: \"Emergency conditions. Stay indoors and keep activity levels low.\" }\n];\nconst cat = CATS.find(c => AQI <= c.max) || CATS[CATS.length - 1];\n\nreturn [\n    {payload: {AQI, category: cat.name, color: cat.color, text: cat.text, advice: cat.advice,\n        pm01: firstReading.pm01, pm25: firstReading.pm025,  pm10: firstReading.pm10}},\n    {payload: AQI},\n    {payload: aqis}\n    ];\n\nreturn newmsg;\n\n/* PurpleAir code for computing the US EPA PM 2.5 AQI via linear interpolation\n   code taken from https://community.purpleair.com/t/how-to-calculate-the-us-epa-pm2-5-aqi/877/14\n*/\nfunction aqiFromPM(pm) {\n    if (isNaN(pm)) return \"-\";\n    if (pm == undefined) return \"-\";\n    if (pm < 0) return pm;\n    if (pm > 1000) return \"-\";\n    /*                                  AQI         RAW PM2.5\n    Good                               0 - 50   |   0.0 – 12.0\n    Moderate                          51 - 100  |  12.1 – 35.4\n    Unhealthy for Sensitive Groups   101 – 150  |  35.5 – 55.4\n    Unhealthy                        151 – 200  |  55.5 – 150.4\n    Very Unhealthy                   201 – 300  |  150.5 – 250.4\n    Hazardous                        301 – 400  |  250.5 – 350.4\n    Hazardous                        401 – 500  |  350.5 – 500.4\n    */\n    if (pm > 350.5) {\n        return calcAQI(pm, 500, 401, 500.4, 350.5); //Hazardous\n    } else if (pm > 250.5) {\n        return calcAQI(pm, 400, 301, 350.4, 250.5); //Hazardous\n    } else if (pm > 150.5) {\n        return calcAQI(pm, 300, 201, 250.4, 150.5); //Very Unhealthy\n    } else if (pm > 55.5) {\n        return calcAQI(pm, 200, 151, 150.4, 55.5); //Unhealthy\n    } else if (pm > 35.5) {\n        return calcAQI(pm, 150, 101, 55.4, 35.5); //Unhealthy for Sensitive Groups\n    } else if (pm > 12.1) {\n        return calcAQI(pm, 100, 51, 35.4, 12.1); //Moderate\n    } else if (pm >= 0) {\n        return calcAQI(pm, 50, 0, 12, 0); //Good\n    } else {\n        return undefined;\n    }\n}\n\n// Cp - PM 2.5 concentration (ug/m**3)\n// Ih, Il - AQI breakpoints for BPh, BPl\n// BPH, BPl - concentration breakbounts bracketing Cp\nfunction calcAQI(Cp, Ih, Il, BPh, BPl) {\n    var a = (Ih - Il);\n    var b = (BPh - BPl);\n    var c = (Cp - BPl);\n    return Math.round((a / b) * c + Il);\n}\n",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 440,
+        "wires": [
+            [
+                "aqi_banner"
             ],
             [
                 "aqi_gauge"
+            ],
+            [
+                "aqi_chart"
             ]
         ]
     },
@@ -16157,6 +16249,7 @@
         "id": "b16092a266eea7ef",
         "type": "inject",
         "z": "aqi_tab",
+        "g": "1b324a496646fe64",
         "name": "trigger Event query every min",
         "props": [
             {
@@ -16174,8 +16267,8 @@
         "topic": "query",
         "payload": "",
         "payloadType": "date",
-        "x": 210,
-        "y": 740,
+        "x": 270,
+        "y": 340,
         "wires": [
             [
                 "f8ef7ad8397a859c"
@@ -16183,77 +16276,86 @@
         ]
     },
     {
-        "id": "f8ef7ad8397a859c",
-        "type": "function",
+        "id": "4362a91571d3d96c",
+        "type": "ui-dropdown",
         "z": "aqi_tab",
-        "name": "query airquality, for every entry",
-        "func": "//entryDateTime is already in seconds\n\nconst query = `\nSELECT\n    strftime('%Y-%m-%d %H:%M:00', datetime(entryDateTime, 'unixepoch', 'localtime'), '+0 minutes') AS datetime,\n    gas_red, \n    gas_oxi, \n    gas_nh3,\n    pm01, \n    pm025, \n    pm10,\n    temp,\n    bar,\n    hum,\n    dew\nFROM\n    airquality\nWHERE\n    entryDateTime > (unixepoch('now') - (86400 * 1))\n    AND sensorName = 'sensorname01'\nORDER BY\n    entryDateTime;\n`;\n\nmsg.topic = query;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 550,
-        "y": 740,
+        "g": "7ec8ad110314eed8",
+        "group": "aqi_grp1",
+        "name": "Select AQ Sensor",
+        "label": "Select AQ Sensor:",
+        "tooltip": "",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "multiple": false,
+        "chips": false,
+        "clearable": false,
+        "options": [
+            {
+                "label": "",
+                "value": "",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "typeIsComboBox": false,
+        "msgTrigger": "onChange",
+        "x": 910,
+        "y": 180,
         "wires": [
             [
-                "c1cb5c86b8d96d91"
+                "2dd543160b29b54e"
             ]
         ]
     },
     {
-        "id": "11e9e09f2ef502f9",
-        "type": "debug",
-        "z": "aqi_tab",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 580,
-        "y": 900,
-        "wires": []
-    },
-    {
         "id": "aqi_chart",
         "type": "ui-chart",
-        "z": "c4f8a57bce0b8ee7",
+        "z": "aqi_tab",
+        "g": "1b324a496646fe64",
         "group": "aqi_grp1",
-        "name": "AQI – last 6 h",
-        "label": "AQI – last 6 h",
-        "order": 3,
+        "name": "AQI – last 24 hours",
+        "label": "AQI – last 24 hours",
+        "order": 4,
         "chartType": "line",
-        "category": "topic",
-        "categoryType": "msg",
-        "xAxisLabel": "",
-        "xAxisProperty": "",
-        "xAxisPropertyType": "msg",
+        "category": "",
+        "categoryType": "none",
+        "xAxisLabel": "Time of Day",
+        "xAxisProperty": "entryDateTime",
+        "xAxisPropertyType": "property",
         "xAxisType": "time",
         "xAxisFormat": "",
-        "xAxisFormatType": "auto",
-        "yAxisLabel": "",
-        "yAxisProperty": "payload",
-        "yAxisPropertyType": "msg",
+        "xAxisFormatType": "{HH}:{mm}",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "AQI",
+        "yAxisProperty": "aqi",
+        "yAxisPropertyType": "property",
         "ymin": "0",
         "ymax": "500",
-        "action": "append",
+        "bins": "",
+        "action": "replace",
         "stackSeries": false,
         "pointShape": "false",
         "pointRadius": 4,
-        "showLegend": false,
-        "removeOlder": "6",
+        "showLegend": true,
+        "removeOlder": "24",
         "removeOlderUnit": "3600",
-        "removeOlderPoints": "",
+        "removeOlderPoints": "300",
         "colors": [
             "#0095ff",
             "#ff7f0e",
             "#2ca02c",
-            "#d62728"
+            "#d62728",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000"
         ],
         "textColor": [
             "#666666"
@@ -16264,11 +16366,11 @@
         ],
         "gridColorDefault": true,
         "width": "6",
-        "height": 5,
+        "height": "6",
         "className": "",
-        "interpolation": "linear",
-        "x": 340,
-        "y": 80,
+        "interpolation": "step",
+        "x": 890,
+        "y": 500,
         "wires": [
             []
         ]
