@@ -1,5 +1,5 @@
-"""Frigate's current frame for a camera (latest.jpg) and whether it is tracking a person on it, through its API on
-127.0.0.1; and httpjson.get_with_headers, which reads an answer's headers as well as its body."""
+"""Frigate's current frame for a camera (latest.jpg), through its API on 127.0.0.1; and httpjson.get_with_headers, which
+reads an answer's headers as well as its body."""
 
 import http.server
 import socket
@@ -61,19 +61,6 @@ def test_an_older_frame_is_marked_offline(answering):
 def test_anything_but_a_jpeg_is_no_frame(answering, answer):
     answering(answer)
     assert frigate.latest_frame("picam_h265") is None
-
-
-def test_people_tracked_counts_frigates_list(answering):
-    calls = answering((200, b'[{"id": "a"}, {"id": "b"}]', {}))
-    assert frigate.people_tracked("oak ave") == 2
-    assert calls[0][0] == "http://127.0.0.1:5000/api/events?in_progress=1&cameras=oak+ave&labels=person&limit=5"
-    assert calls[0][1] == {"X-Cache-Bypass": "1"}
-
-
-@pytest.mark.parametrize("answer", [(None, None, {}), (500, b"[]", {}), (200, b'{"a": 1}', {}), (200, b"no", {})])
-def test_people_tracked_is_none_without_a_list(answering, answer):
-    answering(answer)
-    assert frigate.people_tracked("picam_h265") is None
 
 
 # get_with_headers against a real server

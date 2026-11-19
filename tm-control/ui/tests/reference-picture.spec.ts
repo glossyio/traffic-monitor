@@ -1,5 +1,5 @@
 // The Cameras page's reference picture dialog: the note before any picture, the take, the two pictures as the device
-// holds them, the people line, the legend, the location box, the zip, and starting over when the pictures are gone.
+// holds them, the legend, the location box, the zip, and starting over when the pictures are gone.
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ADMIN, apiError, camerasState, cameraRow, json, newRow, referenceOut, signedIn } from './fake-api'
@@ -14,9 +14,10 @@ const ZIP = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0])
 const EXPIRED = 'These pictures are no longer held on the device. Take them again.'
 const NOTE =
   'This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. ' +
-  'Take it when nobody is in the picture, look at both pictures before you save them, and share them only with ' +
-  "people you would give the unit's exact location. The data file also holds that location unless you clear the " +
-  'box below.'
+  "The device doesn't check the pictures for people. You are responsible for making sure nobody is in either " +
+  'picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only ' +
+  "with people you would give the unit's exact location. The data file also holds that location unless you clear " +
+  'the box below.'
 const INTRO =
   'A still picture of what this camera sees, and the same view with its zones marked, for a tool that places ' +
   'recorded paths on a street. You get one zip with both pictures, a data file with the zones, and a labelled drawing.'
@@ -103,7 +104,7 @@ describe('Reference picture', () => {
     expect(buttonsIn(wrapper.element, 'Reference picture')).toHaveLength(0)
   })
 
-  it('takes the pictures and shows them as the device holds them, with the people line and the legend', async () => {
+  it('takes the pictures and shows them as the device holds them, with the note still above them and the legend', async () => {
     const { api, wrapper } = await openPage()
     await openDialog(wrapper)
     await takePictures()
@@ -115,30 +116,12 @@ describe('Reference picture', () => {
     const text = dialogText()
     expect(text).toContain('The two were taken a moment apart.')
     expect(text).toContain('The device holds these pictures in memory for 10 minutes and never saves them.')
-    expect(text).toContain("Frigate wasn't tracking a person when the pictures were taken.")
+    expect(text).toContain(NOTE)
     expect(dialog()?.querySelectorAll('[data-legend-row]')).toHaveLength(4)
     expect(text).toContain('A–B 12 m, B–C 7.3 m, C–D 12 m, D–A 7.3 m')
     expect(text).toContain('off in Frigate, not drawn')
-    expect(dialog()?.querySelector('[data-people] .v-alert')).toBeNull()
-  })
-
-  it('warns above the pictures when Frigate was tracking a person', async () => {
-    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people: 'seen' }) })
-    await openDialog(wrapper)
-    await takePictures()
-    const warning = dialog()?.querySelector('[data-people] .v-alert')
-    expect(warning?.className).toContain('text-warning')
-    expect(warning?.textContent).toContain('Frigate was tracking a person on this camera')
-  })
-
-  it("says plainly, with no alert, when the check for people couldn't run", async () => {
-    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people: 'not_checked' }) })
-    await openDialog(wrapper)
-    await takePictures()
-    expect(dialog()?.querySelector('[data-people]')?.textContent).toContain(
-      "The check for people in view couldn't run",
-    )
-    expect(dialog()?.querySelector('[data-people] .v-alert')).toBeNull()
+    expect(dialog()?.querySelector('[data-people]')).toBeNull()
+    expect(text).not.toContain('Frigate was tracking')
   })
 
   it('saves the zip with the location while the box is ticked, and without it once cleared', async () => {

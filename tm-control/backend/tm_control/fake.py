@@ -214,11 +214,6 @@ def frigate_frame(settings: Settings, camera: str, zones: bool) -> frigate.Frame
     return frigate.Frame((FAKE_FIXTURES / name).read_bytes(), False)
 
 
-def frigate_people(settings: Settings, camera: str) -> int | None:
-    """Fake mode's stand-in for frigate.people_tracked: nobody is in view."""
-    return 0
-
-
 def show_units(names: list[str], properties: list[str]) -> dict[str, dict[str, str]]:
     """Fake mode's stand-in for systemd.show_units: FAKE_UNIT_STATES, and every other unit running for two hours."""
     running = {

@@ -119,16 +119,16 @@ from an existing lockfile without trouble, so the image still builds and tests t
   The plates switch is there only when the add-on is installed; otherwise Save sends `null` and leaves the file's value
   alone. A 422 for the radar shows under the field, every other failure inside the form.
   Reference picture: an entry in step offers it, as a text button with the row's other actions while Frigate answers
-  (`canTake` in `reference.ts`, which also holds the pictures' addresses, the legend's rows, and the people line). It
+  (`canTake` in `reference.ts`, which also holds the pictures' addresses and the legend's rows). It
   opens `ReferencePicture.vue`, one dialog the page keeps, in two steps. The first has the intro and the note on what
-  the picture gives away, and only Take the pictures: the note comes before any picture, because what it asks (take it
-  when nobody is in view, look before saving, share it as you would the exact location) is decided before the take,
-  not after. The second shows the two pictures side by side on a desktop and stacked on a phone (`v-col cols="12"
-  md="6"`), the people line above them (a warning alert only when Frigate was tracking a person; otherwise a sentence,
-  because "nobody" is not a promise), the zones' legend with a `v-sheet` swatch in each zone's colour, the location
-  box, and Save the zip, Take again, and Close. The pictures are plain `<img>` elements pointing at the device: the
-  session cookie authorizes them, and the page keeps no copy of them, so nothing is left once the dialog closes;
-  closing it, or taking again, tells the device to drop them. A picture that fails to load, or a 404 from Save, means
+  the picture gives away, and only Take the pictures: the note comes before any picture, because what it asks (make
+  sure nobody is in either picture, which the device doesn't check and the admin answers for; share them as you would
+  the exact location) is decided before the take, not after, and it stays above the pictures on the second step. The
+  second shows the two pictures side by side on a desktop and stacked on a phone (`v-col cols="12" md="6"`), the
+  zones' legend with a `v-sheet` swatch in each zone's colour, the location box, and Save the zip, Take again, and
+  Close. The pictures are plain `<img>` elements pointing at the device: the session cookie authorizes them, and the
+  page keeps no copy of them, so nothing is left once the dialog closes; closing it, or taking again, tells the device
+  to drop them. A picture that fails to load, or a 404 from Save, means
   the device no longer holds them, so the dialog goes back to its first step and says so rather than showing a broken
   picture with a working Save button.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and

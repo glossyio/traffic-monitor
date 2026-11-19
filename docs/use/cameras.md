@@ -115,8 +115,8 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name in bold, and when the clean picture was taken, in UTC.
 
 1. On the camera's row, choose **Reference picture**. The dialog says what the picture gives away before any picture is taken.
-2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows both pictures, a line about people in view, and the camera's zones with their colours and side lengths.
-3. Look at both pictures. If someone is in them, wait, and choose **Take again**.
+2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows both pictures and the camera's zones with their colours and side lengths.
+3. Look at both pictures. The device doesn't check them for people, so this is up to you. If anyone is in them, wait, and choose **Take again**.
 4. Leave **Include this place's exact location** ticked to put the place's location in the data file, or clear it.
 5. Choose **Save the zip**.
 
@@ -128,17 +128,11 @@ On a phone joined to the unit's hotspot, the pictures show in Android's sign-in 
 
 The dialog opens with this note:
 
-> This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. Take it when nobody is in the picture, look at both pictures before you save them, and share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
+> This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. The device doesn't check the pictures for people. You are responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
 
 * The location in the data file is the place's exact location, as set on the [Location page](location.md), not the rounded one the database keeps. When the place in use has no location, the box is greyed and the data file holds none.
 * The device holds the pictures in memory for 10 minutes, for the administrator who took them, and never saves them. Closing the dialog, taking them again, or restarting the control app drops them sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads.
 * The audit log records each picture taken and each zip saved, with the camera's name and whether the location was included, never the location itself.
-
-### People in view
-
-Before and after the pictures, the control app asks Frigate whether it is tracking a person on the camera. If it is, an amber box above the pictures says so. Wait until nobody is in view and take them again; nothing stops you saving.
-
-The check needs **Frigate detection** on for the camera, and Frigate's recording or snapshots on too, because Frigate keeps no record of a person it tracks while both are off. Without them, the dialog says the check couldn't run. A unit is installed with detection off. The check asks about people only, and Frigate can miss someone, so looking at both pictures is the real check.
 
 ### When it can't take the pictures
 

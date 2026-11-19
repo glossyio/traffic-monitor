@@ -1,8 +1,9 @@
 <!--
   The reference picture of one camera (its sensors.cameras key, `name`), for a tool that places recorded paths on a
   street. Two steps: first the intro and the note on what the picture gives away, before any picture is taken; then,
-  after Take the pictures (POST /cameras/{name}/reference), both pictures as the device holds them, the people line,
-  the zones' legend, the location box, and Save the zip.
+  after Take the pictures (POST /cameras/{name}/reference), both pictures as the device holds them, the zones' legend,
+  the location box, and Save the zip. The device doesn't check the pictures for people; the note, shown on both steps,
+  makes that the admin's job.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
   dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored). The
   dialog starts over each time it opens. A 404 from Save, or a picture that fails to load, means the device no longer
@@ -12,16 +13,17 @@
 import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import { saveBlob } from '../../components/download'
-import { legendRows, peopleLine, pictureUrl, type ReferenceOut } from './reference'
+import { legendRows, pictureUrl, type ReferenceOut } from './reference'
 
 const INTRO =
   'A still picture of what this camera sees, and the same view with its zones marked, for a tool that places ' +
   'recorded paths on a street. You get one zip with both pictures, a data file with the zones, and a labelled drawing.'
 const NOTE =
   'This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. ' +
-  'Take it when nobody is in the picture, look at both pictures before you save them, and share them only with ' +
-  "people you would give the unit's exact location. The data file also holds that location unless you clear the " +
-  'box below.'
+  "The device doesn't check the pictures for people. You are responsible for making sure nobody is in either " +
+  'picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only ' +
+  "with people you would give the unit's exact location. The data file also holds that location unless you clear " +
+  'the box below.'
 const EXPIRED = 'These pictures are no longer held on the device. Take them again.'
 const CLEAN_ALT = "The camera's view"
 const ZONES_ALT = "The same view with Frigate's zone outlines"
@@ -37,7 +39,6 @@ const error = ref('')
 const expired = ref(false)
 
 const title = computed(() => `Reference picture of ${props.name}`)
-const people = computed(() => (reference.value ? peopleLine(reference.value.people) : null))
 const legend = computed(() => (reference.value ? legendRows(reference.value) : []))
 
 // Tell the device to forget the pictures it holds for this dialog; its answer doesn't matter
@@ -118,12 +119,7 @@ async function save() {
         <v-alert v-if="expired" type="info" variant="tonal" class="mb-4" data-expired>{{ EXPIRED }}</v-alert>
         <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
-        <template v-if="reference && people">
-          <div class="mb-4" data-people>
-            <v-alert v-if="people.type" :type="people.type" class="text-body-2">{{ people.text }}</v-alert>
-            <p v-else class="text-body-2">{{ people.text }}</p>
-          </div>
-
+        <template v-if="reference">
           <v-row dense>
             <v-col cols="12" md="6">
               <img

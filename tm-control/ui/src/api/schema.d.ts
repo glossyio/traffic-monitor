@@ -2154,11 +2154,6 @@ export interface components {
             unit: "m" | "ft";
             /** Zones */
             zones: components["schemas"]["ZoneFacts"][];
-            /**
-             * People
-             * @enum {string}
-             */
-            people: "none" | "seen" | "not_checked";
             /** Has Location */
             has_location: boolean;
         };

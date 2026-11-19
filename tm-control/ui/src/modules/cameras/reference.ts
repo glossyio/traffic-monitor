@@ -1,5 +1,5 @@
-// The reference picture on the Cameras page: which rows offer one, where the held pictures are, the legend's rows, and
-// what the page says about the people check. The rules about the pictures themselves are the backend's.
+// The reference picture on the Cameras page: which rows offer one, where the held pictures are, and the legend's rows.
+// The rules about the pictures themselves are the backend's.
 import type { components } from '../../api/schema'
 import { rowState, type CameraRow } from './rows'
 
@@ -29,29 +29,4 @@ export function legendRows(reference: ReferenceOut): { key: string; color: strin
     } else if (!zone.drawn) detail = 'no outline'
     return { key: zone.key, color: zone.color ?? FALLBACK_COLOR, detail }
   })
-}
-
-export function peopleLine(people: ReferenceOut['people']): { type: 'warning' | undefined; text: string } {
-  if (people === 'seen') {
-    return {
-      type: 'warning',
-      text:
-        'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
-        'then take them again.',
-    }
-  }
-  if (people === 'none') {
-    return {
-      type: undefined,
-      text:
-        "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both " +
-        'pictures yourself.',
-    }
-  }
-  return {
-    type: undefined,
-    text:
-      "The check for people in view couldn't run: Frigate's detection, or both its recording and snapshots, are " +
-      "off for this camera, or Frigate didn't answer. Look at both pictures yourself.",
-  }
 }

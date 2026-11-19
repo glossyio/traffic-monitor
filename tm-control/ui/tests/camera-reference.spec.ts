@@ -1,7 +1,7 @@
-// The reference picture's rules on the Cameras page: which rows offer it, the pictures' addresses, the legend, and
-// what the page says about the people check. Pure functions of the API's answers.
+// The reference picture's rules on the Cameras page: which rows offer it, the pictures' addresses, and the legend.
+// Pure functions of the API's answers.
 import { describe, expect, it } from 'vitest'
-import { canTake, legendRows, peopleLine, pictureUrl } from '../src/modules/cameras/reference'
+import { canTake, legendRows, pictureUrl } from '../src/modules/cameras/reference'
 import { cameraRow, newRow, referenceOut, zoneFacts } from './fake-api'
 
 describe('canTake', () => {
@@ -48,34 +48,5 @@ describe('legendRows', () => {
   it('says a zone that is off is off, even with side lengths', () => {
     const off = zoneFacts({ enabled: false, drawn: false })
     expect(legendRows(referenceOut({ zones: [off] }))[0].detail).toBe('off in Frigate, not drawn')
-  })
-})
-
-describe('peopleLine', () => {
-  it('warns when Frigate was tracking a person', () => {
-    expect(peopleLine('seen')).toEqual({
-      type: 'warning',
-      text:
-        'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
-        'then take them again.',
-    })
-  })
-
-  it("says Frigate saw nobody, and that it can miss people", () => {
-    expect(peopleLine('none')).toEqual({
-      type: undefined,
-      text:
-        "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both " +
-        'pictures yourself.',
-    })
-  })
-
-  it("says the check couldn't run", () => {
-    expect(peopleLine('not_checked')).toEqual({
-      type: undefined,
-      text:
-        "The check for people in view couldn't run: Frigate's detection, or both its recording and snapshots, are " +
-        "off for this camera, or Frigate didn't answer. Look at both pictures yourself.",
-    })
   })
 })

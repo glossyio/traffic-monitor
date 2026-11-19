@@ -280,7 +280,6 @@ export function referenceOut(changes: Partial<ReferenceOut> = {}): ReferenceOut 
       zoneFacts({ key: 'zone_far', color: '#be8f28', enabled: false, drawn: false, distances: [], sides: [] }),
       zoneFacts({ key: 'zone_lane_bus', color: null, drawn: false, corners: [], distances: [], sides: [] }),
     ],
-    people: 'none',
     has_location: true,
     ...changes,
   }

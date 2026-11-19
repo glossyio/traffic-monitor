@@ -30,7 +30,7 @@ def reference(**changes) -> Reference:
         point=(45.5231, -122.6765), deployment_id="1795026000000-1a2b3c4d-d",
         clean=jpeg(1536, 864), zones_picture=jpeg(1536, 864)[:-2] + b"zones\xff\xd9",
         clean_at=1795026605.0, zones_at=1795026606.0, width=1536, height=864, unit="m",
-        zones=[zone_facts(CAMERA)[0]], people="none", tm_version="0.8.0", frigate_version="0.18.2-abc1234",
+        zones=[zone_facts(CAMERA)[0]], tm_version="0.8.0", frigate_version="0.18.2-abc1234",
         expires=1000.0,
     )
     return Reference(**values | changes)

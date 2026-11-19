@@ -103,7 +103,8 @@ def test_a_take_answers_the_legend_and_holds_the_pictures(admin):
     found = taken(admin)
     assert (found["camera"], found["survey_id"], found["width"], found["height"]) == (
         "picam_h265", place["id"], 1536, 864)
-    assert found["expires_in"] == 600 and found["unit"] == "m" and found["people"] == "none"
+    assert found["expires_in"] == 600 and found["unit"] == "m"
+    assert "people" not in found  # the device doesn't check the pictures for people: the admin looks
     assert found["has_location"] is True
     assert found["stem"].startswith(f"tm-reference_{place['id']}_picam_h265_")
     assert [zone["key"] for zone in found["zones"]][:4] == ["zone_capture", "zone_far", "zone_near", "zone_radar"]
@@ -246,52 +247,6 @@ def frames(monkeypatch, clean, zoned):
 def test_a_frame_that_isnt_live_is_refused(admin, monkeypatch, clean, zoned):
     frames(monkeypatch, clean, zoned)
     refused(admin, (409, "no_picture"))
-
-
-# People
-
-
-def people(monkeypatch, *answers):
-    asked = list(answers)
-    calls = []
-
-    def frigate_people(settings, camera):
-        calls.append(camera)
-        return asked.pop(0)
-
-    monkeypatch.setattr(fake, "frigate_people", frigate_people)
-    return calls
-
-
-def test_a_person_before_or_after_is_seen(admin, monkeypatch):
-    calls = people(monkeypatch, 0, 1)
-    assert taken(admin)["people"] == "seen" and calls == ["picam_h265", "picam_h265"]
-
-
-def test_no_answer_is_not_checked(admin, monkeypatch):
-    people(monkeypatch, None, 0)
-    assert taken(admin)["people"] == "not_checked"
-
-
-@pytest.mark.parametrize("record, snapshots, asked", [
-    (False, False, False),  # Frigate saves an event only with a clip or a snapshot, so its events can't show anyone
-    (True, False, True),
-    (False, True, True),
-])
-def test_people_are_asked_about_only_while_frigate_keeps_events(admin, monkeypatch, record, snapshots, asked):
-    calls = people(monkeypatch, 0, 0)
-    config = fake.frigate_answer(admin.app.state.settings)[0]
-    camera = config["cameras"]["picam_h265"]
-    camera["record"]["enabled"], camera["snapshots"]["enabled"] = record, snapshots
-    frigate_says(monkeypatch, config)
-    assert taken(admin)["people"] == ("none" if asked else "not_checked")
-    assert calls == (["picam_h265", "picam_h265"] if asked else [])
-
-
-def test_with_detection_off_people_are_not_asked_about(admin, monkeypatch):
-    calls = people(monkeypatch)
-    assert fake.set_frigate_detect(admin.app.state.settings, "picam_h265", False)
-    assert taken(admin)["people"] == "not_checked" and calls == []
 
 
 # Frigate's own name for the camera

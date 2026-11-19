@@ -5047,15 +5047,6 @@
             "type": "array",
             "title": "Zones"
           },
-          "people": {
-            "type": "string",
-            "enum": [
-              "none",
-              "seen",
-              "not_checked"
-            ],
-            "title": "People"
-          },
           "has_location": {
             "type": "boolean",
             "title": "Has Location"
@@ -5073,7 +5064,6 @@
           "height",
           "unit",
           "zones",
-          "people",
           "has_location"
         ],
         "title": "ReferenceOut"

@@ -56,7 +56,6 @@ class Reference:
     height: int
     unit: Literal["m", "ft"]  # Frigate's unit system: metric or imperial
     zones: list[ZoneFacts]
-    people: Literal["none", "seen", "not_checked"]
     tm_version: str
     frigate_version: str | None
     expires: float  # on time.monotonic()'s clock

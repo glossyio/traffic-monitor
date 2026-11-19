@@ -12,7 +12,8 @@ with its zone outlines, and holds both in memory under a ticket (app.state.refer
 took them: the pictures shown are the pictures saved. It writes nothing, so it holds no lock. GET
 .../{ticket}/clean.jpg and zones.jpg show them, GET .../{ticket}/package gives the zip (the pictures, the data file,
 and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches the disk, a log line, an
-audit row, or an error message.
+audit row, or an error message. The device doesn't check the pictures for people: the dialog's note makes that the
+admin's job.
 """
 
 import time
@@ -296,7 +297,6 @@ class ReferenceOut(BaseModel):
     height: int
     unit: Literal["m", "ft"]
     zones: list[ZoneFacts]
-    people: Literal["none", "seen", "not_checked"]
     has_location: bool  # the place in use has a point, so the box can be ticked
 
 
@@ -368,29 +368,15 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
     if not _sending(stats, row.frigate_camera):
         raise _no_picture()
 
-    def people() -> int | None:
-        if settings.fake:
-            return fake.frigate_people(settings, row.frigate_camera)
-        return frigate.people_tracked(row.frigate_camera)
-
     def frame(zones: bool):
         if settings.fake:
             return fake.frigate_frame(settings, row.frigate_camera, zones)
         return frigate.latest_frame(row.frigate_camera, zones=zones)
 
-    # Frigate saves an event only once it has a clip or a snapshot, so with both off its events can't show anyone
-    keeps_events = any(probes.mapping(camera.get(part)).get("enabled") is True for part in ("record", "snapshots"))
-    checked = row.detect is True and keeps_events
-    before = people() if checked else None
     clean = _live(frame(False), size)
     clean_at = time.time()
     zones_picture = _live(frame(True), size)
     zones_at = time.time()
-    after = people() if checked else None
-    if not checked or before is None or after is None:
-        seen = "seen" if (before or 0) > 0 or (after or 0) > 0 else "not_checked"
-    else:
-        seen = "seen" if before > 0 or after > 0 else "none"
 
     place = Places(app_state.state).in_use()
     point = (place.lat, place.lon) if place and place.lat is not None and place.lon is not None else None
@@ -409,7 +395,6 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         height=size[1],
         unit=distance_unit(whole),
         zones=zone_facts(camera),
-        people=seen,
         tm_version=app_state.manifest.tm_version,
         frigate_version=fake.FAKE_FRIGATE_VERSION if settings.fake else frigate.version(),
     )
@@ -425,7 +410,6 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         height=kept.height,
         unit=kept.unit,
         zones=kept.zones,
-        people=kept.people,
         has_location=point is not None,
     )
 
