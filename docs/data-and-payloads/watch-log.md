@@ -12,7 +12,7 @@ Cameras go in `watch_camera` and radars in `watch_radar`. Both tables are in the
 
 A row covers the five minutes that end at its `time`, which is always a multiple of five minutes on the device's clock. There is a row for every camera and radar listed in [config.yml](../configuration/node-red-config.md#sensorscameras), whether it is enabled or not, so a sensor that was switched off shows up as a row with `enabled` 0 rather than as a gap.
 
-A window with no row means Node-RED didn't see that whole window. That covers every window a restart, a reboot, or a power cut touched, from the one Node-RED stopped in through the one it started in: one window for a quick restart, more for a longer outage. The first row after a start comes at the second five-minute mark, five to ten minutes later. It also covers a window in which the device's clock jumped. Treat a missing window as unknown, not as working or as not working.
+A window with no row means Node-RED didn't see that whole window. That covers every window a restart, a reboot, or a power cut touched, from the one Node-RED stopped in through the one it started in: one window for a quick restart, more for a longer outage. The first row after a start comes at the second five-minute mark, five to ten minutes later. It also covers a window in which the device's clock jumped. If the clock is set back by more than about ten minutes, the times that come round again keep their first rows on the device, while the upload sends the new ones. Treat a missing window as unknown, not as working or as not working.
 
 ## watch_camera
 
@@ -23,9 +23,9 @@ One row for each camera and window. The primary key is `time` and `camera`.
 | `time` | INTEGER | End of the five-minute window | Unix time in seconds |
 | `camera` | TEXT | The camera's name in `config.yml`, the same name as `events.camera` | |
 | `enabled` | INTEGER | Whether the camera's entry in `config.yml` was enabled | `1` or `0` |
-| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the camera had | Empty if it has none |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the camera had | Empty if it has none, or while the camera is off |
 | `frigate_answered` | INTEGER | Whether Frigate sent any status report in the window | `1` or `0` |
-| `stats_messages` | INTEGER | How many of Frigate's reports in the window included this camera. Frigate reports once a minute unless its `mqtt.stats_interval` setting was changed, so 5 is a full window. | 0 or more |
+| `stats_messages` | INTEGER | How many of Frigate's reports in the window included this camera. Frigate reports once a minute unless its `mqtt.stats_interval` setting was changed, so a full window has about 5. | 0 or more |
 | `camera_fps` | REAL | Frames per second the camera delivered, averaged over the reports | Empty when `stats_messages` is 0 |
 | `process_fps` | REAL | Frames per second Frigate processed | Empty when `stats_messages` is 0 |
 | `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `stats_messages` is 0 |
@@ -43,7 +43,7 @@ One row for each radar and window. The primary key is `time` and `radar`.
 | `time` | INTEGER | End of the five-minute window | Unix time in seconds |
 | `radar` | TEXT | The radar's name in [config.yml](../configuration/node-red-config.md#sensorsradars), the same as `radarName` in the radar tables | |
 | `enabled` | INTEGER | Whether the radar's entry in `config.yml` was enabled | `1` or `0` |
-| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the radar had | Empty if it has none |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the radar had | Empty if it has none, or while the radar is off |
 | `port_open` | INTEGER | Whether the device had the radar's serial port open, as at `time` | `1` or `0` |
 | `last_reading_at` | REAL | When the radar's last reading arrived, as at `time` | Unix time in seconds; empty if none since Node-RED started |
 
@@ -51,15 +51,16 @@ A radar with nothing passing it sends little, so a recent `last_reading_at` isn'
 
 ## How to read it
 
-A camera was watching in a window when `enabled`, `frigate_answered`, and `detection_enabled` are all 1 and `camera_fps` is above 0. A radar was watching when `enabled` and `port_open` are both 1.
+A camera was watching in a window when `enabled`, `frigate_answered`, and `detection_enabled` are all 1, `stats_messages` is 4 or more, and `camera_fps` is above 0. A radar was watching when `enabled` and `port_open` are both 1.
 
 The other patterns mean:
 
 | Row | What happened |
 |---|---|
 | `enabled` 0 | The sensor was switched off in `config.yml`. |
-| `frigate_answered` 0 | Frigate was stopped or restarting, so there is nothing about any camera. |
+| `frigate_answered` 0 | Frigate sent nothing for the whole window: it was restarting or not responding. There is nothing about any camera. |
 | `frigate_answered` 1 and `stats_messages` 0 | Frigate was running but didn't have this camera, as when its configuration didn't load. |
+| `stats_messages` well under 5 | Frigate answered for only part of the window. |
 | `camera_fps` 0 | The camera's stream was down. |
 | `detection_enabled` 0 | Detection was switched off, in Frigate or on the [Cameras](../use/cameras.md) page, for some or all of the window. |
 | `port_open` 0 | The radar's serial port wasn't open, as when the radar was unplugged. |
@@ -68,14 +69,15 @@ The other patterns mean:
 
 These use Python's built-in `sqlite3`, or any SQLite tool. Replace `picam_h265` and the dates with your own.
 
-How many of each hour's twelve windows a camera was watching, for one day in the device's local time. `windows_logged` is how many of the twelve have a row, so you can tell a missing window from one when the camera wasn't watching.
+How many of each hour's twelve windows a camera was watching, for one day in your computer's local time. `windows_logged` is how many of the twelve have a row, so you can tell a missing window from one when the camera wasn't watching.
 
 ```sql
 SELECT strftime('%Y-%m-%d %H:00', time - 1, 'unixepoch', 'localtime') AS hour,
        camera,
        COUNT(*) AS windows_logged,
        SUM(CASE WHEN enabled = 1 AND frigate_answered = 1
-                 AND detection_enabled = 1 AND camera_fps > 0
+                 AND detection_enabled = 1 AND stats_messages >= 4
+                 AND camera_fps > 0
                 THEN 1 ELSE 0 END) AS windows_watching
 FROM watch_camera
 WHERE time > CAST(strftime('%s', '2026-03-14', 'utc') AS INTEGER)
