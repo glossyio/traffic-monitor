@@ -10,7 +10,7 @@ The Traffic Monitor is a data collection tool. Everything it collects is process
 
 | Where | What | How long |
 |---|---|---|
-| `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite` | The database: [events](events-payload.md), [radar readings](radar-payload.md), [air quality readings](air-quality-aq-payload.md), the device's deployment history, and operator comments | Until you delete it |
+| `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite` | The database: [events](events-payload.md), [radar readings](radar-payload.md), [air quality readings](air-quality-aq-payload.md), the device's deployment history, the [watch log](watch-log.md) of whether each camera and radar was working, and operator comments | Until you delete it |
 | `/opt/traffic-monitor/frigate/storage/` | Frigate's cropped snapshots of each detection, and recordings of alerts and detections | About an hour, by default |
 | Your ThingsBoard server | A copy of the data above, plus system metrics | If you turn on the [ThingsBoard upload](integrations.md#thingsboard) |
 
@@ -50,6 +50,8 @@ Tables for sensors the device doesn't have stay empty.
 | `radar_oc_payload` | Per-object summaries from the radar, including estimated length | No |
 | `airquality` | Air quality and weather readings. See [Air quality](air-quality-aq-payload.md). | No |
 | `deployment` | Where each sensor was, and when | No, except where homes are far apart: the location is rounded to about 1 km (two decimal places) by default and never stored more precisely, which in a rural area can point to a single home (see [Privacy](#privacy)) |
+| `watch_camera` | Whether each camera was working, every five minutes. See [Watch log](watch-log.md). | No |
+| `watch_radar` | Whether each radar was working, every five minutes. See [Watch log](watch-log.md). | No |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 

@@ -498,12 +498,13 @@
             "99dfff63ac837bc8",
             "f35d3f484c2f6107",
             "221ddfedf40c108f",
-            "8c521232f464d27a"
+            "8c521232f464d27a",
+            "de4758b3192bf12d"
         ],
         "x": 108,
         "y": 93,
         "w": 1198,
-        "h": 794
+        "h": 894
     },
     {
         "id": "fe1b9f6f9d89d353",
@@ -7462,7 +7463,7 @@
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
         "name": "upload gate",
-        "func": "// Every ThingsBoard upload passes here, after the rate limit and just before the URL is built, so each message is\n// judged under the config it is sent with. Only the kinds of data, attributes, and event fields listed in\n// upload-lists.json (beside settings.js, which loads it as global upload_lists) leave the unit; deployment rows go\n// out at the precision tmdb stores them; and the deployments attribute carries what the Sharing page chose, for the\n// server it was chosen for. A key that isn't listed is left out and named once per config load, never with its value.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst config = global.get(\"config\") || {};\n// a message that waited in the rate limit while the upload was turned off goes no further\nif (!isMapping(config.thingsboard) || config.thingsboard.enabled !== true) {\n    return null;\n}\nconst place = isMapping(config.deployment) ? config.deployment : {};\nconst sharing = isMapping(config.sharing) ? config.sharing : {};\nconst thingsboard = isMapping(config.thingsboard) ? config.thingsboard : {};\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nfunction leftOut(key) {\n    warnOnce(`upload:${key}`, `ThingsBoard upload: left out ${key}, which isn't on the list of what is shared.`);\n}\n\nfunction isListOfText(value) {\n    return Array.isArray(value) && value.every((name) => typeof name === \"string\");\n}\n\n// the lists of what is shared; when they didn't load (settings.js gives null), nothing is sent\nconst lists = global.get(\"upload_lists\");\nif (!isMapping(lists) || ![\"telemetry\", \"attributes\", \"event\"].every((key) => isListOfText(lists[key]))) {\n    warnOnce(\"upload:lists\", \"ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent.\");\n    return null;\n}\n\n// the host rule, the same as init config defaults' and the control app's: trim, lower-case, no leading http:// or\n// https://, no trailing /\nfunction normaliseHost(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n    return host === \"\" ? null : host;\n}\n\n// half away from zero, as the deployment engine and SQLite's ROUND (toFixed rounds the magnitude)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\n// a number, or a number quoted in YAML or rendered by a template; anything else is null\nfunction numberOf(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    return null;\n}\n\n// the places tmdb stores for this unit: none stores no location; anything else is 2, as init config defaults\nconst PRECISION = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst unitPlaces = Object.prototype.hasOwnProperty.call(PRECISION, place.database_precision) ? PRECISION[place.database_precision] : 2;\n\n// a row's places: the coarser of its own location_precision and the unit's database_precision; a row without one is\n// at the unit's, and null or none (either side) means no location\nfunction rowPlaces(row) {\n    if (row.location_precision === undefined) {\n        return unitPlaces;\n    }\n    const own = (row.location_precision === null || row.location_precision === \"none\") ? null : numberOf(row.location_precision);\n    if (unitPlaces === null || own === null || !Number.isInteger(own) || own < 0) {\n        return null;\n    }\n    return Math.min(own, unitPlaces);\n}\n\n// a coordinate at these places: a string stays a string, an empty one stays empty\nfunction coordinate(value, places) {\n    if (value === '') {\n        return '';\n    }\n    const number = numberOf(value);\n    if (places === null || number === null) {\n        return null;\n    }\n    const rounded = round(number, places);\n    return typeof value === \"string\" ? String(rounded) : rounded;\n}\n\nfunction reRound(row) {\n    if (!isMapping(row)) {\n        return;\n    }\n    const places = rowPlaces(row);\n    for (const key of [\"lat\", \"lon\"]) {\n        if (key in row) {\n            row[key] = coordinate(row[key], places);\n        }\n    }\n}\n\n// the rows of a list that are mappings, re-rounded; anything else in the list is left out\nfunction rowsOf(list) {\n    const rows = list.filter(isMapping);\n    if (rows.length !== list.length) {\n        warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n    }\n    rows.forEach(reRound);\n    return rows;\n}\n\n// telemetry deployments: a mapping with only the two lists, each an array of rows; null when none is left\nfunction telemetryDeployments(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"updatedDeployment\", \"currentDeployment\"].includes(key)) {\n            leftOut(`deployments.${key}`);\n        } else if (Array.isArray(list)) {\n            kept[key] = rowsOf(list);\n        } else {\n            warnOnce(`upload:deployments.${key}`, `ThingsBoard upload: left out deployments.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// an event with only the listed fields, or null when it isn't a mapping or no field is left\nfunction eventFields(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:event\", \"ThingsBoard upload: left out an event that isn't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, field] of Object.entries(value)) {\n        if (lists.event.includes(key)) {\n            kept[key] = field;\n        } else {\n            leftOut(`event.${key}`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a telemetry item ({ts, values}) with only the listed values, or null when none is left\nfunction telemetryItem(item) {\n    if (!isMapping(item) || !isMapping(item.values)) {\n        warnOnce(\"upload:telemetry\", \"ThingsBoard upload: left out telemetry that isn't {ts, values}.\");\n        return null;\n    }\n    const values = {};\n    for (const [key, value] of Object.entries(item.values)) {\n        if (lists.telemetry.includes(key)) {\n            values[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(values).length === 0) {\n        return null;\n    }\n    if (\"event\" in values) {\n        const event = eventFields(values.event);\n        if (event === null) {\n            delete values.event;\n        } else {\n            values.event = event;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    if (\"deployments\" in values) {\n        const deployments = telemetryDeployments(values.deployments);\n        if (deployments === null) {\n            delete values.deployments;\n        } else {\n            values.deployments = deployments;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    return \"ts\" in item ? { ts: item.ts, values } : { values };\n}\n\n// What the Sharing page chose, sent with the deployments attribute. The two choices count only for the server they\n// were made for (sharing.host); the exact location goes only over https.\nfunction chosen() {\n    const host = normaliseHost(thingsboard.host);\n    const counts = host !== null && normaliseHost(sharing.host) === host;\n    const exact = counts && sharing.exact_location === true;\n    const publicMap = counts && sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\";\n    // the attribute describes the server it is sent to: the target and notice version are for the host they were chosen for\n    const target = (counts && (sharing.target === \"maintainer\" || sharing.target === \"own\")) ? sharing.target : null;\n    const notice_version = (counts && typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null;\n    const survey_id = (typeof place.survey_id === \"string\" && place.survey_id !== '') ? place.survey_id : null;\n    const lat = numberOf(place.lat);\n    const lon = numberOf(place.lon);\n    const point = lat !== null && lon !== null;\n    const https = typeof thingsboard.url === \"string\" && /^https:\\/\\//i.test(thingsboard.url);\n    return {\n        consents: { share_data: true, exact_location: exact, public_map: publicMap, notice_version, target },\n        exact_location: (exact && https && survey_id !== null && point)\n            ? { survey_id, lat: round(lat, 5), lon: round(lon, 5) } : {},\n        public_map: (publicMap === \"rounded_point\" && target === \"maintainer\" && point)\n            ? { survey_id, mode: \"rounded_point\", lat: round(lat, 3), lon: round(lon, 3) } : {},\n    };\n}\n\n// client attributes with only the listed keys, or null when none is left\nfunction attributes(payload) {\n    if (!isMapping(payload)) {\n        warnOnce(\"upload:attributes\", \"ThingsBoard upload: left out attributes that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, value] of Object.entries(payload)) {\n        if (lists.attributes.includes(key)) {\n            kept[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(kept).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in kept) {\n        // one row per sensor; deploymentTopLevel names the survey and holds no coordinates\n        if (isMapping(kept.deployments)) {\n            const rows = {};\n            for (const [name, row] of Object.entries(kept.deployments)) {\n                if (isMapping(row)) {\n                    rows[name] = row;\n                } else {\n                    warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n                }\n            }\n            for (const [name, row] of Object.entries(rows)) {\n                if (name !== \"deploymentTopLevel\") {\n                    reRound(row);\n                }\n            }\n            kept.deployments = rows;\n            Object.assign(kept, chosen());\n        } else {\n            warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n            delete kept.deployments;\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a copy, so the rows other nodes hold aren't re-rounded under them (function nodes have no structuredClone)\nfunction copy(value) {\n    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));\n}\n\n// a new message with only the type and the payload: nothing else an upstream node left on msg reaches the request\nif (msg.type === \"telemetry\") {\n    const many = Array.isArray(msg.payload);\n    const items = copy(many ? msg.payload : [msg.payload]).map(telemetryItem).filter((item) => item !== null);\n    if (items.length === 0) {\n        return null;\n    }\n    return { type: \"telemetry\", payload: many ? items : items[0] };\n}\nif (msg.type === \"attributes\") {\n    const kept = attributes(copy(msg.payload));\n    return kept === null ? null : { type: \"attributes\", payload: kept };\n}\nwarnOnce(\"upload:type\", \"ThingsBoard upload: left out a message that is neither telemetry nor attributes.\");\nreturn null;",
+        "func": "// Every ThingsBoard upload passes here, after the rate limit and just before the URL is built, so each message is\n// judged under the config it is sent with. Only the kinds of data, attributes, and event fields listed in\n// upload-lists.json (beside settings.js, which loads it as global upload_lists) leave the unit, the fields of the\n// watch log's camera and radar rows included; deployment rows go out at the precision tmdb stores them; and the deployments attribute carries what the Sharing page chose, for the\n// server it was chosen for. A key that isn't listed is left out and named once per config load, never with its value.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst config = global.get(\"config\") || {};\n// a message that waited in the rate limit while the upload was turned off goes no further\nif (!isMapping(config.thingsboard) || config.thingsboard.enabled !== true) {\n    return null;\n}\nconst place = isMapping(config.deployment) ? config.deployment : {};\nconst sharing = isMapping(config.sharing) ? config.sharing : {};\nconst thingsboard = isMapping(config.thingsboard) ? config.thingsboard : {};\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nfunction leftOut(key) {\n    warnOnce(`upload:${key}`, `ThingsBoard upload: left out ${key}, which isn't on the list of what is shared.`);\n}\n\nfunction isListOfText(value) {\n    return Array.isArray(value) && value.every((name) => typeof name === \"string\");\n}\n\n// the lists of what is shared; when they didn't load (settings.js gives null), nothing is sent\nconst lists = global.get(\"upload_lists\");\nif (!isMapping(lists) || ![\"telemetry\", \"attributes\", \"event\", \"watch_camera\", \"watch_radar\"].every((key) => isListOfText(lists[key]))) {\n    warnOnce(\"upload:lists\", \"ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent.\");\n    return null;\n}\n\n// the host rule, the same as init config defaults' and the control app's: trim, lower-case, no leading http:// or\n// https://, no trailing /\nfunction normaliseHost(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n    return host === \"\" ? null : host;\n}\n\n// half away from zero, as the deployment engine and SQLite's ROUND (toFixed rounds the magnitude)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\n// a number, or a number quoted in YAML or rendered by a template; anything else is null\nfunction numberOf(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    return null;\n}\n\n// the places tmdb stores for this unit: none stores no location; anything else is 2, as init config defaults\nconst PRECISION = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst unitPlaces = Object.prototype.hasOwnProperty.call(PRECISION, place.database_precision) ? PRECISION[place.database_precision] : 2;\n\n// a row's places: the coarser of its own location_precision and the unit's database_precision; a row without one is\n// at the unit's, and null or none (either side) means no location\nfunction rowPlaces(row) {\n    if (row.location_precision === undefined) {\n        return unitPlaces;\n    }\n    const own = (row.location_precision === null || row.location_precision === \"none\") ? null : numberOf(row.location_precision);\n    if (unitPlaces === null || own === null || !Number.isInteger(own) || own < 0) {\n        return null;\n    }\n    return Math.min(own, unitPlaces);\n}\n\n// a coordinate at these places: a string stays a string, an empty one stays empty\nfunction coordinate(value, places) {\n    if (value === '') {\n        return '';\n    }\n    const number = numberOf(value);\n    if (places === null || number === null) {\n        return null;\n    }\n    const rounded = round(number, places);\n    return typeof value === \"string\" ? String(rounded) : rounded;\n}\n\nfunction reRound(row) {\n    if (!isMapping(row)) {\n        return;\n    }\n    const places = rowPlaces(row);\n    for (const key of [\"lat\", \"lon\"]) {\n        if (key in row) {\n            row[key] = coordinate(row[key], places);\n        }\n    }\n}\n\n// the rows of a list that are mappings, re-rounded; anything else in the list is left out\nfunction rowsOf(list) {\n    const rows = list.filter(isMapping);\n    if (rows.length !== list.length) {\n        warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n    }\n    rows.forEach(reRound);\n    return rows;\n}\n\n// telemetry deployments: a mapping with only the two lists, each an array of rows; null when none is left\nfunction telemetryDeployments(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"updatedDeployment\", \"currentDeployment\"].includes(key)) {\n            leftOut(`deployments.${key}`);\n        } else if (Array.isArray(list)) {\n            kept[key] = rowsOf(list);\n        } else {\n            warnOnce(`upload:deployments.${key}`, `ThingsBoard upload: left out deployments.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a mapping with only the fields on the list, each other one named once with its label (never with its value), or\n// null when no field is left; the text is the warning for a value that isn't a mapping\nfunction listedFields(value, list, label, notMapping) {\n    if (!isMapping(value)) {\n        warnOnce(`upload:${label}`, notMapping);\n        return null;\n    }\n    const kept = {};\n    for (const [key, field] of Object.entries(value)) {\n        if (list.includes(key)) {\n            kept[key] = field;\n        } else {\n            leftOut(`${label}.${key}`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// an event with only the listed fields, or null when it isn't a mapping or no field is left\nfunction eventFields(value) {\n    return listedFields(value, lists.event, \"event\", \"ThingsBoard upload: left out an event that isn't a mapping.\");\n}\n\n// telemetry watch: a mapping with only the two lists of rows, each row with only the listed fields; a list with no\n// row left is left out, and null when neither is left\nfunction telemetryWatch(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:watch\", \"ThingsBoard upload: left out watch rows that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"cameras\", \"radars\"].includes(key)) {\n            leftOut(`watch.${key}`);\n        } else if (Array.isArray(list)) {\n            const label = key === \"cameras\" ? \"watch_camera\" : \"watch_radar\";\n            const rows = list.filter(isMapping);\n            if (rows.length !== list.length) {\n                warnOnce(\"upload:watch_row\", \"ThingsBoard upload: left out watch rows that aren't mappings.\");\n            }\n            const cut = rows.map((row) => listedFields(row, lists[label], label, \"\")).filter((row) => row !== null);\n            if (cut.length > 0) {\n                kept[key] = cut;\n            }\n        } else {\n            warnOnce(`upload:watch.${key}`, `ThingsBoard upload: left out watch.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a telemetry item ({ts, values}) with only the listed values, or null when none is left\nfunction telemetryItem(item) {\n    if (!isMapping(item) || !isMapping(item.values)) {\n        warnOnce(\"upload:telemetry\", \"ThingsBoard upload: left out telemetry that isn't {ts, values}.\");\n        return null;\n    }\n    const values = {};\n    for (const [key, value] of Object.entries(item.values)) {\n        if (lists.telemetry.includes(key)) {\n            values[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(values).length === 0) {\n        return null;\n    }\n    if (\"event\" in values) {\n        const event = eventFields(values.event);\n        if (event === null) {\n            delete values.event;\n        } else {\n            values.event = event;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    if (\"deployments\" in values) {\n        const deployments = telemetryDeployments(values.deployments);\n        if (deployments === null) {\n            delete values.deployments;\n        } else {\n            values.deployments = deployments;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    if (\"watch\" in values) {\n        const watch = telemetryWatch(values.watch);\n        if (watch === null) {\n            delete values.watch;\n        } else {\n            values.watch = watch;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    return \"ts\" in item ? { ts: item.ts, values } : { values };\n}\n\n// What the Sharing page chose, sent with the deployments attribute. The two choices count only for the server they\n// were made for (sharing.host); the exact location goes only over https.\nfunction chosen() {\n    const host = normaliseHost(thingsboard.host);\n    const counts = host !== null && normaliseHost(sharing.host) === host;\n    const exact = counts && sharing.exact_location === true;\n    const publicMap = counts && sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\";\n    // the attribute describes the server it is sent to: the target and notice version are for the host they were chosen for\n    const target = (counts && (sharing.target === \"maintainer\" || sharing.target === \"own\")) ? sharing.target : null;\n    const notice_version = (counts && typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null;\n    const survey_id = (typeof place.survey_id === \"string\" && place.survey_id !== '') ? place.survey_id : null;\n    const lat = numberOf(place.lat);\n    const lon = numberOf(place.lon);\n    const point = lat !== null && lon !== null;\n    const https = typeof thingsboard.url === \"string\" && /^https:\\/\\//i.test(thingsboard.url);\n    return {\n        consents: { share_data: true, exact_location: exact, public_map: publicMap, notice_version, target },\n        exact_location: (exact && https && survey_id !== null && point)\n            ? { survey_id, lat: round(lat, 5), lon: round(lon, 5) } : {},\n        public_map: (publicMap === \"rounded_point\" && target === \"maintainer\" && point)\n            ? { survey_id, mode: \"rounded_point\", lat: round(lat, 3), lon: round(lon, 3) } : {},\n    };\n}\n\n// client attributes with only the listed keys, or null when none is left\nfunction attributes(payload) {\n    if (!isMapping(payload)) {\n        warnOnce(\"upload:attributes\", \"ThingsBoard upload: left out attributes that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, value] of Object.entries(payload)) {\n        if (lists.attributes.includes(key)) {\n            kept[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(kept).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in kept) {\n        // one row per sensor; deploymentTopLevel names the survey and holds no coordinates\n        if (isMapping(kept.deployments)) {\n            const rows = {};\n            for (const [name, row] of Object.entries(kept.deployments)) {\n                if (isMapping(row)) {\n                    rows[name] = row;\n                } else {\n                    warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n                }\n            }\n            for (const [name, row] of Object.entries(rows)) {\n                if (name !== \"deploymentTopLevel\") {\n                    reRound(row);\n                }\n            }\n            kept.deployments = rows;\n            Object.assign(kept, chosen());\n        } else {\n            warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n            delete kept.deployments;\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a copy, so the rows other nodes hold aren't re-rounded under them (function nodes have no structuredClone)\nfunction copy(value) {\n    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));\n}\n\n// a new message with only the type and the payload: nothing else an upstream node left on msg reaches the request\nif (msg.type === \"telemetry\") {\n    const many = Array.isArray(msg.payload);\n    const items = copy(many ? msg.payload : [msg.payload]).map(telemetryItem).filter((item) => item !== null);\n    if (items.length === 0) {\n        return null;\n    }\n    return { type: \"telemetry\", payload: many ? items : items[0] };\n}\nif (msg.type === \"attributes\") {\n    const kept = attributes(copy(msg.payload));\n    return kept === null ? null : { type: \"attributes\", payload: kept };\n}\nwarnOnce(\"upload:type\", \"ThingsBoard upload: left out a message that is neither telemetry nor attributes.\");\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -15623,6 +15624,223 @@
         "y": 2180,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "42ab4681bb24d9f1",
+        "type": "group",
+        "z": "05fcb02c571dcfee",
+        "name": "watch log",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "1c84b05d58e12d41",
+            "c8bdd25e20610818",
+            "e2a5c9f31bf63164",
+            "669fd305a6d19ac3",
+            "1d36b14c5d10b13a",
+            "ddbdf776eb14316b",
+            "c7cdca42234df7eb"
+        ],
+        "x": 14,
+        "y": 1061,
+        "w": 722,
+        "h": 200
+    },
+    {
+        "id": "1c84b05d58e12d41",
+        "type": "mqtt in",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "",
+        "topic": "frigate/stats",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 1100,
+        "wires": [
+            [
+                "c8bdd25e20610818"
+            ]
+        ]
+    },
+    {
+        "id": "c8bdd25e20610818",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "keep frigate stats",
+        "func": "// Adds up Frigate's stats reports (frigate/stats, about one a minute) into the open five-minute window in\n// flow.watch_window, which the mark node starts and closes. Reports are filed under the key config.yml gives\n// each camera, so Frigate's own name is kept nowhere: a camera that config.yml doesn't list is left out.\n// Before the first mark there is no window and nothing is kept.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nconst FPS = [\"camera_fps\", \"process_fps\", \"skipped_fps\", \"detection_fps\"];\n\nconst window = flow.get(\"watch_window\");\nif (!isMapping(window)) {\n    return null;\n}\n\nconst report = msg.payload;\nif (!isMapping(report) || !isMapping(report.cameras)) {\n    warnOnce(\"watch:stats\", \"Watch log: a frigate/stats message couldn't be read, so it wasn't counted.\");\n    return null;\n}\n\nwindow.messages = (Number.isFinite(window.messages) ? window.messages : 0) + 1;\nif (!isMapping(window.cameras)) {\n    window.cameras = {};\n}\n\nconst keys = global.get(\"frigate_cameras\");\nfor (const [name, entry] of Object.entries(report.cameras)) {\n    if (!isMapping(keys) || !has(keys, name) || typeof keys[name] !== \"string\") {\n        continue;\n    }\n    if (!isMapping(entry) || typeof entry.detection_enabled !== \"boolean\"\n        || !FPS.every((field) => typeof entry[field] === \"number\" && Number.isFinite(entry[field]))) {\n        continue;\n    }\n    const key = keys[name];\n    if (!has(window.cameras, key)) {\n        window.cameras[key] = { messages: 0, camera_fps: 0, process_fps: 0, skipped_fps: 0, detection_fps: 0, detection_off: 0 };\n    }\n    const sums = window.cameras[key];\n    sums.messages += 1;\n    for (const field of FPS) {\n        sums[field] += entry[field];\n    }\n    if (entry.detection_enabled === false) {\n        sums.detection_off += 1;\n    }\n}\n\nflow.set(\"watch_window\", window);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e2a5c9f31bf63164",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "every 5 minutes",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/5 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 1180,
+        "wires": [
+            [
+                "669fd305a6d19ac3"
+            ]
+        ]
+    },
+    {
+        "id": "669fd305a6d19ac3",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "watch rows",
+        "func": "// Closes the five-minute window \"keep frigate stats\" has been filling and writes one row per sensor that\n// config.yml lists: a camera row (what Frigate's stats reports added up to) and a radar row (the facts the\n// Status page reads: port open, last reading). The radar facts are the Status page's, taken at the mark.\n// A row says what the sensor did in the window, so no row is written when the window wasn't seen whole.\n\n// The window has to be about five minutes long. These limits keep out the first mark after a start (a short\n// window), a missed mark (a long one), and a clock that jumped (a negative or a huge one).\nconst WINDOW_MIN_MS = 295000;\nconst WINDOW_MAX_MS = 305000;\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\nfunction round2(value) {\n    return Math.round(value * 100) / 100;\n}\n\nconst now = typeof msg.payload === \"number\" ? msg.payload : Date.now();\nconst time = Math.round(now / 300000) * 300;\n\nconst window = flow.get(\"watch_window\");\nflow.set(\"watch_window\", { since: now, messages: 0, cameras: {} });\n\nif (!isMapping(window) || !Number.isFinite(window.since)) {\n    return null;\n}\nconst age = now - window.since;\nif (age < WINDOW_MIN_MS || age > WINDOW_MAX_MS) {\n    return null;\n}\n\nconst config = global.get(\"config\");\nconst sensors = isMapping(config) ? config.sensors : undefined;\nif (!isMapping(sensors)) {\n    return null;\n}\n\nfunction enabled(entry) {\n    return isMapping(entry) && entry.enabled === true ? 1 : 0;\n}\n\nfunction deploymentId(entry) {\n    const id = isMapping(entry) && isMapping(entry.deployment) ? entry.deployment.id : undefined;\n    return typeof id === \"string\" && id !== \"\" ? id : null;\n}\n\nconst sums = isMapping(window.cameras) ? window.cameras : {};\nconst answered = Number.isFinite(window.messages) && window.messages > 0 ? 1 : 0;\nconst cameraRows = [];\nif (isMapping(sensors.cameras)) {\n    for (const [key, entry] of Object.entries(sensors.cameras)) {\n        const mine = has(sums, key) && isMapping(sums[key]) ? sums[key] : null;\n        const seen = mine !== null && Number.isFinite(mine.messages) && mine.messages > 0 && answered === 1;\n        cameraRows.push({\n            time: time,\n            camera: key,\n            enabled: enabled(entry),\n            deployment_id: deploymentId(entry),\n            frigate_answered: answered,\n            stats_messages: seen ? mine.messages : 0,\n            camera_fps: seen ? round2(mine.camera_fps / mine.messages) : null,\n            process_fps: seen ? round2(mine.process_fps / mine.messages) : null,\n            skipped_fps: seen ? round2(mine.skipped_fps / mine.messages) : null,\n            detection_fps: seen ? round2(mine.detection_fps / mine.messages) : null,\n            detection_enabled: seen ? (mine.detection_off === 0 ? 1 : 0) : null\n        });\n    }\n}\n\nconst status = global.get(\"tm_status.radars\");\nconst radarRows = [];\nif (isMapping(sensors.radars)) {\n    for (const [name, entry] of Object.entries(sensors.radars)) {\n        const fact = isMapping(status) && has(status, name) && isMapping(status[name]) ? status[name] : {};\n        const read = typeof fact.last_reading_at === \"string\" ? Date.parse(fact.last_reading_at) / 1000 : NaN;\n        radarRows.push({\n            time: time,\n            radar: name,\n            enabled: enabled(entry),\n            deployment_id: deploymentId(entry),\n            port_open: fact.port_open === true ? 1 : 0,\n            last_reading_at: Number.isFinite(read) ? read : null\n        });\n    }\n}\n\nif (cameraRows.length === 0 && radarRows.length === 0) {\n    return null;\n}\n\nfunction toMessage(row) {\n    const params = {};\n    for (const [column, value] of Object.entries(row)) {\n        params[\"$\" + column] = value;\n    }\n    return { payload: row, params: params };\n}\n\nreturn [\n    cameraRows.length > 0 ? cameraRows.map(toMessage) : null,\n    radarRows.length > 0 ? radarRows.map(toMessage) : null,\n    { payload: { time: time, cameras: cameraRows, radars: radarRows } }\n];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 1180,
+        "wires": [
+            [
+                "1d36b14c5d10b13a"
+            ],
+            [
+                "ddbdf776eb14316b"
+            ],
+            [
+                "c7cdca42234df7eb"
+            ]
+        ]
+    },
+    {
+        "id": "1d36b14c5d10b13a",
+        "type": "sqlite",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO watch_camera (time, camera, enabled, deployment_id, frigate_answered, stats_messages, camera_fps, process_fps, skipped_fps, detection_fps, detection_enabled) VALUES ($time, $camera, $enabled, $deployment_id, $frigate_answered, $stats_messages, $camera_fps, $process_fps, $skipped_fps, $detection_fps, $detection_enabled);\n",
+        "name": "tmdb.watch_camera, Prepared Statement",
+        "x": 600,
+        "y": 1140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ddbdf776eb14316b",
+        "type": "sqlite",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO watch_radar (time, radar, enabled, deployment_id, port_open, last_reading_at) VALUES ($time, $radar, $enabled, $deployment_id, $port_open, $last_reading_at);\n",
+        "name": "tmdb.watch_radar, Prepared Statement",
+        "x": 600,
+        "y": 1180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c7cdca42234df7eb",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "watch link out",
+        "mode": "link",
+        "links": [
+            "7921b4aa847cce2b"
+        ],
+        "x": 560,
+        "y": 1220,
+        "wires": []
+    },
+    {
+        "id": "de4758b3192bf12d",
+        "type": "group",
+        "z": "f7932be9acc7391c",
+        "g": "2f27e270200485b9",
+        "name": "watch",
+        "style": {
+            "label": true,
+            "fill": "#bfdbef"
+        },
+        "nodes": [
+            "7921b4aa847cce2b",
+            "8c42bd6e49ecbba6"
+        ],
+        "x": 134,
+        "y": 879,
+        "w": 352,
+        "h": 82
+    },
+    {
+        "id": "7921b4aa847cce2b",
+        "type": "link in",
+        "z": "f7932be9acc7391c",
+        "g": "de4758b3192bf12d",
+        "name": "watch link in",
+        "links": [
+            "c7cdca42234df7eb"
+        ],
+        "x": 175,
+        "y": 920,
+        "wires": [
+            [
+                "8c42bd6e49ecbba6"
+            ]
+        ]
+    },
+    {
+        "id": "8c42bd6e49ecbba6",
+        "type": "function",
+        "z": "f7932be9acc7391c",
+        "g": "de4758b3192bf12d",
+        "name": "format watch telemetry",
+        "func": "const payload = msg.payload;\n\nreturn {\n    payload: {\n        ts: payload.time * 1000,\n        values: {\n            watch: { cameras: payload.cameras, radars: payload.radars }\n        }\n    }\n};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 920,
+        "wires": [
+            [
+                "8c521232f464d27a"
+            ]
         ]
     }
 ]
