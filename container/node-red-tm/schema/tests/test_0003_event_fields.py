@@ -31,7 +31,7 @@ def test_0003_adds_the_columns_and_rewrites_nothing(tmp_path):
     db_path = at_version_2(tmp_path)
     assert user_version(db_path) == 2
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
-    assert user_version(db_path) == LATEST_VERSION == 3
+    assert user_version(db_path) == LATEST_VERSION
     assert columns(db_path, "events")[-len(NEW_COLUMNS):] == list(NEW_COLUMNS)
     types = {row[1]: row[2] for row in query(db_path, "PRAGMA table_info(events)")}
     assert {name: types[name] for name in NEW_COLUMNS} == NEW_COLUMNS
