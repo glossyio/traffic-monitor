@@ -162,6 +162,12 @@ def test_zone_names_on_the_picture_are_not_bold():
     assert name.get("class") == "halo" and name.get("font-weight") is None
 
 
+def test_the_halo_behind_the_labels_is_thin():
+    """A 6 px white halo made the labels chunky on a real picture; 3 px at the base width keeps them readable."""
+    assert drawing([RADAR_FACTS]).find("svg:style", NS).text.count("stroke-width: 3px;") == 1
+    assert drawing([RADAR_FACTS], 3072, 1728).find("svg:style", NS).text.count("stroke-width: 6px;") == 1
+
+
 def test_a_key_with_markup_stays_text():
     key = '<script>alert(1)</script>&"\'é'
     root = drawing([RADAR_FACTS.model_copy(update={"key": key})])

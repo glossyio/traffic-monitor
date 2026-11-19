@@ -42,7 +42,7 @@ def reference_svg(clean: bytes, width: int, height: int, zones: list[ZoneFacts],
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {_px(total)}" width="{width}" '
         f'height="{_px(total)}" font-family="DejaVu Sans, Arial, Helvetica, sans-serif">',
-        f"<style>.halo {{ paint-order: stroke; stroke: #fff; stroke-width: {_px(6 * s)}px; "
+        f"<style>.halo {{ paint-order: stroke; stroke: #fff; stroke-width: {_px(3 * s)}px; "
         "stroke-linejoin: round; }</style>",
         f"<title>{escape(caption)}</title>",
         f'<image href="data:image/jpeg;base64,{base64.b64encode(clean).decode()}" x="0" y="0" width="{width}" '
