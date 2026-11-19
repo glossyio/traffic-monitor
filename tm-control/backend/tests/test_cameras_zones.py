@@ -29,6 +29,23 @@ def test_frigates_name_for_a_zone_is_never_copied():
     assert "Oak Ave" not in zone_facts(CAMERA)[0].model_dump_json()
 
 
+def test_a_zones_filters_keep_only_the_size_ratio_and_score_keys():
+    filters = {
+        "car": {"min_area": 500, "max_area": 0.5, "min_ratio": 0.4, "max_ratio": 2, "threshold": 0.7, "min_score": 0.5,
+                "friendly_name": "Oak Ave by the school", "mask": "0,0,1,1", "raw_mask": {"a": 1}},
+        "bus": {"friendly_name": {"nested": "Oak Ave"}, "min_area": True},
+        "bike": "text",
+        7: {"min_area": 1},
+    }
+    [zone] = zone_facts({"zones": {"z": RADAR | {"filters": filters}}})
+    assert zone.filters == {
+        "car": {"min_area": 500, "max_area": 0.5, "min_ratio": 0.4, "max_ratio": 2, "threshold": 0.7,
+                "min_score": 0.5},
+        "bus": {},
+    }
+    assert "Oak Ave" not in zone.model_dump_json()
+
+
 @pytest.mark.parametrize("coordinates, corners", [
     (["0.1,0.2", "0.3,0.4", "0.5,0.6"], [(0.1, 0.2), (0.3, 0.4), (0.5, 0.6)]),   # a list
     # Frigate's API gives fractions, above 1 or below 0 where the zone runs past the frame's edge (a bench unit's

@@ -1,7 +1,8 @@
 """What Frigate holds for each of a camera's zones, read from /api/config: the facts a reference picture's data file and
 drawing carry, and nothing else.
 
-Only the keys listed in zone_facts are read; a zone's friendly_name, and any key Frigate adds later, are never copied.
+Only the keys listed in zone_facts are read, and in a zone's filters only FILTER_KEYS for each object; a zone's
+friendly_name, and any key Frigate adds later, are never copied.
 Every value may be missing or in an odd shape (a person edits Frigate's config), and each zone is still listed.
 """
 
@@ -14,6 +15,7 @@ from pydantic import BaseModel
 from tm_control.modules.apps.probes import mapping
 
 FALLBACK_COLOR = "#888888"  # drawn for a zone Frigate gave no colour
+FILTER_KEYS = ("min_area", "max_area", "min_ratio", "max_ratio", "threshold", "min_score")  # per object, numbers only
 
 
 class Corner(BaseModel):
@@ -40,7 +42,7 @@ class ZoneFacts(BaseModel):
     loitering_time: int | None
     speed_threshold: float | None
     objects: list[str]
-    filters: dict
+    filters: dict[str, dict[str, int | float]]  # object name -> FILTER_KEYS that hold a number
 
 
 def corner_letter(index: int) -> str:
@@ -134,6 +136,15 @@ def _sides(corners: list[Corner], distances: list[float]) -> list[Side]:
     ]
 
 
+def _filters(value) -> dict[str, dict[str, int | float]]:
+    """Each object's FILTER_KEYS that hold a number; an object whose filters aren't a mapping is left out."""
+    return {
+        name: {k: v for k, v in filters.items() if k in FILTER_KEYS and _number(v) is not None}
+        for name, filters in mapping(value).items()
+        if isinstance(name, str) and isinstance(filters, dict)
+    }
+
+
 def _zone(key: str, value) -> ZoneFacts:
     zone = mapping(value)
     enabled = zone.get("enabled") is not False
@@ -152,7 +163,7 @@ def _zone(key: str, value) -> ZoneFacts:
         loitering_time=_integer(zone.get("loitering_time")),
         speed_threshold=_number(zone.get("speed_threshold")),
         objects=[name for name in objects if isinstance(name, str)] if isinstance(objects, list) else [],
-        filters=mapping(zone.get("filters")),
+        filters=_filters(zone.get("filters")),
     )
 
 

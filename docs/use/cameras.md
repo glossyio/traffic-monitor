@@ -168,7 +168,8 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 | `corners` | Each corner's `letter` (A, B, C, and on, in the order Frigate stores the corners) and its `x` and `y` as fractions of the frame's width and height, from the top-left corner, even where Frigate's configuration holds the zone in pixels. A corner past the frame's edge is below 0 or above 1 |
 | `distances` | The side lengths entered in Frigate for speed estimation, in Frigate's order, or `[]` |
 | `sides` | The same lengths by side, in the order Frigate stores the corners, such as `{"start": "A", "end": "B", "length": 12}`; the last side ends at A. `[]` unless there is one length for each corner |
-| `inertia`, `loitering_time`, `speed_threshold`, `objects`, `filters` | The zone's settings in Frigate |
+| `inertia`, `loitering_time`, `speed_threshold`, `objects` | The zone's settings in Frigate |
+| `filters` | For each object with filters in the zone, the ones that are numbers among `min_area`, `max_area`, `min_ratio`, `max_ratio`, `threshold`, and `min_score`. Any other filter is left out |
 
 Frigate's name for the camera, the names you typed for zones in Frigate's editor, and the place's description are never in the data file or the drawing.
 

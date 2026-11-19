@@ -2596,7 +2596,9 @@ export interface components {
             objects: string[];
             /** Filters */
             filters: {
-                [key: string]: unknown;
+                [key: string]: {
+                    [key: string]: number;
+                };
             };
         };
         /**

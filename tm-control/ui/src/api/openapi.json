@@ -6583,7 +6583,19 @@
             "title": "Objects"
           },
           "filters": {
-            "additionalProperties": true,
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "type": "object"
+            },
             "type": "object",
             "title": "Filters"
           }
