@@ -9,7 +9,7 @@ The core parts are the Raspberry Pi 5, a microSD card, a camera, and an AI accel
 What each combination gives you:
 
 1. **Camera and AI accelerator**: object detection and counts. The lowest cost.
-2. **Add a radar** for speeds and the direction of travel. Without a radar, events have no speed or direction.
+2. **Add a radar** for speeds and the direction of travel. Without a radar, direction comes from the zones, and a speed only from a Frigate [speed zone](../configuration/frigate-config.md#speed-without-a-radar), which is rougher.
 3. **Add an air quality sensor** for gases, particulate matter, temperature, pressure, humidity, and light.
 4. **Add cameras** to watch more directions with the same accelerator. The software supports several cameras and up to four radars, paired in any pattern. See [Cameras](#cameras).
 

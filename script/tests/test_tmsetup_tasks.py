@@ -1253,3 +1253,12 @@ def test_the_default_upload_host_is_the_maintainers_server():
     assert defaults["tmsetup_thingsboard_server"] == role_vars["tmsetup_sharing_maintainer_host"]
     assert defaults["tmsetup_thingsboard_server"] != "tb.server.com"
     assert role_vars["tmsetup_sharing_public_map_live"] is False
+
+
+def test_the_upload_lists_file_is_copied_and_restarts_node_red():
+    """settings.js reads upload-lists.json only when Node-RED starts, so a changed file restarts it, as a changed
+    flows.json or settings.js does."""
+    task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
+                if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
+    assert "node-red-tm/data/upload-lists.json" in task["loop"]
+    assert task["notify"] == "Restart node-red-tm.service"

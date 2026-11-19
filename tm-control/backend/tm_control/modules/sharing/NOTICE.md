@@ -7,7 +7,7 @@ Sharing is off until you turn it on. Each choice below is separate, and you can 
 
 ## Share data
 
-Your device sends its counts, speeds, radar and air-quality readings, and its system health (versions, temperature, disk use, its name on your network, and its serial number). With them goes the location as your database stores it: rounded to about 1 km unless you chose otherwise on the Location page, or no location at all. Read more at [docs.trafficmonitor.ai](https://docs.trafficmonitor.ai).
+Your device sends its counts, speeds, radar and air-quality readings, and its system health (versions, temperature, disk use, its name on your network, and its serial number). For each object it counted, it also sends the path the object took across the camera's picture and the box around it, as numbers, never a picture. With them goes the location as your database stores it: rounded to about 1 km unless you chose otherwise on the Location page, or no location at all. Read more at [docs.trafficmonitor.ai](https://docs.trafficmonitor.ai).
 
 It doesn't send images, video, plate reads, your device's settings, your Wi-Fi details, or anything you typed as a description.
 

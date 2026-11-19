@@ -5,6 +5,7 @@ module when several run in one pytest session.
 """
 
 import ast
+import base64
 import email.message
 import functools
 import json
@@ -159,6 +160,54 @@ def pi_json(host, url):
 
 def pi_now(host):
     return float(host.check_output("date +%s"))
+
+
+def broker_login(host, expect, codedir):
+    """The broker login in node-red-tm.env, as Redacted (username, password); each is empty when none is set."""
+    if not expect["pii_free"]:
+        pytest.skip("reads node-red-tm.env; set tm_expect.pii_free: true (bench units only)")
+    with host.sudo():
+        text = host.run(f"grep '^TM_MQTT_BROKER_' {codedir}/node-red-tm/node-red-tm.env").stdout
+    values = dict(line.split("=", 1) for line in text.splitlines() if "=" in line)
+    return (Redacted(values.get("TM_MQTT_BROKER_USERNAME", ""), "broker username"),
+            Redacted(values.get("TM_MQTT_BROKER_PASSWORD", ""), "broker password"))
+
+
+# Run on the Pi with the topic, the payload in base64, and the port: an MQTT 3.1.1 CONNECT without a login, one QoS 0
+# PUBLISH, and a DISCONNECT. Prints the CONNACK code, 0 when the message went out.
+PI_MQTT_PUBLISH = """\
+import base64, socket, sys
+topic, payload, port = sys.argv[1].encode(), base64.b64decode(sys.argv[2]), int(sys.argv[3])
+
+def remaining(length):
+    encoded = b''
+    while True:
+        length, digit = divmod(length, 128)
+        encoded += bytes([digit | (0x80 if length else 0)])
+        if not length:
+            return encoded
+
+s = socket.create_connection(('127.0.0.1', port), timeout=5)
+s.sendall(bytes([0x10, 23]) + b'\\x00\\x04MQTT\\x04\\x02\\x00\\x1e\\x00\\x0btmdev-event')
+code = s.recv(4)[3]
+if code == 0:
+    body = len(topic).to_bytes(2, 'big') + topic + payload
+    s.sendall(b'\\x30' + remaining(len(body)) + body + b'\\xe0\\x00')
+s.close()
+print(code)
+"""
+
+
+def publish_on_pi(host, topic, payload, port=1883):
+    """Publish one QoS 0 message, the payload as JSON, on the Pi's own broker without a login.
+
+    Raises with the CONNACK code when the broker refuses, as it does when a broker login is set.
+    """
+    encoded = base64.b64encode(json.dumps(payload).encode()).decode()
+    result = host.run(f"python3 -c {shlex.quote(PI_MQTT_PUBLISH)} {shlex.quote(topic)} {encoded} {int(port)}")
+    code = result.stdout.strip()
+    if result.rc != 0 or code != "0":
+        raise AssertionError(f"the Pi's broker didn't take the message: CONNACK {code or 'none'}, exit {result.rc}")
 
 
 PODMAN_EVENT_FIELDS = ("_CMDLINE", "_SYSTEMD_UNIT", "_PID")

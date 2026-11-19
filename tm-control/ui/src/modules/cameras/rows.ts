@@ -157,8 +157,8 @@ export function issueBoxes(row: CameraRow): IssueBox[] {
     },
     radar: () => ({
       text:
-        `Radar ${row.camera_radar} isn't turned on in config.yml, so this camera gets no speed or direction. ` +
-        'Choose another radar in Settings.',
+        `Radar ${row.camera_radar} isn't turned on in config.yml, so this camera gets no speed from a radar; ` +
+        'its direction comes from the zones. Choose another radar in Settings.',
     }),
     zone_names: () => {
       const names = zoneNamesWith(row, 'pattern')

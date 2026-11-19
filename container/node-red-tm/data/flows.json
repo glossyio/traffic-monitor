@@ -202,12 +202,202 @@
             "86c86b0d82d13028",
             "8eaa1d06a29a5d2b",
             "3ecb4de9412819e6",
-            "e4ed310a39e7e29f"
+            "e4ed310a39e7e29f",
+            "5c1e7a93d2b04f68",
+            "2f9b6d41e8c3a705"
         ],
         "x": 54,
         "y": 79,
-        "w": 532,
+        "w": 866,
         "h": 302
+    },
+    {
+        "id": "b6f20d4e8a1c7395",
+        "type": "group",
+        "z": "9269520ddb532b00",
+        "name": "frigate facts",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "3a8e5c1f70d2b946",
+            "e17b4d90c6a3f528",
+            "9d4f2a6b18e07c35",
+            "c58a1e3d7f96b024",
+            "71e3b9c5a2d4f806",
+            "4c7e2a9b6d1f3085",
+            "e2b80d5c3a7f9164"
+        ],
+        "x": 954,
+        "y": 79,
+        "w": 852,
+        "h": 182
+    },
+    {
+        "id": "3a8e5c1f70d2b946",
+        "type": "inject",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "read frigate facts",
+        "props": [],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "10",
+        "topic": "",
+        "x": 1100,
+        "y": 120,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ]
+        ]
+    },
+    {
+        "id": "e17b4d90c6a3f528",
+        "type": "mqtt in",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "",
+        "topic": "frigate/available",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 1100,
+        "y": 160,
+        "wires": [
+            [
+                "9d4f2a6b18e07c35"
+            ]
+        ]
+    },
+    {
+        "id": "9d4f2a6b18e07c35",
+        "type": "switch",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "frigate is online",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "online",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1310,
+        "y": 160,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ],
+            [
+                "e2b80d5c3a7f9164"
+            ]
+        ]
+    },
+    {
+        "id": "c58a1e3d7f96b024",
+        "type": "http request",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "frigate api/config",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1500,
+        "y": 140,
+        "wires": [
+            [
+                "71e3b9c5a2d4f806"
+            ]
+        ]
+    },
+    {
+        "id": "71e3b9c5a2d4f806",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "keep frigate facts",
+        "func": "// Two facts from Frigate's config, kept in memory for \"frigate fields\": each camera's detect width and height, which\n// turn a box in pixels into fractions of the frame, and ui.unit_system, which names the unit of Frigate's speed\n// estimate. Nothing else reads them. The keys of detect are Frigate's camera names; they stay in this flow context.\n// An answer that can't be read logs nothing: Frigate restarting is normal. With facts in hand it keeps them, and the\n// ten-minute read comes round. Without facts it asks again in 15 seconds (output 2), up to 20 times, because Frigate\n// says it is online before its API listens. Node-RED's request node logs each failed try, so the tries are bounded.\nconst MAX_TRIES = 20;\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction isSize(value) {\n    return typeof value === \"number\" && Number.isFinite(value) && value > 0;\n}\n\nif (msg.statusCode !== 200 || !isMapping(msg.payload) || !isMapping(msg.payload.cameras)) {\n    if (flow.get(\"frigate_facts\") !== undefined) {\n        return null;\n    }\n    const tries = (Number.isInteger(msg.tries) && msg.tries > 0) ? msg.tries : 0;\n    if (tries >= MAX_TRIES) {\n        return null;\n    }\n    // A new message: the failed one carries the answer's headers, which the request node would send to Frigate.\n    return [null, { tries: tries + 1 }];\n}\nconst ui = isMapping(msg.payload.ui) ? msg.payload.ui : {};\nconst unit_system = (ui.unit_system === \"metric\" || ui.unit_system === \"imperial\") ? ui.unit_system : null;\nconst detect = {};\nfor (const [name, camera] of Object.entries(msg.payload.cameras)) {\n    const size = (isMapping(camera) && isMapping(camera.detect)) ? camera.detect : {};\n    if (isSize(size.width) && isSize(size.height)) {\n        detect[name] = { width: size.width, height: size.height };\n    }\n}\nflow.set(\"frigate_facts\", { unit_system, detect });\nreturn null;",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1700,
+        "y": 140,
+        "wires": [
+            [],
+            [
+                "4c7e2a9b6d1f3085"
+            ]
+        ]
+    },
+    {
+        "id": "4c7e2a9b6d1f3085",
+        "type": "delay",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "try again in 15 s",
+        "pauseType": "delay",
+        "timeout": "15",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1700,
+        "y": 200,
+        "wires": [
+            [
+                "c58a1e3d7f96b024"
+            ]
+        ]
+    },
+    {
+        "id": "e2b80d5c3a7f9164",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "b6f20d4e8a1c7395",
+        "name": "forget frigate facts",
+        "func": "// Frigate's frigate/available said something other than \"online\" (it stopped, or the broker lost it): forget its\n// facts, so a box or a unit from before a restart is never applied after it. The read on its next \"online\" fills them\n// again, trying until Frigate's API answers. Logs nothing.\nflow.set(\"frigate_facts\", undefined);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1500,
+        "y": 220,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "71c085648c20e329",
@@ -4433,7 +4623,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "1eebfe6a2eca8ad4",
         "name": "write params for radar_dov insert",
-        "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\n//add deployment_id, no, change in previous node\n//msg.payload.deployment_id = global.get(`config.radars.${msg.payload.radarName}.deployment.id`, \"config\");\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "//convert DetectedObjectVelocity to velocity for insertion\nmsg.payload.velocity = msg.payload.DetectedObjectVelocity;\ndelete msg.payload.DetectedObjectVelocity;\n\n//add deployment_id, no, change in previous node\n//msg.payload.deployment_id = global.get(`config.radars.${msg.payload.radarName}.deployment.id`, \"config\");\n\n// the last unit each radar reported, which \"event finalize output\" takes as the device's speed unit\nif (typeof msg.payload.unit === \"string\" && msg.payload.unit !== \"\" &&\n    typeof msg.payload.radarName === \"string\" && msg.payload.radarName !== \"\") {\n    const stored = global.get(\"radar_units\");\n    const units = (stored !== null && typeof stored === \"object\" && !Array.isArray(stored)) ? stored : {};\n    units[msg.payload.radarName] = msg.payload.unit;\n    global.set(\"radar_units\", units);\n}\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6392,6 +6582,48 @@
         "y": 300,
         "wires": [
             [
+                "5c1e7a93d2b04f68"
+            ]
+        ]
+    },
+    {
+        "id": "5c1e7a93d2b04f68",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "vet sub_label",
+        "func": "// The one place a sub-label is sorted. Frigate sends [text, score] (or the text alone); the text is kept only when it is\n// exactly one of Frigate 0.18.2's built-in logo labels, and the score is never kept. Anything else (a recognized\n// person's name, a known plate's name, a class of the operator's own model) becomes null here, before any other node\n// reads the event, and is never logged. The list changes only by a change to the flows; a store for the values\n// dropped here would take them at this node.\nconst VETTED = [\"amazon\", \"an_post\", \"canada_post\", \"dhl\", \"dpd\", \"fedex\", \"gls\", \"nzpost\", \"postnl\", \"postnord\", \"purolator\", \"royal_mail\", \"ups\", \"usps\"];\n\nfunction vetted(value) {\n    const text = Array.isArray(value) ? value[0] : value;\n    return typeof text === \"string\" && VETTED.includes(text) ? text : null;\n}\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\n// in the live flow frigate_event and payload.after are one object; each is vetted on its own all the same\nfor (const event of [msg.frigate_event, isMapping(msg.payload) ? msg.payload.after : null,\n                     isMapping(msg.payload) ? msg.payload.before : null]) {\n    if (isMapping(event)) {\n        event.sub_label = vetted(event.sub_label);\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "2f9b6d41e8c3a705"
+            ]
+        ]
+    },
+    {
+        "id": "2f9b6d41e8c3a705",
+        "type": "function",
+        "z": "9269520ddb532b00",
+        "g": "0a5faeac9fbd6d55",
+        "name": "frigate fields",
+        "func": "// What Frigate's end message says about the object beyond the fields saved as they come: its path, its boxes, and\n// Frigate's own speed estimate. Worked out here, while Frigate's camera name is still on the event, because the\n// box needs that camera's detect size from the frigate facts. Sets msg.frigate_fields, every key null when there is\n// nothing to keep, and changes nothing else.\nconst MAX_POINTS = 100;\nconst UNITS = { metric: \"kph\", imperial: \"mph\" };\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction isNumber(value) {\n    return typeof value === \"number\" && Number.isFinite(value);\n}\n\nfunction own(object, key) {\n    return isMapping(object) && Object.prototype.hasOwnProperty.call(object, key) ? object[key] : undefined;\n}\n\n// [[x, y], t]: three numbers, nothing else\nfunction isPoint(point) {\n    return Array.isArray(point) && point.length === 2 && Array.isArray(point[0]) && point[0].length === 2\n        && isNumber(point[0][0]) && isNumber(point[0][1]) && isNumber(point[1]);\n}\n\n// the points that are points; more than MAX_POINTS are thinned evenly, keeping the first and the last\nfunction pathOf(value) {\n    if (!Array.isArray(value)) {\n        return null;\n    }\n    const points = value.filter(isPoint);\n    if (points.length === 0) {\n        return null;\n    }\n    if (points.length <= MAX_POINTS) {\n        return points;\n    }\n    const kept = [];\n    for (let i = 0; i < MAX_POINTS; i++) {\n        kept.push(points[Math.round(i * (points.length - 1) / (MAX_POINTS - 1))]);\n    }\n    return kept;\n}\n\nfunction fraction(value) {\n    return Math.round(value * 10000) / 10000;\n}\n\n// Frigate's [x1, y1, x2, y2] in pixels as [left, top, width, height] fractions of the frame; null without the size\nfunction boxOf(value, size) {\n    if (!Array.isArray(value) || value.length !== 4 || !value.every(isNumber) || size === null) {\n        return null;\n    }\n    const [x1, y1, x2, y2] = value;\n    if (x2 < x1 || y2 < y1) {\n        return null;\n    }\n    return [fraction(x1 / size.width), fraction(y1 / size.height), fraction((x2 - x1) / size.width),\n            fraction((y2 - y1) / size.height)];\n}\n\nconst event = isMapping(msg.frigate_event) ? msg.frigate_event : {};\nconst facts = flow.get(\"frigate_facts\");\nconst detect = own(facts, \"detect\");\nconst camera = own(detect, event.camera);\nconst size = isMapping(camera) && isNumber(camera.width) && camera.width > 0 && isNumber(camera.height) && camera.height > 0\n    ? camera : null;\nconst snapshot = isMapping(event.snapshot) ? event.snapshot : {};\n// Frigate sends 0 when it made no estimate\nconst speed = isNumber(event.average_estimated_speed) && event.average_estimated_speed > 0 ? event.average_estimated_speed : null;\nconst unit = speed !== null ? (own(UNITS, own(facts, \"unit_system\")) || null) : null;\n\nmsg.frigate_fields = {\n    path_data: pathOf(event.path_data),\n    box: boxOf(event.box, size),\n    best_box: boxOf(snapshot.box, size),\n    best_frame_time: isNumber(snapshot.frame_time) ? snapshot.frame_time : null,\n    frigate_speed: speed,\n    frigate_speed_unit: unit,\n    frigate_velocity_angle: speed !== null && isNumber(event.velocity_angle) ? event.velocity_angle : null,\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 300,
+        "wires": [
+            [
                 "8eaa1d06a29a5d2b"
             ]
         ]
@@ -6520,7 +6752,7 @@
         "g": "b7398c4e0bc743e5",
         "mydb": "2f60c1ab30a6fc8f",
         "sqlquery": "prepared",
-        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, $radarName);",
+        "sql": "INSERT INTO events (id, camera, label, sub_label, top_score, frame_time, start_time, end_time, entered_zones, score, area, ratio, motionless_count, position_changes, attributes, direction_calc, speed_calc, provenance, deployment_id, radarName, path_data, box, best_box, best_frame_time, frigate_speed, frigate_speed_unit, frigate_velocity_angle, speed_unit, speed_source, radar_readings, direction_source) \nVALUES ($id, $camera, $label, $sub_label, $top_score, $frame_time, $start_time, $end_time, json($entered_zones), $score, $area, $ratio, $motionless_count, $position_changes, json($attributes), $direction_calc, $speed_calc, $provenance, $deployment_id, $radarName, $path_data, $box, $best_box, $best_frame_time, $frigate_speed, $frigate_speed_unit, $frigate_velocity_angle, $speed_unit, $speed_source, $radar_readings, $direction_source);",
         "name": "tmdb.events, Prepared Statement",
         "x": 960,
         "y": 960,
@@ -6534,7 +6766,7 @@
         "z": "9269520ddb532b00",
         "g": "b7398c4e0bc743e5",
         "name": "write params for events insert",
-        "func": "//JSON objects need to be text for SQLite\n\nmsg.payload.entered_zones = `${JSON.stringify(msg.payload.entered_zones)}`;\nmsg.payload.attributes = `${JSON.stringify(msg.payload.attributes)}`;\nmsg.payload.provenance = `${JSON.stringify(msg.payload.provenance)}`;\n\nconst obj = msg.payload;\n\nconst keyedObj = Object.keys(obj).reduce((acc, key) => {\n    acc[`$${key}`] = obj[key];\n    return acc;\n}, {});\n\nmsg.params = keyedObj;\n\nreturn msg;",
+        "func": "// One parameter per column of the INSERT, in its order, and nothing else: SQLite refuses a parameter the statement\n// doesn't name, so a key some other node left on the payload would lose the row. A test compares this list with the\n// INSERT, the finalize node's keys, the events table, and upload-lists.json.\nconst COLUMNS = [\"id\", \"camera\", \"label\", \"sub_label\", \"top_score\", \"frame_time\", \"start_time\", \"end_time\", \"entered_zones\", \"score\", \"area\", \"ratio\", \"motionless_count\", \"position_changes\", \"attributes\", \"direction_calc\", \"speed_calc\", \"provenance\", \"deployment_id\", \"radarName\", \"path_data\", \"box\", \"best_box\", \"best_frame_time\", \"frigate_speed\", \"frigate_speed_unit\", \"frigate_velocity_angle\", \"speed_unit\", \"speed_source\", \"radar_readings\", \"direction_source\"];\n// JSON values are stored as text\nconst JSON_COLUMNS = [\"entered_zones\", \"attributes\", \"provenance\", \"path_data\", \"box\", \"best_box\"];\n\nconst params = {};\nfor (const column of COLUMNS) {\n    const value = msg.payload[column];\n    if (value === undefined || value === null) {\n        params[\"$\" + column] = null;\n    } else if (JSON_COLUMNS.includes(column)) {\n        params[\"$\" + column] = JSON.stringify(value);\n    } else {\n        params[\"$\" + column] = value;\n    }\n}\nmsg.params = params;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6649,7 +6881,7 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "calculate median per direction",
-        "func": "const medianVelocityPerDirection = {};\n\n// Group the data by direction\nconst groupedData = msg.payload.reduce((acc, curr) => {\n  if (!acc[curr.direction]) {\n    acc[curr.direction] = [];\n  }\n  acc[curr.direction].push(curr);\n  return acc;\n}, {});\n\n// Calculate the median velocity for each direction\nfor (const direction in groupedData) {\n  if (groupedData.hasOwnProperty(direction)) {\n    const sortedVelocities = groupedData[direction].map(entry => entry.velocity).sort((a, b) => a - b);\n    const medianIndex = Math.floor(sortedVelocities.length / 2);\n    const medianVelocity =\n      sortedVelocities.length % 2 === 0\n        ? (sortedVelocities[medianIndex - 1] + sortedVelocities[medianIndex]) / 2\n        : sortedVelocities[medianIndex];\n    medianVelocityPerDirection[direction] = medianVelocity;\n  }\n}\n\nmsg.payload = medianVelocityPerDirection;\n\nreturn msg;",
+        "func": "const medianVelocityPerDirection = {};\n\n// Group the data by direction\nconst groupedData = msg.payload.reduce((acc, curr) => {\n  if (!acc[curr.direction]) {\n    acc[curr.direction] = [];\n  }\n  acc[curr.direction].push(curr);\n  return acc;\n}, {});\n\n// Calculate the median velocity for each direction\nfor (const direction in groupedData) {\n  if (groupedData.hasOwnProperty(direction)) {\n    const sortedVelocities = groupedData[direction].map(entry => entry.velocity).sort((a, b) => a - b);\n    const medianIndex = Math.floor(sortedVelocities.length / 2);\n    const medianVelocity =\n      sortedVelocities.length % 2 === 0\n        ? (sortedVelocities[medianIndex - 1] + sortedVelocities[medianIndex]) / 2\n        : sortedVelocities[medianIndex];\n    medianVelocityPerDirection[direction] = medianVelocity;\n  }\n}\n\nmsg.payload = medianVelocityPerDirection;\n// how many readings stand behind each direction's median; \"event finalize output\" saves the one it uses\nmsg.radar_reading_counts = {};\nfor (const direction in groupedData) {\n  if (groupedData.hasOwnProperty(direction)) {\n    msg.radar_reading_counts[direction] = groupedData[direction].length;\n  }\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6670,7 +6902,7 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "match radar speed to event, assign direction",
-        "func": "const newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = msg.payload;\n\nnewMsg.status_radarMatch = false;\n\n//if only 1 Radar.direction USE THAT\nif (Object.keys(msg.payload).length == 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar \n    else if (msg.frigate_event.calc_zone_direction == undefined) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_assigned\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = Object.keys(msg.payload)[0];\n        newMsg.calc_event_speed = msg.payload[Object.keys(msg.payload)[0]];\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if ((Object.keys(msg.payload).length > 1)\n    && (msg.frigate_event.calc_zone_direction != undefined)) {\n\n    //find matching median value to frigate_event\n    if (msg.payload[msg.frigate_event.calc_zone_direction]) {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_match\";\n        newMsg.status_radarMatch = true;\n        newMsg.calc_event_direction = msg.frigate_event.calc_zone_direction;\n        newMsg.calc_event_speed = msg.payload[msg.frigate_event.calc_zone_direction];\n    }\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = undefined;\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      if == 0 Radar.direction DO NOT REPORT\nelse {\n        newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\"; \n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = (msg.frigate_event.calc_zone_direction || undefined);\n        newMsg.calc_event_speed = undefined;\n    }\n\nmsg.payload = newMsg;\n\nreturn msg;",
+        "func": "// The radar's median speed per direction, from \"calculate median per direction\", matched to the direction the zones\n// gave. Without an enabled radar on this camera, \"radar enabled?\" sends Frigate's message here instead of medians:\n// there are none, and the event keeps the zones' direction. A median of 0 is a speed. calc_direction_source says how the\n// direction was decided: zones_radar (the zones and the radar agree), zones (no radar reading), zones_radar_opposite\n// (the radar saw only the other way, so the direction is the zones' and the speed is never the radar's), or radar\n// (the zones gave none and the radar saw one way only); nothing when there is no direction.\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction own(object, key) {\n    return isMapping(object) && Object.prototype.hasOwnProperty.call(object, key);\n}\n\nconst zoneDirection = (isMapping(msg.frigate_event) && msg.frigate_event.calc_zone_direction) || undefined;\nconst medians = {};\nif (msg.radarEnabled === true && isMapping(msg.payload)) {\n    for (const [direction, value] of Object.entries(msg.payload)) {\n        if (typeof value === \"number\" && Number.isFinite(value)) {\n            medians[direction] = value;\n        }\n    }\n}\nconst directions = Object.keys(medians);\nconst counts = isMapping(msg.radar_reading_counts) ? msg.radar_reading_counts : {};\n\nconst newMsg = {};\nnewMsg.radar_DetectedObjectVelocity_median = medians;\nnewMsg.status_radarMatch = false;\n\nfunction matched(status, direction, source) {\n    newMsg.status_match_event_radar_direction = status;\n    newMsg.status_radarMatch = true;\n    newMsg.calc_event_direction = direction;\n    newMsg.calc_direction_source = source;\n    newMsg.calc_event_speed = medians[direction];\n    if (own(counts, direction) && Number.isInteger(counts[direction])) {\n        newMsg.calc_radar_readings = counts[direction];\n    }\n}\n\n//if only 1 Radar.direction USE THAT\nif (directions.length === 1) {\n    //  check if Event.calc_zone_direction MATCHES Radar.direction THEN good\n    if (zoneDirection !== undefined && own(medians, zoneDirection)) {\n        matched(\"radar_speed_direction_match\", zoneDirection, \"zones_radar\");\n    }\n    //  if Event.calc_zone_direction == undefined THEN use 1 that came through radar\n    else if (zoneDirection === undefined) {\n        matched(\"radar_speed_direction_assigned\", directions[0], \"radar\");\n    }\n    //  the radar saw only the other direction: the zones' direction, and no radar speed\n    else {\n        newMsg.calc_event_direction = zoneDirection;\n        newMsg.calc_direction_source = \"zones_radar_opposite\";\n    }\n}\n//  multiple radar directions, but if Event.calc_zone_direction MATCHES Radar.direction THEN good\nelse if (directions.length > 1 && zoneDirection !== undefined) {\n    if (own(medians, zoneDirection)) {\n        matched(\"radar_speed_direction_match\", zoneDirection, \"zones_radar\");\n    }\n    //  none of the radar's directions is the zones': the zones' direction, and no radar speed\n    else {\n        newMsg.status_match_event_radar_direction = \"radar_speed_direction_mismatch\";\n        newMsg.status_radarMatch = false;\n        newMsg.calc_event_direction = zoneDirection;\n        newMsg.calc_direction_source = \"zones_radar_opposite\";\n        newMsg.calc_event_speed = undefined;\n    }\n}\n//      no radar direction (or no radar): the zones' direction, no speed\nelse {\n    newMsg.status_match_event_radar_direction = \"no_radar_speed_detected\";\n    newMsg.status_radarMatch = false;\n    newMsg.calc_event_direction = zoneDirection;\n    newMsg.calc_direction_source = zoneDirection !== undefined ? \"zones\" : undefined;\n    newMsg.calc_event_speed = undefined;\n}\n\nmsg.payload = newMsg;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6698,7 +6930,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 370,
+        "x": 770,
         "y": 340,
         "wires": [
             [
@@ -6786,7 +7018,7 @@
         "z": "9269520ddb532b00",
         "g": "71c085648c20e329",
         "name": "event finalize output",
-        "func": "\n//provenance, frigate first, then radar, if it matched\nvar thisProvenance = [];\nthisProvenance.push(\"frigate\");\nif (msg.payload.status_radarMatch === true) {\n    thisProvenance.push(\"radar\");\n}\n\nconst newPayload = {\n    id:                 msg.frigate_event.id,\n    camera:             msg.frigate_event.camera,\n    label:              msg.frigate_event.label,\n    sub_label:          msg.frigate_event.sub_label,\n    top_score:          msg.frigate_event.top_score,\n    frame_time:         msg.frigate_event.frame_time,\n    start_time:         msg.frigate_event.start_time,\n    end_time:           msg.frigate_event.end_time,\n    entered_zones:      msg.frigate_event.entered_zones,\n    score:              msg.frigate_event.score,\n    area:               msg.frigate_event.area,\n    ratio:              msg.frigate_event.ratio,\n    motionless_count:   msg.frigate_event.motionless_count,\n    position_changes:   msg.frigate_event.position_changes,\n    attributes:         msg.frigate_event.attributes,\n    direction_calc:     (msg.event_direction_speed.calc_event_direction || undefined),\n    speed_calc:         (msg.event_direction_speed.calc_event_speed || undefined),\n    provenance:         thisProvenance,\n    deployment_id:      msg.frigate_event.deployment_id,\n    radarName:          msg.frigate_event.radarName\n}\n\nmsg.payload = newPayload;\n\n\n\nreturn msg;",
+        "func": "// The event's row: the fields saved as Frigate sends them, the direction and speed the radar and zones gave, what\n// \"frigate fields\" worked out, and which speed speed_calc holds. The keys are the events table's columns, in the\n// order of the INSERT; a test keeps the two, the parameters, and upload-lists.json in step.\n\n// metres per second in one of each unit: the radar's names (its U? answer and the short forms), and Frigate's kph\nconst PER_SECOND = {\n    \"mps\": 1, \"m-per-sec\": 1,\n    \"mph\": 0.44704,\n    \"kph\": 1 / 3.6, \"kmph\": 1 / 3.6, \"km-per-hr\": 1 / 3.6,\n    \"fps\": 0.3048, \"ft-per-sec\": 0.3048,\n    \"cmps\": 0.01, \"cm-per-sec\": 0.01,\n};\n// the radar's unit until it has reported one: the unit the setup commands choose\nconst RADAR_DEFAULT_UNIT = \"mph\";\n// how the direction was decided, from \"match radar speed to event, assign direction\"\nconst DIRECTION_SOURCES = [\"zones_radar\", \"zones\", \"zones_radar_opposite\", \"radar\"];\nconst FRIGATE_FIELDS = [\"path_data\", \"box\", \"best_box\", \"best_frame_time\", \"frigate_speed\", \"frigate_speed_unit\", \"frigate_velocity_angle\"];\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction own(object, key) {\n    return isMapping(object) && typeof key === \"string\" && Object.prototype.hasOwnProperty.call(object, key)\n        ? object[key] : undefined;\n}\n\nfunction isNumber(value) {\n    return typeof value === \"number\" && Number.isFinite(value);\n}\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\n// a radar's unit: the last one it reported, or the default until it has reported one\nfunction radarUnit(name) {\n    const unit = own(global.get(\"radar_units\"), name);\n    return typeof unit === \"string\" && unit !== \"\" ? unit : RADAR_DEFAULT_UNIT;\n}\n\n// The device's speed unit, so one device's speed_calc stays in one unit: this camera's radar's; else the first\n// enabled radar's, by name; else, on a device without a radar, Frigate's.\nfunction deviceUnit(frigateUnit) {\n    if (msg.radarEnabled === true && typeof msg.frigate_event.radarName === \"string\") {\n        return radarUnit(msg.frigate_event.radarName);\n    }\n    const config = global.get(\"config\");\n    const radars = isMapping(config) && isMapping(config.sensors) && isMapping(config.sensors.radars) ? config.sensors.radars : {};\n    const enabled = Object.keys(radars).filter((name) => isMapping(radars[name]) && radars[name].enabled === true).sort();\n    return enabled.length > 0 ? radarUnit(enabled[0]) : frigateUnit;\n}\n\nfunction round(value, places) {\n    const factor = Math.pow(10, places);\n    return Math.round(value * factor) / factor;\n}\n\n//provenance, frigate first, then radar, if it matched\nvar thisProvenance = [];\nthisProvenance.push(\"frigate\");\nif (msg.payload.status_radarMatch === true) {\n    thisProvenance.push(\"radar\");\n}\n\nconst found = isMapping(msg.event_direction_speed) ? msg.event_direction_speed : {};\nconst direction = (found.calc_event_direction || undefined);\nconst directionSource = direction !== undefined && DIRECTION_SOURCES.includes(found.calc_direction_source)\n    ? found.calc_direction_source : null;\nconst fields = {};\nfor (const key of FRIGATE_FIELDS) {\n    const value = own(msg.frigate_fields, key);\n    fields[key] = value === undefined ? null : value;\n}\n\n// speed_calc: the radar's speed; else Frigate's, converted to the device's unit and signed like the radar's\n// (negative outbound, positive otherwise); else none. So speed_calc is negative only when direction_calc is outbound,\n// and without a direction it is Frigate's, positive.\nconst speed = { speed_calc: undefined, speed_unit: null, speed_source: null, radar_readings: null };\nconst unit = deviceUnit(fields.frigate_speed_unit);\nif (isNumber(found.calc_event_speed)) {\n    speed.speed_calc = found.calc_event_speed;\n    speed.speed_unit = unit;\n    speed.speed_source = \"radar\";\n    speed.radar_readings = Number.isInteger(found.calc_radar_readings) ? found.calc_radar_readings : null;\n} else if (isNumber(fields.frigate_speed) && own(PER_SECOND, fields.frigate_speed_unit) !== undefined && typeof unit === \"string\") {\n    if (own(PER_SECOND, unit) === undefined) {\n        warnOnce(`speed_unit:${unit}`, `Frigate's speed wasn't used for speed_calc: this flow can't convert to the radar's unit ${unit}.`);\n    } else {\n        const value = round(Math.abs(fields.frigate_speed) * PER_SECOND[fields.frigate_speed_unit] / PER_SECOND[unit], 2);\n        speed.speed_calc = direction === \"outbound\" ? -value : value;\n        speed.speed_unit = unit;\n        speed.speed_source = \"frigate\";\n    }\n}\n\nconst newPayload = {\n    id:                 msg.frigate_event.id,\n    camera:             msg.frigate_event.camera,\n    label:              msg.frigate_event.label,\n    sub_label:          msg.frigate_event.sub_label,\n    top_score:          msg.frigate_event.top_score,\n    frame_time:         msg.frigate_event.frame_time,\n    start_time:         msg.frigate_event.start_time,\n    end_time:           msg.frigate_event.end_time,\n    entered_zones:      msg.frigate_event.entered_zones,\n    score:              msg.frigate_event.score,\n    area:               msg.frigate_event.area,\n    ratio:              msg.frigate_event.ratio,\n    motionless_count:   msg.frigate_event.motionless_count,\n    position_changes:   msg.frigate_event.position_changes,\n    attributes:         msg.frigate_event.attributes,\n    direction_calc:     direction,\n    speed_calc:         speed.speed_calc,\n    provenance:         thisProvenance,\n    deployment_id:      msg.frigate_event.deployment_id,\n    radarName:          msg.frigate_event.radarName,\n    path_data:              fields.path_data,\n    box:                    fields.box,\n    best_box:               fields.best_box,\n    best_frame_time:        fields.best_frame_time,\n    frigate_speed:          fields.frigate_speed,\n    frigate_speed_unit:     fields.frigate_speed_unit,\n    frigate_velocity_angle: fields.frigate_velocity_angle,\n    speed_unit:             speed.speed_unit,\n    speed_source:           speed.speed_source,\n    radar_readings:         speed.radar_readings,\n    direction_source:       directionSource\n}\n\nmsg.payload = newPayload;\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -7230,7 +7462,7 @@
         "z": "f7932be9acc7391c",
         "g": "694f0242d0985c69",
         "name": "upload gate",
-        "func": "// Every ThingsBoard upload passes here, after the rate limit and just before the URL is built, so each message is\n// judged under the config it is sent with. Only the kinds of data listed below leave the unit; deployment rows go\n// out at the precision tmdb stores them; and the deployments attribute carries what the Sharing page chose, for the\n// server it was chosen for. A key that isn't listed is left out and named once per config load, never with its value.\nconst TELEMETRY = [\"event\", \"radar\", \"airquality\", \"system_metrics\", \"deployments\"];\nconst ATTRIBUTES = [\"deployments\", \"radarinfo\", \"sysinfo_tmVersion\", \"sysinfo_osHostname\", \"sysinfo_osRelease\", \"sysinfo_osTimeZone\", \"sysinfo_deviceName\", \"sysinfo_frigateVersion\"];\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst config = global.get(\"config\") || {};\n// a message that waited in the rate limit while the upload was turned off goes no further\nif (!isMapping(config.thingsboard) || config.thingsboard.enabled !== true) {\n    return null;\n}\nconst place = isMapping(config.deployment) ? config.deployment : {};\nconst sharing = isMapping(config.sharing) ? config.sharing : {};\nconst thingsboard = isMapping(config.thingsboard) ? config.thingsboard : {};\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nfunction leftOut(key) {\n    warnOnce(`upload:${key}`, `ThingsBoard upload: left out ${key}, which isn't on the list of what is shared.`);\n}\n\n// the host rule, the same as init config defaults' and the control app's: trim, lower-case, no leading http:// or\n// https://, no trailing /\nfunction normaliseHost(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n    return host === \"\" ? null : host;\n}\n\n// half away from zero, as the deployment engine and SQLite's ROUND (toFixed rounds the magnitude)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\n// a number, or a number quoted in YAML or rendered by a template; anything else is null\nfunction numberOf(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    return null;\n}\n\n// the places tmdb stores for this unit: none stores no location; anything else is 2, as init config defaults\nconst PRECISION = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst unitPlaces = Object.prototype.hasOwnProperty.call(PRECISION, place.database_precision) ? PRECISION[place.database_precision] : 2;\n\n// a row's places: the coarser of its own location_precision and the unit's database_precision; a row without one is\n// at the unit's, and null or none (either side) means no location\nfunction rowPlaces(row) {\n    if (row.location_precision === undefined) {\n        return unitPlaces;\n    }\n    const own = (row.location_precision === null || row.location_precision === \"none\") ? null : numberOf(row.location_precision);\n    if (unitPlaces === null || own === null || !Number.isInteger(own) || own < 0) {\n        return null;\n    }\n    return Math.min(own, unitPlaces);\n}\n\n// a coordinate at these places: a string stays a string, an empty one stays empty\nfunction coordinate(value, places) {\n    if (value === '') {\n        return '';\n    }\n    const number = numberOf(value);\n    if (places === null || number === null) {\n        return null;\n    }\n    const rounded = round(number, places);\n    return typeof value === \"string\" ? String(rounded) : rounded;\n}\n\nfunction reRound(row) {\n    if (!isMapping(row)) {\n        return;\n    }\n    const places = rowPlaces(row);\n    for (const key of [\"lat\", \"lon\"]) {\n        if (key in row) {\n            row[key] = coordinate(row[key], places);\n        }\n    }\n}\n\n// the rows of a list that are mappings, re-rounded; anything else in the list is left out\nfunction rowsOf(list) {\n    const rows = list.filter(isMapping);\n    if (rows.length !== list.length) {\n        warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n    }\n    rows.forEach(reRound);\n    return rows;\n}\n\n// telemetry deployments: a mapping with only the two lists, each an array of rows; null when none is left\nfunction telemetryDeployments(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"updatedDeployment\", \"currentDeployment\"].includes(key)) {\n            leftOut(`deployments.${key}`);\n        } else if (Array.isArray(list)) {\n            kept[key] = rowsOf(list);\n        } else {\n            warnOnce(`upload:deployments.${key}`, `ThingsBoard upload: left out deployments.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a telemetry item ({ts, values}) with only the listed values, or null when none is left\nfunction telemetryItem(item) {\n    if (!isMapping(item) || !isMapping(item.values)) {\n        warnOnce(\"upload:telemetry\", \"ThingsBoard upload: left out telemetry that isn't {ts, values}.\");\n        return null;\n    }\n    const values = {};\n    for (const [key, value] of Object.entries(item.values)) {\n        if (TELEMETRY.includes(key)) {\n            values[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(values).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in values) {\n        const deployments = telemetryDeployments(values.deployments);\n        if (deployments === null) {\n            delete values.deployments;\n        } else {\n            values.deployments = deployments;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    return \"ts\" in item ? { ts: item.ts, values } : { values };\n}\n\n// What the Sharing page chose, sent with the deployments attribute. The two choices count only for the server they\n// were made for (sharing.host); the exact location goes only over https.\nfunction chosen() {\n    const host = normaliseHost(thingsboard.host);\n    const counts = host !== null && normaliseHost(sharing.host) === host;\n    const exact = counts && sharing.exact_location === true;\n    const publicMap = counts && sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\";\n    // the attribute describes the server it is sent to: the target and notice version are for the host they were chosen for\n    const target = (counts && (sharing.target === \"maintainer\" || sharing.target === \"own\")) ? sharing.target : null;\n    const notice_version = (counts && typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null;\n    const survey_id = (typeof place.survey_id === \"string\" && place.survey_id !== '') ? place.survey_id : null;\n    const lat = numberOf(place.lat);\n    const lon = numberOf(place.lon);\n    const point = lat !== null && lon !== null;\n    const https = typeof thingsboard.url === \"string\" && /^https:\\/\\//i.test(thingsboard.url);\n    return {\n        consents: { share_data: true, exact_location: exact, public_map: publicMap, notice_version, target },\n        exact_location: (exact && https && survey_id !== null && point)\n            ? { survey_id, lat: round(lat, 5), lon: round(lon, 5) } : {},\n        public_map: (publicMap === \"rounded_point\" && target === \"maintainer\" && point)\n            ? { survey_id, mode: \"rounded_point\", lat: round(lat, 3), lon: round(lon, 3) } : {},\n    };\n}\n\n// client attributes with only the listed keys, or null when none is left\nfunction attributes(payload) {\n    if (!isMapping(payload)) {\n        warnOnce(\"upload:attributes\", \"ThingsBoard upload: left out attributes that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, value] of Object.entries(payload)) {\n        if (ATTRIBUTES.includes(key)) {\n            kept[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(kept).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in kept) {\n        // one row per sensor; deploymentTopLevel names the survey and holds no coordinates\n        if (isMapping(kept.deployments)) {\n            const rows = {};\n            for (const [name, row] of Object.entries(kept.deployments)) {\n                if (isMapping(row)) {\n                    rows[name] = row;\n                } else {\n                    warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n                }\n            }\n            for (const [name, row] of Object.entries(rows)) {\n                if (name !== \"deploymentTopLevel\") {\n                    reRound(row);\n                }\n            }\n            kept.deployments = rows;\n            Object.assign(kept, chosen());\n        } else {\n            warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n            delete kept.deployments;\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a copy, so the rows other nodes hold aren't re-rounded under them (function nodes have no structuredClone)\nfunction copy(value) {\n    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));\n}\n\n// a new message with only the type and the payload: nothing else an upstream node left on msg reaches the request\nif (msg.type === \"telemetry\") {\n    const many = Array.isArray(msg.payload);\n    const items = copy(many ? msg.payload : [msg.payload]).map(telemetryItem).filter((item) => item !== null);\n    if (items.length === 0) {\n        return null;\n    }\n    return { type: \"telemetry\", payload: many ? items : items[0] };\n}\nif (msg.type === \"attributes\") {\n    const kept = attributes(copy(msg.payload));\n    return kept === null ? null : { type: \"attributes\", payload: kept };\n}\nwarnOnce(\"upload:type\", \"ThingsBoard upload: left out a message that is neither telemetry nor attributes.\");\nreturn null;",
+        "func": "// Every ThingsBoard upload passes here, after the rate limit and just before the URL is built, so each message is\n// judged under the config it is sent with. Only the kinds of data, attributes, and event fields listed in\n// upload-lists.json (beside settings.js, which loads it as global upload_lists) leave the unit; deployment rows go\n// out at the precision tmdb stores them; and the deployments attribute carries what the Sharing page chose, for the\n// server it was chosen for. A key that isn't listed is left out and named once per config load, never with its value.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst config = global.get(\"config\") || {};\n// a message that waited in the rate limit while the upload was turned off goes no further\nif (!isMapping(config.thingsboard) || config.thingsboard.enabled !== true) {\n    return null;\n}\nconst place = isMapping(config.deployment) ? config.deployment : {};\nconst sharing = isMapping(config.sharing) ? config.sharing : {};\nconst thingsboard = isMapping(config.thingsboard) ? config.thingsboard : {};\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nfunction leftOut(key) {\n    warnOnce(`upload:${key}`, `ThingsBoard upload: left out ${key}, which isn't on the list of what is shared.`);\n}\n\nfunction isListOfText(value) {\n    return Array.isArray(value) && value.every((name) => typeof name === \"string\");\n}\n\n// the lists of what is shared; when they didn't load (settings.js gives null), nothing is sent\nconst lists = global.get(\"upload_lists\");\nif (!isMapping(lists) || ![\"telemetry\", \"attributes\", \"event\"].every((key) => isListOfText(lists[key]))) {\n    warnOnce(\"upload:lists\", \"ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent.\");\n    return null;\n}\n\n// the host rule, the same as init config defaults' and the control app's: trim, lower-case, no leading http:// or\n// https://, no trailing /\nfunction normaliseHost(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const host = value.trim().toLowerCase().replace(/^https?:\\/\\//, \"\").replace(/\\/$/, \"\");\n    return host === \"\" ? null : host;\n}\n\n// half away from zero, as the deployment engine and SQLite's ROUND (toFixed rounds the magnitude)\nfunction round(value, places) {\n    return Number(value.toFixed(places));\n}\n\n// a number, or a number quoted in YAML or rendered by a template; anything else is null\nfunction numberOf(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value === \"string\" && value.trim() !== '' && Number.isFinite(Number(value))) {\n        return Number(value);\n    }\n    return null;\n}\n\n// the places tmdb stores for this unit: none stores no location; anything else is 2, as init config defaults\nconst PRECISION = { \"none\": null, \"1\": 1, \"2\": 2 };\nconst unitPlaces = Object.prototype.hasOwnProperty.call(PRECISION, place.database_precision) ? PRECISION[place.database_precision] : 2;\n\n// a row's places: the coarser of its own location_precision and the unit's database_precision; a row without one is\n// at the unit's, and null or none (either side) means no location\nfunction rowPlaces(row) {\n    if (row.location_precision === undefined) {\n        return unitPlaces;\n    }\n    const own = (row.location_precision === null || row.location_precision === \"none\") ? null : numberOf(row.location_precision);\n    if (unitPlaces === null || own === null || !Number.isInteger(own) || own < 0) {\n        return null;\n    }\n    return Math.min(own, unitPlaces);\n}\n\n// a coordinate at these places: a string stays a string, an empty one stays empty\nfunction coordinate(value, places) {\n    if (value === '') {\n        return '';\n    }\n    const number = numberOf(value);\n    if (places === null || number === null) {\n        return null;\n    }\n    const rounded = round(number, places);\n    return typeof value === \"string\" ? String(rounded) : rounded;\n}\n\nfunction reRound(row) {\n    if (!isMapping(row)) {\n        return;\n    }\n    const places = rowPlaces(row);\n    for (const key of [\"lat\", \"lon\"]) {\n        if (key in row) {\n            row[key] = coordinate(row[key], places);\n        }\n    }\n}\n\n// the rows of a list that are mappings, re-rounded; anything else in the list is left out\nfunction rowsOf(list) {\n    const rows = list.filter(isMapping);\n    if (rows.length !== list.length) {\n        warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n    }\n    rows.forEach(reRound);\n    return rows;\n}\n\n// telemetry deployments: a mapping with only the two lists, each an array of rows; null when none is left\nfunction telemetryDeployments(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, list] of Object.entries(value)) {\n        if (![\"updatedDeployment\", \"currentDeployment\"].includes(key)) {\n            leftOut(`deployments.${key}`);\n        } else if (Array.isArray(list)) {\n            kept[key] = rowsOf(list);\n        } else {\n            warnOnce(`upload:deployments.${key}`, `ThingsBoard upload: left out deployments.${key}, which isn't a list.`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// an event with only the listed fields, or null when it isn't a mapping or no field is left\nfunction eventFields(value) {\n    if (!isMapping(value)) {\n        warnOnce(\"upload:event\", \"ThingsBoard upload: left out an event that isn't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, field] of Object.entries(value)) {\n        if (lists.event.includes(key)) {\n            kept[key] = field;\n        } else {\n            leftOut(`event.${key}`);\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a telemetry item ({ts, values}) with only the listed values, or null when none is left\nfunction telemetryItem(item) {\n    if (!isMapping(item) || !isMapping(item.values)) {\n        warnOnce(\"upload:telemetry\", \"ThingsBoard upload: left out telemetry that isn't {ts, values}.\");\n        return null;\n    }\n    const values = {};\n    for (const [key, value] of Object.entries(item.values)) {\n        if (lists.telemetry.includes(key)) {\n            values[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(values).length === 0) {\n        return null;\n    }\n    if (\"event\" in values) {\n        const event = eventFields(values.event);\n        if (event === null) {\n            delete values.event;\n        } else {\n            values.event = event;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    if (\"deployments\" in values) {\n        const deployments = telemetryDeployments(values.deployments);\n        if (deployments === null) {\n            delete values.deployments;\n        } else {\n            values.deployments = deployments;\n        }\n        if (Object.keys(values).length === 0) {\n            return null;\n        }\n    }\n    return \"ts\" in item ? { ts: item.ts, values } : { values };\n}\n\n// What the Sharing page chose, sent with the deployments attribute. The two choices count only for the server they\n// were made for (sharing.host); the exact location goes only over https.\nfunction chosen() {\n    const host = normaliseHost(thingsboard.host);\n    const counts = host !== null && normaliseHost(sharing.host) === host;\n    const exact = counts && sharing.exact_location === true;\n    const publicMap = counts && sharing.public_map === \"rounded_point\" ? \"rounded_point\" : \"none\";\n    // the attribute describes the server it is sent to: the target and notice version are for the host they were chosen for\n    const target = (counts && (sharing.target === \"maintainer\" || sharing.target === \"own\")) ? sharing.target : null;\n    const notice_version = (counts && typeof sharing.notice_version === \"string\" && sharing.notice_version !== '') ? sharing.notice_version : null;\n    const survey_id = (typeof place.survey_id === \"string\" && place.survey_id !== '') ? place.survey_id : null;\n    const lat = numberOf(place.lat);\n    const lon = numberOf(place.lon);\n    const point = lat !== null && lon !== null;\n    const https = typeof thingsboard.url === \"string\" && /^https:\\/\\//i.test(thingsboard.url);\n    return {\n        consents: { share_data: true, exact_location: exact, public_map: publicMap, notice_version, target },\n        exact_location: (exact && https && survey_id !== null && point)\n            ? { survey_id, lat: round(lat, 5), lon: round(lon, 5) } : {},\n        public_map: (publicMap === \"rounded_point\" && target === \"maintainer\" && point)\n            ? { survey_id, mode: \"rounded_point\", lat: round(lat, 3), lon: round(lon, 3) } : {},\n    };\n}\n\n// client attributes with only the listed keys, or null when none is left\nfunction attributes(payload) {\n    if (!isMapping(payload)) {\n        warnOnce(\"upload:attributes\", \"ThingsBoard upload: left out attributes that aren't a mapping.\");\n        return null;\n    }\n    const kept = {};\n    for (const [key, value] of Object.entries(payload)) {\n        if (lists.attributes.includes(key)) {\n            kept[key] = value;\n        } else {\n            leftOut(key);\n        }\n    }\n    if (Object.keys(kept).length === 0) {\n        return null;\n    }\n    if (\"deployments\" in kept) {\n        // one row per sensor; deploymentTopLevel names the survey and holds no coordinates\n        if (isMapping(kept.deployments)) {\n            const rows = {};\n            for (const [name, row] of Object.entries(kept.deployments)) {\n                if (isMapping(row)) {\n                    rows[name] = row;\n                } else {\n                    warnOnce(\"upload:deployments_row\", \"ThingsBoard upload: left out deployment rows that aren't mappings.\");\n                }\n            }\n            for (const [name, row] of Object.entries(rows)) {\n                if (name !== \"deploymentTopLevel\") {\n                    reRound(row);\n                }\n            }\n            kept.deployments = rows;\n            Object.assign(kept, chosen());\n        } else {\n            warnOnce(\"upload:deployments\", \"ThingsBoard upload: left out deployments that aren't a mapping.\");\n            delete kept.deployments;\n        }\n    }\n    return Object.keys(kept).length === 0 ? null : kept;\n}\n\n// a copy, so the rows other nodes hold aren't re-rounded under them (function nodes have no structuredClone)\nfunction copy(value) {\n    return value === undefined ? undefined : JSON.parse(JSON.stringify(value));\n}\n\n// a new message with only the type and the payload: nothing else an upstream node left on msg reaches the request\nif (msg.type === \"telemetry\") {\n    const many = Array.isArray(msg.payload);\n    const items = copy(many ? msg.payload : [msg.payload]).map(telemetryItem).filter((item) => item !== null);\n    if (items.length === 0) {\n        return null;\n    }\n    return { type: \"telemetry\", payload: many ? items : items[0] };\n}\nif (msg.type === \"attributes\") {\n    const kept = attributes(copy(msg.payload));\n    return kept === null ? null : { type: \"attributes\", payload: kept };\n}\nwarnOnce(\"upload:type\", \"ThingsBoard upload: left out a message that is neither telemetry nor attributes.\");\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -10207,7 +10439,7 @@
         "z": "28627559bebdc324",
         "g": "1bd1f21fa0390c69",
         "name": "query events, daily cum car counts in zone_radar with speed_calc",
-        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
+        "func": "//frame_time is already in seconds\n//cars with speeds in zone_radar AND zone_capture since 0400 today\n//count_radar and count_frigate say where speed_calc came from; a row from before speed_source counts as the radar's\n\nconst query = `\nWITH results AS (\n  SELECT \n    COUNT(*) AS count,\n    SUM(CASE WHEN speed_source = 'frigate' THEN 0 ELSE 1 END) AS count_radar,\n    SUM(CASE WHEN speed_source = 'frigate' THEN 1 ELSE 0 END) AS count_frigate,\n    AVG(ABS(speed_calc)) AS mean_speed,\n    MAX(CASE WHEN ntile = 5 THEN ABS(speed_calc) ELSE NULL END) AS p25_speed,\n    MAX(CASE WHEN ntile = 10 THEN ABS(speed_calc) ELSE NULL END) AS p50_speed,\n    MAX(CASE WHEN ntile = 15 THEN ABS(speed_calc) ELSE NULL END) AS p75_speed,\n    MAX(CASE WHEN ntile = 17 THEN ABS(speed_calc) ELSE NULL END) AS p85_speed,\n    MAX(ABS(speed_calc)) AS max_speed,\n    SUM(CASE WHEN ABS(speed_calc) > 25 THEN 1 ELSE 0 END) AS count_over_25,\n    JSON_GROUP_ARRAY(speed_calc) AS speeds\n  FROM \n    (SELECT \n       ABS(speed_calc) as speed_calc,\n       speed_source,\n       NTILE(20) OVER (ORDER BY ABS(speed_calc)) AS ntile\n     FROM \n       events\n     WHERE \n       frame_time >= unixepoch(strftime('%Y-%m-%dT04:00','now', 'localtime'),'utc') AND\n       label = 'car' AND\n       entered_zones LIKE '%zone_radar%' AND\n       entered_zones LIKE '%zone_capture%' AND\n       ABS(speed_calc) NOT NULL AND\n       camera = '${flow.get(\"camera_selection\")}'\n    )\n)\nSELECT \n  *, \n  p75_speed + 1.5 * (p75_speed - p25_speed) AS iqr_upper,\n  (SELECT COUNT(*) FROM json_each(results.speeds) WHERE json_each.value > p75_speed + 1.5 * (p75_speed - p25_speed)) AS iqr_upper_freq\nFROM \n  results;\n`;\n\nmsg.topic = query;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
