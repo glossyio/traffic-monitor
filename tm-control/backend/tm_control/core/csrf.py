@@ -54,7 +54,8 @@ class CsrfMiddleware:
         if scope["type"] == "http" and scope["method"] not in SAFE_METHODS and scope["path"].startswith(self.prefix):
             problem = _problem(Headers(scope=scope))
             if problem:
-                log.info("403 cross-site check (%s) on %s %s", problem, scope["method"], scope["path"])
+                # No path: it can hold a ticket. uvicorn's access line for this request has it, with the ticket hidden.
+                log.info("403 cross-site check (%s) on %s", problem, scope["method"])
                 response = error_response(403, "forbidden", "This request must come from the device's own pages.")
                 await response(scope, receive, send)
                 return

@@ -383,3 +383,15 @@ def test_the_writes_need_the_json_content_type(admin):
     found = taken(admin)
     assert admin.delete(base(found), headers=ORIGIN).status_code == 403
     assert admin.get(f"{base(found)}/clean.jpg").status_code == 200
+
+
+def test_a_refused_delete_logs_no_ticket(admin, caplog):
+    found = taken(admin)
+    caplog.set_level(logging.DEBUG)
+    assert admin.delete(base(found)).status_code == 403  # no Origin, no JSON content type
+    for record in caplog.records:
+        if record.name != "httpx":  # httpx: the test's own client
+            assert found["ticket"] not in record.getMessage()
+    logged = [record.getMessage() for record in caplog.records if record.name == "tm_control.core.csrf"]
+    assert logged == ["403 cross-site check (not JSON or a byte stream) on DELETE"]
+    assert admin.get(f"{base(found)}/clean.jpg").status_code == 200
