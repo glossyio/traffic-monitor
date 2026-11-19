@@ -32,7 +32,7 @@ if verb in state.get("fail_once", []):
     print("command failed: Device or resource busy (-16)", file=sys.stderr)
     sys.exit(240)
 if verb in state.get("hang", []):
-    time.sleep(60)
+    time.sleep(state.get("hang_seconds", 60))
 if verb in state.get("fail", []):
     print("command failed: Device or resource busy (-16)", file=sys.stderr)
     sys.exit(240)
