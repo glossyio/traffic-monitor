@@ -1782,9 +1782,64 @@
             [
                 "314e74cc3f8d050c",
                 "7d83424b6bf3a7a7",
-                "0abd83310c35db9a"
+                "0abd83310c35db9a",
+                "32d06799f761deca"
             ]
         ]
+    },
+    {
+        "id": "740fc35a0acfbceb",
+        "type": "link in",
+        "z": "1c71c8f26f5b7b19",
+        "name": "radar check link in",
+        "links": [
+            "cefb1681686ca59a"
+        ],
+        "x": 135,
+        "y": 90,
+        "wires": [
+            [
+                "05a58d9ee463c696"
+            ]
+        ]
+    },
+    {
+        "id": "32d06799f761deca",
+        "type": "switch",
+        "z": "1c71c8f26f5b7b19",
+        "name": "a power state answer?",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "hask",
+                "v": "PowerMode",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 190,
+        "y": 780,
+        "wires": [
+            [
+                "53227e15ed4fea88"
+            ]
+        ]
+    },
+    {
+        "id": "53227e15ed4fea88",
+        "type": "link out",
+        "z": "1c71c8f26f5b7b19",
+        "name": "radar power link out",
+        "mode": "link",
+        "links": [
+            "cacfcbb811025ebb"
+        ],
+        "x": 190,
+        "y": 900,
+        "wires": []
     },
     {
         "id": "05c37560dd57ea90",
@@ -6374,7 +6429,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "484071aff09e5ec2",
         "name": "tm-internal: RADAR_00 last reading",
-        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_00.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\n// The answers to the watch log's minute check ({\"PowerMode\"} and {\"Power\"} lines) aren't readings, so they leave it alone\nif (typeof msg.payload === \"string\" && (msg.payload.includes('\"PowerMode\"') || msg.payload.includes('\"Power\"'))) {\n    return null;\n}\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_00.last_reading_at\", new Date().toISOString());\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6393,7 +6448,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "484071aff09e5ec2",
         "name": "tm-internal: RADAR_01 last reading",
-        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_01.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\n// The answers to the watch log's minute check ({\"PowerMode\"} and {\"Power\"} lines) aren't readings, so they leave it alone\nif (typeof msg.payload === \"string\" && (msg.payload.includes('\"PowerMode\"') || msg.payload.includes('\"Power\"'))) {\n    return null;\n}\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_01.last_reading_at\", new Date().toISOString());\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6412,7 +6467,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "484071aff09e5ec2",
         "name": "tm-internal: RADAR_02 last reading",
-        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_02.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\n// The answers to the watch log's minute check ({\"PowerMode\"} and {\"Power\"} lines) aren't readings, so they leave it alone\nif (typeof msg.payload === \"string\" && (msg.payload.includes('\"PowerMode\"') || msg.payload.includes('\"Power\"'))) {\n    return null;\n}\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_02.last_reading_at\", new Date().toISOString());\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6431,7 +6486,7 @@
         "z": "1c71c8f26f5b7b19",
         "g": "484071aff09e5ec2",
         "name": "tm-internal: RADAR_03 last reading",
-        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_03.last_reading_at\", new Date().toISOString());\nreturn null;",
+        "func": "// Any line from the radar, enabled or not: /tm-internal/status reports when the last one came\n// The answers to the watch log's minute check ({\"PowerMode\"} and {\"Power\"} lines) aren't readings, so they leave it alone\nif (typeof msg.payload === \"string\" && (msg.payload.includes('\"PowerMode\"') || msg.payload.includes('\"Power\"'))) {\n    return null;\n}\nglobal.set(\"tm_status.radars.TM_RADAR_SERIAL_PORT_03.last_reading_at\", new Date().toISOString());\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -15643,12 +15698,17 @@
             "ddbdf776eb14316b",
             "c7cdca42234df7eb",
             "327af6928ff8f998",
-            "8fab4008b7bc52b7"
+            "8fab4008b7bc52b7",
+            "15c1d3813c3db1ff",
+            "53146efdfdfd00ab",
+            "cefb1681686ca59a",
+            "cacfcbb811025ebb",
+            "9c128cc3e8787dfa"
         ],
         "x": 14,
         "y": 1061,
-        "w": 722,
-        "h": 279
+        "w": 747,
+        "h": 379
     },
     {
         "id": "1c84b05d58e12d41",
@@ -15732,6 +15792,103 @@
         "libs": [],
         "x": 640,
         "y": 1260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "15c1d3813c3db1ff",
+        "type": "inject",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "every minute",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "*/1 0-23 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 1320,
+        "wires": [
+            [
+                "53146efdfdfd00ab"
+            ]
+        ]
+    },
+    {
+        "id": "53146efdfdfd00ab",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "radar minute check",
+        "func": "// Once a minute, asks every radar that config.yml enables for its power state (\"P?\"), and notes in the open\n// five-minute window (flow.watch_window.radars) how many checks were made and at how many the port wasn't open.\n// \"P?\" goes by the radar director's path, like every other command. A radar that config.yml switches off isn't\n// asked: the director turns every command for it into PI, which would only set it idle again. Its port is still\n// noted. \"keep radar power\" counts the answers.\n// Before the first mark there is no window and nothing is asked.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\nconst window = flow.get(\"watch_window\");\nif (!isMapping(window)) {\n    return null;\n}\n\nconst config = global.get(\"config\");\nconst radars = isMapping(config) && isMapping(config.sensors) ? config.sensors.radars : undefined;\nif (!isMapping(radars) || Object.keys(radars).length === 0) {\n    return null;\n}\n\nif (!isMapping(window.radars)) {\n    window.radars = {};\n}\n\nconst status = global.get(\"tm_status.radars\");\nconst messages = [];\nfor (const [name, entry] of Object.entries(radars)) {\n    if (!has(window.radars, name) || !isMapping(window.radars[name])) {\n        window.radars[name] = { checks: 0, port_closed: 0, answers: 0, idle: 0, unknown: 0 };\n    }\n    const mine = window.radars[name];\n    mine.checks += 1;\n    if (!(isMapping(status) && has(status, name) && isMapping(status[name]) && status[name].port_open === true)) {\n        mine.port_closed += 1;\n    }\n    if (isMapping(entry) && entry.enabled === true) {\n        messages.push({ topic: name, payload: \"P?\" });\n    }\n}\n\nflow.set(\"watch_window\", window);\nreturn messages.length > 0 ? [messages] : null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 1320,
+        "wires": [
+            [
+                "cefb1681686ca59a"
+            ]
+        ]
+    },
+    {
+        "id": "cefb1681686ca59a",
+        "type": "link out",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "radar check link out",
+        "mode": "link",
+        "links": [
+            "740fc35a0acfbceb"
+        ],
+        "x": 560,
+        "y": 1320,
+        "wires": []
+    },
+    {
+        "id": "cacfcbb811025ebb",
+        "type": "link in",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "radar power link in",
+        "links": [
+            "53227e15ed4fea88"
+        ],
+        "x": 150,
+        "y": 1380,
+        "wires": [
+            [
+                "9c128cc3e8787dfa"
+            ]
+        ]
+    },
+    {
+        "id": "9c128cc3e8787dfa",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "keep radar power",
+        "func": "// Counts a radar's power state answers into the open five-minute window (flow.watch_window.radars). The radar\n// prints {\"PowerMode\" : \"Active Continuously\"} or {\"PowerMode\" : \"Idle or Pulse\"} for P?, and PA and PI print the\n// same line, so the commands of a radar's setup are counted too: that is what the radar did. P? also prints\n// {\"Power\" : \"Max\"}, which this node never sees. The API notes show \"Continuous\" for active, so a text that starts\n// with \"active\" or \"continuous\" is active, whatever its letter case, and one that starts with \"idle\" is idle.\n// Any other text is counted apart, and warned of once per config load without quoting it.\n// Before the first mark there is no window and nothing is kept.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\n// warn once per config load: \"init config defaults\" empties tm_warned\nfunction warnOnce(id, text) {\n    const warned = global.get(\"tm_warned\") || {};\n    if (warned[id] !== true) {\n        warned[id] = true;\n        global.set(\"tm_warned\", warned);\n        node.warn(text);\n    }\n}\n\nconst window = flow.get(\"watch_window\");\nif (!isMapping(window)) {\n    return null;\n}\n\nconst answer = msg.payload;\nif (!isMapping(answer) || typeof answer.PowerMode !== \"string\" || typeof answer.radarName !== \"string\" || answer.radarName === \"\") {\n    return null;\n}\n\nif (!isMapping(window.radars)) {\n    window.radars = {};\n}\nconst name = answer.radarName;\nif (!has(window.radars, name) || !isMapping(window.radars[name])) {\n    window.radars[name] = { checks: 0, port_closed: 0, answers: 0, idle: 0, unknown: 0 };\n}\nconst mine = window.radars[name];\nmine.answers += 1;\n\nconst text = answer.PowerMode.trim().toLowerCase();\nif (text.startsWith(\"active\") || text.startsWith(\"continuous\")) {\n    // on: nothing more to count\n} else if (text.startsWith(\"idle\")) {\n    mine.idle += 1;\n} else {\n    mine.unknown += 1;\n    warnOnce(\"watch:power\", \"Watch log: a radar gave a power state this version doesn't know, so its radar_on is empty.\");\n}\n\nflow.set(\"watch_window\", window);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 1380,
         "wires": [
             []
         ]
