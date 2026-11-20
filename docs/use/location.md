@@ -39,7 +39,7 @@ If Node-RED hasn't answered yet, as right after an update, a warning at the top 
 Choose **Add a place**, fill in what you know, and **Save**. The place is added as planned.
 
 * **Description**: a name for the place, such as "Front of the school". It never leaves the device.
-* **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`, or [picked on a map](#pick-the-point-on-a-map). Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns that the point is rounded to about a kilometre or more, and still saves it. Leave the field empty for a place with no location.
+* **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`, or [picked on a map](#pick-the-point-on-a-map). Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.
 * **Which way each sensor faces here**: `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`, or **Not set**, for each sensor turned on in the settings.
 
 **Use this phone's location** fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.
@@ -50,7 +50,7 @@ Under the coordinates, **Pick on a map** opens a map. Tap the spot to place a pi
 
 ![The map picker on a phone, with a pin beside a street, its coordinates under the map, and Cancel and Use this point](../assets/images/location-map-pin.png){ width="300" }
 
-The map is drawn by your phone or computer, not by the device. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees which area you look at, which at the closest zoom is a few streets, but the exact point you choose isn't sent to it. If the map can't load, the dialog says so and offers **Try again**; type or paste the coordinates instead.
+The map is drawn by your phone or computer, not by the device. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. It never gets the exact point you choose. If the map can't load, the dialog says so and offers **Try again**; type or paste the coordinates instead.
 
 The map isn't offered while your phone is on the device's own [hotspot](wifi-hotspot.md#phones), because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.
 

@@ -970,7 +970,8 @@ importing places open dialogs from this page, so they move nothing on it.
   host. After that the phone's browser, not the device, asks the host of `map.style_url` for the style, tiles, fonts,
   and sprites of the area on screen. That is allowed because an admin asked for it with a button that says what it
   is, the area looked at is public, and the exact point is never sent: a tap only reads the map and then fills a
-  field. The picker says so in words (it names the host, and says the device sends it nothing), every request is made
+  field. What the host sees of where the admin looked is the tiles that cover the view: its vector tiles stop at zoom
+  14, so even the closest view asks for squares about 1.7 km on a side (at 45.5° N). The picker says so in words (it names the host, and says the device sends it nothing), every request is made
   with no referrer (`transformRequest`), and the control app's backend makes none. The two sources come from the API
   (`PlacesState.map`), never from the UI's code; a source that isn't `https://` is off, and with none there is no
   button.
@@ -989,9 +990,9 @@ importing places open dialogs from this page, so they move nothing on it.
 - The picker is full-screen on a phone (below `sm`) and 720 px wide above. Like the other Location dialogs it is
   `persistent`, so a drag that ends outside the map can't close it; Cancel is the way out.
 - A map that can't load says so, in place of the map, with "Try again", which starts the map afresh. Any `error`
-  before the map's `load`, or no `load` in 10 seconds, counts as a failure, as the plan says, so one missing tile on a
-  flaky connection can show the failure message. The map stays mounted while the dialog fades out and goes at
-  after-leave, so the dialog's body doesn't collapse.
+  before the map's `load`, or no `load` in 10 seconds, counts as a failure, by design (a map that half-loads is of no
+  use for placing a pin), so one missing tile on a flaky connection can show the failure message. The map stays
+  mounted while the dialog fades out and goes at after-leave, so the dialog's body doesn't collapse.
 - The map library, its stylesheet, and its worker are a chunk of their own, loaded the first time the picker opens
   (`defineAsyncComponent`), so the page's first download doesn't grow by them. The worker is a separate `.mjs` file,
   which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by 8 kB, from the three new
