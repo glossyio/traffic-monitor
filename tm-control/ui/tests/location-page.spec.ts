@@ -81,6 +81,7 @@ const PLACES: PlacesState = {
   unassigned: null,
   reconcile: 'done',
   nodered: true,
+  map: { style_url: 'https://tiles.example.invalid/style', overpass_url: 'https://street.example.invalid/api' },
 }
 
 // A deployment of the used place, as GET /surveys/{id}/deployments lists it

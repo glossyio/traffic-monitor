@@ -6,7 +6,7 @@ import pytest
 
 from tm_control.adapters.command import run
 from tm_control.app import create_app
-from tm_control.core.manifest import FrigateInfo, ManifestError, load_manifest
+from tm_control.core.manifest import FrigateInfo, ManifestError, MapInfo, load_manifest
 from tm_control.core.secrets import DEVICE_SECRETS, NAMES, NODE_RED_INTERNAL_TOKEN, FakeSecrets, MissingSecret, Secrets
 from tm_control.core.settings import Settings
 from tm_control.modules.apps import contracts
@@ -117,6 +117,22 @@ def test_an_older_manifest_without_sharing_loads_the_defaults(tmp_path):
     path.write_text(json.dumps(doc))
     sharing = load_manifest(path).sharing
     assert (sharing.maintainer_host, sharing.public_map_live) == ("tb.roadwaybiome.com", False)
+
+
+def test_the_fixture_manifest_names_the_map_sources():
+    info = load_manifest(FIXTURES / "manifest.json").map
+    assert (info.style_url, info.overpass_url) == (
+        "https://tiles.openfreemap.org/styles/liberty",
+        "https://overpass-api.de/api/interpreter",
+    )
+
+
+def test_an_older_manifest_without_map_loads_with_the_map_off(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["map"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).map == MapInfo("", "")
 
 
 def test_the_fixture_manifest_names_the_coral_model():

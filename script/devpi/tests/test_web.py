@@ -1487,6 +1487,14 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
     assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
 
 
+def test_surveys_name_the_roles_map_sources(address, admin_session):
+    """The Location page's map comes from the install's settings: GET /surveys carries the role's two addresses,
+    which a browser fetches (the device never does). An empty or non-https one would be null."""
+    wanted = {"style_url": role_vars()["tmsetup_map_style_url"], "overpass_url": role_vars()["tmsetup_map_overpass_url"]}
+    assert places_state(address, admin_session).get("map") == wanted, (
+        f"GET {API}/surveys: map is not the role's tmsetup_map_style_url and tmsetup_map_overpass_url")
+
+
 def test_in_use_place_matches_config_yml(address, admin_session, usable_host, expect, codedir):
     """The place in use and the precision the Location page shows are the ones config.yml holds. Precision is a string
     there ('none', '1' or '2'), though an old file may have it as a number, and a missing one means '2'; any other

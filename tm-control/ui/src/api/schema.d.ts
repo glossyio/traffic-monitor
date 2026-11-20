@@ -1869,6 +1869,16 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /**
+         * MapSources
+         * @description Where the browser gets the map and the street data; null is off (the install's setting is empty or not https).
+         */
+        MapSources: {
+            /** Style Url */
+            style_url: string | null;
+            /** Overpass Url */
+            overpass_url: string | null;
+        };
         /** Memory */
         Memory: {
             /** Total */
@@ -2036,6 +2046,7 @@ export interface components {
             reconcile: "done" | "waiting_nodered" | "config_unreadable";
             /** Nodered */
             nodered: boolean;
+            map: components["schemas"]["MapSources"];
         };
         /** PlusUseQueued */
         PlusUseQueued: {

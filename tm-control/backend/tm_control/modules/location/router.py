@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import DOWNLOAD_PATH, DOWNLOAD_TOKEN, Audit, User
 from tm_control.core.errors import ApiError
+from tm_control.core.manifest import MapInfo
 from tm_control.modules.auth.deps import client_ip, require_admin
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.access import config_error, load_config, save_config
@@ -78,6 +79,13 @@ class Unassigned(BaseModel):
     last_end: int | None
 
 
+class MapSources(BaseModel):
+    """Where the browser gets the map and the street data; null is off (the install's setting is empty or not https)."""
+
+    style_url: str | None
+    overpass_url: str | None
+
+
 class PlacesState(BaseModel):
     precision: Literal["none", "1", "2"]
     in_use: str | None
@@ -87,6 +95,7 @@ class PlacesState(BaseModel):
     unassigned: Unassigned | None
     reconcile: Literal["done", "waiting_nodered", "config_unreadable"]
     nodered: bool  # whether Node-RED answered the usage counts
+    map: MapSources
 
 
 class SurveyIn(BaseModel):
@@ -273,6 +282,13 @@ def _deployments(rows: list[dict]) -> list[DeploymentOut]:
     return [found for found in map(_deployment, rows) if found is not None]
 
 
+def _map_sources(info: MapInfo) -> MapSources:
+    """The two addresses, each off unless it is https. Street data is of no use without a map to pick on."""
+    style = info.style_url if info.style_url.startswith("https://") else None
+    overpass = info.overpass_url if style and info.overpass_url.startswith("https://") else None
+    return MapSources(style_url=style, overpass_url=overpass)
+
+
 def _state(request: Request, admin: User) -> PlacesState:
     app_state = request.app.state
     try:
@@ -302,6 +318,7 @@ def _state(request: Request, admin: User) -> PlacesState:
         ),
         reconcile=outcome.state,
         nodered=answered,
+        map=_map_sources(app_state.manifest.map),
     )
 
 

@@ -17,6 +17,7 @@ from ruamel.yaml import YAML
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.adapters.redact import REDACTED, redact
 from tm_control.core.auth import Users
+from tm_control.core.manifest import MapInfo
 from tm_control.modules.location.places import Places
 
 BASE = "http://tm-test.local"
@@ -130,6 +131,39 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
     assert isinstance(place["first_used"], int)
     assert state["unassigned"] is None
     assert file_data(admin)["deployment"]["survey_id"] == place["id"]
+
+
+STYLE = "https://tiles.openfreemap.org/styles/liberty"
+OVERPASS = "https://overpass-api.de/api/interpreter"
+
+
+def map_sources(client, style, overpass):
+    """Swap the manifest's map section, as a device installed with other settings would have it."""
+    manifest = client.app.state.manifest
+    client.app.state.manifest = manifest.model_copy(update={"map": MapInfo(style, overpass)})
+
+
+def test_places_name_the_map_sources(admin):
+    assert places(admin)["map"] == {"style_url": STYLE, "overpass_url": OVERPASS}
+
+
+def test_precision_answers_with_the_map_sources(admin):
+    r = admin.put("/api/v1/surveys/precision", json={"precision": "1"}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["map"] == {"style_url": STYLE, "overpass_url": OVERPASS}
+
+
+@pytest.mark.parametrize("style", ["", "http://tiles.example.invalid/style", "ftp://x"])
+def test_a_map_source_that_is_not_https_is_off(admin, style):
+    map_sources(admin, style, OVERPASS)
+    assert places(admin)["map"] == {"style_url": None, "overpass_url": None}
+    map_sources(admin, STYLE, style)
+    assert places(admin)["map"] == {"style_url": STYLE, "overpass_url": None}
+
+
+def test_no_street_data_leaves_the_map_on(admin):
+    map_sources(admin, STYLE, "")
+    assert places(admin)["map"] == {"style_url": STYLE, "overpass_url": None}
 
 
 def test_places_say_what_is_shared(admin):
