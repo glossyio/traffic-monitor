@@ -39,10 +39,22 @@ If Node-RED hasn't answered yet, as right after an update, a warning at the top 
 Choose **Add a place**, fill in what you know, and **Save**. The place is added as planned.
 
 * **Description**: a name for the place, such as "Front of the school". It never leaves the device.
-* **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`. Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Leave the field empty for a place with no location.
+* **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`, or [picked on a map](#pick-the-point-on-a-map). Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns that the point is rounded to about a kilometre or more, and still saves it. Leave the field empty for a place with no location.
 * **Which way each sensor faces here**: `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`, or **Not set**, for each sensor turned on in the settings.
 
 **Use this phone's location** fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.
+
+### Pick the point on a map
+
+Under the coordinates, **Pick on a map** opens a map. Tap the spot to place a pin, drag the pin to the exact place, and choose **Use this point**. The form fills in the coordinates with five decimal places, and you can still change them before you save. The same button is on **Correct location**.
+
+![The map picker on a phone, with a pin beside a street, its coordinates under the map, and Cancel and Use this point](../assets/images/location-map-pin.png){ width="300" }
+
+The map is drawn by your phone or computer, not by the device. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees which area you look at, which at the closest zoom is a few streets, but the exact point you choose isn't sent to it. If the map can't load, the dialog says so and offers **Try again**; type or paste the coordinates instead.
+
+The map isn't offered while your phone is on the device's own [hotspot](wifi-hotspot.md#phones), because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.
+
+To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.
 
 To change a planned place, open it and choose **Edit**. A place that has been used can't be edited; [correct it](#correct-a-wrong-location-or-bearing) instead.
 
@@ -70,7 +82,7 @@ A move usually also needs the camera's zones adjusted; see [First-time setup](..
 
 A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, [record that](#move-or-turn-the-device) instead.
 
-* **Correct location**, on a used place or the place in use, takes a new latitude and longitude. Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, `config.yml` takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.
+* **Correct location**, on a used place or the place in use, takes a new latitude and longitude, typed or [picked on a map](#pick-the-point-on-a-map). Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, `config.yml` takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.
 * **Correct bearing**, on each deployment in an open place, takes the way the sensor really faced. Every record from that deployment then says so. For a deployment that is still running, `config.yml` takes the new bearing too.
 
 Each correction can have a **Reason**, which is kept with the correction on the device. Copies of the database already downloaded, and data already uploaded, keep the old values.

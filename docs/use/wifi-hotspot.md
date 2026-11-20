@@ -25,6 +25,8 @@ The hotspot has no internet, and a phone on it reaches only the unit. Nothing on
     * Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
 * **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. The login and setup pages show that name while the phone is on the hotspot. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
 
+The Location page's [map](location.md#pick-the-point-on-a-map) needs the internet, so the page doesn't offer it on the hotspot. Paste the coordinates there, or open the page once the device is on your Wi-Fi.
+
 Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, in November 2026.
 
 ## The Network page
