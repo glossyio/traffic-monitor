@@ -18,6 +18,8 @@ Downloads the whole database as a compressed archive named `<hostname>_<time>_tm
 
 On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save on Android and on an iPhone.
 
+This download holds the location rounded, as the database stores it. To get a copy with each place's exact location in it, use [Download the database with exact locations](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations) on the Location page.
+
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
 
 ## Download JSON

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, and import places from a CSV file.">
+        <meta name="description" content="Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, import places from a CSV file, and export or download the exact locations.">
       
       
       
@@ -1139,6 +1139,34 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#download-the-database-with-exact-locations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download the database with exact locations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Download the database with exact locations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-copy-adds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the copy adds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2340,6 +2368,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#download-the-database-with-exact-locations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download the database with exact locations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Download the database with exact locations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-copy-adds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the copy adds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choose-the-precision" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2392,7 +2448,7 @@
   
   
   <h1 id="places-and-location">Places and location<a class="headerlink" href="#places-and-location" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, and import places from a CSV file.</p>
+<p class="tm-description">Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, import places from a CSV file, and export or download the exact locations.</p>
 <p>The control app's <strong>Location</strong> page records where the device is and which way its sensors face. It also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.</p>
 <h2 id="places-and-deployments">Places and deployments<a class="headerlink" href="#places-and-deployments" title="Permanent link">&para;</a></h2>
 <p>A <em>place</em> is somewhere the device has been, is, or will be. Each place has an id such as <code>3f9a1c2e-si</code>, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts and records its data, only without saying where. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.</p>
@@ -2400,8 +2456,8 @@
 <p>Each sensor at a place, facing one way, for one stretch of time, is a <em>deployment</em>. Every count and reading is stored with its deployment, so you can tell where it was taken after the device moves. Moving to another place, or turning a sensor, starts a new deployment, and the earlier ones keep what they recorded.</p>
 <p>The exact location is kept in the control app and in Node-RED's settings file, <a href="../../configuration/node-red-config/#deployment"><code>config.yml</code></a>. The database stores the place's id and the location rounded to the <a href="#choose-the-precision">precision</a> you choose.</p>
 <h2 id="the-location-page">The Location page<a class="headerlink" href="#the-location-page" title="Permanent link">&para;</a></h2>
-<p><strong>Location</strong> is in the control app's menu, after <strong>Cameras</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device <a href="../sharing/">shares</a>, and the way each sensor faces. Then come the list of places, the <a href="#export-the-exact-locations">exact locations</a>, and, last, the <a href="#choose-the-precision">precision</a>.</p>
-<p><img alt="The Location page on a phone: the place in use with its stored and exact location, the list of places, and the Precision section at the end, with its choices closed" src="../../assets/images/location-page.png" width="300" /></p>
+<p><strong>Location</strong> is in the control app's menu, after <strong>Cameras</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device <a href="../sharing/">shares</a>, and the way each sensor faces. Then come the list of places, the exact locations (<a href="#export-the-exact-locations">a list</a> and <a href="#download-the-database-with-exact-locations">a copy of the database</a>), and, last, the <a href="#choose-the-precision">precision</a>.</p>
+<p><img alt="The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its two buttons, and the Precision section at the end, with its choices closed" src="../../assets/images/location-page.png" width="300" /></p>
 <p>Each place in the list shows its description, or <strong>No description</strong>, its mark (<strong>In use</strong>, <strong>Planned</strong>, or <strong>Used</strong>), its id, and its location as the database stores it. Select a place to open it. An open place shows:</p>
 <ul>
 <li><strong>Imported from your previous settings</strong> for a place that came from an older version's data; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Update the software</a>.</li>
@@ -2461,7 +2517,35 @@ Corner by the park,,,e,e
 <p>The place in use can't be deleted. Deploy another place first.</p>
 <h2 id="export-the-exact-locations">Export the exact locations<a class="headerlink" href="#export-the-exact-locations" title="Permanent link">&para;</a></h2>
 <p><strong>Export exact locations</strong>, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.</p>
-<p>The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id.</p>
+<p>The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see <a href="#download-the-database-with-exact-locations">Download the database with exact locations</a>.</p>
+<h2 id="download-the-database-with-exact-locations">Download the database with exact locations<a class="headerlink" href="#download-the-database-with-exact-locations" title="Permanent link">&para;</a></h2>
+<p><strong>Download the database with exact locations</strong>, next to <strong>Export exact locations</strong>, saves a copy of the database that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step.</p>
+<p>Choose the button and read the question. It says that the copy holds the exact location of each place the device has been at, that the database on the device keeps its rounded locations, and that you should give the copy only to someone who should know where the device was. Choose <strong>Download</strong>. The device makes a consistent copy of the database first, so the download starts after a wait, which can take a few minutes for a large database, and the page says so. The copy needs free space about the size of the database, as the <a href="../../ui/database/#download-the-database">Data export</a> download does. If the device can't make the copy, the browser has already left the Location page and shows a plain text page with the reason instead of a file: go back to the Location page, and reload it before you try again. Once a copy has started, the button stays off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.</p>
+<p>The button is off, with the reason under it, until a place the device has been at, one marked <strong>In use</strong> or <strong>Used</strong>, has a location. A planned place doesn't count, because the device was never there.</p>
+<p>The file is named <code>&lt;hostname&gt;_&lt;time&gt;_tmdb-exact-locations.tar.gz</code> and holds <code>tmdb-exact-locations.sqlite</code>. The name says what it is, so nobody takes it for the database you can share. On a phone joined to the unit's hotspot, see <a href="../wifi-hotspot/#phones">Phones</a> for how downloads save.</p>
+<h3 id="what-the-copy-adds">What the copy adds<a class="headerlink" href="#what-the-copy-adds" title="Permanent link">&para;</a></h3>
+<p>The copy is the database as it is, with two more things in it:</p>
+<ul>
+<li>The table <code>survey_exact_location</code> has one row for each place: its id, and its exact latitude and longitude.</li>
+<li>The view <code>deployment_exact</code> is the <code>deployment</code> table with two more columns, <code>exact_lat</code> and <code>exact_lon</code>, from the place the row names.</li>
+</ul>
+<p>The <code>deployment</code> table itself is not changed. Its <code>lat</code> and <code>lon</code> still hold the location rounded to the <a href="#choose-the-precision">precision</a> stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">sensorName</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">entryStartDateTime</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">started</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">entryEndDateTime</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">ended</span><span class="p">,</span>
+<span class="w">       </span><span class="n">exact_lat</span><span class="p">,</span><span class="w"> </span><span class="n">exact_lon</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">deployment_exact</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">entryStartDateTime</span><span class="p">;</span>
+</code></pre></div>
+<p>The times are in UTC, and <code>ended</code> is empty for a deployment that is still running. A place has one exact point, so this covers every place the device has been at, past ones included, and not only the one in use.</p>
+<p>The table holds the places the device has been at that have a location. A planned place is never in it, and neither is a place the database doesn't name. The view's <code>exact_lat</code> and <code>exact_lon</code> are empty for:</p>
+<ul>
+<li>A place with no location.</li>
+<li>A place the control app no longer has, because you deleted it.</li>
+<li>A deployment from <a href="#the-location-page">before any place was recorded</a>, which names no place.</li>
+</ul>
+<p>A <a href="#correct-a-wrong-location-or-bearing">correction</a> shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.</p>
+<p>The database on the device is unchanged: it never holds the table or the view, and the <strong>Download the database</strong> button on the <a href="../../ui/database/#download-the-database">Data export</a> page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the <a href="../../data-and-payloads/data-overview/#the-exact-location-in-a-database-copy"><code>exact_location</code></a> attribute holds when you share the exact location.</p>
 <h2 id="choose-the-precision">Choose the precision<a class="headerlink" href="#choose-the-precision" title="Permanent link">&para;</a></h2>
 <p><strong>Precision</strong>, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open <strong>Change the precision</strong>, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:</p>
 <table>
@@ -2486,7 +2570,7 @@ Corner by the park,,,e,e
 </tr>
 </tbody>
 </table>
-<p>The exact location is never stored in the database. It stays on this device, and leaves it only if you <a href="../sharing/">share it</a> or <a href="#export-the-exact-locations">export it</a>. Choose one and <strong>Save</strong>.</p>
+<p>The exact location is never stored in the database. It stays on this device, and leaves it only if you <a href="../sharing/">share it</a>, <a href="#export-the-exact-locations">export it</a>, or <a href="#download-the-database-with-exact-locations">download a copy of the database that holds it</a>. Choose one and <strong>Save</strong>.</p>
 <ul>
 <li><strong>A coarser choice</strong> applies to the deployments running now at once. Rows stored before them keep their precision unless you tick <strong>Also round the rows already stored</strong>, which asks first, because it can't be undone.</li>
 <li><strong>No location stored</strong> removes the stored location from the deployments running now at once. Tick <strong>Also remove it from the rows already stored</strong> to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.</li>
@@ -2495,8 +2579,8 @@ Corner by the park,,,e,e
 <h2 id="what-leaves-the-device">What leaves the device<a class="headerlink" href="#what-leaves-the-device" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A place's description, and the reasons you give for corrections, never leave the device.</li>
-<li>A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it.</li>
-<li>Data you <a href="../sharing/">share</a> carries the location as the database stores it. The exact location goes only if you tick <strong>Share the exact location</strong>, and only for the place in use. The file from <a href="#export-the-exact-locations"><strong>Export exact locations</strong></a> goes where you send it.</li>
+<li>A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with <a href="#download-the-database-with-exact-locations"><strong>Download the database with exact locations</strong></a>, which adds each place's exact location in a table of its own.</li>
+<li>Data you <a href="../sharing/">share</a> carries the location as the database stores it. The exact location goes only if you tick <strong>Share the exact location</strong>, and only for the place in use. The file from <a href="#export-the-exact-locations"><strong>Export exact locations</strong></a>, and the copy from <a href="#download-the-database-with-exact-locations"><strong>Download the database with exact locations</strong></a>, go where you send them.</li>
 <li>A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.</li>
 </ul>
 <p>To change these values in <code>config.yml</code> by hand, see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>

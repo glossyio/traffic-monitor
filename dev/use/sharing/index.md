@@ -31,7 +31,7 @@ For Traffic Monitor's server, the page requires you to read the notice, and to t
 
 The exact location is for you to give or keep
 
-The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in the file the Location page's [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations) saves for you.
+The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in what you save from the Location page: the file from [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations), or the copy of the database from [**Download the database with exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations). You give those yourself, and nothing is sent.
 
 ## What the server already has
 
