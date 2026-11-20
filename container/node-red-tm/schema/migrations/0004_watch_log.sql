@@ -31,5 +31,7 @@ CREATE TABLE watch_radar (
     deployment_id TEXT,
     port_open INTEGER,
     last_reading_at REAL,
+    radar_answers INTEGER,
+    radar_on INTEGER,
     PRIMARY KEY (time, radar)
 ) WITHOUT ROWID;

@@ -2105,7 +2105,8 @@ TICK = 1761800100  # a five-minute mark
 TICK_MS = TICK * 1000
 WATCH_CAMERA_COLUMNS = ["time", "camera", "config_enabled", "deployment_id", "frigate_answers", "camera_answers",
                         "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled", "camera_on"]
-WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at"]
+WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at",
+                       "radar_answers", "radar_on"]
 STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
 EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
 WATCH_SENSORS = {
@@ -2131,9 +2132,9 @@ CAMERA_ROWS = [
 ]
 RADAR_ROWS = [
     {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "config_enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
-     "port_open": 1, "last_reading_at": 1761800098.4},
+     "port_open": 1, "last_reading_at": 1761800098.4, "radar_answers": 5, "radar_on": 1},
     {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "config_enabled": 0, "deployment_id": None, "port_open": 0,
-     "last_reading_at": None},
+     "last_reading_at": None, "radar_answers": 0, "radar_on": None},
 ]
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
@@ -3687,7 +3688,45 @@ def test_a_whole_window_gives_a_row_per_sensor():
     for msg in cameras + radars:
         assert msg["params"] == {f"${name}": value for name, value in msg["payload"].items()}
     assert upload == {"payload": {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}}
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
+
+
+@needs_node
+@pytest.mark.parametrize("counts, expected", [
+    ({"answers": 5, "idle": 0, "unknown": 0}, (5, 1)), ({"answers": 7, "idle": 0, "unknown": 0}, (7, 1)),
+    ({"answers": 2, "idle": 0, "unknown": 0}, (2, 1)), ({"answers": 5, "idle": 1, "unknown": 0}, (5, 0)),
+    ({"answers": 5, "idle": 5, "unknown": 0}, (5, 0)), ({"answers": 5, "idle": 1, "unknown": 2}, (5, 0)),
+    ({"answers": 5, "idle": 0, "unknown": 1}, (5, None)), ({"answers": 0, "idle": 0, "unknown": 0}, (0, None)),
+], ids=["on", "on-with-a-setups-answers", "on-in-the-few-answers", "idle-once", "idle-throughout", "idle-and-unknown",
+        "a-text-not-known", "no-answer"])
+def test_the_radars_row_says_how_often_it_answered_and_whether_it_was_on(counts, expected):
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"]["TM_RADAR_SERIAL_PORT_00"].update(counts)
+    _, radars, upload, _ = watch_tick(window=window)
+    row = radars[0]["payload"]
+    assert (row["radar_answers"], row["radar_on"]) == expected
+    assert radars[0]["params"]["$radar_on"] == expected[1] and upload["payload"]["radars"][0] == row
+
+
+@needs_node
+@pytest.mark.parametrize("entry", [MISSING, None, "broken", {}, {"answers": "5", "idle": 0, "unknown": 0},
+                                   {"answers": 5, "unknown": 0}],
+                         ids=["none", "null", "text", "empty", "answers-as-text", "no-idle-count"])
+def test_a_radar_whose_checks_cannot_be_read_answered_nothing_that_counts(entry):
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"] = {} if entry is MISSING else {"TM_RADAR_SERIAL_PORT_00": entry}
+    _, radars, _, _ = watch_tick(window=window)
+    row = radars[0]["payload"]
+    assert row["radar_on"] is None and row["port_open"] == 1
+    assert row["radar_answers"] == (5 if entry == {"answers": 5, "unknown": 0} else 0)
+
+
+@needs_node
+def test_a_port_that_was_closed_at_any_check_was_not_open_for_the_window():
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"]["TM_RADAR_SERIAL_PORT_00"]["port_closed"] = 1
+    _, radars, _, _ = watch_tick(window=window)
+    assert radars[0]["payload"] == {**RADAR_ROWS[0], "port_open": 0}
 
 
 @needs_node
@@ -3767,7 +3806,7 @@ def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
     """Not the first mark after a start, a mark after a missed one, or one after the clock jumped."""
     cameras, radars, upload, flow = watch_tick(window={**WATCH_WINDOW, "since": TICK_MS - age})
     assert (cameras is not None, radars is not None, upload is not None) == (rows, rows, rows)
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
 
 
 @needs_node
@@ -3778,7 +3817,7 @@ def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
 def test_no_rows_without_a_window_or_sensors(window, config):
     cameras, radars, upload, flow = watch_tick(window=window, config=config)
     assert (cameras, radars, upload) == (None, None, None)
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
 
 
 @needs_node

@@ -43,7 +43,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
           camera_on: 1,
         },
       ],
-      radars: [{ time: 1_793_000_100, radar: 'TM_RADAR_SERIAL_PORT_00', config_enabled: 1, port_open: 1 }],
+      radars: [{ time: 1_793_000_100, radar: 'TM_RADAR_SERIAL_PORT_00', config_enabled: 1, port_open: 1, radar_answers: 5, radar_on: 1 }],
     },
   },
   null,

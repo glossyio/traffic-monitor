@@ -70,6 +70,8 @@
         "config_enabled",
         "deployment_id",
         "port_open",
-        "last_reading_at"
+        "last_reading_at",
+        "radar_answers",
+        "radar_on"
     ]
 }
