@@ -6,6 +6,8 @@
 -- takes about a fifth of the table's size on the card.
 --
 -- This migration changes no row. It is a file of its own so that a card too full to build the
--- index still gets 0005's columns; the device then works as before and tries again at each start.
+-- index still gets 0005's columns. The device then records as before without the index; each
+-- start of Node-RED tries again, which makes the start longer, and the Status page reports the
+-- database schema as behind until the index is built.
 
 CREATE INDEX IF NOT EXISTS index_radar_dov_time ON radar_dov(time);
