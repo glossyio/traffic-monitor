@@ -48,7 +48,10 @@
         "speed_unit",
         "speed_source",
         "radar_readings",
-        "direction_source"
+        "direction_source",
+        "stationary_time",
+        "stops",
+        "zone_times"
     ],
     "watch_camera": [
         "time",
