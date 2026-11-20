@@ -1119,10 +1119,9 @@ def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, add
 MADE_UP_EVENT_SECONDS = 15
 
 
-def test_a_made_up_event_is_recorded_with_its_path_and_boxes(host, expect, codedir, node_red_config, frigate_config):
-    """A made-up Frigate end message on the Pi's broker becomes a row with its path and boxes, and a sub-label that
-    isn't a logo label isn't saved. Writes one row into tmdb.sqlite, which stays: its label (tmdev_check) and its
-    only zone (zone_tmdev) keep it out of every dashboard count. Publishing an event turns nothing on in Frigate."""
+def made_up_camera(host, expect, codedir, node_red_config, frigate_config):
+    """The first enabled camera entry that names a camera Frigate has, as (key, Frigate's name, detect width, detect
+    height). Skips unless the unit is PII-free, its broker has no login, and there is such an entry."""
     require_pii_free(expect)
     username, password = broker_login(host, expect, codedir)
     if username and password:
@@ -1135,29 +1134,50 @@ def test_a_made_up_event_is_recorded_with_its_path_and_boxes(host, expect, coded
     if not entries:
         pytest.skip("no enabled camera entry in config.yml names a camera Frigate has")
     key, name = entries[0]
-    width, height = frigate_cameras[name]["detect"]["width"], frigate_cameras[name]["detect"]["height"]
-    now = pi_now(host)
-    event_id = f"{now:.6f}-tmdev0"
-    after = {
+    detect = frigate_cameras[name]["detect"]
+    return key, name, detect["width"], detect["height"]
+
+
+def made_up_after(event_id, name, width, height, start, last):
+    """A made-up Frigate `after` for a car-sized tmdev_check object in zone_tmdev, seen from start to last."""
+    return {
         "id": event_id, "camera": name, "label": "tmdev_check", "sub_label": ["tmdev person", 0.99],
-        "stationary": False, "position_changes": 2, "entered_zones": ["zone_tmdev"],
+        "stationary": False, "position_changes": 2, "entered_zones": ["zone_tmdev"], "current_zones": [],
         "box": [width / 2, height / 2, width, height],
-        "snapshot": {"frame_time": now - 1, "box": [0, 0, width / 2, height / 2], "score": 0.9},
+        "snapshot": {"frame_time": last - 0.5, "box": [0, 0, width / 2, height / 2], "score": 0.9},
         "average_estimated_speed": 0, "velocity_angle": 0,
-        "path_data": [[[0.1, 0.9], now - 2], [[0.4, 0.8], now - 1], [[0.75, 0.75], now - 0.5]],
-        "top_score": 0.9, "frame_time": now - 0.5, "start_time": now - 2, "end_time": now - 0.5, "score": 0.9,
+        "path_data": [[[0.1, 0.9], start], [[0.4, 0.8], last - 0.5], [[0.75, 0.75], last]],
+        "top_score": 0.9, "frame_time": last, "start_time": start, "end_time": last, "score": 0.9,
         "area": width * height / 4, "ratio": width / height, "motionless_count": 0, "attributes": {},
     }
-    publish_on_pi(host, "frigate/events", {"type": "end", "before": dict(after), "after": after})
-    query = ("SELECT camera, sub_label, json_array_length(path_data), box, best_box, best_frame_time, frigate_speed, "
-             f"speed_calc, speed_source FROM events WHERE id = '{event_id}'")
+
+
+def made_up_row(host, codedir, event_id, columns):
+    """The event's row, waiting up to MADE_UP_EVENT_SECONDS for it."""
+    query = f"SELECT {columns} FROM events WHERE id = '{event_id}'"
     deadline = time.monotonic() + MADE_UP_EVENT_SECONDS
     rows = db_query(host, codedir, query)
     while not rows and time.monotonic() < deadline:
         time.sleep(1)
         rows = db_query(host, codedir, query)
     assert rows, f"no events row for the made-up event within {MADE_UP_EVENT_SECONDS} s"
-    [(camera, sub_label, points, box, best_box, best_frame_time, frigate_speed, speed_calc, speed_source)] = rows
+    return rows[0]
+
+
+def test_a_made_up_event_is_recorded_with_its_path_and_boxes(host, expect, codedir, node_red_config, frigate_config):
+    """A made-up Frigate end message on the Pi's broker becomes a row with its path and boxes, and a sub-label that
+    isn't a logo label isn't saved. An end alone has no time stopped or time in each zone. Writes one row into
+    tmdb.sqlite, which stays: its label (tmdev_check) and its only zone (zone_tmdev) keep it out of every dashboard
+    count. Publishing an event turns nothing on in Frigate."""
+    key, name, width, height = made_up_camera(host, expect, codedir, node_red_config, frigate_config)
+    now = pi_now(host)
+    event_id = f"{now:.6f}-tmdev0"
+    after = made_up_after(event_id, name, width, height, now - 2, now - 0.5)
+    publish_on_pi(host, "frigate/events", {"type": "end", "before": dict(after), "after": after})
+    (camera, sub_label, points, box, best_box, best_frame_time, frigate_speed, speed_calc, speed_source,
+     stationary_time, stops, zone_times) = made_up_row(
+        host, codedir, event_id, "camera, sub_label, json_array_length(path_data), box, best_box, best_frame_time, "
+        "frigate_speed, speed_calc, speed_source, stationary_time, stops, zone_times")
     assert (camera, sub_label, points) == (key, None, 3)
     assert (box, best_box) == ("[0.5,0.5,0.5,0.5]", "[0,0,0.5,0.5]"), "the boxes aren't fractions of the detect size"
     assert best_frame_time is not None
@@ -1165,3 +1185,27 @@ def test_a_made_up_event_is_recorded_with_its_path_and_boxes(host, expect, coded
     # window, so the speed is empty only when the radar gave none.
     assert frigate_speed is None and speed_source != "frigate"
     assert (speed_calc is None) == (speed_source is None)
+    # no new message came before the end, so there is no tally
+    assert (stationary_time, stops, zone_times) == (None, None, None)
+
+
+def test_a_made_up_run_of_messages_is_recorded_with_its_times(host, expect, codedir, node_red_config, frigate_config):
+    """Five made-up Frigate messages for one object, new to end, each one's `before` the `after` of the one before,
+    become a row with the time it stood still and the time in its zone. The frame times are made up, counted from a
+    minute ago, so nothing waits. Writes one row into tmdb.sqlite, which stays, as the end-only test's does."""
+    key, name, width, height = made_up_camera(host, expect, codedir, node_red_config, frigate_config)
+    t = round(pi_now(host)) - 60
+    event_id = f"{t:.6f}-tmdev1"
+    steps = [("new", 0, False, []), ("update", 2, False, ["zone_tmdev"]), ("update", 14, True, ["zone_tmdev"]),
+             ("update", 40, False, ["zone_tmdev"]), ("end", 45, False, ["zone_tmdev"])]
+    before = None
+    for kind, at, stationary, zones in steps:
+        after = made_up_after(event_id, name, width, height, t, t + at)
+        after.update(stationary=stationary, current_zones=zones, end_time=t + 50 if kind == "end" else None)
+        publish_on_pi(host, "frigate/events", {"type": kind, "before": before or dict(after), "after": after})
+        before = dict(after)
+    camera, stationary_time, stops, zone_times = made_up_row(
+        host, codedir, event_id, "camera, stationary_time, stops, zone_times")
+    assert camera == key
+    assert (stationary_time, stops) == (26, 1), "the time stood still or the number of stops isn't the made-up run's"
+    assert json.loads(zone_times) == {"zone_tmdev": {"time": 43, "stationary": 26}}
