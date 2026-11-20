@@ -969,10 +969,13 @@ importing places open dialogs from this page, so they move nothing on it.
 - The first requests outside the device. Until an admin presses "Pick on a map" the page asks nothing of any other
   host. After that the phone's browser, not the device, asks the host of `map.style_url` for the style, tiles, fonts,
   and sprites of the area on screen. That is allowed because an admin asked for it with a button that says what it
-  is, the area looked at is public, and the exact point is never sent: a tap only reads the map and then fills a
-  field. What the host sees of where the admin looked is the tiles that cover the view: its vector tiles stop at zoom
-  14, so even the closest view asks for squares about 1.7 km on a side (at 45.5° N). The picker says so in words (it names the host, and says the device sends it nothing), every request is made
-  with no referrer (`transformRequest`), and the control app's backend makes none. The two sources come from the API
+  is, and the exact point is never sent: a tap only reads the map and then fills a field. What the host learns is the
+  area on screen, never the point: the tiles that cover the view. Its vector tiles stop at zoom 14, so even the
+  closest view asks for squares about 1.7 km on a side (at 45.5° N). The picker names the host and says the device
+  sends it nothing; it doesn't state the tile size. Every request is made with no referrer (`transformRequest`), and
+  the page's referrer policy (`index.html`, `same-origin`) does the same for the links in the map's corner, the
+  attribution, which open their sites with no Referer; the device's own requests keep theirs, which the CSRF check
+  falls back on. The control app's backend makes no request. The two sources come from the API
   (`PlacesState.map`), never from the UI's code; a source that isn't `https://` is off, and with none there is no
   button.
 - The hotspot has no internet, so on it the button gives way to one sentence that says so and says to type or paste
@@ -982,21 +985,29 @@ importing places open dialogs from this page, so they move nothing on it.
   world. A tap places the pin and the marker, which takes the theme's `primary`, can be dragged to the exact spot. A
   tap on the marker itself isn't a tap on the map: MapLibre would deliver it to the map's click as well and move the
   pin a little. North stays up and the map stays flat, for the mouse, a touch, and the keyboard alike; nothing here
-  uses a bearing or a tilt.
+  uses a bearing or a tilt. A double click or double tap doesn't zoom (`doubleClickZoom: false`), because each tap of
+  it would place the pin too; pinch, the wheel, and the buttons zoom.
 - "Use this point" writes the field at five decimal places, as the device keeps an exact location, and the admin can
-  still change it before saving. Typed coordinates with fewer than four decimal places get one warning line in
-  the warning color under the field, with the size they will be rounded to; it never blocks Save, because a rough
-  location is a choice, not a mistake. `saved` and `corrected` say whether the map set the coordinates last.
+  still change it before saving. It waits for the map itself to set the pin (a tap or a drag) and is off while the
+  map has failed, so the field's own point is never written back as a pick. Typed coordinates with fewer than four
+  decimal places get one warning line in the warning color under the field, with the size they will be rounded to; it
+  never blocks Save, because a rough location is a choice, not a mistake. `saved` and `corrected` say whether the map
+  set the coordinates last.
 - The picker is full-screen on a phone (below `sm`) and 720 px wide above. Like the other Location dialogs it is
   `persistent`, so a drag that ends outside the map can't close it; Cancel is the way out.
 - A map that can't load says so, in place of the map, with "Try again", which starts the map afresh. Any `error`
   before the map's `load`, or no `load` in 10 seconds, counts as a failure, by design (a map that half-loads is of no
   use for placing a pin), so one missing tile on a flaky connection can show the failure message. The map stays
-  mounted while the dialog fades out and goes at after-leave, so the dialog's body doesn't collapse.
+  mounted while the dialog fades out and goes at after-leave, so the dialog's body doesn't collapse. A browser that
+  can't make the map at all (no WebGL2) and a map file that can't be fetched get the same message. A page loaded
+  before an upgrade needs a reload: its map file is gone, so the picker says the map failed, and Try again asks for
+  the file again (`MapPicker.vue` imports it by hand, since `defineAsyncComponent` keeps a failed load).
 - The map library, its stylesheet, and its worker are a chunk of their own, loaded the first time the picker opens
-  (`defineAsyncComponent`), so the page's first download doesn't grow by them. The worker is a separate `.mjs` file,
-  which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by 8 kB, from the three new
-  components, because `LocationPage` imports them directly; none of it is library code.
+  (a dynamic `import()` in `MapPicker.vue`), so the page's first download doesn't grow by them. The worker is a
+  separate `.mjs` file, which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by about
+  6.5 kB (2 kB gzipped), from `MapPickButton.vue`, `MapPicker.vue`, the coordinate helpers, and the two forms'
+  changes, because `LocationPage` imports them directly; `PinMap.vue` is in the lazy chunk, and none of the entry's
+  growth is library code.
 
 #### Corrections, and importing places
 
