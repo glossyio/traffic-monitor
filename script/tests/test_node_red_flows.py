@@ -4165,9 +4165,12 @@ def test_an_object_that_is_stationary_when_first_heard_of_has_one_stop():
 
 @needs_node
 def test_no_figure_says_more_than_six_hours():
-    out, _ = run_tally(one_object([("new", 0, False, ["zone_bay"]), ("update", 12, True, ["zone_bay"]),
-                                   ("update", 30012, False, ["zone_bay"]), ("end", 30020, False, [])]))
-    assert out["time_tally"] == {"stationary_time": 21600, "stops": 1, "stopped": [[T0 + 12, T0 + 30012]],
+    """Parked for a little over six hours, with an update a minute, as Frigate sends them."""
+    steps = [("new", 0, False, ["zone_bay"]), ("update", 12, True, ["zone_bay"])]
+    steps += [("update", 12 + 60 * minute, True, ["zone_bay"]) for minute in range(1, 362)]
+    steps += [("update", 21700, False, ["zone_bay"]), ("end", 21708, False, [])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 21600, "stops": 1, "stopped": [[T0 + 12, T0 + 21700]],
                                  "zone_times": {"zone_bay": {"time": 21600, "stationary": 21600}}}
 
 
@@ -4199,6 +4202,28 @@ def test_a_missed_message_leaves_the_figures_empty():
 def test_time_running_backwards_leaves_the_figures_empty():
     messages = [frigate_message("new", 3, 3), frigate_message("update", 1, 3), frigate_message("end", 5, 1)]
     out, _ = run_tally(messages)
+    assert out["time_tally"] is None
+
+
+@needs_node
+@pytest.mark.parametrize("stationary", [False, True], ids=["moving", "stationary"])
+@pytest.mark.parametrize("gap, whole", [(300, True), (300.5, False), (7200, False)])
+def test_more_than_five_minutes_between_two_messages_leaves_the_figures_empty(stationary, gap, whole):
+    """The clock was set forward, or the camera stalled: Frigate's chain of messages is whole, but the time between
+    two of them isn't time the object was watched."""
+    steps = [("new", 0, False, ["zone_bay"]), ("update", 12, stationary, ["zone_bay"]),
+             ("update", 12 + gap, stationary, ["zone_bay"]), ("update", 14 + gap, False, ["zone_bay"]),
+             ("end", 16 + gap, False, [])]
+    out, flow = run_tally(one_object(steps))
+    assert (out["time_tally"] is not None) is whole and flow["time_tallies"] == {}
+    if whole:
+        assert out["time_tally"]["zone_times"] == {
+            "zone_bay": {"time": 16 + gap, "stationary": 2 + gap if stationary else 0}}
+
+
+@needs_node
+def test_a_gap_before_the_end_message_counts_too():
+    out, _ = run_tally(one_object([("new", 0, False, ["zone_bay"]), ("end", 301, False, ["zone_bay"])]))
     assert out["time_tally"] is None
 
 

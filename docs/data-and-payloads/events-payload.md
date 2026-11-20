@@ -73,6 +73,7 @@ ORDER BY start_time;
 
     - Node-RED restarted, or the device rebooted, while Frigate was following the object.
     - A message from Frigate didn't arrive, as when its connection to the broker dropped for a moment.
+    - More than five minutes passed between two of Frigate's messages about the object, as when the device's clock was set or the camera sent no frames for a while.
     - More than 300 objects were being followed at once.
     - The row was recorded by an earlier version of the Traffic Monitor.
 
