@@ -4070,6 +4070,24 @@
         ],
         "title": "LabelsOut"
       },
+      "LatLon": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "LatLon"
+      },
       "Link": {
         "properties": {
           "connected": {
@@ -4176,6 +4194,16 @@
               }
             ],
             "title": "Overpass Url"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatLon"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

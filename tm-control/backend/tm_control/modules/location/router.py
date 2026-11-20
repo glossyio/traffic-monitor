@@ -24,6 +24,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 
+from tm_control.adapters import network, timedate
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import DOWNLOAD_PATH, DOWNLOAD_TOKEN, Audit, User
 from tm_control.core.errors import ApiError
@@ -41,6 +42,7 @@ from tm_control.modules.location.coordinates import (
     stored,
 )
 from tm_control.modules.location.places import Bearing, Places, Survey
+from tm_control.modules.location.region import LatLon, region
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +86,7 @@ class MapSources(BaseModel):
 
     style_url: str | None
     overpass_url: str | None
+    region: LatLon | None = None  # where the map opens with no place to start from: the time zone's city
 
 
 class PlacesState(BaseModel):
@@ -289,6 +292,18 @@ def _map_sources(info: MapInfo) -> MapSources:
     return MapSources(style_url=style, overpass_url=overpass)
 
 
+def _region(app_state) -> LatLon | None:
+    """The device's region, from its time zone and Wi-Fi country (fake mode's own, as the Time page does)."""
+    if app_state.settings.fake:
+        zone = app_state.fake_clock.show().timezone
+        country = app_state.fake_network.country
+    else:
+        state = timedate.show()
+        zone = state.timezone if state else None
+        country = network.wifi_country()
+    return region(zone, country)
+
+
 def _state(request: Request, admin: User) -> PlacesState:
     app_state = request.app.state
     try:
@@ -305,6 +320,9 @@ def _state(request: Request, admin: User) -> PlacesState:
     usage, unassigned, answered = _usage(app_state)
     places = Places(app_state.state)
     current = places.in_use()
+    sources = _map_sources(app_state.manifest.map)
+    if sources.style_url:  # a region is of no use without a map
+        sources.region = _region(app_state)
     return PlacesState(
         precision=precision,
         in_use=current.id if current else None,
@@ -318,7 +336,7 @@ def _state(request: Request, admin: User) -> PlacesState:
         ),
         reconcile=outcome.state,
         nodered=answered,
-        map=_map_sources(app_state.manifest.map),
+        map=sources,
     )
 
 

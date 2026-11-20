@@ -2,11 +2,11 @@
   The map the picker shows, and the only code that imports MapLibre. MapPicker loads this file on demand, so the library
   and its worker stay out of the page's first download. The phone's browser fetches the map's style, tiles, fonts, and
   sprites from `styleUrl`'s host; the device fetches nothing, and every request is sent with no referrer.
-  It opens at the pin (zoom 17), else at `centre` (zoom 14), else on the whole world. A tap sets `pin`, and the marker
-  can be dragged to the exact spot. Rotation and tilt are off, so north stays up. It says `ready` when the map has
-  loaded and `failed`, once, when the browser can't make the map (no WebGL2), an error comes first, or nothing has
-  loaded in 10 seconds (no internet, say). A longitude is wrapped into -180 to 180, because the map repeats the world
-  sideways; nothing here rounds a value.
+  It opens at the pin (zoom 17), else at `centre` (zoom 14), else over `region` (zoom 3), else on the whole world. A
+  tap sets `pin`, and the marker can be dragged to the exact spot. Rotation and tilt are off, so north stays up. It
+  says `ready` when the map has loaded and `failed`, once, when the browser can't make the map (no WebGL2), an error
+  comes first, or nothing has loaded in 10 seconds (no internet, say). A longitude is wrapped into -180 to 180, because
+  the map repeats the world sideways; nothing here rounds a value.
 -->
 <script setup lang="ts">
 import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl'
@@ -18,8 +18,10 @@ import type { LatLon } from './coordinates'
 
 // How long the map has to load before the picker gives up on it
 const LOAD_TIMEOUT_MS = 10000
+// Where the map opens over the device's region: a wide view around that city, about the size of a time zone
+const REGION_ZOOM = 3
 
-const props = defineProps<{ styleUrl: string; centre: LatLon | null }>()
+const props = defineProps<{ styleUrl: string; centre: LatLon | null; region: LatLon | null }>()
 const pin = defineModel<LatLon | null>('pin', { required: true })
 const emit = defineEmits<{ ready: []; failed: [] }>()
 
@@ -70,12 +72,12 @@ function placeMarker(value: LatLon | null) {
 onMounted(() => {
   try {
     setWorkerUrl(workerUrl)
-    const start = pin.value ?? props.centre
+    const start = pin.value ?? props.centre ?? props.region
     map = new MapLibreMap({
       container: element.value!,
       style: props.styleUrl,
       center: start ? [start.lon, start.lat] : [0, 20],
-      zoom: pin.value ? 17 : props.centre ? 14 : 1,
+      zoom: pin.value ? 17 : props.centre ? 14 : props.region ? REGION_ZOOM : 1,
       // North stays up and the map stays flat: nothing here needs a bearing or a tilt
       dragRotate: false,
       pitchWithRotate: false,
@@ -105,7 +107,13 @@ onMounted(() => {
     timer = setTimeout(fail, LOAD_TIMEOUT_MS)
     placeMarker(pin.value)
   } catch {
-    // The browser can't make the map (no WebGL2, say): the picker says so, like any other failure
+    // The browser can't make the map (no WebGL2, say), or a call after making it threw: the picker says so, like any
+    // other failure, and a map that was made is removed, so it stops loading behind the message
+    try {
+      map?.remove()
+    } catch {
+      // nothing more to do for a map that won't go
+    }
     map = null
     fail()
   }

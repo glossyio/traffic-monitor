@@ -226,9 +226,10 @@ def system_info(disk_paths: list[str]) -> dict:
 
 def time_state() -> list[str]:
     """Fake mode's stand-in for timedatectl show, in FakeClock's starting time zone."""
-    now = time.strftime("%a %Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    zone = FakeClock().timezone
+    now = datetime.now(ZoneInfo(zone)).strftime("%a %Y-%m-%d %H:%M:%S %Z")
     return [
-        "Timezone=Etc/UTC",
+        f"Timezone={zone}",
         "LocalRTC=no",
         "CanNTP=yes",
         "NTP=yes",
@@ -254,7 +255,7 @@ class FakeClock:
     ]
 
     def __init__(self):
-        self.timezone = "Etc/UTC"
+        self.timezone = "America/Los_Angeles"  # with FakeNetwork.country, gives the Location page's map a region
         self.ntp = True
 
     def show(self) -> TimeState:
@@ -301,6 +302,7 @@ class FakeNetwork:
             "address": "10.42.0.1",
         }
         self.password: str | None = "ABCD-EFGH-JKLM"
+        self.country = "US"  # the Wi-Fi country
         self.saved: list[dict] = [
             {
                 "uuid": "11111111-1111-4111-8111-111111111111", "name": "Home", "in_use": False, "automatic": True,

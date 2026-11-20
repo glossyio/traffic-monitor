@@ -38,7 +38,14 @@ const start = computed(() => parsePair(coordinates.value))
     </p>
     <template v-else>
       <v-btn variant="outlined" color="primary" min-height="44" @click="open = true">Pick on a map</v-btn>
-      <MapPicker v-model:open="open" :style-url="map.style_url" :start="start" :centre="props.centre" @picked="picked" />
+      <MapPicker
+        v-model:open="open"
+        :style-url="map.style_url"
+        :start="start"
+        :centre="props.centre"
+        :region="map.region ?? null"
+        @picked="picked"
+      />
     </template>
   </div>
 </template>

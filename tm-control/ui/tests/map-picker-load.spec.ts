@@ -31,6 +31,7 @@ it('a map file that cannot be fetched says so, and Try again asks for it again',
     styleUrl: 'https://tiles.example.invalid/style',
     start: null,
     centre: null,
+    region: null,
   })
   await flushPromises()
   await flushPromises()

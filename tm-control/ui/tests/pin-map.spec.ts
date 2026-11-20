@@ -11,6 +11,7 @@ const fake = vi.hoisted(() => {
   class FakeMap {
     static all: FakeMap[] = []
     static failWith: Error | null = null // the constructor throws this, as MapLibre does with no WebGL2
+    static failAfter: Error | null = null // a call after the constructor throws this
     options: Record<string, unknown>
     handlers: Record<string, Handler[]> = {}
     controls: { control: unknown; position?: string }[] = []
@@ -27,6 +28,7 @@ const fake = vi.hoisted(() => {
       return this
     }
     addControl(control: unknown, position?: string) {
+      if (FakeMap.failAfter) throw FakeMap.failAfter
       this.controls.push({ control, position })
       return this
     }
@@ -95,10 +97,11 @@ const LATLON = { lat: 45.52252, lon: -122.6912 }
 
 type Pin = { lat: number; lon: number } | null
 
-function mountMap(props: { centre?: Pin; pin?: Pin } = {}) {
+function mountMap(props: { centre?: Pin; pin?: Pin; region?: Pin } = {}) {
   const wrapper = mountAlone(PinMap, {
     styleUrl: STYLE,
     centre: props.centre ?? null,
+    region: props.region ?? null,
     pin: props.pin ?? null,
     'onUpdate:pin': (value: Pin) => wrapper.setProps({ pin: value }),
   })
@@ -133,6 +136,21 @@ describe('the pin map', () => {
     mountMap()
     expect(theMap().options).toMatchObject({ center: [0, 20], zoom: 1 })
     expect(fake.FakeMarker.all).toHaveLength(1) // only the first mount had a pin
+  })
+
+  it('with no pin and no centre, opens over the region at zoom 3; a centre or a pin wins over it', () => {
+    const region = { lat: 34.05, lon: -118.24 }
+    mountMap({ region })
+    expect(theMap().options).toMatchObject({ center: [-118.24, 34.05], zoom: 3 })
+    expect(fake.FakeMarker.all).toHaveLength(0) // a region is where to look, not a point
+
+    fake.FakeMap.all.length = 0
+    mountMap({ region, centre: { lat: 45.0, lon: -122.0 } })
+    expect(theMap().options).toMatchObject({ center: [-122.0, 45.0], zoom: 14 })
+
+    fake.FakeMap.all.length = 0
+    mountMap({ region, centre: { lat: 45.0, lon: -122.0 }, pin: LATLON })
+    expect(theMap().options).toMatchObject({ center: [-122.6912, 45.52252], zoom: 17 })
   })
 
   it('sends every request with no referrer', () => {
@@ -222,6 +240,16 @@ describe('a map that cannot be made', () => {
   })
   afterEach(() => {
     fake.FakeMap.failWith = null
+    fake.FakeMap.failAfter = null
+  })
+
+  it('removes a map that was made before a later call threw, and says failed once', () => {
+    fake.FakeMap.failAfter = new Error('a call after the constructor')
+    const wrapper = mountMap({ pin: LATLON })
+    expect(theMap().removed).toBe(true)
+    expect(wrapper.emitted('failed')).toHaveLength(1)
+    expect(wrapper.emitted('ready')).toBeUndefined()
+    wrapper.unmount() // the map was dropped: unmounting removes nothing twice and is clean
   })
 
   it('says failed once when the browser has no WebGL2', () => {

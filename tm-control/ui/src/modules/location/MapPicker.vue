@@ -19,6 +19,7 @@ const props = defineProps<{
   styleUrl: string
   start: LatLon | null // the point already in the form's field, if any
   centre: LatLon | null // where to look first with no point: the place in use
+  region: LatLon | null // where to look with neither: the device's time zone's city
 }>()
 const emit = defineEmits<{ picked: [point: LatLon] }>()
 
@@ -122,6 +123,7 @@ function use() {
             :pin="pin"
             :style-url="styleUrl"
             :centre="centre"
+            :region="region"
             @update:pin="pinned"
             @failed="failed = true"
           />

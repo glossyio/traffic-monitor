@@ -12,12 +12,12 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
   return {
     __esModule: true,
     default: defineComponent({
-      props: { styleUrl: String, centre: Object, pin: Object },
+      props: { styleUrl: String, centre: Object, region: Object, pin: Object },
       emits: ['ready', 'failed', 'update:pin'],
       setup(props, { emit }) {
         onMounted(() => (stub.mounts += 1))
         return () =>
-          h('div', { class: 'pin-map-stub', 'data-style': props.styleUrl }, [
+          h('div', { class: 'pin-map-stub', 'data-style': props.styleUrl, 'data-region': JSON.stringify(props.region ?? null) }, [
             h(
               'button',
               { type: 'button', onClick: () => emit('update:pin', { lat: 45.52252, lon: -122.6912 }) },
@@ -38,6 +38,7 @@ function mountPicker(props: Record<string, unknown> = {}) {
     styleUrl: STYLE,
     start: null,
     centre: null,
+    region: null,
     'onUpdate:open': (value: boolean) => wrapper.setProps({ open: value }),
     ...props,
   })
@@ -71,6 +72,12 @@ describe('the map picker', () => {
     )
     expect(dialogText()).toContain('Tap the map to place the pin, then drag it to the exact spot.')
     expect(document.querySelector('.v-dialog')?.getAttribute('aria-label')).toBe('Pick the place on a map')
+  })
+
+  it('hands the region to the map, for when there is no point and no centre', async () => {
+    mountPicker({ region: { lat: 34.05, lon: -118.24 } })
+    await settle()
+    expect(document.querySelector('.pin-map-stub')?.getAttribute('data-region')).toBe('{"lat":34.05,"lon":-118.24}')
   })
 
   it('Use this point is disabled until there is a pin, then answers with it', async () => {

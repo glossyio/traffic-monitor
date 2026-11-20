@@ -14,13 +14,17 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
   return {
     __esModule: true,
     default: defineComponent({
-      props: { styleUrl: String, centre: Object, pin: Object },
+      props: { styleUrl: String, centre: Object, region: Object, pin: Object },
       emits: ['ready', 'failed', 'update:pin'],
-      setup(_props, { emit }) {
+      setup(props, { emit }) {
         return () =>
           h(
             'button',
-            { type: 'button', onClick: () => emit('update:pin', { lat: 45.52252, lon: -122.6912 }) },
+            {
+              type: 'button',
+              'data-region': JSON.stringify(props.region ?? null),
+              onClick: () => emit('update:pin', { lat: 45.52252, lon: -122.6912 }),
+            },
             'Drop the pin',
           )
       },
@@ -84,6 +88,20 @@ describe('the map pick button', () => {
     await clickInDialog('Use this point')
     expect((wrapper.props() as Record<string, unknown>).coordinates).toBe('45.52252, -122.69120')
     expect(wrapper.emitted('picked')).toHaveLength(1)
+  })
+
+  it('the picker is given the map\'s region, or none', async () => {
+    const wrapper = mountButton({ ...ON, region: { lat: 34.05, lon: -118.24 } })
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    await flushPromises()
+    expect(document.querySelector('[data-region]')?.getAttribute('data-region')).toBe('{"lat":34.05,"lon":-118.24}')
+    document.body.replaceChildren()
+    const without = mountButton(ON)
+    await without.find('button').trigger('click')
+    await flushPromises()
+    await flushPromises()
+    expect(document.querySelector('[data-region]')?.getAttribute('data-region')).toBe('null')
   })
 
   it('the picker starts at the coordinates already in the field', async () => {

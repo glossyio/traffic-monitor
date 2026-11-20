@@ -1847,6 +1847,13 @@ export interface components {
             /** Tracked */
             tracked: string[];
         };
+        /** LatLon */
+        LatLon: {
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+        };
         /** Link */
         Link: {
             /** Connected */
@@ -1878,6 +1885,7 @@ export interface components {
             style_url: string | null;
             /** Overpass Url */
             overpass_url: string | null;
+            region?: components["schemas"]["LatLon"] | null;
         };
         /** Memory */
         Memory: {
