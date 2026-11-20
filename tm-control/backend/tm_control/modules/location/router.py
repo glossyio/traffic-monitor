@@ -3,7 +3,8 @@
 GET lists the places (after reconcile.ensure has brought the store and config.yml into step). An admin can plan a
 place (POST), edit or delete one, deploy one (write it and its bearings into Node-RED's config.yml, then wait for
 Node-RED to start the deployments), correct a used place's location or one deployment's bearing, change the precision
-tmdb stores coordinates at, export the places with their exact coordinates, and import planned places from CSV.
+tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds them
+(a one-time download link; Node-RED makes the copy), and import planned places from CSV.
 
 Every write to config.yml or the places store holds app.state.reconcile_lock, so a GET's reconcile never sees half of
 one. config.yml is written before the store, so a refused or failed save leaves both as they were. No coordinate,
@@ -15,6 +16,7 @@ import csv
 import io
 import logging
 import math
+import secrets
 import time
 from time import sleep
 from typing import Literal
@@ -23,9 +25,9 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 
 from tm_control.adapters.nodered import NodeRedError
-from tm_control.core.auth import Audit, User
+from tm_control.core.auth import DOWNLOAD_PATH, DOWNLOAD_TOKEN, Audit, User
 from tm_control.core.errors import ApiError
-from tm_control.modules.auth.deps import require_admin
+from tm_control.modules.auth.deps import client_ip, require_admin
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import DEFAULT_PRECISION, SENSOR_TYPES, ConfigError, NodeRedConfig
@@ -140,6 +142,11 @@ class LocationCorrection(BaseModel):
 class BearingCorrection(BaseModel):
     bearing: str = Field(max_length=16)
     reason: str | None = Field(default=None, max_length=TEXT_MAX)
+
+
+class DatabaseCopyOut(BaseModel):
+    url: str  # a one-time /storefiles link to the copy
+    places: int  # how many places' exact locations the copy holds
 
 
 class ImportIn(BaseModel):
@@ -417,6 +424,44 @@ def export_places(request: Request, admin: User = Depends(require_admin)):
             "Cache-Control": "no-store",
         },
     )
+
+
+@router.post("/database-copy", response_model=DatabaseCopyOut)
+def database_copy(request: Request, response: Response, admin: User = Depends(require_admin)):
+    """Hand Node-RED the exact locations of the places this device has been at (in use or used, with a location),
+    and answer with a one-time /storefiles link to a copy of the database that holds them in a table of its own.
+
+    The control app never opens the database; Node-RED makes the copy when the link is fetched. A planned place is
+    never sent. The audit row, the log, and every message hold the count only: no coordinate, ticket, or link.
+    """
+    app_state = request.app.state
+    try:
+        reconcile.ensure(app_state, admin.id)
+    except ConfigError as error:
+        raise config_error(error) from None
+    places = [
+        {"survey_id": place.id, "lat": place.lat, "lon": place.lon}
+        for place in Places(app_state.state).list()
+        if place.status in ("in_use", "used") and place.lat is not None and place.lon is not None
+    ]
+    if not places:
+        raise ApiError(
+            409,
+            "no_exact_locations",
+            "No place this device has been at has an exact location, so a copy would hold nothing more than the "
+            "database download on the Data export page.",
+        )
+    ticket = secrets.token_hex(16)
+    try:
+        app_state.nodered.keep_exact_copy(ticket, places)
+    except NodeRedError as error:
+        raise _nodered_error(error, "The copy wasn't started.") from None
+    files = f"tmdb-exact-{ticket}"
+    # Always with a token: a browser with a session never spends it, and Android's downloader, which has none, needs it.
+    token = app_state.download_grants.issue(admin, client_ip(request), files, time.monotonic())
+    Audit(app_state.state).record(admin.id, "survey.database_copy", str(len(places)))
+    response.headers["Cache-Control"] = "no-store"
+    return {"url": f"{DOWNLOAD_PATH}?files={files}&{DOWNLOAD_TOKEN}={token}", "places": len(places)}
 
 
 @router.post("/import", response_model=ImportOut)

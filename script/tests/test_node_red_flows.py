@@ -5,12 +5,13 @@ import re
 import sqlite3
 import subprocess
 import textwrap
+import time
 from datetime import datetime
 from pathlib import Path
 
 import pytest
 import yaml
-from required_tools import needs
+from required_tools import missing_tool, needs, needs_node_sqlite, node_has_sqlite
 from tmsetup_render import load_role_yaml, render
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
@@ -43,7 +44,8 @@ def test_database_download_tars_a_copy():
     copy = one("copy database for download")
     assert (copy["type"], copy["sqlquery"], copy["mydb"]) == ("sqlite", "msg.topic", "2f60c1ab30a6fc8f")
     assert "VACUUM INTO" in one("copy database first?")["func"]
-    assert set(one("catch database copy")["scope"]) == {copy["id"], one("copy database first?")["id"]}
+    assert set(one("catch database copy")["scope"]) == {copy["id"], one("copy database first?")["id"],
+                                                        one("write exact locations into the copy")["id"]}
 
 
 def test_download_names_cannot_become_tar_options():
@@ -105,7 +107,7 @@ def test_cancel_stops_a_database_download_during_the_copy():
     stop = by_name["stop if cancelled"]
     assert by_name["copy database for download"]["wires"] == [[stop["id"]]]
     assert stop["outputs"] == 2
-    assert stop["wires"][0] == [by_name["zip files"]["id"]]
+    assert stop["wires"][0] == [by_name["write exact locations into the copy"]["id"]]
     assert set(stop["wires"][1]) == {"8a12d83e700bcaa6", "9297900926075b54"}
     assert '(flow.get("downloadCancelCount") || 0) !== msg.cancelCountAtCopy' in stop["func"]
     assert "Date.now()" not in stop["func"]
@@ -143,6 +145,60 @@ def test_database_copies_in_progress_count_against_free_space():
     assert "Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024" in func
     increment = func.index('flow.set("databaseCopiesInProgress", copies + 1);')
     assert func.index("throw new Error(") < increment < func.index("msg.countsAsCopy = true;") < func.index("mkdirSync(msg.snapshot")
+
+
+SPACE_CHECK = textwrap.dedent(r"""
+    const vm = require("vm"), path = require("path");
+    const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    const GB = 1024 ** 3, size = 3 * GB;
+    const files = { "/db/tmdb.sqlite": size, ["/db/snapshot/earlier/" + input.name]: size };
+    const fs = {
+        existsSync: (p) => p === "/db/snapshot",
+        readdirSync: () => ["earlier"],
+        statSync: (p) => {
+            if (p === "/db/snapshot/earlier") return { mtimeMs: Date.now() };
+            if (p in files) return { size: files[p] };
+            throw new Error("ENOENT");
+        },
+        statfsSync: () => ({ bavail: (4 * GB) / 4096, bsize: 4096 }),
+        mkdirSync: () => {},
+        rmSync: () => {},
+    };
+    const flowStore = { databaseCopiesInProgress: 1 };
+    const context = vm.createContext({
+        Date, Math,
+        global: { get: (key) => ({ fs, path })[key] },
+        flow: { get: (key) => flowStore[key], set: (key, value) => { flowStore[key] = value; } },
+    });
+    let outcome = "allowed";
+    try {
+        new vm.Script("(function(msg, node) {" + input.func + "\n})").runInContext(context)({ snapshot: "/db/snapshot/new" }, {});
+    } catch (err) {
+        outcome = "refused";
+    }
+    process.stdout.write(outcome);
+""")
+
+
+@needs_node
+@pytest.mark.parametrize("name", ["tmdb.sqlite", "tmdb-exact-locations.sqlite"])
+def test_free_space_counts_an_earlier_copy_under_either_name(name):
+    """One earlier 3 GB copy is fully written and still streaming, and 4 GB is free: enough for this copy."""
+    by_name, _ = _download_nodes()
+    result = subprocess.run(["node", "-e", SPACE_CHECK], capture_output=True, text=True, timeout=30,
+                            input=json.dumps({"func": by_name["copy database first?"]["func"], "name": name}))
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "allowed"
+
+
+@needs_node
+def test_starting_the_flows_drops_the_exact_location_lists():
+    by_name, _ = _download_nodes()
+    cleanup = by_name["remove database copies left by a restart"]
+    result = run_functions([(cleanup, {})], flow={"exactCopyPlaces": {"/db/snapshot/x1": [PLACE]}},
+                           context={"exact_copies": {TICKET: {"places": [PLACE], "expires": time.time() * 1000 + 60000}}})
+    assert result["flow"]["exactCopyPlaces"] == {} and result["global"]["exact_copies"] == {}
+    assert "45.52252" not in json.dumps(result["results"])
 
 
 def test_every_end_of_a_database_copy_releases_its_count():
@@ -189,8 +245,12 @@ const vm = require("vm");
 const util = require("util");
 const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const store = input.global;
+// functionGlobalContext's modules (settings.js): global.get answers Node's own, and they are not in the context
+// printed below
+const modules = Object.fromEntries(input.modules.map((name) => [name, require("node:" + name)]));
 const global = {
-    get: (key) => key.split(".").reduce((value, part) => (value == null ? undefined : value[part]), store),
+    get: (key) => (key in modules ? modules[key]
+        : key.split(".").reduce((value, part) => (value == null ? undefined : value[part]), store)),
     set: (key, value) => {
         const parts = key.split(".");
         let target = store;
@@ -223,27 +283,40 @@ for (const step of input.steps) {
         new vm.Script("(function(node) {" + step.initialize + "\n})").runInContext(context)(node);
     }
     started.add(step.id);
-    const result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
+    let result;
+    try {
+        result = new vm.Script("(function(msg, node) {" + step.func + "\n})").runInContext(context)(step.msg, node);
+    } catch (err) {
+        // Node-RED logs an error a function throws, with the msg, for the catch nodes
+        logged.push(["error", String(err.message), true]);
+    }
     // a key whose value is undefined vanishes in JSON, so the payload's keys are reported on their own
     const payload = result == null ? undefined : result.payload;
     const keys = payload !== null && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : null;
     results.push({ result: result === undefined ? null : result, logged, keys });
 }
-console.log(JSON.stringify({ results, global: store, flow: flowStore }));
+// Ends the process itself once the output is written: a function's pending timer (the exact-copy list's ten
+// minutes) must not hold a test for as long as the timer.
+process.stdout.write(JSON.stringify({ results, global: store, flow: flowStore }), () => process.exit(0));
 """
 
 
-def run_functions(steps, env=None, context=None, flow=None):
-    """Run (node, msg) steps under node; returns each step's return value and log, and the global context after."""
+def run_functions(steps, env=None, context=None, flow=None, modules=()):
+    """Run (node, msg) steps under node; returns each step's return value and log, and the global context after.
+
+    modules names what functionGlobalContext holds beyond the context ("fs", "path", "sqlite"): global.get answers
+    Node's module for each. A step whose function throws gets the result null and the error's message in its log."""
     payload = {
+        "modules": list(modules),
         "env": env or {},
         "global": context or {},
         "flow": flow or {},
         "steps": [{"id": node["id"], "func": node["func"], "initialize": node.get("initialize", ""), "msg": msg}
                   for node, msg in steps],
     }
-    result = subprocess.run(["node", "-e", HARNESS], input=json.dumps(payload), capture_output=True, text=True,
-                            timeout=30)
+    # node:sqlite prints an ExperimentalWarning on stderr under Node 22; the tests read stdout only
+    result = subprocess.run(["node", "--disable-warning=ExperimentalWarning", "-e", HARNESS],
+                            input=json.dumps(payload), capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     return json.loads(result.stdout)
 
@@ -1233,11 +1306,13 @@ def test_the_radar_pickers_keep_a_selection_that_is_still_there():
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
-                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"}
+                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing",
+                     "/tm-internal/database/exact-copy"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
-                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post"}
+                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post",
+                       "/tm-internal/database/exact-copy": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
@@ -1262,7 +1337,8 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
               "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
-              "/tm-internal/deployments/precision": "tm-internal: validate precision"}
+              "/tm-internal/deployments/precision": "tm-internal: validate precision",
+              "/tm-internal/database/exact-copy": "tm-internal: validate exact copy"}
 
 
 def tm_internal_endpoints():
@@ -1503,6 +1579,133 @@ def test_tm_internal_correction_endpoints_exist():
         assert endpoints[url]["method"] == "post", url
         [[check_id]] = endpoints[url]["wires"]
         assert by_id[check_id]["name"] == "tm-internal: check token", url
+
+
+TICKET = "0123456789abcdef0123456789abcdef"
+PLACE = {"survey_id": "3f9a1c2e-si", "lat": 45.52252, "lon": -122.6912}
+
+
+def exact_copy_msg(body):
+    return {"req": {}, "payload": body}
+
+
+@needs_node
+@pytest.mark.parametrize("body, detail", [
+    ({"ticket": TICKET, "places": [PLACE]}, None),
+    ({"ticket": TICKET.upper(), "places": [PLACE]}, "ticket"),
+    ({"ticket": TICKET[:-1], "places": [PLACE]}, "ticket"),
+    ({"places": [PLACE]}, "ticket"),
+    ({"ticket": TICKET, "places": []}, "places"),
+    ({"ticket": TICKET, "places": "3f9a1c2e-si"}, "places"),
+    ({"ticket": TICKET, "places": [PLACE, PLACE]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lat": "45.52252"}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lon": None}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lat": 90.5}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "lon": -180.5}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "survey_id": "x' OR 1=1"}]}, "places"),
+    ({"ticket": TICKET, "places": [{**PLACE, "survey_id": "3F9A1C2E-si"}]}, "places"),
+    ({"ticket": TICKET, "places": ["3f9a1c2e-si"]}, "places"),
+    ("ticket=x", "ticket"),
+])
+def test_exact_copy_list_is_validated(body, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+    [step] = run_functions([(validator, exact_copy_msg(body))])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["exactCopy"] == {"ticket": TICKET, "places": [PLACE]}
+        assert "payload" not in passed
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert "45.52252" not in json.dumps(refused)
+
+
+@needs_node
+@pytest.mark.parametrize("body", [{"ticket": TICKET, "places": [PLACE]}, {"ticket": "x", "places": [PLACE]}],
+                         ids=["passed", "refused"])
+def test_exact_copy_validator_leaves_no_request_body_on_either_output(body):
+    """The init-config tab's catch-all feeds a full-message debug node, so the posted list must not stay on msg.req."""
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+    steps = [(validator, {"req": {"body": body, "headers": {}}, "payload": body}), (validator, {"payload": body})]
+    for step in run_functions(steps)["results"]:
+        [output] = [msg for msg in step["result"] if msg is not None]
+        assert "body" not in output.get("req", {})
+        # the list itself goes on to "keep exact copy list" in msg.exactCopy; nothing else on msg holds it
+        assert "45.52252" not in json.dumps({key: value for key, value in output.items() if key != "exactCopy"})
+
+
+@needs_node
+def test_exact_copy_list_accepts_the_largest_list_and_refuses_one_more():
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+
+    def places(count):
+        return [{"survey_id": f"{n:08x}-si", "lat": 45.0, "lon": -122.0} for n in range(count)]
+
+    [ok, too_many] = run_functions([(validator, exact_copy_msg({"ticket": TICKET, "places": places(10000)})),
+                                    (validator, exact_copy_msg({"ticket": TICKET, "places": places(10001)}))])["results"]
+    assert ok["result"][1] is None and len(ok["result"][0]["exactCopy"]["places"]) == 10000
+    assert too_many["result"][0] is None and too_many["result"][1]["payload"] == bad_request("places")
+
+
+@needs_node
+def test_exact_copy_list_keeps_only_three_keys_per_place():
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate exact copy")
+    body = {"ticket": TICKET, "places": [{**PLACE, "description": "x"}]}
+    [step] = run_functions([(validator, exact_copy_msg(body))])["results"]
+    assert step["result"][0]["exactCopy"]["places"] == [PLACE]
+
+
+def keep_node():
+    return named(json.loads(FLOWS.read_text()), "tm-internal: keep exact copy list")
+
+
+@needs_node
+def test_keep_stores_the_list_for_ten_minutes_and_answers_204():
+    before = time.time() * 1000
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})])
+    [step] = result["results"]
+    kept = result["global"]["exact_copies"][TICKET]
+    assert kept["places"] == [PLACE]
+    assert 595000 <= kept["expires"] - before <= 605000
+    msg = step["result"]
+    assert msg["statusCode"] == 204 and msg["payload"] == "" and "exactCopy" not in msg
+    assert "45.52252" not in json.dumps(msg)
+    assert step["logged"] == []
+
+
+@needs_node
+def test_keep_drops_expired_lists_and_keeps_at_most_four():
+    now = time.time() * 1000
+    old = "f" * 32
+    current = {f"{n:032x}": {"places": [PLACE], "expires": now + 100000 * (n + 1)} for n in range(1, 5)}
+    context = {"exact_copies": {old: {"places": [PLACE], "expires": now - 1000}, **current}}
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})], context=context)
+    kept = result["global"]["exact_copies"]
+    soonest = f"{1:032x}"
+    assert old not in kept and soonest not in kept
+    assert len(kept) == 4 and TICKET in kept
+    assert set(kept) == {TICKET, f"{2:032x}", f"{3:032x}", f"{4:032x}"}
+
+
+@needs_node
+def test_keep_replaces_a_ticket_it_already_holds():
+    now = time.time() * 1000
+    context = {"exact_copies": {TICKET: {"places": [], "expires": now + 1000}}}
+    result = run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})], context=context)
+    assert result["global"]["exact_copies"][TICKET]["places"] == [PLACE]
+
+
+def test_keep_sets_a_timer_that_matches_the_download_links_life():
+    func = keep_node()["func"]
+    assert "setTimeout(" in func and "600000" in func and "DownloadGrants.TTL" in func
+
+
+@needs_node
+def test_the_harness_ends_the_process_without_waiting_for_a_timer():
+    started = time.monotonic()
+    run_functions([(keep_node(), {"exactCopy": {"ticket": TICKET, "places": [PLACE]}})])
+    assert time.monotonic() - started < 10
 
 
 LOCATION_SQL = ("UPDATE deployment SET lat = ROUND($lat, location_precision), "
@@ -3399,3 +3602,328 @@ def test_the_car_speed_statistics_count_each_source():
     assert list(result)[:3] == ["count", "count_radar", "count_frigate"]
     assert (result["count"], result["count_radar"], result["count_frigate"]) == (5, 3, 2)
     assert result["max_speed"] == 31.0
+
+
+# The exact locations for a database download: "Validate filenames, setup tar" claims the list for the request, and
+# "write exact locations into the copy" adds it to the throwaway copy, never to tmdb.sqlite.
+
+WRITER = "write exact locations into the copy"
+EXACT_NAME = "tmdb-exact-locations.sqlite"
+EXACT_FILES = "tmdb-exact-" + TICKET
+LIVE_ROWS = [
+    ("1-00000001-d", "3f9a1c2e-si", 45.5, -122.7, 1),
+    ("1-00000002-d", "3f9a1c2e-si", None, None, None),
+    ("1-00000003-d", "aaaaaaaa-si", 45.0, -122.0, 1),
+    ("1-00000004-d", None, 45.0, -122.0, 2),
+]
+
+
+def writer_node():
+    return named(json.loads(FLOWS.read_text()), WRITER)
+
+
+def validate_node():
+    return named(json.loads(FLOWS.read_text()), "Validate filenames, setup tar")
+
+
+def make_database(path, rows=LIVE_ROWS):
+    """A database with the schema and these deployment rows, as tmdb.sqlite is after a VACUUM INTO."""
+    import sqlite3
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path)
+    db.executescript((FLOWS.parent.parent / "schema" / "schema.sql").read_text())
+    for id_, survey_id, lat, lon, precision in rows:
+        db.execute("INSERT INTO deployment (id, survey_id, lat, lon, location_precision) VALUES (?, ?, ?, ?, ?)",
+                   (id_, survey_id, lat, lon, precision))
+    db.commit()
+    db.close()
+
+
+@pytest.fixture
+def exact_copy_files(tmp_path):
+    """A live database, its copy in a snapshot folder, and the writer's inputs for them."""
+    live = tmp_path / "tmdb.sqlite"
+    snapshot = tmp_path / "snapshot" / "x1"
+    make_database(live)
+    make_database(snapshot / "tmdb.sqlite")
+    return {"live": live, "snapshot": snapshot, "copy": snapshot / EXACT_NAME,
+            "env": {"TM_DATABASE_PATH_TMDB": str(live)}}
+
+
+def run_writer(files, places=(PLACE,), msg=None, modules=("fs", "path", "sqlite"), snapshot=None):
+    snapshot = str(snapshot or files["snapshot"])
+    flow = {"exactCopyPlaces": {snapshot: list(places)}}
+    msg = {"snapshot": snapshot, "exactCopy": True} if msg is None else msg
+    result = run_functions([(writer_node(), msg)], env=files["env"], flow=flow, modules=modules)
+    return result["results"][0], result["flow"]
+
+
+def query(path, sql):
+    import sqlite3
+    db = sqlite3.connect(path)
+    try:
+        return db.execute(sql).fetchall()
+    finally:
+        db.close()
+
+
+DEPLOYMENT_SQL = "SELECT * FROM deployment ORDER BY id"
+
+
+@needs_node_sqlite
+def test_exact_writer_adds_the_lookup_table_and_leaves_deployment_alone(exact_copy_files):
+    files = exact_copy_files
+    before = query(files["snapshot"] / "tmdb.sqlite", DEPLOYMENT_SQL)
+    step, flow = run_writer(files)
+    assert step["logged"] == [] and step["result"]["exactCopy"] is True
+    assert sorted(path.name for path in files["snapshot"].iterdir()) == [EXACT_NAME]
+    assert query(files["copy"], DEPLOYMENT_SQL) == before
+    assert query(files["copy"], "SELECT * FROM survey_exact_location") == [("3f9a1c2e-si", 45.52252, -122.6912)]
+    assert query(files["copy"], "SELECT id, exact_lat, exact_lon FROM deployment_exact ORDER BY id") == [
+        ("1-00000001-d", 45.52252, -122.6912), ("1-00000002-d", 45.52252, -122.6912),
+        ("1-00000003-d", None, None), ("1-00000004-d", None, None)]
+    columns = [row[1] for row in query(files["copy"], "PRAGMA table_info(deployment)")]
+    view = [row[1] for row in query(files["copy"], "PRAGMA table_info(deployment_exact)")]
+    assert view == columns + ["exact_lat", "exact_lon"]
+    assert query(files["copy"], "SELECT id, lat, lon, location_precision FROM deployment ORDER BY id") == [
+        (id_, lat, lon, precision) for id_, _, lat, lon, precision in LIVE_ROWS]
+    assert query(files["copy"], "PRAGMA integrity_check") == [("ok",)]
+    assert flow["exactCopyPlaces"] == {}
+
+
+@needs_node_sqlite
+def test_exact_writer_leaves_out_a_place_the_database_never_names(exact_copy_files):
+    files = exact_copy_files
+    never = {"survey_id": "bbbbbbbb-si", "lat": 45.0, "lon": -122.0}
+    step, _ = run_writer(files, places=[PLACE, never])
+    assert step["logged"] == []
+    assert query(files["copy"], "SELECT survey_id FROM survey_exact_location") == [("3f9a1c2e-si",)]
+
+
+@needs_node_sqlite
+def test_exact_writer_never_touches_the_live_database(exact_copy_files):
+    import hashlib
+    files = exact_copy_files
+    before = hashlib.sha256(files["live"].read_bytes()).hexdigest()
+    run_writer(files)
+    assert hashlib.sha256(files["live"].read_bytes()).hexdigest() == before
+    assert [row[0] for row in query(files["live"], "SELECT name FROM sqlite_master WHERE name LIKE '%exact%'")] == []
+
+
+@needs_node_sqlite
+def test_exact_writer_refuses_the_live_database_and_a_folder_outside_snapshot(tmp_path):
+    # (a) the live database is the very file under snapshot/x1
+    inside = tmp_path / "snapshot" / "x1"
+    make_database(inside / "tmdb.sqlite")
+    files = {"snapshot": inside, "copy": inside / EXACT_NAME, "env": {"TM_DATABASE_PATH_TMDB": str(inside / "tmdb.sqlite")}}
+    step, _ = run_writer(files)
+    assert step["result"] is None and [level for level, *_ in step["logged"]] == ["error"]
+    assert query(inside / "tmdb.sqlite", "SELECT name FROM sqlite_master WHERE name = 'survey_exact_location'") == []
+    assert not (inside / EXACT_NAME).exists()
+    # (b) a folder that isn't under a folder named snapshot
+    live = tmp_path / "tmdb.sqlite"
+    make_database(live)
+    elsewhere = tmp_path / "elsewhere" / "x1"
+    make_database(elsewhere / "tmdb.sqlite")
+    files = {"snapshot": elsewhere, "env": {"TM_DATABASE_PATH_TMDB": str(live)}}
+    step, _ = run_writer(files)
+    assert step["result"] is None and [level for level, *_ in step["logged"]] == ["error"]
+    assert query(elsewhere / "tmdb.sqlite", "SELECT name FROM sqlite_master WHERE name = 'survey_exact_location'") == []
+    assert not (elsewhere / EXACT_NAME).exists()
+
+
+@needs_node_sqlite
+def test_a_failed_rewrite_is_caught_and_removes_the_copy(tmp_path):
+    import sqlite3
+    live = tmp_path / "tmdb.sqlite"
+    make_database(live)
+    snapshot = tmp_path / "snapshot" / "x1"
+    snapshot.mkdir(parents=True)
+    db = sqlite3.connect(snapshot / "tmdb.sqlite")
+    db.execute("CREATE TABLE other (id INTEGER)")
+    db.commit()
+    db.close()
+    files = {"snapshot": snapshot, "env": {"TM_DATABASE_PATH_TMDB": str(live)}}
+    step, _ = run_writer(files)
+    assert step["result"] is None and [level for level, *_ in step["logged"]] == ["error"]
+    assert "45.52252" not in json.dumps(step) and "122.6912" not in json.dumps(step)
+    assert not (snapshot / EXACT_NAME).exists()
+    assert query(snapshot / "tmdb.sqlite", "SELECT name FROM sqlite_master WHERE name LIKE '%exact%'") == []
+    # The error reaches "catch database copy", and "database copy failed" removes the whole folder
+    by_name, _ = _download_nodes()
+    assert set(by_name["catch database copy"]["scope"]) == {
+        by_name[name]["id"] for name in ("copy database first?", "copy database for download", WRITER)}
+    assert by_name["catch database copy"]["wires"] == [[by_name["database copy failed"]["id"]]]
+    assert "rmSync(msg.snapshot" in by_name["database copy failed"]["func"]
+
+
+@needs_node
+def test_exact_writer_fails_closed_without_sqlite(tmp_path):
+    snapshot = tmp_path / "snapshot" / "x1"
+    snapshot.mkdir(parents=True)
+    (snapshot / "tmdb.sqlite").write_bytes(b"")
+    files = {"snapshot": snapshot, "env": {"TM_DATABASE_PATH_TMDB": str(tmp_path / "tmdb.sqlite")}}
+    step, flow = run_writer(files, modules=("fs", "path"))
+    assert step["result"] is None
+    [(level, text, with_msg)] = step["logged"]
+    assert (level, with_msg) == ("error", True) and text.startswith("exact copy: ")
+    assert [path.name for path in snapshot.iterdir()] == ["tmdb.sqlite"]
+    assert flow["exactCopyPlaces"] == {}
+
+
+@needs_node
+def test_exact_writer_passes_other_downloads_through():
+    flow = {"exactCopyPlaces": {"/db/snapshot/other": [PLACE]}}
+    msg = {"snapshot": "/db/snapshot/x1", "tarArgs": " -C /db/snapshot/x1 -- tmdb.sqlite"}
+    result = run_functions([(writer_node(), dict(msg))], flow=flow)
+    assert result["results"][0]["result"] == msg and result["results"][0]["logged"] == []
+    assert result["flow"] == flow
+
+
+@needs_node
+def test_exact_writer_refuses_a_copy_with_no_list(tmp_path):
+    files = {"snapshot": tmp_path / "snapshot" / "x1", "env": {}}
+    result = run_functions([(writer_node(), {"snapshot": str(files["snapshot"]), "exactCopy": True})],
+                           modules=("fs", "path", "sqlite"), flow={"exactCopyPlaces": {}})
+    [step] = result["results"]
+    assert step["result"] is None and step["logged"][0][1].startswith("exact copy: ")
+
+
+def claim(entry, files=EXACT_FILES, steps=1, flow=None):
+    """Run "Validate filenames, setup tar" steps times on a request for files, with this exact_copies entry."""
+    context = {"exact_copies": {} if entry is None else {TICKET: entry}}
+    msgs = [{"payload": {"files": files}} for _ in range(steps)]
+    return run_functions([(validate_node(), msg) for msg in msgs], env={"TM_HOSTNAME": "tm-test"}, context=context,
+                         flow=flow, modules=("fs", "path"))
+
+
+def live_entry(places=(PLACE,)):
+    return {"places": list(places), "expires": time.time() * 1000 + 60000}
+
+
+@needs_node
+def test_validate_claims_the_list_for_an_exact_copy():
+    result = claim(live_entry())
+    [step] = result["results"]
+    msg = step["result"]
+    assert msg["snapshot"].startswith("/db/snapshot/") and msg["exactCopy"] is True
+    assert msg["tarArgs"] == " -C " + msg["snapshot"] + " -- " + EXACT_NAME
+    assert msg["downloadName"].startswith("tm-test_") and msg["downloadName"].endswith("_" + EXACT_NAME.replace(".sqlite", ".tar.gz"))
+    assert "statusCode" not in msg and step["logged"] == []
+    assert result["flow"]["exactCopyPlaces"] == {msg["snapshot"]: [PLACE]}
+    # the entry stays until it expires
+    assert TICKET in result["global"]["exact_copies"]
+
+
+@needs_node
+def test_a_ticket_serves_a_second_request_in_its_time():
+    result = claim(live_entry(), steps=2)
+    first, second = (step["result"]["snapshot"] for step in result["results"])
+    assert first != second
+    assert result["flow"]["exactCopyPlaces"] == {first: [PLACE], second: [PLACE]}
+
+
+@needs_node_sqlite
+def test_a_claimed_list_outlives_its_ticket(exact_copy_files):
+    """The claim takes the list when the request arrives, so a ticket that runs out during the copy doesn't spoil it."""
+    files = exact_copy_files
+    claimed = claim(live_entry())
+    [list_for_copy] = claimed["flow"]["exactCopyPlaces"].values()
+    flow = {"exactCopyPlaces": {str(files["snapshot"]): list_for_copy}}
+    result = run_functions([(writer_node(), {"snapshot": str(files["snapshot"]), "exactCopy": True})],
+                           env=files["env"], flow=flow, context={"exact_copies": {}}, modules=("fs", "path", "sqlite"))
+    assert result["results"][0]["logged"] == []
+    assert query(files["copy"], "SELECT * FROM survey_exact_location") == [("3f9a1c2e-si", 45.52252, -122.6912)]
+
+
+EXPIRY_TEXT = "This download link has expired. Start the download again from the Location page."
+
+
+@needs_node
+@pytest.mark.parametrize("entry", [None, {"places": [PLACE], "expires": 1}], ids=["never-kept", "expired"])
+def test_validate_refuses_an_unknown_or_expired_ticket(entry):
+    result = claim(entry)
+    [step] = result["results"]
+    msg = step["result"]
+    assert msg["statusCode"] == 404 and msg["payload"] == EXPIRY_TEXT
+    assert "snapshot" not in msg and "exactCopy" not in msg
+    assert result["flow"] == {}
+    assert result["global"]["exact_copies"] == {}
+    assert [level for level, *_ in step["logged"]] == ["error"]
+    assert TICKET not in json.dumps(step["logged"])
+
+
+@needs_node
+@pytest.mark.parametrize("files", [
+    EXACT_FILES + ",other.json",
+    [EXACT_FILES, EXACT_FILES],
+    "tmdb-exact-" + TICKET.upper(),
+    "tmdb-exact-" + TICKET[:-1],
+    "tmdb-exact-" + TICKET + "x",
+], ids=["two-names", "repeated-parameter", "upper-case", "short", "long"])
+def test_only_one_exact_name_is_an_exact_copy(files):
+    """Anything else falls through to the existing checks, where /db/temp/tmdb-exact-... doesn't exist."""
+    result = claim(live_entry(), files=files)
+    msg = result["results"][0]["result"]
+    assert msg["statusCode"] in (400, 404) and "snapshot" not in msg and "exactCopy" not in msg
+    assert result["flow"] == {}
+
+
+@needs_node
+@pytest.mark.parametrize("step", ["claim", "refusal", "writer"])
+def test_no_download_message_carries_a_coordinate(step, tmp_path):
+    if step == "claim":
+        result = claim(live_entry())
+    elif step == "refusal":
+        result = claim(None)
+    else:
+        if not node_has_sqlite():
+            missing_tool("needs a node with node:sqlite (22.13 or later)")
+        live = tmp_path / "tmdb.sqlite"
+        make_database(live)
+        snapshot = tmp_path / "snapshot" / "x1"
+        make_database(snapshot / "tmdb.sqlite")
+        files = {"snapshot": snapshot, "env": {"TM_DATABASE_PATH_TMDB": str(live)}}
+        step_result, _ = run_writer(files)
+        result = {"results": [step_result]}
+    text = json.dumps(result["results"])
+    assert "45.52252" not in text and "122.6912" not in text
+
+
+def test_exact_copy_is_wired_between_the_copy_and_tar():
+    by_name, by_id = _download_nodes()
+    stop, writer, zipper = by_name["stop if cancelled"], by_name[WRITER], by_name["zip files"]
+    assert stop["wires"][0] == [writer["id"]]
+    assert writer["type"] == "function" and writer["outputs"] == 1 and writer["wires"] == [[zipper["id"]]]
+    assert writer["id"] in by_id["c3e71a6b79637b6f"]["nodes"] and writer["g"] == "c3e71a6b79637b6f"
+    assert by_name["stop if cancelled"]["func"].count("exactCopyPlaces") == 1
+    assert by_name["database copy failed"]["func"].count("exactCopyPlaces") == 1
+
+
+def test_only_the_copy_writer_opens_a_database_itself():
+    flows = json.loads(FLOWS.read_text())
+    users = [node for node in flows if node["type"] == "function" and 'global.get("sqlite")' in node["func"]]
+    assert [node["name"] for node in users] == [WRITER]
+    creators = [node["name"] for node in flows if node["type"] == "function"
+                and ("CREATE TABLE" in node["func"] or "CREATE VIEW" in node["func"])]
+    assert creators == [WRITER]
+    code = writer_node()["func"]
+    assert not re.search(r"\b(UPDATE|DELETE|DROP|ALTER)\b", code)
+    for node in flows:
+        if node["type"] == "sqlite":
+            assert "survey_exact_location" not in node.get("sql", "") and "deployment_exact" not in node.get("sql", "")
+
+
+@needs_node
+@pytest.mark.parametrize("name, msg", [
+    ("stop if cancelled", {"cancelCountAtCopy": 0}),
+    ("database copy failed", {"error": {"message": "x"}}),
+], ids=["cancelled", "failed"])
+def test_a_copy_that_ends_early_drops_its_claimed_list(name, msg):
+    """The writer is the only other place that takes the claimed list, so these two must not leave it behind."""
+    by_name, _ = _download_nodes()
+    flow = {"exactCopyPlaces": {"/db/snapshot/x1": [PLACE], "/db/snapshot/x2": [PLACE]}, "downloadCancelCount": 1}
+    result = run_functions([(by_name[name], {"snapshot": "/db/snapshot/x1", **msg})], flow=flow,
+                           modules=("fs", "path"))
+    assert result["flow"]["exactCopyPlaces"] == {"/db/snapshot/x2": [PLACE]}
+    assert "45.52252" not in json.dumps(result["results"])

@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import pytest
-from required_tools import needs
+from required_tools import needs, needs_node_sqlite
 from tmsetup_render import REPO
 
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
@@ -185,6 +185,20 @@ def test_settings_survive_a_missing_or_broken_upload_lists_file(tmp_path):
             capture_output=True, text=True, timeout=30)
         assert result.returncode == 0, result.stderr
         assert result.stdout.strip() == "null"
+
+
+@needs_node_sqlite
+def test_function_nodes_get_sqlite_for_the_database_copy():
+    """The one function that adds the exact locations to a download's copy opens it with node:sqlite."""
+    keys = run_node("console.log(JSON.stringify(Object.keys(s.functionGlobalContext).sort()));")
+    assert json.loads(keys) == ["fs", "path", "sqlite", "upload_lists"]
+    assert run_node("console.log(typeof s.functionGlobalContext.sqlite.DatabaseSync);") == "function"
+
+
+def test_settings_start_without_node_sqlite():
+    """A Node without node:sqlite gives null, not a failed start; the copy's function then refuses."""
+    text = SETTINGS.read_text()
+    assert "require('node:sqlite')" in text and "catch (err) { return null; }" in text
 
 
 def test_the_editor_takes_no_name_from_the_installer():

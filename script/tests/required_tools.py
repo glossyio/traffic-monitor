@@ -9,6 +9,7 @@ root, aren't about a missing tool and stay plain skips.
 import functools
 import os
 import shutil
+import subprocess
 
 import pytest
 
@@ -23,10 +24,7 @@ def missing_tool(reason):
     pytest.skip(reason)
 
 
-def needs(tool, reason=None):
-    """Mark a test that runs `tool`: skipped where it isn't on PATH, or failed there when TM_TESTS_REQUIRE_TOOLS=1."""
-    reason = reason or f"needs {tool}"
-    missing = shutil.which(tool) is None
+def _needs(missing, reason):
     if not (missing and os.environ.get(REQUIRE_TOOLS) == "1"):
         return pytest.mark.skipif(missing, reason=reason)
 
@@ -36,3 +34,25 @@ def needs(tool, reason=None):
             missing_tool(reason)
         return wrapper
     return decorate
+
+
+def needs(tool, reason=None):
+    """Mark a test that runs `tool`: skipped where it isn't on PATH, or failed there when TM_TESTS_REQUIRE_TOOLS=1."""
+    return _needs(shutil.which(tool) is None, reason or f"needs {tool}")
+
+
+@functools.cache
+def node_has_sqlite():
+    """True when `node` can load node:sqlite (Node 22.13 or later), which the download's database copy uses."""
+    node = shutil.which("node")
+    if node is None:
+        return False
+    try:
+        probe = subprocess.run([node, "--disable-warning=ExperimentalWarning", "-e", "require('node:sqlite')"],
+                               capture_output=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return probe.returncode == 0
+
+
+needs_node_sqlite = _needs(not node_has_sqlite(), "needs a node with node:sqlite (22.13 or later)")
