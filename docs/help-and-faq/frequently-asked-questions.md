@@ -24,7 +24,15 @@ description: Fixes for a device that doesn't count or measure speeds, and answer
 
 ??? question "The home page opens on a computer but not on an Android phone"
 
-    On Android 17, an app needs permission to reach devices on your local network. Browsers that don't have it time out on every device on the phone's own Wi-Fi network, including your router's page, while other apps and computers reach the device. Open the browser's app settings (**Settings > Apps > Chrome**, for example), allow **Nearby devices** or local network access if it's listed, force-stop the browser, and open the page again. If the browser has no such setting, use a computer or another phone. On the device's own hotspot, use the phone's sign-in window instead: Android 17 browsers can't open the device there. See [Wi-Fi and the hotspot](../use/wifi-hotspot.md#phones).
+    On Android 17, an app needs the **Nearby devices** permission to reach anything on the phone's own Wi-Fi network. Despite its name, the permission covers the local network. A browser without it times out on every device there, including your router's page and a Traffic Monitor on its own hotspot, while computers reach the device. Allow it once for each browser you use:
+
+    1. On the phone, open **Settings > Apps** and choose the browser.
+    2. Choose **Permissions > Nearby devices > Allow**.
+    3. Open the device's address again.
+
+    Chrome asks for the permission when you open a device's address and takes you to its **App info** page, where step 2 is the same. In Firefox, follow the steps yourself. Android's [local network protection](https://developer.android.com/privacy-and-security/local-network-permission) page describes the permission.
+
+    On the device's own hotspot, the phone's sign-in window opens the control app without the permission, and a browser needs one more step: keeping the network. See [Wi-Fi and the hotspot](../use/wifi-hotspot.md#phones).
 
 ??? question "The hotspot doesn't show up on my phone"
 
