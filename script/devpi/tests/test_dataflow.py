@@ -226,7 +226,8 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                         problems.append(f"watch_camera.camera_fps for camera {key} is {row['camera_fps']}, "
                                         f"empty is expected while the camera is off")
     if radars:
-        newest, rows = newest_watch_rows(host, codedir, "watch_radar", "radar", ["port_open", "radar_answers", "radar_on"])
+        newest, rows = newest_watch_rows(host, codedir, "watch_radar", "radar",
+                                         ["port_open", "radar_answers", "radar_on"])
         if check_time("watch_radar", newest):
             if set(rows) != set(radars):
                 problems.append(f"the newest watch_radar rows are for radars {sorted(rows)}, "
@@ -239,7 +240,8 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                 if row is not None and (radars.get(radar["env_name"]) or {}).get("enabled") is True:
                     if not (row["radar_answers"] or 0) >= 1:
                         problems.append(f"watch_radar.radar_answers for radar {radar['env_name']} is "
-                                        f"{row['radar_answers']}, the inventory says it is attached")
+                                        f"{row['radar_answers']}, config.yml enables it and the inventory says "
+                                        f"it is attached")
                     if row["radar_on"] not in (0, 1):
                         problems.append(f"watch_radar.radar_on for radar {radar['env_name']} is "
                                         f"{row['radar_on']}, it should be 1 or 0")
