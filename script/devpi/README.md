@@ -232,6 +232,62 @@ The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it;
 
 Before any test runs, each host is checked once for an SSH connection and passwordless sudo. If either is missing, that host's tests fail right away with the reason.
 
+## Real Frigate events from a video file
+
+Made-up messages on `frigate/events` test the flows, but not what Frigate itself sends: when it flags an object as stationary, which zones it lists, how often it updates. For that, a bench unit can play a video file as a camera, the way Frigate's own contributor docs set one up. It was first done for the time stopped bench (#347), and is written down so it can be done again.
+
+**Rules first.** The clip comes from the maintainer, who has checked it for faces and anything else that identifies a person. Turning on Frigate's detection follows the hard rule in `CLAUDE.md`: ask the maintainer first, each time, and only on the loop camera. Recording and snapshots stay off, so Frigate keeps no picture, and nobody but the maintainer looks at the clip, a frame, or the live view.
+
+**The clip.** One continuous take from a camera that doesn't move, a few minutes long, 16:9, ideally 1536×864 at 10 frames a second. Put it on the unit at `<install dir>/frigate/storage/tmdev/loop.mp4`, which Frigate sees as `/media/frigate/tmdev/loop.mp4`. The first one was HEVC, 8 minutes 34 seconds, 19 MB, and Frigate decoded it in software at 10 fps without skipping frames.
+
+**The camera.** Paste this under `cameras:` in Frigate's configuration editor and choose **Save & Restart**:
+
+```yaml
+  tmdev_loop:
+    enabled: true
+    type: generic
+    mqtt:
+      enabled: false
+    ffmpeg:
+      hwaccel_args: []
+      inputs:
+        - path: /media/frigate/tmdev/loop.mp4
+          input_args: -re -stream_loop -1 -fflags +genpts
+          roles:
+            - detect
+    detect:
+      enabled: false
+      width: 1536
+      height: 864
+      fps: 10
+    record:
+      enabled: false
+    snapshots:
+      enabled: false
+    objects:
+      track:
+        - car
+```
+
+- `hwaccel_args: []` makes Frigate decode the file in software, since the unit's hardware decoder is set up for the camera's own stream. Only cars are tracked, so a person in the clip never becomes an object.
+- `-re` plays the file in real time and `-stream_loop -1` starts it again the moment it ends. So each pass starts one clip length after the one before, and the same cars come at the same points in every pass, which lets you line events up with the clip by time alone. Switching the camera off and on in Frigate starts the clip from the beginning, after a few seconds.
+
+**Zones.** Draw them in Frigate's zone editor on `tmdev_loop`, with names that start `zone_tmdev_`, so the rows are in no dashboard count. A zone holds an object when the bottom middle of its box is inside, so a car parked beside a lane can count in the lane's zone; draw a parking zone generously. A zone with side lengths (speed estimation) lists an object only while it moves. Without the flows' own zones (`zone_capture`, `zone_near`, `zone_far`, `zone_radar`), events are still recorded, but with no direction.
+
+**The Cameras page entry.** Add one for `tmdev_loop` and pair it with the unit's radar, before detection goes on: Node-RED records nothing from a Frigate camera without an enabled entry. The page gives the entry a neutral key (`camera_` and a number and six letters or digits), which is what the rows carry.
+
+**Watching the messages without seeing pictures.** Run a small listener on the Pi that subscribes to `frigate/events` on the unit's broker and writes one line for each message with only the fields the test needs (frame times, `stationary`, `current_zones`, and so on), and read only that file. Delete it afterwards. Stop the listener in a `tmdev.py run` of its own: `pkill -f <pattern>` also matches the remote shell when any word of the same command contains the pattern.
+
+**The radar** measures the bench, not the clip. To test anything that uses its readings, insert made-up `radar_dov` rows (with the maintainer's OK) with a `deployment_id` of their own, covering an event's window before that event ends, and delete them by that `deployment_id` afterwards. A write to `tmdb.sqlite` while Node-RED runs can make one of its own writes fail if they land at the same moment, so keep it to one short transaction.
+
+**What Frigate 0.18.2 did** on the first run, with its defaults (stationary after 100 frames, an object given up 50 frames after it was last seen):
+- A passing car sent 14 to 19 messages over about 4 seconds in view, and its event ended about 5 seconds after its last frame.
+- A car that parked was flagged stationary about 10 seconds after it stopped moving; a stationary object got an update once a minute (the longest gap between two messages was 60.2 seconds).
+- Cars parked through the whole clip kept one id across the jump back to the clip's start.
+- A parked car hidden for a second by a passing one was lost: its event ended as if it had moved, so it was recorded, and Frigate found it again under a new id.
+
+**Afterwards.** Turn detection off with the Cameras page's switch (or `PUT /api/camera/tmdev_loop/set/detect` with `{"value": "OFF"}` on the unit's port 5000), and confirm it in `/api/config` sent with `X-Cache-Bypass: 1`. Frigate keeps that switch across restarts, so a restart alone doesn't turn it off. Then remove the Cameras page entry and the camera from Frigate's config, restart Frigate, and delete the clip. The session's rows stay in `tmdb.sqlite`, along with the entry's deployment and watch log rows.
+
 ## The run log
 
 The log lives on your machine, outside the repo, at `~/.local/state/traffic-monitor/dev-tests/` by default. It follows `$XDG_STATE_HOME` if you set that, and `TM_DEV_LOG_DIR` overrides it. Run `tmdev.py log --path` to print the exact location.
