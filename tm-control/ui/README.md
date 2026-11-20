@@ -981,12 +981,31 @@ importing places open dialogs from this page, so they move nothing on it.
 - The hotspot has no internet, so on it the button gives way to one sentence that says so and says to type or paste
   the coordinates, or to come back once the device is on Wi-Fi. The page knows it is on the hotspot from
   `GET /setup/status`.
-- The picker opens at the point already in the field (zoom 17), else at the place in use (zoom 14), else on the whole
-  world. A tap places the pin and the marker, which takes the theme's `primary`, can be dragged to the exact spot. A
-  tap on the marker itself isn't a tap on the map: MapLibre would deliver it to the map's click as well and move the
-  pin a little. North stays up and the map stays flat, for the mouse, a touch, and the keyboard alike; nothing here
-  uses a bearing or a tilt. A double click or double tap doesn't zoom (`doubleClickZoom: false`), because each tap of
-  it would place the pin too; pinch, the wheel, and the buttons zoom.
+- The picker opens at the point already in the field (zoom 17), else at the place in use (zoom 14), else over the
+  device's region (zoom 3), else on the whole world. A tap places the pin and the marker, which takes the theme's
+  `primary`, can be dragged to the exact spot. A tap on the marker itself isn't a tap on the map: MapLibre would
+  deliver it to the map's click as well and move the pin a little. North stays up and the map stays flat, for the
+  mouse, a touch, and the keyboard alike; nothing here uses a bearing or a tilt. A double click or double tap doesn't
+  zoom (`doubleClickZoom: false`), because each tap of it would place the pin too; pinch, the wheel, and the buttons
+  zoom.
+- The region is for a place with nothing to start from, so the map doesn't open on the whole world. The backend works
+  it out from the device's own files (`modules/location/region.py`, `MapSources.region`): the city of the time zone,
+  from the Pi's own time-zone data, rounded to two places, and null with no map. The data is two tzdata tables:
+  `zone1970.tab` answers first, and a zone it doesn't list (it merged many names away, such as `Europe/Amsterdam`) is
+  looked up in `zone.tab` beside it. Legacy aliases such as `US/Pacific` give none. The region is used only when the
+  Wi-Fi country is set and is one of the countries the zone's row lists. The installer sets the zone (`-z`, default
+  `America/Los_Angeles`) and the Wi-Fi country (`US` when the device has none), so a unit left on both defaults
+  passes the check and opens over Los Angeles until its zone is set on the Date and time page; the check keeps a zone
+  from sending the map to a country the Wi-Fi isn't set for. Rejected: looking up the device's internet address, and
+  time-zone boundary data. Both come from outside the device, and the maintainer ruled out any outside request for
+  this. The region isn't private: it is a time zone's city, `GET /surveys` is admin-only, and the map's host learns
+  little more at this zoom than the phone's internet address tells it. The zoom is 3, a wide view around the city,
+  about the size of a time zone. A time zone's city often sits at the zone's edge (Los Angeles at the south end of the
+  Pacific zone), so the view has to be wide to show much of the zone around the city. Zoom 5 showed only the south of
+  California and zoom 4 only California and part of its neighbours; a fake-mode review at 375 and 1280 px found zoom 3
+  holds the whole Pacific zone on a phone and, on a wide screen, runs from Portland to Mexico. Going further out or in
+  is one constant (`REGION_ZOOM` in `PinMap.vue`) and its test. Fake mode is in the Pacific zone with Wi-Fi country
+  US, so it shows this.
 - "Use this point" writes the field at five decimal places, as the device keeps an exact location, and the admin can
   still change it before saving. It waits for the map itself to set the pin (a tap or a drag) and is off while the
   map has failed, so the field's own point is never written back as a pick. Typed coordinates with fewer than four
@@ -1005,7 +1024,7 @@ importing places open dialogs from this page, so they move nothing on it.
 - The map library, its stylesheet, and its worker are a chunk of their own, loaded the first time the picker opens
   (a dynamic `import()` in `MapPicker.vue`), so the page's first download doesn't grow by them. The worker is a
   separate `.mjs` file, which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by about
-  6.5 kB (2 kB gzipped), from `MapPickButton.vue`, `MapPicker.vue`, the coordinate helpers, and the two forms'
+  6.6 kB (2 kB gzipped), from `MapPickButton.vue`, `MapPicker.vue`, the coordinate helpers, and the two forms'
   changes, because `LocationPage` imports them directly; `PinMap.vue` is in the lazy chunk, and none of the entry's
   growth is library code.
 

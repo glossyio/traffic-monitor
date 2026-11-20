@@ -217,7 +217,7 @@ The `location` module serves the [Location page](../use/location.md). It's for a
 
 | Route | What it does |
 |---|---|
-| `GET /surveys` | The place in use, the precision, the enabled sensors and their bearings, the places with Node-RED's usage counts, the deployments recorded before any place, and `map`, the two sources from the manifest (`style_url` and `overpass_url`), each null unless it is `https://`. Runs the reconcile first. |
+| `GET /surveys` | The place in use, the precision, the enabled sensors and their bearings, the places with Node-RED's usage counts, the deployments recorded before any place, and `map`, the two sources from the manifest (`style_url` and `overpass_url`), each null unless it is `https://`, with `region`, where the map opens when there is no place to start from: the city of the device's time zone (from the Pi's own time-zone data, `zone1970.tab` and then `zone.tab`, two decimal places), only when the Wi-Fi country is one of the zone's countries, and null otherwise or with no map. Runs the reconcile first. |
 | `POST /surveys`, `PATCH` and `DELETE /surveys/{id}` | Plan a place, edit a planned one, delete one that isn't in use |
 | `POST /surveys/{id}/deploy` | Writes the place and every enabled sensor's bearing into `config.yml`, then asks Node-RED every second, for up to 20 seconds, for the new deployments. `reloaded: false` when they didn't appear, which isn't an error: the file is written. |
 | `PUT /surveys/precision` | Writes `database_precision`; with `round_stored`, also has Node-RED round the rows already stored |
