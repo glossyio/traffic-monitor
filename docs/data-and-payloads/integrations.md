@@ -14,7 +14,7 @@ Node-RED hosts an MQTT broker on the device at port `1883`. Frigate, the air qua
 |---|---|---|
 | `frigate/events` | Frigate to the Traffic Monitor | Frigate's [event messages](https://docs.frigate.video/integrations/mqtt). The Traffic Monitor records the ones with `type: "end"` as [events](events-payload.md). |
 | `frigate/<camera>/<object>/snapshot` | Frigate to subscribers | A cropped JPEG of each detected object, which can show a person. Frigate publishes it only when the camera's `mqtt` setting is on, and new installs turn it off. The Traffic Monitor doesn't use it. See [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots). |
-| `frigate/stats` | Frigate to the Traffic Monitor | Frigate's status report, about once a minute. The Traffic Monitor adds each camera's frame rates and whether detection was on up into the [watch log](watch-log.md). |
+| `frigate/stats` | Frigate to the Traffic Monitor | Frigate's status report, about once a minute. The Traffic Monitor adds each camera's frame rates and whether detection was on up into the [watch log](watch-log.md). Each report also prompts it to read from Frigate's settings whether each camera is on. |
 | `aq/<sensor>/readings` | [Air quality sensor](../add-ons/air-quality.md) to the Traffic Monitor | One JSON reading. See [Air quality](air-quality-aq-payload.md). |
 | `tm/events` | The Traffic Monitor to subscribers | Today's cumulative counts, mainly for a display board. Published with QoS 1 and retained, so a new subscriber gets the latest counts at once. See below. |
 

@@ -10,7 +10,7 @@ Cameras go in `watch_camera` and radars in `watch_radar`. Both tables are in the
 
 ## What a row covers
 
-A row covers the five minutes that end at its `time`, which is always a multiple of five minutes on the device's clock. There is a row for every camera and radar listed in [config.yml](../configuration/node-red-config.md#sensorscameras), whether it is enabled or not, so a sensor that was switched off shows up as a row with `enabled` 0 rather than as a gap.
+A row covers the five minutes that end at its `time`, which is always a multiple of five minutes on the device's clock. There is a row for every camera and radar listed in [config.yml](../configuration/node-red-config.md#sensorscameras), whether it is enabled or not, so a sensor that was switched off in `config.yml` shows up as a row with `config_enabled` 0 rather than as a gap.
 
 A window with no row means Node-RED didn't see that whole window. That covers every window a restart, a reboot, or a power cut touched, from the one Node-RED stopped in through the one it started in: one window for a quick restart, more for a longer outage. The first row after a start comes at the second five-minute mark, five to ten minutes later. It also covers a window in which the device's clock jumped. If the clock is set back by more than about ten minutes, the times that come round again keep their first rows on the device, while the upload sends the new ones. Treat a missing window as unknown, not as working or as not working.
 
@@ -22,17 +22,18 @@ One row for each camera and window. The primary key is `time` and `camera`.
 |---|---|---|---|
 | `time` | INTEGER | End of the five-minute window | Unix time in seconds |
 | `camera` | TEXT | The camera's name in `config.yml`, the same name as `events.camera` | |
-| `enabled` | INTEGER | Whether the camera's entry in `config.yml` was enabled | `1` or `0` |
-| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the camera had | Empty if it has none, or while the camera is off |
-| `frigate_answered` | INTEGER | Whether Frigate sent any status report in the window | `1` or `0` |
-| `stats_messages` | INTEGER | How many of Frigate's reports in the window included this camera. Frigate reports once a minute unless its `mqtt.stats_interval` setting was changed, so a full window has about 5. | 0 or more |
-| `camera_fps` | REAL | Frames per second the camera delivered, averaged over the reports | Empty when `stats_messages` is 0 |
-| `process_fps` | REAL | Frames per second Frigate processed | Empty when `stats_messages` is 0 |
-| `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `stats_messages` is 0 |
-| `detection_fps` | REAL | Regions per second sent to the detector. Frigate can send several regions of one frame, so this can be higher than `camera_fps`. | Empty when `stats_messages` is 0 |
-| `detection_enabled` | INTEGER | Whether detection was on for the whole window. It is 0 when detection was off in any report of the window. | `1` or `0`; empty when `stats_messages` is 0 |
+| `config_enabled` | INTEGER | The camera's `enabled` setting in `config.yml`. This is only the setting. It says nothing about whether the camera was working; the columns after it are for that. | `1` or `0` |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the camera had | Empty if it has none, or while the camera is off in `config.yml` |
+| `frigate_answers` | INTEGER | How many status reports Frigate sent in the window. Frigate reports once a minute unless its `mqtt.stats_interval` setting was changed, so a full window has about 5. It is the same on every camera's row. | 0 or more; 0 when Frigate sent none |
+| `camera_answers` | INTEGER | How many of those reports covered this camera | 0 or more, up to `frigate_answers` |
+| `camera_fps` | REAL | Frames per second the camera delivered, averaged over the reports | Empty when `camera_answers` is 0 or `camera_on` is 0 |
+| `process_fps` | REAL | Frames per second Frigate processed | Empty when `camera_answers` is 0 or `camera_on` is 0 |
+| `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `camera_answers` is 0 or `camera_on` is 0 |
+| `detection_fps` | REAL | Regions per second sent to the detector. Frigate can send several regions of one frame, so this can be higher than `camera_fps`. | Empty when `camera_answers` is 0 or `camera_on` is 0 |
+| `detection_enabled` | INTEGER | Whether detection was on for the whole window. It is 0 when detection was off in any report of the window. | `1` or `0`; empty when `camera_answers` is 0 |
+| `camera_on` | INTEGER | Whether the camera was on in Frigate for the whole window. Frigate can turn a camera off without stopping, with the power button in its live view. It is 0 when the camera was off at any time the device asked. The device reads Frigate's settings each time one of its status reports arrives. | `1` or `0`; empty when Frigate gave no answer |
 
-The four frame rates are means of the reports in the window, rounded to two decimals.
+The four frame rates are means of the reports in the window, rounded to two decimals. They are empty for a camera that was turned off because Frigate keeps listing such a camera in its reports and repeats the last frame rates it measured, so the device leaves them out rather than record numbers from before.
 
 ## watch_radar
 
@@ -42,16 +43,34 @@ One row for each radar and window. The primary key is `time` and `radar`.
 |---|---|---|---|
 | `time` | INTEGER | End of the five-minute window | Unix time in seconds |
 | `radar` | TEXT | The radar's name in [config.yml](../configuration/node-red-config.md#sensorsradars), the same as `radarName` in the radar tables | |
-| `enabled` | INTEGER | Whether the radar's entry in `config.yml` was enabled | `1` or `0` |
-| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the radar had | Empty if it has none, or while the radar is off |
-| `port_open` | INTEGER | Whether the device had the radar's serial port open, as at `time` | `1` or `0` |
-| `last_reading_at` | REAL | When the radar's last reading arrived, as at `time` | Unix time in seconds; empty if none since Node-RED started |
+| `config_enabled` | INTEGER | The radar's `enabled` setting in `config.yml`. This is only the setting. It says nothing about whether the radar was working; the columns after it are for that. | `1` or `0` |
+| `deployment_id` | TEXT | The [deployment](data-overview.md#deployment) the radar had | Empty if it has none, or while the radar is off in `config.yml` |
+| `port_open` | INTEGER | Whether the device had the radar's serial port open for the whole window: at each of the minute checks and at `time` | `1` or `0` |
+| `last_reading_at` | REAL | When the radar's last reading arrived, as at `time`. The radar's answers to the minute check are not readings and don't count. | Unix time in seconds; empty if none since Node-RED started |
+| `radar_answers` | INTEGER | Once a minute the device asks each radar that is switched on in `config.yml` for its power state. This is how many answers the radar gave in the window, so a full window has about 5. A window in which the radar was set up (a `config.yml` save) has a few more, because the setup's own commands are answered the same way. | 0 or more; 0 when it gave none or wasn't asked |
+| `radar_on` | INTEGER | Whether the radar was active for the whole window. It is 0 when any answer said idle. In idle a radar's transmitter is off and it sends no readings, while its serial port stays open. | `1` or `0`; empty when the radar didn't answer, wasn't asked, or gave a state this version doesn't know |
 
-A radar with nothing passing it sends little, so a recent `last_reading_at` isn't needed for the radar to be working.
+A radar with nothing passing it sends little, so a recent `last_reading_at` isn't needed for the radar to be working. It is a time, not a figure for the window: it can be older than the window while the radar is working.
+
+## The same idea in both tables
+
+The two tables follow one pattern, so a column in one has a counterpart in the other.
+
+| The idea | `watch_camera` | `watch_radar` |
+|---|---|---|
+| The entry's `enabled` setting in `config.yml` | `config_enabled` | `config_enabled` |
+| The connection | | `port_open` |
+| How often the program that reports on cameras spoke | `frigate_answers` | |
+| How many answers there were about this sensor | `camera_answers` | `radar_answers` |
+| The sensor's own switch, for the whole window | `camera_on` | `radar_on` |
+| What the sensor delivered | the four frame rates, means over the window | `last_reading_at`, as at `time` |
+| Detection | `detection_enabled` | |
+
+Some differences stay. Frigate keeps running a camera that `config.yml` switches off, so that camera's row still shows what Frigate said. A radar that `config.yml` switches off is held in idle and isn't asked, so its row has `radar_answers` 0 and `radar_on` empty. The device asks Frigate about a camera's switch when a status report arrives, and asks each radar once a minute on its own clock, so a Frigate that sent nothing isn't asked and a silent radar is.
 
 ## How to read it
 
-A camera was watching in a window when `enabled`, `frigate_answered`, and `detection_enabled` are all 1, `stats_messages` is 4 or more, and `camera_fps` is above 0. A radar was watching when `enabled` and `port_open` are both 1.
+A camera was watching in a window when `config_enabled`, `camera_on`, and `detection_enabled` are all 1, `camera_answers` is 4 or more, and `camera_fps` is above 0. A radar was watching when `config_enabled`, `port_open`, and `radar_on` are all 1 and `radar_answers` is 4 or more.
 
 What a camera row looks like in each situation:
 
@@ -61,18 +80,24 @@ What a camera row looks like in each situation:
 | Watching, with nothing moving in view | `detection_enabled` 1, `camera_fps` above 0, `detection_fps` 0. Frigate runs the detector only where it sees motion or is tracking an object, so a quiet road gives 0 with detection on. |
 | Camera on, detection switched off in Frigate or on the [Cameras](../use/cameras.md) page for the whole window | `detection_enabled` 0, `camera_fps` above 0, `detection_fps` 0 |
 | Detection switched on or off partway through the window | `detection_enabled` 0. `detection_fps` can be above 0: it's the mean of all the window's reports, including those with detection on. |
-| The camera's stream was down while Frigate ran | `frigate_answered` 1, `camera_fps` 0 |
-| Frigate ran without this camera, as when its configuration didn't load | `frigate_answered` 1, `stats_messages` 0, the frame rates and `detection_enabled` empty |
-| Frigate answered for only part of the window | `stats_messages` well under 5 |
-| Frigate sent nothing for the whole window: it was restarting or not responding | `frigate_answered` 0, `stats_messages` 0, the frame rates and `detection_enabled` empty. There is nothing about any camera. |
-| The camera was switched off in `config.yml` | `enabled` 0, `deployment_id` empty. The other columns still show what Frigate reported. |
+| The camera was turned off in Frigate, for all or part of the window | `camera_on` 0 and the four frame rates empty. `detection_enabled` still shows Frigate's detection switch. |
+| The camera's stream was down while Frigate ran | `camera_on` 1, `camera_fps` 0 |
+| Frigate ran without this camera, as when its configuration didn't load | `frigate_answers` about 5, `camera_answers` 0, the frame rates and `detection_enabled` empty |
+| Frigate answered for only part of the window | `camera_answers` well under 5 |
+| Frigate sent nothing for the whole window: it was restarting or not responding | `frigate_answers` 0, `camera_answers` 0, the frame rates and `detection_enabled` empty, `camera_on` empty. There is nothing about any camera. |
+| The camera was switched off in `config.yml` | `config_enabled` 0, `deployment_id` empty. The other columns still show what Frigate reported. |
 
 What a radar row looks like:
 
 | What happened | How the row looks |
 |---|---|
-| The radar was switched off in `config.yml` | `enabled` 0, `deployment_id` empty |
-| The radar's serial port wasn't open, as when the radar was unplugged | `port_open` 0 |
+| Watching | `config_enabled`, `port_open`, and `radar_on` all 1, `radar_answers` about 5 |
+| The radar was switched off in `config.yml` | `config_enabled` 0, `deployment_id` empty, `radar_answers` 0, `radar_on` empty |
+| The radar was in idle for all or part of the window | `radar_on` 0. The port is still open, and the row would otherwise look like a working radar. |
+| The radar was set up during the window, as when `config.yml` was saved | `radar_on` 0, because a setup puts the radar in idle for a few seconds, and `radar_answers` more than 5 |
+| The radar didn't answer | `radar_answers` 0 or low, `radar_on` empty when there were no answers |
+| The radar was unplugged for part of the window | `port_open` 0, `radar_answers` low |
+| The radar's serial port wasn't open for the whole window | `port_open` 0, `radar_answers` 0, `radar_on` empty |
 
 ## Examples
 
@@ -84,8 +109,8 @@ How many of each hour's twelve windows a camera was watching, for one day in you
 SELECT strftime('%Y-%m-%d %H:00', time - 1, 'unixepoch', 'localtime') AS hour,
        camera,
        COUNT(*) AS windows_logged,
-       SUM(CASE WHEN enabled = 1 AND frigate_answered = 1
-                 AND detection_enabled = 1 AND stats_messages >= 4
+       SUM(CASE WHEN config_enabled = 1 AND camera_on = 1
+                 AND detection_enabled = 1 AND camera_answers >= 4
                  AND camera_fps > 0
                 THEN 1 ELSE 0 END) AS windows_watching
 FROM watch_camera
@@ -100,6 +125,7 @@ The events in each window, next to whether the camera was watching. An event bel
 ```sql
 SELECT w.time,
        w.camera_fps,
+       w.camera_on,
        w.detection_enabled,
        COUNT(e.id) AS events
 FROM watch_camera AS w
@@ -114,11 +140,27 @@ GROUP BY w.time
 ORDER BY w.time;
 ```
 
+How many of each hour's twelve windows a radar was watching, by the radar rule. A radar that was idle or didn't answer counts as not watching, as does one whose serial port closed at any minute check.
+
+```sql
+SELECT strftime('%Y-%m-%d %H:00', time - 1, 'unixepoch', 'localtime') AS hour,
+       radar,
+       COUNT(*) AS windows_logged,
+       SUM(CASE WHEN config_enabled = 1 AND port_open = 1
+                 AND radar_on = 1 AND radar_answers >= 4
+                THEN 1 ELSE 0 END) AS windows_watching
+FROM watch_radar
+WHERE time > CAST(strftime('%s', '2026-03-14', 'utc') AS INTEGER)
+  AND time <= CAST(strftime('%s', '2026-03-15', 'utc') AS INTEGER)
+GROUP BY hour, radar
+ORDER BY hour, radar;
+```
+
 ## Where the watch log goes
 
 The rows are in the database download and in the ThingsBoard upload, as one `watch` value every five minutes; see [MQTT and ThingsBoard](integrations.md#thingsboard). They are not in the JSON export.
 
-A `watch` value holds the window's rows, one list for cameras and one for radars. This one is from a camera that was on with detection switched off:
+A `watch` value holds the window's rows, one list for cameras and one for radars. This one is from a camera that was on with detection switched off, and a radar that was active:
 
 ```json
 {
@@ -126,25 +168,28 @@ A `watch` value holds the window's rows, one list for cameras and one for radars
         {
             "time": 1773489600,
             "camera": "picam_h265",
-            "enabled": 1,
+            "config_enabled": 1,
             "deployment_id": "1773400000000-3f9c2a1b-d",
-            "frigate_answered": 1,
-            "stats_messages": 5,
+            "frigate_answers": 5,
+            "camera_answers": 5,
             "camera_fps": 10.06,
             "process_fps": 10.1,
             "skipped_fps": 0,
             "detection_fps": 0,
-            "detection_enabled": 0
+            "detection_enabled": 0,
+            "camera_on": 1
         }
     ],
     "radars": [
         {
             "time": 1773489600,
             "radar": "TM_RADAR_SERIAL_PORT_00",
-            "enabled": 1,
+            "config_enabled": 1,
             "deployment_id": "1773400000000-8b51e0d7-d",
             "port_open": 1,
-            "last_reading_at": 1773489595.09
+            "last_reading_at": 1773489595.09,
+            "radar_answers": 5,
+            "radar_on": 1
         }
     ]
 }
