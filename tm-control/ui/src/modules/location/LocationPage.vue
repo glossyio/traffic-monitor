@@ -74,6 +74,13 @@ function since(ms: number | null) {
 // The place in use, as the card at the top
 const inUse = computed(() => state.value?.surveys.find((place) => place.id === state.value?.in_use) ?? null)
 
+// Where the map looks first when a place has no point yet: the place in use, when it has one
+const centre = computed(() =>
+  inUse.value && inUse.value.lat !== null && inUse.value.lon !== null
+    ? { lat: inUse.value.lat, lon: inUse.value.lon }
+    : null,
+)
+
 const cardItems = computed(() => {
   const place = inUse.value
   if (!place || !state.value) return []
@@ -572,6 +579,8 @@ onMounted(load)
       v-model:open="formOpen"
       :sensors="state.sensors"
       :survey="editing"
+      :map="state.map"
+      :centre="centre"
       @saved="load"
       @stale="load"
     />
@@ -593,11 +602,13 @@ onMounted(load)
       />
     </v-dialog>
     <CorrectDialog
-      v-if="correcting"
+      v-if="correcting && state"
       v-model:open="correctOpen"
       :kind="correcting.kind"
       :place="correcting.place"
       :deployment="correcting.deployment"
+      :map="state.map"
+      :centre="centre"
       @corrected="refresh"
       @stale="load"
     />

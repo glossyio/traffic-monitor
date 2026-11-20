@@ -10,8 +10,10 @@ const NUMBER = String.raw`[+-]?(?:\d+(?:\.\d+)?|\.\d+)`
 // Two numbers separated by a comma (spaces around it allowed) or by spaces alone
 const PAIR = new RegExp(String.raw`^\s*(${NUMBER})(?:\s*,\s*|\s+)(${NUMBER})\s*$`)
 
+export type LatLon = { lat: number; lon: number }
+
 // A pasted "latitude, longitude", or null when it isn't one (a decimal comma, the wrong order, out of range)
-export function parsePair(text: string): { lat: number; lon: number } | null {
+export function parsePair(text: string): LatLon | null {
   const match = PAIR.exec(text)
   if (!match) return null
   const lat = Number(match[1])
@@ -20,9 +22,33 @@ export function parsePair(text: string): { lat: number; lon: number } | null {
   return { lat, lon }
 }
 
+// The fewer digits after the dot of the two numbers in a pair `parsePair` accepts; null for any other text
+export function decimalsTyped(text: string): number | null {
+  if (!parsePair(text)) return null
+  const match = PAIR.exec(text)!
+  const digits = (number: string) => (number.split('.')[1] ?? '').length
+  return Math.min(digits(match[1]), digits(match[2]))
+}
+
+// How wide an area a count of decimal places (0 to 3) keeps a point to
+export function roundedTo(decimals: number): string {
+  return ['100 km', '10 km', '1 km', '100 m'][decimals]
+}
+
+// Four places keep a point to about 10 m, which is what an exact location needs
+export const FEW_DECIMALS = 4
+
+// A line under the coordinates field for a pair typed with fewer places than that, or '' for anything else. It is
+// advice, never an error: a place at a coarse point is allowed.
+export function fewDecimalsWarning(text: string): string {
+  const decimals = decimalsTyped(text)
+  if (decimals === null || decimals >= FEW_DECIMALS) return ''
+  return `For an exact location, use at least four decimal places (about 10 m). This is rounded to about ${roundedTo(decimals)}.`
+}
+
 // How far apart two points are, in km, along the earth's surface (the haversine formula, on a sphere of the earth's
 // mean radius). Correct location uses it only to tell a typo fixed nearby from a point that looks like a move.
-export function distanceKm(from: { lat: number; lon: number }, to: { lat: number; lon: number }): number {
+export function distanceKm(from: LatLon, to: LatLon): number {
   const radians = (degrees: number) => (degrees * Math.PI) / 180
   const dLat = radians(to.lat - from.lat)
   const dLon = radians(to.lon - from.lon)

@@ -1,7 +1,7 @@
 // The correction dialog: a used place's location (POST /surveys/{id}/location), with a second confirmation for a
 // point far enough to look like a move, or one deployment's bearing (POST /surveys/{id}/deployments/{id}/bearing).
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import CorrectDialog from '../src/modules/location/CorrectDialog.vue'
 import { apiError, fakeApi } from './fake-api'
@@ -32,6 +32,26 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
   }
 }
 
+// PinMap is stubbed: a button drops the pin at a point near the docs' example, and another at 45.0, -122.0
+vi.mock('../src/modules/location/PinMap.vue', async () => {
+  const { defineComponent, h } = await import('vue')
+  return {
+    __esModule: true,
+    default: defineComponent({
+      props: { styleUrl: String, centre: Object, pin: Object },
+      emits: ['ready', 'failed', 'update:pin'],
+      setup(_props, { emit }) {
+        return () =>
+          h('div', [
+            h('button', { type: 'button', onClick: () => emit('update:pin', { lat: 45.52252, lon: -122.6912 }) }, 'Drop the pin'),
+          ])
+      },
+    }),
+  }
+})
+
+const MAP = { style_url: 'https://tiles.example.invalid/style', overpass_url: null }
+
 const NEAR = place({})
 const FAR = place({ lat: 45.0, lon: -122.0, stored_lat: 45.0, stored_lon: -122.0 })
 
@@ -52,7 +72,7 @@ const BEARING = 'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b
 const FAR_TEXT = "That's far enough to look like a move. Correct it anyway?"
 
 function mountCorrect(kind: 'location' | 'bearing', survey: SurveyOut, deployment?: DeploymentOut) {
-  return mountAlone(CorrectDialog, { open: true, kind, place: survey, deployment })
+  return mountAlone(CorrectDialog, { open: true, kind, place: survey, deployment, map: MAP, centre: null })
 }
 
 function correctButton() {
@@ -120,6 +140,35 @@ describe('correcting a location', () => {
       },
     ])
     expect(dialog.emitted('corrected')).toHaveLength(1)
+  })
+
+  it('a point picked more than 1 km away still asks the second question', async () => {
+    const api = fakeApi({ [LOCATION]: FAR })
+    const dialog = mountCorrect('location', FAR)
+    await flushPromises()
+    await clickInDialog('Pick on a map')
+    await flushPromises()
+    await clickInDialog('Drop the pin')
+    await clickInDialog('Use this point')
+    expect(dialogField('Coordinates').value).toBe('45.52252, -122.69120')
+    await clickInDialog('Correct')
+    expect(api.sent).toEqual([])
+    expect(document.body.textContent).toContain(FAR_TEXT)
+    await clickInDialog('Correct it anyway')
+    expect(api.sent).toHaveLength(1)
+    expect(dialog.emitted('corrected')).toEqual([[true]]) // the map set the point
+  })
+
+  it('warns about fewer than four decimal places and still corrects', async () => {
+    const api = fakeApi({ [LOCATION]: NEAR })
+    const dialog = mountCorrect('location', NEAR)
+    await flushPromises()
+    await typeInto(dialogField('Coordinates'), '45.52, -122.69')
+    expect(dialogText()).toContain('For an exact location, use at least four decimal places (about 10 m).')
+    expect(correctButton().disabled).toBe(false)
+    await clickInDialog('Correct')
+    expect(api.sent).toHaveLength(1)
+    expect(dialog.emitted('corrected')).toEqual([[false]]) // typed
   })
 
   it('sends nothing when the far correction is cancelled', async () => {

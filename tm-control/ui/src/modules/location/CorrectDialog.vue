@@ -6,7 +6,9 @@
     place with none isn't offered one, and the field can't be left blank.
   - kind 'bearing': which way the sensor faced in one of the place's deployments
     (POST /surveys/{id}/deployments/{deployment_id}/bearing).
-  The dialog starts over each time it opens. Emits `corrected` once the API has answered, then closes; and `stale`
+  A map button under the coordinates picks the point on a map, and a line warns when fewer than four decimal places
+  are typed; a point picked far away asks the second question like a typed one. The dialog starts over each time it
+  opens. Emits `corrected` (with whether the map set the point last) once the API has answered, then closes; and `stale`
   when the API refused because config.yml or the place changed since the page loaded (409), or Node-RED failed after
   the place was changed (502), so the page loads the places again.
 -->
@@ -15,10 +17,12 @@ import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
-import { BEARINGS, distanceKm, formatExact, parsePair } from './coordinates'
+import { BEARINGS, distanceKm, fewDecimalsWarning, formatExact, parsePair, type LatLon } from './coordinates'
+import MapPickButton from './MapPickButton.vue'
 
 type SurveyOut = components['schemas']['SurveyOut']
 type DeploymentOut = components['schemas']['DeploymentOut']
+type MapSources = components['schemas']['MapSources']
 
 // A new point farther than this from the old one looks like a move, not a typo
 const FAR_KM = 1
@@ -28,10 +32,13 @@ const props = defineProps<{
   kind: 'location' | 'bearing'
   place: SurveyOut // a used place or the place in use; with a point, for a location correction
   deployment?: DeploymentOut // the deployment whose bearing to correct
+  map: MapSources // where the map comes from; null style_url is no map
+  centre: LatLon | null // where the map looks first with no point: the place in use
 }>()
-const emit = defineEmits<{ corrected: []; stale: [] }>()
+const emit = defineEmits<{ corrected: [onMap: boolean]; stale: [] }>()
 
 const coordinates = ref('')
+const onMap = ref(false) // whether the map set the coordinates last
 const bearing = ref('')
 const reason = ref('')
 const saving = ref(false)
@@ -46,6 +53,7 @@ watch(
     coordinates.value = props.place.lat !== null ? formatExact(props.place.lat, props.place.lon) : ''
     bearing.value = props.deployment?.bearing ?? ''
     reason.value = ''
+    onMap.value = false
     error.value = ''
   },
   { immediate: true },
@@ -58,6 +66,7 @@ const pair = computed(() => parsePair(coordinates.value))
 const coordinatesError = computed(() =>
   coordinates.value.trim() && !pair.value ? 'Enter latitude, longitude with a dot as the decimal mark' : '',
 )
+const fewDecimals = computed(() => fewDecimalsWarning(coordinates.value))
 
 // How far the new point is from the old one, in km
 const distance = computed(() => {
@@ -101,7 +110,7 @@ async function correct() {
         body: { bearing: bearing.value, reason: why },
       })
     }
-    emit('corrected')
+    emit('corrected', onMap.value)
     open.value = false
   } catch (failure) {
     error.value = messageOf(failure)
@@ -137,7 +146,16 @@ async function correct() {
               spellcheck="false"
               variant="outlined"
               :disabled="saving"
+              class="mb-2"
+              @update:model-value="onMap = false"
+            />
+            <p v-if="fewDecimals" class="text-body-2 text-warning mb-2">{{ fewDecimals }}</p>
+            <MapPickButton
+              v-model:coordinates="coordinates"
+              :map="map"
+              :centre="centre"
               class="mb-4"
+              @picked="onMap = true"
             />
           </template>
 

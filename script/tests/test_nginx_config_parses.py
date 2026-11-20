@@ -62,3 +62,48 @@ def test_nr_tm_internal_is_denied(tmp_path):
         assert pattern.search(path), path
     for path in ("/nr/", "/nr/flows", "/nr/tm-internals", "/tm-internal/status"):
         assert not pattern.search(path), path
+
+
+def mime_lines(tmp_path):
+    """The rendered nginx.conf's lines from the mime.types include to its default_type."""
+    render_config(tmp_path)
+    text = (tmp_path / "nginx.conf").read_text()
+    match = re.search(r"^ *include +/etc/nginx/mime\.types;.*?^ *default_type .*?;$", text, re.MULTILINE | re.DOTALL)
+    assert match, "no mime.types include in nginx.conf"
+    return match.group(0)
+
+
+def test_mjs_is_added_after_the_included_mime_types(tmp_path):
+    """nginx's mime.types has no .mjs, and the Location page's map runs its worker from one: a browser refuses a
+    module script that isn't JavaScript. The types block comes after the include, so it adds to it."""
+    lines = mime_lines(tmp_path)
+    assert re.search(r"types\s*\{\s*text/javascript\s+mjs;\s*\}", lines)
+    assert lines.index("mime.types") < lines.index("text/javascript mjs;")
+
+
+@needs("podman", "needs Podman")
+def test_mjs_and_js_are_both_served_as_javascript(tmp_path):
+    """Run the pinned image on the rendered mime lines and ask for a .mjs, a .js, and a .css file."""
+    image = f"docker.io/library/nginx:{ROLE_VARS['tmsetup_nginx_version']}"
+    if not have_image(image):
+        missing_tool(f"{image} is neither cached nor pullable")
+    lines = mime_lines(tmp_path / "rendered")
+    site = tmp_path / "site"
+    site.mkdir()
+    for name in ("a.mjs", "b.js", "c.css"):
+        (site / name).write_text("x\n")
+    (tmp_path / "n.conf").write_text(
+        f"events {{}}\nhttp {{\n{lines}\naccess_log off;\nserver {{ listen 8089; root /srv; }}\n}}\n")
+    (tmp_path / "probe.sh").write_text(
+        "nginx -c /tmp/n.conf\nsleep 1\n"
+        "for f in a.mjs b.js c.css; do echo \"$f $(curl -sI http://127.0.0.1:8089/$f | grep -i '^content-type')\"; done\n")
+    result = subprocess.run(
+        ["podman", "run", "--rm", "--entrypoint", "sh",
+         "-v", f"{tmp_path / 'n.conf'}:/tmp/n.conf:ro,Z", "-v", f"{site}:/srv:ro,Z",
+         "-v", f"{tmp_path / 'probe.sh'}:/tmp/probe.sh:ro,Z", image, "/tmp/probe.sh"],
+        capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr
+    types = {line.split()[0]: line.split(": ", 1)[1].strip() for line in result.stdout.splitlines()}
+    assert types["a.mjs"] == "text/javascript"
+    assert types["b.js"] in ("text/javascript", "application/javascript")  # js still maps, after the new block
+    assert types["c.css"] == "text/css"
