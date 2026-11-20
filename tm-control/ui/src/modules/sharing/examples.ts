@@ -40,6 +40,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
           camera_fps: 5,
           detection_fps: 0.4,
           detection_enabled: 1,
+          camera_on: 1,
         },
       ],
       radars: [{ time: 1_793_000_100, radar: 'TM_RADAR_SERIAL_PORT_00', config_enabled: 1, port_open: 1 }],

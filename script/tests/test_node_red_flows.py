@@ -2103,7 +2103,7 @@ GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 4
 TICK = 1761800100  # a five-minute mark
 TICK_MS = TICK * 1000
 WATCH_CAMERA_COLUMNS = ["time", "camera", "config_enabled", "deployment_id", "frigate_answers", "camera_answers",
-                        "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled"]
+                        "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled", "camera_on"]
 WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at"]
 STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
 EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}, "switches": {}}
@@ -2123,8 +2123,9 @@ NO_NUMBERS = {"camera_answers": 0, "camera_fps": None, "process_fps": None, "ski
 CAMERA_ROWS = [
     {"time": TICK, "camera": "camera_1_3fa9c2", "config_enabled": 1, "deployment_id": "1761700000000-0a1b2c3d-d",
      "frigate_answers": 5, "camera_answers": 5, "camera_fps": 5.0, "process_fps": 4.9, "skipped_fps": 0.0,
-     "detection_fps": 0.4, "detection_enabled": 1},
-    {"time": TICK, "camera": "side_st", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5, **NO_NUMBERS},
+     "detection_fps": 0.4, "detection_enabled": 1, "camera_on": 1},
+    {"time": TICK, "camera": "side_st", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5, **NO_NUMBERS,
+     "camera_on": None},
 ]
 RADAR_ROWS = [
     {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "config_enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
@@ -3684,14 +3685,15 @@ def test_a_whole_window_gives_a_row_per_sensor():
     for msg in cameras + radars:
         assert msg["params"] == {f"${name}": value for name, value in msg["payload"].items()}
     assert upload == {"payload": {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}}
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
 
 
 @needs_node
 def test_when_frigate_did_not_answer_every_camera_still_has_its_row():
     cameras, _, _, _ = watch_tick(window=EMPTY_WINDOW)
     assert [msg["payload"] for msg in cameras] == [
-        {**CAMERA_ROWS[0], "frigate_answers": 0, **NO_NUMBERS}, {**CAMERA_ROWS[1], "frigate_answers": 0}]
+        {**CAMERA_ROWS[0], "frigate_answers": 0, **NO_NUMBERS, "camera_on": None},
+        {**CAMERA_ROWS[1], "frigate_answers": 0}]
 
 
 @needs_node
@@ -3715,6 +3717,47 @@ def test_detection_off_in_any_report_is_off_for_the_window():
     assert cameras[0]["payload"]["detection_enabled"] == 0
 
 
+NO_FRAME_RATES = {"camera_fps": None, "process_fps": None, "skipped_fps": None, "detection_fps": None}
+
+
+@needs_node
+@pytest.mark.parametrize("off", [1, 5], ids=["turned-off-partway", "off-all-window"])
+def test_a_camera_off_in_frigate_is_off_for_the_window_and_has_no_frame_rates(off):
+    """Frigate keeps reporting the last frame rates of a camera that is off, so the row leaves them out. What
+    Frigate said about its reports and its detection switch stays."""
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["switches"]["camera_1_3fa9c2"] = {"answers": 5, "off": off}
+    cameras, _, upload, _ = watch_tick(window=window)
+    assert cameras[0]["payload"] == {**CAMERA_ROWS[0], **NO_FRAME_RATES, "camera_on": 0}
+    assert cameras[0]["params"]["$camera_on"] == 0 and cameras[0]["params"]["$camera_fps"] is None
+    assert upload["payload"]["cameras"][0] == cameras[0]["payload"]
+
+
+@needs_node
+@pytest.mark.parametrize("switches", [
+    {}, None, "broken", {"camera_1_3fa9c2": None}, {"camera_1_3fa9c2": {"answers": 0, "off": 0}},
+    {"camera_1_3fa9c2": {"answers": "5", "off": 0}}, {"camera_1_3fa9c2": {"answers": 5}},
+], ids=["none", "null", "text", "null-entry", "no-answers", "answers-as-text", "no-off-count"])
+def test_without_an_answer_the_switch_is_unknown_and_the_frame_rates_stay(switches):
+    cameras, _, _, _ = watch_tick(window={**copy.deepcopy(WATCH_WINDOW), "switches": switches})
+    assert cameras[0]["payload"] == {**CAMERA_ROWS[0], "camera_on": None}
+
+
+@needs_node
+def test_frigates_switch_is_recorded_for_a_camera_its_reports_leave_out():
+    window = {**EMPTY_WINDOW, "messages": 5, "switches": {"side_st": {"answers": 5, "off": 5}}}
+    cameras, _, _, _ = watch_tick(window=window)
+    assert cameras[1]["payload"] == {**CAMERA_ROWS[1], "camera_on": 0}
+
+
+@needs_node
+def test_a_window_with_no_report_says_nothing_about_the_switch():
+    """An answer to the last report of the window before can land just after the mark."""
+    window = {**EMPTY_WINDOW, "switches": {"camera_1_3fa9c2": {"answers": 1, "off": 0}}}
+    cameras, _, _, _ = watch_tick(window=window)
+    assert (cameras[0]["payload"]["frigate_answers"], cameras[0]["payload"]["camera_on"]) == (0, None)
+
+
 @needs_node
 @pytest.mark.parametrize("age, rows", [(295000, True), (300000, True), (305000, True), (120000, False),
                                        (294000, False), (306000, False), (900000, False), (-3600000, False)])
@@ -3722,7 +3765,7 @@ def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
     """Not the first mark after a start, a mark after a missed one, or one after the clock jumped."""
     cameras, radars, upload, flow = watch_tick(window={**WATCH_WINDOW, "since": TICK_MS - age})
     assert (cameras is not None, radars is not None, upload is not None) == (rows, rows, rows)
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
 
 
 @needs_node
@@ -3733,7 +3776,7 @@ def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
 def test_no_rows_without_a_window_or_sensors(window, config):
     cameras, radars, upload, flow = watch_tick(window=window, config=config)
     assert (cameras, radars, upload) == (None, None, None)
-    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}}
 
 
 @needs_node
@@ -3743,7 +3786,7 @@ def test_rows_follow_config_yml_as_it_is_at_the_mark():
     cameras, radars, upload, _ = watch_tick(config=config)
     assert [msg["payload"] for msg in cameras] == [
         {"time": TICK, "camera": "new_key", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5,
-         **NO_NUMBERS}]
+         **NO_NUMBERS, "camera_on": None}]
     assert radars is None
     assert upload["payload"] == {"time": TICK, "cameras": [cameras[0]["payload"]], "radars": []}
 

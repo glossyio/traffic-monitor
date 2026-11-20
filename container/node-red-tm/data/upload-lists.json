@@ -61,7 +61,8 @@
         "process_fps",
         "skipped_fps",
         "detection_fps",
-        "detection_enabled"
+        "detection_enabled",
+        "camera_on"
     ],
     "watch_radar": [
         "time",

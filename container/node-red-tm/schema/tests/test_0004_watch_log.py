@@ -10,6 +10,7 @@ WATCH_CAMERA = {
     "time": "INTEGER", "camera": "TEXT", "config_enabled": "INTEGER", "deployment_id": "TEXT",
     "frigate_answers": "INTEGER", "camera_answers": "INTEGER", "camera_fps": "REAL", "process_fps": "REAL",
     "skipped_fps": "REAL", "detection_fps": "REAL", "detection_enabled": "INTEGER",
+    "camera_on": "INTEGER",
 }
 WATCH_RADAR = {"time": "INTEGER", "radar": "TEXT", "config_enabled": "INTEGER", "deployment_id": "TEXT",
                "port_open": "INTEGER", "last_reading_at": "REAL"}

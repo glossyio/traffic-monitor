@@ -20,6 +20,7 @@ CREATE TABLE watch_camera (
     skipped_fps REAL,
     detection_fps REAL,
     detection_enabled INTEGER,
+    camera_on INTEGER,
     PRIMARY KEY (time, camera)
 ) WITHOUT ROWID;
 
