@@ -4325,3 +4325,73 @@ def test_zone_times_is_stored_as_json_text():
     params = step["result"]["params"]
     assert (params["$stationary_time"], params["$stops"]) == (26, 1)
     assert json.loads(params["$zone_times"]) == STOP_TALLY["zone_times"]
+
+
+PULL_SPEED = "b39062019fac1a66"  # capture-events: pull speed, direction for event period
+
+
+def radar_query(tally=MISSING):
+    msg = {"frigate_event": {"start_time": T0 + 0.4, "end_time": T0 + 49.6, "radarName": "TM_RADAR_SERIAL_PORT_00"}}
+    if tally is not MISSING:
+        msg["time_tally"] = tally
+    [step] = run_functions([(node_by_id(PULL_SPEED), msg)])["results"]
+    assert step["logged"] == []
+    return step["result"]["topic"]
+
+
+def radar_seconds(tally=MISSING):
+    """Which readings the event's query returns, out of one a second from 10 before T0 to 70 after, for this radar
+    and for another one. As whole seconds after T0."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.executemany("INSERT INTO radar_dov (time, radarName, direction, velocity) VALUES (?, ?, 'inbound', 20)",
+                    [(T0 + second, name) for second in range(-10, 71)
+                     for name in ("TM_RADAR_SERIAL_PORT_00", "TM_RADAR_SERIAL_PORT_01")])
+    # the flow's query names the radar in double quotes, which not every build of SQLite takes as text
+    rows = con.execute(radar_query(tally).replace('"', "'")).fetchall()
+    assert {row[4] for row in rows} <= {"TM_RADAR_SERIAL_PORT_00"}
+    return sorted(round(row[0] - T0) for row in rows)
+
+
+WHOLE_WINDOW = list(range(-2, 53))  # two seconds before the start to two after the end
+
+
+@needs_node
+def test_an_event_that_never_stopped_gets_the_query_it_gets_today():
+    assert radar_seconds() == WHOLE_WINDOW
+    for tally in (None, {**STOP_TALLY, "stopped": []}, {"stationary_time": 0}):
+        assert radar_query(tally) == radar_query() and "NOT" not in radar_query(tally)
+
+
+@needs_node
+def test_the_readings_while_the_object_stood_still_are_left_out():
+    """Stopped from 14 to 40: the readings after 16 and before 38 are left out, two seconds kept at each end."""
+    assert radar_seconds(STOP_TALLY) == list(range(-2, 17)) + list(range(38, 53))
+    two = {**STOP_TALLY, "stopped": [[T0 + 5.5, T0 + 12.5], [T0 + 30, T0 + 44]]}
+    # 5.5 to 12.5 leaves out only second 9, and 30 to 44 leaves out 33 to 41
+    assert radar_seconds(two) == list(range(-2, 9)) + list(range(10, 33)) + list(range(42, 53))
+
+
+@needs_node
+@pytest.mark.parametrize("stopped", [
+    [[T0 + 14, T0 + 18]], [[T0 + 40, T0 + 14]], "text", None, [[T0 + 14]], [None, "text", 7],
+    [["1; DROP TABLE radar_dov", T0 + 40]], [[T0 + 14, "40"]], [[T0 + 14, None]],
+], ids=["too-short", "backwards", "text", "null", "one-number", "not-pairs", "text-in-a-pair", "text-end", "null-end"])
+def test_a_stretch_that_cannot_be_used_leaves_the_whole_window(stopped):
+    assert radar_seconds({**STOP_TALLY, "stopped": stopped}) == WHOLE_WINDOW
+
+
+@needs_node
+def test_the_events_radar_query_reads_only_its_own_stretch_of_time():
+    """Task 2's index is used by the query as the flow writes it, with and without stretches left out."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for tally in (MISSING, STOP_TALLY):
+        plan = con.execute("EXPLAIN QUERY PLAN " + radar_query(tally).replace('"', "'")).fetchall()
+        assert "USING INDEX index_radar_dov_time" in " ".join(row[3] for row in plan)
+
+
+@needs_node
+def test_at_most_twenty_stretches_are_left_out():
+    stopped = [[T0 + second, T0 + second + 6] for second in range(0, 44, 2)]  # 22 stretches
+    assert radar_query({**STOP_TALLY, "stopped": stopped}).count("NOT") == 20
