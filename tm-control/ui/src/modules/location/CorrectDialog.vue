@@ -149,7 +149,7 @@ async function correct() {
               class="mb-2"
               @update:model-value="onMap = false"
             />
-            <p v-if="fewDecimals" class="text-body-2 text-warning mb-2">{{ fewDecimals }}</p>
+            <p v-if="fewDecimals" class="text-body-2 text-warning mt-3 mb-2">{{ fewDecimals }}</p>
             <MapPickButton
               v-model:coordinates="coordinates"
               :map="map"

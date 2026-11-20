@@ -4,7 +4,8 @@
   so MapLibre isn't part of the page's first download. The dialog says where the map comes from and that the device
   sends nothing: the phone's browser asks the map's host for the area it shows. When the map can't load (a phone with
   no internet), the dialog says so and offers Try again, which mounts the map afresh. It starts over each time it
-  opens, at `start`, and is full-screen on a phone.
+  opens, at `start`, and is full-screen on a phone. The map stays mounted while the dialog fades out, so the body
+  doesn't collapse, and is removed at after-leave.
 -->
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
@@ -25,6 +26,8 @@ const { xs } = useDisplay()
 const pin = ref<LatLon | null>(null)
 const failed = ref(false)
 const attempt = ref(0) // a new key mounts the map afresh
+// The map stays mounted while the dialog fades out, so its body doesn't collapse; after-leave removes it
+const mapMounted = ref(false)
 
 // Start over from the field's point each time the dialog opens
 watch(
@@ -34,6 +37,7 @@ watch(
     pin.value = props.start
     failed.value = false
     attempt.value += 1
+    mapMounted.value = true
   },
   { immediate: true },
 )
@@ -66,6 +70,7 @@ function use() {
     :fullscreen="xs"
     scrollable
     aria-label="Pick the place on a map"
+    @after-leave="mapMounted = false"
   >
     <v-card color="surface" :rounded="xs ? 0 : 'lg'" class="d-flex flex-column">
       <v-card-title class="text-h6 text-wrap pt-4">Pick the place on a map</v-card-title>
@@ -73,22 +78,25 @@ function use() {
         <p class="text-body-2 text-secondary mb-4">
           The map comes from {{ host }}. Your phone asks it for the area you look at; this device sends it nothing.
         </p>
-        <v-alert v-if="failed" type="warning" class="mb-4">
-          The map couldn't load. This phone may have no internet connection. Type or paste the coordinates instead.
-          <div class="mt-3">
-            <v-btn variant="outlined" min-height="44" @click="retry">Try again</v-btn>
-          </div>
-        </v-alert>
+        <!-- In a block of its own: an alert's own flex settings would stretch or squash it in this column -->
+        <div v-if="failed" class="mb-4">
+          <v-alert type="warning">
+            The map couldn't load. This phone may have no internet connection. Type or paste the coordinates instead.
+            <div class="mt-3">
+              <v-btn variant="outlined" min-height="44" @click="retry">Try again</v-btn>
+            </div>
+          </v-alert>
+        </div>
         <div
-          v-else-if="open"
+          v-else-if="mapMounted"
           class="flex-grow-1 rounded border"
           :style="{ minHeight: '320px', height: xs ? undefined : '420px' }"
         >
           <PinMap :key="attempt" v-model:pin="pin" :style-url="styleUrl" :centre="centre" @failed="failed = true" />
         </div>
-        <p class="text-body-1 mt-4">
+        <p v-if="pin || !failed" class="text-body-1 mt-4">
           <template v-if="pin">{{ formatExact(pin.lat, pin.lon) }}</template>
-          <template v-else>Tap the map to place the pin, then drag it to the exact spot.</template>
+          <template v-else-if="!failed">Tap the map to place the pin, then drag it to the exact spot.</template>
         </p>
       </v-card-text>
       <v-card-actions class="px-4 pb-4">

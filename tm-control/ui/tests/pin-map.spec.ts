@@ -15,6 +15,7 @@ const fake = vi.hoisted(() => {
     controls: { control: unknown; position?: string }[] = []
     removed = false
     touchZoomRotate = { disableRotation: vi.fn() }
+    keyboard = { disableRotation: vi.fn() }
     constructor(options: Record<string, unknown>) {
       this.options = options
       FakeMap.all.push(this)
@@ -39,6 +40,7 @@ const fake = vi.hoisted(() => {
     options: Record<string, unknown>
     handlers: Record<string, Handler[]> = {}
     lngLat: [number, number] | null = null
+    element = document.createElement('div')
     map: FakeMap | null = null
     removed = false
     constructor(options: Record<string, unknown>) {
@@ -51,6 +53,9 @@ const fake = vi.hoisted(() => {
     }
     getLngLat() {
       return { lng: this.lngLat![0], lat: this.lngLat![1] }
+    }
+    getElement() {
+      return this.element
     }
     addTo(map: FakeMap) {
       this.map = map
@@ -157,6 +162,23 @@ describe('the pin map', () => {
     expect(fake.FakeMarker.all).toHaveLength(1) // the same marker moved
   })
 
+  it('a click on the marker itself does not move the pin', async () => {
+    const wrapper = mountMap({ pin: LATLON })
+    const marker = fake.FakeMarker.all[0]
+    const head = document.createElement('span') // the pin's drawing sits inside the marker's element
+    marker.getElement().appendChild(head)
+
+    theMap().fire('click', { lngLat: { lng: -122.69, lat: 45.5226 }, originalEvent: { target: head } })
+    theMap().fire('click', { lngLat: { lng: -122.69, lat: 45.5226 }, originalEvent: { target: marker.getElement() } })
+    await flushPromises()
+    expect(wrapper.emitted('update:pin')).toBeUndefined()
+
+    // a click on the map beside it still moves the pin
+    theMap().fire('click', { lngLat: { lng: -122.69, lat: 45.5226 }, originalEvent: { target: document.body } })
+    await flushPromises()
+    expect(wrapper.emitted('update:pin')).toEqual([[{ lat: 45.5226, lon: -122.69 }]])
+  })
+
   it('a longitude past 180 is wrapped', async () => {
     const wrapper = mountMap()
     theMap().fire('click', { lngLat: { lng: 237.3088, lat: 45.52252 } })
@@ -173,6 +195,7 @@ describe('the pin map', () => {
     const map = theMap()
     expect(map.options).toMatchObject({ dragRotate: false, pitchWithRotate: false, maxPitch: 0, touchPitch: false })
     expect(map.touchZoomRotate.disableRotation).toHaveBeenCalled()
+    expect(map.keyboard.disableRotation).toHaveBeenCalled() // the keyboard can't turn the map either
     expect(map.controls).toHaveLength(1)
     expect(map.controls[0].control).toBeInstanceOf(fake.FakeNavigationControl)
     expect((map.controls[0].control as { options: unknown }).options).toEqual({ showCompass: false })

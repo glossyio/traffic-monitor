@@ -32,7 +32,7 @@ const start = computed(() => parsePair(coordinates.value))
 
 <template>
   <div v-if="map.style_url">
-    <p v-if="onHotspot" class="text-body-2 text-secondary">
+    <p v-if="onHotspot" class="text-body-2 text-secondary mt-4">
       The map needs the internet, and this device's hotspot has none. Type or paste the coordinates, or come back to
       this page once the device is on your Wi-Fi.
     </p>

@@ -178,6 +178,10 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 
 - `src/styles/focus.css`: a 2 px keyboard focus ring in the primary color. Vuetify's own focus cue is too faint to
   see on the filled buttons (about 1.2:1), and raising its opacity can't reach the 3:1 a focus indicator needs.
+- `maplibre-gl/dist/maplibre-gl.css`, the map library's own stylesheet, for the Location page's map, its zoom buttons,
+  its attribution, and its marker. Only `PinMap.vue` imports it, so it loads with the map and not with the page. The
+  library draws all of that itself, so there is nothing in Vuetify to use instead; the marker takes the theme's
+  `primary`.
 - Three small scoped style blocks: the setup code field; spacing for the license agreement's headings and
   paragraphs, which come from markdown and can't take Vuetify's classes; and tabular digits for the clocks on the
   Date and time page.
@@ -907,10 +911,10 @@ importing places open dialogs from this page, so they move nothing on it.
 |  device                          |   |                                  |
 | [Coordinates                   ] |   | picam_h265                       |
 |  Paste latitude, longitude ...   |   | New deployment starts      (blue)|
-| [Use this phone's location]      |   | Was N, now [NE  v]               |
-|  (HTTPS only; else one sentence) |   | TM_RADAR_SERIAL_PORT_00          |
-| A map pin is coming in a later   |   | New deployment starts            |
-| update.                          |   | Was not set, now [Not set v]     |
+|  (under 4 decimals: a warning)   |   | Was N, now [NE  v]               |
+| [Pick on a map]                  |   | TM_RADAR_SERIAL_PORT_00          |
+| [Use this phone's location]      |   | New deployment starts            |
+|  (HTTPS only; else one sentence) |   | Was not set, now [Not set v]     |
 | Which way each sensor faces here |   |                                  |
 | [Bearing, picam_h265         v]  |   | Stored in the database:          |
 | [Bearing, TM_RADAR_SERIAL_... v] |   | 45.0, -122.0                     |
@@ -956,6 +960,42 @@ importing places open dialogs from this page, so they move nothing on it.
   its message and the page loads the places again behind it.
 - The deploy dialog keeps showing its review while it fades out, rather than emptying first, and each opening starts
   a fresh review. Both dialogs are named by their title for screen readers.
+
+#### Picking the point on a map
+
+`MapPickButton.vue` sits under the coordinates field of the place form and of "Correct location". It opens
+`MapPicker.vue`, a dialog around `PinMap.vue`, which is the only file that imports the map library (MapLibre GL).
+
+- The first requests outside the device. Until an admin presses "Pick on a map" the page asks nothing of any other
+  host. After that the phone's browser, not the device, asks the host of `map.style_url` for the style, tiles, fonts,
+  and sprites of the area on screen. That is allowed because an admin asked for it with a button that says what it
+  is, the area looked at is public, and the exact point is never sent: a tap only reads the map and then fills a
+  field. The picker says so in words (it names the host, and says the device sends it nothing), every request is made
+  with no referrer (`transformRequest`), and the control app's backend makes none. The two sources come from the API
+  (`PlacesState.map`), never from the UI's code; a source that isn't `https://` is off, and with none there is no
+  button.
+- The hotspot has no internet, so on it the button gives way to one sentence that says so and says to type or paste
+  the coordinates, or to come back once the device is on Wi-Fi. The page knows it is on the hotspot from
+  `GET /setup/status`.
+- The picker opens at the point already in the field (zoom 17), else at the place in use (zoom 14), else on the whole
+  world. A tap places the pin and the marker, which takes the theme's `primary`, can be dragged to the exact spot. A
+  tap on the marker itself isn't a tap on the map: MapLibre would deliver it to the map's click as well and move the
+  pin a little. North stays up and the map stays flat, for the mouse, a touch, and the keyboard alike; nothing here
+  uses a bearing or a tilt.
+- "Use this point" writes the field at five decimal places, as the device keeps an exact location, and the admin can
+  still change it before saving. Typed coordinates with fewer than four decimal places get one warning line in
+  the warning color under the field, with the size they will be rounded to; it never blocks Save, because a rough
+  location is a choice, not a mistake. `saved` and `corrected` say whether the map set the coordinates last.
+- The picker is full-screen on a phone (below `sm`) and 720 px wide above. Like the other Location dialogs it is
+  `persistent`, so a drag that ends outside the map can't close it; Cancel is the way out.
+- A map that can't load says so, in place of the map, with "Try again", which starts the map afresh. Any `error`
+  before the map's `load`, or no `load` in 10 seconds, counts as a failure, as the plan says, so one missing tile on a
+  flaky connection can show the failure message. The map stays mounted while the dialog fades out and goes at
+  after-leave, so the dialog's body doesn't collapse.
+- The map library, its stylesheet, and its worker are a chunk of their own, loaded the first time the picker opens
+  (`defineAsyncComponent`), so the page's first download doesn't grow by them. The worker is a separate `.mjs` file,
+  which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by 8 kB, from the three new
+  components, because `LocationPage` imports them directly; none of it is library code.
 
 #### Corrections, and importing places
 
@@ -1019,6 +1059,25 @@ The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: 
   not to type, so it isn't held together.
 - Looked at and kept: the disabled button's reason is in normal text, as for the Sharing page's disabled boxes.
 
+The map pin (checked in fake mode at 375 and 1280 px wide, with the real map: the form with its button, the picker
+with and without a pin, the failure message, the hotspot sentence, and the warning; the marker was tapped and dragged
+and the picker closed mid-fade, in a real browser):
+
+- Tapping the marker moved the pin a little, because the tap also reached the map's own click. A tap on the marker is
+  ignored now. Dragging it, and tapping the map beside it, still move the pin.
+- The map was removed the moment the dialog began to close, so the dialog's body collapsed while it faded. The map
+  now stays until the dialog has left.
+- On a phone the failure's alert grew to fill the dialog, and with a first fix squashed to a sliver, because a
+  Vuetify alert sets its own flex size and the dialog's body is a column. The alert sits in a block of its own now.
+- The failure still said "Tap the map to place the pin" under the message. With no map, that line is gone.
+- The sentence on the hotspot and the warning about decimals sat tight under the field's hint and read as more of
+  the hint. They have more room above.
+- The keyboard could still rotate the map (shift with the arrow keys); that is off now too.
+- Looked at and kept: "Use this point" with no pin is dim, as every disabled button is; the line under the map says
+  what to do.
+- Looked at and kept: the map is light on the dark theme. It is the map's own style, and the library's attribution
+  stays as it draws it.
+
 #### Defaults rejected
 
 - A data table of the deployments: see above.
@@ -1041,6 +1100,13 @@ The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: 
   let a later click start another copy that holds the exact locations. The page opens it once and keeps no link.
 - One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
   before anything is created.
+- OpenStreetMap's own tiles: its usage policy is for light use, not for an app that every install's phones would
+  ask. The install names a source in the manifest, which a site can change.
+- An address search on the map: it would send an address, which is exactly what a private place is, to a search
+  service. A pin and, later, a street picked from the map need nothing typed.
+- Tiles kept on the device for offline use: the unit would store and update a map, on a card that is for its data,
+  to serve a page used a few times; and a phone with no internet can type or paste a point.
+- A map on the hotspot: the phone has no internet there, so the map could only fail. One sentence says so instead.
 
 ### Network
 

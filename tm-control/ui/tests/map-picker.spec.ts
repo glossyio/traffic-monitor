@@ -1,5 +1,6 @@
 // The picker dialog around the map. PinMap is stubbed: it can say it failed, and set the pin.
 import { flushPromises } from '@vue/test-utils'
+import { VDialog } from 'vuetify/components'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MapPicker from '../src/modules/location/MapPicker.vue'
 import { clickInDialog, dialogButtons, dialogText, mountAlone } from './mount'
@@ -97,12 +98,14 @@ describe('the map picker', () => {
       "The map couldn't load. This phone may have no internet connection. Type or paste the coordinates instead.",
     )
     expect(document.querySelector('.pin-map-stub')).toBeNull()
+    expect(dialogText()).not.toContain('Tap the map') // there is no map to tap
 
     await clickInDialog('Try again')
     await settle()
     expect(stub.mounts).toBe(2)
     expect(document.querySelector('.pin-map-stub')).not.toBeNull()
     expect(dialogText()).not.toContain("The map couldn't load")
+    expect(dialogText()).toContain('Tap the map to place the pin')
   })
 
   it('Cancel answers nothing', async () => {
@@ -112,6 +115,26 @@ describe('the map picker', () => {
     await clickInDialog('Cancel')
     expect(wrapper.emitted('picked')).toBeUndefined()
     expect((wrapper.props() as Record<string, unknown>).open).toBe(false)
+  })
+
+  it('keeps the map while the dialog fades out and removes it after', async () => {
+    const wrapper = mountPicker()
+    await settle()
+    await clickInDialog('Drop the pin')
+    await clickInDialog('Cancel')
+    expect((wrapper.props() as Record<string, unknown>).open).toBe(false)
+    // The dialog is still fading: its body must not collapse by losing the map
+    expect(document.querySelector('.pin-map-stub')).not.toBeNull()
+
+    wrapper.findComponent(VDialog).vm.$emit('afterLeave')
+    await settle()
+    expect(document.querySelector('.pin-map-stub')).toBeNull()
+
+    // Opening again mounts a map afresh
+    await wrapper.setProps({ open: true })
+    await settle()
+    expect(stub.mounts).toBe(2)
+    expect(document.querySelector('.pin-map-stub')).not.toBeNull()
   })
 
   it('starts over each time it opens', async () => {

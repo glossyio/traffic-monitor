@@ -83,6 +83,7 @@ onMounted(() => {
     transformRequest: (url) => ({ url, referrerPolicy: 'no-referrer' }),
   })
   map.touchZoomRotate.disableRotation()
+  map.keyboard.disableRotation()
   map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
   map.on('load', () => {
     loaded = true
@@ -90,7 +91,12 @@ onMounted(() => {
     emit('ready')
   })
   map.on('error', fail)
-  map.on('click', (event) => setPin(event.lngLat.lat, event.lngLat.lng))
+  map.on('click', (event) => {
+    // The marker sits on the map, so a tap on it reaches here too, and would move the pin a little
+    const target = event.originalEvent?.target
+    if (target instanceof Node && marker?.getElement().contains(target)) return
+    setPin(event.lngLat.lat, event.lngLat.lng)
+  })
   timer = setTimeout(fail, LOAD_TIMEOUT_MS)
   placeMarker(pin.value)
 })
