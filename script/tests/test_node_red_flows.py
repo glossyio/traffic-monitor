@@ -1956,10 +1956,10 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
     """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts, and
     again for the watch log's camera switches), and the thumbnail and snapshot of an event id. None puts a camera
-    name in its URL. Frigate's summary lists every camera by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
-    (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
-    camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
-    frigate_cameras."""
+    name in its URL. Frigate's summary lists every camera by Frigate's name, and the one node that picks a camera
+    out of it is "structure frigate api/summary" (eb140f61419c6a08), which compares with flow.camera_selection (a
+    key). Every function that reads camera_selection and isn't a query of tmdb (which stores the key) must map the
+    key back through frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
     assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
