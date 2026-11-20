@@ -146,7 +146,7 @@ async function correct() {
               spellcheck="false"
               variant="outlined"
               :disabled="saving"
-              class="mb-2"
+              :class="map.style_url ? 'mb-2' : 'mb-4'"
               @update:model-value="onMap = false"
             />
             <p v-if="fewDecimals" class="text-body-2 text-warning mt-3 mb-2">{{ fewDecimals }}</p>

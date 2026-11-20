@@ -10,6 +10,7 @@ type Handler = (event?: unknown) => void
 const fake = vi.hoisted(() => {
   class FakeMap {
     static all: FakeMap[] = []
+    static failWith: Error | null = null // the constructor throws this, as MapLibre does with no WebGL2
     options: Record<string, unknown>
     handlers: Record<string, Handler[]> = {}
     controls: { control: unknown; position?: string }[] = []
@@ -17,6 +18,7 @@ const fake = vi.hoisted(() => {
     touchZoomRotate = { disableRotation: vi.fn() }
     keyboard = { disableRotation: vi.fn() }
     constructor(options: Record<string, unknown>) {
+      if (FakeMap.failWith) throw FakeMap.failWith
       this.options = options
       FakeMap.all.push(this)
     }
@@ -190,6 +192,12 @@ describe('the pin map', () => {
     expect(((wrapper.props() as Record<string, unknown>).pin as { lon: number }).lon).toBeCloseTo(-122.6912, 6)
   })
 
+  it('a double click or double tap does not zoom the map', () => {
+    // Each tap of it would also place the pin, so zooming in that way would undo a careful drag
+    mountMap()
+    expect(theMap().options).toMatchObject({ doubleClickZoom: false })
+  })
+
   it('rotation is off and the map is removed on unmount', () => {
     const wrapper = mountMap({ pin: LATLON })
     const map = theMap()
@@ -203,6 +211,25 @@ describe('the pin map', () => {
 
     wrapper.unmount()
     expect(map.removed).toBe(true)
+  })
+})
+
+describe('a map that cannot be made', () => {
+  beforeEach(() => {
+    document.body.replaceChildren()
+    fake.FakeMap.all.length = 0
+    fake.FakeMarker.all.length = 0
+  })
+  afterEach(() => {
+    fake.FakeMap.failWith = null
+  })
+
+  it('says failed once when the browser has no WebGL2', () => {
+    fake.FakeMap.failWith = new Error('Failed to initialize WebGL')
+    const wrapper = mountMap({ pin: LATLON })
+    expect(wrapper.emitted('failed')).toHaveLength(1)
+    expect(wrapper.emitted('ready')).toBeUndefined()
+    wrapper.unmount() // there is no map to remove: unmounting is clean
   })
 })
 

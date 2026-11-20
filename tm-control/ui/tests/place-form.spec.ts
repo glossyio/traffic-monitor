@@ -308,4 +308,17 @@ describe('the place form', () => {
     await clickInDialog('Save')
     expect(retyped.emitted('saved')![0][1]).toBe(false)
   })
+
+  it("saved says the map didn't set it when the phone's location replaced a pick", async () => {
+    fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    secure(true)
+    phone({ latitude: 45.52, longitude: -122.69 })
+    const wrapper = mountForm()
+    await flushPromises()
+    await pickOnMap()
+    await clickInDialog("Use this phone's location")
+    expect(dialogField('Coordinates').value).toBe('45.52000, -122.69000')
+    await clickInDialog('Save')
+    expect(wrapper.emitted('saved')![0][1]).toBe(false)
+  })
 })

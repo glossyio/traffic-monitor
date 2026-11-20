@@ -55,6 +55,13 @@ describe('the map picker', () => {
     stub.mounts = 0
   })
 
+  it('mounts nothing, so fetches nothing, before the dialog opens', async () => {
+    mountPicker({ open: false })
+    await settle()
+    expect(stub.mounts).toBe(0)
+    expect(document.querySelector('.pin-map-stub')).toBeNull()
+  })
+
   it('names the host of the map and says the device sends nothing', async () => {
     mountPicker()
     await settle()
@@ -81,11 +88,40 @@ describe('the map picker', () => {
     expect((wrapper.props() as Record<string, unknown>).open).toBe(false)
   })
 
-  it('starts at the point it was given', async () => {
-    mountPicker({ start: { lat: 45.0, lon: -122.0 } })
+  it('starts at the point it was given, but only the map can make it the answer', async () => {
+    const wrapper = mountPicker({ start: { lat: 45.0, lon: -122.0 } })
     await settle()
     expect(dialogText()).toContain('45.00000, -122.00000')
+    // Nothing was picked: using the typed point would only write it back with more decimals than it has
+    expect(dialogButtons('Use this point')[0].disabled).toBe(true)
+
+    await clickInDialog('Drop the pin')
     expect(dialogButtons('Use this point')[0].disabled).toBe(false)
+    await clickInDialog('Use this point')
+    expect(wrapper.emitted('picked')).toEqual([[{ lat: 45.52252, lon: -122.6912 }]])
+  })
+
+  it('Use this point stays disabled while the map has failed', async () => {
+    mountPicker({ start: { lat: 45.0, lon: -122.0 } })
+    await settle()
+    await clickInDialog('Drop the pin')
+    expect(dialogButtons('Use this point')[0].disabled).toBe(false)
+    await clickInDialog('Fail the map')
+    expect(dialogButtons('Use this point')[0].disabled).toBe(true)
+    await clickInDialog('Try again')
+    await settle()
+    // The pin the map set before it failed is still there
+    expect(dialogButtons('Use this point')[0].disabled).toBe(false)
+  })
+
+  it('starts over, with Use this point disabled, each time it opens', async () => {
+    const wrapper = mountPicker({ start: { lat: 45.0, lon: -122.0 } })
+    await settle()
+    await clickInDialog('Drop the pin')
+    await clickInDialog('Cancel')
+    await wrapper.setProps({ open: true })
+    await settle()
+    expect(dialogButtons('Use this point')[0].disabled).toBe(true)
   })
 
   it('a failure shows the message and Try again mounts the map again', async () => {

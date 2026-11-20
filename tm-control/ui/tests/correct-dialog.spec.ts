@@ -71,8 +71,13 @@ const LOCATION = 'POST /api/v1/surveys/c0ffee01-si/location'
 const BEARING = 'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/bearing'
 const FAR_TEXT = "That's far enough to look like a move. Correct it anyway?"
 
-function mountCorrect(kind: 'location' | 'bearing', survey: SurveyOut, deployment?: DeploymentOut) {
-  return mountAlone(CorrectDialog, { open: true, kind, place: survey, deployment, map: MAP, centre: null })
+function mountCorrect(
+  kind: 'location' | 'bearing',
+  survey: SurveyOut,
+  deployment?: DeploymentOut,
+  map: { style_url: string | null; overpass_url: string | null } = MAP,
+) {
+  return mountAlone(CorrectDialog, { open: true, kind, place: survey, deployment, map, centre: null })
 }
 
 function correctButton() {
@@ -157,6 +162,20 @@ describe('correcting a location', () => {
     await clickInDialog('Correct it anyway')
     expect(api.sent).toHaveLength(1)
     expect(dialog.emitted('corrected')).toEqual([[true]]) // the map set the point
+  })
+
+  it('keeps its old spacing under the field when there is no map to pick on', async () => {
+    const field = () => dialogField('Coordinates').closest('.v-input')!
+    mountCorrect('location', NEAR, undefined, { style_url: null, overpass_url: null })
+    await flushPromises()
+    expect(dialogButtons('Pick on a map')).toHaveLength(0)
+    expect(field().classList.contains('mb-4')).toBe(true)
+    document.body.replaceChildren()
+
+    mountCorrect('location', NEAR)
+    await flushPromises()
+    expect(dialogButtons('Pick on a map')).toHaveLength(1)
+    expect(field().classList.contains('mb-4')).toBe(false) // the button carries the space below it
   })
 
   it('warns about fewer than four decimal places and still corrects', async () => {

@@ -4,8 +4,9 @@
   sprites from `styleUrl`'s host; the device fetches nothing, and every request is sent with no referrer.
   It opens at the pin (zoom 17), else at `centre` (zoom 14), else on the whole world. A tap sets `pin`, and the marker
   can be dragged to the exact spot. Rotation and tilt are off, so north stays up. It says `ready` when the map has
-  loaded and `failed`, once, when an error comes first or nothing has loaded in 10 seconds (no internet, say). A
-  longitude is wrapped into -180 to 180, because the map repeats the world sideways; nothing here rounds a value.
+  loaded and `failed`, once, when the browser can't make the map (no WebGL2), an error comes first, or nothing has
+  loaded in 10 seconds (no internet, say). A longitude is wrapped into -180 to 180, because the map repeats the world
+  sideways; nothing here rounds a value.
 -->
 <script setup lang="ts">
 import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl'
@@ -67,38 +68,47 @@ function placeMarker(value: LatLon | null) {
 }
 
 onMounted(() => {
-  setWorkerUrl(workerUrl)
-  const start = pin.value ?? props.centre
-  map = new MapLibreMap({
-    container: element.value!,
-    style: props.styleUrl,
-    center: start ? [start.lon, start.lat] : [0, 20],
-    zoom: pin.value ? 17 : props.centre ? 14 : 1,
-    // North stays up and the map stays flat: nothing here needs a bearing or a tilt
-    dragRotate: false,
-    pitchWithRotate: false,
-    maxPitch: 0,
-    touchPitch: false,
-    // No referrer on any request: the map's host learns the area, not which page asked
-    transformRequest: (url) => ({ url, referrerPolicy: 'no-referrer' }),
-  })
-  map.touchZoomRotate.disableRotation()
-  map.keyboard.disableRotation()
-  map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
-  map.on('load', () => {
-    loaded = true
-    clearTimeout(timer)
-    emit('ready')
-  })
-  map.on('error', fail)
-  map.on('click', (event) => {
-    // The marker sits on the map, so a tap on it reaches here too, and would move the pin a little
-    const target = event.originalEvent?.target
-    if (target instanceof Node && marker?.getElement().contains(target)) return
-    setPin(event.lngLat.lat, event.lngLat.lng)
-  })
-  timer = setTimeout(fail, LOAD_TIMEOUT_MS)
-  placeMarker(pin.value)
+  try {
+    setWorkerUrl(workerUrl)
+    const start = pin.value ?? props.centre
+    map = new MapLibreMap({
+      container: element.value!,
+      style: props.styleUrl,
+      center: start ? [start.lon, start.lat] : [0, 20],
+      zoom: pin.value ? 17 : props.centre ? 14 : 1,
+      // North stays up and the map stays flat: nothing here needs a bearing or a tilt
+      dragRotate: false,
+      pitchWithRotate: false,
+      maxPitch: 0,
+      touchPitch: false,
+      // A double click or double tap would zoom in, but each tap of it also places the pin; pinch, the wheel, and the
+      // buttons still zoom
+      doubleClickZoom: false,
+      // No referrer on any request: the map's host learns the area, not which page asked
+      transformRequest: (url) => ({ url, referrerPolicy: 'no-referrer' }),
+    })
+    map.touchZoomRotate.disableRotation()
+    map.keyboard.disableRotation()
+    map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
+    map.on('load', () => {
+      loaded = true
+      clearTimeout(timer)
+      emit('ready')
+    })
+    map.on('error', fail)
+    map.on('click', (event) => {
+      // The marker sits on the map, so a tap on it reaches here too, and would move the pin a little
+      const target = event.originalEvent?.target
+      if (target instanceof Node && marker?.getElement().contains(target)) return
+      setPin(event.lngLat.lat, event.lngLat.lng)
+    })
+    timer = setTimeout(fail, LOAD_TIMEOUT_MS)
+    placeMarker(pin.value)
+  } catch {
+    // The browser can't make the map (no WebGL2, say): the picker says so, like any other failure
+    map = null
+    fail()
+  }
 })
 
 watch(pin, placeMarker)
