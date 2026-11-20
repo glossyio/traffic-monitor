@@ -2088,6 +2088,7 @@ EVENT_COLUMNS = [
     "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
     "provenance", "deployment_id", "radarName", "path_data", "box", "best_box", "best_frame_time", "frigate_speed",
     "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
+    "stationary_time", "stops", "zone_times",
 ]
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -2782,7 +2783,7 @@ def test_upload_result_wiring():
 FINALIZE = "a8aeffd2e5bc17f2"  # capture-events: event finalize output
 EVENT_PARAMS = "a96d834e3571c549"  # capture-events: write params for events insert
 EVENT_INSERT = "61d6a19c99c60e0b"  # capture-events: tmdb.events, Prepared Statement
-JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box"}
+JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box", "zone_times"}
 SCHEMA_SQL = FLOWS.parents[1] / "schema" / "schema.sql"
 EVENT = {
     "id": "1761800000.123456-abc123", "camera": "camera_1_3fa9c2", "label": "car", "sub_label": None,
@@ -2793,7 +2794,7 @@ EVENT = {
 
 
 def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING,
-                 source=MISSING):
+                 source=MISSING, tally=MISSING):
     """The message "event finalize output" gets: the event under its camera's key, and what the speed nodes found."""
     found = {"status_radarMatch": speed is not None, "calc_event_direction": direction, "calc_event_speed": speed,
              "calc_radar_readings": readings}
@@ -2803,6 +2804,8 @@ def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERI
            "payload": found, "event_direction_speed": found}
     if fields is not MISSING:
         msg["frigate_fields"] = fields
+    if tally is not MISSING:
+        msg["time_tally"] = tally
     return msg
 
 
@@ -3392,7 +3395,8 @@ def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
 ], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
 def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
     payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
-    assert payload["direction_source"] == expected and list(payload)[-1] == "direction_source"
+    assert payload["direction_source"] == expected
+    assert list(payload).index("direction_source") == EVENT_COLUMNS.index("direction_source")
     assert step["logged"] == []
 
 
@@ -3472,10 +3476,36 @@ def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
     con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
     row = con.execute("SELECT camera, sub_label, direction_calc, speed_calc, speed_unit, speed_source, radar_readings, "
                       "frigate_speed, frigate_speed_unit, json_array_length(path_data), json_extract(box, '$[0]'), "
-                      "best_frame_time, radarName, direction_source FROM events").fetchone()
+                      "best_frame_time, radarName, direction_source, stationary_time, stops, zone_times "
+                      "FROM events").fetchone()
     assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
-                   1761800002.1, None, "zones")
+                   1761800002.1, None, "zones", None, None, None)
     assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
+
+
+@needs_node
+def test_a_made_up_run_of_messages_becomes_a_row_with_its_times():
+    """STOP's messages through the tally node, then the end message through the same chain and the INSERT."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    config["sensors"]["radars"] = {}
+    _, context = load_config(config)
+    messages = one_object(STOP)
+    after = {**AFTER, **messages[-1]["payload"]["after"], "sub_label": ["Jane Doe", 0.97],
+             "entered_zones": ["zone_stop"], "top_score": 0.91, "score": 0.88, "area": 57600, "ratio": 1.78,
+             "motionless_count": 0, "position_changes": 3, "attributes": {}}
+    messages[-1]["payload"]["after"] = after
+    msg, flow = run_tally(messages)
+    msg = run_chain(["vet sub_label", "frigate fields", APPEND_CONFIG,
+                     "calculate direction based on frigate event zones", MATCH], {**msg, "frigate_event": after},
+                    context, {**flow, "frigate_facts": METRIC})
+    msg = {**msg, "event_direction_speed": msg["payload"]}
+    msg = run_chain([FINALIZE, EVENT_PARAMS], msg, context, {})
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
+    row = con.execute("SELECT stationary_time, stops, json_extract(zone_times, '$.zone_stop.time'), "
+                      "json_extract(zone_times, '$.zone_stop.stationary') FROM events").fetchone()
+    assert row == (26.0, 1, 41, 26)
 
 
 SPEED_STATS = "584504e6c8935eaf"  # ui-monitoring: query events, daily cum car counts in zone_radar with speed_calc
@@ -4259,3 +4289,39 @@ def test_every_frigate_event_message_passes_the_tally_first():
     group = by_id[tally["g"]]
     assert group["id"] == "0a5faeac9fbd6d55" and tally["id"] in group["nodes"] and tally["z"] == source["z"]
     assert group["x"] < tally["x"] < group["x"] + group["w"] and group["y"] < tally["y"] < group["y"] + group["h"]
+
+
+def saved_times(tally=MISSING):
+    [step] = run_functions([(node_by_id(FINALIZE), finalize_msg("inbound", 22.5, 7, tally=tally))])["results"]
+    payload = step["result"]["payload"]
+    assert step["logged"] == [] and "stopped" not in payload
+    return payload["stationary_time"], payload["stops"], payload["zone_times"]
+
+
+@needs_node
+def test_the_times_are_saved_with_the_event():
+    assert saved_times(STOP_TALLY) == (26, 1, {"zone_stop": {"time": 41, "stationary": 26}})
+    assert saved_times({**STOP_TALLY, "stationary_time": 0, "stops": 0, "zone_times": {}}) == (0, 0, {})
+
+
+@needs_node
+@pytest.mark.parametrize("tally", [
+    MISSING, None, "text", [], {}, {key: value for key, value in STOP_TALLY.items() if key != "stops"},
+    {**STOP_TALLY, "stops": 1.5}, {**STOP_TALLY, "stops": -1}, {**STOP_TALLY, "stationary_time": "26"},
+    {**STOP_TALLY, "stationary_time": -1}, {**STOP_TALLY, "zone_times": []}, {**STOP_TALLY, "zone_times": None},
+    {**STOP_TALLY, "zone_times": {"zone_stop": {"time": 41}}},
+    {**STOP_TALLY, "zone_times": {"zone_stop": {"time": "41", "stationary": 0}}},
+    {**STOP_TALLY, "zone_times": {"zone_stop": 41}},
+])
+def test_times_that_are_not_whole_are_all_left_empty(tally):
+    assert saved_times(tally) == (None, None, None)
+
+
+@needs_node
+def test_zone_times_is_stored_as_json_text():
+    payload = {name: None for name in EVENT_COLUMNS} | {"zone_times": STOP_TALLY["zone_times"], "stops": 1,
+                                                        "stationary_time": 26}
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert (params["$stationary_time"], params["$stops"]) == (26, 1)
+    assert json.loads(params["$zone_times"]) == STOP_TALLY["zone_times"]
