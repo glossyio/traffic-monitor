@@ -52,7 +52,7 @@ Frigate doesn't send these times. Each message about an object says whether the 
 
 The figures run to the last frame the object was seen in, so they add up to a little less than `end_time` minus `start_time`. No figure says more than six hours: 21600 means six hours or more.
 
-A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, the time before is lost, because an event that ends while the object is stationary isn't recorded. A vehicle that was already parked when the device or Frigate started is timed only from then.
+A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, it follows it as a new object, so one stay becomes two or more events, each with only its own part of the time. The part before the vehicle was lost is saved as an event of its own, unless that event ended while the object was stationary, which isn't recorded. A vehicle that was already parked when the device or Frigate started is timed only from then.
 
 For example, the time each car of one day spent in a stop-sign zone, and how much of it stopped:
 

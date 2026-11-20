@@ -76,4 +76,4 @@ The limits:
 - Six hours is the most a figure says; 21600 means six hours or more.
 - A vehicle that is still parked has no event yet.
 - A vehicle that was already parked when the device or Frigate started is timed only from then.
-- If Frigate loses sight of a parked vehicle and finds it again, it is recorded only from where it was found.
+- If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, the stay is split into two or more events, each shorter than the stay, and a part can be missing. A vehicle that stayed longer than allowed can then have no event over the limit.
