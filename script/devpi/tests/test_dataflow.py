@@ -159,10 +159,14 @@ def newest_watch_rows(host, codedir, table, sensor_column, columns):
     return rows[0][0], {row[1]: dict(zip(columns, row[2:])) for row in rows}
 
 
-def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red_config, frigate_stats):
+def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red_config, frigate_stats,
+                                                 frigate_config):
     """The newest watch_camera and watch_radar rows are on a five-minute mark within 400 seconds of now, name each
     camera and radar config.yml lists, and, for a camera Frigate reports on, say Frigate answered, with its stats
-    messages and detection setting; an expected radar's port is open. Reads only."""
+    messages, detection setting, and whether the camera is on (as Frigate's configuration says), with no frame rate
+    when it is off; an expected radar's port is open, it answered the once-a-minute power-state question, and
+    radar_on says whether it is on. Reads only, and passes with the camera on or off and the radar active or idle.
+    A radar that answers but is idle (radar_on 0) is a finding for a person, not for this test."""
     active = node_red_active_seconds(host)
     if active < WATCH_FIRST_ROWS_SECONDS:
         pytest.skip(f"node-red-tm.service has been active for {active / 60:.0f} minutes; its first watch log rows "
@@ -188,12 +192,14 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
 
     if cameras:
         newest, rows = newest_watch_rows(host, codedir, "watch_camera", "camera",
-                                         ["frigate_answers", "camera_answers", "detection_enabled"])
+                                         ["frigate_answers", "camera_answers", "detection_enabled", "camera_on",
+                                          "camera_fps"])
         if check_time("watch_camera", newest):
             if set(rows) != set(cameras):
                 problems.append(f"the newest watch_camera rows are for cameras {sorted(rows)}, "
                                 f"config.yml's sensors.cameras has {sorted(cameras)}")
             reported = frigate_stats.get("cameras") or {}
+            configured_cameras = frigate_config.get("cameras") or {}
             for key, entry in cameras.items():
                 row = rows.get(key)
                 frigate_name = (entry or {}).get("frigate_camera") or key
@@ -209,8 +215,18 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                 if detecting is not None and row["detection_enabled"] != int(bool(detecting)):
                     problems.append(f"watch_camera.detection_enabled for camera {key} is {row['detection_enabled']}, "
                                     f"Frigate's stats say {int(bool(detecting))} now")
+                if row["camera_on"] is None:
+                    problems.append(f"watch_camera.camera_on for camera {key} is empty, Frigate reports on it now")
+                else:
+                    enabled = (configured_cameras.get(frigate_name) or {}).get("enabled")
+                    if enabled is not None and row["camera_on"] != int(bool(enabled)):
+                        problems.append(f"watch_camera.camera_on for camera {key} is {row['camera_on']}, "
+                                        f"Frigate's configuration says {int(bool(enabled))} now")
+                    if row["camera_on"] == 0 and row["camera_fps"] is not None:
+                        problems.append(f"watch_camera.camera_fps for camera {key} is {row['camera_fps']}, "
+                                        f"empty is expected while the camera is off")
     if radars:
-        newest, rows = newest_watch_rows(host, codedir, "watch_radar", "radar", ["port_open"])
+        newest, rows = newest_watch_rows(host, codedir, "watch_radar", "radar", ["port_open", "radar_answers", "radar_on"])
         if check_time("watch_radar", newest):
             if set(rows) != set(radars):
                 problems.append(f"the newest watch_radar rows are for radars {sorted(rows)}, "
@@ -220,4 +236,11 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                 if row is not None and row["port_open"] != 1:
                     problems.append(f"watch_radar.port_open for radar {radar['env_name']} is {row['port_open']}, "
                                     f"the inventory says it is attached")
+                if row is not None and (radars.get(radar["env_name"]) or {}).get("enabled") is True:
+                    if not (row["radar_answers"] or 0) >= 1:
+                        problems.append(f"watch_radar.radar_answers for radar {radar['env_name']} is "
+                                        f"{row['radar_answers']}, the inventory says it is attached")
+                    if row["radar_on"] not in (0, 1):
+                        problems.append(f"watch_radar.radar_on for radar {radar['env_name']} is "
+                                        f"{row['radar_on']}, it should be 1 or 0")
     assert not problems, "; ".join(problems)
