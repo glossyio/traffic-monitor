@@ -24,9 +24,11 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 
+from tm_control.adapters import network, timedate
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import DOWNLOAD_PATH, DOWNLOAD_TOKEN, Audit, User
 from tm_control.core.errors import ApiError
+from tm_control.core.manifest import MapInfo
 from tm_control.modules.auth.deps import client_ip, require_admin
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.access import config_error, load_config, save_config
@@ -40,6 +42,7 @@ from tm_control.modules.location.coordinates import (
     stored,
 )
 from tm_control.modules.location.places import Bearing, Places, Survey
+from tm_control.modules.location.region import LatLon, region
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +81,14 @@ class Unassigned(BaseModel):
     last_end: int | None
 
 
+class MapSources(BaseModel):
+    """Where the browser gets the map and the street data; null is off (the install's setting is empty or not https)."""
+
+    style_url: str | None
+    overpass_url: str | None
+    region: LatLon | None = None  # where the map opens with no place to start from: the time zone's city
+
+
 class PlacesState(BaseModel):
     precision: Literal["none", "1", "2"]
     in_use: str | None
@@ -87,6 +98,7 @@ class PlacesState(BaseModel):
     unassigned: Unassigned | None
     reconcile: Literal["done", "waiting_nodered", "config_unreadable"]
     nodered: bool  # whether Node-RED answered the usage counts
+    map: MapSources
 
 
 class SurveyIn(BaseModel):
@@ -273,6 +285,25 @@ def _deployments(rows: list[dict]) -> list[DeploymentOut]:
     return [found for found in map(_deployment, rows) if found is not None]
 
 
+def _map_sources(info: MapInfo) -> MapSources:
+    """The two addresses, each off unless it is https. Street data is of no use without a map to pick on."""
+    style = info.style_url if info.style_url.startswith("https://") else None
+    overpass = info.overpass_url if style and info.overpass_url.startswith("https://") else None
+    return MapSources(style_url=style, overpass_url=overpass)
+
+
+def _region(app_state) -> LatLon | None:
+    """The device's region, from its time zone and Wi-Fi country (fake mode's own, as the Time page does)."""
+    if app_state.settings.fake:
+        zone = app_state.fake_clock.show().timezone
+        country = app_state.fake_network.country
+    else:
+        state = timedate.show()
+        zone = state.timezone if state else None
+        country = network.wifi_country()
+    return region(zone, country)
+
+
 def _state(request: Request, admin: User) -> PlacesState:
     app_state = request.app.state
     try:
@@ -289,6 +320,9 @@ def _state(request: Request, admin: User) -> PlacesState:
     usage, unassigned, answered = _usage(app_state)
     places = Places(app_state.state)
     current = places.in_use()
+    sources = _map_sources(app_state.manifest.map)
+    if sources.style_url:  # a region is of no use without a map
+        sources.region = _region(app_state)
     return PlacesState(
         precision=precision,
         in_use=current.id if current else None,
@@ -302,6 +336,7 @@ def _state(request: Request, admin: User) -> PlacesState:
         ),
         reconcile=outcome.state,
         nodered=answered,
+        map=sources,
     )
 
 

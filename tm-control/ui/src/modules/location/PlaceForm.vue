@@ -2,7 +2,10 @@
   The dialog that adds a place (POST /surveys) or, given a planned `survey`, edits it (PATCH /surveys/{id}): a private
   description, the coordinates as one "latitude, longitude" field, and a bearing for each enabled sensor. On a secure
   (HTTPS) page the phone can fill in the coordinates; on plain HTTP browsers don't share a location, and the form says
-  so. The form starts over each time it opens. Emits `saved` with the place the API answered, then closes; and
+  so. A map button under the field picks the point on a map instead, and a line warns when fewer than four decimal
+  places are typed (about 10 m): advice, never an error. The form starts over each time it opens. Emits `saved` with
+  the place the API answered and whether the map set the coordinates last (typing after a pick makes it false), then
+  closes; and
   `stale` when the API refused because the place changed since the page loaded (409, such as a planned place that
   was deployed meanwhile), so the page loads the places again.
 -->
@@ -10,20 +13,25 @@
 import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
-import { BEARINGS, formatExact, parsePair, startingBearings } from './coordinates'
+import { BEARINGS, fewDecimalsWarning, formatExact, parsePair, startingBearings, type LatLon } from './coordinates'
+import MapPickButton from './MapPickButton.vue'
 
 type Bearing = components['schemas']['Bearing']
 type SurveyOut = components['schemas']['SurveyOut']
+type MapSources = components['schemas']['MapSources']
 
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{
   sensors: Bearing[] // the enabled sensors, each with its bearing in config.yml now
   survey?: SurveyOut // the planned place to edit; none to add one
+  map: MapSources // where the map comes from; null style_url is no map
+  centre: LatLon | null // where the map looks first with no point: the place in use
 }>()
-const emit = defineEmits<{ saved: [survey: SurveyOut]; stale: [] }>()
+const emit = defineEmits<{ saved: [survey: SurveyOut, onMap: boolean]; stale: [] }>()
 
 const description = ref('')
 const coordinates = ref('')
+const onMap = ref(false) // whether the map set the coordinates last
 const bearings = ref<Bearing[]>([])
 const saving = ref(false)
 const error = ref('')
@@ -39,6 +47,7 @@ watch(
     description.value = survey?.description ?? ''
     coordinates.value = survey && survey.lat !== null ? formatExact(survey.lat, survey.lon) : ''
     bearings.value = startingBearings(props.sensors, survey)
+    onMap.value = false
     error.value = ''
     locateError.value = ''
   },
@@ -50,6 +59,7 @@ const pair = computed(() => parsePair(coordinates.value))
 const coordinatesError = computed(() =>
   coordinates.value.trim() && !pair.value ? 'Enter latitude, longitude with a dot as the decimal mark' : '',
 )
+const fewDecimals = computed(() => fewDecimalsWarning(coordinates.value))
 
 // The phone's location. Browsers share it only with secure pages, and the device is usually reached over plain HTTP.
 const secure = window.isSecureContext
@@ -66,6 +76,7 @@ function useThisPhone() {
       locating.value = false
       // Five decimal places, as the device keeps them (about a metre)
       coordinates.value = `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`
+      onMap.value = false
     },
     (refused) => {
       locating.value = false
@@ -89,7 +100,7 @@ async function save() {
     const { data } = props.survey
       ? await api.PATCH('/api/v1/surveys/{survey_id}', { params: { path: { survey_id: props.survey.id } }, body })
       : await api.POST('/api/v1/surveys', { body })
-    emit('saved', data as SurveyOut)
+    emit('saved', data as SurveyOut, onMap.value)
     open.value = false
   } catch (failure) {
     error.value = messageOf(failure)
@@ -131,6 +142,15 @@ const title = computed(() => {
             spellcheck="false"
             variant="outlined"
             class="mb-2"
+            @update:model-value="onMap = false"
+          />
+          <p v-if="fewDecimals" class="text-body-2 text-warning mt-3 mb-2">{{ fewDecimals }}</p>
+          <MapPickButton
+            v-model:coordinates="coordinates"
+            :map="map"
+            :centre="centre"
+            class="mb-2"
+            @picked="onMap = true"
           />
           <v-btn
             v-if="secure"
@@ -146,7 +166,6 @@ const title = computed(() => {
             Browsers only share your location with secure pages. Paste coordinates instead.
           </p>
           <v-alert v-if="locateError" type="warning" class="mt-4">{{ locateError }}</v-alert>
-          <p class="text-body-2 text-secondary mt-2">A map pin is coming in a later update.</p>
 
           <template v-if="bearings.length">
             <h3 class="text-subtitle-1 font-weight-medium mt-6">Which way each sensor faces here</h3>

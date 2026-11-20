@@ -4070,6 +4070,24 @@
         ],
         "title": "LabelsOut"
       },
+      "LatLon": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "LatLon"
+      },
       "Link": {
         "properties": {
           "connected": {
@@ -4152,6 +4170,49 @@
           "lon"
         ],
         "title": "LocationCorrection"
+      },
+      "MapSources": {
+        "properties": {
+          "style_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Url"
+          },
+          "overpass_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overpass Url"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatLon"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "style_url",
+          "overpass_url"
+        ],
+        "title": "MapSources",
+        "description": "Where the browser gets the map and the street data; null is off (the install's setting is empty or not https)."
       },
       "Memory": {
         "properties": {
@@ -4707,6 +4768,9 @@
           "nodered": {
             "type": "boolean",
             "title": "Nodered"
+          },
+          "map": {
+            "$ref": "#/components/schemas/MapSources"
           }
         },
         "type": "object",
@@ -4718,7 +4782,8 @@
           "surveys",
           "unassigned",
           "reconcile",
-          "nodered"
+          "nodered",
+          "map"
         ],
         "title": "PlacesState"
       },

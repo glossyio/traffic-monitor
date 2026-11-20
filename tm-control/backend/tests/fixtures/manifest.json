@@ -36,6 +36,10 @@
         "maintainer_host": "tb.example.invalid",
         "public_map_live": false
     },
+    "map": {
+        "style_url": "https://tiles.openfreemap.org/styles/liberty",
+        "overpass_url": "https://overpass-api.de/api/interpreter"
+    },
     "revproxy_locations": [
         "dashboard.conf",
         "frigate.conf",

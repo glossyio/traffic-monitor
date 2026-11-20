@@ -111,6 +111,9 @@
       sharing:
         maintainer_host: '{{ tmsetup_sharing_maintainer_host }}'
         public_map_live: '{{ tmsetup_sharing_public_map_live | bool }}'
+      map:
+        style_url: '{{ tmsetup_map_style_url }}'
+        overpass_url: '{{ tmsetup_map_overpass_url }}'
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results
