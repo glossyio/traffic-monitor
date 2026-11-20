@@ -15641,12 +15641,14 @@
             "669fd305a6d19ac3",
             "1d36b14c5d10b13a",
             "ddbdf776eb14316b",
-            "c7cdca42234df7eb"
+            "c7cdca42234df7eb",
+            "327af6928ff8f998",
+            "8fab4008b7bc52b7"
         ],
         "x": 14,
         "y": 1061,
         "w": 722,
-        "h": 200
+        "h": 279
     },
     {
         "id": "1c84b05d58e12d41",
@@ -15666,7 +15668,8 @@
         "y": 1100,
         "wires": [
             [
-                "c8bdd25e20610818"
+                "c8bdd25e20610818",
+                "327af6928ff8f998"
             ]
         ]
     },
@@ -15685,6 +15688,50 @@
         "libs": [],
         "x": 400,
         "y": 1100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "327af6928ff8f998",
+        "type": "http request",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "frigate api/config, watch log",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://frigate:5000/api/config",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 400,
+        "y": 1260,
+        "wires": [
+            [
+                "8fab4008b7bc52b7"
+            ]
+        ]
+    },
+    {
+        "id": "8fab4008b7bc52b7",
+        "type": "function",
+        "z": "05fcb02c571dcfee",
+        "g": "42ab4681bb24d9f1",
+        "name": "keep frigate camera switch",
+        "func": "// Files Frigate's answer about each camera's switch into the open five-minute window in flow.watch_window.\n// A stats report can't say this itself: Frigate keeps listing a camera that is off in frigate/stats, with the last\n// frame rates it measured. So each stats report also asks Frigate for its configuration (GET /api/config), where\n// a camera's `enabled` is its switch as it is now. Answers are filed under the key config.yml gives each camera,\n// so Frigate's own name is kept nowhere: a camera that config.yml doesn't list is left out.\n// An answer that can't be read is no answer, and nothing is logged (a Frigate that is restarting is normal).\n// Before the first mark there is no window and nothing is kept.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\nconst window = flow.get(\"watch_window\");\nif (!isMapping(window)) {\n    return null;\n}\n\nif (msg.statusCode !== 200 || !isMapping(msg.payload) || !isMapping(msg.payload.cameras)) {\n    return null;\n}\n\nif (!isMapping(window.switches)) {\n    window.switches = {};\n}\n\nconst keys = global.get(\"frigate_cameras\");\nfor (const [name, entry] of Object.entries(msg.payload.cameras)) {\n    if (!isMapping(keys) || !has(keys, name) || typeof keys[name] !== \"string\") {\n        continue;\n    }\n    if (!isMapping(entry) || typeof entry.enabled !== \"boolean\") {\n        continue;\n    }\n    const key = keys[name];\n    if (!has(window.switches, key)) {\n        window.switches[key] = { answers: 0, off: 0 };\n    }\n    window.switches[key].answers += 1;\n    if (entry.enabled === false) {\n        window.switches[key].off += 1;\n    }\n}\n\nflow.set(\"watch_window\", window);\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 1260,
         "wires": [
             []
         ]

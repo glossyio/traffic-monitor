@@ -1953,15 +1953,15 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 
 
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
-    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts), and the
-    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
-    by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
+    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts, and
+    again for the watch log's camera switches), and the thumbnail and snapshot of an event id. None puts a camera
+    name in its URL. Frigate's summary lists every camera by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
     (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
     camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
     frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
-    assert len(calls) == 5 and not [node["id"] for node in calls if "camera" in node["url"]]
+    assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
     selects = [node["id"] for node in flows
                if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
     assert selects == [SUMMARY]
@@ -2106,7 +2106,7 @@ WATCH_CAMERA_COLUMNS = ["time", "camera", "config_enabled", "deployment_id", "fr
                         "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled"]
 WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at"]
 STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
-EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}}
+EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}, "switches": {}}
 WATCH_SENSORS = {
     "cameras": {"camera_1_3fa9c2": {"enabled": True, "deployment": {"id": "1761700000000-0a1b2c3d-d"}},
                 "side_st": {"enabled": False}},
@@ -2115,7 +2115,7 @@ WATCH_SENSORS = {
 }
 WATCH_WINDOW = {"since": TICK_MS - 300000, "messages": 5, "cameras": {"camera_1_3fa9c2": {
     "messages": 5, "camera_fps": 25.0, "process_fps": 24.5, "skipped_fps": 0.0, "detection_fps": 2.0,
-    "detection_off": 0}}}
+    "detection_off": 0}}, "switches": {"camera_1_3fa9c2": {"answers": 5, "off": 0}}}
 RADAR_STATUS = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "port_open": True,
                                             "last_reading_at": "2025-10-30T04:54:58.400Z"}}
 NO_NUMBERS = {"camera_answers": 0, "camera_fps": None, "process_fps": None, "skipped_fps": None,
@@ -3575,6 +3575,88 @@ def test_frigate_stats_reach_the_keeper():
     group = by_id[keep["g"]]
     assert group["name"] == "watch log" and group["z"] == keep["z"] == source["z"] == tab_id(flows, "system")
     assert source["g"] == group["id"] and {keep["id"], source["id"]} <= set(group["nodes"])
+
+
+def frigate_switches(**cameras):
+    """Frigate's /api/config answer, cut down to cameras with the given enabled values."""
+    return {"statusCode": 200, "payload": {
+        "cameras": {name: {"enabled": on, "detect": {"enabled": False}} for name, on in cameras.items()}, "mqtt": {}}}
+
+
+def keep_switch(messages, window=MISSING):
+    """Run "keep frigate camera switch" on each message in turn, with one camera config.yml lists under another key."""
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "keep frigate camera switch")
+    return run_functions([(node, message) for message in messages],
+                         context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}, "tm_warned": {}}, flow=flow)
+
+
+@needs_node
+def test_frigates_answers_are_counted_under_the_cameras_key():
+    run = keep_switch([frigate_switches(oak_ave_wide=True, back_lane=False), frigate_switches(oak_ave_wide=False)])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW,
+                                           "switches": {"camera_1_3fa9c2": {"answers": 2, "off": 1}}}
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [step["logged"] for step in run["results"]] == [[], []]
+    # Frigate's names, the listed camera's and the unlisted one's, are kept nowhere
+    kept = json.dumps([run["flow"], run["results"], run["global"]["tm_warned"]])
+    assert "oak_ave_wide" not in kept and "back_lane" not in kept
+
+
+@needs_node
+@pytest.mark.parametrize("message", [
+    {"statusCode": 503, "payload": "Service Unavailable"},
+    {"statusCode": "ECONNREFUSED", "payload": "RequestError: connect ECONNREFUSED : http://frigate:5000/api/config"},
+    {"payload": frigate_switches(oak_ave_wide=True)["payload"]},
+    {"statusCode": 200, "payload": "text"}, {"statusCode": 200, "payload": None}, {"statusCode": 200, "payload": {}},
+    {"statusCode": 200, "payload": {"cameras": []}},
+], ids=["an-error-status", "no-connection", "no-status", "text", "null", "no-cameras-key", "cameras-list"])
+def test_an_answer_that_cannot_be_read_is_no_answer(message):
+    run = keep_switch([message])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW
+    assert run["results"][0]["result"] is None and run["results"][0]["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("camera", [None, "on", {}, {"enabled": 1}, {"enabled": "true"}, {"enabled": None}],
+                         ids=["null", "text", "no-enabled", "a-number", "text-true", "null-enabled"])
+def test_a_camera_whose_switch_cannot_be_read_is_left_out(camera):
+    run = keep_switch([{"statusCode": 200, "payload": {"cameras": {"oak_ave_wide": camera}}}])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_before_the_first_mark_no_answer_is_kept():
+    run = keep_switch([frigate_switches(oak_ave_wide=True)], window=None)
+    assert run["flow"] == {} and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_a_window_opened_before_this_change_takes_answers():
+    """A deploy in the middle of a window leaves one without `switches`."""
+    run = keep_switch([frigate_switches(oak_ave_wide=True)],
+                      window={"since": TICK_MS - 300000, "messages": 0, "cameras": {}})
+    assert run["flow"]["watch_window"]["switches"] == {"camera_1_3fa9c2": {"answers": 1, "off": 0}}
+
+
+def test_each_stats_report_asks_frigate_for_its_configuration():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate camera switch")
+    ask = named(flows, "frigate api/config, watch log")
+    base = by_id["c58a1e3d7f96b024"]  # the base PR's request node, which this one copies
+    same = ("type", "method", "ret", "paytoqs", "url", "tls", "persist", "proxy", "insecureHTTPParser", "authType",
+            "senderr", "headers")
+    assert {field: ask[field] for field in same} == {field: base[field] for field in same}
+    assert ask["url"] == "http://frigate:5000/api/config" and ask["wires"] == [[keep["id"]]]
+    [source] = [node for node in flows if ask["id"] in sum(node.get("wires", []), [])]
+    assert (source["type"], source["topic"]) == ("mqtt in", "frigate/stats")
+    assert source["wires"] == [[named(flows, "keep frigate stats")["id"], ask["id"]]]
+    assert (keep["type"], keep["outputs"], keep["wires"], keep["initialize"], keep["finalize"]) == (
+        "function", 1, [[]], "", "")
+    group = by_id[keep["g"]]
+    assert group["name"] == "watch log" and ask["g"] == group["id"] and {keep["id"], ask["id"]} <= set(group["nodes"])
+    assert keep["z"] == ask["z"] == tab_id(flows, "system")
 
 
 def watch_tick(window=WATCH_WINDOW, config=MISSING, radars=RADAR_STATUS, now=TICK_MS):
