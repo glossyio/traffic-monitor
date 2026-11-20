@@ -4036,3 +4036,226 @@ def test_the_watch_log_is_written_every_five_minutes():
     for node_id in group["nodes"]:
         node = by_id[node_id]
         assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
+
+
+# Time stopped and time in each zone. Frigate sends no times, only whether the object is stationary and which zones
+# it is in, on every frigate/events message. "tally time stopped and time in zones" adds the time between messages
+# up for each object, from its new message to its end, and hands the totals to the end message as msg.time_tally.
+
+TALLY = "tally time stopped and time in zones"
+T0 = 1761800000.0  # the first frame's time
+TALLY_ID = "1761800000.0-abc123"
+
+
+def frigate_message(kind, at, before_at, stationary=False, zones=(), event_id=TALLY_ID):
+    """One frigate/events message, cut down to what the tally reads, with a camera name and a sub-label that must go
+    no further. Times are seconds after T0. An end message's end_time is five seconds after its last frame."""
+    after = {"id": event_id, "camera": "oak_ave_wide", "sub_label": ["Jane Doe", 0.97], "frame_time": T0 + at,
+             "end_time": T0 + at + 5 if kind == "end" else None, "stationary": stationary,
+             "current_zones": list(zones)}
+    return {"topic": "frigate/events",
+            "payload": {"type": kind, "before": {"id": event_id, "frame_time": T0 + before_at}, "after": after}}
+
+
+def one_object(steps, event_id=TALLY_ID):
+    """Frigate's messages for one object, from (type, seconds after T0, stationary, zones) steps. Each message's
+    `before` holds the frame time of the message before it, as Frigate's does."""
+    messages, last = [], steps[0][1]
+    for kind, at, stationary, zones in steps:
+        messages.append(frigate_message(kind, at, last, stationary, zones, event_id))
+        last = at
+    return messages
+
+
+def run_tally(messages, flow=None):
+    """Run the tally node on each message in turn. Returns the message the last one sent on and the flow context
+    after. Every message must go on with its payload as it came, and nothing may be logged."""
+    node = named(json.loads(FLOWS.read_text()), TALLY)
+    run = run_functions([(node, copy.deepcopy(msg)) for msg in messages], context={"tm_warned": {}}, flow=flow or {})
+    for step, msg in zip(run["results"], messages, strict=True):
+        assert step["logged"] == [] and step["result"]["payload"] == msg["payload"]
+    return run["results"][-1]["result"], run["flow"]
+
+
+DRIVE_THROUGH = [("new", 0, False, []), ("update", 1, False, ["zone_far"]),
+                 ("update", 2.5, False, ["zone_far", "zone_radar"]), ("update", 4, False, ["zone_near"]),
+                 ("end", 5.5, False, ["zone_near"])]
+STOP = [("new", 0, False, []), ("update", 2, False, ["zone_stop"]), ("update", 14, True, ["zone_stop"]),
+        ("update", 40, False, ["zone_stop"]), ("update", 43, False, []), ("end", 45, False, [])]
+STOP_TALLY = {"stationary_time": 26, "stops": 1, "zone_times": {"zone_stop": {"time": 41, "stationary": 26}},
+              "stopped": [[T0 + 14, T0 + 40]]}
+
+
+@needs_node
+def test_a_drive_through_has_its_time_in_each_zone_and_no_stop():
+    """The last stretch ends at the last frame the object was seen in: zone_near has 1.5 seconds, not 6.5."""
+    out, flow = run_tally(one_object(DRIVE_THROUGH))
+    assert out["time_tally"] == {"stationary_time": 0, "stops": 0, "stopped": [], "zone_times": {
+        "zone_far": {"time": 3, "stationary": 0}, "zone_radar": {"time": 1.5, "stationary": 0},
+        "zone_near": {"time": 1.5, "stationary": 0}}}
+    assert flow["time_tallies"] == {}
+
+
+@needs_node
+def test_a_stop_in_a_zone_runs_from_frigates_flag_to_the_frame_the_object_moved_in():
+    out, flow = run_tally(one_object(STOP))
+    assert out["time_tally"] == STOP_TALLY and flow["time_tallies"] == {}
+
+
+@needs_node
+def test_until_the_end_the_figures_stay_in_the_tally():
+    out, flow = run_tally(one_object(STOP)[:-1])
+    assert out["time_tally"] is None
+    assert flow["time_tallies"] == {TALLY_ID: {
+        "at": T0 + 43, "stationary": False, "zones": [], "stationary_time": 26, "stops": 1,
+        "zone_times": {"zone_stop": {"time": 41, "stationary": 26}}, "stopped": [[T0 + 14, T0 + 40]],
+        "stopped_since": None, "broken": False}}
+    # Frigate's name for the camera and the sub-label are kept nowhere
+    assert "oak_ave_wide" not in json.dumps(flow) and "Jane Doe" not in json.dumps(flow)
+
+
+@needs_node
+def test_two_stops_are_counted_and_added_up():
+    steps = [("new", 0, False, ["zone_a"]), ("update", 12, True, ["zone_a"]), ("update", 20, False, ["zone_a"]),
+             ("update", 30, False, ["zone_b"]), ("update", 45, True, ["zone_b"]), ("update", 50, False, ["zone_b"]),
+             ("end", 52, False, ["zone_b"])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 13, "stops": 2, "stopped": [[T0 + 12, T0 + 20], [T0 + 45, T0 + 50]],
+                                 "zone_times": {"zone_a": {"time": 30, "stationary": 8},
+                                                "zone_b": {"time": 22, "stationary": 5}}}
+
+
+@needs_node
+def test_an_object_that_is_stationary_when_first_heard_of_has_one_stop():
+    out, _ = run_tally(one_object([("new", 0, True, ["zone_bay"]), ("update", 30, False, ["zone_bay"]),
+                                   ("end", 34, False, [])]))
+    assert out["time_tally"] == {"stationary_time": 30, "stops": 1, "stopped": [[T0, T0 + 30]],
+                                 "zone_times": {"zone_bay": {"time": 34, "stationary": 30}}}
+
+
+@needs_node
+def test_no_figure_says_more_than_six_hours():
+    out, _ = run_tally(one_object([("new", 0, False, ["zone_bay"]), ("update", 12, True, ["zone_bay"]),
+                                   ("update", 30012, False, ["zone_bay"]), ("end", 30020, False, [])]))
+    assert out["time_tally"] == {"stationary_time": 21600, "stops": 1, "stopped": [[T0 + 12, T0 + 30012]],
+                                 "zone_times": {"zone_bay": {"time": 21600, "stationary": 21600}}}
+
+
+@needs_node
+def test_figures_are_rounded_to_two_decimals():
+    out, _ = run_tally(one_object([("new", 0, False, ["zone_a"]), ("end", 0.123456, False, ["zone_a"])]))
+    assert out["time_tally"]["zone_times"] == {"zone_a": {"time": 0.12, "stationary": 0}}
+
+
+@needs_node
+def test_an_object_first_heard_of_after_a_restart_gets_no_figures():
+    """Node-RED restarted while Frigate was following it: no tally is started by an update or an end."""
+    for count in (1, 2, 5):
+        out, flow = run_tally(one_object(STOP)[count:])
+        assert out["time_tally"] is None and flow.get("time_tallies", {}) == {}
+
+
+@needs_node
+def test_a_missed_message_leaves_the_figures_empty():
+    messages = one_object(STOP)
+    del messages[3]  # the update at 40 never arrived, so the next one's `before` isn't the last message seen
+    _, flow = run_tally(messages[:-1])
+    assert flow["time_tallies"][TALLY_ID]["broken"] is True
+    out, flow = run_tally(messages)
+    assert out["time_tally"] is None and flow["time_tallies"] == {}
+
+
+@needs_node
+def test_time_running_backwards_leaves_the_figures_empty():
+    messages = [frigate_message("new", 3, 3), frigate_message("update", 1, 3), frigate_message("end", 5, 1)]
+    out, _ = run_tally(messages)
+    assert out["time_tally"] is None
+
+
+@needs_node
+def test_a_second_new_message_starts_the_tally_again():
+    steps = [("new", 0, False, ["zone_a"]), ("update", 5, False, ["zone_a"]), ("new", 6, False, []),
+             ("end", 8, False, [])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 0, "stops": 0, "stopped": [], "zone_times": {}}
+
+
+@needs_node
+def test_at_most_300_objects_are_followed_and_the_one_heard_of_longest_ago_goes_first():
+    ids = [f"{T0 + i}-{i:06d}" for i in range(301)]
+    messages = [frigate_message("new", i, i, event_id=ids[i]) for i in range(300)]
+    messages.append(frigate_message("update", 300, 0, event_id=ids[0]))
+    messages.append(frigate_message("new", 301, 301, event_id=ids[300]))
+    _, flow = run_tally(messages)
+    assert len(flow["time_tallies"]) == 300
+    assert ids[1] not in flow["time_tallies"] and {ids[0], ids[2], ids[300]} <= set(flow["time_tallies"])
+
+
+@needs_node
+@pytest.mark.parametrize("later, kept", [(86400, True), (86401, False)])
+def test_an_object_not_heard_of_for_more_than_a_day_is_dropped(later, kept):
+    messages = [frigate_message("new", 0, 0), frigate_message("new", later, later, event_id="1761886400.0-zzz999")]
+    _, flow = run_tally(messages)
+    assert (TALLY_ID in flow["time_tallies"]) is kept and "1761886400.0-zzz999" in flow["time_tallies"]
+
+
+@needs_node
+def test_only_the_twenty_longest_stops_are_kept():
+    steps = [("new", 0, False, [])]
+    at = 0
+    for length in [30, 5] + [40] * 20:  # the 5-second stop is the shortest of 22, then the 30-second one
+        steps += [("update", at + 10, True, []), ("update", at + 10 + length, False, [])]
+        at += 10 + length
+    steps.append(("end", at + 1, False, []))
+    out, _ = run_tally(one_object(steps))
+    lengths = sorted(round(to - start) for start, to in out["time_tally"]["stopped"])
+    assert lengths == [40] * 20 and out["time_tally"]["stops"] == 22
+    assert out["time_tally"]["stationary_time"] == 835
+
+
+@needs_node
+@pytest.mark.parametrize("zones, expected", [
+    ("zone_a", []), (None, []), ({"zone_a": 1}, []),
+    (["zone_a", 7, None, "zone_a", "zone_b", ""], ["zone_a", "zone_b"]),
+    ([f"zone_{i}" for i in range(60)], [f"zone_{i}" for i in range(50)]),
+], ids=["text", "null", "mapping", "junk-in-the-list", "more-than-fifty"])
+def test_only_zone_names_are_tallied_and_at_most_fifty(zones, expected):
+    messages = one_object([("new", 0, False, []), ("end", 2, False, [])])
+    for msg in messages:
+        msg["payload"]["after"]["current_zones"] = zones
+    out, _ = run_tally(messages)
+    assert list(out["time_tally"]["zone_times"]) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    "online", None, 7, [], {}, {"type": "end"}, {"type": "end", "after": None},
+    {"type": "end", "after": {"id": "", "frame_time": T0}}, {"type": "end", "after": {"id": 7, "frame_time": T0}},
+    {"type": "end", "after": {"id": TALLY_ID, "frame_time": "soon"}},
+    {"type": "sideways", "before": {"frame_time": T0}, "after": {"id": TALLY_ID, "frame_time": T0}},
+], ids=["text", "null", "number", "list", "empty", "no-after", "after-null", "no-id", "id-number", "time-text",
+        "unknown-type"])
+def test_a_message_that_is_not_frigates_shape_goes_on_untouched(payload):
+    out, flow = run_tally([{"topic": "frigate/events", "payload": payload, "time_tally": {"stationary_time": 999}}])
+    assert out["time_tally"] is None and flow.get("time_tallies", {}) == {}
+
+
+@needs_node
+@pytest.mark.parametrize("flow", [{"time_tallies": "junk"}, {"time_tallies": [1]}, {"time_tallies": {TALLY_ID: "junk"}}])
+def test_junk_in_flow_context_is_replaced(flow):
+    out, _ = run_tally(one_object(STOP), flow=flow)
+    assert out["time_tally"] == STOP_TALLY
+
+
+def test_every_frigate_event_message_passes_the_tally_first():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tally, source, switch = named(flows, TALLY), by_id["f20c74c0ccfd256c"], by_id["2deec9d340d5ed26"]
+    assert (source["type"], source["topic"]) == ("mqtt in", "frigate/events")
+    assert source["wires"] == [["86c86b0d82d13028", tally["id"]]] and by_id["86c86b0d82d13028"]["type"] == "debug"
+    assert tally["wires"] == [[switch["id"]]] and switch["name"] == 'payload.type == "end"'
+    assert [node["id"] for node in flows if switch["id"] in sum(node.get("wires", []), [])] == [tally["id"]]
+    assert (tally["type"], tally["outputs"], tally["initialize"], tally["finalize"]) == ("function", 1, "", "")
+    group = by_id[tally["g"]]
+    assert group["id"] == "0a5faeac9fbd6d55" and tally["id"] in group["nodes"] and tally["z"] == source["z"]
+    assert group["x"] < tally["x"] < group["x"] + group["w"] and group["y"] < tally["y"] < group["y"] + group["h"]
