@@ -31,7 +31,7 @@ One row for each camera and window. The primary key is `time` and `camera`.
 | `skipped_fps` | REAL | Frames per second Frigate skipped because it was behind | Empty when `camera_answers` is 0 or `camera_on` is 0 |
 | `detection_fps` | REAL | Regions per second sent to the detector. Frigate can send several regions of one frame, so this can be higher than `camera_fps`. | Empty when `camera_answers` is 0 or `camera_on` is 0 |
 | `detection_enabled` | INTEGER | Whether detection was on for the whole window. It is 0 when detection was off in any report of the window. | `1` or `0`; empty when `camera_answers` is 0 |
-| `camera_on` | INTEGER | Whether the camera was on in Frigate for the whole window. Frigate can turn a camera off without stopping, with the power button in its live view. It is 0 when the camera was off at any time the device asked. The device reads Frigate's settings each time one of its status reports arrives. | `1` or `0`; empty when Frigate gave no answer |
+| `camera_on` | INTEGER | Whether the camera was on in Frigate for the whole window. Frigate can turn a camera off without stopping, with the power button in its live view. It is 0 when the camera was off at any time the device asked. The device reads Frigate's settings each time one of its status reports arrives. | `1` or `0`; empty when Frigate sent no report in the window, or when its settings couldn't be read or didn't list this camera |
 
 The four frame rates are means of the reports in the window, rounded to two decimals. They are empty for a camera that was turned off because Frigate keeps listing such a camera in its reports and repeats the last frame rates it measured, so the device leaves them out rather than record numbers from before.
 
@@ -76,12 +76,13 @@ What a camera row looks like in each situation:
 
 | What happened | How the row looks |
 |---|---|
-| Watching, with traffic | `detection_enabled` 1, `camera_fps` above 0, `detection_fps` above 0 |
-| Watching, with nothing moving in view | `detection_enabled` 1, `camera_fps` above 0, `detection_fps` 0. Frigate runs the detector only where it sees motion or is tracking an object, so a quiet road gives 0 with detection on. |
+| Watching, with traffic | `camera_on` 1, `detection_enabled` 1, `camera_fps` above 0, `detection_fps` above 0 |
+| Watching, with nothing moving in view | `camera_on` 1, `detection_enabled` 1, `camera_fps` above 0, `detection_fps` 0. Frigate runs the detector only where it sees motion or is tracking an object, so a quiet road gives 0 with detection on. |
 | Camera on, detection switched off in Frigate or on the [Cameras](../use/cameras.md) page for the whole window | `detection_enabled` 0, `camera_fps` above 0, `detection_fps` 0 |
 | Detection switched on or off partway through the window | `detection_enabled` 0. `detection_fps` can be above 0: it's the mean of all the window's reports, including those with detection on. |
 | The camera was turned off in Frigate, for all or part of the window | `camera_on` 0 and the four frame rates empty. `detection_enabled` still shows Frigate's detection switch. |
 | The camera's stream was down while Frigate ran | `camera_on` 1, `camera_fps` 0 |
+| Frigate sent its reports, but the device couldn't read its settings | `frigate_answers` and `camera_answers` about 5, `camera_on` empty, the frame rates as Frigate reported them. The device can't tell whether the camera was on, so the window doesn't count as watching. |
 | Frigate ran without this camera, as when its configuration didn't load | `frigate_answers` about 5, `camera_answers` 0, the frame rates and `detection_enabled` empty |
 | Frigate answered for only part of the window | `camera_answers` well under 5 |
 | Frigate sent nothing for the whole window: it was restarting or not responding | `frigate_answers` 0, `camera_answers` 0, the frame rates and `detection_enabled` empty, `camera_on` empty. There is nothing about any camera. |
