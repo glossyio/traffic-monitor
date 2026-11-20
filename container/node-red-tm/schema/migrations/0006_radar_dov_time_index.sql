@@ -1,0 +1,11 @@
+-- An index on the radar readings' time.
+--
+-- Without it, every query on radar_dov reads the whole table: each event's radar query, which
+-- asks for the few seconds around the event; the newest readings; and a date-range export. With
+-- it, each reads only its own stretch of time. Building it reads the whole table once, and it
+-- takes about a fifth of the table's size on the card.
+--
+-- This migration changes no row. It is a file of its own so that a card too full to build the
+-- index still gets 0005's columns; the device then works as before and tries again at each start.
+
+CREATE INDEX IF NOT EXISTS index_radar_dov_time ON radar_dov(time);

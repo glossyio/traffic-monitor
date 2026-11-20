@@ -169,11 +169,11 @@ def test_database_that_cannot_be_opened_is_reported_as_an_error(tmp_path, capsys
 
 
 def test_database_newer_than_the_migrations_is_left_unchanged(db_path):
-    create_db(db_path, "CREATE TABLE from_the_future (x);", user_version=5)
+    create_db(db_path, "CREATE TABLE from_the_future (x);", user_version=LATEST_VERSION + 1)
 
     assert migrate("--db", db_path) == 0
 
-    assert user_version(db_path) == 5
+    assert user_version(db_path) == LATEST_VERSION + 1
     assert tables(db_path) == {"from_the_future"}
     assert files_in(db_path.parent / "backup") == []
 
