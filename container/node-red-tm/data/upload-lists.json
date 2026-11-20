@@ -53,10 +53,10 @@
     "watch_camera": [
         "time",
         "camera",
-        "enabled",
+        "config_enabled",
         "deployment_id",
-        "frigate_answered",
-        "stats_messages",
+        "frigate_answers",
+        "camera_answers",
         "camera_fps",
         "process_fps",
         "skipped_fps",
@@ -66,7 +66,7 @@
     "watch_radar": [
         "time",
         "radar",
-        "enabled",
+        "config_enabled",
         "deployment_id",
         "port_open",
         "last_reading_at"

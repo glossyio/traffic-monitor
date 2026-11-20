@@ -188,7 +188,7 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
 
     if cameras:
         newest, rows = newest_watch_rows(host, codedir, "watch_camera", "camera",
-                                         ["frigate_answered", "stats_messages", "detection_enabled"])
+                                         ["frigate_answers", "camera_answers", "detection_enabled"])
         if check_time("watch_camera", newest):
             if set(rows) != set(cameras):
                 problems.append(f"the newest watch_camera rows are for cameras {sorted(rows)}, "
@@ -199,11 +199,11 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                 frigate_name = (entry or {}).get("frigate_camera") or key
                 if row is None or frigate_name not in reported:
                     continue
-                if row["frigate_answered"] != 1:
-                    problems.append(f"watch_camera.frigate_answered for camera {key} is {row['frigate_answered']}, "
+                if not (row["frigate_answers"] or 0) >= 1:
+                    problems.append(f"watch_camera.frigate_answers for camera {key} is {row['frigate_answers']}, "
                                     f"Frigate reports on it now")
-                if not (row["stats_messages"] or 0) >= 1:
-                    problems.append(f"watch_camera.stats_messages for camera {key} is {row['stats_messages']}, "
+                if not (row["camera_answers"] or 0) >= 1:
+                    problems.append(f"watch_camera.camera_answers for camera {key} is {row['camera_answers']}, "
                                     f"Frigate reports on it now")
                 detecting = reported[frigate_name].get("detection_enabled")
                 if detecting is not None and row["detection_enabled"] != int(bool(detecting)):

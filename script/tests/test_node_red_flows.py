@@ -2102,9 +2102,9 @@ GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 4
             "survey_id": "3f9a1c2e-si"}
 TICK = 1761800100  # a five-minute mark
 TICK_MS = TICK * 1000
-WATCH_CAMERA_COLUMNS = ["time", "camera", "enabled", "deployment_id", "frigate_answered", "stats_messages",
+WATCH_CAMERA_COLUMNS = ["time", "camera", "config_enabled", "deployment_id", "frigate_answers", "camera_answers",
                         "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled"]
-WATCH_RADAR_COLUMNS = ["time", "radar", "enabled", "deployment_id", "port_open", "last_reading_at"]
+WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at"]
 STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
 EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}}
 WATCH_SENSORS = {
@@ -2118,18 +2118,18 @@ WATCH_WINDOW = {"since": TICK_MS - 300000, "messages": 5, "cameras": {"camera_1_
     "detection_off": 0}}}
 RADAR_STATUS = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "port_open": True,
                                             "last_reading_at": "2025-10-30T04:54:58.400Z"}}
-NO_NUMBERS = {"stats_messages": 0, "camera_fps": None, "process_fps": None, "skipped_fps": None,
+NO_NUMBERS = {"camera_answers": 0, "camera_fps": None, "process_fps": None, "skipped_fps": None,
               "detection_fps": None, "detection_enabled": None}
 CAMERA_ROWS = [
-    {"time": TICK, "camera": "camera_1_3fa9c2", "enabled": 1, "deployment_id": "1761700000000-0a1b2c3d-d",
-     "frigate_answered": 1, "stats_messages": 5, "camera_fps": 5.0, "process_fps": 4.9, "skipped_fps": 0.0,
+    {"time": TICK, "camera": "camera_1_3fa9c2", "config_enabled": 1, "deployment_id": "1761700000000-0a1b2c3d-d",
+     "frigate_answers": 5, "camera_answers": 5, "camera_fps": 5.0, "process_fps": 4.9, "skipped_fps": 0.0,
      "detection_fps": 0.4, "detection_enabled": 1},
-    {"time": TICK, "camera": "side_st", "enabled": 0, "deployment_id": None, "frigate_answered": 1, **NO_NUMBERS},
+    {"time": TICK, "camera": "side_st", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5, **NO_NUMBERS},
 ]
 RADAR_ROWS = [
-    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "config_enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
      "port_open": 1, "last_reading_at": 1761800098.4},
-    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "enabled": 0, "deployment_id": None, "port_open": 0,
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "config_enabled": 0, "deployment_id": None, "port_open": 0,
      "last_reading_at": None},
 ]
 GATE_TELEMETRY = {
@@ -3609,14 +3609,20 @@ def test_a_whole_window_gives_a_row_per_sensor():
 def test_when_frigate_did_not_answer_every_camera_still_has_its_row():
     cameras, _, _, _ = watch_tick(window=EMPTY_WINDOW)
     assert [msg["payload"] for msg in cameras] == [
-        {**CAMERA_ROWS[0], "frigate_answered": 0, **NO_NUMBERS}, {**CAMERA_ROWS[1], "frigate_answered": 0}]
+        {**CAMERA_ROWS[0], "frigate_answers": 0, **NO_NUMBERS}, {**CAMERA_ROWS[1], "frigate_answers": 0}]
 
 
 @needs_node
 def test_frigate_answering_without_the_camera_is_not_frigate_not_answering():
     cameras, _, _, _ = watch_tick(window={**EMPTY_WINDOW, "messages": 5})
-    assert [(msg["payload"]["frigate_answered"], msg["payload"]["stats_messages"], msg["payload"]["camera_fps"])
-            for msg in cameras] == [(1, 0, None), (1, 0, None)]
+    assert [(msg["payload"]["frigate_answers"], msg["payload"]["camera_answers"], msg["payload"]["camera_fps"])
+            for msg in cameras] == [(5, 0, None), (5, 0, None)]
+
+
+@needs_node
+def test_frigate_answers_is_the_windows_message_count_on_every_row():
+    cameras, _, _, _ = watch_tick(window={**WATCH_WINDOW, "messages": 2})
+    assert [msg["payload"]["frigate_answers"] for msg in cameras] == [2, 2]
 
 
 @needs_node
@@ -3654,7 +3660,8 @@ def test_rows_follow_config_yml_as_it_is_at_the_mark():
     config = {"sensors": {"cameras": {"new_key": None}, "radars": {}}}
     cameras, radars, upload, _ = watch_tick(config=config)
     assert [msg["payload"] for msg in cameras] == [
-        {"time": TICK, "camera": "new_key", "enabled": 0, "deployment_id": None, "frigate_answered": 1, **NO_NUMBERS}]
+        {"time": TICK, "camera": "new_key", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5,
+         **NO_NUMBERS}]
     assert radars is None
     assert upload["payload"] == {"time": TICK, "cameras": [cameras[0]["payload"]], "radars": []}
 

@@ -7,11 +7,11 @@ import pytest
 from helpers import ALL_TABLES, BASELINE_TABLES, LATEST_VERSION, SCHEMA_DIR, migrate, query, tables, user_version
 
 WATCH_CAMERA = {
-    "time": "INTEGER", "camera": "TEXT", "enabled": "INTEGER", "deployment_id": "TEXT", "frigate_answered": "INTEGER",
-    "stats_messages": "INTEGER", "camera_fps": "REAL", "process_fps": "REAL", "skipped_fps": "REAL",
-    "detection_fps": "REAL", "detection_enabled": "INTEGER",
+    "time": "INTEGER", "camera": "TEXT", "config_enabled": "INTEGER", "deployment_id": "TEXT",
+    "frigate_answers": "INTEGER", "camera_answers": "INTEGER", "camera_fps": "REAL", "process_fps": "REAL",
+    "skipped_fps": "REAL", "detection_fps": "REAL", "detection_enabled": "INTEGER",
 }
-WATCH_RADAR = {"time": "INTEGER", "radar": "TEXT", "enabled": "INTEGER", "deployment_id": "TEXT",
+WATCH_RADAR = {"time": "INTEGER", "radar": "TEXT", "config_enabled": "INTEGER", "deployment_id": "TEXT",
                "port_open": "INTEGER", "last_reading_at": "REAL"}
 
 

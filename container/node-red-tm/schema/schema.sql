@@ -164,10 +164,10 @@ CREATE TABLE radar_timed_speed_counts (
 CREATE TABLE watch_camera (
     time INTEGER NOT NULL,
     camera TEXT NOT NULL,
-    enabled INTEGER,
+    config_enabled INTEGER,
     deployment_id TEXT,
-    frigate_answered INTEGER,
-    stats_messages INTEGER,
+    frigate_answers INTEGER,
+    camera_answers INTEGER,
     camera_fps REAL,
     process_fps REAL,
     skipped_fps REAL,
@@ -179,7 +179,7 @@ CREATE TABLE watch_camera (
 CREATE TABLE watch_radar (
     time INTEGER NOT NULL,
     radar TEXT NOT NULL,
-    enabled INTEGER,
+    config_enabled INTEGER,
     deployment_id TEXT,
     port_open INTEGER,
     last_reading_at REAL,
