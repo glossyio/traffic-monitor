@@ -132,7 +132,11 @@ module.exports = {
 
   functionGlobalContext: {
     fs:require('fs'),
-    path:require('path')
+    path:require('path'),
+    // Node's built-in SQLite, for the one function node that adds the exact locations to a database download's
+    // throwaway copy ("write exact locations into the copy"), never to tmdb.sqlite. null when this Node has no
+    // node:sqlite, so Node-RED still starts and that function refuses.
+    sqlite:(() => { try { return require('node:sqlite'); } catch (err) { return null; } })()
   },
 
   debugMaxLength: 1000,
