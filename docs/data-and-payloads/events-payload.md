@@ -19,7 +19,7 @@ An event is one object that Frigate detected and tracked until it left the frame
 
 The zones give a direction when the object entered both `zone_near` and `zone_far`: `zone_near` then `zone_far` is outbound, and the reverse is inbound. This works on any camera.
 
-When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. For an object that stood still, the readings from while it was stationary are left out, with the same two-second margin, so a parked car's speed doesn't come from the traffic that passed it. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, `speed_calc` takes Frigate's, if Frigate made an estimate.
+When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. For an object that stood still, the readings from while Frigate held it as stationary are left out, with the same two-second margin, so most of the traffic that passed a parked car doesn't count toward its speed. Frigate's flag starts about ten seconds into a stop, so the readings from those first seconds stay in. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, `speed_calc` takes Frigate's, if Frigate made an estimate.
 
 | Zones | Radar readings | `direction_calc` | `direction_source` | `speed_calc` |
 |---|---|---|---|---|
@@ -52,7 +52,7 @@ Frigate doesn't send these times. Each message about an object says whether the 
 
 The figures run to the last frame the object was seen in, so they add up to a little less than `end_time` minus `start_time`. No figure says more than six hours: 21600 means six hours or more.
 
-A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, the time before is lost, because an event that ends while the object is stationary isn't recorded.
+A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, the time before is lost, because an event that ends while the object is stationary isn't recorded. A vehicle that was already parked when the device or Frigate started is timed only from then.
 
 For example, the time each car of one day spent in a stop-sign zone, and how much of it stopped:
 

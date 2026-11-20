@@ -74,5 +74,6 @@ ORDER BY start_time;
 The limits:
 
 - Six hours is the most a figure says; 21600 means six hours or more.
-- A vehicle that was already parked when the device started, or is still parked, has no event yet.
+- A vehicle that is still parked has no event yet.
+- A vehicle that was already parked when the device or Frigate started is timed only from then.
 - If Frigate loses sight of a parked vehicle and finds it again, it is recorded only from where it was found.
