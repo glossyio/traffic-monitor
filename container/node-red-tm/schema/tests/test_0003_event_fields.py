@@ -32,7 +32,9 @@ def test_0003_adds_the_columns_and_rewrites_nothing(tmp_path):
     assert user_version(db_path) == 2
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == LATEST_VERSION
-    assert columns(db_path, "events")[-len(NEW_COLUMNS):] == list(NEW_COLUMNS)
+    names = columns(db_path, "events")
+    start = names.index("path_data")
+    assert names[start:start + len(NEW_COLUMNS)] == list(NEW_COLUMNS)
     types = {row[1]: row[2] for row in query(db_path, "PRAGMA table_info(events)")}
     assert {name: types[name] for name in NEW_COLUMNS} == NEW_COLUMNS
     assert query(db_path, "SELECT sub_label, speed_calc, speed_unit, speed_source, path_data FROM events") == [

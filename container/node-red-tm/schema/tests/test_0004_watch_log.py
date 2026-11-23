@@ -38,7 +38,7 @@ def test_0004_adds_the_two_tables_and_rewrites_nothing(tmp_path):
     before = query(db_path, "SELECT * FROM events")
     assert user_version(db_path) == 3 and tables(db_path) == BASELINE_TABLES
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
-    assert user_version(db_path) == LATEST_VERSION == 4
+    assert user_version(db_path) == LATEST_VERSION
     assert tables(db_path) == ALL_TABLES == BASELINE_TABLES | {"watch_camera", "watch_radar"}
     for table, expected in (("watch_camera", WATCH_CAMERA), ("watch_radar", WATCH_RADAR)):
         info = query(db_path, f"PRAGMA table_info({table})")
@@ -46,7 +46,8 @@ def test_0004_adds_the_two_tables_and_rewrites_nothing(tmp_path):
         assert [row[1] for row in info] == list(expected)
         # the primary key: the mark, then the sensor
         assert sorted((row[5], row[1]) for row in info if row[5]) == [(1, "time"), (2, list(expected)[1])]
-    assert query(db_path, "SELECT * FROM events") == before
+    # later migrations may add columns at the end; the ones there before keep their values
+    assert [row[:len(before[0])] for row in query(db_path, "SELECT * FROM events")] == before
 
 
 def test_a_sensor_has_one_row_per_window(tmp_path):

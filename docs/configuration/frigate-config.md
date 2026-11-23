@@ -57,6 +57,8 @@ Frigate's unit setting, `ui: unit_system:`, decides the units: with `metric` the
 
 The device saves Frigate's estimate with each event, with its unit and the direction it was moving across the picture, whether or not the radar gave a speed. When the radar gave none, or the camera has no radar, the event's speed is Frigate's, converted to the device's speed unit. [Direction and speed](../data-and-payloads/events-payload.md#direction-and-speed) has the rules. The estimate is rougher than a radar's: it depends on how well the zone's corners and lengths match the road, and it is an average of Frigate's last few estimates for the object.
 
+A zone with side lengths lists an object only while it moves, so its time in an event's `zone_times` leaves out any time the object stood still. See [Time stopped and time in each zone](../data-and-payloads/events-payload.md#time-stopped-and-time-in-each-zone).
+
 ## Recordings and snapshots
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](../data-and-payloads/data-overview.md) describes what the device stores.

@@ -2291,6 +2291,7 @@ EVENT_COLUMNS = [
     "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
     "provenance", "deployment_id", "radarName", "path_data", "box", "best_box", "best_frame_time", "frigate_speed",
     "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
+    "stationary_time", "stops", "zone_times",
 ]
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -2985,7 +2986,7 @@ def test_upload_result_wiring():
 FINALIZE = "a8aeffd2e5bc17f2"  # capture-events: event finalize output
 EVENT_PARAMS = "a96d834e3571c549"  # capture-events: write params for events insert
 EVENT_INSERT = "61d6a19c99c60e0b"  # capture-events: tmdb.events, Prepared Statement
-JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box"}
+JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box", "zone_times"}
 SCHEMA_SQL = FLOWS.parents[1] / "schema" / "schema.sql"
 EVENT = {
     "id": "1761800000.123456-abc123", "camera": "camera_1_3fa9c2", "label": "car", "sub_label": None,
@@ -2996,7 +2997,7 @@ EVENT = {
 
 
 def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING,
-                 source=MISSING):
+                 source=MISSING, tally=MISSING):
     """The message "event finalize output" gets: the event under its camera's key, and what the speed nodes found."""
     found = {"status_radarMatch": speed is not None, "calc_event_direction": direction, "calc_event_speed": speed,
              "calc_radar_readings": readings}
@@ -3006,6 +3007,8 @@ def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERI
            "payload": found, "event_direction_speed": found}
     if fields is not MISSING:
         msg["frigate_fields"] = fields
+    if tally is not MISSING:
+        msg["time_tally"] = tally
     return msg
 
 
@@ -3595,7 +3598,8 @@ def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
 ], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
 def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
     payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
-    assert payload["direction_source"] == expected and list(payload)[-1] == "direction_source"
+    assert payload["direction_source"] == expected
+    assert list(payload).index("direction_source") == EVENT_COLUMNS.index("direction_source")
     assert step["logged"] == []
 
 
@@ -3675,10 +3679,36 @@ def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
     con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
     row = con.execute("SELECT camera, sub_label, direction_calc, speed_calc, speed_unit, speed_source, radar_readings, "
                       "frigate_speed, frigate_speed_unit, json_array_length(path_data), json_extract(box, '$[0]'), "
-                      "best_frame_time, radarName, direction_source FROM events").fetchone()
+                      "best_frame_time, radarName, direction_source, stationary_time, stops, zone_times "
+                      "FROM events").fetchone()
     assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
-                   1761800002.1, None, "zones")
+                   1761800002.1, None, "zones", None, None, None)
     assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
+
+
+@needs_node
+def test_a_made_up_run_of_messages_becomes_a_row_with_its_times():
+    """STOP's messages through the tally node, then the end message through the same chain and the INSERT."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    config["sensors"]["radars"] = {}
+    _, context = load_config(config)
+    messages = one_object(STOP)
+    after = {**AFTER, **messages[-1]["payload"]["after"], "sub_label": ["Jane Doe", 0.97],
+             "entered_zones": ["zone_stop"], "top_score": 0.91, "score": 0.88, "area": 57600, "ratio": 1.78,
+             "motionless_count": 0, "position_changes": 3, "attributes": {}}
+    messages[-1]["payload"]["after"] = after
+    msg, flow = run_tally(messages)
+    msg = run_chain(["vet sub_label", "frigate fields", APPEND_CONFIG,
+                     "calculate direction based on frigate event zones", MATCH], {**msg, "frigate_event": after},
+                    context, {**flow, "frigate_facts": METRIC})
+    msg = {**msg, "event_direction_speed": msg["payload"]}
+    msg = run_chain([FINALIZE, EVENT_PARAMS], msg, context, {})
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
+    row = con.execute("SELECT stationary_time, stops, json_extract(zone_times, '$.zone_stop.time'), "
+                      "json_extract(zone_times, '$.zone_stop.stationary') FROM events").fetchone()
+    assert row == (26.0, 1, 41, 26)
 
 
 SPEED_STATS = "584504e6c8935eaf"  # ui-monitoring: query events, daily cum car counts in zone_radar with speed_calc
@@ -4239,6 +4269,360 @@ def test_the_watch_log_is_written_every_five_minutes():
     for node_id in group["nodes"]:
         node = by_id[node_id]
         assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
+
+
+# Time stopped and time in each zone. Frigate sends no times, only whether the object is stationary and which zones
+# it is in, on every frigate/events message. "tally time stopped and time in zones" adds the time between messages
+# up for each object, from its new message to its end, and hands the totals to the end message as msg.time_tally.
+
+TALLY = "tally time stopped and time in zones"
+T0 = 1761800000.0  # the first frame's time
+TALLY_ID = "1761800000.0-abc123"
+
+
+def frigate_message(kind, at, before_at, stationary=False, zones=(), event_id=TALLY_ID):
+    """One frigate/events message, cut down to what the tally reads, with a camera name and a sub-label that must go
+    no further. Times are seconds after T0. An end message's end_time is five seconds after its last frame."""
+    after = {"id": event_id, "camera": "oak_ave_wide", "sub_label": ["Jane Doe", 0.97], "frame_time": T0 + at,
+             "end_time": T0 + at + 5 if kind == "end" else None, "stationary": stationary,
+             "current_zones": list(zones)}
+    return {"topic": "frigate/events",
+            "payload": {"type": kind, "before": {"id": event_id, "frame_time": T0 + before_at}, "after": after}}
+
+
+def one_object(steps, event_id=TALLY_ID):
+    """Frigate's messages for one object, from (type, seconds after T0, stationary, zones) steps. Each message's
+    `before` holds the frame time of the message before it, as Frigate's does."""
+    messages, last = [], steps[0][1]
+    for kind, at, stationary, zones in steps:
+        messages.append(frigate_message(kind, at, last, stationary, zones, event_id))
+        last = at
+    return messages
+
+
+def run_tally(messages, flow=None):
+    """Run the tally node on each message in turn. Returns the message the last one sent on and the flow context
+    after. Every message must go on with its payload as it came, and nothing may be logged."""
+    node = named(json.loads(FLOWS.read_text()), TALLY)
+    run = run_functions([(node, copy.deepcopy(msg)) for msg in messages], context={"tm_warned": {}}, flow=flow or {})
+    for step, msg in zip(run["results"], messages, strict=True):
+        assert step["logged"] == [] and step["result"]["payload"] == msg["payload"]
+    return run["results"][-1]["result"], run["flow"]
+
+
+DRIVE_THROUGH = [("new", 0, False, []), ("update", 1, False, ["zone_far"]),
+                 ("update", 2.5, False, ["zone_far", "zone_radar"]), ("update", 4, False, ["zone_near"]),
+                 ("end", 5.5, False, ["zone_near"])]
+STOP = [("new", 0, False, []), ("update", 2, False, ["zone_stop"]), ("update", 14, True, ["zone_stop"]),
+        ("update", 40, False, ["zone_stop"]), ("update", 43, False, []), ("end", 45, False, [])]
+STOP_TALLY = {"stationary_time": 26, "stops": 1, "zone_times": {"zone_stop": {"time": 41, "stationary": 26}},
+              "stopped": [[T0 + 14, T0 + 40]]}
+
+
+@needs_node
+def test_a_drive_through_has_its_time_in_each_zone_and_no_stop():
+    """The last stretch ends at the last frame the object was seen in: zone_near has 1.5 seconds, not 6.5."""
+    out, flow = run_tally(one_object(DRIVE_THROUGH))
+    assert out["time_tally"] == {"stationary_time": 0, "stops": 0, "stopped": [], "zone_times": {
+        "zone_far": {"time": 3, "stationary": 0}, "zone_radar": {"time": 1.5, "stationary": 0},
+        "zone_near": {"time": 1.5, "stationary": 0}}}
+    assert flow["time_tallies"] == {}
+
+
+@needs_node
+def test_a_stop_in_a_zone_runs_from_frigates_flag_to_the_frame_the_object_moved_in():
+    out, flow = run_tally(one_object(STOP))
+    assert out["time_tally"] == STOP_TALLY and flow["time_tallies"] == {}
+
+
+@needs_node
+def test_until_the_end_the_figures_stay_in_the_tally():
+    out, flow = run_tally(one_object(STOP)[:-1])
+    assert out["time_tally"] is None
+    assert flow["time_tallies"] == {TALLY_ID: {
+        "at": T0 + 43, "stationary": False, "zones": [], "stationary_time": 26, "stops": 1,
+        "zone_times": {"zone_stop": {"time": 41, "stationary": 26}}, "stopped": [[T0 + 14, T0 + 40]],
+        "stopped_since": None, "broken": False}}
+    # Frigate's name for the camera and the sub-label are kept nowhere
+    assert "oak_ave_wide" not in json.dumps(flow) and "Jane Doe" not in json.dumps(flow)
+
+
+@needs_node
+def test_two_stops_are_counted_and_added_up():
+    steps = [("new", 0, False, ["zone_a"]), ("update", 12, True, ["zone_a"]), ("update", 20, False, ["zone_a"]),
+             ("update", 30, False, ["zone_b"]), ("update", 45, True, ["zone_b"]), ("update", 50, False, ["zone_b"]),
+             ("end", 52, False, ["zone_b"])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 13, "stops": 2, "stopped": [[T0 + 12, T0 + 20], [T0 + 45, T0 + 50]],
+                                 "zone_times": {"zone_a": {"time": 30, "stationary": 8},
+                                                "zone_b": {"time": 22, "stationary": 5}}}
+
+
+@needs_node
+def test_an_object_that_is_stationary_when_first_heard_of_has_one_stop():
+    out, _ = run_tally(one_object([("new", 0, True, ["zone_bay"]), ("update", 30, False, ["zone_bay"]),
+                                   ("end", 34, False, [])]))
+    assert out["time_tally"] == {"stationary_time": 30, "stops": 1, "stopped": [[T0, T0 + 30]],
+                                 "zone_times": {"zone_bay": {"time": 34, "stationary": 30}}}
+
+
+@needs_node
+def test_no_figure_says_more_than_six_hours():
+    """Parked for a little over six hours, with an update a minute, as Frigate sends them."""
+    steps = [("new", 0, False, ["zone_bay"]), ("update", 12, True, ["zone_bay"])]
+    steps += [("update", 12 + 60 * minute, True, ["zone_bay"]) for minute in range(1, 362)]
+    steps += [("update", 21700, False, ["zone_bay"]), ("end", 21708, False, [])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 21600, "stops": 1, "stopped": [[T0 + 12, T0 + 21700]],
+                                 "zone_times": {"zone_bay": {"time": 21600, "stationary": 21600}}}
+
+
+@needs_node
+def test_figures_are_rounded_to_two_decimals():
+    out, _ = run_tally(one_object([("new", 0, False, ["zone_a"]), ("end", 0.123456, False, ["zone_a"])]))
+    assert out["time_tally"]["zone_times"] == {"zone_a": {"time": 0.12, "stationary": 0}}
+
+
+@needs_node
+def test_an_object_first_heard_of_after_a_restart_gets_no_figures():
+    """Node-RED restarted while Frigate was following it: no tally is started by an update or an end."""
+    for count in (1, 2, 5):
+        out, flow = run_tally(one_object(STOP)[count:])
+        assert out["time_tally"] is None and flow.get("time_tallies", {}) == {}
+
+
+@needs_node
+def test_a_missed_message_leaves_the_figures_empty():
+    messages = one_object(STOP)
+    del messages[3]  # the update at 40 never arrived, so the next one's `before` isn't the last message seen
+    _, flow = run_tally(messages[:-1])
+    assert flow["time_tallies"][TALLY_ID]["broken"] is True
+    out, flow = run_tally(messages)
+    assert out["time_tally"] is None and flow["time_tallies"] == {}
+
+
+@needs_node
+def test_time_running_backwards_leaves_the_figures_empty():
+    messages = [frigate_message("new", 3, 3), frigate_message("update", 1, 3), frigate_message("end", 5, 1)]
+    out, _ = run_tally(messages)
+    assert out["time_tally"] is None
+
+
+@needs_node
+@pytest.mark.parametrize("stationary", [False, True], ids=["moving", "stationary"])
+@pytest.mark.parametrize("gap, whole", [(300, True), (300.5, False), (7200, False)])
+def test_more_than_five_minutes_between_two_messages_leaves_the_figures_empty(stationary, gap, whole):
+    """The clock was set forward, or the camera stalled: Frigate's chain of messages is whole, but the time between
+    two of them isn't time the object was watched."""
+    steps = [("new", 0, False, ["zone_bay"]), ("update", 12, stationary, ["zone_bay"]),
+             ("update", 12 + gap, stationary, ["zone_bay"]), ("update", 14 + gap, False, ["zone_bay"]),
+             ("end", 16 + gap, False, [])]
+    out, flow = run_tally(one_object(steps))
+    assert (out["time_tally"] is not None) is whole and flow["time_tallies"] == {}
+    if whole:
+        assert out["time_tally"]["zone_times"] == {
+            "zone_bay": {"time": 16 + gap, "stationary": 2 + gap if stationary else 0}}
+
+
+@needs_node
+def test_a_gap_before_the_end_message_counts_too():
+    out, _ = run_tally(one_object([("new", 0, False, ["zone_bay"]), ("end", 301, False, ["zone_bay"])]))
+    assert out["time_tally"] is None
+
+
+@needs_node
+def test_a_second_new_message_starts_the_tally_again():
+    steps = [("new", 0, False, ["zone_a"]), ("update", 5, False, ["zone_a"]), ("new", 6, False, []),
+             ("end", 8, False, [])]
+    out, _ = run_tally(one_object(steps))
+    assert out["time_tally"] == {"stationary_time": 0, "stops": 0, "stopped": [], "zone_times": {}}
+
+
+@needs_node
+def test_at_most_300_objects_are_followed_and_the_one_heard_of_longest_ago_goes_first():
+    ids = [f"{T0 + i}-{i:06d}" for i in range(301)]
+    messages = [frigate_message("new", i, i, event_id=ids[i]) for i in range(300)]
+    messages.append(frigate_message("update", 300, 0, event_id=ids[0]))
+    messages.append(frigate_message("new", 301, 301, event_id=ids[300]))
+    _, flow = run_tally(messages)
+    assert len(flow["time_tallies"]) == 300
+    assert ids[1] not in flow["time_tallies"] and {ids[0], ids[2], ids[300]} <= set(flow["time_tallies"])
+
+
+@needs_node
+@pytest.mark.parametrize("later, kept", [(86400, True), (86401, False)])
+def test_an_object_not_heard_of_for_more_than_a_day_is_dropped(later, kept):
+    messages = [frigate_message("new", 0, 0), frigate_message("new", later, later, event_id="1761886400.0-zzz999")]
+    _, flow = run_tally(messages)
+    assert (TALLY_ID in flow["time_tallies"]) is kept and "1761886400.0-zzz999" in flow["time_tallies"]
+
+
+@needs_node
+def test_only_the_twenty_longest_stops_are_kept():
+    steps = [("new", 0, False, [])]
+    at = 0
+    for length in [30, 5] + [40] * 20:  # the 5-second stop is the shortest of 22, then the 30-second one
+        steps += [("update", at + 10, True, []), ("update", at + 10 + length, False, [])]
+        at += 10 + length
+    steps.append(("end", at + 1, False, []))
+    out, _ = run_tally(one_object(steps))
+    lengths = sorted(round(to - start) for start, to in out["time_tally"]["stopped"])
+    assert lengths == [40] * 20 and out["time_tally"]["stops"] == 22
+    assert out["time_tally"]["stationary_time"] == 835
+
+
+@needs_node
+@pytest.mark.parametrize("zones, expected", [
+    ("zone_a", []), (None, []), ({"zone_a": 1}, []),
+    (["zone_a", 7, None, "zone_a", "zone_b", ""], ["zone_a", "zone_b"]),
+    ([f"zone_{i}" for i in range(60)], [f"zone_{i}" for i in range(50)]),
+], ids=["text", "null", "mapping", "junk-in-the-list", "more-than-fifty"])
+def test_only_zone_names_are_tallied_and_at_most_fifty(zones, expected):
+    messages = one_object([("new", 0, False, []), ("end", 2, False, [])])
+    for msg in messages:
+        msg["payload"]["after"]["current_zones"] = zones
+    out, _ = run_tally(messages)
+    assert list(out["time_tally"]["zone_times"]) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    "online", None, 7, [], {}, {"type": "end"}, {"type": "end", "after": None},
+    {"type": "end", "after": {"id": "", "frame_time": T0}}, {"type": "end", "after": {"id": 7, "frame_time": T0}},
+    {"type": "end", "after": {"id": TALLY_ID, "frame_time": "soon"}},
+    {"type": "sideways", "before": {"frame_time": T0}, "after": {"id": TALLY_ID, "frame_time": T0}},
+], ids=["text", "null", "number", "list", "empty", "no-after", "after-null", "no-id", "id-number", "time-text",
+        "unknown-type"])
+def test_a_message_that_is_not_frigates_shape_goes_on_untouched(payload):
+    out, flow = run_tally([{"topic": "frigate/events", "payload": payload, "time_tally": {"stationary_time": 999}}])
+    assert out["time_tally"] is None and flow.get("time_tallies", {}) == {}
+
+
+@needs_node
+@pytest.mark.parametrize("flow", [{"time_tallies": "junk"}, {"time_tallies": [1]}, {"time_tallies": {TALLY_ID: "junk"}}])
+def test_junk_in_flow_context_is_replaced(flow):
+    out, _ = run_tally(one_object(STOP), flow=flow)
+    assert out["time_tally"] == STOP_TALLY
+
+
+def test_every_frigate_event_message_passes_the_tally_first():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tally, source, switch = named(flows, TALLY), by_id["f20c74c0ccfd256c"], by_id["2deec9d340d5ed26"]
+    assert (source["type"], source["topic"]) == ("mqtt in", "frigate/events")
+    assert source["wires"] == [["86c86b0d82d13028", tally["id"]]] and by_id["86c86b0d82d13028"]["type"] == "debug"
+    assert tally["wires"] == [[switch["id"]]] and switch["name"] == 'payload.type == "end"'
+    assert [node["id"] for node in flows if switch["id"] in sum(node.get("wires", []), [])] == [tally["id"]]
+    assert (tally["type"], tally["outputs"], tally["initialize"], tally["finalize"]) == ("function", 1, "", "")
+    group = by_id[tally["g"]]
+    assert group["id"] == "0a5faeac9fbd6d55" and tally["id"] in group["nodes"] and tally["z"] == source["z"]
+    assert group["x"] < tally["x"] < group["x"] + group["w"] and group["y"] < tally["y"] < group["y"] + group["h"]
+
+
+def saved_times(tally=MISSING):
+    [step] = run_functions([(node_by_id(FINALIZE), finalize_msg("inbound", 22.5, 7, tally=tally))])["results"]
+    payload = step["result"]["payload"]
+    assert step["logged"] == [] and "stopped" not in payload
+    return payload["stationary_time"], payload["stops"], payload["zone_times"]
+
+
+@needs_node
+def test_the_times_are_saved_with_the_event():
+    assert saved_times(STOP_TALLY) == (26, 1, {"zone_stop": {"time": 41, "stationary": 26}})
+    assert saved_times({**STOP_TALLY, "stationary_time": 0, "stops": 0, "zone_times": {}}) == (0, 0, {})
+
+
+@needs_node
+@pytest.mark.parametrize("tally", [
+    MISSING, None, "text", [], {}, {key: value for key, value in STOP_TALLY.items() if key != "stops"},
+    {**STOP_TALLY, "stops": 1.5}, {**STOP_TALLY, "stops": -1}, {**STOP_TALLY, "stationary_time": "26"},
+    {**STOP_TALLY, "stationary_time": -1}, {**STOP_TALLY, "zone_times": []}, {**STOP_TALLY, "zone_times": None},
+    {**STOP_TALLY, "zone_times": {"zone_stop": {"time": 41}}},
+    {**STOP_TALLY, "zone_times": {"zone_stop": {"time": "41", "stationary": 0}}},
+    {**STOP_TALLY, "zone_times": {"zone_stop": 41}},
+])
+def test_times_that_are_not_whole_are_all_left_empty(tally):
+    assert saved_times(tally) == (None, None, None)
+
+
+@needs_node
+def test_zone_times_is_stored_as_json_text():
+    payload = {name: None for name in EVENT_COLUMNS} | {"zone_times": STOP_TALLY["zone_times"], "stops": 1,
+                                                        "stationary_time": 26}
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert (params["$stationary_time"], params["$stops"]) == (26, 1)
+    assert json.loads(params["$zone_times"]) == STOP_TALLY["zone_times"]
+
+
+PULL_SPEED = "b39062019fac1a66"  # capture-events: pull speed, direction for event period
+
+
+def radar_query(tally=MISSING):
+    msg = {"frigate_event": {"start_time": T0 + 0.4, "end_time": T0 + 49.6, "radarName": "TM_RADAR_SERIAL_PORT_00"}}
+    if tally is not MISSING:
+        msg["time_tally"] = tally
+    [step] = run_functions([(node_by_id(PULL_SPEED), msg)])["results"]
+    assert step["logged"] == []
+    return step["result"]["topic"]
+
+
+def radar_seconds(tally=MISSING):
+    """Which readings the event's query returns, out of one a second from 10 before T0 to 70 after, for this radar
+    and for another one. As whole seconds after T0."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.executemany("INSERT INTO radar_dov (time, radarName, direction, velocity) VALUES (?, ?, 'inbound', 20)",
+                    [(T0 + second, name) for second in range(-10, 71)
+                     for name in ("TM_RADAR_SERIAL_PORT_00", "TM_RADAR_SERIAL_PORT_01")])
+    # the flow's query names the radar in double quotes, which not every build of SQLite takes as text
+    rows = con.execute(radar_query(tally).replace('"', "'")).fetchall()
+    assert {row[4] for row in rows} <= {"TM_RADAR_SERIAL_PORT_00"}
+    return sorted(round(row[0] - T0) for row in rows)
+
+
+WHOLE_WINDOW = list(range(-2, 53))  # two seconds before the start to two after the end
+
+
+@needs_node
+def test_an_event_that_never_stopped_gets_the_query_it_gets_today():
+    assert radar_seconds() == WHOLE_WINDOW
+    for tally in (None, {**STOP_TALLY, "stopped": []}, {"stationary_time": 0}):
+        assert radar_query(tally) == radar_query() and "NOT" not in radar_query(tally)
+
+
+@needs_node
+def test_the_readings_while_the_object_stood_still_are_left_out():
+    """Stopped from 14 to 40: the readings after 16 and before 38 are left out, two seconds kept at each end."""
+    assert radar_seconds(STOP_TALLY) == list(range(-2, 17)) + list(range(38, 53))
+    two = {**STOP_TALLY, "stopped": [[T0 + 5.5, T0 + 12.5], [T0 + 30, T0 + 44]]}
+    # 5.5 to 12.5 leaves out only second 9, and 30 to 44 leaves out 33 to 41
+    assert radar_seconds(two) == list(range(-2, 9)) + list(range(10, 33)) + list(range(42, 53))
+
+
+@needs_node
+@pytest.mark.parametrize("stopped", [
+    [[T0 + 14, T0 + 18]], [[T0 + 40, T0 + 14]], "text", None, [[T0 + 14]], [None, "text", 7],
+    [["1; DROP TABLE radar_dov", T0 + 40]], [[T0 + 14, "40"]], [[T0 + 14, None]],
+], ids=["too-short", "backwards", "text", "null", "one-number", "not-pairs", "text-in-a-pair", "text-end", "null-end"])
+def test_a_stretch_that_cannot_be_used_leaves_the_whole_window(stopped):
+    assert radar_seconds({**STOP_TALLY, "stopped": stopped}) == WHOLE_WINDOW
+
+
+@needs_node
+def test_the_events_radar_query_reads_only_its_own_stretch_of_time():
+    """Task 2's index is used by the query as the flow writes it, with and without stretches left out."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for tally in (MISSING, STOP_TALLY):
+        plan = con.execute("EXPLAIN QUERY PLAN " + radar_query(tally).replace('"', "'")).fetchall()
+        assert "USING INDEX index_radar_dov_time" in " ".join(row[3] for row in plan)
+
+
+@needs_node
+def test_at_most_twenty_stretches_are_left_out():
+    stopped = [[T0 + second, T0 + second + 6] for second in range(0, 44, 2)]  # 22 stretches
+    assert radar_query({**STOP_TALLY, "stopped": stopped}).count("NOT") == 20
 
 
 # The exact locations for a database download: "Validate filenames, setup tar" claims the list for the request, and

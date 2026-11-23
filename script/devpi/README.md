@@ -179,7 +179,7 @@ A failure therefore tells you whether to look at the hardware, the inventory, or
 | `test_cameras.py` | CSI sensors, the HEVC decoder's udev symlink and the decoder passed to the running Frigate container, Frigate cameras producing frames, go2rtc streams, and `config.yml` camera entries |
 | `test_environmental.py` | Air-quality monitors enabled in `config.yml` and writing recent readings |
 | `test_dataflow.py` | `tmdb_migrate.py --check` passes (skipped for code from before #208), no plate reads, new radar and event rows (with `live_traffic`), deployment rows rounded and one open per enabled sensor on the configured survey, and, with `tm_control_login`, every survey id on an open `deployment` row is a place on the Location page (a deleted place's closed rows keep its id); the newest `watch_camera` and `watch_radar` rows are on a five-minute mark within 400 seconds of now, cover each camera and radar in `config.yml`, and agree with Frigate's stats and configuration (whether each camera is on, with no frame rate while it is off) and the inventory's radars (an enabled radar answered the power-state question and says whether it is on) (skipped for the first 11 minutes after Node-RED starts; reads only) |
-| `test_disruptive.py` | The stack recovers after a pod restart, after a reboot, and after a reset with no shutdown: units active, and Frigate, Node-RED, nginx, and the control app answering; Frigate follows the HEVC decoder after its `/dev/media` number changes; the home page loads with the pod stopped; the pod starts after its network unit fails once; with the control app stopped, app paths answer 503 with the rescue page; on `pii_free` units with `tm_control_login`, `sudo tm-control reset-admin` sends app paths to `/setup`, and claiming the Pi again with the inventory's login works. With `tm_control_login`: a restart from the control app restarts Frigate; Frigate restarting itself through its own API leaves its Services row ok; a new time zone from it restarts the pod and nginx, and Node-RED's log times follow it; a reboot from it comes back without the control app or nginx restarting after a failure; and on `pii_free` units, a time set through it becomes the Pi's, saving and removing the ThingsBoard token through it writes and empties its file and env line and restarts Node-RED, and the same for the Frigate+ key restarts Frigate and leaves Node-RED running, and a database schema behind the migrations shows as an error on the status page (`--disruptive` only), and on `pii_free` units with `tm_control_login`, uploading a placeholder model's two files through the control app, listing it, downloading its package, and deleting it leaves Frigate's invocation unchanged (it never uses the placeholder), and, with no Frigate+ key set, using a Frigate+ model by its ID is refused with 409 `no_key` and leaves Frigate's invocation unchanged (it never contacts Frigate+); on `pii_free` units without a broker login, a made-up Frigate event published on the Pi's broker becomes an `events` row with its path, its boxes as fractions of the camera's detect size, no sub-label, and no speed from Frigate |
+| `test_disruptive.py` | The stack recovers after a pod restart, after a reboot, and after a reset with no shutdown: units active, and Frigate, Node-RED, nginx, and the control app answering; Frigate follows the HEVC decoder after its `/dev/media` number changes; the home page loads with the pod stopped; the pod starts after its network unit fails once; with the control app stopped, app paths answer 503 with the rescue page; on `pii_free` units with `tm_control_login`, `sudo tm-control reset-admin` sends app paths to `/setup`, and claiming the Pi again with the inventory's login works. With `tm_control_login`: a restart from the control app restarts Frigate; Frigate restarting itself through its own API leaves its Services row ok; a new time zone from it restarts the pod and nginx, and Node-RED's log times follow it; a reboot from it comes back without the control app or nginx restarting after a failure; and on `pii_free` units, a time set through it becomes the Pi's, saving and removing the ThingsBoard token through it writes and empties its file and env line and restarts Node-RED, and the same for the Frigate+ key restarts Frigate and leaves Node-RED running, and a database schema behind the migrations shows as an error on the status page (`--disruptive` only), and on `pii_free` units with `tm_control_login`, uploading a placeholder model's two files through the control app, listing it, downloading its package, and deleting it leaves Frigate's invocation unchanged (it never uses the placeholder), and, with no Frigate+ key set, using a Frigate+ model by its ID is refused with 409 `no_key` and leaves Frigate's invocation unchanged (it never contacts Frigate+); on `pii_free` units without a broker login, a made-up Frigate event published on the Pi's broker becomes an `events` row with its path, its boxes as fractions of the camera's detect size, no sub-label, no speed from Frigate, and no time stopped, and a made-up run of five messages for one object, `new` to `end`, becomes a row with the time it stood still, one stop, and its time in its zone |
 
 Some checks need a particular setup. Without it they're skipped, and the summary says why:
 - **`pii_free`:** checks that read `config.yml`, `node-red-tm.env`, or `tmdb.sqlite`, that write into the Pi's data folder, that compare the Pi's secrets with what it shows (on the Pi, so no value leaves it), that read Node-RED's internal token, that change the Pi's clock, or that reset the control app's accounts.
@@ -192,7 +192,7 @@ Two login checks leave something behind:
 - **The reset-admin test** (`--disruptive`, `pii_free` units with `tm_control_login`) deletes every control app account on the Pi, including viewers that people made, and ends every browser session. It then re-creates only the inventory's administrator, so everyone else has to be added again.
 - **The login backoff test** makes six wrong logins. The control app remembers the failures against your machine's address for 15 minutes, unless a successful login from it clears them sooner. Meanwhile, one more wrong password from your machine makes you wait a few seconds. Without `tm_control_login`, a second run within those 15 minutes skips the test, because it can't clear the count first.
 
-**The made-up event test** (`--disruptive`, `pii_free` units without a broker login) publishes one made-up Frigate `end` message on `frigate/events` on the Pi's broker, which turns nothing on in Frigate. The row it makes stays in `tmdb.sqlite`. Its label, `tmdev_check`, and its only zone, `zone_tmdev`, keep it out of every dashboard count; its id ends in `-tmdev0`. When the unit is sharing data, the event is uploaded like a real one.
+**The made-up event tests** (`--disruptive`, `pii_free` units without a broker login) publish made-up Frigate messages on `frigate/events` on the Pi's broker, which turns nothing on in Frigate: one `end` message alone, with an id ending in `-tmdev0`, and a run of five messages for one object, `new`, three `update`s, and `end`, with an id ending in `-tmdev1` and frame times counted from a minute before, so nothing waits. Each makes one row, which stays in `tmdb.sqlite`. Their label, `tmdev_check`, and their only zone, `zone_tmdev`, keep them out of every dashboard count. When the unit is sharing data, the events are uploaded like real ones.
 
 **The unclean reset test** (`--disruptive`) resets the Pi without shutting it down, after a `sync`, as a power loss
 would. It checks that every app comes back and that no image build did the boot's Podman refresh (#268).
@@ -231,6 +231,63 @@ Each run is logged as `summary.md` and `results.jsonl`. Their code is what the l
 The tests run only when `TM_DEV_HOSTS` names the hosts. `tmdev.py test` sets it; if you run pytest yourself, set it. Otherwise every device test is skipped, so running the repo's other tests never touches a Pi. If it's set but the inventory is missing, pytest stops with an error instead of skipping.
 
 Before any test runs, each host is checked once for an SSH connection and passwordless sudo. If either is missing, that host's tests fail right away with the reason.
+
+## Real Frigate events from a video file
+
+Made-up messages on `frigate/events` test the flows, but not what Frigate itself sends: when it flags an object as stationary, which zones it lists, how often it updates. For that, a bench unit can play a video file as a camera, the way Frigate's own contributor docs set one up. It was first done for the time stopped bench (#347), and is written down so it can be done again.
+
+**Rules first.** The clip comes from the maintainer, who has checked it for faces and anything else that identifies a person. Turning on Frigate's detection follows the hard rule in `CLAUDE.md`: ask the maintainer first, each time, and only on the loop camera. The request says how many times detection will be turned on, and the consent, the times it went on and off, and the confirmation that it is off are recorded in the `tmdev check`. Recording and snapshots stay off, so Frigate keeps no picture, and nobody but the maintainer looks at the clip, a frame, or the live view.
+
+**The clip.** One continuous take from a camera that doesn't move, a few minutes long, 16:9, ideally 1536×864 at 10 frames a second. Put it on the unit at `<install dir>/frigate/storage/tmdev/loop.mp4`, which Frigate sees as `/media/frigate/tmdev/loop.mp4`. The first one was HEVC, 8 minutes 34 seconds, 19 MB, and Frigate decoded it in software at 10 fps without skipping frames.
+
+**The camera.** Paste this under `cameras:` in Frigate's configuration editor and choose **Save & Restart**:
+
+```yaml
+  tmdev_loop:
+    enabled: true
+    type: generic
+    mqtt:
+      enabled: false
+    ffmpeg:
+      hwaccel_args: []
+      inputs:
+        - path: /media/frigate/tmdev/loop.mp4
+          input_args: -re -stream_loop -1 -fflags +genpts
+          roles:
+            - detect
+    detect:
+      enabled: false
+      width: 1536
+      height: 864
+      fps: 10
+    record:
+      enabled: false
+    snapshots:
+      enabled: false
+    objects:
+      track:
+        - car
+```
+
+- `hwaccel_args: []` makes Frigate decode the file in software, since the unit's hardware decoder is set up for the camera's own stream. Only cars are tracked, so a person in the clip never becomes an object.
+- `-re` plays the file in real time and `-stream_loop -1` starts it again the moment it ends. So each pass starts one clip length after the one before, and the same cars come at the same points in every pass, which lets you line events up with the clip by time alone. A restart of Frigate starts the clip from the beginning, about ten seconds later.
+- After **Save & Restart**, confirm in `/api/config` (sent with `X-Cache-Bypass: 1`) that detection is off for `tmdev_loop` and for the unit's own camera before asking to turn it on, because Frigate remembers the switch across restarts. Detection is then turned on with the Cameras page's Frigate detection switch.
+
+**Zones.** Draw them in Frigate's zone editor on `tmdev_loop`, with names that start `zone_tmdev_`, so the rows are in no dashboard count. A zone holds an object when the bottom middle of its box is inside, so a car parked beside a lane can count in the lane's zone; draw a parking zone generously. A zone with side lengths (speed estimation) lists an object only while it moves. Without the flows' own zones (`zone_capture`, `zone_near`, `zone_far`, `zone_radar`), events are still recorded. The zones then give no direction, so an event has a direction and a speed only when the paired radar had readings in its window, and those are the bench's, not the clip's.
+
+**The Cameras page entry.** Add one for `tmdev_loop` and pair it with the unit's radar, before detection goes on: Node-RED records nothing from a Frigate camera without an enabled entry. The page gives the entry a neutral key (`camera_` and a number and six letters or digits), which is what the rows carry.
+
+**Watching the messages without seeing pictures.** Run a small listener on the Pi that subscribes to `frigate/events` on the unit's broker and writes one line for each message with only the fields the test needs (frame times, `stationary`, `current_zones`, and so on), and read only that file. Delete it afterwards. Stop the listener in a `tmdev.py run` of its own: `pkill -f <pattern>` also matches the remote shell when any word of the same command contains the pattern.
+
+**The radar** measures the bench, not the clip. To test anything that uses its readings, insert made-up `radar_dov` rows (with the maintainer's OK) with a `deployment_id` of their own, covering an event's window before that event ends, and delete them by that `deployment_id` afterwards. A write to `tmdb.sqlite` while Node-RED runs can make one of its own writes fail if they land at the same moment, so keep it to one short transaction.
+
+**What Frigate 0.18.2 did** on the first run, with its defaults at 10 frames a second (stationary after 10 seconds without moving, which is 100 frames; an object given up 5 seconds after it was last seen, 50 frames):
+- A passing car sent 14 to 19 messages over about 4 seconds in view, and its event ended about 5 seconds after its last frame.
+- A car that parked was flagged stationary about 10 seconds after it stopped moving; a stationary object got an update once a minute (the longest gap between two messages was 60.2 seconds).
+- Cars parked through the whole clip kept one id across the jump back to the clip's start.
+- A parked car hidden for a second by a passing one was lost: its event ended as if it had moved, so it was recorded, and Frigate found it again under a new id.
+
+**Afterwards.** Turn detection off with the Cameras page's switch (or `PUT /api/camera/tmdev_loop/set/detect` with `{"value": "OFF"}` on the unit's port 5000), and confirm it in `/api/config` sent with `X-Cache-Bypass: 1`. Frigate keeps that switch across restarts, so a restart alone doesn't turn it off. Record the switch-off and its confirmation in the `tmdev check`. Then remove the Cameras page entry and the camera from Frigate's config, restart Frigate, and delete the clip. The session's rows stay in `tmdb.sqlite`, along with the entry's deployment and watch log rows.
 
 ## The run log
 
