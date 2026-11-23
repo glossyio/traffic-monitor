@@ -1,6 +1,6 @@
 # Ideas and use cases
 
-The device collects more than counts. With extra zones in Frigate and the [event data](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md), you can study how people and vehicles interact. Two examples follow; share yours in [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell).
+The device collects more than counts. With extra zones in Frigate and the [event data](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/index.md), you can study how people and vehicles interact. Three examples follow; share yours in [Show and tell](https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell).
 
 ## Near misses at a crosswalk
 
@@ -30,3 +30,32 @@ A rolling stop, also called a California stop or Rhode Island stop, is a vehicle
 1. Give each stop-sign zone a [loitering time](https://docs.frigate.video/configuration/zones/#zone-loitering) that matches your jurisdiction, such as 3 seconds, and limit it to `car` if you like. The zone then appears in an event's `entered_zones` only if the vehicle stayed in it that long. A vehicle that rolled through has an event without the zone.
 1. Optionally add wider zones for each approach, so you can also see turning movements: a car that went from `zone_intersection_e` to `zone_intersection_n` turned right.
 1. Check the zones against a few real vehicles in Frigate's **Explore** view. It can take a while to find a car that stops properly.
+
+### Without a loitering time
+
+A second way needs no time chosen in advance. Give the stop-sign zone no loitering time and no side lengths for speed estimation. Every vehicle's event then has its seconds in the zone in `zone_times`, and how many of them it was stationary, so you can try one, two, or three seconds afterwards against the same events. [Time stopped and time in each zone](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/#time-stopped-and-time-in-each-zone) has an example query.
+
+Frigate's stationary flag is no help at a stop sign: it marks an object stationary only after about ten seconds without moving, which a full stop rarely lasts. The time in the zone is what to compare. A zone with a loitering time records only the time beyond it.
+
+## How long vehicles stay parked
+
+1. In Frigate, draw a zone over the parking bays, such as `zone_parking`, without side lengths for speed estimation.
+1. A vehicle that parks and leaves is one event, saved when it leaves. Its `zone_times` has its time in the bay and how much of that it was stationary.
+
+For a 15-minute bay, the vehicles that stayed longer than allowed are the events with more than 900 seconds stationary in the zone:
+
+```
+SELECT id,
+       datetime(start_time, 'unixepoch', 'localtime') AS arrived,
+       json_extract(zone_times, '$.zone_parking.stationary') AS seconds_parked
+FROM events
+WHERE json_extract(zone_times, '$.zone_parking.stationary') > 900
+ORDER BY start_time;
+```
+
+The limits:
+
+- Six hours is the most a figure says; 21600 means six hours or more.
+- A vehicle that is still parked has no event yet.
+- A vehicle that was already parked when the device or Frigate started is timed only from then.
+- If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, the stay is split into two or more events, each shorter than the stay, and a part can be missing. A vehicle that stayed longer than allowed can then have no event over the limit.

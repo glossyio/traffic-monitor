@@ -1,6 +1,6 @@
 ______________________________________________________________________
 
-## description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.
+## description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, speed, and how long it stopped and spent in each zone.
 
 # Events
 
@@ -8,7 +8,7 @@ An event is one object that Frigate detected and tracked until it left the frame
 
 ## How an event is made
 
-1. Frigate publishes a message on the device's MQTT topic `frigate/events` for each tracked object. When the object leaves the frame, the message has `type: "end"` and holds everything Frigate knows about it.
+1. Frigate publishes messages on the device's MQTT topic `frigate/events` for each tracked object: `new` when it starts following the object, `update` while it follows it, and `end` when the object leaves the frame. The `end` message holds everything Frigate knows about the object. From the `new` and `update` messages, the Traffic Monitor adds up how long the object stood still and how long it was in each zone (see [Time stopped and time in each zone](#time-stopped-and-time-in-each-zone)).
 1. The Traffic Monitor keeps the `end` message if the camera has an enabled entry in [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorscameras) and the object moved. From here on, the camera goes by its entry's name.
 1. If the object entered any zone, it works out the direction from the zones, and the speed from the camera's radar, or from Frigate's own estimate when the radar gave none, as described below. It adds `radar` to `provenance` when the radar's speed was used.
 1. It writes the row, publishes today's counts on `tm/events`, and uploads the event to ThingsBoard if that is on. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
@@ -19,7 +19,7 @@ An event is one object that Frigate detected and tracked until it left the frame
 
 The zones give a direction when the object entered both `zone_near` and `zone_far`: `zone_near` then `zone_far` is outbound, and the reverse is inbound. This works on any camera.
 
-When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, `speed_calc` takes Frigate's, if Frigate made an estimate.
+When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. For an object that stood still, the readings from while Frigate held it as stationary are left out, with the same two-second margin, so most of the traffic that passed a parked car doesn't count toward its speed. Frigate's flag starts about ten seconds into a stop, so the readings from those first seconds stay in. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, `speed_calc` takes Frigate's, if Frigate made an estimate.
 
 | Zones        | Radar readings                           | `direction_calc`      | `direction_source`     | `speed_calc`                 |
 | ------------ | ---------------------------------------- | --------------------- | ---------------------- | ---------------------------- |
@@ -38,6 +38,46 @@ Frigate estimates a speed only for an object that crossed a zone drawn with four
 
 The device's speed unit is the unit its radar reports, mph unless the radar is set to another. A camera without a radar on a device that has one uses that radar's unit, so one device's speeds are all in one unit. A device without an enabled radar uses Frigate's unit, km/h or mph, which follows Frigate's unit setting.
 
+## Time stopped and time in each zone
+
+Frigate doesn't send these times. Each message about an object says whether the object is stationary at that moment and which zones it is in. The Traffic Monitor adds up the time between one message and the next: to `stationary_time` when the object was stationary, to each zone it was in, and to that zone's `stationary` figure when both held. `stops` counts how many times the object became stationary.
+
+**Stationary** is Frigate's flag. Frigate marks an object stationary once it hasn't moved for about ten seconds (its [stationary objects](https://docs.frigate.video/configuration/stationary_objects) setting), so `stationary_time` starts about ten seconds into each stop. For the whole length of the stops, add ten seconds for each of `stops`. A stop shorter than that doesn't show in `stationary_time` or `stops`; for those, use the time in a zone, as in [Vehicles that don't stop at a stop sign](https://docs.trafficmonitor.ai/dev/help-and-faq/use-cases-and-scenarios/#vehicles-that-dont-stop-at-a-stop-sign).
+
+**A zone's time** runs from when Frigate lists the object in the zone to when it no longer does. Three things decide when that is:
+
+- Frigate lists an object once it has been inside for three frames in a row (the zone's [inertia](https://docs.frigate.video/configuration/zones)).
+- A zone with a loitering time lists the object only after that time, so its figure is the time beyond it.
+- A zone with side lengths for [speed estimation](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#speed-without-a-radar) lists an object only while it moves. It never has stationary time, and its time leaves out any time stopped. Draw a stop or parking zone without side lengths.
+
+The figures run to the last frame the object was seen in, so they add up to a little less than `end_time` minus `start_time`. No figure says more than six hours: 21600 means six hours or more.
+
+A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, it follows it as a new object, so one stay becomes two or more events, each with only its own part of the time. The part before the vehicle was lost is saved as an event of its own, unless that event ended while the object was stationary, which isn't recorded. A vehicle that was already parked when the device or Frigate started is timed only from then.
+
+For example, the time each car of one day spent in a stop-sign zone, and how much of it stopped:
+
+```
+SELECT id,
+       datetime(start_time, 'unixepoch', 'localtime') AS seen,
+       json_extract(zone_times, '$.zone_stop_sign_e.time') AS seconds_in_zone,
+       json_extract(zone_times, '$.zone_stop_sign_e.stationary') AS seconds_stopped
+FROM events
+WHERE label = 'car'
+  AND date(start_time, 'unixepoch', 'localtime') = '2026-11-19'
+  AND json_extract(zone_times, '$.zone_stop_sign_e') IS NOT NULL
+ORDER BY start_time;
+```
+
+When the three columns are empty
+
+`stationary_time`, `stops`, and `zone_times` are filled together or left empty together. They are empty when:
+
+- Node-RED restarted, or the device rebooted, while Frigate was following the object.
+- A message from Frigate didn't arrive, as when its connection to the broker dropped for a moment.
+- More than five minutes passed between two of Frigate's messages about the object, as when the device's clock was set or the camera sent no frames for a while.
+- More than 300 objects were being followed at once.
+- The row was recorded by an earlier version of the Traffic Monitor.
+
 ## Columns
 
 Values that come straight from Frigate's message are marked *Frigate*. Frigate's [MQTT](https://docs.frigate.video/integrations/mqtt) page documents them in full.
@@ -49,9 +89,9 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `label`                  | TEXT              | *Frigate.* The object type                                                                                                                                     | One of Frigate's [object labels](https://docs.frigate.video/configuration/objects)                                                                                                                                                                                                                                                                          |
 | `sub_label`              | TEXT              | *Frigate.* A delivery company's logo that Frigate recognized on the object                                                                                     | One of `amazon`, `an_post`, `canada_post`, `dhl`, `dpd`, `fedex`, `gls`, `nzpost`, `postnl`, `postnord`, `purolator`, `royal_mail`, `ups`, or `usps`; usually empty. Anything else Frigate sends as a sub-label, such as a recognized person's or a known plate's name, isn't saved. Rows from earlier versions of the Traffic Monitor can hold other text. |
 | `top_score`              | REAL              | *Frigate.* The highest detection score while the object was tracked                                                                                            | 0 to 1                                                                                                                                                                                                                                                                                                                                                      |
-| `frame_time`             | REAL              | *Frigate.* When the last frame Frigate processed for the object was taken                                                                                      | Unix time in seconds                                                                                                                                                                                                                                                                                                                                        |
+| `frame_time`             | REAL              | *Frigate.* When the last frame the object was seen in was taken                                                                                                | Unix time in seconds                                                                                                                                                                                                                                                                                                                                        |
 | `start_time`             | REAL              | *Frigate.* When the object was first seen                                                                                                                      | Unix time in seconds                                                                                                                                                                                                                                                                                                                                        |
-| `end_time`               | REAL              | *Frigate.* When the object was last seen                                                                                                                       | Unix time in seconds                                                                                                                                                                                                                                                                                                                                        |
+| `end_time`               | REAL              | *Frigate.* When Frigate stopped following the object, up to about five seconds after it was last seen (`frame_time`)                                           | Unix time in seconds                                                                                                                                                                                                                                                                                                                                        |
 | `entered_zones`          | TEXT              | *Frigate.* The zones the object entered, in order, named as they are in Frigate                                                                                | A JSON array of zone names, such as `["zone_capture", "zone_near", "zone_radar", "zone_far"]`. See [Zone names are saved with your data](https://docs.trafficmonitor.ai/dev/use/cameras/#zone-names-are-saved-with-your-data).                                                                                                                              |
 | `score`                  | REAL              | *Frigate.* The object's current score when the event ended                                                                                                     | 0 to 1                                                                                                                                                                                                                                                                                                                                                      |
 | `area`                   | REAL              | *Frigate.* Width × height of the object's box, in pixels                                                                                                       |                                                                                                                                                                                                                                                                                                                                                             |
@@ -75,7 +115,10 @@ Values that come straight from Frigate's message are marked *Frigate*. Frigate's
 | `frigate_speed`          | REAL              | *Frigate.* Frigate's own speed estimate: the average of its last ten estimates for the object                                                                  | A positive number in `frigate_speed_unit`; empty when Frigate made no estimate                                                                                                                                                                                                                                                                              |
 | `frigate_speed_unit`     | TEXT              | The unit of `frigate_speed`, from Frigate's unit setting                                                                                                       | `kph` or `mph`; empty when there's no estimate, or when the device hadn't yet read Frigate's setting                                                                                                                                                                                                                                                        |
 | `frigate_velocity_angle` | REAL              | *Frigate.* The direction the object was moving across the picture at Frigate's last estimate                                                                   | Degrees from 0 to 360: 0 toward the right edge of the picture, 90 toward the bottom, 180 toward the left, and 270 toward the top; empty when there's no estimate                                                                                                                                                                                            |
+| `stationary_time`        | REAL              | How long Frigate held the object as stationary, in all. See [Time stopped and time in each zone](#time-stopped-and-time-in-each-zone).                         | Seconds, at most 21600, which means six hours or more; empty when the figures couldn't be worked out                                                                                                                                                                                                                                                        |
+| `stops`                  | INTEGER           | How many separate times the object became stationary                                                                                                           | A count; empty when the figures couldn't be worked out                                                                                                                                                                                                                                                                                                      |
+| `zone_times`             | TEXT              | For each zone Frigate listed the object in, the time it spent there and how much of that it was stationary                                                     | A JSON object in seconds, such as `{"zone_near": {"time": 1.2, "stationary": 0}, "zone_far": {"time": 1.4, "stationary": 0}}`, each figure at most 21600; empty when the figures couldn't be worked out                                                                                                                                                     |
 
-Events recorded by an earlier version of the Traffic Monitor have `direction_source`, `speed_unit`, `speed_source`, `radar_readings`, and the columns from `path_data` on empty, and their `speed_calc`, when they have one, is the radar's. Their `direction_calc` is empty where the radar saw only the other way, and on a camera without an enabled radar.
+Events recorded by an earlier version of the Traffic Monitor have `direction_source`, `speed_unit`, `speed_source`, `radar_readings`, the columns from `path_data` to `frigate_velocity_angle`, and `stationary_time`, `stops`, and `zone_times` empty, and their `speed_calc`, when they have one, is the radar's. Their `direction_calc` is empty where the radar saw only the other way, and on a camera without an enabled radar.
 
-The JSON export on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page gives the JSON columns (`entered_zones`, `attributes`, `provenance`, `path_data`, `box`, and `best_box`) as text, the way the database stores them. Parse them as JSON to use them.
+The JSON export on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page gives the JSON columns (`entered_zones`, `attributes`, `provenance`, `path_data`, `box`, `best_box`, and `zone_times`) as text, the way the database stores them. Parse them as JSON to use them.

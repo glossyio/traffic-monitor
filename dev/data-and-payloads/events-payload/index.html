@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-skip">
+        <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-speed-and-how-long-it-stopped-and-spent-in-each-zone" class="md-skip">
           Skip to content
         </a>
       
@@ -1590,10 +1590,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-nav__link">
+  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-speed-and-how-long-it-stopped-and-spent-in-each-zone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.
+        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, speed, and how long it stopped and spent in each zone.
       
     </span>
   </a>
@@ -1628,6 +1628,17 @@
     <span class="md-ellipsis">
       
         Direction and speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-stopped-and-time-in-each-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time stopped and time in each zone
       
     </span>
   </a>
@@ -2259,10 +2270,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-nav__link">
+  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-speed-and-how-long-it-stopped-and-spent-in-each-zone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.
+        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, speed, and how long it stopped and spent in each zone.
       
     </span>
   </a>
@@ -2297,6 +2308,17 @@
     <span class="md-ellipsis">
       
         Direction and speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#time-stopped-and-time-in-each-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time stopped and time in each zone
       
     </span>
   </a>
@@ -2347,12 +2369,12 @@
   
   
   <hr />
-<h2 id="description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed">description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.<a class="headerlink" href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" title="Permanent link">&para;</a></h2>
+<h2 id="description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-speed-and-how-long-it-stopped-and-spent-in-each-zone">description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, speed, and how long it stopped and spent in each zone.<a class="headerlink" href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-speed-and-how-long-it-stopped-and-spent-in-each-zone" title="Permanent link">&para;</a></h2>
 <h1 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h1>
 <p>An event is one object that Frigate detected and tracked until it left the frame: a car, a person, a bicycle, and so on. The Traffic Monitor adds the direction of travel and, when it has one, the speed, and it stores the result in the <code>events</code> table of the database.</p>
 <h2 id="how-an-event-is-made">How an event is made<a class="headerlink" href="#how-an-event-is-made" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Frigate publishes a message on the device's MQTT topic <code>frigate/events</code> for each tracked object. When the object leaves the frame, the message has <code>type: "end"</code> and holds everything Frigate knows about it.</li>
+<li>Frigate publishes messages on the device's MQTT topic <code>frigate/events</code> for each tracked object: <code>new</code> when it starts following the object, <code>update</code> while it follows it, and <code>end</code> when the object leaves the frame. The <code>end</code> message holds everything Frigate knows about the object. From the <code>new</code> and <code>update</code> messages, the Traffic Monitor adds up how long the object stood still and how long it was in each zone (see <a href="#time-stopped-and-time-in-each-zone">Time stopped and time in each zone</a>).</li>
 <li>The Traffic Monitor keeps the <code>end</code> message if the camera has an enabled entry in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> and the object moved. From here on, the camera goes by its entry's name.</li>
 <li>If the object entered any zone, it works out the direction from the zones, and the speed from the camera's radar, or from Frigate's own estimate when the radar gave none, as described below. It adds <code>radar</code> to <code>provenance</code> when the radar's speed was used.</li>
 <li>It writes the row, publishes today's counts on <code>tm/events</code>, and uploads the event to ThingsBoard if that is on. See <a href="../integrations/">MQTT and ThingsBoard</a>.</li>
@@ -2360,7 +2382,7 @@
 <p><a href="../../setup-guide/#3-adjust-the-zones">First-time setup</a> describes the four zones.</p>
 <h2 id="direction-and-speed">Direction and speed<a class="headerlink" href="#direction-and-speed" title="Permanent link">&para;</a></h2>
 <p>The zones give a direction when the object entered both <code>zone_near</code> and <code>zone_far</code>: <code>zone_near</code> then <code>zone_far</code> is outbound, and the reverse is inbound. This works on any camera.</p>
-<p>When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, <code>speed_calc</code> takes Frigate's, if Frigate made an estimate.</p>
+<p>When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. For an object that stood still, the readings from while Frigate held it as stationary are left out, with the same two-second margin, so most of the traffic that passed a parked car doesn't count toward its speed. Frigate's flag starts about ten seconds into a stop, so the readings from those first seconds stay in. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, <code>speed_calc</code> takes Frigate's, if Frigate made an estimate.</p>
 <table>
 <thead>
 <tr>
@@ -2420,6 +2442,39 @@
 <p><code>direction_source</code> also says how far to trust the direction. <code>zones_radar</code> is two sensors agreeing. <code>zones</code> and <code>zones_radar_opposite</code> come from the camera alone, which followed the object itself; with <code>zones_radar_opposite</code>, the radar's readings belonged to something else, such as oncoming traffic. <code>radar</code> is the least certain, because its readings can belong to another object than the one the camera saw. If many events on one device have <code>zones_radar_opposite</code>, check that <code>zone_near</code> and <code>zone_far</code> aren't drawn the wrong way round.</p>
 <p>Frigate estimates a speed only for an object that crossed a zone drawn with four corners and the real length of each side, so it makes none unless you set one up; see <a href="../../configuration/frigate-config/#speed-without-a-radar">Speed without a radar</a>. Its figure is always saved in <code>frigate_speed</code>, with its unit, whether or not the radar gave a speed, so an event with both has both. When Frigate's speed fills in <code>speed_calc</code>, it is converted to the device's speed unit and signed like the radar's: negative outbound, positive inbound or when the direction isn't known. <code>speed_source</code> says which one <code>speed_calc</code> holds. So for every event, <code>speed_calc</code> is negative only when <code>direction_calc</code> is <code>outbound</code>, and when <code>direction_calc</code> is empty the speed is Frigate's, positive, and its sign says nothing about the direction.</p>
 <p>The device's speed unit is the unit its radar reports, mph unless the radar is set to another. A camera without a radar on a device that has one uses that radar's unit, so one device's speeds are all in one unit. A device without an enabled radar uses Frigate's unit, km/h or mph, which follows Frigate's unit setting.</p>
+<h2 id="time-stopped-and-time-in-each-zone">Time stopped and time in each zone<a class="headerlink" href="#time-stopped-and-time-in-each-zone" title="Permanent link">&para;</a></h2>
+<p>Frigate doesn't send these times. Each message about an object says whether the object is stationary at that moment and which zones it is in. The Traffic Monitor adds up the time between one message and the next: to <code>stationary_time</code> when the object was stationary, to each zone it was in, and to that zone's <code>stationary</code> figure when both held. <code>stops</code> counts how many times the object became stationary.</p>
+<p><strong>Stationary</strong> is Frigate's flag. Frigate marks an object stationary once it hasn't moved for about ten seconds (its <a href="https://docs.frigate.video/configuration/stationary_objects">stationary objects</a> setting), so <code>stationary_time</code> starts about ten seconds into each stop. For the whole length of the stops, add ten seconds for each of <code>stops</code>. A stop shorter than that doesn't show in <code>stationary_time</code> or <code>stops</code>; for those, use the time in a zone, as in <a href="../../help-and-faq/use-cases-and-scenarios/#vehicles-that-dont-stop-at-a-stop-sign">Vehicles that don't stop at a stop sign</a>.</p>
+<p><strong>A zone's time</strong> runs from when Frigate lists the object in the zone to when it no longer does. Three things decide when that is:</p>
+<ul>
+<li>Frigate lists an object once it has been inside for three frames in a row (the zone's <a href="https://docs.frigate.video/configuration/zones">inertia</a>).</li>
+<li>A zone with a loitering time lists the object only after that time, so its figure is the time beyond it.</li>
+<li>A zone with side lengths for <a href="../../configuration/frigate-config/#speed-without-a-radar">speed estimation</a> lists an object only while it moves. It never has stationary time, and its time leaves out any time stopped. Draw a stop or parking zone without side lengths.</li>
+</ul>
+<p>The figures run to the last frame the object was seen in, so they add up to a little less than <code>end_time</code> minus <code>start_time</code>. No figure says more than six hours: 21600 means six hours or more.</p>
+<p>A vehicle that drives in, parks, and drives off is one event, saved when it leaves, with the time it stood still. If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, it follows it as a new object, so one stay becomes two or more events, each with only its own part of the time. The part before the vehicle was lost is saved as an event of its own, unless that event ended while the object was stationary, which isn't recorded. A vehicle that was already parked when the device or Frigate started is timed only from then.</p>
+<p>For example, the time each car of one day spent in a stop-sign zone, and how much of it stopped:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">,</span><span class="w"> </span><span class="s1">'localtime'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">seen</span><span class="p">,</span>
+<span class="w">       </span><span class="n">json_extract</span><span class="p">(</span><span class="n">zone_times</span><span class="p">,</span><span class="w"> </span><span class="s1">'$.zone_stop_sign_e.time'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">seconds_in_zone</span><span class="p">,</span>
+<span class="w">       </span><span class="n">json_extract</span><span class="p">(</span><span class="n">zone_times</span><span class="p">,</span><span class="w"> </span><span class="s1">'$.zone_stop_sign_e.stationary'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">seconds_stopped</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">events</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'car'</span>
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="nb">date</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">,</span><span class="w"> </span><span class="s1">'localtime'</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2026-11-19'</span>
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">json_extract</span><span class="p">(</span><span class="n">zone_times</span><span class="p">,</span><span class="w"> </span><span class="s1">'$.zone_stop_sign_e'</span><span class="p">)</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">start_time</span><span class="p">;</span>
+</code></pre></div>
+<details class="info">
+<summary>When the three columns are empty</summary>
+<p><code>stationary_time</code>, <code>stops</code>, and <code>zone_times</code> are filled together or left empty together. They are empty when:</p>
+<ul>
+<li>Node-RED restarted, or the device rebooted, while Frigate was following the object.</li>
+<li>A message from Frigate didn't arrive, as when its connection to the broker dropped for a moment.</li>
+<li>More than five minutes passed between two of Frigate's messages about the object, as when the device's clock was set or the camera sent no frames for a while.</li>
+<li>More than 300 objects were being followed at once.</li>
+<li>The row was recorded by an earlier version of the Traffic Monitor.</li>
+</ul>
+</details>
 <h2 id="columns">Columns<a class="headerlink" href="#columns" title="Permanent link">&para;</a></h2>
 <p>Values that come straight from Frigate's message are marked <em>Frigate</em>. Frigate's <a href="https://docs.frigate.video/integrations/mqtt">MQTT</a> page documents them in full.</p>
 <table>
@@ -2465,7 +2520,7 @@
 <tr>
 <td><code>frame_time</code></td>
 <td>REAL</td>
-<td><em>Frigate.</em> When the last frame Frigate processed for the object was taken</td>
+<td><em>Frigate.</em> When the last frame the object was seen in was taken</td>
 <td>Unix time in seconds</td>
 </tr>
 <tr>
@@ -2477,7 +2532,7 @@
 <tr>
 <td><code>end_time</code></td>
 <td>REAL</td>
-<td><em>Frigate.</em> When the object was last seen</td>
+<td><em>Frigate.</em> When Frigate stopped following the object, up to about five seconds after it was last seen (<code>frame_time</code>)</td>
 <td>Unix time in seconds</td>
 </tr>
 <tr>
@@ -2618,10 +2673,28 @@
 <td><em>Frigate.</em> The direction the object was moving across the picture at Frigate's last estimate</td>
 <td>Degrees from 0 to 360: 0 toward the right edge of the picture, 90 toward the bottom, 180 toward the left, and 270 toward the top; empty when there's no estimate</td>
 </tr>
+<tr>
+<td><code>stationary_time</code></td>
+<td>REAL</td>
+<td>How long Frigate held the object as stationary, in all. See <a href="#time-stopped-and-time-in-each-zone">Time stopped and time in each zone</a>.</td>
+<td>Seconds, at most 21600, which means six hours or more; empty when the figures couldn't be worked out</td>
+</tr>
+<tr>
+<td><code>stops</code></td>
+<td>INTEGER</td>
+<td>How many separate times the object became stationary</td>
+<td>A count; empty when the figures couldn't be worked out</td>
+</tr>
+<tr>
+<td><code>zone_times</code></td>
+<td>TEXT</td>
+<td>For each zone Frigate listed the object in, the time it spent there and how much of that it was stationary</td>
+<td>A JSON object in seconds, such as <code>{"zone_near": {"time": 1.2, "stationary": 0}, "zone_far": {"time": 1.4, "stationary": 0}}</code>, each figure at most 21600; empty when the figures couldn't be worked out</td>
+</tr>
 </tbody>
 </table>
-<p>Events recorded by an earlier version of the Traffic Monitor have <code>direction_source</code>, <code>speed_unit</code>, <code>speed_source</code>, <code>radar_readings</code>, and the columns from <code>path_data</code> on empty, and their <code>speed_calc</code>, when they have one, is the radar's. Their <code>direction_calc</code> is empty where the radar saw only the other way, and on a camera without an enabled radar.</p>
-<p>The JSON export on the <a href="../../ui/database/">Data export</a> page gives the JSON columns (<code>entered_zones</code>, <code>attributes</code>, <code>provenance</code>, <code>path_data</code>, <code>box</code>, and <code>best_box</code>) as text, the way the database stores them. Parse them as JSON to use them.</p>
+<p>Events recorded by an earlier version of the Traffic Monitor have <code>direction_source</code>, <code>speed_unit</code>, <code>speed_source</code>, <code>radar_readings</code>, the columns from <code>path_data</code> to <code>frigate_velocity_angle</code>, and <code>stationary_time</code>, <code>stops</code>, and <code>zone_times</code> empty, and their <code>speed_calc</code>, when they have one, is the radar's. Their <code>direction_calc</code> is empty where the radar saw only the other way, and on a camera without an enabled radar.</p>
+<p>The JSON export on the <a href="../../ui/database/">Data export</a> page gives the JSON columns (<code>entered_zones</code>, <code>attributes</code>, <code>provenance</code>, <code>path_data</code>, <code>box</code>, <code>best_box</code>, and <code>zone_times</code>) as text, the way the database stores them. Parse them as JSON to use them.</p>
   
 
 

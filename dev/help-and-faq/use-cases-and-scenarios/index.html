@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Ways to use a Traffic Monitor beyond counting, such as near-miss analysis at a crosswalk and rolling-stop detection at a stop sign.">
+        <meta name="description" content="Ways to use a Traffic Monitor beyond counting, such as near-miss analysis at a crosswalk, rolling-stop detection at a stop sign, and how long vehicles stay parked.">
       
       
       
@@ -1913,6 +1913,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Vehicles that don&#39;t stop at a stop sign">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#without-a-loitering-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Without a loitering time
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-long-vehicles-stay-parked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How long vehicles stay parked
+      
+    </span>
+  </a>
+  
 </li>
       
     </ul>
@@ -2241,6 +2269,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Vehicles that don&#39;t stop at a stop sign">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#without-a-loitering-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Without a loitering time
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-long-vehicles-stay-parked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How long vehicles stay parked
+      
+    </span>
+  </a>
+  
 </li>
       
     </ul>
@@ -2274,8 +2330,8 @@
   
   
   <h1 id="ideas-and-use-cases">Ideas and use cases<a class="headerlink" href="#ideas-and-use-cases" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Ways to use a Traffic Monitor beyond counting, such as near-miss analysis at a crosswalk and rolling-stop detection at a stop sign.</p>
-<p>The device collects more than counts. With extra zones in Frigate and the <a href="../../data-and-payloads/events-payload/">event data</a>, you can study how people and vehicles interact. Two examples follow; share yours in <a href="https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell">Show and tell</a>.</p>
+<p class="tm-description">Ways to use a Traffic Monitor beyond counting, such as near-miss analysis at a crosswalk, rolling-stop detection at a stop sign, and how long vehicles stay parked.</p>
+<p>The device collects more than counts. With extra zones in Frigate and the <a href="../../data-and-payloads/events-payload/">event data</a>, you can study how people and vehicles interact. Three examples follow; share yours in <a href="https://github.com/glossyio/traffic-monitor/discussions/new?category=show-and-tell">Show and tell</a>.</p>
 <h2 id="near-misses-at-a-crosswalk">Near misses at a crosswalk<a class="headerlink" href="#near-misses-at-a-crosswalk" title="Permanent link">&para;</a></h2>
 <p>A near miss is a driver and a vulnerable road user, such as a pedestrian at a crosswalk, in conflict at the same moment. These events are rarely captured today. The first step is a definition, and traffic law supplies one. As an example, Oregon's rules, summarized by <a href="https://portlandbicycleschool.com/driving-around-bicycles/driving-around-pedestrians-faq/">Portland Bicycle School</a>:</p>
 <ul>
@@ -2317,6 +2373,29 @@
 <p><img alt="Frigate Explore view listing car events with their zones" src="../../assets/images/Screenshot_20260313_121735.png" /></p>
 </li>
 </ol>
+<h3 id="without-a-loitering-time">Without a loitering time<a class="headerlink" href="#without-a-loitering-time" title="Permanent link">&para;</a></h3>
+<p>A second way needs no time chosen in advance. Give the stop-sign zone no loitering time and no side lengths for speed estimation. Every vehicle's event then has its seconds in the zone in <code>zone_times</code>, and how many of them it was stationary, so you can try one, two, or three seconds afterwards against the same events. <a href="../../data-and-payloads/events-payload/#time-stopped-and-time-in-each-zone">Time stopped and time in each zone</a> has an example query.</p>
+<p>Frigate's stationary flag is no help at a stop sign: it marks an object stationary only after about ten seconds without moving, which a full stop rarely lasts. The time in the zone is what to compare. A zone with a loitering time records only the time beyond it.</p>
+<h2 id="how-long-vehicles-stay-parked">How long vehicles stay parked<a class="headerlink" href="#how-long-vehicles-stay-parked" title="Permanent link">&para;</a></h2>
+<ol>
+<li>In Frigate, draw a zone over the parking bays, such as <code>zone_parking</code>, without side lengths for speed estimation.</li>
+<li>A vehicle that parks and leaves is one event, saved when it leaves. Its <code>zone_times</code> has its time in the bay and how much of that it was stationary.</li>
+</ol>
+<p>For a 15-minute bay, the vehicles that stayed longer than allowed are the events with more than 900 seconds stationary in the zone:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">,</span><span class="w"> </span><span class="s1">'localtime'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">arrived</span><span class="p">,</span>
+<span class="w">       </span><span class="n">json_extract</span><span class="p">(</span><span class="n">zone_times</span><span class="p">,</span><span class="w"> </span><span class="s1">'$.zone_parking.stationary'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">seconds_parked</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">events</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">json_extract</span><span class="p">(</span><span class="n">zone_times</span><span class="p">,</span><span class="w"> </span><span class="s1">'$.zone_parking.stationary'</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">900</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">start_time</span><span class="p">;</span>
+</code></pre></div>
+<p>The limits:</p>
+<ul>
+<li>Six hours is the most a figure says; 21600 means six hours or more.</li>
+<li>A vehicle that is still parked has no event yet.</li>
+<li>A vehicle that was already parked when the device or Frigate started is timed only from then.</li>
+<li>If Frigate loses sight of a parked vehicle and finds it again, as when a passing vehicle hides it for a moment, the stay is split into two or more events, each shorter than the stay, and a part can be missing. A vehicle that stayed longer than allowed can then have no event over the limit.</li>
+</ul>
   
 
 
