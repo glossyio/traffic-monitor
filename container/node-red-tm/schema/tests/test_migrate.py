@@ -10,6 +10,7 @@ import pytest
 
 import helpers
 from helpers import (
+    ALL_TABLES,
     BASELINE_TABLES,
     LATEST_VERSION,
     LEGACY_SCHEMA,
@@ -62,7 +63,7 @@ def output(capsys):
 def test_fresh_database_gets_baseline_tables_and_version(db_path):
     assert migrate("--db", db_path) == 0
 
-    assert tables(db_path) == BASELINE_TABLES
+    assert tables(db_path) == ALL_TABLES
     assert user_version(db_path) == LATEST_VERSION
     assert files_in(db_path.parent / "backup") == []  # nothing to back up yet
 
@@ -418,4 +419,4 @@ def test_runner_needs_only_the_standard_library(db_path):
                             capture_output=True, text=True)
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert tables(db_path) == BASELINE_TABLES
+    assert tables(db_path) == ALL_TABLES

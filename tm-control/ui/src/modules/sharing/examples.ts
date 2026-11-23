@@ -1,8 +1,9 @@
 // What each sharing choice sends, as the person sees it before ticking the box. The values are made up (the
 // coordinates are an example, not a place this device is); the shapes are the ones the upload uses.
 
-// Share data: an event with its speed, its path across the picture, and its box, and a deployment row whose location
-// is rounded to the stored precision
+// Share data: an event with its speed, its path across the picture, and its box, a deployment row whose location is
+// rounded to the stored precision, and the watch log, which every five minutes says whether each camera and radar was
+// working
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -27,6 +28,22 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
       lat: 45.52,
       lon: -122.69,
       location_precision: 2,
+    },
+    watch: {
+      cameras: [
+        {
+          time: 1_793_000_100,
+          camera: 'camera_1_3fa9c2',
+          config_enabled: 1,
+          frigate_answers: 5,
+          camera_answers: 5,
+          camera_fps: 5,
+          detection_fps: 0.4,
+          detection_enabled: 1,
+          camera_on: 1,
+        },
+      ],
+      radars: [{ time: 1_793_000_100, radar: 'TM_RADAR_SERIAL_PORT_00', config_enabled: 1, port_open: 1, radar_answers: 5, radar_on: 1 }],
     },
   },
   null,

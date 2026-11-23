@@ -147,6 +147,7 @@ nav:
           - Data and privacy: data-and-payloads/data-overview.md
           - Events: data-and-payloads/events-payload.md
           - Object paths: data-and-payloads/object-paths.md
+          - Watch log: data-and-payloads/watch-log.md
           - Radar: data-and-payloads/radar-payload.md
           - Air quality: data-and-payloads/air-quality-aq-payload.md
           - MQTT and ThingsBoard: data-and-payloads/integrations.md

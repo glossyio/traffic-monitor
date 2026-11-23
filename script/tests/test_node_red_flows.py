@@ -1,5 +1,6 @@
 """Check Node-RED's flows.json off-device."""
 
+import copy
 import json
 import re
 import sqlite3
@@ -755,6 +756,7 @@ def test_radars_report_config_port_and_last_reading():
 
 
 RADAR_JUNCTION, RADAR_DIRECTOR = "05a58d9ee463c696", "e9bd400bfc06d988"  # where the hourly time sync goes
+RADAR_REPLIES = "05e485cfcada03a3"  # where the radars' parsed lines pass
 
 
 def test_a_reopened_radar_port_gets_the_time_through_the_radar_director():
@@ -2155,15 +2157,15 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 
 
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
-    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts), and the
-    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
-    by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
-    (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
-    camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
-    frigate_cameras."""
+    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts, and
+    again for the watch log's camera switches), and the thumbnail and snapshot of an event id. None puts a camera
+    name in its URL. Frigate's summary lists every camera by Frigate's name, and the one node that picks a camera
+    out of it is "structure frigate api/summary" (eb140f61419c6a08), which compares with flow.camera_selection (a
+    key). Every function that reads camera_selection and isn't a query of tmdb (which stores the key) must map the
+    key back through frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
-    assert len(calls) == 5 and not [node["id"] for node in calls if "camera" in node["url"]]
+    assert len(calls) == 6 and not [node["id"] for node in calls if "camera" in node["url"]]
     selects = [node["id"] for node in flows
                if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
     assert selects == [SUMMARY]
@@ -2302,12 +2304,48 @@ TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
             "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
             "survey_id": "3f9a1c2e-si"}
+TICK = 1761800100  # a five-minute mark
+TICK_MS = TICK * 1000
+WATCH_CAMERA_COLUMNS = ["time", "camera", "config_enabled", "deployment_id", "frigate_answers", "camera_answers",
+                        "camera_fps", "process_fps", "skipped_fps", "detection_fps", "detection_enabled", "camera_on"]
+WATCH_RADAR_COLUMNS = ["time", "radar", "config_enabled", "deployment_id", "port_open", "last_reading_at",
+                       "radar_answers", "radar_on"]
+STATS_WARNING = "Watch log: a frigate/stats message couldn't be read, so it wasn't counted."
+EMPTY_WINDOW = {"since": TICK_MS - 300000, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
+WATCH_SENSORS = {
+    "cameras": {"camera_1_3fa9c2": {"enabled": True, "deployment": {"id": "1761700000000-0a1b2c3d-d"}},
+                "side_st": {"enabled": False}},
+    "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"id": "1761700000000-4e5f6a7b-d"}},
+               "TM_RADAR_SERIAL_PORT_01": {"enabled": False}},
+}
+WATCH_WINDOW = {"since": TICK_MS - 300000, "messages": 5, "cameras": {"camera_1_3fa9c2": {
+    "messages": 5, "camera_fps": 25.0, "process_fps": 24.5, "skipped_fps": 0.0, "detection_fps": 2.0,
+    "detection_off": 0}}, "switches": {"camera_1_3fa9c2": {"answers": 5, "off": 0}},
+    "radars": {"TM_RADAR_SERIAL_PORT_00": {"checks": 5, "port_closed": 0, "answers": 5, "idle": 0, "unknown": 0}}}
+RADAR_STATUS = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "port_open": True,
+                                            "last_reading_at": "2025-10-30T04:54:58.400Z"}}
+NO_NUMBERS = {"camera_answers": 0, "camera_fps": None, "process_fps": None, "skipped_fps": None,
+              "detection_fps": None, "detection_enabled": None}
+CAMERA_ROWS = [
+    {"time": TICK, "camera": "camera_1_3fa9c2", "config_enabled": 1, "deployment_id": "1761700000000-0a1b2c3d-d",
+     "frigate_answers": 5, "camera_answers": 5, "camera_fps": 5.0, "process_fps": 4.9, "skipped_fps": 0.0,
+     "detection_fps": 0.4, "detection_enabled": 1, "camera_on": 1},
+    {"time": TICK, "camera": "side_st", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5, **NO_NUMBERS,
+     "camera_on": None},
+]
+RADAR_ROWS = [
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_00", "config_enabled": 1, "deployment_id": "1761700000000-4e5f6a7b-d",
+     "port_open": 1, "last_reading_at": 1761800098.4, "radar_answers": 5, "radar_on": 1},
+    {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "config_enabled": 0, "deployment_id": None, "port_open": 0,
+     "last_reading_at": None, "radar_answers": 0, "radar_on": None},
+]
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
     "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
     "airquality": {"entryDateTime": 1761800000, "pm025": 4.0, "sensorName": "aq"},
     "system_metrics": {"time_ms_utc": TS, "cpu_percent": 12.5},
     "deployments": {"updatedDeployment": [{**GATE_ROW, "entryEndDateTime": TS}], "currentDeployment": [GATE_ROW]},
+    "watch": {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]},
 }
 GATE_ATTRIBUTES = {
     "deployments": {
@@ -2720,12 +2758,13 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event"]
-    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments"]
+    assert list(lists) == ["telemetry", "attributes", "event", "watch_camera", "watch_radar"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -2742,7 +2781,10 @@ def test_the_gate_holds_no_list_of_its_own():
     None, {}, [], "event", {"telemetry": ["event"], "attributes": []},
     {"telemetry": "event", "attributes": [], "event": []},
     {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
-], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text"])
+    {key: names for key, names in upload_lists().items() if key != "watch_camera"},
+    {**upload_lists(), "watch_radar": ["time", 7]},
+], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
+        "no-watch-camera-list", "watch-radar-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -2774,6 +2816,65 @@ def test_gate_leaves_out_an_event_it_cannot_read(event):
     assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
     out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}})
     assert out is None
+
+
+WATCH_VALUE = {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]}
+
+
+def watch_item(value):
+    return {"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value}}}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_watch_fields():
+    value = {"cameras": [{**CAMERA_ROWS[0], "surprise": "kept-on-the-unit"}],
+             "radars": [{**RADAR_ROWS[0], "note": "kept-on-the-unit"}], "extra": [1]}
+    run = gate_run([watch_item(value), watch_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TICK_MS, "values": {"watch": WATCH_VALUE}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert sorted(warnings) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("watch.extra", "watch_camera.surprise", "watch_radar.note"))
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+
+
+@needs_node
+@pytest.mark.parametrize("value", [
+    "text", ["cameras"], None, 7, {}, {"extra": []}, {"cameras": "all", "radars": 7}, {"cameras": [], "radars": []},
+    {"cameras": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
+        "no-listed-field"])
+def test_gate_leaves_out_watch_rows_it_cannot_read(value):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value, "radar": radar}}})
+    assert out["payload"] == {"ts": TICK_MS, "values": {"radar": radar}}
+    out, _ = gate(watch_item(value))
+    assert out is None
+
+
+@needs_node
+def test_gate_keeps_the_list_that_has_rows():
+    out, logged = gate(watch_item({"cameras": [CAMERA_ROWS[0], "text"], "radars": []}))
+    assert out["payload"]["values"]["watch"] == {"cameras": [CAMERA_ROWS[0]]}
+    assert logged == [["warn", "ThingsBoard upload: left out watch rows that aren't mappings.", False]]
+
+
+@needs_node
+def test_watch_rows_are_sent_as_one_telemetry_value():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    out, link_in, fmt = named(flows, "watch link out"), named(flows, "watch link in"), named(flows, "format watch telemetry")
+    assert out["links"] == [link_in["id"]] and link_in["links"] == [out["id"]]
+    assert (link_in["type"], link_in["z"], fmt["z"]) == ("link in", tab_id(flows, "thingsboard"), link_in["z"])
+    assert link_in["wires"] == [[fmt["id"]]] and fmt["wires"] == [["8c521232f464d27a"]]
+    group = by_id[fmt["g"]]
+    assert (group["name"], group["g"], link_in["g"]) == ("watch", "2f27e270200485b9", group["id"])
+    payload = {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}
+    [step] = run_functions([(fmt, {"payload": payload, "params": {"$time": TICK}})])["results"]
+    assert step["result"] == {"payload": {"ts": TICK_MS, "values": {"watch": {"cameras": CAMERA_ROWS,
+                                                                              "radars": RADAR_ROWS}}}}
+    assert gate({"type": "telemetry", "payload": step["result"]["payload"]})[0]["payload"] == step["result"]["payload"]
 
 
 def record_node():
@@ -3602,6 +3703,542 @@ def test_the_car_speed_statistics_count_each_source():
     assert list(result)[:3] == ["count", "count_radar", "count_frigate"]
     assert (result["count"], result["count_radar"], result["count_frigate"]) == (5, 3, 2)
     assert result["max_speed"] == 31.0
+
+
+# The watch log: what Frigate's stats reports and the radar facts add up to over five minutes, one row each in
+# watch_camera and watch_radar. "keep frigate stats" adds the reports up; the mark node starts and closes the windows.
+
+
+def camera_stats(camera_fps=5.0, detection_enabled=True, **changes):
+    return {"camera_fps": camera_fps, "process_fps": 4.5, "skipped_fps": 0.0, "detection_fps": 0.5,
+            "detection_enabled": detection_enabled, "pid": 123, "ffmpeg_pid": 456, **changes}
+
+
+def keep_stats(payloads, window=MISSING):
+    """Run "keep frigate stats" on each payload in turn, with one camera that config.yml lists under another key."""
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "keep frigate stats")
+    return run_functions([(node, {"topic": "frigate/stats", "payload": payload}) for payload in payloads],
+                         context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}, "tm_warned": {}}, flow=flow)
+
+
+@needs_node
+def test_reports_are_added_up_under_the_cameras_key():
+    run = keep_stats([
+        {"cameras": {"oak_ave_wide": camera_stats(5.0), "back_lane": camera_stats(9.0)}, "service": {"uptime": 60}},
+        {"cameras": {"oak_ave_wide": camera_stats(4.0, detection_enabled=False)}},
+    ])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 2, "cameras": {"camera_1_3fa9c2": {
+        "messages": 2, "camera_fps": 9.0, "process_fps": 9.0, "skipped_fps": 0.0, "detection_fps": 1.0,
+        "detection_off": 1}}}
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [step["logged"] for step in run["results"]] == [[], []]
+    # Frigate's names, the listed camera's and the unlisted one's, are kept nowhere
+    kept = json.dumps([run["flow"], run["results"]])
+    assert "oak_ave_wide" not in kept and "back_lane" not in kept
+
+
+@needs_node
+def test_a_frigate_with_no_cameras_still_answered():
+    assert keep_stats([{"cameras": {}}])["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 1}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", ["online", None, 7, [], {}, {"cameras": []}, {"cameras": "none"}],
+                         ids=["text", "null", "number", "list", "no-cameras-key", "cameras-list", "cameras-text"])
+def test_a_report_that_cannot_be_read_is_not_counted(payload):
+    run = keep_stats([payload, payload])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW
+    assert [entry for step in run["results"] for entry in step["logged"]] == [["warn", STATS_WARNING, False]]
+    assert run["global"]["tm_warned"] == {"watch:stats": True}
+
+
+@needs_node
+@pytest.mark.parametrize("entry", [
+    None, "busy", camera_stats(camera_fps="5.0"), camera_stats(detection_enabled=1),
+    {key: value for key, value in camera_stats().items() if key != "detection_fps"},
+], ids=["null", "text", "fps-as-text", "detection-as-number", "an-fps-missing"])
+def test_a_camera_entry_that_cannot_be_read_is_left_out(entry):
+    run = keep_stats([{"cameras": {"oak_ave_wide": entry}}])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW, "messages": 1}
+    assert run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_before_the_first_mark_nothing_is_kept():
+    run = keep_stats([{"cameras": {"oak_ave_wide": camera_stats()}}], window=None)
+    assert run["flow"] == {} and run["results"][0]["logged"] == []
+
+
+def test_frigate_stats_reach_the_keeper():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate stats")
+    [source] = [node for node in flows if keep["id"] in sum(node.get("wires", []), [])]
+    assert (source["type"], source["topic"], source["broker"], source["qos"], source["datatype"]) == (
+        "mqtt in", "frigate/stats", "a5d65dd0e3566daa", "0", "auto-detect")
+    assert (keep["type"], keep["outputs"], keep["wires"], keep["initialize"], keep["finalize"]) == (
+        "function", 1, [[]], "", "")
+    group = by_id[keep["g"]]
+    assert group["name"] == "watch log" and group["z"] == keep["z"] == source["z"] == tab_id(flows, "system")
+    assert source["g"] == group["id"] and {keep["id"], source["id"]} <= set(group["nodes"])
+
+
+def frigate_switches(**cameras):
+    """Frigate's /api/config answer, cut down to cameras with the given enabled values."""
+    return {"statusCode": 200, "payload": {
+        "cameras": {name: {"enabled": on, "detect": {"enabled": False}} for name, on in cameras.items()}, "mqtt": {}}}
+
+
+def keep_switch(messages, window=MISSING):
+    """Run "keep frigate camera switch" on each message in turn, with one camera config.yml lists under another key."""
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "keep frigate camera switch")
+    return run_functions([(node, message) for message in messages],
+                         context={"frigate_cameras": {"oak_ave_wide": "camera_1_3fa9c2"}, "tm_warned": {}}, flow=flow)
+
+
+@needs_node
+def test_frigates_answers_are_counted_under_the_cameras_key():
+    run = keep_switch([frigate_switches(oak_ave_wide=True, back_lane=False), frigate_switches(oak_ave_wide=False)])
+    assert run["flow"]["watch_window"] == {**EMPTY_WINDOW,
+                                           "switches": {"camera_1_3fa9c2": {"answers": 2, "off": 1}}}
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [step["logged"] for step in run["results"]] == [[], []]
+    # Frigate's names, the listed camera's and the unlisted one's, are kept nowhere
+    kept = json.dumps([run["flow"], run["results"], run["global"]["tm_warned"]])
+    assert "oak_ave_wide" not in kept and "back_lane" not in kept
+
+
+@needs_node
+@pytest.mark.parametrize("message", [
+    {"statusCode": 503, "payload": "Service Unavailable"},
+    {"statusCode": "ECONNREFUSED", "payload": "RequestError: connect ECONNREFUSED : http://frigate:5000/api/config"},
+    {"payload": frigate_switches(oak_ave_wide=True)["payload"]},
+    {"statusCode": 200, "payload": "text"}, {"statusCode": 200, "payload": None}, {"statusCode": 200, "payload": {}},
+    {"statusCode": 200, "payload": {"cameras": []}},
+], ids=["an-error-status", "no-connection", "no-status", "text", "null", "no-cameras-key", "cameras-list"])
+def test_an_answer_that_cannot_be_read_is_no_answer(message):
+    run = keep_switch([message])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW
+    assert run["results"][0]["result"] is None and run["results"][0]["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("camera", [None, "on", {}, {"enabled": 1}, {"enabled": "true"}, {"enabled": None}],
+                         ids=["null", "text", "no-enabled", "a-number", "text-true", "null-enabled"])
+def test_a_camera_whose_switch_cannot_be_read_is_left_out(camera):
+    run = keep_switch([{"statusCode": 200, "payload": {"cameras": {"oak_ave_wide": camera}}}])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_before_the_first_mark_no_answer_is_kept():
+    run = keep_switch([frigate_switches(oak_ave_wide=True)], window=None)
+    assert run["flow"] == {} and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_a_window_opened_before_this_change_takes_answers():
+    """A deploy in the middle of a window leaves one without `switches`."""
+    run = keep_switch([frigate_switches(oak_ave_wide=True)],
+                      window={"since": TICK_MS - 300000, "messages": 0, "cameras": {}})
+    assert run["flow"]["watch_window"]["switches"] == {"camera_1_3fa9c2": {"answers": 1, "off": 0}}
+
+
+def test_each_stats_report_asks_frigate_for_its_configuration():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate camera switch")
+    ask = named(flows, "frigate api/config, watch log")
+    base = by_id["c58a1e3d7f96b024"]  # the base PR's request node, which this one copies
+    same = ("type", "method", "ret", "paytoqs", "url", "tls", "persist", "proxy", "insecureHTTPParser", "authType",
+            "senderr", "headers")
+    assert {field: ask[field] for field in same} == {field: base[field] for field in same}
+    assert ask["url"] == "http://frigate:5000/api/config" and ask["wires"] == [[keep["id"]]]
+    [source] = [node for node in flows if ask["id"] in sum(node.get("wires", []), [])]
+    assert (source["type"], source["topic"]) == ("mqtt in", "frigate/stats")
+    assert source["wires"] == [[named(flows, "keep frigate stats")["id"], ask["id"]]]
+    assert (keep["type"], keep["outputs"], keep["wires"], keep["initialize"], keep["finalize"]) == (
+        "function", 1, [[]], "", "")
+    group = by_id[keep["g"]]
+    assert group["name"] == "watch log" and ask["g"] == group["id"] and {keep["id"], ask["id"]} <= set(group["nodes"])
+    assert keep["z"] == ask["z"] == tab_id(flows, "system")
+
+
+def watch_tick(window=WATCH_WINDOW, config=MISSING, radars=RADAR_STATUS, now=TICK_MS):
+    """Run "watch rows" on one mark. Returns its three outputs (camera messages, radar messages, the upload
+    message), each None when it sent none, and the flow context after."""
+    context = {"tm_status": {"radars": radars}}
+    if config is not None:
+        context["config"] = {"sensors": WATCH_SENSORS} if config is MISSING else config
+    flow = {} if window is None else {"watch_window": copy.deepcopy(window)}
+    node = named(json.loads(FLOWS.read_text()), "watch rows")
+    run = run_functions([(node, {"payload": now})], context=context, flow=flow)
+    [step] = run["results"]
+    assert step["logged"] == []
+    outputs = step["result"] if step["result"] is not None else [None, None, None]
+    return (*outputs, run["flow"])
+
+
+@needs_node
+def test_a_whole_window_gives_a_row_per_sensor():
+    cameras, radars, upload, flow = watch_tick()
+    assert [msg["payload"] for msg in cameras] == CAMERA_ROWS
+    assert [msg["payload"] for msg in radars] == RADAR_ROWS
+    assert [list(msg["payload"]) for msg in cameras] == [WATCH_CAMERA_COLUMNS] * 2
+    assert [list(msg["payload"]) for msg in radars] == [WATCH_RADAR_COLUMNS] * 2
+    for msg in cameras + radars:
+        assert msg["params"] == {f"${name}": value for name, value in msg["payload"].items()}
+    assert upload == {"payload": {"time": TICK, "cameras": CAMERA_ROWS, "radars": RADAR_ROWS}}
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
+
+
+@needs_node
+@pytest.mark.parametrize("counts, expected", [
+    ({"answers": 5, "idle": 0, "unknown": 0}, (5, 1)), ({"answers": 7, "idle": 0, "unknown": 0}, (7, 1)),
+    ({"answers": 2, "idle": 0, "unknown": 0}, (2, 1)), ({"answers": 5, "idle": 1, "unknown": 0}, (5, 0)),
+    ({"answers": 5, "idle": 5, "unknown": 0}, (5, 0)), ({"answers": 5, "idle": 1, "unknown": 2}, (5, 0)),
+    ({"answers": 5, "idle": 0, "unknown": 1}, (5, None)), ({"answers": 0, "idle": 0, "unknown": 0}, (0, None)),
+], ids=["on", "on-with-a-setups-answers", "on-in-the-few-answers", "idle-once", "idle-throughout", "idle-and-unknown",
+        "a-text-not-known", "no-answer"])
+def test_the_radars_row_says_how_often_it_answered_and_whether_it_was_on(counts, expected):
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"]["TM_RADAR_SERIAL_PORT_00"].update(counts)
+    _, radars, upload, _ = watch_tick(window=window)
+    row = radars[0]["payload"]
+    assert (row["radar_answers"], row["radar_on"]) == expected
+    assert radars[0]["params"]["$radar_on"] == expected[1] and upload["payload"]["radars"][0] == row
+
+
+@needs_node
+@pytest.mark.parametrize("entry", [MISSING, None, "broken", {}, {"answers": "5", "idle": 0, "unknown": 0},
+                                   {"answers": 5, "unknown": 0}],
+                         ids=["none", "null", "text", "empty", "answers-as-text", "no-idle-count"])
+def test_a_radar_whose_checks_cannot_be_read_answered_nothing_that_counts(entry):
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"] = {} if entry is MISSING else {"TM_RADAR_SERIAL_PORT_00": entry}
+    _, radars, _, _ = watch_tick(window=window)
+    row = radars[0]["payload"]
+    assert row["radar_on"] is None and row["port_open"] == 1
+    assert row["radar_answers"] == (5 if entry == {"answers": 5, "unknown": 0} else 0)
+
+
+@needs_node
+def test_a_port_that_was_closed_at_any_check_was_not_open_for_the_window():
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["radars"]["TM_RADAR_SERIAL_PORT_00"]["port_closed"] = 1
+    _, radars, _, _ = watch_tick(window=window)
+    assert radars[0]["payload"] == {**RADAR_ROWS[0], "port_open": 0}
+
+
+@needs_node
+def test_when_frigate_did_not_answer_every_camera_still_has_its_row():
+    cameras, _, _, _ = watch_tick(window=EMPTY_WINDOW)
+    assert [msg["payload"] for msg in cameras] == [
+        {**CAMERA_ROWS[0], "frigate_answers": 0, **NO_NUMBERS, "camera_on": None},
+        {**CAMERA_ROWS[1], "frigate_answers": 0}]
+
+
+@needs_node
+def test_frigate_answering_without_the_camera_is_not_frigate_not_answering():
+    cameras, _, _, _ = watch_tick(window={**EMPTY_WINDOW, "messages": 5})
+    assert [(msg["payload"]["frigate_answers"], msg["payload"]["camera_answers"], msg["payload"]["camera_fps"])
+            for msg in cameras] == [(5, 0, None), (5, 0, None)]
+
+
+@needs_node
+def test_frigate_answers_is_the_windows_message_count_on_every_row():
+    cameras, _, _, _ = watch_tick(window={**WATCH_WINDOW, "messages": 2})
+    assert [msg["payload"]["frigate_answers"] for msg in cameras] == [2, 2]
+
+
+@needs_node
+def test_detection_off_in_any_report_is_off_for_the_window():
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["cameras"]["camera_1_3fa9c2"]["detection_off"] = 1
+    cameras, _, _, _ = watch_tick(window=window)
+    assert cameras[0]["payload"]["detection_enabled"] == 0
+
+
+NO_FRAME_RATES = {"camera_fps": None, "process_fps": None, "skipped_fps": None, "detection_fps": None}
+
+
+@needs_node
+@pytest.mark.parametrize("off", [1, 5], ids=["turned-off-partway", "off-all-window"])
+def test_a_camera_off_in_frigate_is_off_for_the_window_and_has_no_frame_rates(off):
+    """Frigate keeps reporting the last frame rates of a camera that is off, so the row leaves them out. What
+    Frigate said about its reports and its detection switch stays."""
+    window = copy.deepcopy(WATCH_WINDOW)
+    window["switches"]["camera_1_3fa9c2"] = {"answers": 5, "off": off}
+    cameras, _, upload, _ = watch_tick(window=window)
+    assert cameras[0]["payload"] == {**CAMERA_ROWS[0], **NO_FRAME_RATES, "camera_on": 0}
+    assert cameras[0]["params"]["$camera_on"] == 0 and cameras[0]["params"]["$camera_fps"] is None
+    assert upload["payload"]["cameras"][0] == cameras[0]["payload"]
+
+
+@needs_node
+@pytest.mark.parametrize("switches", [
+    {}, None, "broken", {"camera_1_3fa9c2": None}, {"camera_1_3fa9c2": {"answers": 0, "off": 0}},
+    {"camera_1_3fa9c2": {"answers": "5", "off": 0}}, {"camera_1_3fa9c2": {"answers": 5}},
+], ids=["none", "null", "text", "null-entry", "no-answers", "answers-as-text", "no-off-count"])
+def test_without_an_answer_the_switch_is_unknown_and_the_frame_rates_stay(switches):
+    cameras, _, _, _ = watch_tick(window={**copy.deepcopy(WATCH_WINDOW), "switches": switches})
+    assert cameras[0]["payload"] == {**CAMERA_ROWS[0], "camera_on": None}
+
+
+@needs_node
+def test_frigates_switch_is_recorded_for_a_camera_its_reports_leave_out():
+    window = {**EMPTY_WINDOW, "messages": 5, "switches": {"side_st": {"answers": 5, "off": 5}}}
+    cameras, _, _, _ = watch_tick(window=window)
+    assert cameras[1]["payload"] == {**CAMERA_ROWS[1], "camera_on": 0}
+
+
+@needs_node
+def test_a_window_with_no_report_says_nothing_about_the_switch():
+    """An answer to the last report of the window before can land just after the mark."""
+    window = {**EMPTY_WINDOW, "switches": {"camera_1_3fa9c2": {"answers": 1, "off": 0}}}
+    cameras, _, _, _ = watch_tick(window=window)
+    assert (cameras[0]["payload"]["frigate_answers"], cameras[0]["payload"]["camera_on"]) == (0, None)
+
+
+@needs_node
+@pytest.mark.parametrize("age, rows", [(295000, True), (300000, True), (305000, True), (120000, False),
+                                       (294000, False), (306000, False), (900000, False), (-3600000, False)])
+def test_only_a_window_about_five_minutes_long_gives_rows(age, rows):
+    """Not the first mark after a start, a mark after a missed one, or one after the clock jumped."""
+    cameras, radars, upload, flow = watch_tick(window={**WATCH_WINDOW, "since": TICK_MS - age})
+    assert (cameras is not None, radars is not None, upload is not None) == (rows, rows, rows)
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
+
+
+@needs_node
+@pytest.mark.parametrize("window, config", [
+    (None, MISSING), (WATCH_WINDOW, None), (WATCH_WINDOW, {}), (WATCH_WINDOW, {"sensors": "broken"}),
+    (WATCH_WINDOW, {"sensors": {"cameras": None, "radars": []}}),
+], ids=["first-mark", "no-config", "no-sensors", "sensors-text", "nothing-listed"])
+def test_no_rows_without_a_window_or_sensors(window, config):
+    cameras, radars, upload, flow = watch_tick(window=window, config=config)
+    assert (cameras, radars, upload) == (None, None, None)
+    assert flow["watch_window"] == {"since": TICK_MS, "messages": 0, "cameras": {}, "switches": {}, "radars": {}}
+
+
+@needs_node
+def test_rows_follow_config_yml_as_it_is_at_the_mark():
+    """A camera that left config.yml gets no row; an entry with nothing under it is a camera that is off."""
+    config = {"sensors": {"cameras": {"new_key": None}, "radars": {}}}
+    cameras, radars, upload, _ = watch_tick(config=config)
+    assert [msg["payload"] for msg in cameras] == [
+        {"time": TICK, "camera": "new_key", "config_enabled": 0, "deployment_id": None, "frigate_answers": 5,
+         **NO_NUMBERS, "camera_on": None}]
+    assert radars is None
+    assert upload["payload"] == {"time": TICK, "cameras": [cameras[0]["payload"]], "radars": []}
+
+
+@needs_node
+@pytest.mark.parametrize("now", [TICK_MS - 40, TICK_MS + 40, TICK_MS + 2000])
+def test_the_time_is_the_five_minute_mark(now):
+    cameras, _, _, _ = watch_tick(window={**WATCH_WINDOW, "since": now - 300000}, now=now)
+    assert cameras[0]["payload"]["time"] == TICK
+
+
+@needs_node
+@pytest.mark.parametrize("status", [None, {}, {"TM_RADAR_SERIAL_PORT_00": {"port_open": "yes",
+                                                                           "last_reading_at": "not a time"}}])
+def test_a_radar_the_status_knows_nothing_about_is_not_open(status):
+    _, radars, _, _ = watch_tick(radars=status)
+    assert [(msg["payload"]["port_open"], msg["payload"]["last_reading_at"]) for msg in radars] == [(0, None)] * 2
+
+
+POWER_WARNING = "Watch log: a radar gave a power state this version doesn't know, so its radar_on is empty."
+NO_CHECKS = {"checks": 0, "port_closed": 0, "answers": 0, "idle": 0, "unknown": 0}
+
+
+def radar_check(window=MISSING, config=MISSING, radars=RADAR_STATUS):
+    """Run "radar minute check" once. Returns what it sent (None when nothing) and the flow context after."""
+    context = {"tm_status": {"radars": radars}}
+    if config is not None:
+        context["config"] = {"sensors": WATCH_SENSORS} if config is MISSING else config
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "radar minute check")
+    run = run_functions([(node, {"payload": TICK_MS})], context=context, flow=flow)
+    [step] = run["results"]
+    assert step["logged"] == []
+    return step["result"], run["flow"]
+
+
+@needs_node
+def test_each_minute_every_enabled_radar_is_asked_its_power_state():
+    """A radar that config.yml switches off isn't asked: the director would turn the question into PI. Its port is
+    still noted."""
+    sent, flow = radar_check()
+    assert sent == [[{"topic": "TM_RADAR_SERIAL_PORT_00", "payload": "P?"}]]
+    assert flow["watch_window"]["radars"] == {
+        "TM_RADAR_SERIAL_PORT_00": {**NO_CHECKS, "checks": 1},
+        "TM_RADAR_SERIAL_PORT_01": {**NO_CHECKS, "checks": 1, "port_closed": 1}}
+
+
+@needs_node
+@pytest.mark.parametrize("status", [{}, None, {"TM_RADAR_SERIAL_PORT_00": {"port_open": False}},
+                                    {"TM_RADAR_SERIAL_PORT_00": {"port_open": "true"}}],
+                         ids=["unknown-radar", "no-status", "closed", "text"])
+def test_a_port_that_is_not_open_at_a_check_is_counted(status):
+    sent, flow = radar_check(radars=status)
+    assert flow["watch_window"]["radars"]["TM_RADAR_SERIAL_PORT_00"] == {**NO_CHECKS, "checks": 1, "port_closed": 1}
+    assert sent == [[{"topic": "TM_RADAR_SERIAL_PORT_00", "payload": "P?"}]]  # asked all the same
+
+
+@needs_node
+def test_checks_add_up_over_the_window():
+    window = copy.deepcopy(WATCH_WINDOW)
+    _, flow = radar_check(window=window)
+    assert flow["watch_window"]["radars"]["TM_RADAR_SERIAL_PORT_00"] == {**NO_CHECKS, "checks": 6, "answers": 5}
+
+
+@needs_node
+@pytest.mark.parametrize("window, config", [
+    (None, MISSING), (MISSING, None), (MISSING, {}), (MISSING, {"sensors": "broken"}),
+    (MISSING, {"sensors": {"radars": []}}), (MISSING, {"sensors": {"radars": {}}}),
+], ids=["no-window", "no-config", "empty-config", "broken-sensors", "radars-list", "no-radars"])
+def test_no_check_without_a_window_or_radars(window, config):
+    sent, flow = radar_check(window=window, config=config)
+    assert sent is None
+    assert flow == ({} if window is None else {"watch_window": EMPTY_WINDOW})
+
+
+def power_answer(mode, radar="TM_RADAR_SERIAL_PORT_00"):
+    """A radar's answer to P?, PA, or PI as it reaches the keeper: parsed, with the radar's name added."""
+    return {"payload": {"PowerMode": mode, "radarName": radar, "deployment_id": "1761700000000-4e5f6a7b-d"}}
+
+
+def keep_power(messages, window=MISSING):
+    flow = {} if window is None else {"watch_window": copy.deepcopy(EMPTY_WINDOW if window is MISSING else window)}
+    node = named(json.loads(FLOWS.read_text()), "keep radar power")
+    return run_functions([(node, message) for message in messages], context={"tm_warned": {}}, flow=flow)
+
+
+@needs_node
+@pytest.mark.parametrize("mode, counted", [
+    ("Active Continuously", {}), ("Continuous", {}), ("active continuously", {}),
+    ("Idle or Pulse", {"idle": 1}), ("Idle", {"idle": 1}), ("IDLE", {"idle": 1}),
+], ids=["active", "the-api-notes-word", "lower-case", "idle", "idle-short", "upper-case"])
+def test_a_power_answer_is_counted_for_its_radar(mode, counted):
+    run = keep_power([power_answer(mode)])
+    assert run["flow"]["watch_window"]["radars"] == {"TM_RADAR_SERIAL_PORT_00": {**NO_CHECKS, "answers": 1, **counted}}
+    assert run["results"][0]["result"] is None and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_a_power_state_this_version_does_not_know_is_counted_apart_and_warned_of_once():
+    run = keep_power([power_answer("Hibernating"), power_answer("Hibernating")])
+    assert run["flow"]["watch_window"]["radars"] == {
+        "TM_RADAR_SERIAL_PORT_00": {**NO_CHECKS, "answers": 2, "unknown": 2}}
+    assert [entry for step in run["results"] for entry in step["logged"]] == [["warn", POWER_WARNING, False]]
+    assert run["global"]["tm_warned"] == {"watch:power": True}
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    "text", None, {}, {"PowerMode": "Active Continuously"}, {"PowerMode": 1, "radarName": "TM_RADAR_SERIAL_PORT_00"},
+    {"PowerMode": "Active Continuously", "radarName": 7}, {"PowerMode": "Active Continuously", "radarName": ""},
+], ids=["text", "null", "empty", "no-radar", "mode-as-number", "radar-as-number", "empty-radar"])
+def test_a_power_answer_that_cannot_be_read_is_not_counted(payload):
+    run = keep_power([{"payload": payload}])
+    assert run["flow"]["watch_window"] == EMPTY_WINDOW and run["results"][0]["logged"] == []
+
+
+@needs_node
+def test_before_the_first_mark_no_power_answer_is_kept():
+    run = keep_power([power_answer("Active Continuously")], window=None)
+    assert run["flow"] == {} and run["results"][0]["logged"] == []
+
+
+def test_the_radars_are_asked_every_minute_and_their_answers_reach_the_keeper():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    system, radar_tab = tab_id(flows, "system"), tab_id(flows, "capture-radar")
+    check, keep = named(flows, "radar minute check"), named(flows, "keep radar power")
+    [inject] = [node for node in flows if check["id"] in sum(node.get("wires", []), [])]
+    assert (inject["type"], inject["name"], inject["crontab"], inject["repeat"], inject["once"]) == (
+        "inject", "every minute", "*/1 0-23 * * *", "", False)
+    ask_out, ask_in = named(flows, "radar check link out"), named(flows, "radar check link in")
+    assert check["wires"] == [[ask_out["id"]]] and (check["outputs"], keep["outputs"], keep["wires"]) == (1, 1, [[]])
+    assert (ask_out["links"], ask_in["links"], ask_in["wires"]) == ([ask_in["id"]], [ask_out["id"]], [[RADAR_JUNCTION]])
+    picked = named(flows, "a power state answer?")
+    assert (picked["type"], picked["property"], picked["propertyType"], picked["rules"]) == (
+        "switch", "payload", "msg", [{"t": "hask", "v": "PowerMode", "vt": "str"}])
+    assert picked["id"] in by_id[RADAR_REPLIES]["wires"][0]
+    answer_out, answer_in = named(flows, "radar power link out"), named(flows, "radar power link in")
+    assert picked["wires"] == [[answer_out["id"]]]
+    assert (answer_out["links"], answer_in["links"], answer_in["wires"]) == (
+        [answer_in["id"]], [answer_out["id"]], [[keep["id"]]])
+    group = by_id[check["g"]]
+    on_system = (inject, check, ask_out, answer_in, keep)
+    assert group["name"] == "watch log" and {node["g"] for node in on_system} == {group["id"]}
+    assert {node["id"] for node in on_system} <= set(group["nodes"]) and {node["z"] for node in on_system} == {system}
+    assert {node["z"] for node in (ask_in, picked, answer_out)} == {radar_tab}
+
+
+@needs_node
+@pytest.mark.parametrize("line, a_reading", [
+    ('{"DetectedObjectVelocity":"3.2"}', True), ('{"Clock":"54"}', True), ("garbled", True),
+    ('{"PowerMode" : "Active Continuously"}', False), ('{"PowerMode" : "Idle or Pulse"}', False),
+    ('{"Power" : "Max"}', False),
+])
+def test_an_answer_to_the_minute_check_is_not_a_reading(line, a_reading):
+    flows = json.loads(FLOWS.read_text())
+    for number in range(4):
+        node = named(flows, f"tm-internal: RADAR_0{number} last reading")
+        run = run_functions([(node, {"payload": line})], context={})
+        radar = ((run["global"].get("tm_status") or {}).get("radars") or {}).get(f"TM_RADAR_SERIAL_PORT_0{number}")
+        assert (radar is not None and "last_reading_at" in radar) == a_reading
+        assert run["results"][0]["result"] is None and run["results"][0]["logged"] == []
+
+
+def watch_insert(table):
+    """The INSERT for a watch table: its node, its columns, and the parameter each one takes."""
+    [node] = [node for node in json.loads(FLOWS.read_text())
+              if node["type"] == "sqlite" and f"INSERT INTO {table} " in node.get("sql", "")]
+    match = re.fullmatch(rf"\s*INSERT INTO {table} \(([^)]*)\)\s*VALUES \((.*)\);\s*", node["sql"], re.DOTALL)
+    return node, [name.strip() for name in match[1].split(",")], [value.strip() for value in match[2].split(",")]
+
+
+WATCH_TABLES = {"watch_camera": WATCH_CAMERA_COLUMNS, "watch_radar": WATCH_RADAR_COLUMNS}
+
+
+def test_watch_fields_agree():
+    """For each table, one list of fields in one order: what "watch rows" builds (checked above), what the INSERT
+    names, what its parameters are, and what the table has."""
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for table, columns in WATCH_TABLES.items():
+        node, names, values = watch_insert(table)
+        assert names == columns and values == [f"${name}" for name in columns]
+        assert (node["sqlquery"], node["mydb"]) == ("prepared", TMDB)
+        assert [row[1] for row in con.execute(f"PRAGMA table_info({table})")] == columns
+        assert upload_lists()[table] == columns
+
+
+def test_the_watch_log_is_written_every_five_minutes():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    rows = named(flows, "watch rows")
+    [inject] = [node for node in flows if rows["id"] in sum(node.get("wires", []), [])]
+    assert (inject["type"], inject["crontab"], inject["repeat"], inject["once"], inject["payloadType"]) == (
+        "inject", "*/5 0-23 * * *", "", False, "date")
+    camera_insert, radar_insert = watch_insert("watch_camera")[0], watch_insert("watch_radar")[0]
+    link = named(flows, "watch link out")
+    assert (rows["type"], rows["outputs"], rows["initialize"], rows["finalize"]) == ("function", 3, "", "")
+    assert rows["wires"] == [[camera_insert["id"]], [radar_insert["id"]], [link["id"]]]
+    assert (link["type"], link["mode"]) == ("link out", "link")
+    nodes = (inject, rows, camera_insert, radar_insert, link)
+    group = by_id[rows["g"]]
+    assert group["name"] == "watch log" and {node["g"] for node in nodes} == {group["id"]}
+    assert {node["id"] for node in nodes} <= set(group["nodes"])
+    assert {node["z"] for node in nodes} == {tab_id(flows, "system")}
+    for node_id in group["nodes"]:
+        node = by_id[node_id]
+        assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
 
 
 # The exact locations for a database download: "Validate filenames, setup tar" claims the list for the request, and
