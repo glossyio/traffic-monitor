@@ -2237,6 +2237,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-map-on-the-location-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The map on the Location page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#a-database-copy-with-the-exact-locations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2577,6 +2588,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-map-on-the-location-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The map on the Location page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#a-database-copy-with-the-exact-locations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2742,7 +2764,7 @@
 <p>It reads two things the installer writes, and keeps one database of its own:</p>
 <ul>
 <li><code>/etc/traffic-monitor/secrets/</code>: two kinds of secret, and the hotspot's password. Five are generated once on the device: the session key, Frigate's proxy secret, the Node-RED editor's token key, the token for Node-RED's internal status, and go2rtc's RTSP password. Four are entered by an administrator: the ThingsBoard access token on the Sharing page, the Plate Recognizer token and license key on the Device page, and the Frigate+ API key on the Detection page. The installer creates them empty, and only the <code>set-secret</code> job writes them. <code>GENERATED_SECRETS</code> and <code>ENTERED_SECRETS</code> in <code>core/secrets.py</code> match the role's <code>tmsetup_secret_names</code> and <code>tmsetup_entered_secret_names</code> (a test keeps each pair equal), <code>DEVICE_SECRETS</code> is the two together, and the diagnostics redact the value of each. An empty file means the secret isn't set. The <code>secrets</code> module (<code>GET /secrets</code>, and <code>POST</code> and <code>DELETE /secrets/{name}</code>) lists what is set, never a value, and starts the job. The hotspot's password, <code>hotspot_password</code>, is in neither list: <code>tm-hotspot-setup</code> creates it, and writes it again when it adopts a hand-made profile; otherwise only the <code>network</code> job changes it. tm-control reads it (<code>read_hotspot_password</code> in <code>core/secrets.py</code>) for one route, <code>GET /network/hotspot/password</code>, which answers admins only.</li>
-<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read, and <code>sharing</code>, the maintainer's upload server and whether the public map choice is live (<code>maintainer_host</code> and <code>public_map_live</code>, from the role's <code>tmsetup_sharing_maintainer_host</code> and <code>tmsetup_sharing_public_map_live</code>), which the Sharing page and its checks read.</li>
+<li><code>/etc/traffic-monitor/manifest.json</code>: what the installer installed and found, such as the version, the installing user, the proxied apps, the home page's colors, and, on a device with a Coral, the model section the installer gives Frigate (<code>frigate.coral_model</code>, from the role's <code>tmsetup_frigate_coral_model</code>), which the Detection page puts back, and <code>network</code>, the hotspot's Wi-Fi device, profile name, and address (<code>wlan0</code>, <code>tm-hotspot</code>, <code>10.42.0.1</code>, from the role's <code>tmsetup_wifi_device</code>, <code>tmsetup_hotspot_profile</code>, and <code>tmsetup_hotspot_address</code>), which the Network checks and <code>tm-control card</code> read, and <code>sharing</code>, the maintainer's upload server and whether the public map choice is live (<code>maintainer_host</code> and <code>public_map_live</code>, from the role's <code>tmsetup_sharing_maintainer_host</code> and <code>tmsetup_sharing_public_map_live</code>), which the Sharing page and its checks read, and <code>map</code>, where a browser gets the Location page's map from (<code>style_url</code>, from the role's <code>tmsetup_map_style_url</code>; empty turns the map off). tm-control only passes it on, and fetches nothing.</li>
 <li><code>/var/lib/tm-control/state.sqlite</code>: users, the claim and the setup code's hash, license acceptances, job records, an audit log, the Location page's places (<code>surveys</code>, <code>survey_bearings</code>, and <code>survey_corrections</code>), and the Sharing page's consents (<code>sharing_consents</code>, migration 4). Numbered migrations in <code>core/state.py</code> create and update it, recorded in <code>PRAGMA user_version</code>. Never change a migration that has shipped; add the next one.</li>
 </ul>
 <p>While the device is unclaimed, the installer keeps the setup code in a root-only file, <code>/etc/traffic-monitor/setup-code</code>, and hands it to <code>tm-control set-setup-code</code> on every run, which stores only its hash. The installer's command-line steps run as the code owner, and <code>sudo tm-control reset-admin</code> drops to that user after writing a new code file, so root never writes the database.</p>
@@ -3008,7 +3030,7 @@
 <tbody>
 <tr>
 <td><code>GET /surveys</code></td>
-<td>The place in use, the precision, the enabled sensors and their bearings, the places with Node-RED's usage counts, and the deployments recorded before any place. Runs the reconcile first.</td>
+<td>The place in use, the precision, the enabled sensors and their bearings, the places with Node-RED's usage counts, the deployments recorded before any place, and <code>map</code>, the map's address from the manifest (<code>style_url</code>), null unless it is <code>https://</code>, with <code>region</code>, where the map opens when there is no place to start from: the city of the device's time zone (from the Pi's own time-zone data, <code>zone1970.tab</code> and then <code>zone.tab</code>, two decimal places), only when the Wi-Fi country is one of the zone's countries, and null otherwise or with no map. Runs the reconcile first.</td>
 </tr>
 <tr>
 <td><code>POST /surveys</code>, <code>PATCH</code> and <code>DELETE /surveys/{id}</code></td>
@@ -3086,6 +3108,9 @@
 </tr>
 </tbody>
 </table>
+<h4 id="the-map-on-the-location-page">The map on the Location page<a class="headerlink" href="#the-map-on-the-location-page" title="Permanent link">&para;</a></h4>
+<p>The place form and <strong>Correct location</strong> can pick the point on a map. The map is the browser's business: tm-control only reports where to get it (<code>map</code> in <code>GET /surveys</code>, from the manifest) and makes no request to it. The UI (<code>ui/src/modules/location/</code>) draws it with MapLibre GL, which only <code>PinMap.vue</code> imports. <code>MapPicker.vue</code> loads <code>PinMap.vue</code> with a dynamic <code>import()</code>, so the library, its stylesheet, and its worker are separate files that the browser fetches the first time the picker opens, and the page's first download doesn't grow by them. The worker is a <code>.mjs</code> file, which the revproxy's nginx serves as JavaScript (<code>types { text/javascript mjs; }</code> in <code>nginx.conf.j2</code>, because its <code>mime.types</code> has none).</p>
+<p>The specs don't run the library, which needs WebGL: <code>pin-map.spec.ts</code> replaces <code>maplibre-gl</code> with small classes that record what <code>PinMap.vue</code> asks of them (the options, the marker, the events), and <code>map-picker.spec.ts</code> replaces <code>PinMap.vue</code> with a stub that can drop a pin or fail. To see the real map, run <a href="#run-it-on-a-laptop">fake mode</a>, whose manifest names a map source, in a browser with internet access.</p>
 <h4 id="a-database-copy-with-the-exact-locations">A database copy with the exact locations<a class="headerlink" href="#a-database-copy-with-the-exact-locations" title="Permanent link">&para;</a></h4>
 <p><code>POST /surveys/database-copy</code> is the one place the exact locations leave tm-control for a database file, and neither side opens the other's database to do it.</p>
 <ol>

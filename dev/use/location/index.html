@@ -1085,6 +1085,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Add a place">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pick-the-point-on-a-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pick the point on a map
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2310,6 +2327,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Add a place">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pick-the-point-on-a-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pick the point on a map
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2472,10 +2506,16 @@
 <p>Choose <strong>Add a place</strong>, fill in what you know, and <strong>Save</strong>. The place is added as planned.</p>
 <ul>
 <li><strong>Description</strong>: a name for the place, such as "Front of the school". It never leaves the device.</li>
-<li><strong>Coordinates</strong>: the latitude and longitude, pasted from a maps app as one value, such as <code>45.52252, -122.69120</code>. Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Leave the field empty for a place with no location.</li>
+<li><strong>Coordinates</strong>: the latitude and longitude, pasted from a maps app as one value, such as <code>45.52252, -122.69120</code>, or <a href="#pick-the-point-on-a-map">picked on a map</a>. Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.</li>
 <li><strong>Which way each sensor faces here</strong>: <code>N</code>, <code>NE</code>, <code>E</code>, <code>SE</code>, <code>S</code>, <code>SW</code>, <code>W</code>, <code>NW</code>, or <strong>Not set</strong>, for each sensor turned on in the settings.</li>
 </ul>
 <p><strong>Use this phone's location</strong> fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.</p>
+<h3 id="pick-the-point-on-a-map">Pick the point on a map<a class="headerlink" href="#pick-the-point-on-a-map" title="Permanent link">&para;</a></h3>
+<p>Under the coordinates, <strong>Pick on a map</strong> opens a map. Tap the spot to place a pin, drag the pin to the exact place, and choose <strong>Use this point</strong>. The form fills in the coordinates with five decimal places, and you can still change them before you save. The same button is on <strong>Correct location</strong>.</p>
+<p><img alt="The map picker on a phone, with a pin beside a street, its coordinates under the map, and Cancel and Use this point" src="../../assets/images/location-map-pin.png" width="300" /></p>
+<p>The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer sets the time zone (its <code>-z</code> option, <code>America/Los_Angeles</code> unless you give another), so a device left on the installer's time zone and Wi-Fi country opens over Los Angeles until you set its time zone on the <a href="../device-health/#the-date-and-time-page">Date and time page</a>. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers <strong>Try again</strong>; type or paste the coordinates instead.</p>
+<p>The map isn't offered while your phone is on the device's own <a href="../wifi-hotspot/#phones">hotspot</a>, because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.</p>
+<p>To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.</p>
 <p>To change a planned place, open it and choose <strong>Edit</strong>. A place that has been used can't be edited; <a href="#correct-a-wrong-location-or-bearing">correct it</a> instead.</p>
 <h2 id="move-or-turn-the-device">Move or turn the device<a class="headerlink" href="#move-or-turn-the-device" title="Permanent link">&para;</a></h2>
 <p>When the device moves to another place, record it from that place: <strong>Deploy here</strong> if the place is planned, or <strong>Re-deploy here</strong> if the device has been there before. When a sensor is turned to face another way, record it with <strong>Modify deployment</strong> on the place in use.</p>
@@ -2495,7 +2535,7 @@
 <h2 id="correct-a-wrong-location-or-bearing">Correct a wrong location or bearing<a class="headerlink" href="#correct-a-wrong-location-or-bearing" title="Permanent link">&para;</a></h2>
 <p>A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, <a href="#move-or-turn-the-device">record that</a> instead.</p>
 <ul>
-<li><strong>Correct location</strong>, on a used place or the place in use, takes a new latitude and longitude. Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, <code>config.yml</code> takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.</li>
+<li><strong>Correct location</strong>, on a used place or the place in use, takes a new latitude and longitude, typed or <a href="#pick-the-point-on-a-map">picked on a map</a>. Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, <code>config.yml</code> takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.</li>
 <li><strong>Correct bearing</strong>, on each deployment in an open place, takes the way the sensor really faced. Every record from that deployment then says so. For a deployment that is still running, <code>config.yml</code> takes the new bearing too.</li>
 </ul>
 <p>Each correction can have a <strong>Reason</strong>, which is kept with the correction on the device. Copies of the database already downloaded, and data already uploaded, keep the old values.</p>
