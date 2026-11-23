@@ -1221,7 +1221,8 @@
             "5ce2b1e89783a67e",
             "45620e4ed4a0c575",
             "b4446864cff62fd7",
-            "19275be7a9ef0fe2"
+            "19275be7a9ef0fe2",
+            "58c31afcc851a8e0"
         ],
         "x": 4,
         "y": 1859,
@@ -1690,7 +1691,7 @@
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1082
+        "h": 1182
     },
     {
         "id": "484071aff09e5ec2",
@@ -3380,12 +3381,19 @@
             "0aae1d3d3e4c7d3e",
             "beadba835546c0ae",
             "0acc95218c0c0a0c",
-            "477aff9a19ae76ba"
+            "477aff9a19ae76ba",
+            "208618ccc9a81219",
+            "202d31e1bcdd0e1a",
+            "cc2d3a7a9d1c4bff",
+            "19330a26e7147ec2",
+            "90f459bbf47fedaa",
+            "74bbeec1de9cbb88",
+            "4c3e0ddb6be3f58c"
         ],
         "x": 94,
         "y": 1419,
         "w": 1786,
-        "h": 742
+        "h": 842
     },
     {
         "id": "13e034c27f12073e",
@@ -15317,7 +15325,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "Validate filenames, setup tar",
-        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\n// A repeated parameter (?files=a&files=b) arrives as an array; check every name it holds\nconst requested = Array.isArray(msg.payload.files) ? msg.payload.files.join(\",\") : String(msg.payload.files);\nlet files = requested.split(\",\");\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n  // Only plain file names: tar gets each name as an argument, so spaces or a leading \"-\" would become tar options\n  if (baseDir != \"/db\" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {\n    node.error(\"Invalid file name: \" + fileName);\n    msg.statusCode = 400;\n    msg.payload = \"Invalid file name.\";\n    return msg;\n  }\n\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir + path.sep)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nif (files == '/db/tmdb.sqlite') {\n  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by \"copy database for download\"\n  msg.snapshot = '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';\n} else {\n  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;\n}\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// \"download chunks\" sets the download headers with the first chunk, so an error before then is a plain HTTP error\nmsg.downloadName = prefix + name + \".tar.gz\";\nreturn msg;",
+        "func": "  // Compress and stream one or more files from a safe folder using a query param: ?files=file1,file2,file3, ...\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\n\n// Get the requested filenames from the query parameters\nif (!msg.payload.files) {\n  node.error(\"No files specified\");\n  msg.statusCode = 400;\n  msg.payload = \"No files specified\";\n  return msg;\n}\n// A repeated parameter (?files=a&files=b) arrives as an array; check every name it holds\nconst requested = Array.isArray(msg.payload.files) ? msg.payload.files.join(\",\") : String(msg.payload.files);\nlet files = requested.split(\",\");\n\n// Prepare filename prefix for download tar file and included files.\n// The purpose is to help distinguish files that are downloaded from multiple TM's and/or on multiple occasions\nconst now = new Date();\nconst timezoneOffset = now.getTimezoneOffset() * 60 * 1000; // UTC offset in milliseconds\nconst localNow = now.valueOf() - timezoneOffset;\nconst ISONow = new Date(localNow).toISOString().substring(0, 19);\nconst prefix = env.get(\"TM_HOSTNAME\") + '_' + ISONow + '_';\n\n// A database copy gets its own folder under /db/snapshot\nconst newSnapshot = () => '/db/snapshot/' + ISONow.replace(/:/g, '') + '-' + Math.random().toString(36).slice(2, 8);\n\n// A request for exactly one name, tmdb-exact-<ticket>, is the database copy with the exact locations added. The\n// control app handed the list over under that ticket (POST /tm-internal/database/exact-copy). This takes the list now,\n// because a large database takes minutes to copy and the ticket may run out meanwhile; \"write exact locations into\n// the copy\" reads the claimed list, not the ticket. The entry stays until it expires: Android's sign-in window fetches\n// a download twice, and each fetch makes its own copy. No coordinate is put on msg, logged, or echoed.\nconst exactTicket = files.length === 1 ? /^tmdb-exact-([0-9a-f]{32})$/.exec(files[0]) : null;\nif (exactTicket) {\n  const copies = global.get(\"exact_copies\") || {};\n  // a timer doesn't survive a redeploy, so the expiry is checked here too\n  for (const held of Object.keys(copies)) {\n    if (!(copies[held].expires > Date.now())) {\n      delete copies[held];\n    }\n  }\n  global.set(\"exact_copies\", copies);\n  const entry = copies[exactTicket[1]];\n  if (!entry) {\n    node.error(\"An exact-locations download link was refused: it has expired or was never made.\");\n    msg.statusCode = 404;\n    msg.payload = \"This download link has expired. Start the download again from the Location page.\";\n    return msg;\n  }\n  msg.snapshot = newSnapshot();\n  msg.exactCopy = true;\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb-exact-locations.sqlite';\n  msg.downloadName = prefix + 'tmdb-exact-locations.tar.gz';\n  const claimed = flow.get(\"exactCopyPlaces\") || {};\n  claimed[msg.snapshot] = entry.places;\n  flow.set(\"exactCopyPlaces\", claimed);\n  return msg;\n}\n\n// Define the base directory where downloadable files are stored\nlet baseDir = '/db/temp';\n// When downloading the entire database, the base directory is \"/db\"\nif (files == \"/db/tmdb.sqlite\") {\n  baseDir = \"/db\";\n}\n\n// function to validate each file - sets \"msg\" with a status code and error message & returns it, else returns null\nfunction validateFile(fileName) {\n  // Only plain file names: tar gets each name as an argument, so spaces or a leading \"-\" would become tar options\n  if (baseDir != \"/db\" && !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(fileName)) {\n    node.error(\"Invalid file name: \" + fileName);\n    msg.statusCode = 400;\n    msg.payload = \"Invalid file name.\";\n    return msg;\n  }\n\n // Resolve the full path to prevent path traversal attacks\n  const filePath = path.resolve(baseDir, fileName);\n\n  // Ensure the resolved path is still inside the allowed directory\n  if (!filePath.startsWith(baseDir + path.sep)) {\n    node.error(\"Access denied to \" + filePath);\n    node.error(\"baseDir is \" + baseDir);\n    msg.statusCode = 403;\n    msg.payload = 'Access denied.';\n    return msg;\n  }\n\n  // Check if the file exists\n  if (!fs.existsSync(filePath)) {\n    node.error('File \"' + filePath + '\" not found.');\n    msg.statusCode = 404;\n    msg.payload = 'File \"' + filePath + '\" not found.';\n    return msg;\n  }\n\n  return null;\n}\n\n// validate each file exists and is in the expected folder\nlet filepath = \"\";\nfor (const file of files) {\n  if (validateFile(file)) {\n    return msg;\n  }\n  filepath += ' ' + file;\n}\n\n// Prefix for 'tar cvf download.tar.gz ' command that is executed in the next node.\n// '-C <folder>' means execute the tar file in the specified folder. This ensures that\n// the file(s) will untar directly in the target filesystem.\nif (files == '/db/tmdb.sqlite') {\n  // Node-RED keeps writing tmdb.sqlite, so tar a copy made by \"copy database for download\"\n  msg.snapshot = newSnapshot();\n  msg.tarArgs = ' -C ' + msg.snapshot + ' -- tmdb.sqlite';\n} else {\n  msg.tarArgs = ' -C ' + baseDir + ' --' + filepath;\n}\n\n// Tar file name contains 'tmdb'if downloading the database. Otherwise, it contains 'json'\nconst name = files == \"/db/tmdb.sqlite\" ? \"tmdb\" : \"json\";\n\n// \"download chunks\" sets the download headers with the first chunk, so an error before then is a plain HTTP error\nmsg.downloadName = prefix + name + \".tar.gz\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -15556,7 +15564,7 @@
                 "8f8958d08aa3a85d"
             ]
         ],
-        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\ntry {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n} catch (err) {\n    node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n}\n// Set when \"copy database first?\" counted this copy, not when it refused for lack of space\nif (msg.countsAsCopy) {\n    flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n    delete msg.countsAsCopy;\n}\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
+        "func": "// The database copy for a download failed: remove what was copied and answer with an error.\ntry {\n    global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n} catch (err) {\n    node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n}\n// Nothing else will take the list claimed for this copy\nconst claimedKey = \"exactCopyPlaces\";\nconst claimed = flow.get(claimedKey) || {};\ndelete claimed[msg.snapshot];\nflow.set(claimedKey, claimed);\n// Set when \"copy database first?\" counted this copy, not when it refused for lack of space\nif (msg.countsAsCopy) {\n    flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n    delete msg.countsAsCopy;\n}\nconst reason = String((msg.error && msg.error.message) || \"unknown error\");\nmsg.payload = /SQLITE_FULL|disk is full/.test(reason)\n    ? \"Download failed: not enough free space to copy the database\"\n    : \"Download failed: couldn't copy the database: \" + reason;\nnode.error(msg.payload);\nmsg.statusCode = 500;\nreturn msg;",
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f"
     },
@@ -15597,7 +15605,7 @@
                 "6b71ab080a582bd2"
             ]
         ],
-        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// \"stop if cancelled\" compares this with the Cancel count when the copy finishes\nmsg.cancelCountAtCopy = flow.get(\"downloadCancelCount\") || 0;\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    try {\n        if (fs.statSync(dir).mtimeMs < stale) {\n            fs.rmSync(dir, { recursive: true, force: true });\n        }\n    } catch (err) {\n        // Another download removed it first\n    }\n}\n// VACUUM INTO writes a full copy. Leave room for every other flow's writes, or the copy could fill the disk.\n// Copies run one after another, so earlier downloads' copies may not be written yet: leave room for\n// them too, less what they've written so far (measured first, so the free space already reflects it).\nconst size = fs.statSync(\"/db/tmdb.sqlite\").size;\nconst copies = flow.get(\"databaseCopiesInProgress\") || 0;\nlet written = 0;\ntry {\n    for (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n        try {\n            written += fs.statSync(path.join(root, entry, \"tmdb.sqlite\")).size;\n        } catch (err) {\n            // Not written yet, or another download removed it\n        }\n    }\n} catch (err) {\n    // Couldn't read the folder: count every earlier copy in full\n}\nconst { bavail, bsize } = fs.statfsSync(\"/db\");\nconst needed = Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024;\nif (bavail * bsize < needed) {\n    // \"database copy failed\" answers with the \"not enough free space\" message\n    throw new Error(\"disk is full: not enough free space to copy the database\");\n}\n// Each way this copy ends releases the count: \"handle end of file or error\", \"database copy failed\",\n// or \"stop if cancelled\"\nflow.set(\"databaseCopiesInProgress\", copies + 1);\nmsg.countsAsCopy = true;\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
+        "func": "// A database download tars a copy (msg.snapshot, set by \"Validate filenames, setup tar\"),\n// because Node-RED keeps writing tmdb.sqlite. Other downloads go straight to tar.\nif (!msg.snapshot) {\n    return [msg, null];\n}\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst root = path.dirname(msg.snapshot);\n// \"stop if cancelled\" compares this with the Cancel count when the copy finishes\nmsg.cancelCountAtCopy = flow.get(\"downloadCancelCount\") || 0;\n// Remove copies left by a download that never finished, e.g. when Node-RED restarted mid-download\nconst stale = Date.now() - 60 * 60 * 1000;\nfor (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n    const dir = path.join(root, entry);\n    try {\n        if (fs.statSync(dir).mtimeMs < stale) {\n            fs.rmSync(dir, { recursive: true, force: true });\n        }\n    } catch (err) {\n        // Another download removed it first\n    }\n}\n// VACUUM INTO writes a full copy. Leave room for every other flow's writes, or the copy could fill the disk.\n// Copies run one after another, so earlier downloads' copies may not be written yet: leave room for\n// them too, less what they've written so far (measured first, so the free space already reflects it).\nconst size = fs.statSync(\"/db/tmdb.sqlite\").size;\nconst copies = flow.get(\"databaseCopiesInProgress\") || 0;\nlet written = 0;\ntry {\n    for (const entry of fs.existsSync(root) ? fs.readdirSync(root) : []) {\n        // \"write exact locations into the copy\" renames a finished copy, so count it under either name\n        for (const name of [\"tmdb.sqlite\", \"tmdb-exact-locations.sqlite\"]) {\n            try {\n                written += fs.statSync(path.join(root, entry, name)).size;\n            } catch (err) {\n                // Not written yet, renamed, or another download removed it\n            }\n        }\n    }\n} catch (err) {\n    // Couldn't read the folder: count every earlier copy in full\n}\nconst { bavail, bsize } = fs.statfsSync(\"/db\");\nconst needed = Math.max(copies * size - written, 0) + size + 256 * 1024 * 1024;\nif (bavail * bsize < needed) {\n    // \"database copy failed\" answers with the \"not enough free space\" message\n    throw new Error(\"disk is full: not enough free space to copy the database\");\n}\n// Each way this copy ends releases the count: \"handle end of file or error\", \"database copy failed\",\n// or \"stop if cancelled\"\nflow.set(\"databaseCopiesInProgress\", copies + 1);\nmsg.countsAsCopy = true;\nfs.mkdirSync(msg.snapshot, { recursive: true });\n// The same sqlitedb config as every other flow, so their writes wait for the copy instead of failing\nmsg.topic = \"VACUUM INTO '\" + msg.snapshot + \"/tmdb.sqlite'\";\nreturn [null, msg];",
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f"
     },
@@ -15607,7 +15615,8 @@
         "name": "catch database copy",
         "scope": [
             "a7ea83d9c70f2981",
-            "6b71ab080a582bd2"
+            "6b71ab080a582bd2",
+            "58c31afcc851a8e0"
         ],
         "uncaught": false,
         "x": 870,
@@ -15626,7 +15635,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "stop if cancelled",
-        "func": "// Cancel only signals tar, which hasn't started while the database is being copied.\n// So stop here if Cancel was pressed after this download's copy started.\nif ((flow.get(\"downloadCancelCount\") || 0) !== msg.cancelCountAtCopy) {\n    try {\n        global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n    } catch (err) {\n        node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n    }\n    if (msg.countsAsCopy) {\n        flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n        delete msg.countsAsCopy;\n    }\n    msg.payload = \"Download stopped\";\n    msg.statusCode = 500;\n    // Output 2 sends the HTTP error and shows the message on the Dashboard\n    return [null, msg];\n}\nreturn [msg, null];",
+        "func": "// Cancel only signals tar, which hasn't started while the database is being copied.\n// So stop here if Cancel was pressed after this download's copy started.\nif ((flow.get(\"downloadCancelCount\") || 0) !== msg.cancelCountAtCopy) {\n    try {\n        global.get(\"fs\").rmSync(msg.snapshot, { recursive: true, force: true });\n    } catch (err) {\n        node.warn(\"Couldn't remove \" + msg.snapshot + \": \" + err.message);\n    }\n    // Nothing else will take the list claimed for this copy\n    const claimedKey = \"exactCopyPlaces\";\n    const claimed = flow.get(claimedKey) || {};\n    delete claimed[msg.snapshot];\n    flow.set(claimedKey, claimed);\n    if (msg.countsAsCopy) {\n        flow.set(\"databaseCopiesInProgress\", Math.max((flow.get(\"databaseCopiesInProgress\") || 0) - 1, 0));\n        delete msg.countsAsCopy;\n    }\n    msg.payload = \"Download stopped\";\n    msg.statusCode = 500;\n    // Output 2 sends the HTTP error and shows the message on the Dashboard\n    return [null, msg];\n}\nreturn [msg, null];",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -15637,11 +15646,32 @@
         "y": 2060,
         "wires": [
             [
-                "30d1dd9d6d580fa4"
+                "58c31afcc851a8e0"
             ],
             [
                 "8a12d83e700bcaa6",
                 "9297900926075b54"
+            ]
+        ]
+    },
+    {
+        "id": "58c31afcc851a8e0",
+        "type": "function",
+        "z": "7c7dba965ad4a266",
+        "g": "c3e71a6b79637b6f",
+        "name": "write exact locations into the copy",
+        "func": "// Adds the exact locations to a database download's throwaway copy, never to tmdb.sqlite: the copy gets a table of\n// the places' exact points and a view that joins it to deployment, which is not changed. The list is the one\n// \"Validate filenames, setup tar\" claimed for this copy. Every failure throws an error for \"catch database copy\":\n// its text names the step, or is SQLite's or Node's own message (which can name the copy's path), and no\n// coordinate is put on msg, logged, or put in an error.\n// Without msg.exactCopy this is another kind of download and passes through.\nif (!msg.exactCopy) {\n    return msg;\n}\nconst claimedKey = \"exactCopyPlaces\";\nconst claimed = flow.get(claimedKey) || {};\nconst places = claimed[msg.snapshot];\ndelete claimed[msg.snapshot];\nflow.set(claimedKey, claimed);\n\nconst fs = global.get(\"fs\");\nconst path = global.get(\"path\");\nconst sqlite = global.get(\"sqlite\");\nif (!sqlite) {\n    throw new Error(\"exact copy: this Node has no node:sqlite\");\n}\nif (!Array.isArray(places)) {\n    throw new Error(\"exact copy: no list of places for this copy\");\n}\nif (typeof msg.snapshot !== \"string\" || path.basename(path.dirname(msg.snapshot)) !== \"snapshot\") {\n    throw new Error(\"exact copy: the copy is not in a snapshot folder\");\n}\nconst file = path.join(msg.snapshot, \"tmdb.sqlite\");\nif (!fs.existsSync(file)) {\n    throw new Error(\"exact copy: the copy is missing\");\n}\n// never the live database: this is the one function that writes a database file\nconst live = env.get(\"TM_DATABASE_PATH_TMDB\");\nif (!live || !fs.existsSync(live) || fs.realpathSync(file) === fs.realpathSync(live)) {\n    throw new Error(\"exact copy: this is not a copy of the database\");\n}\n\nconst db = new sqlite.DatabaseSync(file);\ntry {\n    db.exec(\"BEGIN IMMEDIATE\");\n    db.exec(\"CREATE TABLE survey_exact_location (survey_id TEXT PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL)\");\n    // Only a place the copy's deployment table names: a place the device was never at stays out of the file\n    const insert = db.prepare(\n        \"INSERT INTO survey_exact_location (survey_id, lat, lon) SELECT $survey_id, $lat, $lon \" +\n        \"WHERE EXISTS (SELECT 1 FROM deployment WHERE survey_id = $survey_id)\");\n    for (const place of places) {\n        insert.run({ $survey_id: place.survey_id, $lat: place.lat, $lon: place.lon });\n    }\n    db.exec(\"CREATE VIEW deployment_exact AS SELECT d.*, s.lat AS exact_lat, s.lon AS exact_lon \" +\n        \"FROM deployment d LEFT JOIN survey_exact_location s USING (survey_id)\");\n    db.exec(\"COMMIT\");\n} finally {\n    db.close();\n}\nfs.renameSync(file, path.join(msg.snapshot, \"tmdb-exact-locations.sqlite\"));\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 2140,
+        "wires": [
+            [
+                "30d1dd9d6d580fa4"
             ]
         ]
     },
@@ -15690,7 +15720,7 @@
         "z": "7c7dba965ad4a266",
         "g": "c3e71a6b79637b6f",
         "name": "remove database copies left by a restart",
-        "func": "// No download can be in progress when the flows start, so anything under /db/snapshot\n// was left by a download that a restart cut short.\nconst fs = global.get(\"fs\");\nconst root = \"/db/snapshot\";\nflow.set(\"databaseCopiesInProgress\", 0);\ntry {\n    const leftovers = fs.existsSync(root) ? fs.readdirSync(root) : [];\n    fs.rmSync(root, { recursive: true, force: true });\n    if (leftovers.length > 0) {\n        node.warn(\"Removed database copies left by a restart: \" + leftovers.join(\", \"));\n    }\n} catch (err) {\n    node.warn(\"Couldn't remove \" + root + \": \" + err.message);\n}\nreturn null;",
+        "func": "// No download can be in progress when the flows start, so anything under /db/snapshot\n// was left by a download that a restart cut short.\nconst fs = global.get(\"fs\");\nconst root = \"/db/snapshot\";\nflow.set(\"databaseCopiesInProgress\", 0);\n// Nor can a copy be waiting for its exact locations: drop the lists claimed for copies and those kept under tickets\nflow.set(\"exactCopyPlaces\", {});\nglobal.set(\"exact_copies\", {});\ntry {\n    const leftovers = fs.existsSync(root) ? fs.readdirSync(root) : [];\n    fs.rmSync(root, { recursive: true, force: true });\n    if (leftovers.length > 0) {\n        node.warn(\"Removed database copies left by a restart: \" + leftovers.join(\", \"));\n    }\n} catch (err) {\n    node.warn(\"Couldn't remove \" + root + \": \" + err.message);\n}\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -15702,6 +15732,129 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "208618ccc9a81219",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/database/exact-copy",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2180,
+        "wires": [
+            [
+                "202d31e1bcdd0e1a"
+            ]
+        ]
+    },
+    {
+        "id": "202d31e1bcdd0e1a",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2180,
+        "wires": [
+            [
+                "19330a26e7147ec2"
+            ],
+            [
+                "cc2d3a7a9d1c4bff"
+            ]
+        ]
+    },
+    {
+        "id": "cc2d3a7a9d1c4bff",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2220,
+        "wires": []
+    },
+    {
+        "id": "19330a26e7147ec2",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate exact copy",
+        "func": "// tm-control hands over the exact locations for one database copy: a ticket (32 lowercase hex characters) and\n// 1 to 10000 places, each a survey id and a finite latitude and longitude as JSON numbers (a string, null, or NaN is\n// refused). Only those three keys of a place are kept, and no survey id may appear twice. The list is passed on as\n// msg.exactCopy and msg.payload and msg.req.body are removed. Nothing is logged or echoed back, so no coordinate leaves the request.\nconst refuse = (detail) => {\n    if (msg.req) {\n        delete msg.req.body;\n    }\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail };\n    return [null, msg];\n};\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nif (typeof body.ticket !== \"string\" || !/^[0-9a-f]{32}$/.test(body.ticket)) {\n    return refuse(\"ticket\");\n}\nif (!Array.isArray(body.places) || body.places.length < 1 || body.places.length > 10000) {\n    return refuse(\"places\");\n}\nconst number = (v, limit) => typeof v === \"number\" && Number.isFinite(v) && v >= -limit && v <= limit;\nconst seen = new Set();\nconst places = [];\nfor (const place of body.places) {\n    if (place === null || typeof place !== \"object\" || typeof place.survey_id !== \"string\"\n        || !/^[0-9a-f]{8}-si$/.test(place.survey_id) || seen.has(place.survey_id)\n        || !number(place.lat, 90) || !number(place.lon, 180)) {\n        return refuse(\"places\");\n    }\n    seen.add(place.survey_id);\n    places.push({ survey_id: place.survey_id, lat: place.lat, lon: place.lon });\n}\nmsg.exactCopy = { ticket: body.ticket, places };\ndelete msg.payload;\n// the posted list is also on the request (msg.req.body), which the tab's catch-all debug node would show\nif (msg.req) {\n    delete msg.req.body;\n}\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2180,
+        "wires": [
+            [
+                "74bbeec1de9cbb88"
+            ],
+            [
+                "90f459bbf47fedaa"
+            ]
+        ]
+    },
+    {
+        "id": "90f459bbf47fedaa",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2220,
+        "wires": []
+    },
+    {
+        "id": "74bbeec1de9cbb88",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: keep exact copy list",
+        "func": "// Keeps the list tm-control just handed over, in memory only, under its ticket for ten minutes. Nothing is written\n// to disk or logged, and the answer is 204 with no body. The list rides this one message (msg.exactCopy) from the\n// validator and is deleted before the answer, so no message that reaches a response or a debug node carries it.\n// The 600000 ms match DownloadGrants.TTL (600 seconds) in tm-control's core/auth.py, the life of a download link:\n// a link and its list run out together.\n// At most four lists are held: expired ones go first, then the one that expires soonest, until room is made.\nconst life = 600000;\nconst now = Date.now();\nconst copies = global.get(\"exact_copies\") || {};\nfor (const ticket of Object.keys(copies)) {\n    if (!(copies[ticket].expires > now)) {\n        delete copies[ticket];\n    }\n}\ndelete copies[msg.exactCopy.ticket];\nwhile (Object.keys(copies).length >= 4) {\n    const soonest = Object.keys(copies).reduce((a, b) => (copies[a].expires <= copies[b].expires ? a : b));\n    delete copies[soonest];\n}\nconst ticket = msg.exactCopy.ticket;\nconst expires = now + life;\ncopies[ticket] = { places: msg.exactCopy.places, expires };\nglobal.set(\"exact_copies\", copies);\nsetTimeout(() => {\n    const held = global.get(\"exact_copies\");\n    if (held && held[ticket] && held[ticket].expires === expires) {\n        delete held[ticket];\n        global.set(\"exact_copies\", held);\n    }\n}, life);\ndelete msg.exactCopy;\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 2180,
+        "wires": [
+            [
+                "4c3e0ddb6be3f58c"
+            ]
+        ]
+    },
+    {
+        "id": "4c3e0ddb6be3f58c",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1340,
+        "y": 2180,
+        "wires": []
     },
     {
         "id": "42ab4681bb24d9f1",

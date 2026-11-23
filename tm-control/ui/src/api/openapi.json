@@ -1115,6 +1115,28 @@
         }
       }
     },
+    "/api/v1/surveys/database-copy": {
+      "post": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Database Copy",
+        "description": "Hand Node-RED the exact locations of the places this device has been at (in use or used, with a location),\nand answer with a one-time /storefiles link to a copy of the database that holds them in a table of its own.\n\nThe control app never opens the database; Node-RED makes the copy when the link is fetched. A planned place is\nnever sent. The audit row, the log, and every message hold the count only: no coordinate, ticket, or link.",
+        "operationId": "database_copy_api_v1_surveys_database_copy_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseCopyOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/surveys/import": {
       "post": {
         "tags": [
@@ -3126,6 +3148,24 @@
           "password"
         ],
         "title": "Credentials"
+      },
+      "DatabaseCopyOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "places": {
+            "type": "integer",
+            "title": "Places"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "places"
+        ],
+        "title": "DatabaseCopyOut"
       },
       "DeployIn": {
         "properties": {

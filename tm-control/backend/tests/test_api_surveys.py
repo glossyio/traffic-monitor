@@ -15,6 +15,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from tm_control.adapters.nodered import NodeRedError
+from tm_control.adapters.redact import REDACTED, redact
 from tm_control.core.auth import Users
 from tm_control.modules.location.places import Places
 
@@ -864,3 +865,128 @@ def test_export_writes_an_empty_pair_for_no_location(admin):
     place = create(admin, "Somewhere", lat=None, lon=None)
     line = next(line for line in export(admin).text.splitlines() if line.startswith(place["id"] + ","))
     assert line.startswith(f"{place['id']},,,planned,")
+
+
+# The database copy with exact locations
+
+COPY = "/api/v1/surveys/database-copy"
+COPY_URL = re.compile(r"^/storefiles\?files=tmdb-exact-([0-9a-f]{32})&tm_token=[A-Za-z0-9_-]+$")
+
+
+def locate_in_use(client) -> str:
+    """The place in use, at the example coordinates."""
+    in_use = first_place(client)
+    r = client.post(f"/api/v1/surveys/{in_use}/location", json={"lat": 45.52252, "lon": -122.6912}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    return in_use
+
+
+def used_place(client, survey_id, lat=None, lon=None):
+    return Places(client.app.state.state).create(survey_id, None, lat, lon, [], "ui", "used", None)
+
+
+def test_database_copy_is_admin_only(claimed_client, login):
+    nodered = claimed_client.app.state.nodered
+    assert claimed_client.post(COPY, headers=JSON_HEADERS).status_code == 401
+    Users(claimed_client.app.state.state).create(*VIEWER, "viewer")
+    login(claimed_client, *VIEWER)
+    assert claimed_client.post(COPY, headers=JSON_HEADERS).status_code == 403
+    assert nodered.exact_copies == {}
+    assert len(claimed_client.app.state.download_grants) == 0
+
+
+def test_database_copy_sends_the_located_places_and_answers_a_link(admin):
+    in_use = locate_in_use(admin)
+    used_place(admin, "aaaaaaaa-si")  # used, no location
+    r = admin.post(COPY, headers=JSON_HEADERS)
+    assert r.status_code == 200, r.text
+    assert r.headers["cache-control"] == "no-store"
+    body = r.json()
+    assert body["places"] == 1
+    found = COPY_URL.match(body["url"])
+    assert found, body["url"]
+    kept = admin.app.state.nodered.exact_copies
+    assert kept == {found.group(1): [{"survey_id": in_use, "lat": 45.52252, "lon": -122.6912}]}
+    assert len(admin.app.state.download_grants) == 1
+
+
+def test_database_copy_sends_a_used_place_too(admin):
+    in_use = locate_in_use(admin)
+    used_place(admin, "bbbbbbbb-si", 45.0, -122.0)
+    assert admin.post(COPY, headers=JSON_HEADERS).json()["places"] == 2
+    (sent,) = admin.app.state.nodered.exact_copies.values()
+    assert {place["survey_id"] for place in sent} == {in_use, "bbbbbbbb-si"}
+
+
+def test_database_copy_leaves_out_planned_places(admin):
+    in_use = locate_in_use(admin)
+    create(admin, lat=45.0, lon=-122.0)
+    assert admin.post(COPY, headers=JSON_HEADERS).json()["places"] == 1
+    (sent,) = admin.app.state.nodered.exact_copies.values()
+    assert [place["survey_id"] for place in sent] == [in_use]
+
+
+def test_database_copy_needs_a_located_place(admin):
+    old = first_place(admin)
+    unlocated = create(admin, lat=None, lon=None)
+    deploy(admin, unlocated["id"])  # in use with no location; the first place is used now
+    with sqlite3.connect(admin.app.state.state.path) as con:
+        con.execute("UPDATE surveys SET lat = NULL, lon = NULL WHERE id = ?", (old,))
+    create(admin, lat=45.0, lon=-122.0)  # located, but planned
+    grants = len(admin.app.state.download_grants)
+    r = admin.post(COPY, headers=JSON_HEADERS)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "no_exact_locations"
+    assert admin.app.state.nodered.exact_copies == {}
+    assert len(admin.app.state.download_grants) == grants
+    assert not [row for row in audit_rows(admin) if row[0] == "survey.database_copy"]
+
+
+def test_database_copy_makes_no_link_when_node_red_fails(admin, monkeypatch):
+    locate_in_use(admin)
+
+    def unreachable(*args):
+        raise NodeRedError("unreachable")
+
+    monkeypatch.setattr(admin.app.state.nodered, "keep_exact_copy", unreachable)
+    r = admin.post(COPY, headers=JSON_HEADERS)
+    assert r.status_code == 502 and r.json()["error"]["code"] == "nodered_error"
+    assert "wasn't started" in r.json()["error"]["message"]
+    assert len(admin.app.state.download_grants) == 0
+    assert not [row for row in audit_rows(admin) if row[0] == "survey.database_copy"]
+
+
+def test_the_diagnostics_hide_a_database_copy_links_ticket_and_token(admin):
+    """nginx's access log holds the link, and the diagnostics quote that log: redact() must know the name the route
+    gives the file."""
+    locate_in_use(admin)
+    url = admin.post(COPY, headers=JSON_HEADERS).json()["url"]
+    ticket = COPY_URL.match(url).group(1)
+    out = redact(f'10.42.0.23 - - [15/Nov/2026:08:11:15 +0000] "GET {url} HTTP/1.1" 200 394000', [])
+    assert ticket not in out and url.rpartition("=")[2] not in out
+    assert f'"GET /storefiles?files=tmdb-exact-{REDACTED}&tm_token={REDACTED} HTTP/1.1" 200' in out
+
+
+def test_database_copy_audits_the_count_only(admin, caplog):
+    caplog.set_level(logging.DEBUG)
+    locate_in_use(admin)
+    r = admin.post(COPY, headers=JSON_HEADERS)
+    assert r.status_code == 200
+    ticket = COPY_URL.match(r.json()["url"]).group(1)
+    token = r.json()["url"].rpartition("=")[2]
+    assert ("survey.database_copy", "1") in audit_rows(admin)
+    for action, detail in audit_rows(admin):
+        for needle in ("45.", "122.", ticket, token):
+            assert needle not in (detail or "")
+    assert caplog.records
+    for record in caplog.records:
+        message = record.getMessage()
+        for needle in ("45.5", "-122.6", "45.0", "-122.0", ticket, token):
+            assert needle not in message
+
+
+def test_two_database_copies_get_different_tickets(admin):
+    locate_in_use(admin)
+    first = admin.post(COPY, headers=JSON_HEADERS).json()["url"]
+    second = admin.post(COPY, headers=JSON_HEADERS).json()["url"]
+    assert COPY_URL.match(first).group(1) != COPY_URL.match(second).group(1)
+    assert len(admin.app.state.nodered.exact_copies) == 2

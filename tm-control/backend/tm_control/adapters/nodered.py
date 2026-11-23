@@ -122,6 +122,10 @@ class NodeRed:
     def correct_bearing(self, deployment_id: str, bearing: str) -> None:
         self._call("POST", f"/deployments/{quote(deployment_id, safe='')}/bearing", body={"bearing": bearing})
 
+    def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
+        """Hand Node-RED the exact locations of places for one database copy, under a ticket it keeps for ten minutes."""
+        self._call("POST", "/database/exact-copy", body={"ticket": ticket, "places": places})
+
     def after_config_write(self) -> None:
         """Called after config.yml is saved. Node-RED's watch node re-reads the file by itself, so this does nothing;
         a test double overrides it to apply the change."""
