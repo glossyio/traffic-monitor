@@ -3,8 +3,9 @@ time state, the status report, the services, the manifest, and the last lines of
 
 The whole text is redacted before it leaves the device: every device secret's value, every secret-looking value in
 the apps' .env files (the broker password can show up inside a URL in a log line), the entered secrets' values
-(Node-RED's journal can show the ThingsBoard token as the MQTT username), and the value after any password-,
-token-, or secret-style key. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
+(Node-RED's journal can show the ThingsBoard token as the MQTT username), the value after any password-,
+token-, or secret-style key, and the ticket in the file name of a database copy with exact locations, which nginx's
+access log holds. Frigate's names for the cameras are replaced too (camera_names): they stay on the device.
 The names come from config.yml, Frigate's running config, Frigate's own config file (so a stopped Frigate hides
 none), and the config.yml backups. So is the query string of every saved change to Frigate's settings (config/set),
 which holds what was set, such as a zone's key and the name typed for it, and in its percent-encoded form, which a

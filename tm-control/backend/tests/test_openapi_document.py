@@ -41,6 +41,7 @@ def test_surveys_paths_are_declared_with_their_answers(settings):
         ("/api/v1/surveys", "post"): "201",
         ("/api/v1/surveys/precision", "put"): "200",
         ("/api/v1/surveys/import", "post"): "200",
+        ("/api/v1/surveys/database-copy", "post"): "200",
         ("/api/v1/surveys/{survey_id}", "patch"): "200",
         ("/api/v1/surveys/{survey_id}", "delete"): "204",
         ("/api/v1/surveys/{survey_id}/deploy", "post"): "200",

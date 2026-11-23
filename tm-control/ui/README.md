@@ -191,6 +191,10 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 
 - `src/styles/focus.css`: a 2 px keyboard focus ring in the primary color. Vuetify's own focus cue is too faint to
   see on the filled buttons (about 1.2:1), and raising its opacity can't reach the 3:1 a focus indicator needs.
+- `maplibre-gl/dist/maplibre-gl.css`, the map library's own stylesheet, for the Location page's map, its zoom buttons,
+  its attribution, and its marker. Only `PinMap.vue` imports it, so it loads with the map and not with the page. The
+  library draws all of that itself, so there is nothing in Vuetify to use instead; the marker takes the theme's
+  `primary`.
 - Three small scoped style blocks: the setup code field; spacing for the license agreement's headings and
   paragraphs, which come from markdown and can't take Vuetify's classes; and tabular digits for the clocks on the
   Date and time page.
@@ -265,8 +269,11 @@ data, an "Add a viewer" form, and the list of accounts, each viewer with a menu 
 - Results appear next to the form that caused them and stay there, rather than in a toast that disappears.
 - Sentence case, no exclamation marks, no apologies.
 - On the unit's own hotspot, the login and setup pages open with a tonal info note (`HotspotNote.vue`): no internet,
-  and the `.local` address to open in a browser on an iPhone. The address is text, not a link, because a link would open
-  inside the phone's sign-in window.
+  then three numbered steps from the phone's sign-in window to a browser, which saves the downloads the window can't.
+  Copy the `.local` address comes first, because the second step (Use this network as is on Android, Use Without
+  Internet on an iPhone) closes the window and the note with it; the third names the Nearby devices permission an
+  Android 17 browser needs. The address has a Copy button and is text, not a link, because a link would open inside
+  the phone's sign-in window.
 
 ### Principles
 
@@ -850,11 +857,26 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- "Exact locations" sits between the places and the precision: one sentence and one button, "Export exact locations".
-  The button asks first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error colour,
-  because the file is not destroyed, only handed out. The file comes from `GET /surveys/export` and is saved with
+- "Exact locations" sits between the places and the precision: one sentence and two buttons, "Export exact locations"
+  and "Download the database with exact locations", in a row that wraps (`d-flex flex-wrap ga-3`). Both are outlined,
+  primary, and large, and both ask first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error
+  colour, because nothing is destroyed, only handed out. The export comes from `GET /surveys/export` and is saved with
   `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's line
   say "Sharing: data and the exact location" when the exact location is on.
+- The database copy is a different kind of download: `POST /surveys/database-copy` answers with the address of the
+  device's own `/storefiles` download, and the page hands it to `openDownload` (`components/download.ts`), which is
+  `window.location.assign`. That is how the Dashboard's download starts, and the only way that works in Android's
+  sign-in window, which gives a download to a helper that follows a navigation and sends no cookie. The page can't
+  watch the download, so after the request it says in an info alert what is happening: the device makes the copy first,
+  which takes a few minutes for a large database, and the download starts by itself. The alert stays until the page is reloaded;
+  a failure shows the API's message in the section's error alert and opens nothing.
+- The copy button is disabled, with its reason in normal text under the buttons, until a place with the status in use
+  or used has both coordinates. That is what the API needs (it answers 409 `no_exact_locations` otherwise), and a
+  planned place doesn't count, because the copy holds only places the device has been at. In fake mode the link leads
+  nowhere (there is no Node-RED to make the copy), so the browser lands on a 404 after the info alert shows.
+- Once a copy has started the button stays disabled until the page is reloaded (the maintainer chose this on review):
+  the request is answered at once, but the device may still be making a multi-GB copy, and a second confirm would start
+  a second copy that holds the exact locations. A request that fails doesn't count as started, so it can be retried.
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
@@ -905,10 +927,10 @@ importing places open dialogs from this page, so they move nothing on it.
 |  device                          |   |                                  |
 | [Coordinates                   ] |   | picam_h265                       |
 |  Paste latitude, longitude ...   |   | New deployment starts      (blue)|
-| [Use this phone's location]      |   | Was N, now [NE  v]               |
-|  (HTTPS only; else one sentence) |   | TM_RADAR_SERIAL_PORT_00          |
-| A map pin is coming in a later   |   | New deployment starts            |
-| update.                          |   | Was not set, now [Not set v]     |
+|  (under 4 decimals: a warning)   |   | Was N, now [NE  v]               |
+| [Pick on a map]                  |   | TM_RADAR_SERIAL_PORT_00          |
+| [Use this phone's location]      |   | New deployment starts            |
+|  (HTTPS only; else one sentence) |   | Was not set, now [Not set v]     |
 | Which way each sensor faces here |   |                                  |
 | [Bearing, picam_h265         v]  |   | Stored in the database:          |
 | [Bearing, TM_RADAR_SERIAL_... v] |   | 45.0, -122.0                     |
@@ -954,6 +976,73 @@ importing places open dialogs from this page, so they move nothing on it.
   its message and the page loads the places again behind it.
 - The deploy dialog keeps showing its review while it fades out, rather than emptying first, and each opening starts
   a fresh review. Both dialogs are named by their title for screen readers.
+
+#### Picking the point on a map
+
+`MapPickButton.vue` sits under the coordinates field of the place form and of "Correct location". It opens
+`MapPicker.vue`, a dialog around `PinMap.vue`, which is the only file that imports the map library (MapLibre GL).
+
+- The first requests outside the device. Until an admin presses "Pick on a map" the page asks nothing of any other
+  host. After that the phone's browser, not the device, asks the host of `map.style_url` for the style, tiles, fonts,
+  and sprites of the area on screen. That is allowed because an admin asked for it with a button that says what it
+  is, and the exact point is never sent: a tap only reads the map and then fills a field. What the host learns is the
+  area on screen, never the point: the tiles that cover the view. Its vector tiles stop at zoom 14, so even the
+  closest view asks for squares about 1.7 km on a side (at 45.5° N). The picker names the host and says the device
+  sends it nothing; it doesn't state the tile size. Every request is made with no referrer (`transformRequest`), and
+  the page's referrer policy (`index.html`, `same-origin`) does the same for the links in the map's corner, the
+  attribution, which open their sites with no Referer; the device's own requests keep theirs, which the CSRF check
+  falls back on. The control app's backend makes no request. The map's address comes from the API
+  (`PlacesState.map`), never from the UI's code; an address that isn't `https://` is off, and with none there is no
+  button.
+- The hotspot has no internet, so on it the button gives way to one sentence that says so and says to type or paste
+  the coordinates, or to come back once the device is on Wi-Fi. The page knows it is on the hotspot from
+  `GET /setup/status`.
+- The picker opens at the point already in the field (zoom 17), else at the place in use (zoom 14), else over the
+  device's region (zoom 3), else on the whole world. A tap places the pin and the marker, which takes the theme's
+  `primary`, can be dragged to the exact spot. A tap on the marker itself isn't a tap on the map: MapLibre would
+  deliver it to the map's click as well and move the pin a little. North stays up and the map stays flat, for the
+  mouse, a touch, and the keyboard alike; nothing here uses a bearing or a tilt. A double click or double tap doesn't
+  zoom (`doubleClickZoom: false`), because each tap of it would place the pin too; pinch, the wheel, and the buttons
+  zoom.
+- The region is for a place with nothing to start from, so the map doesn't open on the whole world. The backend works
+  it out from the device's own files (`modules/location/region.py`, `MapSources.region`): the city of the time zone,
+  from the Pi's own time-zone data, rounded to two places, and null with no map. The data is two tzdata tables:
+  `zone1970.tab` answers first, and a zone it doesn't list (it merged many names away, such as `Europe/Amsterdam`) is
+  looked up in `zone.tab` beside it. Legacy aliases such as `US/Pacific` give none. The region is used only when the
+  Wi-Fi country is set and is one of the countries the zone's row lists. The installer sets the zone (`-z`, default
+  `America/Los_Angeles`) and the Wi-Fi country (`US` when the device has none), so a unit left on both defaults
+  passes the check and opens over Los Angeles until its zone is set on the Date and time page; the check keeps a zone
+  from sending the map to a country the Wi-Fi isn't set for. Rejected: looking up the device's internet address, and
+  time-zone boundary data. Both come from outside the device, and the maintainer ruled out any outside request for
+  this. The region isn't private: it is a time zone's city, `GET /surveys` is admin-only, and the map's host learns
+  little more at this zoom than the phone's internet address tells it. The zoom is 3, a wide view around the city,
+  about the size of a time zone. A time zone's city often sits at the zone's edge (Los Angeles at the south end of the
+  Pacific zone), so the view has to be wide to show much of the zone around the city. Zoom 5 showed only the south of
+  California and zoom 4 only California and part of its neighbours; a fake-mode review at 375 and 1280 px found zoom 3
+  holds the whole Pacific zone on a phone and, on a wide screen, runs from Portland to Mexico. Going further out or in
+  is one constant (`REGION_ZOOM` in `PinMap.vue`) and its test. Fake mode is in the Pacific zone with Wi-Fi country
+  US, so it shows this.
+- "Use this point" writes the field at five decimal places, as the device keeps an exact location, and the admin can
+  still change it before saving. It waits for the map itself to set the pin (a tap or a drag) and is off while the
+  map has failed, so the field's own point is never written back as a pick. Typed coordinates with fewer than four
+  decimal places get one warning line in the warning color under the field, with the size they will be rounded to; it
+  never blocks Save, because a rough location is a choice, not a mistake. `saved` and `corrected` say whether the map
+  set the coordinates last.
+- The picker is full-screen on a phone (below `sm`) and 720 px wide above. Like the other Location dialogs it is
+  `persistent`, so a drag that ends outside the map can't close it; Cancel is the way out.
+- A map that can't load says so, in place of the map, with "Try again", which starts the map afresh. Any `error`
+  before the map's `load`, or no `load` in 10 seconds, counts as a failure, by design (a map that half-loads is of no
+  use for placing a pin), so one missing tile on a flaky connection can show the failure message. The map stays
+  mounted while the dialog fades out and goes at after-leave, so the dialog's body doesn't collapse. A browser that
+  can't make the map at all (no WebGL2) and a map file that can't be fetched get the same message. A page loaded
+  before an upgrade needs a reload: its map file is gone, so the picker says the map failed, and Try again asks for
+  the file again (`MapPicker.vue` imports it by hand, since `defineAsyncComponent` keeps a failed load).
+- The map library, its stylesheet, and its worker are a chunk of their own, loaded the first time the picker opens
+  (a dynamic `import()` in `MapPicker.vue`), so the page's first download doesn't grow by them. The worker is a
+  separate `.mjs` file, which nginx serves as JavaScript (`mime.types` has no `mjs`). The entry chunk grew by about
+  6.6 kB (2 kB gzipped), from `MapPickButton.vue`, `MapPicker.vue`, the coordinate helpers, and the two forms'
+  changes, because `LocationPage` imports them directly; `PinMap.vue` is in the lazy chunk, and none of the entry's
+  growth is library code.
 
 #### Corrections, and importing places
 
@@ -1006,6 +1095,36 @@ on one place, the precision panel open, and No location stored chosen:
 - `column-gap-2` isn't a Vuetify class, so the deployment line's gap came only from its button's padding. It's `gc-2`
   now.
 
+The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: the section, the confirmation, the
+"making the copy" alert, the failure alert, and the disabled button):
+
+- At 320 px the long button name was cut off on both sides, because a button's text doesn't wrap. The name is in a
+  `text-wrap` span inside a button of automatic height, so it breaks onto two lines and the button grows.
+- Looked at and kept: at 375 px the name also breaks onto two lines, under the shorter "Export exact locations"
+  button, since the two don't fit on one row; at 1366 px both sit on one row.
+- Looked at and kept: the file name in the info alert breaks after "tmdb-exact-" on a phone. It is a name to recognise,
+  not to type, so it isn't held together.
+- Looked at and kept: the disabled button's reason is in normal text, as for the Sharing page's disabled boxes.
+
+The map pin (checked in fake mode at 375 and 1280 px wide, with the real map: the form with its button, the picker
+with and without a pin, the failure message, the hotspot sentence, and the warning; the marker was tapped and dragged
+and the picker closed mid-fade, in a real browser):
+
+- Tapping the marker moved the pin a little, because the tap also reached the map's own click. A tap on the marker is
+  ignored now. Dragging it, and tapping the map beside it, still move the pin.
+- The map was removed the moment the dialog began to close, so the dialog's body collapsed while it faded. The map
+  now stays until the dialog has left.
+- On a phone the failure's alert grew to fill the dialog, and with a first fix squashed to a sliver, because a
+  Vuetify alert sets its own flex size and the dialog's body is a column. The alert sits in a block of its own now.
+- The failure still said "Tap the map to place the pin" under the message. With no map, that line is gone.
+- The sentence on the hotspot and the warning about decimals sat tight under the field's hint and read as more of
+  the hint. They have more room above.
+- The keyboard could still rotate the map (shift with the arrow keys); that is off now too.
+- Looked at and kept: "Use this point" with no pin is dim, as every disabled button is; the line under the map says
+  what to do.
+- Looked at and kept: the map is light on the dark theme. It is the map's own style, and the library's attribution
+  stays as it draws it.
+
 #### Defaults rejected
 
 - A data table of the deployments: see above.
@@ -1022,8 +1141,19 @@ on one place, the precision panel open, and No location stored chosen:
   Node-RED hasn't reloaded must stay until it's read.
 - A table for the import's preview: a sensor column per sensor doesn't fit 375 px. Each place is a short list item,
   as the deployments are.
+- A progress bar or polling for the database copy: the device doesn't report progress, and the browser's own download
+  list shows the transfer once it starts. The info alert says what to expect instead.
+- A link in the info alert for the download: the address is good for ten minutes, and a link left on the page would
+  let a later click start another copy that holds the exact locations. The page opens it once and keeps no link.
 - One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
   before anything is created.
+- OpenStreetMap's own tiles: its usage policy is for light use, not for an app that every install's phones would
+  ask. The install names a source in the manifest, which a site can change.
+- An address search on the map: it would send an address, which is exactly what a private place is, to a search
+  service. A pin picked on the map needs nothing typed.
+- Tiles kept on the device for offline use: the unit would store and update a map, on a card that is for its data,
+  to serve a page used a few times; and a phone with no internet can type or paste a point.
+- A map on the hotspot: the phone has no internet there, so the map could only fail. One sentence says so instead.
 
 ### Network
 
@@ -1463,6 +1593,8 @@ The first-run step and the Location page's "Exact locations" were checked the sa
   "Save and finish", so the two never look alike.
 - Looked at and kept: the Location page's Precision paragraph still says a later update will export the database with
   each place's exact location. The new file lists the places, not the database, so the sentence is still true.
+  (Since changed: the database copy now exists, and the paragraph points at Download the database with exact
+  locations.)
 - Looked at and kept: the export confirmation uses the primary colour, not the error colour used for deletes.
 
 #### Defaults rejected

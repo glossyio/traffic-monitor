@@ -122,7 +122,7 @@ The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2
 
 ![The reference picture dialog on a phone after the pictures are taken: a stand-in picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and never saves them, the zones listed with their colours, the box Include this place's exact location ticked, and Close, Take again, and Save the zip](../assets/images/cameras-reference.png){ width="300" }
 
-On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as [Download diagnostics](wifi-hotspot.md#phones). Save it from a computer on the unit's network instead.
+On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as **Download diagnostics**. Like it, the zip saves from a browser, on a computer or on the phone after the steps under [Phones](wifi-hotspot.md#phones).
 
 ### What the picture gives away
 

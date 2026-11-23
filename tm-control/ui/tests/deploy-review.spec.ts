@@ -62,6 +62,7 @@ const STATE: PlacesState = {
   unassigned: null,
   reconcile: 'done',
   nodered: true,
+  map: { style_url: 'https://tiles.example.invalid/style' },
 }
 
 const DEPLOY = 'POST /api/v1/surveys/c0ffee01-si/deploy'

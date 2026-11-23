@@ -12,19 +12,26 @@ The hotspot's name is `TM-` and four characters from the unit's serial number, s
 
 1. Find the hotspot's name and password on the unit's card. The card is the printout that came with a pre-built unit; for a unit you installed yourself, the installer shows it at the end of its run on the device. An administrator can also show the password on the [Network page](#the-network-page), and `sudo tm-control card` on the unit prints it again, together with the setup code while the unit is [unclaimed](control-app.md#claim-the-device).
 2. On your phone, join the hotspot with that password. Your phone may say the network has no internet. Stay connected.
-3. The phone's sign-in window opens the control app by itself, on its login or setup page. If it doesn't, open `http://10.42.0.1/` in a browser. The unit's `.local` name, `http://<hostname>.local/`, also works.
+3. The phone's sign-in window opens the control app by itself, on its login or setup page. If it doesn't, open `http://10.42.0.1/` in a browser. The unit's `.local` name, `http://<hostname>.local/`, also works. On a phone, a browser needs the steps under [Phones](#phones) first.
 
 The hotspot has no internet, and a phone on it reaches only the unit. Nothing on the unit's Ethernet or home network is reachable from the hotspot.
 
 ### Phones
 
-* **Android 17:** the sign-in window is the way in. Android 17 browsers can't open the unit while the phone is on its hotspot, so don't close the window until you're done. See [the Android 17 entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) if the page doesn't open on your home network either.
-    * The database and JSON downloads on the [Data export page](../ui/database.md) save from the sign-in window. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
-    * **Download diagnostics** on the Device page and **Save the zip** of a camera's [reference picture](cameras.md#take-a-reference-picture) don't save from the sign-in window: the phone says "Could not download". The reference pictures themselves do show there. Save the file from a computer on the unit's network instead.
-    * Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
-* **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. The login and setup pages show that name while the phone is on the hotspot. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
+The sign-in window opens the control app with nothing to set up, but it can't save every download. A browser can. The note at the top of the login and setup pages lists the steps: copy the unit's address, keep the network, and open the address in a browser.
 
-Tested with a Pixel 7 on Android 17 and with Firefox on an iPhone on iOS 18.7, in November 2026.
+* **Android 17:**
+    * To keep the network, open the sign-in window's menu and choose **Use this network as is**. Until you do, a phone with mobile data on doesn't use the hotspot for its browsers, so neither the unit's name nor `http://10.42.0.1/` opens. Logging in to the control app in the sign-in window doesn't change that.
+    * Allow **Nearby devices** for the browser; [the Android entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) has the steps. Without it the browser times out on the unit, on the hotspot and on your home network.
+    * In the sign-in window, the database and JSON downloads on the [Data export page](../ui/database.md) save. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
+    * **Download the database with exact locations** on the [Location page](location.md#download-the-database-with-exact-locations) saves from the sign-in window too. The phone asks for it twice, so the unit makes the copy twice and needs free space for two copies of the database for a while.
+    * **Download diagnostics** on the Device page and **Save the zip** of a camera's [reference picture](cameras.md#take-a-reference-picture) don't save from the sign-in window: the phone says "Could not download". The reference pictures themselves do show there. Both save from a browser.
+    * Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
+* **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
+
+The Location page's [map](location.md#pick-the-point-on-a-map) needs the internet, so the page doesn't offer it on the hotspot. Paste the coordinates there, or open the page once the device is on your Wi-Fi.
+
+Tested with a Pixel 7 on Android 17 (the sign-in window, Chrome, and Firefox) and with Firefox on an iPhone on iOS 18.7, in November 2026.
 
 ## The Network page
 
@@ -82,7 +89,7 @@ Below that, a countdown starts at 5 minutes: **Joining `<name>` in 4:32**. Use t
 * **Cancel** ends it, and the unit stays where it is. Nothing is saved.
 * If you do nothing, the unit joins when the countdown ends.
 
-When the unit joins, the network is saved and the unit uses it. If the unit was on the hotspot, the hotspot stops. A phone on the hotspot loses it, so join the network yourself and open one of the addresses from the card. On an Android 17 phone a browser may not open a device on the phone's own Wi-Fi network; see [the Android 17 entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) if the address doesn't open. The result stays on the page until you choose **Dismiss**.
+When the unit joins, the network is saved and the unit uses it. If the unit was on the hotspot, the hotspot stops. A phone on the hotspot loses it, so join the network yourself and open one of the addresses from the card. On an Android 17 phone, a browser needs the **Nearby devices** permission to open it; see [the Android entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) if the address doesn't open. The result stays on the page until you choose **Dismiss**.
 
 !!! info "A network with a sign-in page"
     Some networks, such as a hotel's or a cafe's, give the unit an address but make a device open a web page before it reaches the internet. The unit can't complete that page. The card says "Joined, but this network needs a sign-in page, so the unit has no internet there." The unit can still join the network and be reached on it, and you can switch to it if you want that.

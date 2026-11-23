@@ -633,6 +633,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/database-copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Database Copy
+         * @description Hand Node-RED the exact locations of the places this device has been at (in use or used, with a location),
+         *     and answer with a one-time /storefiles link to a copy of the database that holds them in a table of its own.
+         *
+         *     The control app never opens the database; Node-RED makes the copy when the link is fetched. A planned place is
+         *     never sent. The audit row, the log, and every message hold the count only: no coordinate, ticket, or link.
+         */
+        post: operations["database_copy_api_v1_surveys_database_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/surveys/import": {
         parameters: {
             query?: never;
@@ -1640,6 +1664,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** DatabaseCopyOut */
+        DatabaseCopyOut: {
+            /** Url */
+            url: string;
+            /** Places */
+            places: number;
+        };
         /** DeployIn */
         DeployIn: {
             /** Bearings */
@@ -1906,6 +1937,13 @@ export interface components {
             /** Tracked */
             tracked: string[];
         };
+        /** LatLon */
+        LatLon: {
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+        };
         /** Link */
         Link: {
             /** Connected */
@@ -1927,6 +1965,15 @@ export interface components {
             lon: number;
             /** Reason */
             reason?: string | null;
+        };
+        /**
+         * MapSources
+         * @description Where the browser gets the map; null is off (the install's setting is empty or not https).
+         */
+        MapSources: {
+            /** Style Url */
+            style_url: string | null;
+            region?: components["schemas"]["LatLon"] | null;
         };
         /** Memory */
         Memory: {
@@ -2095,6 +2142,7 @@ export interface components {
             reconcile: "done" | "waiting_nodered" | "config_unreadable";
             /** Nodered */
             nodered: boolean;
+            map: components["schemas"]["MapSources"];
         };
         /** PlusUseQueued */
         PlusUseQueued: {
@@ -3535,6 +3583,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    database_copy_api_v1_surveys_database_copy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatabaseCopyOut"];
+                };
             };
         };
     };

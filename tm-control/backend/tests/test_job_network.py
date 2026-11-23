@@ -678,6 +678,17 @@ def test_a_scan_that_fails_or_hangs_leaves_the_old_result(world):
     assert len(world.iw_calls()) == 1  # a hang that uses up the time is not tried again
     assert old.read_text() == '{"networks": []}'
 
+def test_a_retry_that_times_out_keeps_the_previous_error(world):
+    world.iw["fail_once"] = ["scan"]
+    world.iw["hang"] = ["scan"]
+    world.iw["hang_seconds"] = 60
+    world.scan_timeout = "2"
+
+    result = world.run({"action": "scan"})
+
+    assert result.returncode == 1
+    assert result.stdout.strip() == "failed: scan (iw exit status 240)"
+    assert len(world.iw_calls()) == 2
 
 def test_the_retry_shares_the_time_limit_of_the_first_try(world):
     world.iw["fail"] = ["scan"]
