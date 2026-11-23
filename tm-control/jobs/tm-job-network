@@ -807,15 +807,24 @@ class Run:
         iw, limit = trusted("IW", IW), trusted_seconds("TM_NETWORK_SCAN_TIMEOUT", SCAN_TIMEOUT)
         wait = trusted_seconds("TM_NETWORK_SCAN_RETRY_WAIT", SCAN_RETRY_WAIT)
         started = time.monotonic()
+        last_error = None
+
         while True:
             try:
                 text = run_iw(iw, self.device, limit - (time.monotonic() - started))
                 break
             except IwFailed as error:
-                # a try that hung used up the time; a busy iw is tried again while the time lasts
-                if error.timed_out or limit - (time.monotonic() - started) - wait <= 0:
+                # Keep the last busy iw error if a later try times out.
+                if error.timed_out:
+                    if last_error is not None:
+                        raise last_error
+                    raise
+
+                last_error = error
+                if limit - (time.monotonic() - started) - wait <= 0:
                     raise
                 time.sleep(wait)
+
         networks = parse_scan(text)
         write_scan(trusted("TM_NETWORK_RUN_DIR", RUN_DIR), networks)
         print(f"heard {plural(len(networks), 'network')}")
