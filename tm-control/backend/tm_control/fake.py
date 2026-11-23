@@ -470,6 +470,7 @@ class FakeNodeRed(NodeRed):
         super().__init__("fake")
         self.config_path = Path(config_path)
         self.rows: list[dict] = []
+        self.exact_copies: dict[str, list[dict]] = {}  # ticket -> the places a database copy was asked for
         self._lock = threading.RLock()
         self._seen = None  # the file's (inode, size, mtime) when the engine last ran
         self._deployment = None  # config.yml's deployment keys as last read (the engine's global.config.deployment)
@@ -651,6 +652,9 @@ class FakeNodeRed(NodeRed):
                 if row["survey_id"] == survey_id and row["location_precision"] is not None:
                     digits = row["location_precision"]
                     row.update(lat=round_half_away(lat, digits), lon=round_half_away(lon, digits))
+
+    def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
+        self.exact_copies[ticket] = [dict(place) for place in places]
 
     def correct_bearing(self, deployment_id: str, bearing: str) -> None:
         from tm_control.modules.location.coordinates import BEARINGS, DEPLOYMENT_ID
