@@ -167,7 +167,7 @@ The database on the device is unchanged: it never holds the table or the view, a
 | **About 10 km** (45.5, -122.7) | One decimal place, about a city |
 | **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
 
-The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](sharing.md), [export it](#export-the-exact-locations), or [download a copy of the database that holds it](#download-the-database-with-exact-locations). Choose one and **Save**.
+The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](sharing.md), [export it](#export-the-exact-locations), [download a copy of the database that holds it](#download-the-database-with-exact-locations), or save it with a camera's [reference picture](cameras.md#take-a-reference-picture). Choose one and **Save**.
 
 * **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
 * **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.
@@ -178,6 +178,7 @@ The exact location is never stored in the database. It stays on this device, and
 * A place's description, and the reasons you give for corrections, never leave the device.
 * A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Download the database with exact locations**](#download-the-database-with-exact-locations), which adds each place's exact location in a table of its own.
 * Data you [share](sharing.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download the database with exact locations**](#download-the-database-with-exact-locations), go where you send them.
+* A camera's [reference picture](cameras.md#take-a-reference-picture) holds the exact location of the place in use unless you clear **Include this place's exact location**, and the pictures show the street. The zip goes where you send it.
 * A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
 
 To change these values in `config.yml` by hand, see [Edit the location by hand](../configuration/node-red-config.md#edit-the-location-by-hand).

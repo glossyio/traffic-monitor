@@ -380,7 +380,8 @@ describe('Cameras page', () => {
 
     it('has no buttons on a new row when no entry is gone', async () => {
       const { wrapper } = await openPage(camerasState({ rows: [WIDE, FRESH] }))
-      expect(actionTexts(wrapper)).toEqual([])
+      // the in-step entry offers only its reference picture
+      expect(actionTexts(wrapper)).toEqual(['Reference picture'])
     })
 
     it('confirms a point, posts the new Frigate camera, and shows the answer', async () => {
@@ -482,7 +483,8 @@ describe('Cameras page', () => {
 
     it('offers no Remove for an entry that is in step, and no neutral name for a neutral one', async () => {
       const { wrapper } = await openPage(camerasState({ rows: [WIDE, TELE] }))
-      expect(actionTexts(wrapper)).toEqual([])
+      // each in-step entry offers only its reference picture
+      expect(actionTexts(wrapper)).toEqual(['Reference picture', 'Reference picture'])
     })
 
     it('shows the API message and loads the list again when an action finds Frigate or the file changed', async () => {

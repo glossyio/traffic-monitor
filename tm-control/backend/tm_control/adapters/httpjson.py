@@ -29,17 +29,28 @@ def _loopback(url: str) -> None:
         raise ValueError("tm-control reaches the apps on 127.0.0.1 only")
 
 
-def _send(request: urllib.request.Request, timeout: float | None) -> tuple[int | None, bytes | None]:
+def _headers(response) -> dict[str, str]:
+    return {name.lower(): value for name, value in response.headers.items()}
+
+
+def _exchange(
+    request: urllib.request.Request, timeout: float | None
+) -> tuple[int | None, bytes | None, dict[str, str]]:
     try:
         with _OPENER.open(request, timeout=TIMEOUT if timeout is None else timeout) as response:
-            return response.status, _body(response)
+            return response.status, _body(response), _headers(response)
     except urllib.error.HTTPError as error:
         try:
-            return error.code, _body(error)
+            return error.code, _body(error), _headers(error)
         except Exception:
-            return error.code, None
+            return error.code, None, {}
     except Exception:
-        return None, None
+        return None, None, {}
+
+
+def _send(request: urllib.request.Request, timeout: float | None) -> tuple[int | None, bytes | None]:
+    status, body, _ = _exchange(request, timeout)
+    return status, body
 
 
 def get(
@@ -51,6 +62,17 @@ def get(
     """
     _loopback(url)
     return _send(urllib.request.Request(url, headers=dict(headers or {})), timeout)
+
+
+def get_with_headers(
+    url: str, headers: dict[str, str] | None = None, timeout: float | None = None
+) -> tuple[int | None, bytes | None, dict[str, str]]:
+    """As get, plus the answer's headers under lower-case names; {} when nothing answered.
+
+    Raises ValueError for a URL that isn't on 127.0.0.1.
+    """
+    _loopback(url)
+    return _exchange(urllib.request.Request(url, headers=dict(headers or {})), timeout)
 
 
 def post(

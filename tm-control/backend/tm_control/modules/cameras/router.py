@@ -6,9 +6,20 @@ cameras_changed when they no longer match what the admin confirmed, edits config
 store, and records an audit row. The one write that goes to Frigate instead, its detection switch, holds the same
 lock and leaves config.yml alone. Frigate's camera name is never logged, audited, or put in an error message: audit rows
 carry the sensors.cameras key only.
+
+The reference picture (POST /cameras/{name}/reference) reads Frigate twice for the camera's current frame, plain and
+with its zone outlines, and holds both in memory under a ticket (app.state.references, reference.py) for the admin who
+took them: the pictures shown are the pictures saved. It writes nothing, so it holds no lock. GET
+.../{ticket}/clean.jpg and zones.jpg show them, GET .../{ticket}/package gives the zip (the pictures, the data file,
+and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches the disk, a log line, an
+audit row, or an error message. The device doesn't check the pictures for people: the dialog's note makes that the
+admin's job.
 """
 
-from fastapi import APIRouter, Depends, Request
+import time
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from tm_control import fake
@@ -19,8 +30,10 @@ from tm_control.core.errors import ApiError
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
+from tm_control.modules.cameras import reference
 from tm_control.modules.cameras.names import is_neutral, new_name
 from tm_control.modules.cameras.state import CameraRadar, CameraRow, CamerasState, compare, frigate_now
+from tm_control.modules.cameras.zones import ZoneFacts, detect_size, distance_unit, zone_facts
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
@@ -98,6 +111,10 @@ def _unavailable() -> ApiError:
         409, "frigate_unavailable",
         "Frigate isn't answering, so its cameras can't be compared. Try again when it is running.",
     )
+
+
+def _camera_off() -> ApiError:
+    return ApiError(409, "camera_off", "This camera is turned off in Frigate. Turn it on in Frigate first.")
 
 
 def _not_found() -> ApiError:
@@ -237,7 +254,7 @@ def set_detection(
         if row.in_frigate == "absent":
             raise _changed()
         if row.in_frigate == "off":
-            raise ApiError(409, "camera_off", "This camera is turned off in Frigate. Turn it on in Frigate first.")
+            raise _camera_off()
         if settings.fake:
             taken = fake.set_frigate_detect(settings, row.frigate_camera, body.enabled)
         else:
@@ -264,3 +281,177 @@ def remove_camera(name: str, request: Request, admin: User = Depends(require_adm
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.remove", name)
     return cameras_state(request)
+
+
+# Reference picture
+
+
+class ReferenceOut(BaseModel):
+    ticket: str
+    expires_in: int  # seconds the pictures are held: 600
+    stem: str  # the zip's name without ".zip"
+    camera: str
+    survey_id: str | None
+    taken_at: str  # the clean picture's, as in the data file
+    width: int
+    height: int
+    unit: Literal["m", "ft"]
+    zones: list[ZoneFacts]
+    has_location: bool  # the place in use has a point, so the box can be ticked
+
+
+PICTURE_BODY = {200: {"description": "The picture", "content": {"image/jpeg": {"schema": {"type": "string",
+                                                                                         "format": "binary"}}}}}
+ZIP_BODY = {200: {"description": "The zip", "content": {"application/zip": {"schema": {"type": "string",
+                                                                                      "format": "binary"}}}}}
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+def _no_picture() -> ApiError:
+    return ApiError(
+        409, "no_picture",
+        "Frigate has no live picture from this camera right now. Check the camera on the Status page, then try again.",
+    )
+
+
+def _expired() -> ApiError:
+    return ApiError(404, "reference_expired", "These pictures are no longer held on the device. Take them again.")
+
+
+def _live(frame, size: tuple[int, int]) -> bytes:
+    """The frame's bytes when it is the camera's current frame at the detect size; Frigate's error picture comes with
+    a 200 and no header, so its size is what gives it away."""
+    if frame is None or frame.offline or reference.jpeg_size(frame.data) != size:
+        raise _no_picture()
+    return frame.data
+
+
+def _sending(stats, camera: str) -> bool:
+    fps = probes.mapping(probes.mapping(probes.mapping(stats).get("cameras")).get(camera)).get("camera_fps")
+    return isinstance(fps, (int, float)) and not isinstance(fps, bool) and fps > 0
+
+
+def _open_deployment(app_state, survey_id: str, name: str) -> str | None:
+    """The id of the camera's open deployment row at the place; None when Node-RED doesn't answer or has none."""
+    try:
+        rows = app_state.nodered.deployments(survey_id)
+    except NodeRedError:
+        return None
+    found = None
+    for row in rows:
+        if (row.get("sensorType"), row.get("sensorName")) == ("cameras", name) and not row.get("entryEndDateTime"):
+            found = row.get("id")
+    return found if isinstance(found, str) else None
+
+
+@router.post("/{name}/reference", response_model=ReferenceOut)
+def take_reference(name: str, request: Request, admin: User = Depends(require_admin)) -> ReferenceOut:
+    """Take the camera's current frame from Frigate, plain and with its zone outlines, and hold both in memory."""
+    app_state = request.app.state
+    settings = app_state.settings
+    config = load_config(app_state)
+    _exists(config, name)
+    whole = fake.frigate_answer(settings)[0] if settings.fake else frigate.config()
+    if whole is None or probes.frigate_safe_mode(whole):
+        raise _unavailable()
+    cameras = probes.mapping(whole.get("cameras"))
+    row = _entry(compare(config.cameras(), cameras, config.radars()), name)
+    if row.in_frigate == "absent" or row.duplicate_of is not None:
+        raise _changed()
+    if row.in_frigate == "off":
+        raise _camera_off()
+    camera = probes.mapping(cameras.get(row.frigate_camera))
+    size = detect_size(camera)
+    if size is None:
+        raise _no_picture()
+    stats = fake.frigate_stats(settings) if settings.fake else frigate.stats()
+    if not _sending(stats, row.frigate_camera):
+        raise _no_picture()
+
+    def frame(zones: bool):
+        if settings.fake:
+            return fake.frigate_frame(settings, row.frigate_camera, zones)
+        return frigate.latest_frame(row.frigate_camera, zones=zones)
+
+    clean = _live(frame(False), size)
+    clean_at = time.time()
+    zones_picture = _live(frame(True), size)
+    zones_at = time.time()
+
+    place = Places(app_state.state).in_use()
+    point = (place.lat, place.lon) if place and place.lat is not None and place.lon is not None else None
+    kept = app_state.references.keep(
+        time.monotonic(),
+        user_id=admin.id,
+        camera=name,
+        survey_id=place.id if place else None,
+        point=point,
+        deployment_id=_open_deployment(app_state, place.id, name) if place else None,
+        clean=clean,
+        zones_picture=zones_picture,
+        clean_at=clean_at,
+        zones_at=zones_at,
+        width=size[0],
+        height=size[1],
+        unit=distance_unit(whole),
+        zones=zone_facts(camera),
+        tm_version=app_state.manifest.tm_version,
+        frigate_version=fake.FAKE_FRIGATE_VERSION if settings.fake else frigate.version(),
+    )
+    Audit(app_state.state).record(admin.id, "camera.reference", name)
+    return ReferenceOut(
+        ticket=kept.ticket,
+        expires_in=int(app_state.references.TTL),
+        stem=reference.stem(kept),
+        camera=name,
+        survey_id=kept.survey_id,
+        taken_at=reference.iso(kept.clean_at),
+        width=kept.width,
+        height=kept.height,
+        unit=kept.unit,
+        zones=kept.zones,
+        has_location=point is not None,
+    )
+
+
+def _held(request: Request, name: str, ticket: str, admin: User) -> reference.Reference:
+    held = request.app.state.references.get(ticket, admin.id, time.monotonic())
+    if held is None or held.camera != name:
+        raise _expired()
+    return held
+
+
+@router.get("/{name}/reference/{ticket}/package", response_class=Response, responses=ZIP_BODY)
+def reference_package(
+    name: str, ticket: str, request: Request, location: bool = Query(), admin: User = Depends(require_admin)
+) -> Response:
+    """The zip of the pictures shown, the data file (with the place's point when location is true and there is one),
+    and the drawing."""
+    held = _held(request, name, ticket, admin)
+    body = reference.package(held, with_location=location)
+    with_point = location and held.point is not None
+    Audit(request.app.state.state).record(
+        admin.id, "camera.reference_saved_with_location" if with_point else "camera.reference_saved", name
+    )
+    return Response(
+        body, media_type="application/zip",
+        headers=NO_STORE | {"Content-Disposition": f'attachment; filename="{reference.stem(held)}.zip"'},
+    )
+
+
+@router.get("/{name}/reference/{ticket}/{picture}", response_class=Response, responses=PICTURE_BODY)
+def reference_picture(
+    name: str, ticket: str, picture: Literal["clean.jpg", "zones.jpg"], request: Request,
+    admin: User = Depends(require_admin),
+) -> Response:
+    """One of the pictures held: the camera's view, or the same view with Frigate's zone outlines."""
+    held = _held(request, name, ticket, admin)
+    return Response(held.clean if picture == "clean.jpg" else held.zones_picture, media_type="image/jpeg",
+                    headers=NO_STORE)
+
+
+@router.delete("/{name}/reference/{ticket}", status_code=204)
+def drop_reference(name: str, ticket: str, request: Request, admin: User = Depends(require_admin)) -> Response:
+    """Forget the pictures before their time is up, whether or not they were still held."""
+    request.app.state.references.drop(ticket, admin.id)
+    return Response(status_code=204)

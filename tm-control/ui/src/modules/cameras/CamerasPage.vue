@@ -8,7 +8,8 @@
   replaces the page's. While Frigate isn't answering, or is in safe mode, its cameras can't be compared: a line says
   so, the settings stay editable. The actions that need the comparison (Point at this, Add as new, Use a neutral
   camera name, Remove) are offered only while `state.frigate` is "ok"; each confirms first, except Add as new. A
-  refused action shows the API's message above the list, and a 409 or 404 loads the list again.
+  refused action shows the API's message above the list, and a 409 or 404 loads the list again. An entry whose camera is
+  on in Frigate also offers Reference picture, which opens ReferencePicture for it (one dialog, kept by the page).
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
@@ -16,6 +17,8 @@ import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import CameraEdit, { type CameraSettings } from './CameraEdit.vue'
+import { canTake } from './reference'
+import ReferencePicture from './ReferencePicture.vue'
 import { issueBoxes, otherZonesText, pointChoices, rowState, zoneNote, zonesText, type CameraRow } from './rows'
 
 type CamerasState = components['schemas']['CamerasState']
@@ -117,8 +120,23 @@ function hasBody(row: CameraRow) {
     noteOf(row) !== null ||
     frigateLine(row) !== '' ||
     otherZones(row) !== '' ||
-    actions(row).length > 0
+    actions(row).length > 0 ||
+    offersReference(row)
   )
+}
+
+// The reference picture needs Frigate's camera, so it is offered only while Frigate answers
+function offersReference(row: CameraRow) {
+  return compared.value && canTake(row)
+}
+
+// The one reference picture dialog, and the camera it is open for
+const referenceOpen = ref(false)
+const referenceFor = ref('')
+
+function openReference(row: CameraRow) {
+  referenceFor.value = row.name ?? ''
+  referenceOpen.value = true
 }
 
 // The buttons under a row's header, each with what it does; none while Frigate can't be compared
@@ -369,7 +387,7 @@ async function save(settings: CameraSettings, detect: boolean | null) {
             </v-alert>
             <div v-if="frigateLine(row)" class="text-body-2 text-secondary">{{ frigateLine(row) }}</div>
             <div v-if="otherZones(row)" class="text-body-2 text-secondary" data-other-zones>{{ otherZones(row) }}</div>
-            <div v-if="actions(row).length" class="d-flex flex-wrap ga-2 mt-2" data-actions>
+            <div v-if="actions(row).length || offersReference(row)" class="d-flex flex-wrap ga-2 mt-2" data-actions>
               <v-btn
                 v-for="action in actions(row)"
                 :key="action.text"
@@ -379,6 +397,15 @@ async function save(settings: CameraSettings, detect: boolean | null) {
                 @click="ask(action.pending)"
               >
                 {{ action.text }}
+              </v-btn>
+              <v-btn
+                v-if="offersReference(row)"
+                variant="text"
+                color="primary"
+                min-height="44"
+                @click="openReference(row)"
+              >
+                Reference picture
               </v-btn>
             </div>
           </div>
@@ -396,6 +423,7 @@ async function save(settings: CameraSettings, detect: boolean | null) {
         :confirm-color="confirmWords.color"
         @confirm="confirmed"
       />
+      <ReferencePicture v-model:open="referenceOpen" :name="referenceFor" />
     </template>
   </div>
 </template>
