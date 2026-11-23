@@ -132,15 +132,12 @@ def test_the_manifest_carries_the_sharing_values():
 
 def test_the_manifest_carries_the_map_values():
     role_vars = load_role_yaml("vars/main.yml")
-    wanted = {
-        "style_url": role_vars["tmsetup_map_style_url"],
-        "overpass_url": role_vars["tmsetup_map_overpass_url"],
-    }
+    wanted = {"style_url": role_vars["tmsetup_map_style_url"]}
     assert all(value.startswith("https://") for value in wanted.values())
     assert collected_manifest()["map"] == wanted
     assert json.loads(rendered_manifest())["map"] == wanted
     parsed = Manifest.model_validate(json.loads(rendered_manifest())).map
-    assert (parsed.style_url, parsed.overpass_url) == (wanted["style_url"], wanted["overpass_url"])
+    assert parsed.style_url == wanted["style_url"]
 
 
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():

@@ -121,10 +121,7 @@ def test_an_older_manifest_without_sharing_loads_the_defaults(tmp_path):
 
 def test_the_fixture_manifest_names_the_map_sources():
     info = load_manifest(FIXTURES / "manifest.json").map
-    assert (info.style_url, info.overpass_url) == (
-        "https://tiles.openfreemap.org/styles/liberty",
-        "https://overpass-api.de/api/interpreter",
-    )
+    assert info.style_url == "https://tiles.openfreemap.org/styles/liberty"
 
 
 def test_an_older_manifest_without_map_loads_with_the_map_off(tmp_path):
@@ -132,7 +129,15 @@ def test_an_older_manifest_without_map_loads_with_the_map_off(tmp_path):
     del doc["map"]
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(doc))
-    assert load_manifest(path).map == MapInfo("", "")
+    assert load_manifest(path).map == MapInfo("")
+
+
+def test_an_older_manifest_with_a_street_data_key_still_loads(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    doc["map"]["overpass_url"] = "https://street.example.invalid/api"
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).map == MapInfo("https://tiles.openfreemap.org/styles/liberty")
 
 
 def test_the_fixture_manifest_names_the_coral_model():

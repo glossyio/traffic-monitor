@@ -1488,15 +1488,16 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
 
 
 def test_surveys_name_the_roles_map_sources(address, admin_session):
-    """The Location page's map comes from the install's settings: GET /surveys carries the role's two addresses,
+    """The Location page's map comes from the install's settings: GET /surveys carries the role's map address,
     which a browser fetches (the device never does), and the device's region to open the map over when there is no
     place to start from: a {lat, lon} or null, depending on its time zone and Wi-Fi country. An empty or non-https
     address would be null."""
-    wanted = {"style_url": role_vars()["tmsetup_map_style_url"], "overpass_url": role_vars()["tmsetup_map_overpass_url"]}
+    wanted = {"style_url": role_vars()["tmsetup_map_style_url"]}
     sources = places_state(address, admin_session).get("map")
     assert isinstance(sources, dict), f"GET {API}/surveys: map is a {type(sources).__name__}, not an object"
     got = {key: sources.get(key) for key in wanted}
-    assert got == wanted, f"GET {API}/surveys: map is not the role's tmsetup_map_style_url and tmsetup_map_overpass_url"
+    assert got == wanted, f"GET {API}/surveys: map is not the role's tmsetup_map_style_url"
+    assert "overpass_url" not in sources, f"GET {API}/surveys: map still has overpass_url"
     region = sources.get("region")
     numbers = isinstance(region, dict) and all(
         isinstance(region.get(axis), (int, float)) and not isinstance(region.get(axis), bool) for axis in ("lat", "lon"))

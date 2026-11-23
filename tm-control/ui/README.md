@@ -975,8 +975,8 @@ importing places open dialogs from this page, so they move nothing on it.
   sends it nothing; it doesn't state the tile size. Every request is made with no referrer (`transformRequest`), and
   the page's referrer policy (`index.html`, `same-origin`) does the same for the links in the map's corner, the
   attribution, which open their sites with no Referer; the device's own requests keep theirs, which the CSRF check
-  falls back on. The control app's backend makes no request. The two sources come from the API
-  (`PlacesState.map`), never from the UI's code; a source that isn't `https://` is off, and with none there is no
+  falls back on. The control app's backend makes no request. The map's address comes from the API
+  (`PlacesState.map`), never from the UI's code; an address that isn't `https://` is off, and with none there is no
   button.
 - The hotspot has no internet, so on it the button gives way to one sentence that says so and says to type or paste
   the coordinates, or to come back once the device is on Wi-Fi. The page knows it is on the hotspot from
@@ -1134,7 +1134,7 @@ and the picker closed mid-fade, in a real browser):
 - OpenStreetMap's own tiles: its usage policy is for light use, not for an app that every install's phones would
   ask. The install names a source in the manifest, which a site can change.
 - An address search on the map: it would send an address, which is exactly what a private place is, to a search
-  service. A pin and, later, a street picked from the map need nothing typed.
+  service. A pin picked on the map needs nothing typed.
 - Tiles kept on the device for offline use: the unit would store and update a map, on a card that is for its data,
   to serve a page used a few times; and a phone with no internet can type or paste a point.
 - A map on the hotspot: the phone has no internet there, so the map could only fail. One sentence says so instead.

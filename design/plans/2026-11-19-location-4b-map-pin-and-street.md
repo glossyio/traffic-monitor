@@ -1,5 +1,7 @@
 # Location 4B: the map pin and the street, stored on the device
 
+> **Note, 2026-11-23:** after the build, the street-data setting (`tmsetup_map_overpass_url`) was taken out of the map pin's pull request, because the second step (the street) is on hold. Its street data came from public Overpass servers, which are run by volunteers and at capacity, and the step waits for a source this project runs itself. The tasks below stay as the record of what was built, so they still name that setting.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** An admin sets a place's exact spot on a map. Nothing is sent anywhere. The street step is Part B's.

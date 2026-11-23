@@ -49,11 +49,10 @@ class SharingInfo:
 
 @dataclass(frozen=True)
 class MapInfo:
-    """Where a browser gets the Location page's map and street data (tmsetup_map_style_url,
-    tmsetup_map_overpass_url). Empty means off; the device itself fetches neither."""
+    """Where a browser gets the Location page's map (tmsetup_map_style_url). Empty means off; the device itself
+    fetches nothing."""
 
     style_url: str = ""
-    overpass_url: str = ""
 
 
 class Manifest(BaseModel):

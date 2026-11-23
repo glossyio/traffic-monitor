@@ -82,10 +82,9 @@ class Unassigned(BaseModel):
 
 
 class MapSources(BaseModel):
-    """Where the browser gets the map and the street data; null is off (the install's setting is empty or not https)."""
+    """Where the browser gets the map; null is off (the install's setting is empty or not https)."""
 
     style_url: str | None
-    overpass_url: str | None
     region: LatLon | None = None  # where the map opens with no place to start from: the time zone's city
 
 
@@ -286,10 +285,9 @@ def _deployments(rows: list[dict]) -> list[DeploymentOut]:
 
 
 def _map_sources(info: MapInfo) -> MapSources:
-    """The two addresses, each off unless it is https. Street data is of no use without a map to pick on."""
+    """The map's address, off unless it is https."""
     style = info.style_url if info.style_url.startswith("https://") else None
-    overpass = info.overpass_url if style and info.overpass_url.startswith("https://") else None
-    return MapSources(style_url=style, overpass_url=overpass)
+    return MapSources(style_url=style)
 
 
 def _region(app_state) -> LatLon | None:

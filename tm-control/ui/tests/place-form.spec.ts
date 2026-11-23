@@ -30,7 +30,7 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
   }
 })
 
-const MAP = { style_url: 'https://tiles.example.invalid/style', overpass_url: null }
+const MAP = { style_url: 'https://tiles.example.invalid/style' }
 
 const SENSORS: Bearing[] = [
   { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },

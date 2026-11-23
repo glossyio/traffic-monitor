@@ -4184,17 +4184,6 @@
             ],
             "title": "Style Url"
           },
-          "overpass_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Overpass Url"
-          },
           "region": {
             "anyOf": [
               {
@@ -4208,11 +4197,10 @@
         },
         "type": "object",
         "required": [
-          "style_url",
-          "overpass_url"
+          "style_url"
         ],
         "title": "MapSources",
-        "description": "Where the browser gets the map and the street data; null is off (the install's setting is empty or not https)."
+        "description": "Where the browser gets the map; null is off (the install's setting is empty or not https)."
       },
       "Memory": {
         "properties": {

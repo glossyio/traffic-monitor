@@ -149,15 +149,14 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
 
 
 STYLE = "https://tiles.openfreemap.org/styles/liberty"
-OVERPASS = "https://overpass-api.de/api/interpreter"
 LOS_ANGELES = {"lat": 34.05, "lon": -118.24}  # fake mode's time zone and Wi-Fi country (US), as the table has them
-SOURCES = {"style_url": STYLE, "overpass_url": OVERPASS, "region": LOS_ANGELES}
+SOURCES = {"style_url": STYLE, "region": LOS_ANGELES}
 
 
-def map_sources(client, style, overpass):
+def map_style(client, style):
     """Swap the manifest's map section, as a device installed with other settings would have it."""
     manifest = client.app.state.manifest
-    client.app.state.manifest = manifest.model_copy(update={"map": MapInfo(style, overpass)})
+    client.app.state.manifest = manifest.model_copy(update={"map": MapInfo(style)})
 
 
 def test_places_name_the_map_sources(admin):
@@ -172,14 +171,12 @@ def test_precision_answers_with_the_map_sources(admin):
 
 @pytest.mark.parametrize("style", ["", "http://tiles.example.invalid/style", "ftp://x"])
 def test_a_map_source_that_is_not_https_is_off(admin, style):
-    map_sources(admin, style, OVERPASS)
-    assert places(admin)["map"] == {"style_url": None, "overpass_url": None, "region": None}
-    map_sources(admin, STYLE, style)
-    assert places(admin)["map"] == {"style_url": STYLE, "overpass_url": None, "region": LOS_ANGELES}
+    map_style(admin, style)
+    assert places(admin)["map"] == {"style_url": None, "region": None}
 
 
 def test_no_map_means_no_region(admin):
-    map_sources(admin, "", OVERPASS)
+    map_style(admin, "")
     assert places(admin)["map"]["region"] is None
 
 
@@ -198,11 +195,6 @@ def test_a_zone_only_the_second_table_lists_gives_its_region(admin):
     admin.app.state.fake_clock.timezone = "Europe/Amsterdam"
     admin.app.state.fake_network.country = "NL"
     assert places(admin)["map"]["region"] == {"lat": 52.37, "lon": 4.9}
-
-
-def test_no_street_data_leaves_the_map_on(admin):
-    map_sources(admin, STYLE, "")
-    assert places(admin)["map"] == {"style_url": STYLE, "overpass_url": None, "region": LOS_ANGELES}
 
 
 def test_places_say_what_is_shared(admin):

@@ -50,7 +50,7 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
   }
 })
 
-const MAP = { style_url: 'https://tiles.example.invalid/style', overpass_url: null }
+const MAP = { style_url: 'https://tiles.example.invalid/style' }
 
 const NEAR = place({})
 const FAR = place({ lat: 45.0, lon: -122.0, stored_lat: 45.0, stored_lon: -122.0 })
@@ -75,7 +75,7 @@ function mountCorrect(
   kind: 'location' | 'bearing',
   survey: SurveyOut,
   deployment?: DeploymentOut,
-  map: { style_url: string | null; overpass_url: string | null } = MAP,
+  map: { style_url: string | null } = MAP,
 ) {
   return mountAlone(CorrectDialog, { open: true, kind, place: survey, deployment, map, centre: null })
 }
@@ -166,7 +166,7 @@ describe('correcting a location', () => {
 
   it('keeps its old spacing under the field when there is no map to pick on', async () => {
     const field = () => dialogField('Coordinates').closest('.v-input')!
-    mountCorrect('location', NEAR, undefined, { style_url: null, overpass_url: null })
+    mountCorrect('location', NEAR, undefined, { style_url: null })
     await flushPromises()
     expect(dialogButtons('Pick on a map')).toHaveLength(0)
     expect(field().classList.contains('mb-4')).toBe(true)

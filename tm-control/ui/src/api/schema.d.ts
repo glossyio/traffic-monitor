@@ -1878,13 +1878,11 @@ export interface components {
         };
         /**
          * MapSources
-         * @description Where the browser gets the map and the street data; null is off (the install's setting is empty or not https).
+         * @description Where the browser gets the map; null is off (the install's setting is empty or not https).
          */
         MapSources: {
             /** Style Url */
             style_url: string | null;
-            /** Overpass Url */
-            overpass_url: string | null;
             region?: components["schemas"]["LatLon"] | null;
         };
         /** Memory */

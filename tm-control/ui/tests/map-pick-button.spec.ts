@@ -32,8 +32,8 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
   }
 })
 
-const ON: MapSources = { style_url: 'https://tiles.example.invalid/style', overpass_url: null }
-const OFF: MapSources = { style_url: null, overpass_url: 'https://street.example.invalid/api' }
+const ON: MapSources = { style_url: 'https://tiles.example.invalid/style' }
+const OFF: MapSources = { style_url: null }
 
 const HOTSPOT_SENTENCE =
   "The map needs the internet, and this device's hotspot has none. Type or paste the coordinates, or come back to this page once the device is on your Wi-Fi."
