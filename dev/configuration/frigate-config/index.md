@@ -40,6 +40,16 @@ The Pi camera is set up to produce two streams. Frigate uses `picam_h265_detect`
 
 To switch, change two things in the configuration editor under `cameras: picam_h265:`: the input `path` to `rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr`, and `detect: width: 2304` with `height: 1296`. Frigate fills in the `{…}` values from `frigate.env`. Then redraw the [zones](https://docs.trafficmonitor.ai/dev/setup-guide/#3-adjust-the-zones) for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.
 
+## Speed without a radar
+
+Frigate can estimate the speed of an object that crosses a zone set up for it: a zone with exactly four corners, with the real length of each side entered under `distances`. Frigate's [speed estimation](https://docs.frigate.video/configuration/zones/#speed-estimation) page shows how to draw one. Without such a zone, Frigate makes no estimate.
+
+The shortest way is to use `zone_radar`, which Frigate's configuration as installed already draws with four corners: measure each side on the road and add the lengths under `distances`. The dashboards' speed figures (the [car speed statistics and Latest observations](https://docs.trafficmonitor.ai/dev/ui/monitoring/index.md), and the legacy dashboard's speeding card) count only objects that entered `zone_radar`, so a speed zone drawn elsewhere fills in each event's speed but not those figures.
+
+Frigate's unit setting, `ui: unit_system:`, decides the units: with `metric` the side lengths are in metres and the speed in km/h, and with `imperial` they're in feet and the speed in mph. The device reads the setting from Frigate when either of them starts and every ten minutes. After you change it, choose **Save & Restart** in Frigate's configuration editor: the device forgets the old setting when Frigate stops and reads the new one within about half a minute of Frigate coming back. Until then an event keeps Frigate's estimate without a unit, so the estimate isn't used as the event's speed. A change that takes effect without a restart is seen within ten minutes.
+
+The device saves Frigate's estimate with each event, with its unit and the direction it was moving across the picture, whether or not the radar gave a speed. When the radar gave none, or the camera has no radar, the event's speed is Frigate's, converted to the device's speed unit. [Direction and speed](https://docs.trafficmonitor.ai/dev/data-and-payloads/events-payload/#direction-and-speed) has the rules. The estimate is rougher than a radar's: it depends on how well the zone's corners and lengths match the road, and it is an average of Frigate's last few estimates for the object.
+
 ## Recordings and snapshots
 
 By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The `record:` and `snapshots:` sections control this: set `enabled: false` to keep nothing, or raise `retain: days` to keep more. [Data and privacy](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/index.md) describes what the device stores.

@@ -16,7 +16,7 @@
         <link rel="prev" href="../data-overview/">
       
       
-        <link rel="next" href="../radar-payload/">
+        <link rel="next" href="../object-paths/">
       
       
         
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-direction-and-radar-speed" class="md-skip">
+        <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-skip">
           Skip to content
         </a>
       
@@ -1453,6 +1453,8 @@
       
         
       
+        
+      
     
     
     
@@ -1586,10 +1588,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-direction-and-radar-speed" class="md-nav__link">
+  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: The events table: one row per object the camera detected, with its label, times, zones, direction, and radar speed.
+        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.
       
     </span>
   </a>
@@ -1650,6 +1652,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2199,10 +2229,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-direction-and-radar-speed" class="md-nav__link">
+  <a href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: The events table: one row per object the camera detected, with its label, times, zones, direction, and radar speed.
+        description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.
       
     </span>
   </a>
@@ -2287,25 +2317,27 @@
   
   
   <hr />
-<h2 id="description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-direction-and-radar-speed">description: The events table: one row per object the camera detected, with its label, times, zones, direction, and radar speed.<a class="headerlink" href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-direction-and-radar-speed" title="Permanent link">&para;</a></h2>
+<h2 id="description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed">description: The events table: one row per object the camera detected, with its label, times, zones, path, direction, and speed.<a class="headerlink" href="#description-the-events-table-one-row-per-object-the-camera-detected-with-its-label-times-zones-path-direction-and-speed" title="Permanent link">&para;</a></h2>
 <h1 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h1>
-<p>An event is one object that Frigate detected and tracked until it left the frame: a car, a person, a bicycle, and so on. When the camera has a radar, the Traffic Monitor adds the direction of travel and the speed, and it stores the result in the <code>events</code> table of the database.</p>
+<p>An event is one object that Frigate detected and tracked until it left the frame: a car, a person, a bicycle, and so on. The Traffic Monitor adds the direction of travel and, when it has one, the speed, and it stores the result in the <code>events</code> table of the database.</p>
 <h2 id="how-an-event-is-made">How an event is made<a class="headerlink" href="#how-an-event-is-made" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Frigate publishes a message on the device's MQTT topic <code>frigate/events</code> for each tracked object. When the object leaves the frame, the message has <code>type: "end"</code> and holds everything Frigate knows about it.</li>
 <li>The Traffic Monitor keeps the <code>end</code> message if the camera has an enabled entry in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> and the object moved. From here on, the camera goes by its entry's name.</li>
-<li>If the object entered any zone and the camera has an enabled radar, it works out the direction and the speed, as described below, and adds <code>radar</code> to <code>provenance</code> when a speed was found.</li>
+<li>If the object entered any zone, it works out the direction from the zones, and the speed from the camera's radar, or from Frigate's own estimate when the radar gave none, as described below. It adds <code>radar</code> to <code>provenance</code> when the radar's speed was used.</li>
 <li>It writes the row, publishes today's counts on <code>tm/events</code>, and uploads the event to ThingsBoard if that is on. See <a href="../integrations/">MQTT and ThingsBoard</a>.</li>
 </ol>
 <p><a href="../../setup-guide/#3-adjust-the-zones">First-time setup</a> describes the four zones.</p>
 <h2 id="direction-and-speed">Direction and speed<a class="headerlink" href="#direction-and-speed" title="Permanent link">&para;</a></h2>
-<p>The zones give a direction when the object entered both <code>zone_near</code> and <code>zone_far</code>: <code>zone_near</code> then <code>zone_far</code> is outbound, and the reverse is inbound. The radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction.</p>
+<p>The zones give a direction when the object entered both <code>zone_near</code> and <code>zone_far</code>: <code>zone_near</code> then <code>zone_far</code> is outbound, and the reverse is inbound. This works on any camera.</p>
+<p>When the camera has an enabled radar, the radar's readings come from the time the object was in view, with a two-second margin on each side. The radar reports a direction with each reading, and the speed is the median of the readings in the chosen direction. When the radar gives no speed, <code>speed_calc</code> takes Frigate's, if Frigate made an estimate.</p>
 <table>
 <thead>
 <tr>
 <th>Zones</th>
 <th>Radar readings</th>
 <th><code>direction_calc</code></th>
+<th><code>direction_source</code></th>
 <th><code>speed_calc</code></th>
 </tr>
 </thead>
@@ -2314,18 +2346,28 @@
 <td>A direction</td>
 <td>In that direction, or in both directions</td>
 <td>The zones' direction</td>
+<td><code>zones_radar</code></td>
 <td>The median in that direction</td>
 </tr>
 <tr>
 <td>A direction</td>
 <td>Only in the other direction</td>
-<td>Empty</td>
-<td>Empty</td>
+<td>The zones' direction</td>
+<td><code>zones_radar_opposite</code></td>
+<td>Frigate's speed, or empty</td>
+</tr>
+<tr>
+<td>A direction</td>
+<td>None, or no enabled radar on the camera</td>
+<td>The zones' direction</td>
+<td><code>zones</code></td>
+<td>Frigate's speed, or empty</td>
 </tr>
 <tr>
 <td>No direction</td>
 <td>In one direction only</td>
 <td>The radar's direction</td>
+<td><code>radar</code></td>
 <td>The median in that direction</td>
 </tr>
 <tr>
@@ -2333,22 +2375,21 @@
 <td>In both directions</td>
 <td>Empty</td>
 <td>Empty</td>
-</tr>
-<tr>
-<td>A direction</td>
-<td>None</td>
-<td>The zones' direction</td>
-<td>Empty</td>
+<td>Frigate's speed, or empty</td>
 </tr>
 <tr>
 <td>No direction</td>
-<td>None</td>
+<td>None, or no enabled radar on the camera</td>
 <td>Empty</td>
 <td>Empty</td>
+<td>Frigate's speed, or empty</td>
 </tr>
 </tbody>
 </table>
-<p>An object that entered no zone, and every object on a camera without an enabled radar, has no direction and no speed.</p>
+<p>An object that entered no zone has no direction, and the radar's readings aren't looked at. It has a speed only if Frigate estimated one.</p>
+<p><code>direction_source</code> also says how far to trust the direction. <code>zones_radar</code> is two sensors agreeing. <code>zones</code> and <code>zones_radar_opposite</code> come from the camera alone, which followed the object itself; with <code>zones_radar_opposite</code>, the radar's readings belonged to something else, such as oncoming traffic. <code>radar</code> is the least certain, because its readings can belong to another object than the one the camera saw. If many events on one device have <code>zones_radar_opposite</code>, check that <code>zone_near</code> and <code>zone_far</code> aren't drawn the wrong way round.</p>
+<p>Frigate estimates a speed only for an object that crossed a zone drawn with four corners and the real length of each side, so it makes none unless you set one up; see <a href="../../configuration/frigate-config/#speed-without-a-radar">Speed without a radar</a>. Its figure is always saved in <code>frigate_speed</code>, with its unit, whether or not the radar gave a speed, so an event with both has both. When Frigate's speed fills in <code>speed_calc</code>, it is converted to the device's speed unit and signed like the radar's: negative outbound, positive inbound or when the direction isn't known. <code>speed_source</code> says which one <code>speed_calc</code> holds. So for every event, <code>speed_calc</code> is negative only when <code>direction_calc</code> is <code>outbound</code>, and when <code>direction_calc</code> is empty the speed is Frigate's, positive, and its sign says nothing about the direction.</p>
+<p>The device's speed unit is the unit its radar reports, mph unless the radar is set to another. A camera without a radar on a device that has one uses that radar's unit, so one device's speeds are all in one unit. A device without an enabled radar uses Frigate's unit, km/h or mph, which follows Frigate's unit setting.</p>
 <h2 id="columns">Columns<a class="headerlink" href="#columns" title="Permanent link">&para;</a></h2>
 <p>Values that come straight from Frigate's message are marked <em>Frigate</em>. Frigate's <a href="https://docs.frigate.video/integrations/mqtt">MQTT</a> page documents them in full.</p>
 <table>
@@ -2382,8 +2423,8 @@
 <tr>
 <td><code>sub_label</code></td>
 <td>TEXT</td>
-<td><em>Frigate.</em> A label added by another process, such as a recognized face</td>
-<td>Usually empty</td>
+<td><em>Frigate.</em> A delivery company's logo that Frigate recognized on the object</td>
+<td>One of <code>amazon</code>, <code>an_post</code>, <code>canada_post</code>, <code>dhl</code>, <code>dpd</code>, <code>fedex</code>, <code>gls</code>, <code>nzpost</code>, <code>postnl</code>, <code>postnord</code>, <code>purolator</code>, <code>royal_mail</code>, <code>ups</code>, or <code>usps</code>; usually empty. Anything else Frigate sends as a sub-label, such as a recognized person's or a known plate's name, isn't saved. Rows from earlier versions of the Traffic Monitor can hold other text.</td>
 </tr>
 <tr>
 <td><code>top_score</code></td>
@@ -2394,7 +2435,7 @@
 <tr>
 <td><code>frame_time</code></td>
 <td>REAL</td>
-<td><em>Frigate.</em> When the best frame of the object was taken</td>
+<td><em>Frigate.</em> When the last frame Frigate processed for the object was taken</td>
 <td>Unix time in seconds</td>
 </tr>
 <tr>
@@ -2458,16 +2499,40 @@
 <td><code>outbound</code> (away from the device), <code>inbound</code> (toward it), or empty. See <a href="#direction-and-speed">Direction and speed</a>.</td>
 </tr>
 <tr>
+<td><code>direction_source</code></td>
+<td>TEXT</td>
+<td>How <code>direction_calc</code> was decided</td>
+<td><code>zones_radar</code> (the zones, with radar readings the same way), <code>zones</code> (the zones, with no radar reading or no enabled radar), <code>zones_radar_opposite</code> (the zones, while the radar saw only the other way), or <code>radar</code> (the radar, when the zones gave none); empty when <code>direction_calc</code> is</td>
+</tr>
+<tr>
 <td><code>speed_calc</code></td>
 <td>REAL</td>
-<td>Speed from the radar, in the radar's units (mph by default)</td>
-<td>Positive for inbound and negative for outbound; empty if no speed was matched</td>
+<td>The speed: the radar's, or Frigate's when the radar gave none, in the unit in <code>speed_unit</code></td>
+<td>Negative for outbound, positive for inbound or when the direction isn't known; empty when there's no speed</td>
+</tr>
+<tr>
+<td><code>speed_unit</code></td>
+<td>TEXT</td>
+<td>The unit of <code>speed_calc</code>, the device's speed unit</td>
+<td>The radar's unit, <code>mph</code> unless the radar is set to another; <code>kph</code> or <code>mph</code> on a device without an enabled radar; empty when there's no speed</td>
+</tr>
+<tr>
+<td><code>speed_source</code></td>
+<td>TEXT</td>
+<td>Where <code>speed_calc</code> came from</td>
+<td><code>radar</code> or <code>frigate</code>; empty when there's no speed</td>
+</tr>
+<tr>
+<td><code>radar_readings</code></td>
+<td>INTEGER</td>
+<td>How many radar readings the median in <code>speed_calc</code> came from</td>
+<td>A count when <code>speed_source</code> is <code>radar</code>; otherwise empty</td>
 </tr>
 <tr>
 <td><code>provenance</code></td>
 <td>TEXT</td>
 <td>Which sensors contributed, primary first</td>
-<td>A JSON array: <code>["frigate"]</code>, or <code>["frigate", "radar"]</code> when a speed was matched</td>
+<td>A JSON array: <code>["frigate"]</code>, or <code>["frigate", "radar"]</code> when the radar's speed was used</td>
 </tr>
 <tr>
 <td><code>radarName</code></td>
@@ -2481,8 +2546,52 @@
 <td>Where the device was. See the <a href="../data-overview/#deployment">deployment</a> table.</td>
 <td>A <code>deployment.id</code>, or empty</td>
 </tr>
+<tr>
+<td><code>path_data</code></td>
+<td>TEXT</td>
+<td><em>Frigate.</em> The object's path across the camera's picture. See <a href="../object-paths/">Object paths</a>.</td>
+<td>A JSON array of up to 100 <code>[[x, y], t]</code> points, or empty</td>
+</tr>
+<tr>
+<td><code>box</code></td>
+<td>TEXT</td>
+<td>The object's box in the last frame Frigate processed, as fractions of the frame</td>
+<td>A JSON array <code>[left, top, width, height]</code>, each from 0 to 1; empty when the device hadn't yet read the camera's size from Frigate</td>
+</tr>
+<tr>
+<td><code>best_box</code></td>
+<td>TEXT</td>
+<td>The object's box in its best frame, the one Frigate's snapshot shows</td>
+<td>As <code>box</code></td>
+</tr>
+<tr>
+<td><code>best_frame_time</code></td>
+<td>REAL</td>
+<td><em>Frigate.</em> When the best frame was taken</td>
+<td>Unix time in seconds</td>
+</tr>
+<tr>
+<td><code>frigate_speed</code></td>
+<td>REAL</td>
+<td><em>Frigate.</em> Frigate's own speed estimate: the average of its last ten estimates for the object</td>
+<td>A positive number in <code>frigate_speed_unit</code>; empty when Frigate made no estimate</td>
+</tr>
+<tr>
+<td><code>frigate_speed_unit</code></td>
+<td>TEXT</td>
+<td>The unit of <code>frigate_speed</code>, from Frigate's unit setting</td>
+<td><code>kph</code> or <code>mph</code>; empty when there's no estimate, or when the device hadn't yet read Frigate's setting</td>
+</tr>
+<tr>
+<td><code>frigate_velocity_angle</code></td>
+<td>REAL</td>
+<td><em>Frigate.</em> The direction the object was moving across the picture at Frigate's last estimate</td>
+<td>Degrees from 0 to 360: 0 toward the right edge of the picture, 90 toward the bottom, 180 toward the left, and 270 toward the top; empty when there's no estimate</td>
+</tr>
 </tbody>
 </table>
+<p>Events recorded by an earlier version of the Traffic Monitor have <code>direction_source</code>, <code>speed_unit</code>, <code>speed_source</code>, <code>radar_readings</code>, and the columns from <code>path_data</code> on empty, and their <code>speed_calc</code>, when they have one, is the radar's. Their <code>direction_calc</code> is empty where the radar saw only the other way, and on a camera without an enabled radar.</p>
+<p>The JSON export on the <a href="../../ui/database/">Data export</a> page gives the JSON columns (<code>entered_zones</code>, <code>attributes</code>, <code>provenance</code>, <code>path_data</code>, <code>box</code>, and <code>best_box</code>) as text, the way the database stores them. Parse them as JSON to use them.</p>
   
 
 

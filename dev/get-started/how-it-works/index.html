@@ -1542,6 +1542,8 @@
       
         
       
+        
+      
     
     
     
@@ -1627,6 +1629,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2268,12 +2298,12 @@
 <li><strong><a href="https://frigate.video/">Frigate</a></strong> finds and tracks objects in the video, using the AI accelerator if the device has one and the CPU if not. It records which <strong>zones</strong> each object passed through. When an object leaves the frame, Frigate publishes an event on the device's MQTT broker.</li>
 <li><strong>The radar</strong> (optional) measures the speed and direction of whatever moves in front of it and reports readings over USB several times a second.</li>
 <li>
-<p><strong><a href="https://nodered.org/">Node-RED</a></strong> runs the Traffic Monitor logic. It keeps every radar reading, and it records every moving object from an enabled camera as an event. When the camera has a radar and the object entered any zone, it:</p>
+<p><strong><a href="https://nodered.org/">Node-RED</a></strong> runs the Traffic Monitor logic. It keeps every radar reading, and it records every moving object from an enabled camera as an event, with the path it took across the picture. When the object entered any zone, it:</p>
 <ul>
-<li>works out the direction of travel from the order in which the object entered <code>zone_near</code> and <code>zone_far</code>, or from the radar if the zones don't give one;</li>
-<li>attaches a speed: the median radar reading in that direction while the object was in view, with a two-second margin on each side.</li>
+<li>works out the direction of travel from the order in which the object entered <code>zone_near</code> and <code>zone_far</code>, or from the camera's radar if the zones don't give one;</li>
+<li>attaches a speed: the median radar reading in that direction while the object was in view, with a two-second margin on each side, or Frigate's own estimate when the radar gives none.</li>
 </ul>
-<p>Without a radar, events have no direction or speed. <a href="../../data-and-payloads/events-payload/#direction-and-speed">Direction and speed</a> has the exact rules.</p>
+<p>Without a radar, the direction comes from the zones, and a speed only from Frigate, which estimates one only in a zone you set up for it. <a href="../../data-and-payloads/events-payload/#direction-and-speed">Direction and speed</a> has the exact rules.</p>
 <p>The dashboards and the daily counts then filter the events by zone: they count objects that passed through <code>zone_capture</code>, and they use only objects that passed through <code>zone_radar</code> for speed statistics.
 5. <strong>The database</strong>, one SQLite file on the device, stores the events, the radar readings, air quality readings from the optional sensor, and the device's deployment history. The dashboards read from it, and you can download it.</p>
 </li>

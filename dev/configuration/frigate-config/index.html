@@ -1304,6 +1304,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#speed-without-a-radar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Speed without a radar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#recordings-and-snapshots" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1658,6 +1669,8 @@
       
         
       
+        
+      
     
     
     
@@ -1743,6 +1756,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2346,6 +2387,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#speed-without-a-radar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Speed without a radar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#recordings-and-snapshots" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2524,6 +2576,11 @@
 <h2 id="higher-resolution-stream">Higher-resolution stream<a class="headerlink" href="#higher-resolution-stream" title="Permanent link">&para;</a></h2>
 <p>The Pi camera is set up to produce two streams. Frigate uses <code>picam_h265_detect</code> at 1536×864 by default, which gives the best balance of detail and load. A second stream, <code>picam_h265_detect_hr</code>, runs at 2304×1296 for cases where objects are small in the frame.</p>
 <p>To switch, change two things in the configuration editor under <code>cameras: picam_h265:</code>: the input <code>path</code> to <code>rtsp://{FRIGATE_GO2RTC_RTSP_USER}:{FRIGATE_GO2RTC_RTSP_PASSWORD}@host.containers.internal:8554/picam_h265_detect_hr</code>, and <code>detect: width: 2304</code> with <code>height: 1296</code>. Frigate fills in the <code>{…}</code> values from <code>frigate.env</code>. Then redraw the <a href="../../setup-guide/#3-adjust-the-zones">zones</a> for the new frame size. The higher resolution costs CPU and may lower the frame rate on a busy road.</p>
+<h2 id="speed-without-a-radar">Speed without a radar<a class="headerlink" href="#speed-without-a-radar" title="Permanent link">&para;</a></h2>
+<p>Frigate can estimate the speed of an object that crosses a zone set up for it: a zone with exactly four corners, with the real length of each side entered under <code>distances</code>. Frigate's <a href="https://docs.frigate.video/configuration/zones/#speed-estimation">speed estimation</a> page shows how to draw one. Without such a zone, Frigate makes no estimate.</p>
+<p>The shortest way is to use <code>zone_radar</code>, which Frigate's configuration as installed already draws with four corners: measure each side on the road and add the lengths under <code>distances</code>. The dashboards' speed figures (the <a href="../../ui/monitoring/">car speed statistics and Latest observations</a>, and the legacy dashboard's speeding card) count only objects that entered <code>zone_radar</code>, so a speed zone drawn elsewhere fills in each event's speed but not those figures.</p>
+<p>Frigate's unit setting, <code>ui: unit_system:</code>, decides the units: with <code>metric</code> the side lengths are in metres and the speed in km/h, and with <code>imperial</code> they're in feet and the speed in mph. The device reads the setting from Frigate when either of them starts and every ten minutes. After you change it, choose <strong>Save &amp; Restart</strong> in Frigate's configuration editor: the device forgets the old setting when Frigate stops and reads the new one within about half a minute of Frigate coming back. Until then an event keeps Frigate's estimate without a unit, so the estimate isn't used as the event's speed. A change that takes effect without a restart is seen within ten minutes.</p>
+<p>The device saves Frigate's estimate with each event, with its unit and the direction it was moving across the picture, whether or not the radar gave a speed. When the radar gave none, or the camera has no radar, the event's speed is Frigate's, converted to the device's speed unit. <a href="../../data-and-payloads/events-payload/#direction-and-speed">Direction and speed</a> has the rules. The estimate is rougher than a radar's: it depends on how well the zone's corners and lengths match the road, and it is an average of Frigate's last few estimates for the object.</p>
 <h2 id="recordings-and-snapshots">Recordings and snapshots<a class="headerlink" href="#recordings-and-snapshots" title="Permanent link">&para;</a></h2>
 <p>By default, Frigate keeps a cropped snapshot of each detection and a recording of each alert and detection for about an hour, so you can check what was detected. The <code>record:</code> and <code>snapshots:</code> sections control this: set <code>enabled: false</code> to keep nothing, or raise <code>retain: days</code> to keep more. <a href="../../data-and-payloads/data-overview/">Data and privacy</a> describes what the device stores.</p>
 <p>Frigate can also publish a cropped snapshot of each detected object on the device's <a href="../../data-and-payloads/integrations/#mqtt">MQTT broker</a>. The Traffic Monitor doesn't use these snapshots, so new installs turn them off with <code>mqtt: enabled: false</code> under <code>cameras: picam_h265:</code>. On an older install, add those lines in the configuration editor. Frigate keeps publishing the events the Traffic Monitor counts.</p>

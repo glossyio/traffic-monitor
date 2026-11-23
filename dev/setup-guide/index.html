@@ -1553,6 +1553,8 @@
       
         
       
+        
+      
     
     
     
@@ -1638,6 +1640,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2337,7 +2367,7 @@
 </tr>
 <tr>
 <td><code>zone_radar</code></td>
-<td>The part of the road the radar covers accurately, roughly a rectangle from curb to curb in the middle of the frame. Skip it if the device has no radar.</td>
+<td>The part of the road the radar covers accurately, roughly a rectangle from curb to curb in the middle of the frame. Keep it on a device without a radar too: draw it where you can measure the road, and give it the lengths of its sides if Frigate is to estimate speeds; see <a href="../configuration/frigate-config/#speed-without-a-radar">Speed without a radar</a>.</td>
 <td>Speed statistics. Any object that enters a zone gets a speed from the radar, but the dashboards' speed statistics use only objects that passed through this zone. <a href="../deployment-and-mounting-guide/#radar-considerations">Radar considerations</a> shows how to find the radar's coverage.</td>
 </tr>
 </tbody>

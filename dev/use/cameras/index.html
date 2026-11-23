@@ -1675,6 +1675,8 @@
       
         
       
+        
+      
     
     
     
@@ -1760,6 +1762,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2581,7 +2611,7 @@
 </tr>
 <tr>
 <td><strong>Radar</strong></td>
-<td>The radar that supplies this camera's speeds. The camera's direction needs an enabled radar too, whether it comes from the zones' order or from the radar. <strong>No radar</strong> records the camera's events with no speed and no direction. One radar can serve several cameras.</td>
+<td>The radar that supplies this camera's speeds. Direction comes from the zones' order on any camera, and from the radar only when the zones give none. <strong>No radar</strong> records the camera's events with the zones' direction, and with a speed only from Frigate, where you've set up a <a href="../../configuration/frigate-config/#speed-without-a-radar">speed zone</a>. One radar can serve several cameras.</td>
 </tr>
 <tr>
 <td><strong>Send plates to Plate Recognizer</strong></td>

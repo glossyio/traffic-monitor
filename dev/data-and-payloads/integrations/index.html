@@ -1453,6 +1453,8 @@
       
         
       
+        
+      
     
     
     
@@ -1538,6 +1540,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2375,7 +2405,7 @@
 <p>The device can upload its data to a <a href="https://thingsboard.io/">ThingsBoard</a> server, which gives you dashboards and storage for a fleet of devices. Turn it on, and choose what is uploaded, on the control app's Sharing page; see <a href="../../use/sharing/">Share data</a>. The page sets the server and the device's access token. The <a href="../../configuration/node-red-config/#thingsboard"><code>thingsboard</code> section</a> of config.yml holds the server's address.</p>
 <p>Once connected, the device sends over ThingsBoard's HTTP API:</p>
 <ul>
-<li>Each <a href="../events-payload/">event</a> as telemetry, with <code>ts</code> set to the event's <code>frame_time</code> in milliseconds and <code>values</code> holding every column of the event.</li>
+<li>Each <a href="../events-payload/">event</a> as telemetry, with <code>ts</code> set to the event's <code>frame_time</code> in milliseconds and <code>values.event</code> holding the event's columns that are on the list of what is shared, <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/data/upload-lists.json"><code>upload-lists.json</code></a>. A column that isn't on the list stays on the device.</li>
 <li>Each <a href="../radar-payload/">radar</a> and <a href="../air-quality-aq-payload/">air quality</a> reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.</li>
 <li>The device's system metrics as telemetry, every five minutes.</li>
 <li>The deployment location and radar information as device attributes.</li>

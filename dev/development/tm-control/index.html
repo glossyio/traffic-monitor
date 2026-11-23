@@ -1449,6 +1449,8 @@
       
         
       
+        
+      
     
     
     
@@ -1534,6 +1536,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -3233,7 +3263,7 @@
 <li>The reference picture's pictures live only in <code>app.state.references</code> (<code>References</code> in <code>modules/cameras/reference.py</code>): a ticket from <code>secrets.token_urlsafe(16)</code> answers only the admin who took it, for 600 seconds on the monotonic clock. A new take drops that admin's earlier one, and the store holds two at most, so at most four frames are in memory. A ticket that isn't held, or is held for another camera, is 404 <code>reference_expired</code>. Frigate answers a camera that isn't sending with its own error picture, HTTP 200 and no header, so the take refuses a frame two ways: Frigate's stats must give the camera a <code>camera_fps</code> above 0, and the JPEG's size, read from its SOF marker, must be the camera's detect size; a frame marked <code>X-Frigate-Offline</code> is refused too. <code>zones.py</code> reads each zone from Frigate's <code>/api/config</code> (<code>ZoneFacts</code>: corners as fractions in stored order, lettered A, B, C, kept as they are below 0 or above 1, since <code>/api/config</code> gives fractions even for a zone whose <code>config.yml</code> holds pixels, and a pixel point past the frame becomes a fraction above 1; side lengths by side; of a zone's <code>filters</code>, only each object's <code>FILTER_KEYS</code> that hold a number; Frigate's colours, which <code>/api/config</code> gives as blue, green, red), <code>reference.py</code> holds the tickets and writes the data file and the zip, and <code>svg.py</code> draws the SVG as text, escaping every key. The take doesn't check for people, and the dialog's note makes that the admin's job: Frigate 0.18 saves an event only once the object has moved and has a clip or a snapshot, so <code>/api/events</code> never shows a person standing still, and the live list that does (the WebSocket's <code>camera_activity</code>) would need a WebSocket client. No picture, ticket, or point goes to a log line, an audit row, or an error message: the audit detail is the entry's key, <code>HideTickets</code> replaces the ticket in uvicorn's access log with <code>-</code>, the error handlers in <code>core/errors.py</code> log the route's path template, and the cross-site check's 403 line names the method and no path. The entry's key is the only camera name in any of them, so they hold Frigate's name only for an entry that uses it as its key, as the installer's <code>picam_h265</code> does. nginx's access log still holds the ticket, as it holds a download link's token; it answers only the admin who took it, for 10 minutes.</li>
 <li>Copy diagnostics replaces every Frigate camera name that differs from its entry's key, and every Frigate camera no entry points at, Off ones included (it doesn't use <code>compare</code>'s rows, which leave those out), with <code>redact_words</code> (whole words, longest first; a percent escape before a name, or one that was encoded once more (<code>%252C</code>), counts as an edge, so every name in a login redirect's <code>next=</code> is replaced too), the way it replaces a secret. It reads the names from the file, Frigate's running config, Frigate's config file (<code>adapters.frigate.config_file</code>, which still names a camera while Frigate is down or in safe mode; a file that can't be read is skipped), and the <code>config.yml</code> backups beside the file. It also replaces the query string after every <code>config/set?</code> and after its percent-encoded form, which a login redirect's <code>next=</code> carries (<code>_CONFIG_SET</code> in <code>diagnostics.py</code>), because nginx's access log and Frigate's journal keep the request line, and the zone editor's holds a zone's key and the name typed for it. <code>check_groups</code> text may name Frigate's cameras, because the Status page is behind the login.</li>
 </ul>
-<p>Node-RED gets the mapping from "init config defaults" (the <code>init-config</code> tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: <code>frigate_cameras</code>, a map from Frigate's name to the key; <code>camera_labels</code>, each key's label for the dashboard pickers, <code>&lt;key&gt; (&lt;Frigate's name&gt;)</code> when the two differ; and <code>tm_warned</code>, which is reset on every load so a warning is logged once per config load: one for events from cameras no entry points at, which names none of them, and one for each radar name a camera is paired with that <code>config.yml</code> lacks. They're their own globals, not part of <code>global.config</code>, because "init config defaults" takes <code>frigate_camera</code> out of each entry before the config is stored: in Node-RED, Frigate's name lives only in <code>frigate_cameras</code> and <code>camera_labels</code>. "append config" looks each event's camera up in <code>frigate_cameras</code> and sets it to the key before anything reads it, so the <code>events</code> row, <code>tm/event</code> and <code>tm/events</code>, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a <code>camera_radar</code> that names no radar records the event without one.</p>
+<p>Node-RED gets the mapping from "init config defaults" (the <code>init-config</code> tab), which sets three globals after everything that can throw, so a rejected load leaves the old ones: <code>frigate_cameras</code>, a map from Frigate's name to the key; <code>camera_labels</code>, each key's label for the dashboard pickers, <code>&lt;key&gt; (&lt;Frigate's name&gt;)</code> when the two differ; and <code>tm_warned</code>, which is reset on every load so a warning is logged once per config load: one for events from cameras no entry points at, which names none of them, and one for each radar name a camera is paired with that <code>config.yml</code> lacks. They're their own globals, not part of <code>global.config</code>, because "init config defaults" takes <code>frigate_camera</code> out of each entry before the config is stored: in Node-RED, Frigate's name lives only in <code>frigate_cameras</code>, <code>camera_labels</code>, and the <code>frigate_facts</code> flow context on <code>capture-events</code>, where "keep frigate facts" keeps each camera's detect size from Frigate's <code>/api/config</code> under Frigate's name. Only two nodes read an event before its camera gets the key: "vet sub_label" and "frigate fields", which looks the detect size up by Frigate's name and puts no name in what it adds. "append config" then looks each event's camera up in <code>frigate_cameras</code> and sets it to the key, so the <code>events</code> row, <code>tm/event</code> and <code>tm/events</code>, ThingsBoard, and Plate Recognizer carry only the key. An event from a camera the map lacks is dropped with one warning, and a <code>camera_radar</code> that names no radar records the event without one.</p>
 <h3 id="the-network-module-and-the-hotspot">The Network module and the hotspot<a class="headerlink" href="#the-network-module-and-the-hotspot" title="Permanent link">&para;</a></h3>
 <p>The <code>network</code> module adds the Network check group (<code>hotspot</code>, <code>wifi</code>, <code>internet</code>, and <code>wifi_country</code>, in <code>modules/network/checks.py</code>) and the Network page's routes. Both read the unit's network through <code>adapters/network.py</code>, which runs <code>nmcli</code> and <code>iw</code> and never asks for a secret. An offline unit is normal, so the Internet check is never a warning or an error, and a read that fails is <code>unknown</code>. The hotspot's values come from the manifest's <code>network</code> section. The checks' words are the contract with <a href="../../use/wifi-hotspot/">the operator page</a>.</p>
 <p>The routes are in <code>modules/network/router.py</code>:</p>

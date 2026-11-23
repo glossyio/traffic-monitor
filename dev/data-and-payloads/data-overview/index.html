@@ -1453,6 +1453,8 @@
       
         
       
+        
+      
     
     
     
@@ -1679,6 +1681,34 @@
     
   
     Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
   
 
     
@@ -2392,14 +2422,14 @@
 </tbody>
 </table>
 <h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Permanent link">&para;</a></h2>
-<p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, and through which zones, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.</p>
+<p>We believe in <a href="https://en.wikipedia.org/wiki/Open_data">open data</a>: anonymized data is a public good and the basis of useful research. The database is designed to be shareable. With the default settings it is <a href="https://en.wikipedia.org/wiki/De-identification">de-identified</a>: it records what passed (a label), when, how fast, the path it took across the camera's picture, and which zones it went through, and never an image or a plate number. Its location is rounded to about 1 km, which in a town shows the neighbourhood but not the address.</p>
 <p>Images do exist on the device, briefly. Frigate keeps snapshots and short clips for about an hour so you can check what it detected. To keep none, turn off recordings and snapshots as described in <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>. To keep them longer, raise the retention there, and treat the device as holding images of people.</p>
 <p>By default, the device sends no images or video anywhere. Everything is processed on the device, and <code>tmdb.sqlite</code> holds only metadata. The live view and the recordings are behind the device's <a href="../../use/control-app/">login</a>, which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's <a href="../integrations/#mqtt">MQTT broker</a>. New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a> shows the setting. A snapshot you choose to <a href="../../configuration/frigate-config/#submit-snapshots">submit to Frigate+</a> does leave the device, and it can show people.</p>
 <p>With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see <a href="#deployment">deployment</a>). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose <strong>About 10 km</strong> or <strong>No location stored</strong> on the <a href="../../use/location/">Location</a> page before it starts recording. The exact location stays on the device, in <code>config.yml</code> and in the control app's list of places, and neither is part of the database. The database, and the download on the Data export page, hold rounded locations; the Location page's separate <a href="../../use/location/#download-the-database-with-exact-locations">download with exact locations</a> adds the exact ones, for admins.</p>
 <p>The database stops being de-identified if you:</p>
 <ul>
 <li>Install the <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a> add-on. Plate numbers go into the <code>plate_recognizer</code> table. Don't share a database from a device that has ever had the add-on on.</li>
-<li>Turn on Frigate features that add identifying sub-labels or attributes to events, such as face recognition or license plate recognition.</li>
+<li>Keep a database that an earlier version of the Traffic Monitor recorded while Frigate's face recognition or license plate recognition was on. The <code>sub_label</code> column keeps only delivery companies' logos, so a recognized person's or a known plate's name isn't saved, but rows recorded earlier can still hold one.</li>
 <li>Write identifying details into operator comments.</li>
 <li>Name a zone in Frigate after a street, a house number, or a person. Zone names are saved with every event; see <a href="../../use/cameras/#zone-names-are-saved-with-your-data">Zone names are saved with your data</a>.</li>
 <li>Keep the copy of the database that an upgrade leaves in <code>db/backup/</code>. It can hold the exact coordinates from before they were rounded (see <a href="#deployment">deployment</a>), so don't share it.</li>
@@ -2419,8 +2449,8 @@
 <tbody>
 <tr>
 <td><code>events</code></td>
-<td>One row per object the camera detected, with direction and speed. See <a href="../events-payload/">Events</a>.</td>
-<td>Only through Frigate sub-labels or attributes, if you turn those on, or a zone name you typed</td>
+<td>One row per object the camera detected, with its path, direction, and speed. See <a href="../events-payload/">Events</a>.</td>
+<td>No, except rows an earlier version recorded with a recognized person's or plate's name in <code>sub_label</code>, or a zone name you typed</td>
 </tr>
 <tr>
 <td><code>radar_dov</code></td>
