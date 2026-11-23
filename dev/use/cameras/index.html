@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Keep the Traffic Monitor's camera settings in step with Frigate's cameras, choose each camera's radar and recording, point a camera at its new name after a rename in Frigate, and see which name is saved and shared.">
+        <meta name="description" content="Keep the Traffic Monitor's camera settings in step with Frigate's cameras, choose each camera's radar and recording, point a camera at its new name after a rename in Frigate, take a reference picture of a camera's view and zones, and see which name is saved and shared.">
       
       
       
@@ -1117,6 +1117,67 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#take-a-reference-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Take a reference picture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Take a reference picture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-picture-gives-away" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the picture gives away
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-it-cant-take-the-pictures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When it can't take the pictures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-drawings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two drawings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-data-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The data file
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2352,6 +2413,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#take-a-reference-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Take a reference picture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Take a reference picture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-picture-gives-away" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the picture gives away
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-it-cant-take-the-pictures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When it can't take the pictures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-drawings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two drawings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-data-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The data file
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#zone-names-are-saved-with-your-data" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2404,7 +2526,7 @@
   
   
   <h1 id="cameras">Cameras<a class="headerlink" href="#cameras" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Keep the Traffic Monitor&#39;s camera settings in step with Frigate&#39;s cameras, choose each camera&#39;s radar and recording, point a camera at its new name after a rename in Frigate, and see which name is saved and shared.</p>
+<p class="tm-description">Keep the Traffic Monitor&#39;s camera settings in step with Frigate&#39;s cameras, choose each camera&#39;s radar and recording, point a camera at its new name after a rename in Frigate, take a reference picture of a camera&#39;s view and zones, and see which name is saved and shared.</p>
 <p>The control app's <strong>Cameras</strong> page connects each camera in <a href="../../configuration/frigate-config/">Frigate</a> to its settings in the Traffic Monitor: whether its events are recorded, which radar gives it speeds, and whether its events go to <a href="../../add-ons/plate-recognizer/">Plate Recognizer</a>. It also keeps the two in step after you rename or add a camera in Frigate. Only the administrator sees the page.</p>
 <p>A camera that was set up by the installer and never renamed works without it. Use the page when you rename a camera in Frigate, add one, pair a camera with a different radar, or want the camera's name kept out of the data the device saves and shares.</p>
 <h2 id="two-names-for-each-camera">Two names for each camera<a class="headerlink" href="#two-names-for-each-camera" title="Permanent link">&para;</a></h2>
@@ -2427,6 +2549,7 @@
 <li><strong>Other zones enabled</strong>: the camera's other zones that are on, by their IDs, with your name beside an ID that Frigate made up. Their IDs are saved with every event; see <a href="#zone-names-are-saved-with-your-data">Zone names are saved with your data</a>.</li>
 <li><strong>Off in Frigate</strong>, when the camera is in Frigate's configuration but turned off there.</li>
 </ul>
+<p>An entry whose camera is on in Frigate also has <strong>Reference picture</strong> on its row, while Frigate answers; see <a href="#take-a-reference-picture">Take a reference picture</a>.</p>
 <p>A Frigate camera that no entry is paired with shows its <strong>Frigate detection</strong>, and <strong>Database capture: off</strong>.</p>
 <h3 id="what-needs-attention">What needs attention<a class="headerlink" href="#what-needs-attention" title="Permanent link">&para;</a></h3>
 <p>The page marks each problem the Status page's <a href="../device-health/#the-camera-checks">camera checks</a> report, on the camera it's about, in the same colors: red for a problem, amber for a warning. Above the list, a line says how many cameras need attention. Each marked row has a box for each problem that says what's wrong and what to do on this page:</p>
@@ -2491,6 +2614,160 @@
 <p>Records already saved keep the old name. They can't be renamed here, because rewriting a database of several gigabytes on a microSD card takes a long time. The dashboards' charts start again under the new name, and Node-RED ends the camera's deployment under the old name and starts one under the new one, at the same place and facing the same way. The confirmation says so before it does anything. A server that receives the device's data sees the old sensor end and a new one start.</p>
 <h2 id="remove-an-entry">Remove an entry<a class="headerlink" href="#remove-an-entry" title="Permanent link">&para;</a></h2>
 <p>An entry whose Frigate camera is gone, because you deleted the camera or renamed it and pointed no entry at the new name, has <strong>Remove</strong>. Choose it and confirm. The entry's settings are removed from <code>config.yml</code>, and Node-RED ends the camera's deployment. Records already saved are kept. The same button removes an entry that repeats another entry's Frigate camera.</p>
+<h2 id="take-a-reference-picture">Take a reference picture<a class="headerlink" href="#take-a-reference-picture" title="Permanent link">&para;</a></h2>
+<p><strong>Reference picture</strong> gives you one zip for a tool that places recorded paths on a street: a still picture of what the camera sees, the same view with its zones marked, and the zones' shapes and sizes. Both pictures are the size of Frigate's detect frame, so paths and boxes recorded as fractions of that frame line up with them.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;name&gt;_clean.jpg</code></td>
+<td>The camera's current frame from Frigate, with nothing drawn on it</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;_zones.jpg</code></td>
+<td>The same view a moment later, drawn by Frigate with the outline of each zone that is on, in the zone's colour</td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;.json</code></td>
+<td>The data file: the place, the camera, when the pictures were taken, and every zone; see <a href="#the-data-file">The data file</a></td>
+</tr>
+<tr>
+<td><code>&lt;name&gt;_zones.svg</code></td>
+<td>A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it</td>
+</tr>
+</tbody>
+</table>
+<p>The four files share one name, such as <code>tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z</code>: the ID of the place in use (<code>no-place</code> when there is none), the camera's name (the one in bold on its row), and when the clean picture was taken, in UTC.</p>
+<ol>
+<li>On the camera's row, choose <strong>Reference picture</strong>. The dialog says what the picture gives away before any picture is taken.</li>
+<li>Wait until nobody is in view, and choose <strong>Take the pictures</strong>. The dialog shows both pictures and the camera's zones with their colours and side lengths.</li>
+<li>Look at both pictures. The device doesn't check them for people, so this is up to you. If anyone is in them, wait, and choose <strong>Take again</strong>.</li>
+<li>Leave <strong>Include this place's exact location</strong> ticked to put the place's location in the data file, or clear it.</li>
+<li>Choose <strong>Save the zip</strong>.</li>
+</ol>
+<p><img alt="The reference picture dialog on a phone after the pictures are taken: a stand-in picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and never saves them, the zones listed with their colours, the box Include this place's exact location ticked, and Close, Take again, and Save the zip" src="../../assets/images/cameras-reference.png" width="300" /></p>
+<p>On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as <strong>Download diagnostics</strong>. Like it, the zip saves from a browser, on a computer or on the phone after the steps under <a href="../wifi-hotspot/#phones">Phones</a>.</p>
+<h3 id="what-the-picture-gives-away">What the picture gives away<a class="headerlink" href="#what-the-picture-gives-away" title="Permanent link">&para;</a></h3>
+<p>The dialog opens with this note:</p>
+<blockquote>
+<p>This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. The device doesn't check the pictures for people. You are responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.</p>
+</blockquote>
+<ul>
+<li>The location in the data file is the place's exact location, as set on the <a href="../location/">Location page</a>, not the rounded one the database keeps. When the place in use has no location, the box is greyed and the data file holds none.</li>
+<li>The device holds the pictures in memory for 10 minutes, for the administrator who took them, and never saves them. Closing the dialog, taking them again, or restarting the control app drops them sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads.</li>
+<li>The audit log records each picture taken and each zip saved, with the camera's name and whether the location was included, never the location itself.</li>
+</ul>
+<h3 id="when-it-cant-take-the-pictures">When it can't take the pictures<a class="headerlink" href="#when-it-cant-take-the-pictures" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>This camera is turned off in Frigate.</strong> Turn it on in Frigate first.</li>
+<li><strong>Frigate has no live picture from this camera right now.</strong> The camera isn't sending, or Frigate has only an older frame. Check the camera on the <a href="../device-health/#the-status-page">Status page</a>, then try again.</li>
+<li><strong>These pictures are no longer held on the device.</strong> Ten minutes have passed, you took another picture, or the control app restarted. Take them again.</li>
+</ul>
+<h3 id="the-two-drawings">The two drawings<a class="headerlink" href="#the-two-drawings" title="Permanent link">&para;</a></h3>
+<p>The zones picture is Frigate's own drawing: outlines only, of the zones that are on, with no names. The SVG is the control app's, drawn on the clean picture from the data file. It outlines each zone that is on in its colour and names it, and letters the corners of each zone with side lengths (or, when no zone has any, of each zone with four corners). Its legend lists every zone, with its side lengths, or <strong>off in Frigate, not drawn</strong>, or <strong>no outline</strong> for a zone with fewer than three corners.</p>
+<h3 id="the-data-file">The data file<a class="headerlink" href="#the-data-file" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format</code>, <code>format_version</code></td>
+<td><code>traffic-monitor-reference</code> and <code>1</code></td>
+</tr>
+<tr>
+<td><code>survey_id</code></td>
+<td>The ID of the place in use, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>camera</code></td>
+<td>The camera's name (the one in bold on its row)</td>
+</tr>
+<tr>
+<td><code>deployment_id</code></td>
+<td>The camera's open deployment at the place, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>location</code></td>
+<td><code>{"lat": …, "lon": …}</code>, the place's exact location, or <code>null</code> when the box was cleared or there was no location to include</td>
+</tr>
+<tr>
+<td><code>pictures</code></td>
+<td>Each file's name, and for the two pictures <code>taken_at</code>, in UTC, such as <code>2026-11-18T18:30:05Z</code></td>
+</tr>
+<tr>
+<td><code>traffic_monitor_version</code>, <code>frigate_version</code></td>
+<td>The versions running when the pictures were taken</td>
+</tr>
+<tr>
+<td><code>detect</code></td>
+<td>The <code>width</code> and <code>height</code> of Frigate's detect frame in pixels, which is the pictures' size</td>
+</tr>
+<tr>
+<td><code>distance_unit</code></td>
+<td>The unit of the zones' side lengths: <code>ft</code> when Frigate's interface is set to imperial units, else <code>m</code></td>
+</tr>
+<tr>
+<td><code>zones</code></td>
+<td>Every zone of the camera, in Frigate's order, with the fields below</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Zone field</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td>The zone's ID</td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td>The colour Frigate draws the zone in, as <code>#rrggbb</code>, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td>Whether the zone is on in Frigate</td>
+</tr>
+<tr>
+<td><code>drawn</code></td>
+<td>Whether the zone is outlined in the pictures: it's on and has at least three corners</td>
+</tr>
+<tr>
+<td><code>corners</code></td>
+<td>Each corner's <code>letter</code> (A, B, C, and on, in the order Frigate stores the corners) and its <code>x</code> and <code>y</code> as fractions of the frame's width and height, from the top-left corner, even where Frigate's configuration holds the zone in pixels. A corner past the frame's edge is below 0 or above 1</td>
+</tr>
+<tr>
+<td><code>distances</code></td>
+<td>The side lengths entered in Frigate for speed estimation, in Frigate's order, or <code>[]</code></td>
+</tr>
+<tr>
+<td><code>sides</code></td>
+<td>The same lengths by side, in the order Frigate stores the corners, such as <code>{"start": "A", "end": "B", "length": 12}</code>; the last side ends at A. <code>[]</code> unless there is one length for each corner</td>
+</tr>
+<tr>
+<td><code>inertia</code>, <code>loitering_time</code>, <code>speed_threshold</code>, <code>objects</code></td>
+<td>The zone's settings in Frigate</td>
+</tr>
+<tr>
+<td><code>filters</code></td>
+<td>For each object with filters in the zone, the ones that are numbers among <code>min_area</code>, <code>max_area</code>, <code>min_ratio</code>, <code>max_ratio</code>, <code>threshold</code>, and <code>min_score</code>. Any other filter is left out</td>
+</tr>
+</tbody>
+</table>
+<p>The names you typed for zones in Frigate's editor and the place's description are never in the data file or the drawing. Frigate's name for the camera isn't either, unless the camera's entry uses it as its own name, as the installer's <code>picam_h265</code> does: then it's in the files' names, the data file, and the drawing. To keep it out, <a href="#use-a-neutral-camera-name">use a neutral camera name</a> first.</p>
 <h2 id="zone-names-are-saved-with-your-data">Zone names are saved with your data<a class="headerlink" href="#zone-names-are-saved-with-your-data" title="Permanent link">&para;</a></h2>
 <p>A zone's ID is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Frigate makes the ID from the name you type in its zone editor, in lower case with <code>_</code> for spaces, so <code>1420 Oak St</code> is saved as <code>1420_oak_st</code>. Name zones for what they are, such as a compass direction (<code>zone_north</code>) or a lane (<code>zone_lane_bus</code>), not for a street, a house number, or a person.</p>
 <p>A name with other punctuation, or with letters outside a to z, gets an ID that Frigate makes up, such as <code>zone_a9bacc03</code>. The page shows your name beside that ID and doesn't check it, because the ID says nothing about the place.</p>
@@ -2506,6 +2783,7 @@
 <li><strong>Frigate's own database, and its recordings and snapshots.</strong> Frigate keeps events under its own camera names.</li>
 <li><strong>Frigate's <code>frigate/events</code> messages</strong> on the device's <a href="../../data-and-payloads/integrations/">MQTT broker</a>. Anything subscribed to the broker sees them. Frigate publishes them, not the Traffic Monitor.</li>
 <li><strong>Frigate+.</strong> The name identifies the camera for the scene conditions and annotations you submit.</li>
+<li><strong>A reference picture of an entry named for its Frigate camera.</strong> The files' names, the data file, and the drawing carry the entry's name, which is then Frigate's name too. See <a href="#take-a-reference-picture">Take a reference picture</a>.</li>
 <li><strong>Records saved before a switch.</strong> A device whose entry was named by hand has saved that name with its records, and keeps it there after you <a href="#use-a-neutral-camera-name">use a neutral camera name</a>.</li>
 </ul>
 <p>The Status page shows Frigate's camera names to anyone who is logged in, as Frigate does. The <a href="../device-health/#download-diagnostics">diagnostics file</a> replaces them before you send it to someone; that section lists its limits.</p>

@@ -2610,7 +2610,7 @@ Corner by the park,,,e,e
 </tr>
 </tbody>
 </table>
-<p>The exact location is never stored in the database. It stays on this device, and leaves it only if you <a href="../sharing/">share it</a>, <a href="#export-the-exact-locations">export it</a>, or <a href="#download-the-database-with-exact-locations">download a copy of the database that holds it</a>. Choose one and <strong>Save</strong>.</p>
+<p>The exact location is never stored in the database. It stays on this device, and leaves it only if you <a href="../sharing/">share it</a>, <a href="#export-the-exact-locations">export it</a>, <a href="#download-the-database-with-exact-locations">download a copy of the database that holds it</a>, or save it with a camera's <a href="../cameras/#take-a-reference-picture">reference picture</a>. Choose one and <strong>Save</strong>.</p>
 <ul>
 <li><strong>A coarser choice</strong> applies to the deployments running now at once. Rows stored before them keep their precision unless you tick <strong>Also round the rows already stored</strong>, which asks first, because it can't be undone.</li>
 <li><strong>No location stored</strong> removes the stored location from the deployments running now at once. Tick <strong>Also remove it from the rows already stored</strong> to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.</li>
@@ -2621,6 +2621,7 @@ Corner by the park,,,e,e
 <li>A place's description, and the reasons you give for corrections, never leave the device.</li>
 <li>A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with <a href="#download-the-database-with-exact-locations"><strong>Download the database with exact locations</strong></a>, which adds each place's exact location in a table of its own.</li>
 <li>Data you <a href="../sharing/">share</a> carries the location as the database stores it. The exact location goes only if you tick <strong>Share the exact location</strong>, and only for the place in use. The file from <a href="#export-the-exact-locations"><strong>Export exact locations</strong></a>, and the copy from <a href="#download-the-database-with-exact-locations"><strong>Download the database with exact locations</strong></a>, go where you send them.</li>
+<li>A camera's <a href="../cameras/#take-a-reference-picture">reference picture</a> holds the exact location of the place in use unless you clear <strong>Include this place's exact location</strong>, and the pictures show the street. The zip goes where you send it.</li>
 <li>A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.</li>
 </ul>
 <p>To change these values in <code>config.yml</code> by hand, see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>

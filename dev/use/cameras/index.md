@@ -28,6 +28,8 @@ An entry's row shows its name in bold, and Frigate's name beside it when the two
 - **Other zones enabled**: the camera's other zones that are on, by their IDs, with your name beside an ID that Frigate made up. Their IDs are saved with every event; see [Zone names are saved with your data](#zone-names-are-saved-with-your-data).
 - **Off in Frigate**, when the camera is in Frigate's configuration but turned off there.
 
+An entry whose camera is on in Frigate also has **Reference picture** on its row, while Frigate answers; see [Take a reference picture](#take-a-reference-picture).
+
 A Frigate camera that no entry is paired with shows its **Frigate detection**, and **Database capture: off**.
 
 ### What needs attention
@@ -89,6 +91,76 @@ Records already saved keep the old name. They can't be renamed here, because rew
 
 An entry whose Frigate camera is gone, because you deleted the camera or renamed it and pointed no entry at the new name, has **Remove**. Choose it and confirm. The entry's settings are removed from `config.yml`, and Node-RED ends the camera's deployment. Records already saved are kept. The same button removes an entry that repeats another entry's Frigate camera.
 
+## Take a reference picture
+
+**Reference picture** gives you one zip for a tool that places recorded paths on a street: a still picture of what the camera sees, the same view with its zones marked, and the zones' shapes and sizes. Both pictures are the size of Frigate's detect frame, so paths and boxes recorded as fractions of that frame line up with them.
+
+| File               | What it holds                                                                                                           |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `<name>_clean.jpg` | The camera's current frame from Frigate, with nothing drawn on it                                                       |
+| `<name>_zones.jpg` | The same view a moment later, drawn by Frigate with the outline of each zone that is on, in the zone's colour           |
+| `<name>.json`      | The data file: the place, the camera, when the pictures were taken, and every zone; see [The data file](#the-data-file) |
+| `<name>_zones.svg` | A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it           |
+
+The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name (the one in bold on its row), and when the clean picture was taken, in UTC.
+
+1. On the camera's row, choose **Reference picture**. The dialog says what the picture gives away before any picture is taken.
+1. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows both pictures and the camera's zones with their colours and side lengths.
+1. Look at both pictures. The device doesn't check them for people, so this is up to you. If anyone is in them, wait, and choose **Take again**.
+1. Leave **Include this place's exact location** ticked to put the place's location in the data file, or clear it.
+1. Choose **Save the zip**.
+
+On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as **Download diagnostics**. Like it, the zip saves from a browser, on a computer or on the phone after the steps under [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones).
+
+### What the picture gives away
+
+The dialog opens with this note:
+
+> This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. The device doesn't check the pictures for people. You are responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
+
+- The location in the data file is the place's exact location, as set on the [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md), not the rounded one the database keeps. When the place in use has no location, the box is greyed and the data file holds none.
+- The device holds the pictures in memory for 10 minutes, for the administrator who took them, and never saves them. Closing the dialog, taking them again, or restarting the control app drops them sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads.
+- The audit log records each picture taken and each zip saved, with the camera's name and whether the location was included, never the location itself.
+
+### When it can't take the pictures
+
+- **This camera is turned off in Frigate.** Turn it on in Frigate first.
+- **Frigate has no live picture from this camera right now.** The camera isn't sending, or Frigate has only an older frame. Check the camera on the [Status page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-status-page), then try again.
+- **These pictures are no longer held on the device.** Ten minutes have passed, you took another picture, or the control app restarted. Take them again.
+
+### The two drawings
+
+The zones picture is Frigate's own drawing: outlines only, of the zones that are on, with no names. The SVG is the control app's, drawn on the clean picture from the data file. It outlines each zone that is on in its colour and names it, and letters the corners of each zone with side lengths (or, when no zone has any, of each zone with four corners). Its legend lists every zone, with its side lengths, or **off in Frigate, not drawn**, or **no outline** for a zone with fewer than three corners.
+
+### The data file
+
+| Field                                        | What it holds                                                                                                              |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `format`, `format_version`                   | `traffic-monitor-reference` and `1`                                                                                        |
+| `survey_id`                                  | The ID of the place in use, or `null`                                                                                      |
+| `camera`                                     | The camera's name (the one in bold on its row)                                                                             |
+| `deployment_id`                              | The camera's open deployment at the place, or `null`                                                                       |
+| `location`                                   | `{"lat": …, "lon": …}`, the place's exact location, or `null` when the box was cleared or there was no location to include |
+| `pictures`                                   | Each file's name, and for the two pictures `taken_at`, in UTC, such as `2026-11-18T18:30:05Z`                              |
+| `traffic_monitor_version`, `frigate_version` | The versions running when the pictures were taken                                                                          |
+| `detect`                                     | The `width` and `height` of Frigate's detect frame in pixels, which is the pictures' size                                  |
+| `distance_unit`                              | The unit of the zones' side lengths: `ft` when Frigate's interface is set to imperial units, else `m`                      |
+| `zones`                                      | Every zone of the camera, in Frigate's order, with the fields below                                                        |
+
+| Zone field                                                | What it holds                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`                                                     | The zone's ID                                                                                                                                                                                                                                                                                   |
+| `color`                                                   | The colour Frigate draws the zone in, as `#rrggbb`, or `null`                                                                                                                                                                                                                                   |
+| `enabled`                                                 | Whether the zone is on in Frigate                                                                                                                                                                                                                                                               |
+| `drawn`                                                   | Whether the zone is outlined in the pictures: it's on and has at least three corners                                                                                                                                                                                                            |
+| `corners`                                                 | Each corner's `letter` (A, B, C, and on, in the order Frigate stores the corners) and its `x` and `y` as fractions of the frame's width and height, from the top-left corner, even where Frigate's configuration holds the zone in pixels. A corner past the frame's edge is below 0 or above 1 |
+| `distances`                                               | The side lengths entered in Frigate for speed estimation, in Frigate's order, or `[]`                                                                                                                                                                                                           |
+| `sides`                                                   | The same lengths by side, in the order Frigate stores the corners, such as `{"start": "A", "end": "B", "length": 12}`; the last side ends at A. `[]` unless there is one length for each corner                                                                                                 |
+| `inertia`, `loitering_time`, `speed_threshold`, `objects` | The zone's settings in Frigate                                                                                                                                                                                                                                                                  |
+| `filters`                                                 | For each object with filters in the zone, the ones that are numbers among `min_area`, `max_area`, `min_ratio`, `max_ratio`, `threshold`, and `min_score`. Any other filter is left out                                                                                                          |
+
+The names you typed for zones in Frigate's editor and the place's description are never in the data file or the drawing. Frigate's name for the camera isn't either, unless the camera's entry uses it as its own name, as the installer's `picam_h265` does: then it's in the files' names, the data file, and the drawing. To keep it out, [use a neutral camera name](#use-a-neutral-camera-name) first.
+
 ## Zone names are saved with your data
 
 A zone's ID is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Frigate makes the ID from the name you type in its zone editor, in lower case with `_` for spaces, so `1420 Oak St` is saved as `1420_oak_st`. Name zones for what they are, such as a compass direction (`zone_north`) or a lane (`zone_lane_bus`), not for a street, a house number, or a person.
@@ -109,6 +181,7 @@ The Traffic Monitor keeps Frigate's name out of what it saves and shares. These 
 - **Frigate's own database, and its recordings and snapshots.** Frigate keeps events under its own camera names.
 - **Frigate's `frigate/events` messages** on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md). Anything subscribed to the broker sees them. Frigate publishes them, not the Traffic Monitor.
 - **Frigate+.** The name identifies the camera for the scene conditions and annotations you submit.
+- **A reference picture of an entry named for its Frigate camera.** The files' names, the data file, and the drawing carry the entry's name, which is then Frigate's name too. See [Take a reference picture](#take-a-reference-picture).
 - **Records saved before a switch.** A device whose entry was named by hand has saved that name with its records, and keeps it there after you [use a neutral camera name](#use-a-neutral-camera-name).
 
 The Status page shows Frigate's camera names to anyone who is logged in, as Frigate does. The [diagnostics file](https://docs.trafficmonitor.ai/dev/use/device-health/#download-diagnostics) replaces them before you send it to someone; that section lists its limits.
