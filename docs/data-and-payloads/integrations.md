@@ -73,7 +73,7 @@ The device can upload its data to a [ThingsBoard](https://thingsboard.io/) serve
 
 Once connected, the device sends over ThingsBoard's HTTP API:
 
-* Each [event](events-payload.md) as telemetry, with `ts` set to the event's `frame_time` in milliseconds and `values` holding every column of the event.
+* Each [event](events-payload.md) as telemetry, with `ts` set to the event's `frame_time` in milliseconds and `values.event` holding the event's columns that are on the list of what is shared, [`upload-lists.json`](https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/data/upload-lists.json). A column that isn't on the list stays on the device.
 * Each [radar](radar-payload.md) and [air quality](air-quality-aq-payload.md) reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.
 * The device's system metrics as telemetry, every five minutes.
 * The deployment location and radar information as device attributes.

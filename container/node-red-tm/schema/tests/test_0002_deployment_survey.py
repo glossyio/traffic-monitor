@@ -1,6 +1,6 @@
 """0002 on synthetic rows: ids per place before rounding, rounding to two decimals, NULL pairs, and the legacy shape."""
 import sqlite3
-from helpers import SCHEMA_DIR, LEGACY_SCHEMA, create_db, migrate, query, user_version, columns
+from helpers import LATEST_VERSION, SCHEMA_DIR, LEGACY_SCHEMA, create_db, migrate, query, user_version, columns
 
 BASELINE = (SCHEMA_DIR / "migrations" / "0001_baseline.sql").read_text()
 ROWS = [  # id, start, end, lat, lon, bearing, sensorType, sensorName
@@ -23,7 +23,7 @@ def v1_db(path):
 def test_0002_adds_columns_index_and_version(db_path):
     v1_db(db_path)
     assert migrate("--db", db_path) == 0
-    assert user_version(db_path) == 2
+    assert user_version(db_path) == LATEST_VERSION
     assert columns(db_path, "deployment")[-2:] == ["survey_id", "location_precision"]
     assert query(db_path, "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'index_events_deployment_id'")
 
@@ -68,7 +68,7 @@ def test_0002_from_a_released_unit_at_version_0_backs_up_as_v0(db_path):
                     " VALUES (?, ?, ?, ?, ?, ?, ?, ?)", ROWS[:2])
     con.commit(); con.close()
     assert migrate("--db", db_path) == 0
-    assert user_version(db_path) == 2
+    assert user_version(db_path) == LATEST_VERSION
     [backup] = (db_path.parent / "backup").glob("tmdb-v0-*.sqlite")
     assert not list((db_path.parent / "backup").glob("tmdb-v1-*.sqlite"))
     assert query(backup, "SELECT id, lat, lon FROM deployment ORDER BY id") == [
@@ -85,7 +85,7 @@ def test_0002_applies_to_the_legacy_deployment_shape(db_path, capsys):
     con.execute("INSERT INTO deployment (id, lat, lon) VALUES ('old-d', 45.52252, -122.69120)")
     con.commit(); con.close()
     assert migrate("--db", db_path) == 0
-    assert user_version(db_path) == 2
+    assert user_version(db_path) == LATEST_VERSION
     assert query(db_path, "SELECT lat, lon, location_precision, survey_id IS NOT NULL FROM deployment") == [
         (45.52, -122.69, 2, 1)]
     out = capsys.readouterr()

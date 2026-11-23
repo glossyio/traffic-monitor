@@ -2,9 +2,11 @@
 
 import json
 import re
+import sqlite3
 import subprocess
 import textwrap
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -288,7 +290,10 @@ for (const step of input.steps) {
         // Node-RED logs an error a function throws, with the msg, for the catch nodes
         logged.push(["error", String(err.message), true]);
     }
-    results.push({ result: result === undefined ? null : result, logged });
+    // a key whose value is undefined vanishes in JSON, so the payload's keys are reported on their own
+    const payload = result == null ? undefined : result.payload;
+    const keys = payload !== null && typeof payload === "object" && !Array.isArray(payload) ? Object.keys(payload) : null;
+    results.push({ result: result === undefined ? null : result, logged, keys });
 }
 // Ends the process itself once the output is written: a function's pending timer (the exact-copy list's ten
 // minutes) must not hold a test for as long as the timer.
@@ -2150,15 +2155,15 @@ def test_the_frigate_summary_chart_is_empty_with_no_camera_selected():
 
 
 def test_every_node_that_asks_frigate_for_a_camera_by_name_maps_the_key_back():
-    """Nodes that call Frigate's API (frigate:5000): version, events/summary, and the thumbnail and snapshot of an
-    event id. None puts a camera name in its URL. Frigate's summary lists every camera
+    """Nodes that call Frigate's API (frigate:5000): version, events/summary, config (for the frigate facts), and the
+    thumbnail and snapshot of an event id. None puts a camera name in its URL. Frigate's summary lists every camera
     by Frigate's name, and the one node that picks a camera out of it is "structure frigate api/summary"
     (eb140f61419c6a08), which compares with flow.camera_selection (a key). Every function that reads
     camera_selection and isn't a query of tmdb (which stores the key) must map the key back through
     frigate_cameras."""
     flows = json.loads(FLOWS.read_text())
     calls = [node for node in flows if "frigate:5000" in (node.get("url") or "")]
-    assert len(calls) == 4 and not [node["id"] for node in calls if "camera" in node["url"]]
+    assert len(calls) == 5 and not [node["id"] for node in calls if "camera" in node["url"]]
     selects = [node["id"] for node in flows
                if "camera_selection" in (node.get("func") or "") and "SELECT" not in node["func"]]
     assert selects == [SUMMARY]
@@ -2278,6 +2283,21 @@ GATE_THINGSBOARD = {"host": "tb.example.invalid", "url": "https://tb.example.inv
 GATE_ADDED = {"consents", "exact_location", "public_map"}
 CONSENTS_OFF = {"share_data": True, "exact_location": False, "public_map": "none", "notice_version": None,
                 "target": None}
+UPLOAD_LISTS = FLOWS.parent / "upload-lists.json"
+EVENT_COLUMNS = [
+    "id", "camera", "label", "sub_label", "top_score", "frame_time", "start_time", "end_time", "entered_zones",
+    "score", "area", "ratio", "motionless_count", "position_changes", "attributes", "direction_calc", "speed_calc",
+    "provenance", "deployment_id", "radarName", "path_data", "box", "best_box", "best_frame_time", "frigate_speed",
+    "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
+]
+KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
+LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
+
+
+def upload_lists():
+    return json.loads(UPLOAD_LISTS.read_text())
+
+
 TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
             "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
@@ -2335,18 +2355,24 @@ def gate_node():
     return named(json.loads(FLOWS.read_text()), "upload gate")
 
 
-def gate_run(msgs, sharing=None, thingsboard=None, deployment=None):
-    """Run the upload gate on each message in turn, with this config; returns the run (results, global)."""
+def gate_run(msgs, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
+    """Run the upload gate on each message in turn, with this config and the upload lists (upload-lists.json unless
+    given; none at all for None); returns the run (results, global)."""
     config = {"sharing": SHARING_OFF if sharing is None else sharing,
               "thingsboard": {"enabled": True, **(GATE_THINGSBOARD if thingsboard is None else thingsboard)},
               "deployment": GATE_PLACE if deployment is None else deployment}
+    context = {"config": config, "tm_warned": {}}
+    if lists is MISSING:
+        context["upload_lists"] = upload_lists()
+    elif lists is not None:
+        context["upload_lists"] = lists
     gate = gate_node()
-    return run_functions([(gate, msg) for msg in msgs], context={"config": config, "tm_warned": {}})
+    return run_functions([(gate, msg) for msg in msgs], context=context)
 
 
-def gate(msg, sharing=None, thingsboard=None, deployment=None):
+def gate(msg, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
     """The upload gate's output for one message (None when it sends nothing), and its log."""
-    [step] = gate_run([msg], sharing, thingsboard, deployment)["results"]
+    [step] = gate_run([msg], sharing, thingsboard, deployment, lists)["results"]
     return step["result"], step["logged"]
 
 
@@ -2692,11 +2718,62 @@ def test_everything_uploaded_passes_the_gate():
     assert {node["id"] for node in nodes if node["type"] == "http request"} == {UPLOAD_REQUEST}
 
 
-def test_gate_lists():
+def test_upload_lists_file():
+    lists = upload_lists()
+    assert list(lists) == ["telemetry", "attributes", "event"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments"]
+    assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
+                                   "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
+                                   "sysinfo_frigateVersion"]
+    assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert all(len(names) == len(set(names)) for names in lists.values())
+    # one name per line, so two changes that each add a field merge without touching the same line
+    assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
+
+
+def test_the_gate_holds_no_list_of_its_own():
     func = gate_node()["func"]
-    assert 'const TELEMETRY = ["event", "radar", "airquality", "system_metrics", "deployments"];' in func
-    assert ('const ATTRIBUTES = ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname", '
-            '"sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName", "sysinfo_frigateVersion"];') in func
+    assert 'global.get("upload_lists")' in func
+    assert "const TELEMETRY" not in func and "const ATTRIBUTES" not in func and '"sysinfo_tmVersion"' not in func
+
+
+@needs_node
+@pytest.mark.parametrize("lists", [
+    None, {}, [], "event", {"telemetry": ["event"], "attributes": []},
+    {"telemetry": "event", "attributes": [], "event": []},
+    {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
+], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text"])
+def test_gate_sends_nothing_without_readable_lists(lists):
+    msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
+            {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
+    run = gate_run(msgs, lists=lists)
+    assert [step["result"] for step in run["results"]] == [None, None]
+    assert [entry for step in run["results"] for entry in step["logged"]] == [["warn", LISTS_WARNING, False]]
+    assert run["global"]["tm_warned"] == {"upload:lists": True}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_event_fields():
+    event = {**GATE_TELEMETRY["event"], "surprise": "kept-on-the-unit"}
+    item = {"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}}
+    run = gate_run([item, item])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["ThingsBoard upload: left out event.surprise, which isn't on the list of what is shared."]
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+    assert run["global"]["tm_warned"] == {"upload:event.surprise": True}
+
+
+@needs_node
+@pytest.mark.parametrize("event", ["text", ["id"], None, 7, {"surprise": 1}],
+                         ids=["text", "list", "null", "number", "no-listed-field"])
+def test_gate_leaves_out_an_event_it_cannot_read(event):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event, "radar": radar}}})
+    assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"event": event}}})
+    assert out is None
 
 
 def record_node():
@@ -2802,6 +2879,729 @@ def test_upload_result_wiring():
     func = record["func"]
     for forbidden in ("msg.payload", "msg.url", "msg.headers", "error.message", "node.warn", "node.error", "node.log"):
         assert forbidden not in func, forbidden
+
+
+FINALIZE = "a8aeffd2e5bc17f2"  # capture-events: event finalize output
+EVENT_PARAMS = "a96d834e3571c549"  # capture-events: write params for events insert
+EVENT_INSERT = "61d6a19c99c60e0b"  # capture-events: tmdb.events, Prepared Statement
+JSON_COLUMNS = {"entered_zones", "attributes", "provenance", "path_data", "box", "best_box"}
+SCHEMA_SQL = FLOWS.parents[1] / "schema" / "schema.sql"
+EVENT = {
+    "id": "1761800000.123456-abc123", "camera": "camera_1_3fa9c2", "label": "car", "sub_label": None,
+    "top_score": 0.91, "frame_time": 1761800004.2, "start_time": 1761800000.1, "end_time": 1761800004.3,
+    "entered_zones": ["zone_near", "zone_far"], "score": 0.88, "area": 57600, "ratio": 1.78, "motionless_count": 0,
+    "position_changes": 3, "attributes": {}, "deployment_id": "1761800000000-0a1b2c3d-d",
+}
+
+
+def finalize_msg(direction=None, speed=None, readings=None, radar="TM_RADAR_SERIAL_PORT_00", fields=MISSING,
+                 source=MISSING):
+    """The message "event finalize output" gets: the event under its camera's key, and what the speed nodes found."""
+    found = {"status_radarMatch": speed is not None, "calc_event_direction": direction, "calc_event_speed": speed,
+             "calc_radar_readings": readings}
+    if source is not MISSING:
+        found["calc_direction_source"] = source
+    msg = {"frigate_event": {**EVENT, **({"radarName": radar} if radar else {})}, "radarEnabled": radar is not None,
+           "payload": found, "event_direction_speed": found}
+    if fields is not MISSING:
+        msg["frigate_fields"] = fields
+    return msg
+
+
+def event_keys():
+    [step] = run_functions([(node_by_id(FINALIZE), finalize_msg("inbound", 22.5, 7))])["results"]
+    return step["keys"]
+
+
+def event_insert():
+    """The INSERT's columns and the parameter each one takes."""
+    match = re.fullmatch(r"\s*INSERT INTO events \(([^)]*)\)\s*VALUES \((.*)\);\s*", node_by_id(EVENT_INSERT)["sql"],
+                         re.DOTALL)
+    return ([name.strip() for name in match[1].split(",")], [value.strip() for value in match[2].split(",")])
+
+
+@needs_node
+def test_event_fields_agree():
+    """One list of event fields, in one order: what finalize builds, what the INSERT names, what its parameters are,
+    what the table has, and (less what is kept on the unit) what the upload gate lets through."""
+    assert event_keys() == EVENT_COLUMNS
+    names, values = event_insert()
+    assert names == EVENT_COLUMNS
+    assert all(value in (f"${name}", f"json(${name})") for name, value in zip(names, values, strict=True))
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": {name: None for name in EVENT_COLUMNS}})])["results"]
+    assert list(step["result"]["params"]) == [f"${name}" for name in EVENT_COLUMNS]
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    assert {row[1] for row in con.execute("PRAGMA table_info(events)")} >= set(EVENT_COLUMNS)
+    assert upload_lists()["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+
+
+@needs_node
+def test_event_params_bind_only_the_columns():
+    payload = {**EVENT, "direction_calc": "inbound", "provenance": ["frigate"], "surprise": "no column"}
+    del payload["sub_label"]
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert "$surprise" not in params and len(params) == len(EVENT_COLUMNS)
+    assert params["$sub_label"] is None and params["$speed_calc"] is None and params["$radarName"] is None
+    assert params["$entered_zones"] == '["zone_near","zone_far"]'
+    assert params["$attributes"] == "{}" and params["$provenance"] == '["frigate"]'
+    assert params["$top_score"] == 0.91 and params["$motionless_count"] == 0
+    assert step["result"]["payload"]["entered_zones"] == ["zone_near", "zone_far"]  # the payload isn't changed
+
+
+@needs_node
+@pytest.mark.parametrize("column", sorted(JSON_COLUMNS))
+@pytest.mark.parametrize("absent", [True, False], ids=["absent", "null"])
+def test_event_params_keep_a_missing_json_column_empty(column, absent):
+    """Today an absent one becomes the text "undefined", which json() refuses, so the row is lost, and a null one
+    becomes the text "null"."""
+    payload = {name: None for name in EVENT_COLUMNS if not (absent and name == column)}
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    assert step["result"]["params"][f"${column}"] is None
+
+
+SET_FRIGATE_EVENT = "76911cc7f28e7da2"  # capture-events: set frigate_event from payload.after
+VETTED = ["amazon", "an_post", "canada_post", "dhl", "dpd", "fedex", "gls", "nzpost", "postnl", "postnord",
+          "purolator", "royal_mail", "ups", "usps"]
+
+
+def vet(sub_label):
+    after = {"camera": "oak_ave_wide", "id": "1.0-abc", "sub_label": sub_label}
+    msg = {"frigate_event": dict(after), "payload": {"type": "end", "before": dict(after), "after": dict(after)}}
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "vet sub_label"), msg)])["results"]
+    return step
+
+
+@needs_node
+@pytest.mark.parametrize("given, kept", [
+    (["amazon", 0.91], "amazon"), ("ups", "ups"), (["royal_mail", 0.5], "royal_mail"),
+    (["Jane Doe", 0.97], None), ("ABC123", None), (["Amazon", 0.9], None), (["amazon ", 0.9], None),
+    (["my_custom_class", 0.8], None), (None, None), ([], None), ([["amazon"], 0.9], None),
+    ({"text": "amazon"}, None), (42, None), ("", None),
+])
+def test_only_a_vetted_sub_label_is_kept(given, kept):
+    step = vet(given)
+    result = step["result"]
+    assert result["frigate_event"]["sub_label"] == kept
+    assert result["payload"]["after"]["sub_label"] == kept and result["payload"]["before"]["sub_label"] == kept
+    assert step["logged"] == []
+    if kept is None and given:
+        assert "Jane Doe" not in json.dumps(step) and "ABC123" not in json.dumps(step)
+
+
+@needs_node
+def test_vetting_survives_a_message_without_before_or_after():
+    node = named(json.loads(FLOWS.read_text()), "vet sub_label")
+    for payload in ({}, {"before": None, "after": None}, "text", None):
+        [step] = run_functions([(node, {"frigate_event": {"sub_label": ["Jane Doe", 0.9]}, "payload": payload})])["results"]
+        assert step["result"]["frigate_event"]["sub_label"] is None
+
+
+def test_the_vetted_list_is_frigates_logo_labels():
+    func = named(json.loads(FLOWS.read_text()), "vet sub_label")["func"]
+    assert "const VETTED = " + json.dumps(VETTED) + ";" in func
+
+
+def test_every_event_is_vetted_before_any_other_node_reads_it():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    vetting = named(flows, "vet sub_label")
+    assert by_id[SET_FRIGATE_EVENT]["wires"] == [[vetting["id"]]]
+    assert (vetting["type"], vetting["outputs"], vetting["z"]) == ("function", 1, tab_id(flows, "capture-events"))
+    assert [node["id"] for node in flows if vetting["id"] in sum(node.get("wires", []), [])] == [SET_FRIGATE_EVENT]
+    assert APPEND_CONFIG in {node["id"] for node in reachable(by_id, [vetting["id"]])}
+
+
+FRIGATE_CONFIG = {
+    "ui": {"unit_system": "imperial", "timezone": None},
+    "cameras": {
+        "oak_ave_wide": {"detect": {"width": 1280, "height": 720, "fps": 10}, "zones": {}},
+        "side_gate": {"detect": {"width": 1920, "height": 1080}},
+        "no_size": {"detect": {"width": 0, "height": None}},
+        "text_size": {"detect": {"width": "1280", "height": "720"}},
+        "odd": "text",
+    },
+}
+FACTS = {"unit_system": "imperial", "detect": {"oak_ave_wide": {"width": 1280, "height": 720},
+                                                "side_gate": {"width": 1920, "height": 1080}}}
+
+
+def keep_facts(msg, flow=None):
+    node = named(json.loads(FLOWS.read_text()), "keep frigate facts")
+    run = run_functions([(node, msg)], flow={} if flow is None else flow)
+    return run["results"][0], run["flow"]
+
+
+@needs_node
+@pytest.mark.parametrize("tries", [None, 5], ids=["first-read", "a-later-try"])
+def test_frigate_facts_are_kept(tries):
+    msg = {"statusCode": 200, "payload": FRIGATE_CONFIG}
+    if tries is not None:
+        msg["tries"] = tries
+    step, flow = keep_facts(msg)
+    assert flow == {"frigate_facts": FACTS}
+    assert step["result"] is None and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("ui, expected", [
+    ({"unit_system": "metric"}, "metric"), ({"unit_system": "imperial"}, "imperial"), ({"unit_system": "Metric"}, None),
+    ({"unit_system": None}, None), ({}, None), (None, None), ("metric", None),
+])
+def test_the_unit_system_is_one_of_frigates_two_or_unknown(ui, expected):
+    _, flow = keep_facts({"statusCode": 200, "payload": {**FRIGATE_CONFIG, "ui": ui}})
+    assert flow["frigate_facts"]["unit_system"] == expected
+
+
+UNREADABLE_ANSWERS = [
+    {"statusCode": 500, "payload": FRIGATE_CONFIG}, {"statusCode": 200, "payload": "<html>"},
+    {"statusCode": 200, "payload": None}, {"statusCode": 200, "payload": []}, {"payload": FRIGATE_CONFIG},
+    {"statusCode": 200, "payload": {"ui": {"unit_system": "metric"}}},
+    {"statusCode": "ECONNREFUSED", "payload": "Error: connect ECONNREFUSED : http://frigate:5000/api/config"},
+]
+UNREADABLE_IDS = ["error", "text", "null", "list", "no-status", "no-cameras", "refused"]
+
+
+@needs_node
+@pytest.mark.parametrize("msg", UNREADABLE_ANSWERS, ids=UNREADABLE_IDS)
+def test_an_answer_that_cannot_be_read_keeps_the_last_facts(msg):
+    """With facts in hand a failed read asks nothing more: the ten-minute read comes round."""
+    before = {"frigate_facts": {"unit_system": "metric", "detect": {"oak_ave_wide": {"width": 640, "height": 360}}}}
+    step, flow = keep_facts({**msg, "tries": 3}, flow=json.loads(json.dumps(before)))
+    assert flow == before and step["result"] is None and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("msg", UNREADABLE_ANSWERS, ids=UNREADABLE_IDS)
+def test_without_facts_an_answer_that_cannot_be_read_asks_again(msg):
+    """Frigate says it is online before its API listens, so the read that follows fails; it is tried again.
+
+    The retry is a new message holding only its count: the failed one carries the answer's headers, which the request
+    node would send back to Frigate as request headers.
+    """
+    answer = {**msg, "headers": {"content-type": "text/html", "server": "nginx"}, "responseUrl": "x", "_msgid": "a1"}
+    step, flow = keep_facts(answer)
+    assert step["result"] == [None, {"tries": 1}]
+    assert flow == {} and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("tries, expected", [
+    (1, 2), (2, 3), (19, 20), (0, 1), (None, 1), ("3", 1), (2.5, 1), (-1, 1), ([4], 1),
+], ids=["1", "2", "19", "0", "null", "text", "fraction", "negative", "list"])
+def test_each_try_counts_up_in_a_new_message(tries, expected):
+    step, _ = keep_facts({"statusCode": 500, "payload": "<html>", "headers": {"server": "nginx"}, "tries": tries})
+    assert step["result"] == [None, {"tries": expected}]
+
+
+@needs_node
+@pytest.mark.parametrize("tries", [20, 21])
+def test_it_stops_asking_after_twenty_tries(tries):
+    """Node-RED's request node logs each failed try, so the tries are bounded."""
+    step, flow = keep_facts({"statusCode": 500, "payload": "<html>", "tries": tries})
+    assert step["result"] is None and flow == {} and step["logged"] == []
+
+
+def forget_facts(payload, flow):
+    node = named(json.loads(FLOWS.read_text()), "forget frigate facts")
+    run = run_functions([(node, {"topic": "frigate/available", "payload": payload, "retain": True})], flow=flow)
+    return run["results"][0], run["flow"]
+
+
+@needs_node
+@pytest.mark.parametrize("payload", ["stopped", "offline", "restarting", ""])
+def test_frigate_going_away_forgets_the_facts(payload):
+    """A box or a unit from before Frigate restarts is never applied after it: a new detect size may come with it."""
+    step, flow = forget_facts(payload, {"frigate_facts": json.loads(json.dumps(FACTS)), "other": 1})
+    assert flow == {"other": 1}
+    assert step["result"] is None and step["logged"] == []
+
+
+@needs_node
+def test_after_forgetting_the_next_failed_read_asks_again():
+    flows = json.loads(FLOWS.read_text())
+    forget, keep = named(flows, "forget frigate facts"), named(flows, "keep frigate facts")
+    run = run_functions([(forget, {"payload": "offline"}), (keep, {"statusCode": 500, "payload": "<html>"})],
+                        flow={"frigate_facts": json.loads(json.dumps(FACTS))})
+    assert [step["result"] for step in run["results"]] == [None, [None, {"tries": 1}]]
+    assert run["flow"] == {}
+
+
+def test_frigate_facts_are_read_at_start_when_frigate_comes_back_and_every_ten_minutes():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    keep = named(flows, "keep frigate facts")
+    forget = named(flows, "forget frigate facts")
+    [request] = [node for node in flows if node["type"] == "http request" and keep["id"] in sum(node["wires"], [])]
+    assert (request["method"], request["url"], request["ret"]) == ("GET", "http://frigate:5000/api/config", "obj")
+    sources = [node for node in flows if request["id"] in sum(node.get("wires", []), [])]
+    assert sorted(node["type"] for node in sources) == ["delay", "inject", "switch"]
+    inject = next(node for node in sources if node["type"] == "inject")
+    assert (inject["once"], str(inject["onceDelay"]), str(inject["repeat"])) == (True, "10", "600")
+    switch = next(node for node in sources if node["type"] == "switch")
+    assert (switch["property"], switch["rules"]) == ("payload", [{"t": "eq", "v": "online", "vt": "str"},
+                                                                 {"t": "else"}])
+    assert (switch["outputs"], switch["wires"]) == (2, [[request["id"]], [forget["id"]]])
+    [available] = [node for node in flows if switch["id"] in sum(node.get("wires", []), [])]
+    assert (available["type"], available["topic"], available["broker"]) == ("mqtt in", "frigate/available",
+                                                                           "a5d65dd0e3566daa")
+    delay = next(node for node in sources if node["type"] == "delay")
+    assert (delay["pauseType"], str(delay["timeout"]), delay["timeoutUnits"]) == ("delay", "15", "seconds")
+    assert (keep["outputs"], keep["wires"]) == (2, [[], [delay["id"]]])
+    assert [node["id"] for node in flows if delay["id"] in sum(node.get("wires", []), [])] == [keep["id"]]
+    assert (forget["type"], forget["outputs"], forget["wires"]) == ("function", 1, [[]])
+    capture = tab_id(flows, "capture-events")
+    nodes = (keep, request, inject, switch, available, delay, forget)
+    assert {node["z"] for node in nodes} == {capture}
+    group = by_id[keep["g"]]
+    assert group["name"] == "frigate facts" and {node["g"] for node in nodes} == {group["id"]}
+    assert set(group["nodes"]) == {node["id"] for node in nodes}
+    for node in nodes:
+        assert group["x"] < node["x"] < group["x"] + group["w"] and group["y"] < node["y"] < group["y"] + group["h"]
+
+
+AFTER = {
+    "id": "1761800000.123456-abc123", "camera": "oak_ave_wide", "label": "car", "sub_label": None,
+    "frame_time": 1761800004.2, "start_time": 1761800000.1, "end_time": 1761800004.3,
+    "box": [960, 360, 1280, 540], "snapshot": {"frame_time": 1761800002.1, "box": [320, 180, 640, 360], "score": 0.9},
+    "average_estimated_speed": 38.6, "velocity_angle": 172.4, "entered_zones": ["zone_near", "zone_far"],
+    "path_data": [[[0.25, 0.5], 1761800000.1], [[0.5, 0.52], 1761800002.1], [[0.8751, 0.55], 1761800004.2]],
+}
+METRIC = {"unit_system": "metric", "detect": {"oak_ave_wide": {"width": 1280, "height": 720}}}
+FIELDS = {
+    "path_data": AFTER["path_data"], "box": [0.75, 0.5, 0.25, 0.25], "best_box": [0.25, 0.25, 0.25, 0.25],
+    "best_frame_time": 1761800002.1, "frigate_speed": 38.6, "frigate_speed_unit": "kph",
+    "frigate_velocity_angle": 172.4,
+}
+NO_FIELDS = dict.fromkeys(FIELDS)
+
+
+def frigate_fields(facts=METRIC, **changes):
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    msg = {"frigate_event": {**AFTER, **changes}, "payload": {"type": "end"}}
+    [step] = run_functions([(node, msg)], flow={} if facts is None else {"frigate_facts": facts})["results"]
+    assert step["logged"] == []
+    assert step["result"]["frigate_event"] == msg["frigate_event"]  # the event itself is left alone
+    return step["result"]["frigate_fields"]
+
+
+@needs_node
+def test_frigate_fields_from_an_end_message():
+    fields = frigate_fields()
+    assert fields == FIELDS and list(fields) == list(FIELDS)
+    assert "oak_ave_wide" not in json.dumps(fields)
+
+
+@needs_node
+@pytest.mark.parametrize("facts", [None, {"unit_system": None, "detect": {}},
+                                   {"unit_system": "metric", "detect": {"another_camera": {"width": 1280, "height": 720}}}],
+                         ids=["not-read-yet", "empty", "another-camera"])
+def test_without_the_cameras_facts_there_are_no_boxes(facts):
+    fields = frigate_fields(facts)
+    assert fields["box"] is None and fields["best_box"] is None
+    assert fields["path_data"] == AFTER["path_data"] and fields["best_frame_time"] == 1761800002.1
+    assert fields["frigate_speed"] == 38.6 and fields["frigate_velocity_angle"] == 172.4
+    assert fields["frigate_speed_unit"] == ("kph" if facts and facts["unit_system"] else None)
+
+
+@needs_node
+def test_imperial_is_mph():
+    assert frigate_fields({**METRIC, "unit_system": "imperial"})["frigate_speed_unit"] == "mph"
+
+
+@needs_node
+@pytest.mark.parametrize("speed", [0, 0.0, -3.2, None, "38", MISSING])
+def test_frigates_zero_is_no_estimate(speed):
+    after = dict(AFTER)
+    if speed is MISSING:
+        del after["average_estimated_speed"]
+    else:
+        after["average_estimated_speed"] = speed
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    [step] = run_functions([(node, {"frigate_event": after})], flow={"frigate_facts": METRIC})["results"]
+    fields = step["result"]["frigate_fields"]
+    assert (fields["frigate_speed"], fields["frigate_speed_unit"], fields["frigate_velocity_angle"]) == (None, None, None)
+    assert fields["box"] == FIELDS["box"]
+
+
+@needs_node
+def test_a_long_path_keeps_a_hundred_points_first_and_last():
+    path = [[[round(index / 250, 4), 0.5], 1761800000.0 + index] for index in range(250)]
+    kept = frigate_fields(path_data=path)["path_data"]
+    assert kept == [path[int(index * 249 / 99 + 0.5)] for index in range(100)]
+    assert kept[0] == path[0] and kept[-1] == path[-1]
+    assert frigate_fields(path_data=path[:100])["path_data"] == path[:100]
+    assert len(frigate_fields(path_data=path[:101])["path_data"]) == 100
+
+
+@needs_node
+def test_a_path_holds_numbers_only():
+    good = AFTER["path_data"]
+    mixed = [good[0], [[0.1, 0.2], "t"], ["x"], [[0.1], 1.0], [[None, 0.2], 1.0], {"a": 1}, "Jane Doe", good[1],
+             [[0.1, 0.2, 0.3], 1.0], [[0.1, 0.2], 1.0, 2.0], good[2]]
+    assert frigate_fields(path_data=mixed)["path_data"] == good
+    for path in ("Jane Doe", None, {}, [], [["x"]], 7):
+        assert frigate_fields(path_data=path)["path_data"] is None
+
+
+@needs_node
+@pytest.mark.parametrize("box", [[960, 360, 1280], [960, 360, 1280, "540"], [1280, 360, 960, 540], None, "box",
+                                 [960, 360, 1280, 540, 1], [960, 360, 1280, None]])
+def test_a_box_that_is_not_four_numbers_in_order_is_empty(box):
+    fields = frigate_fields(box=box, snapshot={"frame_time": "soon", "box": box})
+    assert (fields["box"], fields["best_box"], fields["best_frame_time"]) == (None, None, None)
+
+
+@needs_node
+@pytest.mark.parametrize("snapshot", [None, "text", {}, MISSING])
+def test_an_event_without_a_best_frame(snapshot):
+    after = {key: value for key, value in AFTER.items() if key != "snapshot"}
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    event = after if snapshot is MISSING else {**after, "snapshot": snapshot}
+    [step] = run_functions([(node, {"frigate_event": event})], flow={"frigate_facts": METRIC})["results"]
+    fields = step["result"]["frigate_fields"]
+    assert (fields["best_box"], fields["best_frame_time"], fields["box"]) == (None, None, FIELDS["box"])
+
+
+@needs_node
+def test_frigate_fields_survive_an_event_that_is_not_a_mapping():
+    node = named(json.loads(FLOWS.read_text()), "frigate fields")
+    for event in (None, "text", []):
+        [step] = run_functions([(node, {"frigate_event": event})], flow={"frigate_facts": METRIC})["results"]
+        assert step["result"]["frigate_fields"] == NO_FIELDS
+
+
+def test_frigate_fields_are_worked_out_while_frigates_name_is_on_the_event():
+    flows = json.loads(FLOWS.read_text())
+    fields, vetting = named(flows, "frigate fields"), named(flows, "vet sub_label")
+    assert vetting["wires"] == [[fields["id"]]] and fields["wires"] == [[APPEND_CONFIG]]
+    assert [node["id"] for node in flows if APPEND_CONFIG in sum(node.get("wires", []), [])] == [fields["id"]]
+
+
+MEDIAN = "c123fc5ed5e14e8a"  # capture-events: calculate median per direction
+MATCH = "673e45159a2dfccf"  # capture-events: match radar speed to event, assign direction
+DOV_PARAMS = "1acba66197b7b0fa"  # capture-radar: write params for radar_dov insert
+FRIGATE_MESSAGE = {"type": "end", "before": {"id": "1.0-abc"}, "after": {"id": "1.0-abc"}}
+
+
+def match(zone_direction, medians, counts=None, radar=True):
+    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+    msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
+           "radar_reading_counts": counts or {}}
+    [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+    found = step["result"]["payload"]
+    return (found.get("calc_event_direction"), found.get("calc_event_speed"), found["status_radarMatch"],
+            found.get("calc_radar_readings"), found.get("calc_direction_source"))
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, counts, expected", [
+    ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2},
+     ("inbound", 22.5, True, 7, "zones_radar")),
+    ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4, "zones_radar")),
+    ("inbound", {"outbound": -30.0}, {"outbound": 5}, ("inbound", None, False, None, "zones_radar_opposite")),
+    (None, {"outbound": -30.0}, {"outbound": 5}, ("outbound", -30.0, True, 5, "radar")),
+    (None, {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2}, (None, None, False, None, None)),
+    ("outbound", {}, {}, ("outbound", None, False, None, "zones")),
+    (None, {}, {}, (None, None, False, None, None)),
+    ("inbound", {"inbound": 0}, {"inbound": 3}, ("inbound", 0, True, 3, "zones_radar")),
+    (None, {"outbound": 0}, {"outbound": 1}, ("outbound", 0, True, 1, "radar")),
+    ("inbound", {"inbound": 0, "outbound": -30.0}, {"inbound": 3, "outbound": 2}, ("inbound", 0, True, 3, "zones_radar")),
+    # a reading with no direction is grouped under "null" by "calculate median per direction"
+    ("outbound", {"inbound": 22.5, "null": 3.0}, {"inbound": 4, "null": 1},
+     ("outbound", None, False, None, "zones_radar_opposite")),
+], ids=["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
+        "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"])
+def test_direction_and_speed_with_a_radar(zones, medians, counts, expected):
+    assert match(zones, medians, counts) == expected
+
+
+@needs_node
+def test_the_statuses_stay_when_the_radar_saw_only_the_other_direction():
+    event = {"id": "1.0-abc", "calc_zone_direction": "inbound"}
+    found = {}
+    for medians in ({"outbound": -30.0}, {"outbound": -30.0, "null": 3.0}):
+        msg = {"frigate_event": event, "radarEnabled": True, "payload": medians, "radar_reading_counts": {}}
+        [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+        found[len(medians)] = step["result"]["payload"]
+    assert "status_match_event_radar_direction" not in found[1] and found[1]["status_radarMatch"] is False
+    assert found[2]["status_match_event_radar_direction"] == "radar_speed_direction_mismatch"
+
+
+@needs_node
+@pytest.mark.parametrize("zones", ["inbound", "outbound", None])
+def test_a_camera_without_a_radar_gets_its_direction_from_the_zones(zones):
+    assert match(zones, None, radar=False) == (zones, None, False, None, "zones" if zones else None)
+
+
+NO_ZONE = "entered no zone"
+DIRECTION_TABLE = [
+    # zones' direction (or NO_ZONE), radar medians (None: no enabled radar)
+    #   -> direction_calc, direction_source, speed_calc, speed_source; Frigate's speed is 38.6 kph, 23.98 mph
+    ("outbound", {"outbound": -30.0, "inbound": 20.0}, ("outbound", "zones_radar", -30.0, "radar")),
+    ("inbound", {"inbound": 22.5}, ("inbound", "zones_radar", 22.5, "radar")),
+    ("outbound", {"inbound": 22.5}, ("outbound", "zones_radar_opposite", -23.98, "frigate")),
+    ("inbound", {"outbound": -30.0}, ("inbound", "zones_radar_opposite", 23.98, "frigate")),
+    ("outbound", {}, ("outbound", "zones", -23.98, "frigate")),
+    ("inbound", None, ("inbound", "zones", 23.98, "frigate")),
+    ("outbound", None, ("outbound", "zones", -23.98, "frigate")),
+    (None, {"outbound": -30.0}, ("outbound", "radar", -30.0, "radar")),
+    (None, {"inbound": 0}, ("inbound", "radar", 0, "radar")),
+    (None, {"inbound": 22.5, "outbound": -30.0}, (None, None, 23.98, "frigate")),
+    (None, {}, (None, None, 23.98, "frigate")),
+    (None, None, (None, None, 23.98, "frigate")),
+    (NO_ZONE, None, (None, None, 23.98, "frigate")),
+]
+DIRECTION_IDS = ["zones-radar-of-two", "zones-radar", "opposite-outbound", "opposite-inbound", "zones-radar-none",
+                 "zones-no-radar-inbound", "zones-no-radar-outbound", "radar", "radar-zero", "no-direction-two",
+                 "no-direction-none", "no-direction-no-radar", "no-zone"]
+
+
+def direction_and_speed(zones, medians):
+    """The match node (or, for an object that entered no zone, the skip node), then "event finalize output"."""
+    radar = medians is not None
+    event = {**EVENT, **({"radarName": "TM_RADAR_SERIAL_PORT_00"} if radar else {}),
+             **({"calc_zone_direction": zones} if zones not in (None, NO_ZONE) else {})}
+    msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
+           "radar_reading_counts": {direction: 3 for direction in (medians or {})}}
+    node = named(json.loads(FLOWS.read_text()), "skip camera direction calc AND radar lookup") if zones == NO_ZONE \
+        else node_by_id(MATCH)
+    [step] = run_functions([(node, msg)])["results"]
+    found = step["result"]["payload"]
+    payload, step, _ = finalize({**step["result"], "event_direction_speed": found, "frigate_fields": FIELDS})
+    assert step["logged"] == []
+    return payload
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, expected", DIRECTION_TABLE, ids=DIRECTION_IDS)
+def test_direction_source_says_how_the_direction_was_decided(zones, medians, expected):
+    payload = direction_and_speed(zones, medians)
+    assert (payload["direction_calc"], payload["direction_source"], payload["speed_calc"],
+            payload["speed_source"]) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, expected", DIRECTION_TABLE, ids=DIRECTION_IDS)
+def test_speed_calc_is_negative_only_when_the_direction_is_outbound(zones, medians, expected):
+    """One rule for every event: a negative speed_calc means outbound, and without a direction the speed is
+    Frigate's, positive, and its sign says nothing."""
+    payload = direction_and_speed(zones, medians)
+    speed, direction = payload["speed_calc"], payload["direction_calc"]
+    if speed:
+        assert (speed < 0) == (direction == "outbound")
+    if direction is None:
+        assert payload["speed_source"] in (None, "frigate") and (speed is None or speed >= 0)
+    if payload["speed_source"] == "radar":
+        assert direction is not None
+
+
+@needs_node
+def test_medians_come_with_the_number_of_readings():
+    rows = [{"direction": "inbound", "velocity": value, "unit": "mph"} for value in (21.0, 22.0, 26.0)]
+    rows += [{"direction": "outbound", "velocity": value, "unit": "mph"} for value in (-30.0, -32.0)]
+    [step] = run_functions([(node_by_id(MEDIAN), {"payload": rows})])["results"]
+    assert step["result"]["payload"] == {"inbound": 22.0, "outbound": -31.0}
+    assert step["result"]["radar_reading_counts"] == {"inbound": 3, "outbound": 2}
+    [step] = run_functions([(node_by_id(MEDIAN), {"payload": []})])["results"]
+    assert step["result"]["payload"] == {} and step["result"]["radar_reading_counts"] == {}
+
+
+@needs_node
+def test_the_last_unit_each_radar_reported_is_remembered():
+    reading = {"time": 1761800000.5, "unit": "mph", "direction": "inbound", "DetectedObjectVelocity": 21.3,
+               "radarName": "TM_RADAR_SERIAL_PORT_00", "deployment_id": "1761800000000-0a1b2c3d-d"}
+    other = {**reading, "radarName": "TM_RADAR_SERIAL_PORT_01", "unit": "kmph"}
+    no_unit = {key: value for key, value in reading.items() if key != "unit"}
+    node = node_by_id(DOV_PARAMS)
+    run = run_functions([(node, {"payload": dict(reading)}), (node, {"payload": other}), (node, {"payload": no_unit})])
+    assert run["global"]["radar_units"] == {"TM_RADAR_SERIAL_PORT_00": "mph", "TM_RADAR_SERIAL_PORT_01": "kmph"}
+    assert run["results"][0]["result"]["params"] == {
+        "$time": 1761800000.5, "$unit": "mph", "$direction": "inbound", "$velocity": 21.3,
+        "$radarName": "TM_RADAR_SERIAL_PORT_00", "$deployment_id": "1761800000000-0a1b2c3d-d"}
+
+
+RADARS_ON = {"TM_RADAR_SERIAL_PORT_00": {"enabled": True}}
+NO_SPEED = {"speed_calc": None, "speed_unit": None, "speed_source": None, "radar_readings": None}
+
+
+def finalize(msg, radars=None, units=None):
+    context = {"config": {"sensors": {"radars": RADARS_ON if radars is None else radars}},
+               "radar_units": units or {}, "tm_warned": {}}
+    run = run_functions([(node_by_id(FINALIZE), msg)], context=context)
+    [step] = run["results"]
+    payload = step["result"]["payload"]
+    return {key: payload.get(key) for key in step["keys"]}, step, run["global"]
+
+
+def speed_of(payload):
+    return {key: payload[key] for key in NO_SPEED}
+
+
+@needs_node
+def test_a_radar_speed_is_saved_with_frigates_beside_it():
+    payload, step, _ = finalize(finalize_msg("inbound", 22.5, 7, fields=FIELDS), units={"TM_RADAR_SERIAL_PORT_00": "mph"})
+    assert list(payload) == EVENT_COLUMNS and step["logged"] == []
+    assert speed_of(payload) == {"speed_calc": 22.5, "speed_unit": "mph", "speed_source": "radar", "radar_readings": 7}
+    assert {key: payload[key] for key in FIELDS} == FIELDS
+    assert payload["direction_calc"] == "inbound" and payload["provenance"] == ["frigate", "radar"]
+
+
+@needs_node
+@pytest.mark.parametrize("direction, units, expected", [
+    ("outbound", {}, {"speed_calc": -23.98, "speed_unit": "mph"}),
+    ("inbound", {}, {"speed_calc": 23.98, "speed_unit": "mph"}),
+    (None, {}, {"speed_calc": 23.98, "speed_unit": "mph"}),
+    ("outbound", {"TM_RADAR_SERIAL_PORT_00": "mps"}, {"speed_calc": -10.72, "speed_unit": "mps"}),
+])
+def test_frigates_speed_fills_in_when_the_radar_gave_none(direction, units, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS), units=units)
+    assert speed_of(payload) == {**expected, "speed_source": "frigate", "radar_readings": None}
+    assert payload["frigate_speed"] == 38.6 and payload["frigate_speed_unit"] == "kph"
+    assert payload["provenance"] == ["frigate"] and step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("radars", [{}, {"TM_RADAR_SERIAL_PORT_00": {"enabled": False}},
+                                    {"TM_RADAR_SERIAL_PORT_00": None}, "text"],
+                         ids=["none", "disabled", "empty-entry", "not-a-mapping"])
+def test_a_device_without_a_radar_keeps_frigates_unit(radars):
+    msg = finalize_msg("outbound", None, None, radar=None, fields=FIELDS)
+    payload, _, _ = finalize(msg, radars=radars)
+    assert speed_of(payload) == {"speed_calc": -38.6, "speed_unit": "kph", "speed_source": "frigate",
+                                 "radar_readings": None}
+    assert payload["radarName"] is None
+
+
+@needs_node
+def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
+    """One device's speed_calc stays in one unit."""
+    imperial = {**FIELDS, "frigate_speed": 30.0, "frigate_speed_unit": "mph"}
+    msg = finalize_msg("inbound", None, None, radar=None, fields=imperial)
+    radars = {"TM_RADAR_SERIAL_PORT_01": {"enabled": True}, "TM_RADAR_SERIAL_PORT_00": {"enabled": False}}
+    payload, _, _ = finalize(msg, radars=radars, units={"TM_RADAR_SERIAL_PORT_01": "kmph"})
+    assert speed_of(payload) == {"speed_calc": 48.28, "speed_unit": "kmph", "speed_source": "frigate",
+                                 "radar_readings": None}
+
+
+@needs_node
+@pytest.mark.parametrize("direction, source, expected", [
+    ("inbound", "zones_radar", "zones_radar"), ("outbound", "zones", "zones"),
+    ("outbound", "zones_radar_opposite", "zones_radar_opposite"), ("inbound", "radar", "radar"),
+    (None, "zones", None), ("inbound", "frigate", None), ("inbound", "", None), ("inbound", None, None),
+    ("inbound", MISSING, None), ("inbound", ["zones"], None),
+], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
+def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
+    assert payload["direction_source"] == expected and list(payload)[-1] == "direction_source"
+    assert step["logged"] == []
+
+
+@needs_node
+def test_a_radar_speed_of_zero_is_saved():
+    payload, _, _ = finalize(finalize_msg("inbound", 0, 3, fields=FIELDS))
+    assert speed_of(payload) == {"speed_calc": 0, "speed_unit": "mph", "speed_source": "radar", "radar_readings": 3}
+
+
+@needs_node
+@pytest.mark.parametrize("fields", [
+    {**FIELDS, "frigate_speed_unit": None}, {**FIELDS, "frigate_speed": None, "frigate_speed_unit": None,
+                                             "frigate_velocity_angle": None}, NO_FIELDS, MISSING, None, "text",
+], ids=["unit-not-read", "no-estimate", "nothing", "missing", "null", "text"])
+def test_no_speed_without_a_radar_speed_or_a_usable_frigate_speed(fields):
+    payload, step, _ = finalize(finalize_msg("inbound", None, None, fields=fields))
+    assert speed_of(payload) == NO_SPEED and step["logged"] == []
+    assert list(payload) == EVENT_COLUMNS
+    expected = fields if isinstance(fields, dict) else NO_FIELDS
+    assert {key: payload[key] for key in FIELDS} == expected
+
+
+@needs_node
+def test_a_radar_unit_the_flow_cannot_convert_to_gets_no_fallback_and_one_warning():
+    msg = finalize_msg("inbound", None, None, fields=FIELDS)
+    context = {"config": {"sensors": {"radars": RADARS_ON}}, "radar_units": {"TM_RADAR_SERIAL_PORT_00": "furlongs"},
+               "tm_warned": {}}
+    run = run_functions([(node_by_id(FINALIZE), msg), (node_by_id(FINALIZE), msg)], context=context)
+    for step in run["results"]:
+        assert step["result"]["payload"].get("speed_calc") is None
+        assert step["result"]["payload"].get("speed_source") is None
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["Frigate's speed wasn't used for speed_calc: this flow can't convert to the radar's unit furlongs."]
+    assert run["global"]["tm_warned"] == {"speed_unit:furlongs": True}
+
+
+@needs_node
+def test_event_params_turn_the_new_lists_into_json_text():
+    payload, _, _ = finalize(finalize_msg("inbound", 22.5, 7, fields=FIELDS))
+    [step] = run_functions([(node_by_id(EVENT_PARAMS), {"payload": payload})])["results"]
+    params = step["result"]["params"]
+    assert json.loads(params["$path_data"]) == FIELDS["path_data"]
+    assert params["$box"] == "[0.75,0.5,0.25,0.25]" and params["$best_box"] == "[0.25,0.25,0.25,0.25]"
+    assert params["$radar_readings"] == 7 and params["$speed_source"] == "radar"
+
+
+def run_chain(names_or_ids, msg, context, flow):
+    """Run nodes one after another, each on the message the one before returned; None if one of them drops it."""
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    for name in names_or_ids:
+        node = by_id.get(name) or named(flows, name)
+        run = run_functions([(node, msg)], context=context, flow=flow)
+        msg, context, flow = run["results"][0]["result"], run["global"], run["flow"]
+        if msg is None:
+            return None
+    return msg
+
+
+@needs_node
+def test_a_made_up_event_on_a_camera_without_a_radar_becomes_a_row():
+    """The whole chain of function nodes, then the node's own INSERT against the migrated schema."""
+    config = config_with_cameras({"camera_1_3fa9c2": {"frigate_camera": "oak_ave_wide", "enabled": True}})
+    config["sensors"]["radars"] = {}
+    _, context = load_config(config)
+    after = {**AFTER, "sub_label": ["Jane Doe", 0.97], "entered_zones": ["zone_near", "zone_far"], "top_score": 0.91,
+             "score": 0.88, "area": 57600, "ratio": 1.78, "motionless_count": 0, "position_changes": 3,
+             "attributes": {}}
+    msg = {"frigate_event": after, "payload": {"type": "end", "before": dict(after), "after": after}}
+    msg = run_chain(["vet sub_label", "frigate fields", APPEND_CONFIG,
+                     "calculate direction based on frigate event zones", MATCH], msg, context,
+                    {"frigate_facts": METRIC})
+    msg = {**msg, "event_direction_speed": msg["payload"]}
+    msg = run_chain([FINALIZE, EVENT_PARAMS], msg, context, {})
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    con.execute(node_by_id(EVENT_INSERT)["sql"], {key[1:]: value for key, value in msg["params"].items()})
+    row = con.execute("SELECT camera, sub_label, direction_calc, speed_calc, speed_unit, speed_source, radar_readings, "
+                      "frigate_speed, frigate_speed_unit, json_array_length(path_data), json_extract(box, '$[0]'), "
+                      "best_frame_time, radarName, direction_source FROM events").fetchone()
+    assert row == ("camera_1_3fa9c2", None, "outbound", -38.6, "kph", "frigate", None, 38.6, "kph", 3, 0.75,
+                   1761800002.1, None, "zones")
+    assert "Jane Doe" not in json.dumps(msg) and "oak_ave_wide" not in json.dumps(msg["payload"])
+
+
+SPEED_STATS = "584504e6c8935eaf"  # ui-monitoring: query events, daily cum car counts in zone_radar with speed_calc
+
+
+@needs_node
+def test_the_car_speed_statistics_count_each_source():
+    [step] = run_functions([(node_by_id(SPEED_STATS), {"payload": {}})],
+                           flow={"camera_selection": "camera_1_3fa9c2"})["results"]
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    # 05:00 today, local time: inside "since 04:00 today" whenever the test runs
+    today = datetime.now().replace(hour=5, minute=0, second=0, microsecond=0).timestamp()
+    zones = '["zone_capture", "zone_radar"]'
+    rows = [("a", 22.0, "radar"), ("b", -31.0, "radar"), ("c", 27.0, None), ("d", 24.5, "frigate"),
+            ("e", -19.0, "frigate"), ("f", None, None)]
+    con.executemany("INSERT INTO events (id, camera, label, frame_time, entered_zones, speed_calc, speed_source) "
+                    "VALUES (?, 'camera_1_3fa9c2', 'car', ?, ?, ?, ?)",
+                    [(name, today, zones, speed, source) for name, speed, source in rows])
+    con.row_factory = sqlite3.Row
+    result = dict(con.execute(step["result"]["topic"]).fetchone())
+    assert list(result)[:3] == ["count", "count_radar", "count_frigate"]
+    assert (result["count"], result["count_radar"], result["count_frigate"]) == (5, 3, 2)
+    assert result["max_speed"] == 31.0
 
 
 # The exact locations for a database download: "Validate filenames, setup tar" claims the list for the request, and

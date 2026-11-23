@@ -24,10 +24,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from devpi_checks import (API, UNCLAIMED, NoRedirect, Redacted, db_query, detector_name, entered_secret_states,
-                          is_claimed, places_state, read_root_file, request_from_this_machine, require_pii_free,
-                          retry_after, role_vars, session, set_secret_table, status_checks, tm_internal_token,
-                          tm_login_or_none)
+from devpi_checks import (API, UNCLAIMED, NoRedirect, Redacted, broker_login, db_query, detector_name,
+                          entered_secret_states, is_claimed, places_state, read_root_file, request_from_this_machine,
+                          require_pii_free, retry_after, role_vars, session, set_secret_table, status_checks,
+                          tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -492,16 +492,6 @@ def connack_code(address, username=None, password=None, port=1883):
         return mqtt_connack(address, username, password, port)
     except Exception:
         return -1
-
-
-def broker_login(host, expect, codedir):
-    if not expect["pii_free"]:
-        pytest.skip("reads node-red-tm.env; set tm_expect.pii_free: true (bench units only)")
-    with host.sudo():
-        text = host.run(f"grep '^TM_MQTT_BROKER_' {codedir}/node-red-tm/node-red-tm.env").stdout
-    values = dict(line.split("=", 1) for line in text.splitlines() if "=" in line)
-    return (Redacted(values.get("TM_MQTT_BROKER_USERNAME", ""), "broker username"),
-            Redacted(values.get("TM_MQTT_BROKER_PASSWORD", ""), "broker password"))
 
 
 def test_mqtt_port_follows_the_broker_login(host, address, expect, codedir):

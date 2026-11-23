@@ -61,7 +61,7 @@ Choose **Settings** on a camera's row. The row opens to its settings. Change the
 |---|---|
 | **Frigate detection** | Frigate's own detection switch for this camera, the same one as in Frigate's live view. It changes when you save, without restarting Frigate, and Frigate keeps it after a restart. Off, Frigate stops detecting objects on the camera, so there are no events to record; it keeps streaming, and recording video if you set it to. Shown only while Frigate answers and the camera is on there. |
 | **Database capture** | Off, the Traffic Monitor drops this camera's events: nothing is saved in the database or sent on. Frigate keeps detecting either way. |
-| **Radar** | The radar that supplies this camera's speeds. The camera's direction needs an enabled radar too, whether it comes from the zones' order or from the radar. **No radar** records the camera's events with no speed and no direction. One radar can serve several cameras. |
+| **Radar** | The radar that supplies this camera's speeds. Direction comes from the zones' order on any camera, and from the radar only when the zones give none. **No radar** records the camera's events with the zones' direction, and with a speed only from Frigate, where you've set up a [speed zone](../configuration/frigate-config.md#speed-without-a-radar). One radar can serve several cameras. |
 | **Send plates to Plate Recognizer** | Shown only when the add-on is installed. See [Plate Recognizer](../add-ons/plate-recognizer.md). |
 
 The drop-down lists the radars the device was installed with, each with its state:

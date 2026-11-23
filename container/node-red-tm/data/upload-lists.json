@@ -1,0 +1,52 @@
+{
+    "telemetry": [
+        "event",
+        "radar",
+        "airquality",
+        "system_metrics",
+        "deployments"
+    ],
+    "attributes": [
+        "deployments",
+        "radarinfo",
+        "sysinfo_tmVersion",
+        "sysinfo_osHostname",
+        "sysinfo_osRelease",
+        "sysinfo_osTimeZone",
+        "sysinfo_deviceName",
+        "sysinfo_frigateVersion"
+    ],
+    "event": [
+        "id",
+        "camera",
+        "label",
+        "sub_label",
+        "top_score",
+        "frame_time",
+        "start_time",
+        "end_time",
+        "entered_zones",
+        "score",
+        "area",
+        "ratio",
+        "motionless_count",
+        "position_changes",
+        "attributes",
+        "direction_calc",
+        "speed_calc",
+        "provenance",
+        "deployment_id",
+        "radarName",
+        "path_data",
+        "box",
+        "best_box",
+        "best_frame_time",
+        "frigate_speed",
+        "frigate_speed_unit",
+        "frigate_velocity_angle",
+        "speed_unit",
+        "speed_source",
+        "radar_readings",
+        "direction_source"
+    ]
+}

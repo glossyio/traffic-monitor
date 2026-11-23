@@ -189,8 +189,8 @@ describe('issueBoxes', () => {
       [
         cameraRow({ camera_radar: 'TM_RADAR_SERIAL_PORT_01', issues: [warn('radar')] }),
         'warning',
-        "Radar TM_RADAR_SERIAL_PORT_01 isn't turned on in config.yml, so this camera gets no speed or direction. " +
-          'Choose another radar in Settings.',
+        "Radar TM_RADAR_SERIAL_PORT_01 isn't turned on in config.yml, so this camera gets no speed from a radar; " +
+          'its direction comes from the zones. Choose another radar in Settings.',
       ],
     ]
     for (const [row, level, text] of cases) {

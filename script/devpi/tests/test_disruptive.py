@@ -20,9 +20,10 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
-from devpi_checks import (API, RESTARTING_UNITS, Redacted, db_query, detector_name, entered_secret_states,
-                          find_hevc_decoder, frigate_host_devices, pi_now, podman_events, request_from_this_machine,
-                          require_pii_free, role_vars, session, status_checks, tm_login_or_none)
+from devpi_checks import (API, RESTARTING_UNITS, Redacted, broker_login, db_query, detector_name,
+                          entered_secret_states, find_hevc_decoder, frigate_host_devices, pi_now, podman_events,
+                          publish_on_pi, request_from_this_machine, require_pii_free, role_vars, session,
+                          status_checks, tm_login_or_none)
 
 pytestmark = pytest.mark.disruptive
 
@@ -1113,3 +1114,54 @@ def test_a_throwaway_network_is_ordered_and_forgotten_through_the_jobs(host, add
         for other, priority in original.items():
             host.run(f"sudo nmcli connection modify uuid {shlex.quote(other)} "
                      f"connection.autoconnect-priority {shlex.quote(priority)}")
+
+
+MADE_UP_EVENT_SECONDS = 15
+
+
+def test_a_made_up_event_is_recorded_with_its_path_and_boxes(host, expect, codedir, node_red_config, frigate_config):
+    """A made-up Frigate end message on the Pi's broker becomes a row with its path and boxes, and a sub-label that
+    isn't a logo label isn't saved. Writes one row into tmdb.sqlite, which stays: its label (tmdev_check) and its
+    only zone (zone_tmdev) keep it out of every dashboard count. Publishing an event turns nothing on in Frigate."""
+    require_pii_free(expect)
+    username, password = broker_login(host, expect, codedir)
+    if username and password:
+        pytest.skip("the broker has a login, and the made-up event is published without one")
+    cameras = (node_red_config.get("sensors") or {}).get("cameras") or {}
+    frigate_cameras = frigate_config.get("cameras") or {}
+    entries = [(key, entry.get("frigate_camera") or key) for key, entry in cameras.items()
+               if isinstance(entry, dict) and entry.get("enabled") is True]
+    entries = [(key, name) for key, name in entries if name in frigate_cameras]
+    if not entries:
+        pytest.skip("no enabled camera entry in config.yml names a camera Frigate has")
+    key, name = entries[0]
+    width, height = frigate_cameras[name]["detect"]["width"], frigate_cameras[name]["detect"]["height"]
+    now = pi_now(host)
+    event_id = f"{now:.6f}-tmdev0"
+    after = {
+        "id": event_id, "camera": name, "label": "tmdev_check", "sub_label": ["tmdev person", 0.99],
+        "stationary": False, "position_changes": 2, "entered_zones": ["zone_tmdev"],
+        "box": [width / 2, height / 2, width, height],
+        "snapshot": {"frame_time": now - 1, "box": [0, 0, width / 2, height / 2], "score": 0.9},
+        "average_estimated_speed": 0, "velocity_angle": 0,
+        "path_data": [[[0.1, 0.9], now - 2], [[0.4, 0.8], now - 1], [[0.75, 0.75], now - 0.5]],
+        "top_score": 0.9, "frame_time": now - 0.5, "start_time": now - 2, "end_time": now - 0.5, "score": 0.9,
+        "area": width * height / 4, "ratio": width / height, "motionless_count": 0, "attributes": {},
+    }
+    publish_on_pi(host, "frigate/events", {"type": "end", "before": dict(after), "after": after})
+    query = ("SELECT camera, sub_label, json_array_length(path_data), box, best_box, best_frame_time, frigate_speed, "
+             f"speed_calc, speed_source FROM events WHERE id = '{event_id}'")
+    deadline = time.monotonic() + MADE_UP_EVENT_SECONDS
+    rows = db_query(host, codedir, query)
+    while not rows and time.monotonic() < deadline:
+        time.sleep(1)
+        rows = db_query(host, codedir, query)
+    assert rows, f"no events row for the made-up event within {MADE_UP_EVENT_SECONDS} s"
+    [(camera, sub_label, points, box, best_box, best_frame_time, frigate_speed, speed_calc, speed_source)] = rows
+    assert (camera, sub_label, points) == (key, None, 3)
+    assert (box, best_box) == ("[0.5,0.5,0.5,0.5]", "[0,0,0.5,0.5]"), "the boxes aren't fractions of the detect size"
+    assert best_frame_time is not None
+    # Frigate's 0 is no estimate. A radar paired with the camera can still have seen real traffic in the event's
+    # window, so the speed is empty only when the radar gave none.
+    assert frigate_speed is None and speed_source != "frigate"
+    assert (speed_calc is None) == (speed_source is None)

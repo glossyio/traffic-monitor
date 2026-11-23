@@ -6,3 +6,13 @@ Traffic monitoring solution node-red flow
 ### About
 
 Traffic Monitor built with edge ML for object detection and radar for speed monitoring. Learn more at www.trafficmonitor.ai
+
+### upload-lists.json
+
+What the ThingsBoard upload may send. `settings.js` reads it when Node-RED starts and puts it in the global context as `upload_lists`, and the "upload gate" function on the `thingsboard` tab sends only what it lists:
+
+- `telemetry`: the kinds of telemetry, such as `event` and `radar`.
+- `attributes`: the client attributes.
+- `event`: the fields of an event. A field that isn't listed is saved on the device and left out of the upload.
+
+Keep one name per line, so that two changes that each add a name don't conflict. When the file is missing or isn't JSON, `upload_lists` is `null` and the gate sends nothing. The installer copies the file on every run and restarts Node-RED when it changes. A new event column goes in this list, or in `KEPT_ON_THE_UNIT` in `script/tests/test_node_red_flows.py` when it stays on the device; `test_event_fields_agree` checks the list against the flows and the schema.
