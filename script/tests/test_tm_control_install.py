@@ -130,6 +130,16 @@ def test_the_manifest_carries_the_sharing_values():
     assert (parsed.maintainer_host, parsed.public_map_live) == ("tb.roadwaybiome.com", False)
 
 
+def test_the_manifest_carries_the_map_values():
+    role_vars = load_role_yaml("vars/main.yml")
+    wanted = {"style_url": role_vars["tmsetup_map_style_url"]}
+    assert all(value.startswith("https://") for value in wanted.values())
+    assert collected_manifest()["map"] == wanted
+    assert json.loads(rendered_manifest())["map"] == wanted
+    parsed = Manifest.model_validate(json.loads(rendered_manifest())).map
+    assert parsed.style_url == wanted["style_url"]
+
+
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
 

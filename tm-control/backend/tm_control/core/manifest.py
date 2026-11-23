@@ -47,6 +47,14 @@ class SharingInfo:
     public_map_live: bool = False
 
 
+@dataclass(frozen=True)
+class MapInfo:
+    """Where a browser gets the Location page's map (tmsetup_map_style_url). Empty means off; the device itself
+    fetches nothing."""
+
+    style_url: str = ""
+
+
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -59,6 +67,7 @@ class Manifest(BaseModel):
     frigate: FrigateInfo = FrigateInfo()
     network: NetworkInfo = NetworkInfo()
     sharing: SharingInfo = SharingInfo()
+    map: MapInfo = MapInfo()
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage

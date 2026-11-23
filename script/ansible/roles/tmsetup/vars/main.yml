@@ -167,4 +167,8 @@ tmsetup_wifi_packages:
 tmsetup_sharing_maintainer_host: 'tb.roadwaybiome.com'
 tmsetup_sharing_public_map_live: false
 
+# The Location page's map (tm-control's manifest records it). A browser fetches it, only after an admin presses a map
+# button; the device never does. An empty value turns the map off.
+tmsetup_map_style_url: 'https://tiles.openfreemap.org/styles/liberty'
+
 ...

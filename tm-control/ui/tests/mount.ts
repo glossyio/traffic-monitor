@@ -69,11 +69,14 @@ export function dialogText(): string {
 
 // One component on its own, with Vuetify and a router (for its links)
 export function mountAlone(component: Component, props: Record<string, unknown>): VueWrapper {
+  // A fresh store each time, the active one, for what the component reads from the session
+  const pinia = createPinia()
+  setActivePinia(pinia)
   const routes = [{ path: '/:any(.*)*', component: { render: () => null } }]
   const router = createRouter({ history: createMemoryHistory(), routes })
   const wrapper = mount(component, {
     props,
-    global: { plugins: [router, createAppVuetify(undefined)] },
+    global: { plugins: [pinia, router, createAppVuetify(undefined)] },
     attachTo: document.body,
   })
   mounted.push(wrapper)

@@ -24,9 +24,12 @@ The sign-in window opens the control app with nothing to set up, but it can't sa
     * To keep the network, open the sign-in window's menu and choose **Use this network as is**. Until you do, a phone with mobile data on doesn't use the hotspot for its browsers, so neither the unit's name nor `http://10.42.0.1/` opens. Logging in to the control app in the sign-in window doesn't change that.
     * Allow **Nearby devices** for the browser; [the Android entry](../help-and-faq/frequently-asked-questions.md#troubleshooting) has the steps. Without it the browser times out on the unit, on the hotspot and on your home network.
     * In the sign-in window, the database and JSON downloads on the [Data export page](../ui/database.md) save. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
+    * **Download the database with exact locations** on the [Location page](location.md#download-the-database-with-exact-locations) saves from the sign-in window too. The phone asks for it twice, so the unit makes the copy twice and needs free space for two copies of the database for a while.
     * **Download diagnostics** on the Device page doesn't save from the sign-in window: the phone says "Could not download". It saves from a browser.
     * Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
 * **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
+
+The Location page's [map](location.md#pick-the-point-on-a-map) needs the internet, so the page doesn't offer it on the hotspot. Paste the coordinates there, or open the page once the device is on your Wi-Fi.
 
 Tested with a Pixel 7 on Android 17 (the sign-in window, Chrome, and Firefox) and with Firefox on an iPhone on iOS 18.7, in November 2026.
 

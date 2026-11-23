@@ -8,15 +8,24 @@ import json
 import re
 import secrets
 import shlex
+import shutil
 import socket
+import sqlite3
+import tarfile
+import tempfile
 import time
+import urllib.error
 import urllib.parse
+import urllib.request
+from contextlib import closing
+from pathlib import Path
 
 import pytest
 import yaml
-from devpi_checks import (API, UNCLAIMED, Redacted, detector_name, entered_secret_states, is_claimed, places_state,
-                          read_root_file, request_from_this_machine, require_pii_free, retry_after, role_vars,
-                          session, set_secret_table, status_checks, tm_internal_token, tm_login_or_none)
+from devpi_checks import (API, UNCLAIMED, NoRedirect, Redacted, db_query, detector_name, entered_secret_states,
+                          is_claimed, places_state, read_root_file, request_from_this_machine, require_pii_free,
+                          retry_after, role_vars, session, set_secret_table, status_checks, tm_internal_token,
+                          tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -208,6 +217,8 @@ def test_feeds_is_view_only_from_this_machine(address, admin_session, path, meth
         ("?files=../temp-other.json", 400),
         ("?files=-v", 400),
         ("?files=a%20b.json", 400),
+        # A database copy's ticket that was never made, or has run out: no ticket is 404, as a missing file is
+        ("?files=tmdb-exact-" + "0" * 32, 404),
     ],
 )
 def test_data_export_errors_from_this_machine(address, admin_session, query, expected):
@@ -315,6 +326,118 @@ def test_data_export_copy_failure_is_an_http_error(host, expect, codedir, codeow
     rc, status, offers_file = curl_outcome(result)
     assert (rc, status) == (0, "500"), f"curl exit {rc}, HTTP {status or 'none'}"
     assert not offers_file, "the browser would save the error as a file"
+
+
+def test_node_red_has_sqlite_for_the_database_copy(host):
+    """The database copy with exact locations is written with Node's own sqlite module, which settings.js hands the
+    flows as a global; the image's Node must have it."""
+    with host.sudo():
+        result = host.run("podman exec node-red-tm node -e \"require('node:sqlite')\"")
+    assert result.rc == 0, result.stderr.strip().splitlines()[-1:] or f"exit {result.rc}"
+
+
+def database_copy_answer(address, cookie):
+    """(HTTP status, the link as Redacted or None, the error's code or None) of POST /surveys/database-copy as this
+    session. It also makes a one-time link and a ticket on the device, which run out in ten minutes."""
+    answer = request_from_this_machine(address, f"{API}/surveys/database-copy", "POST", cookie)
+    found = answer.json()
+    found = found if isinstance(found, dict) else {}
+    url = found.get("url")
+    error = found.get("error")
+    code = error.get("code") if isinstance(error, dict) else None
+    return answer.status, Redacted(url, "database copy link") if isinstance(url, str) else None, code
+
+
+def test_database_copy_needs_an_admin(address, admin_session, viewer_session):
+    """A viewer can't start a database copy with exact locations (403). The admin gets a link to it, or, when no place
+    this device has been at has an exact location, a 409 that says so."""
+    refusal = admin_refusal(request_from_this_machine(address, f"{API}/surveys/database-copy", "POST", viewer_session))
+    assert refusal == (403, ADMIN_ONLY), f"POST {API}/surveys/database-copy with a viewer session (status, message)"
+    status, url, code = database_copy_answer(address, admin_session)
+    assert status in (200, 409), f"POST {API}/surveys/database-copy with the admin session answered HTTP {status}"
+    if status == 200:
+        assert url is not None and url.startswith("/storefiles?files=tmdb-exact-"), (
+            "the link from POST /surveys/database-copy doesn't start /storefiles?files=tmdb-exact-")
+    else:
+        assert code == "no_exact_locations", f"POST {API}/surveys/database-copy answered 409 with another error code"
+
+
+def download_to(address, cookie, url, path):
+    """Fetch this link from this machine into the file at this path, a block at a time (a database can be gigabytes).
+    Returns the HTTP status, or why there was none. Never raises for an HTTP or network error, and nothing it returns
+    holds the address, the cookie, or the link."""
+    request = urllib.request.Request(f"http://{address}{url}")
+    request.add_header("Cookie", cookie)
+    try:
+        # The copy is made before the first byte, so the wait is the database's size
+        with urllib.request.build_opener(NoRedirect).open(request, timeout=900) as response, open(path, "wb") as saved:
+            while block := response.read(1 << 20):
+                saved.write(block)
+            return response.status
+    except urllib.error.HTTPError as error:
+        return error.code
+    except (urllib.error.URLError, OSError) as error:
+        return f"no answer ({type(getattr(error, 'reason', error)).__name__})"
+
+
+def counts_in_the_copy(path):
+    """What the downloaded copy holds, as counts only: its integrity check, rows in survey_exact_location, rows of
+    deployment_exact with an exact latitude, and rows of deployment with a latitude and no location_precision."""
+    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as copy:
+        return {
+            "integrity_check": copy.execute("PRAGMA integrity_check").fetchone()[0],
+            "survey_exact_location": copy.execute("SELECT count(*) FROM survey_exact_location").fetchone()[0],
+            "deployment_exact with an exact_lat": copy.execute(
+                "SELECT count(*) FROM deployment_exact WHERE exact_lat IS NOT NULL").fetchone()[0],
+            "deployment with a lat and no location_precision": copy.execute(
+                "SELECT count(*) FROM deployment WHERE lat IS NOT NULL AND location_precision IS NULL").fetchone()[0],
+        }
+
+
+def test_a_database_copy_holds_exact_locations_and_the_database_does_not(host, address, admin_session, expect,
+                                                                         codedir):
+    """The archive from POST /surveys/database-copy holds one file, tmdb-exact-locations.sqlite, which has the exact
+    locations of the places in survey_exact_location and deployment_exact, and a deployment table that still carries
+    its rounding. The device's own database never gets the table or the view, and no copy is left behind.
+
+    Only counts are read and printed. The archive is fetched into a temporary folder here, removed afterwards.
+    """
+    require_pii_free(expect)
+    status, url, _ = database_copy_answer(address, admin_session)
+    if status == 409:
+        pytest.skip("no place this device has been at has an exact location (POST /surveys/database-copy answered 409)")
+    assert status == 200 and url is not None, f"POST {API}/surveys/database-copy answered HTTP {status}"
+    folder = tempfile.mkdtemp(prefix="tmdev-exact-copy-")
+    try:
+        archive, unpacked = Path(folder, "copy.tar.gz"), Path(folder, "unpacked")
+        unpacked.mkdir()
+        fetched = download_to(address, admin_session, url, archive)
+        assert fetched == 200, f"fetching the database copy answered HTTP {fetched}"
+        with tarfile.open(archive) as packed:
+            members = packed.getnames()
+            assert members == ["tmdb-exact-locations.sqlite"], (
+                f"the archive holds {len(members)} members, not just tmdb-exact-locations.sqlite")
+            packed.extract(members[0], unpacked, filter="data")
+        found = counts_in_the_copy(unpacked / members[0])
+        assert found["integrity_check"] == "ok", "the copy's PRAGMA integrity_check isn't ok"
+        assert found["survey_exact_location"] >= 1, "survey_exact_location in the copy has no rows"
+        assert found["deployment_exact with an exact_lat"] >= 1, "deployment_exact in the copy has no exact_lat row"
+        key = "deployment with a lat and no location_precision"
+        assert found[key] == 0, f"{found[key]} rows of the copy's deployment table have a lat and no location_precision"
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+    # The device's own database never holds the table or the view, and the copy on the Pi is gone
+    holding = db_query(host, codedir, "SELECT count(*) FROM sqlite_master "
+                                      "WHERE name IN ('survey_exact_location', 'deployment_exact')")[0][0]
+    assert holding == 0, f"the device's tmdb.sqlite holds {holding} of survey_exact_location and deployment_exact"
+    # The copy is removed when the download ends, which can be a moment after the last byte reaches this machine
+    for _ in range(10):
+        with host.sudo():
+            left = host.run(f"find {codedir}/node-red-tm/db/snapshot -mindepth 1").stdout.split()
+        if not left:
+            break
+        time.sleep(1)
+    assert left == [], f"db/snapshot holds {len(left)} entries after the download"
 
 
 def test_camera_stream_needs_credentials(address):
@@ -1088,18 +1211,20 @@ def test_tm_internal_status_has_the_upload_section(host, expect):
 
 
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body
-# holds no coordinate, so a request that got past the token check would change nothing.
+# holds no coordinate (an empty body on the copy's route, which would refuse it), so a request that got past the token
+# check would change nothing.
 TM_INTERNAL_WRITES = [
     "http://127.0.0.1:1880/tm-internal/surveys/3f9a1c2e-si/location",
     "http://127.0.0.1:1880/tm-internal/deployments/1-00000000-d/bearing",
+    "http://127.0.0.1:1880/tm-internal/database/exact-copy",
 ]
 
 
 @pytest.mark.parametrize("url", TM_INTERNAL_WRITES, ids=[url.rsplit("/tm-internal/", 1)[1] for url in TM_INTERNAL_WRITES])
 def test_tm_internal_writes_need_the_token_on_the_pi(host, url):
-    """On the Pi, the two internal endpoints that correct a place's location and a deployment's bearing answer 401 to a
-    POST without the token or with a wrong one, before they read the body. No token is read, so this runs on every
-    unit."""
+    """On the Pi, the internal endpoints that correct a place's location, a deployment's bearing, and hold the exact
+    locations for a database copy answer 401 to a POST without the token or with a wrong one, before they read the body.
+    No token is read, so this runs on every unit."""
     refused = (tm_internal_answer(host, url=url, body={})[0], tm_internal_answer(host, "tmdev-wrong-token", url, {})[0])
     assert refused == ("401", "401"), f"without a token and with a wrong one, POST {url} answered {refused}"
 
@@ -1158,6 +1283,42 @@ def test_diagnostics_has_no_secret_value(host, address, expect, codedir, admin_s
     leaked = {name: count for name, count in counts.items()
               if count != "0" and not (name in ENTERED_SECRETS and count == "unset")}
     assert not leaked, f"secrets in the diagnostics text (lines holding the value, or missing): {leaked}"
+
+
+# The diagnostics through the proxy with the admin session, then: how many lines hold the file name of a database copy
+# with exact locations with a ticket after it, and how many hold that name with the ticket replaced. The cookie is on
+# curl's command line, as in DIAGNOSTICS_COUNTS.
+COPY_TICKET_COUNTS = """\
+diag=$(mktemp) || exit 3
+trap 'rm -f "$diag"' EXIT
+curl -sf --max-time 90 -H {host_header} -H {cookie_header} -o "$diag" http://localhost{path} || exit 3
+grep -c -E 'tmdb-exact-[0-9a-f]{{32}}' "$diag"
+grep -c -F 'tmdb-exact-<redacted>' "$diag"
+exit 0"""
+
+
+def copy_ticket_counts(host, address, cookie):
+    """COPY_TICKET_COUNTS's exit code and output lines. The command holds the cookie, so its CommandResult stays in
+    here, as in diagnostics_counts."""
+    result = host.run(COPY_TICKET_COUNTS.format(host_header=shlex.quote(f"Host: {address}"),
+                                                cookie_header=shlex.quote(f"Cookie: {cookie}"),
+                                                path=f"{API}/system/diagnostics"))
+    return result.rc, result.stdout.splitlines()
+
+
+def test_diagnostics_hides_a_database_copy_ticket(host, address, admin_session):
+    """nginx's log holds the ticket in the file name of a database copy with exact locations, and the diagnostics quote
+    that log with the ticket replaced. The request here is for a ticket that was never made (32 zeros, a 404), so no
+    copy is made and no list of places is involved. Counted on the Pi."""
+    path = "/storefiles?files=tmdb-exact-" + "0" * 32
+    status = status_from_this_machine(address, path, cookie=admin_session)
+    assert status == 404, f"a database copy link whose ticket was never made answered {status}"
+    rc, lines = copy_ticket_counts(host, address, admin_session)
+    assert rc == 0 and len(lines) == 2, (
+        f"couldn't download {API}/system/diagnostics through the proxy with the admin session")
+    shown, hidden = lines
+    assert shown == "0", f"{shown} lines of the diagnostics text hold a database copy's ticket"
+    assert hidden != "0", "the diagnostics text doesn't hold the request just made, so nothing was checked"
 
 
 # --- The entered secrets ---------------------------------------------------------------------------------------------
@@ -1324,6 +1485,24 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
     assert len(in_use) == 1 and state.get("in_use") == in_use[0], (
         f"GET {API}/surveys: in_use is {state.get('in_use')!r} and the places in use are {in_use}")
     assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
+
+
+def test_surveys_name_the_roles_map_sources(address, admin_session):
+    """The Location page's map comes from the install's settings: GET /surveys carries the role's map address,
+    which a browser fetches (the device never does), and the device's region to open the map over when there is no
+    place to start from: a {lat, lon} or null, depending on its time zone and Wi-Fi country. An empty or non-https
+    address would be null."""
+    wanted = {"style_url": role_vars()["tmsetup_map_style_url"]}
+    sources = places_state(address, admin_session).get("map")
+    assert isinstance(sources, dict), f"GET {API}/surveys: map is a {type(sources).__name__}, not an object"
+    got = {key: sources.get(key) for key in wanted}
+    assert got == wanted, f"GET {API}/surveys: map is not the role's tmsetup_map_style_url"
+    assert "overpass_url" not in sources, f"GET {API}/surveys: map still has overpass_url"
+    region = sources.get("region")
+    numbers = isinstance(region, dict) and all(
+        isinstance(region.get(axis), (int, float)) and not isinstance(region.get(axis), bool) for axis in ("lat", "lon"))
+    assert region is None or numbers, (
+        f"GET {API}/surveys: map.region is neither null nor an object with a numeric lat and lon")
 
 
 def test_in_use_place_matches_config_yml(address, admin_session, usable_host, expect, codedir):
