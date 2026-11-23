@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
 import * as download from '../src/components/download'
+import CorrectDialog from '../src/modules/location/CorrectDialog.vue'
+import PlaceForm from '../src/modules/location/PlaceForm.vue'
 import { button, click, clickInDialog, dialogButtons, dialogField, dialogText, field, mountApp, typeInto } from './mount'
 
 type PlacesState = components['schemas']['PlacesState']
@@ -81,6 +83,7 @@ const PLACES: PlacesState = {
   unassigned: null,
   reconcile: 'done',
   nodered: true,
+  map: { style_url: 'https://tiles.example.invalid/style' },
 }
 
 // A deployment of the used place, as GET /surveys/{id}/deployments lists it
@@ -622,6 +625,30 @@ describe('the Location page', () => {
     await clickInDialog('Save')
     expect(api.sent.filter((r) => r.method === 'POST').map((r) => r.path)).toEqual(['/api/v1/surveys'])
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2) // reloaded
+  })
+
+  it('the dialogs get the map sources and the place in use as the centre', async () => {
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+    })
+    const { wrapper } = await mountApp('/location')
+    const form = wrapper.findComponent(PlaceForm)
+    expect(form.props('map')).toEqual(PLACES.map)
+    expect(form.props('centre')).toEqual({ lat: 45.52252, lon: -122.6912 })
+
+    await expand(wrapper, 'No description')
+    await click(wrapper, 'Correct location')
+    const correct = wrapper.findComponent(CorrectDialog)
+    expect(correct.props('map')).toEqual(PLACES.map)
+    expect(correct.props('centre')).toEqual({ lat: 45.52252, lon: -122.6912 })
+  })
+
+  it('has no centre when the place in use has no point', async () => {
+    signedIn(ADMIN, { [SURVEYS]: { ...PLACES, surveys: [{ ...IN_USE, lat: null, lon: null }, PLANNED, USED] } })
+    const { wrapper } = await mountApp('/location')
+    expect(wrapper.findComponent(PlaceForm).props('centre')).toBeNull()
   })
 
   it("opens the form from Edit with the planned place's values", async () => {

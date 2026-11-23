@@ -2,12 +2,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   BEARINGS,
+  FEW_DECIMALS,
   PRECISIONS,
+  decimalsTyped,
   distanceKm,
   formatExact,
   formatStored,
+  fewDecimalsWarning,
   isCoarser,
   parsePair,
+  roundedTo,
 } from '../src/modules/location/coordinates'
 
 describe('parsePair', () => {
@@ -85,5 +89,44 @@ describe('the choices', () => {
     expect(isCoarser('1', '2')).toBe(true)
     expect(isCoarser('2', '1')).toBe(false)
     expect(isCoarser('1', '1')).toBe(false)
+  })
+})
+
+describe('decimalsTyped', () => {
+  it('counts the digits after the dot of the shorter number', () => {
+    expect(decimalsTyped('45.52252, -122.69120')).toBe(5)
+    expect(decimalsTyped('45.5, -122.69120')).toBe(1)
+    expect(decimalsTyped('45.52252 -122.7')).toBe(1)
+    expect(decimalsTyped('45, -122')).toBe(0)
+  })
+
+  it('is null for text that is not a pair', () => {
+    expect(decimalsTyped('abc')).toBeNull()
+    expect(decimalsTyped('45,5 122')).toBeNull()
+    expect(decimalsTyped('')).toBeNull()
+    expect(decimalsTyped('95.12345, 10.12345')).toBeNull()
+  })
+})
+
+describe('roundedTo', () => {
+  it('names the area a count of decimal places keeps', () => {
+    expect([0, 1, 2, 3].map(roundedTo)).toEqual(['100 km', '10 km', '1 km', '100 m'])
+  })
+})
+
+describe('fewDecimalsWarning', () => {
+  it('warns below four decimal places and says how far the rounding reaches', () => {
+    expect(FEW_DECIMALS).toBe(4)
+    expect(fewDecimalsWarning('45.52, -122.69')).toBe(
+      'For an exact location, use at least four decimal places (about 10 m). This is rounded to about 1 km.',
+    )
+    expect(fewDecimalsWarning('45.123, -122.6912')).toContain('rounded to about 100 m.')
+  })
+
+  it('says nothing for four places or more, for a blank field, or for text that is not a pair', () => {
+    expect(fewDecimalsWarning('45.5225, -122.6912')).toBe('')
+    expect(fewDecimalsWarning('45.52252, -122.69120')).toBe('')
+    expect(fewDecimalsWarning('')).toBe('')
+    expect(fewDecimalsWarning('abc')).toBe('')
   })
 })

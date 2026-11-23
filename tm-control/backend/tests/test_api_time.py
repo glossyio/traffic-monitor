@@ -866,16 +866,16 @@ def test_fake_mode_keeps_its_own_clock(claimed_client, login, monkeypatch):
     monkeypatch.setattr("tm_control.adapters.systemd.run", no_run)
     login(claimed_client, *ADMIN)
     state = claimed_client.get("/api/v1/time").json()
-    assert state["timezone"] == "Etc/UTC"
+    assert state["timezone"] == "America/Los_Angeles"
     assert state["ntp"] == {"enabled": True, "synchronized": True, "available": True}
-    assert datetime.fromisoformat(state["device_time"]).utcoffset() == timedelta(0)
+    assert datetime.fromisoformat(state["device_time"]).utcoffset() in (timedelta(hours=-8), timedelta(hours=-7))
     zones = claimed_client.get("/api/v1/time/timezones").json()
     assert set(ZONES) <= set(zones)
 
     assert change(claimed_client, {"timezone": "Mars/Olympus"}).status_code == 422
     r = change(claimed_client, {"time": "2026-10-28T21:41:35Z", "timezone": "Mars/Olympus"})
     assert r.status_code == 200, r.text
-    assert r.json()["timezone_unknown"] is True and r.json()["timezone"] == "Etc/UTC"
+    assert r.json()["timezone_unknown"] is True and r.json()["timezone"] == "America/Los_Angeles"
     assert r.json()["restarting"] == []
     r = change(claimed_client, {"time": "2026-10-28T21:41:35Z", "timezone": "Europe/Berlin"})
     assert r.status_code == 200, r.text
@@ -949,3 +949,12 @@ def test_device_client_reports_the_clock_without_running_timedatectl(device_clie
     groups = device_client.get("/api/v1/status").json()["groups"]
     assert groups[-1]["id"] == "time"
     assert [(c["id"], c["status"]) for c in groups[-1]["checks"]] == [("time.plausible", "unknown")]
+
+
+def test_fake_modes_diagnostics_clock_is_in_the_fake_clocks_zone():
+    from tm_control import fake
+
+    lines = fake.time_state()
+    assert f"Timezone={fake.FakeClock().timezone}" in lines
+    stamp = next(line for line in lines if line.startswith("TimeUSec="))
+    assert not stamp.endswith(" UTC")

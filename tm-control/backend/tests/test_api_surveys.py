@@ -17,6 +17,8 @@ from ruamel.yaml import YAML
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.adapters.redact import REDACTED, redact
 from tm_control.core.auth import Users
+from tm_control.core.manifest import MapInfo
+from tm_control.modules.location import region as region_module
 from tm_control.modules.location.places import Places
 
 BASE = "http://tm-test.local"
@@ -36,6 +38,20 @@ def no_waiting(monkeypatch):
     """Deploy polls Node-RED for up to 20 s; the fake applies a write at once, so a test never needs to wait."""
     monkeypatch.setattr(surveys_router, "POLL_INTERVAL", 0.0)
     monkeypatch.setattr(surveys_router, "DEPLOY_TIMEOUT", 0.0)
+
+
+@pytest.fixture(autouse=True)
+def zone_table(monkeypatch, tmp_path):
+    """The time-zone tables the region is read from: small ones of our own, not the machine's tzdata."""
+    path = tmp_path / "zone1970.tab"
+    path.write_text(
+        "US\t+340308-1181434\tAmerica/Los_Angeles\tPacific\nGB,GG,IM,JE\t+513030-0000731\tEurope/London\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(region_module, "ZONE_TAB", path)
+    all_zones = tmp_path / "zone.tab"
+    all_zones.write_text("NL\t+5222+00454\tEurope/Amsterdam\n", encoding="utf-8")
+    monkeypatch.setattr(region_module, "ZONE_TAB_ALL", all_zones)
 
 
 @pytest.fixture
@@ -130,6 +146,55 @@ def test_claim_created_the_first_place_from_the_fixture(admin):
     assert isinstance(place["first_used"], int)
     assert state["unassigned"] is None
     assert file_data(admin)["deployment"]["survey_id"] == place["id"]
+
+
+STYLE = "https://tiles.openfreemap.org/styles/liberty"
+LOS_ANGELES = {"lat": 34.05, "lon": -118.24}  # fake mode's time zone and Wi-Fi country (US), as the table has them
+SOURCES = {"style_url": STYLE, "region": LOS_ANGELES}
+
+
+def map_style(client, style):
+    """Swap the manifest's map section, as a device installed with other settings would have it."""
+    manifest = client.app.state.manifest
+    client.app.state.manifest = manifest.model_copy(update={"map": MapInfo(style)})
+
+
+def test_places_name_the_map_sources(admin):
+    assert places(admin)["map"] == SOURCES
+
+
+def test_precision_answers_with_the_map_sources(admin):
+    r = admin.put("/api/v1/surveys/precision", json={"precision": "1"}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["map"] == SOURCES
+
+
+@pytest.mark.parametrize("style", ["", "http://tiles.example.invalid/style", "ftp://x"])
+def test_a_map_source_that_is_not_https_is_off(admin, style):
+    map_style(admin, style)
+    assert places(admin)["map"] == {"style_url": None, "region": None}
+
+
+def test_no_map_means_no_region(admin):
+    map_style(admin, "")
+    assert places(admin)["map"]["region"] is None
+
+
+@pytest.mark.parametrize("country", ["", None, "GB"])
+def test_a_country_that_is_not_the_zones_gives_no_region(admin, country):
+    admin.app.state.fake_network.country = country
+    assert places(admin)["map"]["region"] is None
+
+
+def test_a_zone_the_table_lacks_gives_no_region(admin):
+    admin.app.state.fake_clock.timezone = "Etc/UTC"
+    assert places(admin)["map"]["region"] is None
+
+
+def test_a_zone_only_the_second_table_lists_gives_its_region(admin):
+    admin.app.state.fake_clock.timezone = "Europe/Amsterdam"
+    admin.app.state.fake_network.country = "NL"
+    assert places(admin)["map"]["region"] == {"lat": 52.37, "lon": 4.9}
 
 
 def test_places_say_what_is_shared(admin):
