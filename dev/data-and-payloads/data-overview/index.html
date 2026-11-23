@@ -1455,6 +1455,8 @@
       
         
       
+        
+      
     
     
     
@@ -1709,6 +1711,34 @@
     
   
     Object paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../watch-log/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Watch log
   
 
     
@@ -2406,7 +2436,7 @@
 <tbody>
 <tr>
 <td><code>/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite</code></td>
-<td>The database: <a href="../events-payload/">events</a>, <a href="../radar-payload/">radar readings</a>, <a href="../air-quality-aq-payload/">air quality readings</a>, the device's deployment history, and operator comments</td>
+<td>The database: <a href="../events-payload/">events</a>, <a href="../radar-payload/">radar readings</a>, <a href="../air-quality-aq-payload/">air quality readings</a>, the device's deployment history, the <a href="../watch-log/">watch log</a> of whether each camera and radar was working, and operator comments</td>
 <td>Until you delete it</td>
 </tr>
 <tr>
@@ -2486,6 +2516,16 @@
 <td><code>deployment</code></td>
 <td>Where each sensor was, and when</td>
 <td>No, except where homes are far apart: the location is rounded to about 1 km (two decimal places) by default and never stored more precisely, which in a rural area can point to a single home (see <a href="#privacy">Privacy</a>)</td>
+</tr>
+<tr>
+<td><code>watch_camera</code></td>
+<td>Whether each camera was working, every five minutes. See <a href="../watch-log/">Watch log</a>.</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>watch_radar</code></td>
+<td>Whether each radar was working, every five minutes. See <a href="../watch-log/">Watch log</a>.</td>
+<td>No</td>
 </tr>
 <tr>
 <td><code>comments</code></td>

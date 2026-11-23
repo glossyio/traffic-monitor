@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/data-and-payloads/radar-payload/">
       
       
-        <link rel="prev" href="../object-paths/">
+        <link rel="prev" href="../watch-log/">
       
       
         <link rel="next" href="../air-quality-aq-payload/">
@@ -1455,6 +1455,8 @@
       
         
       
+        
+      
     
     
     
@@ -1568,6 +1570,34 @@
     
   
     Object paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../watch-log/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Watch log
   
 
     
@@ -2407,7 +2437,7 @@
 </tbody>
 </table>
 <p>Across the tables, <code>direction</code> is <code>inbound</code> (toward the radar) or <code>outbound</code> (away from it), speeds are positive for inbound and negative for outbound, and the unit is the radar's speed unit, mph by default. <code>radarName</code> is the radar's name from <a href="../../configuration/node-red-config/#sensorsradars">config.yml</a>, and <code>deployment_id</code> points at the <a href="../data-overview/#deployment">deployment</a> the reading was taken in.</p>
-<p>The times come from the radar's own clock, which starts again from zero whenever the radar loses power. The Traffic Monitor sets that clock from the device's clock when the service starts, whenever config.yml is saved, every hour, and within about half a minute of a radar being plugged back in.</p>
+<p>The times come from the radar's own clock, which starts again from zero whenever the radar loses power. The Traffic Monitor sets that clock from the device's clock when the service starts, whenever config.yml is saved, every hour, and within about half a minute of a radar being plugged back in. Once a minute it also asks each radar that is switched on in <code>config.yml</code> for its power state, for the <a href="../watch-log/">watch log</a>. The answer isn't a reading and isn't stored in these tables.</p>
 <h2 id="radar_dov">radar_dov<a class="headerlink" href="#radar_dov" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

@@ -1455,6 +1455,8 @@
       
         
       
+        
+      
     
     
     
@@ -1568,6 +1570,34 @@
     
   
     Object paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../watch-log/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Watch log
   
 
     
@@ -2328,6 +2358,11 @@
 <td>A cropped JPEG of each detected object, which can show a person. Frigate publishes it only when the camera's <code>mqtt</code> setting is on, and new installs turn it off. The Traffic Monitor doesn't use it. See <a href="../../configuration/frigate-config/#recordings-and-snapshots">Tune object detection</a>.</td>
 </tr>
 <tr>
+<td><code>frigate/stats</code></td>
+<td>Frigate to the Traffic Monitor</td>
+<td>Frigate's status report, about once a minute. The Traffic Monitor adds each camera's frame rates and whether detection was on up into the <a href="../watch-log/">watch log</a>. Each report also prompts it to read from Frigate's settings whether each camera is on.</td>
+</tr>
+<tr>
 <td><code>aq/&lt;sensor&gt;/readings</code></td>
 <td><a href="../../add-ons/air-quality/">Air quality sensor</a> to the Traffic Monitor</td>
 <td>One JSON reading. See <a href="../air-quality-aq-payload/">Air quality</a>.</td>
@@ -2408,6 +2443,7 @@
 <li>Each <a href="../events-payload/">event</a> as telemetry, with <code>ts</code> set to the event's <code>frame_time</code> in milliseconds and <code>values.event</code> holding the event's columns that are on the list of what is shared, <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/data/upload-lists.json"><code>upload-lists.json</code></a>. A column that isn't on the list stays on the device.</li>
 <li>Each <a href="../radar-payload/">radar</a> and <a href="../air-quality-aq-payload/">air quality</a> reading as telemetry. Readings from the high-rate radar tables are batched to avoid hundreds of messages per vehicle.</li>
 <li>The device's system metrics as telemetry, every five minutes.</li>
+<li>The <a href="../watch-log/">watch log</a> as telemetry, every five minutes: one <code>watch</code> value with <code>cameras</code> and <code>radars</code> lists holding that window's rows, and <code>ts</code> set to the end of the window in milliseconds. The fields sent are the <code>watch_camera</code> and <code>watch_radar</code> lists in <code>upload-lists.json</code>, which hold every column of the two tables.</li>
 <li>The deployment location and radar information as device attributes.</li>
 </ul>
   
