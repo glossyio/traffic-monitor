@@ -256,8 +256,11 @@ data, an "Add a viewer" form, and the list of accounts, each viewer with a menu 
 - Results appear next to the form that caused them and stay there, rather than in a toast that disappears.
 - Sentence case, no exclamation marks, no apologies.
 - On the unit's own hotspot, the login and setup pages open with a tonal info note (`HotspotNote.vue`): no internet,
-  and the `.local` address to open in a browser on an iPhone. The address is text, not a link, because a link would open
-  inside the phone's sign-in window.
+  then three numbered steps from the phone's sign-in window to a browser, which saves the downloads the window can't.
+  Copy the `.local` address comes first, because the second step (Use this network as is on Android, Use Without
+  Internet on an iPhone) closes the window and the note with it; the third names the Nearby devices permission an
+  Android 17 browser needs. The address has a Copy button and is text, not a link, because a link would open inside
+  the phone's sign-in window.
 
 ### Principles
 
