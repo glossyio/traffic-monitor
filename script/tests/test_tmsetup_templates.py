@@ -367,6 +367,14 @@ def test_ui_page_is_revalidated_and_missing_assets_are_404():
     assert 'add_header Cache-Control "public, max-age=31536000, immutable";' in assets
 
 
+def test_ui_root_declares_utf8_for_the_license_notice():
+    """third-party-licenses.txt is plain text with © and other non-ASCII characters. Without a charset nginx sends
+    text/plain bare, and a browser may show it as mojibake. It sits in the root location, not /assets/."""
+    blocks = dict(top_level_blocks(location("tm-control-ui.conf")))
+    assert "charset utf-8;" in blocks["location /"]
+    assert "charset" not in blocks["location /assets/"]
+
+
 def test_unavailable_page_names_cockpit_and_the_service():
     page = render(
         "container/revproxy/html/unavailable.html.j2",

@@ -14,6 +14,9 @@ export default defineConfig({
     // Imports only the Vuetify components the pages use, with the SASS settings in src/styles/settings.scss
     vuetify({ autoImport: true, styles: { configFile: 'src/styles/settings.scss' } }),
   ],
+  // Writes the license texts of the libraries bundled into the pages to dist/third-party-licenses.txt, which the
+  // About page links to. The build tool makes it, so it can't drift from what ships. (nginx serves it as UTF-8.)
+  build: { license: { fileName: 'third-party-licenses.txt' } },
   server: { proxy: backend },
   preview: { proxy: backend },
   test: {
