@@ -19,7 +19,8 @@ from tmsetup_render import REPO, load_role_yaml, render
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
-from tm_control.modules.location.coordinates import read_heading  # noqa: E402  (needs tm-control/backend on sys.path)
+from tm_control.modules.location import mounting  # noqa: E402
+from tm_control.modules.location.coordinates import read_heading  # noqa: E402
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -724,6 +725,7 @@ MOUNTING_ERRORS = {
     "view_distance_m": "isn't a number from 0 to 1000",
     "mount": "isn't 1 to 32 lower-case letters, digits, or underscores",
 }
+CAMERA_KEY = ("cameras", "picam_h265")
 GIVEN_MOUNTING = {"pitch_deg": 14.94, "height_m": 2.134, "view_distance_m": 7.951, "mount": "tripod"}
 KEPT_MOUNTING = {"pitch_deg": 14.9, "height_m": 2.13, "view_distance_m": 7.95, "mount": "tripod"}
 BAD_MOUNTING = [("pitch_deg", 91), ("pitch_deg", -1), ("pitch_deg", "15"), ("pitch_deg", True), ("height_m", 0),
@@ -767,6 +769,46 @@ def test_init_config_defaults_limits_are_inclusive(key, value):
     payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40, key: value}))
     assert camera_mounting(payload)[key] == value
     assert logged == []
+
+
+# The rounding edges are chosen on the doubles' exact values: 90.05, 100.005 and 1000.005 are held a hair below the half
+# and round back inside, 0.005 and -0.005 a hair above it, and 0.004 rounds to 0, which a height refuses.
+LIMIT_EDGES = {
+    "pitch_deg": [0, 90, 90.04, 90.05, 90.06, 91, -0.04, -0.05, -0.06, -1, 14.96, 0.04, "15", True, [1]],
+    "height_m": [0.01, 100, 0, 0.004, 0.005, 100.004, 100.005, 100.006, 101, -2, 3.665, "2", False, [1]],
+    "view_distance_m": [0, 1000, -0.004, -0.005, 1000.004, 1000.005, 1000.006, 1001, -1, 13.664, "7", True, [1]],
+    "mount": ["tripod", "a" * 32, "a" * 33, "Tripod", " tripod", "tripod ", "tripod\n", "a b", "a-b", "é", 5, True, [1]],
+}
+
+
+@needs_node
+def test_mounting_limits_match_the_control_apps():
+    """Each limit, one step past it and the rounding edges go through both copies the flows hold of the table (init
+    config defaults, on what config.yml gives, and the validator of a mounting correction, on what the control app
+    sends), and what each keeps or refuses is what mounting.read keeps or refuses."""
+    flows = json.loads(FLOWS.read_text())
+    defaults = named(flows, "init config defaults")
+    validator = named(flows, "tm-internal: validate mounting correction")
+    cases = [(key, value) for key, values in LIMIT_EDGES.items() for value in values]
+    expected = [getattr(mounting.read(*CAMERA_KEY, {key: value}), key) for key, value in cases]
+    assert any(value is None for value in expected) and any(value is not None for value in expected)
+
+    steps = [(defaults, {"payload": heading_config({"heading_deg": 90}, {"heading_deg": 40, key: value})})
+             for key, value in cases]
+    for (key, value), step, want in zip(cases, run_functions(steps)["results"], expected):
+        camera = step["result"]["payload"]["sensors"]["cameras"]["picam_h265"]["deployment"]
+        assert camera[key] == want, (key, value)
+        errors = [text for level, text, with_msg in step["logged"] if level == "error"]
+        assert errors == ([] if want is not None else [f"{CAMERA_PATH}.{key} {MOUNTING_ERRORS[key]}"]), (key, value)
+
+    steps = [(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": mounting_body(**{key: value})})
+             for key, value in cases]
+    for (key, value), step, want in zip(cases, run_functions(steps)["results"], expected):
+        passed, refused = step["result"]
+        if want is None:
+            assert passed is None and refused["payload"] == bad_request(key), (key, value)
+        else:
+            assert refused is None and passed["params"][f"${key}"] == want, (key, value)
 
 
 def test_config_template_has_the_survey_keys():
