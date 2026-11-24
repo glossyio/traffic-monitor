@@ -66,6 +66,13 @@ describe('the About page', () => {
     }
   })
 
+  it('says whose product Roadway Biome is, with a link to the company', async () => {
+    const page = await aboutPage()
+    expect(page.text()).toContain('Roadway Biome is a product of Green Dormer Solutions, LLC.')
+    const links = page.findAll('a[href="https://www.greendormer.com/"]')
+    expect(links.map((a) => a.text())).toEqual(['Green Dormer Solutions, LLC'])
+  })
+
   it('sends the reader to the Device page for versions', async () => {
     const page = await aboutPage()
     expect(page.text()).toContain('Software versions are on the Device page.')

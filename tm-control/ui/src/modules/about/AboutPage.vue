@@ -39,7 +39,8 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
     <p class="text-body-1">
       Traffic Monitor is an open source roadway counter and speed monitor. It counts people walking, bicycles, and
       vehicles and measures speeds, on the device, with a camera and a radar. It is maintained by Roadway Biome, which
-      also sells assembled units and runs the server that units can share data with.
+      also sells assembled units and runs the server that units can share data with. Roadway Biome is a product of
+      <a href="https://www.greendormer.com/" v-bind="OUTSIDE">Green Dormer Solutions, LLC</a>.
     </p>
     <!-- A wrapping row with a gap, so the four links stay apart and fit a 360 px phone on two lines -->
     <div class="d-flex flex-wrap gc-6 gr-2 my-4 text-body-1">
