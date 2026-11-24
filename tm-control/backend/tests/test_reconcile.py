@@ -12,7 +12,10 @@ from tm_control.adapters.yamlfile import read_config
 from tm_control.core.auth import Users
 from tm_control.core.manifest import load_manifest
 from tm_control.core.state import State
+from tm_control.fake import FakeNodeRed
 from tm_control.modules.location import reconcile
+from tm_control.modules.location.config import NodeRedConfig
+from tm_control.modules.location.mounting import Mounting
 from tm_control.modules.location.places import Places, SensorHeading
 from tm_control.modules.sharing import follow
 from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents
@@ -638,6 +641,119 @@ def test_a_reset_file_leaves_a_heading_the_operator_set(unit):
     assert sensor_heading(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == 90
     assert file_deployment(unit)["survey_id"] == place.id
     assert Places(unit.state).in_use().headings == SENSORS  # the store keeps the place's own
+
+
+POLE = {"heading_deg": 0, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
+CAMERA = ("cameras", "picam_h265")
+
+
+def mounted_unit(unit):
+    """The place in use with its camera mounted (stored for the place, written in the file), a Node-RED fake running
+    the engine over the file, and then the file reset as tmsetup.sh -f leaves it: no survey id, a blank top-level
+    heading, no sensor block. Returns the place."""
+    reconcile.ensure(unit)  # the place in use, its sensors facing 0
+    place = Places(unit.state).in_use()
+    given = Mounting(sensor_type=CAMERA[0], sensor_name=CAMERA[1], measured="pitch", mount="pole", **{
+        key: value for key, value in POLE.items() if key != "mount"})
+    Places(unit.state).set_mounting(place.id, given)
+    config = NodeRedConfig(unit.config_path)
+    config.set_sensor_mounting(*CAMERA, given)
+    config.save()
+    unit.nodered = FakeNodeRed(unit.config_path)
+    assert {(row["sensorName"], row["survey_id"]) for row in unit.nodered.rows} == {
+        ("picam_h265", place.id), ("TM_RADAR_SERIAL_PORT_00", place.id)}
+    shutil.copy(FIXTURES / "node_red_config_ok.yml", unit.config_path)
+    edit(unit, "heading_deg: 0\n", "heading_deg:\n")
+    return place
+
+
+def camera_block(unit):
+    return dict(read_config(unit.config_path).data["sensors"]["cameras"]["picam_h265"].get("deployment") or {})
+
+
+def test_a_reset_file_gets_the_mounting_back(unit, monkeypatch):
+    """The place's id, headings, and a sensor's mounting go back in one save, so the engine sees the whole mounting
+    when it sees the id, and starts no deployment."""
+    place = mounted_unit(unit)
+    unit.nodered.after_config_write()  # the reset file: no survey id, so the open rows are kept
+    rows = [dict(row) for row in unit.nodered.rows]
+    saves = []
+    real = NodeRedConfig.save
+    monkeypatch.setattr(
+        NodeRedConfig, "save", lambda self, *args, **kwargs: saves.append(1) or real(self, *args, **kwargs)
+    )
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.followed) == ("done", "restored")
+    assert len(saves) == 1
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert camera_block(unit) == POLE  # measured is the store's alone
+    radar = read_config(unit.config_path).data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]
+    assert dict(radar["deployment"]) == {"heading_deg": 0}  # a sensor with nothing stored gets its heading alone
+    unit.nodered.after_config_write()
+    assert unit.nodered.rows == rows  # the same two rows: none new, none closed
+    assert Places(unit.state).mountings(place.id)[0].measured == "pitch"  # the store keeps what it had
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_reset_file_gets_no_unconfirmed_mounting_back(unit):
+    """After a move back, the stored four wait to be confirmed and the file and the open rows have none of them: a
+    reset gets the id and the heading back, and none of the four, so the engine starts no deployment."""
+    reconcile.ensure(unit)  # the place in use, its sensors facing 0
+    places = Places(unit.state)
+    place = places.in_use()
+    places.set_mounting(place.id, Mounting(sensor_type=CAMERA[0], sensor_name=CAMERA[1], measured="pitch", **POLE))
+    places.create("3f9a1c2e-si", None, None, None, [], "ui", "planned", None)
+    places.set_in_use("3f9a1c2e-si")
+    places.set_in_use(place.id)  # back, as Deploy here does, which removed the four from the file
+    assert [(m.sensor_type, m.sensor_name) for m in places.unconfirmed(place.id)] == [CAMERA]
+    unit.nodered = FakeNodeRed(unit.config_path)
+    shutil.copy(FIXTURES / "node_red_config_ok.yml", unit.config_path)
+    edit(unit, "heading_deg: 0\n", "heading_deg:\n")
+    unit.nodered.after_config_write()  # the reset file: no survey id, so the open rows are kept
+    rows = [dict(row) for row in unit.nodered.rows]
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert camera_block(unit) == {"heading_deg": 0}
+    unit.nodered.after_config_write()
+    assert unit.nodered.rows == rows  # the same two rows: none new, none closed
+    assert places.mountings(place.id)[0].height_m == 3.66  # still offered
+
+
+def test_a_hand_move_marks_the_places_mounting_unconfirmed(unit):
+    reconcile.ensure(unit)  # the first place, from the file
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.set_mounting(first, Mounting(sensor_type=CAMERA[0], sensor_name=CAMERA[1], heading_deg=0, height_m=3.66))
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    assert reconcile.ensure(unit).followed == "unknown_id"
+    assert places.unconfirmed(first) == []
+    edit(unit, "survey_id: 3f9a1c2e-si", f"survey_id: {first}")  # back by hand
+    reconcile.ensure(unit)
+    assert places.in_use().id == first
+    assert [(m.sensor_type, m.sensor_name, m.height_m) for m in places.unconfirmed(first)] == [(*CAMERA, 3.66)]
+
+
+def test_a_reset_file_with_another_heading_gets_no_mounting(unit):
+    """A heading someone put in the reset file is theirs, and the sensor gets nothing back."""
+    place = mounted_unit(unit)
+    edit(unit, "            camera_radar: TM_RADAR_SERIAL_PORT_00\n",
+         "            camera_radar: TM_RADAR_SERIAL_PORT_00\n            deployment:\n"
+         "                heading_deg: 90\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert camera_block(unit) == {"heading_deg": 90}
+    assert Places(unit.state).mountings(place.id)[0].height_m == 3.66  # the store still has it
+
+
+def test_a_file_that_has_mounting_keys_keeps_them(unit):
+    """A sensor whose block already holds any of the other four is the operator's: none of the stored four is added."""
+    place = mounted_unit(unit)
+    edit(unit, "            camera_radar: TM_RADAR_SERIAL_PORT_00\n",
+         "            camera_radar: TM_RADAR_SERIAL_PORT_00\n            deployment:\n                heading_deg:\n"
+         "                height_m: 2.5\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == place.id
+    assert camera_block(unit) == {"heading_deg": 0, "height_m": 2.5}  # the heading goes back as before; nothing else
 
 
 @pytest.mark.parametrize("block", INVALID_POINTS)

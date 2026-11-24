@@ -117,6 +117,59 @@ def test_correct_heading_posts_json(wire):
     assert json.loads(wire.calls[1][3]) == {"heading_deg": None}
 
 
+def test_correct_mounting_posts_the_five_keys(wire):
+    wire.answer = (204, b"")
+    values = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": None, "mount": "pole",
+              "measured": "pitch"}
+    assert NodeRed(TOKEN).correct_mounting(DEPLOYMENT, values) is None
+    method, url, headers, body, content_type = wire.calls[0]
+    assert (method, url, content_type) == ("POST", f"{BASE}/deployments/{DEPLOYMENT}/mounting", "application/json")
+    assert headers == {"X-TM-Internal-Token": TOKEN}
+    assert json.loads(body) == {  # exactly the five: `measured` stays in the control app
+        "heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": None, "mount": "pole",
+    }
+    with pytest.raises(KeyError):  # a key left out is never sent as a clear
+        NodeRed(TOKEN).correct_mounting(DEPLOYMENT, {"heading_deg": 40})
+    assert len(wire.calls) == 1
+
+
+def test_the_correction_carries_the_five_facts_in_the_rules_order():
+    from tm_control.modules.location.mounting import FIELDS
+
+    assert nodered.MOUNTING_KEYS == FIELDS  # the adapter doesn't import the modules; this keeps the two lists one
+
+
+def test_a_refused_mounting_raises_without_the_body(wire):
+    wire.answer = (400, b'{"error": "bad_request", "detail": "height_m"}')
+    values = {"heading_deg": None, "pitch_deg": None, "height_m": 3.66, "view_distance_m": None, "mount": None}
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).correct_mounting(DEPLOYMENT, values)
+    assert (raised.value.code, raised.value.status) == ("bad_request", 400)
+    assert "height_m" not in str(raised.value) and "3.66" not in repr(raised.value)
+
+
+def test_recorded_reads_which_open_deployments_have_traffic(wire):
+    wire.answer = answer({"deployments": {DEPLOYMENT: True, "1700000000001-0badf00d-d": False,
+                                          "1700000000002-0badf00d-d": None}})
+    assert NodeRed(TOKEN).recorded(SURVEY) == {
+        DEPLOYMENT: True, "1700000000001-0badf00d-d": False, "1700000000002-0badf00d-d": None,
+    }
+    assert wire.calls == [("GET", f"{BASE}/surveys/{SURVEY}/recorded", {"X-TM-Internal-Token": TOKEN}, None, None)]
+    wire.answer = answer({"deployments": {}})
+    assert NodeRed(TOKEN).recorded(SURVEY) == {}
+
+
+@pytest.mark.parametrize("body", [
+    {}, {"deployments": []}, {"deployments": None}, {"deployments": {DEPLOYMENT: "yes"}},
+    {"deployments": {DEPLOYMENT: 1}}, {"deployments": {DEPLOYMENT: {}}}, [],
+])
+def test_recorded_refuses_an_answer_that_is_not_ids_to_true_false_or_null(wire, body):
+    wire.answer = answer(body)
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).recorded(SURVEY)
+    assert raised.value.code == "unexpected"
+
+
 def test_a_failed_post_raises(wire):
     wire.answer = (400, b'{"error": "bad_request", "detail": "lat"}')
     with pytest.raises(NodeRedError) as raised:

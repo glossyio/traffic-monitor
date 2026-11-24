@@ -142,6 +142,22 @@ MIGRATIONS = [
     ALTER TABLE survey_corrections_new RENAME TO survey_corrections;
     CREATE INDEX survey_corrections_survey ON survey_corrections (survey_id);
     """,
+    # How each sensor is mounted at a place, beside its heading (issue #357): tilt below level, height above the road,
+    # distance along the ground to the centre of the view, which of tilt and distance was measured (the other is worked
+    # out), and the usual mount the values were started from. All NULL until the Mounting form saves them.
+    """
+    ALTER TABLE survey_sensors ADD COLUMN pitch_deg REAL;
+    ALTER TABLE survey_sensors ADD COLUMN height_m REAL;
+    ALTER TABLE survey_sensors ADD COLUMN view_distance_m REAL;
+    ALTER TABLE survey_sensors ADD COLUMN measured TEXT CHECK (measured IN ('pitch', 'distance'));
+    ALTER TABLE survey_sensors ADD COLUMN mount TEXT;
+    """,
+    # Whether a sensor's other four wait to be confirmed (issue #357): a move to a place used before records none of
+    # them, and offers them until a save writes that sensor. Every row from before holds what config.yml has, so it
+    # stays confirmed.
+    """
+    ALTER TABLE survey_sensors ADD COLUMN unconfirmed INTEGER NOT NULL DEFAULT 0 CHECK (unconfirmed IN (0, 1));
+    """,
 ]
 
 
