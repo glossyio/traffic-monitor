@@ -1807,13 +1807,160 @@ def test_validate_setup_waits_for_the_config_and_the_schema_version(context):
 
 @needs_node
 def test_validate_setup_caps_a_json_fact():
-    ok = [{"key": "z" * 100} for _ in range(100)]
-    assert len(json.dumps(ok, separators=(",", ":"))) < 16384
+    def bare(n):
+        return [{"key": "z" * 100, "enabled": True, "corners": [], "distances": [], "inertia": None,
+                 "loitering_time": None, "speed_threshold": None, "objects": [], "filters": {}} for _ in range(n)]
+    ok, big = bare(50), bare(200)
+    assert len(json.dumps(ok, separators=(",", ":"))) < 16384 < len(json.dumps(big, separators=(",", ":")))
     assert validate_setup(with_camera(zones=ok))["result"][1] is None
-    big = [{"key": "z" * 100} for _ in range(200)]
-    assert len(json.dumps(big, separators=(",", ":"))) > 16384
     passed, refused = validate_setup(with_camera(zones=big))["result"]
     assert passed is None and refused["payload"] == bad_request("cameras.zones")
+
+
+FRIGATE_CAMERA = {
+    "detect": {"width": 1536, "height": 864, "fps": 10, "stationary": {"interval": 50, "threshold": 50}},
+    "objects": {
+        "track": ["car", "person"],
+        "mask": {"o1": {"friendly_name": "Drive", "enabled": False, "coordinates": "0.2,0.2,0.3,0.2,0.3,0.3"}},
+        "filters": {"car": {"min_area": 100, "max_area": 2000.5, "min_ratio": 0.1, "max_ratio": 9, "threshold": 0.7,
+                            "min_score": 0.5, "mask": {"f1": {"coordinates": "0,0,0.5,0,0.5,0.5"}}},
+                    "person": {"mask": "0.1,0.1,0.2,0.1,0.2,0.2"}},
+    },
+    "motion": {"mask": {"m1": {"friendly_name": "Sky", "coordinates": "0,0,1,0,1,0.1"}}},
+    "zones": {
+        "zone_capture": {
+            "friendly_name": "Oak Ave", "color": [1, 2, 3], "enabled": True, "inertia": 3, "loitering_time": 0,
+            "coordinates": "0.1,0.2,0.9,0.2,0.9,0.8,0.1,0.8", "distances": ["5.0", "2", "5", "2"],
+            "speed_threshold": 12.5, "objects": ["car", "person"],
+            "filters": {"car": {"min_area": 50, "threshold": 0.6}},
+        },
+        "zone_far": {"enabled": False, "coordinates": "0.1,0.1,0.2,0.1", "loitering_time": 30},
+    },
+}
+
+
+def setup_with(**changes):
+    """A snapshot whose camera is built by the control app from a Frigate camera with every zone field, all three
+    kinds of mask, and filters; `changes` replace some of its facts."""
+    camera = snapshot.camera_facts(FRIGATE_CAMERA, None)
+    return {**GOOD_SETUP, "cameras": {"cam_a": {**camera, **changes}}}
+
+
+@needs_node
+def test_validate_setup_accepts_what_the_control_app_builds():
+    """The nested half of the field rule: what snapshot.camera_facts puts inside zones, masks, and thresholds is what
+    the validator accepts, and every part of it is there to be checked."""
+    body = setup_with()
+    camera = body["cameras"]["cam_a"]
+    assert [zone["key"] for zone in camera["zones"]] == ["zone_capture", "zone_far"]
+    assert camera["zones"][0]["filters"] == {"car": {"min_area": 50, "threshold": 0.6}}
+    assert camera["zones"][1]["inertia"] is None and camera["zones"][1]["corners"] == []
+    assert set(camera["masks"]) == {"motion", "objects", "object_filters"}
+    assert camera["masks"]["objects"][0]["enabled"] is False
+    assert set(camera["masks"]["object_filters"]) == {"car", "person"}
+    assert set(camera["thresholds"]["car"]) == {"min_area", "max_area", "min_ratio", "max_ratio", "threshold",
+                                                 "min_score"}
+    passed, refused = validate_setup(body)["result"]
+    assert refused is None and passed["setup"] == body
+
+
+ZONE = snapshot.camera_facts(FRIGATE_CAMERA, None)["zones"][0]
+MASK = {"enabled": True, "corners": [[0.1, 0.2], [0.3, 0.2], [0.3, 0.4]]}
+MASKS = {"motion": [MASK], "objects": [], "object_filters": {"car": [MASK]}}
+BAD_NUMBERS = ["1", None, True, [1], {"a": 1}]
+
+
+def zone_with(**changes):
+    return [{**ZONE, **changes}]
+
+
+def without(mapping, key):
+    return {name: value for name, value in mapping.items() if name != key}
+
+
+@needs_node
+@pytest.mark.parametrize("fact, value", [
+    # one more key, and a friendly_name, in a zone, a mask, the masks mapping, and a filter set
+    ("zones", zone_with(friendly_name="Oak Ave")), ("zones", zone_with(color="#010203")),
+    ("zones", zone_with(filters={"car": {"min_area": 1, "friendly_name": "x"}})),
+    ("masks", {**MASKS, "friendly_name": "Drive"}), ("masks", {**MASKS, "id": "m1"}),
+    ("masks", {"motion": [{**MASK, "friendly_name": "Sky"}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [], "objects": [{**MASK, "id": "o1"}], "object_filters": {}}),
+    ("masks", {"motion": [], "objects": [], "object_filters": {"car": [{**MASK, "friendly_name": "x"}]}}),
+    ("thresholds", {"car": {"min_area": 1, "friendly_name": "x"}}), ("thresholds", {"car": {"mask": 1}}),
+    # a zone, the masks mapping, or a mask with a key missing
+    *[("zones", [without(ZONE, key)]) for key in ZONE],
+    *[("masks", without(MASKS, key)) for key in MASKS],
+    ("masks", {"motion": [{"corners": MASK["corners"]}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{"enabled": True}], "objects": [], "object_filters": {}}),
+    # a wrong type in each zone field
+    *[("zones", zone_with(**{field: value})) for field in ZONE for value in ["x", {"a": 1}, [None], 7]
+      if not (field in ("inertia", "loitering_time", "speed_threshold") and value == 7)
+      and not (field == "key" and value == "x")],
+    ("zones", zone_with(key="")), ("zones", zone_with(key=None)), ("zones", zone_with(enabled=None)),
+    ("zones", zone_with(enabled=1)), ("zones", zone_with(inertia=3.5)), ("zones", zone_with(inertia="3")),
+    ("zones", zone_with(loitering_time=True)), ("zones", zone_with(speed_threshold="12")),
+    ("zones", zone_with(speed_threshold=True)),
+    ("zones", zone_with(corners=[[0.1, 0.2, 0.3]])), ("zones", zone_with(corners=[[0.1]])),
+    ("zones", zone_with(corners=[[0.1, "0.2"]])), ("zones", zone_with(corners=[[0.1, None]])),
+    ("zones", zone_with(corners=[0.1, 0.2])), ("zones", zone_with(corners=[{"x": 1, "y": 2}])),
+    ("zones", zone_with(distances=["5"])), ("zones", zone_with(distances=[None])),
+    ("zones", zone_with(objects=[3])), ("zones", zone_with(objects=["car", None])),
+    ("zones", zone_with(filters=[])), ("zones", zone_with(filters={"car": []})),
+    ("zones", zone_with(filters={"car": {"min_area": "1"}})), ("zones", zone_with(filters={"car": {"min_area": None}})),
+    ("zones", ["zone_far"]), ("zones", [None]), ("zones", [[]]), ("zones", {"zone_far": ZONE}),
+    # a wrong type in the masks and their parts
+    ("masks", []), ("masks", "none"), ("masks", {"motion": MASK, "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [], "objects": None, "object_filters": {}}),
+    ("masks", {"motion": [], "objects": [], "object_filters": []}),
+    ("masks", {"motion": [], "objects": [], "object_filters": {"car": MASK}}),
+    ("masks", {"motion": [], "objects": [], "object_filters": {"car": [1]}}),
+    ("masks", {"motion": ["m1"], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{**MASK, "enabled": "yes"}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{**MASK, "enabled": None}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{**MASK, "corners": "0,0,1,1"}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{**MASK, "corners": [[0, 1, 2]]}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{**MASK, "corners": [[0, "1"]]}], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [], "objects": [], "object_filters": {"car": [{**MASK, "corners": None}]}}),
+    # a wrong type in thresholds and filter sets
+    ("thresholds", []), ("thresholds", {"car": []}), ("thresholds", {"car": None}), ("thresholds", {"car": "x"}),
+    *[("thresholds", {"car": {"min_area": value}}) for value in BAD_NUMBERS],
+    *[("zones", zone_with(filters={"car": {"threshold": value}})) for value in BAD_NUMBERS],
+], ids=lambda value: None)
+def test_validate_setup_refuses_what_is_wrong_inside(fact, value):
+    """Anything wrong inside zones, masks, or thresholds is refused by the fact's name, and no further."""
+    passed, refused = validate_setup(with_camera(**{fact: value}))["result"]
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(f"cameras.{fact}")
+
+
+@needs_node
+@pytest.mark.parametrize("fact, value", [
+    ("zones", []), ("zones", zone_with(corners=[], distances=[], objects=[], filters={}, inertia=None,
+                                       loitering_time=None, speed_threshold=None)),
+    ("zones", zone_with(corners=[[-0.1, 1.2], [0, 0], [1, 1]], speed_threshold=0, inertia=0)),
+    ("masks", {}), ("masks", {"motion": [], "objects": [], "object_filters": {}}),
+    ("masks", {"motion": [{"enabled": False, "corners": []}], "objects": [], "object_filters": {"car": []}}),
+    ("thresholds", {}), ("thresholds", {"car": {}}), ("thresholds", {"car": {"min_area": 0, "threshold": -1.5}}),
+])
+def test_validate_setup_accepts_the_empty_and_odd_but_well_formed(fact, value):
+    passed, refused = validate_setup(with_camera(**{fact: value}))["result"]
+    assert refused is None and passed["setup"]["cameras"]["cam_a"][fact] == value
+
+
+@needs_node
+@pytest.mark.parametrize("fact, build", [("zones", lambda number: zone_with(speed_threshold=number)),
+                                         ("zones", lambda number: zone_with(distances=[number])),
+                                         ("zones", lambda number: zone_with(corners=[[number, 0]])),
+                                         ("masks", lambda number: {"motion": [{**MASK, "corners": [[0, number]]}],
+                                                                   "objects": [], "object_filters": {}}),
+                                         ("thresholds", lambda number: {"car": {"min_area": number}})])
+def test_validate_setup_refuses_a_number_that_is_not_finite(fact, build):
+    """JSON has no NaN or infinity, but a body with 400 digits parses to one in JavaScript, so each place that takes a
+    number refuses it."""
+    for number in (10**400, -(10**400)):
+        passed, refused = validate_setup(with_camera(**{fact: build(number)}))["result"]
+        assert passed is None and refused["payload"] == bad_request(f"cameras.{fact}")
 
 
 @needs_node

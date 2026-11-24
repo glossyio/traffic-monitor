@@ -3,12 +3,12 @@ its zones, its masks), gathered from the same readers the Detection and Cameras 
 
 Only the facts listed in DEVICE_FACTS and CAMERA_FACTS leave this module, and each camera is keyed by its sensors.cameras
 key in config.yml. Frigate's name for a camera, an input path, a zone's or mask's friendly_name, its colour, and a
-mask's id are never read into the snapshot. Node-RED checks only the type of a zone's or mask's contents, so they are
-whitelisted here: built from the listed keys and nothing else.
+mask's id are never read into the snapshot. A zone's, a mask's, and a filter set's contents are whitelisted here (built
+from the listed keys and nothing else), and Node-RED's validator checks that they are exactly those.
 
 Values Node-RED's validator would refuse are never sent: a text fact that isn't a string, is empty, or is longer than
-TEXT_MAX is None; a whole-number fact is an int or None, never a float. Nothing here logs a camera, a zone, a title,
-a profile, or a value.
+TEXT_MAX is None; a whole-number fact is an int or None, never a float; a number that isn't finite, and a zone with no
+key, are left out. Nothing here logs a camera, a zone, a title, a profile, or a value.
 """
 
 import math
@@ -83,10 +83,11 @@ def _names(value) -> list[str]:
 # The cameras
 
 def _filters(filters, labels: Iterable[str] | None) -> dict[str, dict]:
-    """Each label's FILTER_KEYS numbers (the labels in `labels`, or all), a label with no number left out."""
+    """Each label's FILTER_KEYS numbers (the labels in `labels`, or all); a number that isn't a finite one, and a label
+    with no number left, are left out."""
     found = {}
     for label, numbers in zones.object_filters(filters).items():
-        numbers = {key: _number(value) for key, value in numbers.items()}
+        numbers = {key: number for key, value in numbers.items() if (number := _number(value)) is not None}
         if numbers and (labels is None or label in labels):
             found[label] = numbers
     return found
@@ -161,7 +162,7 @@ def camera_facts(camera: Mapping, active_profile: str | None) -> dict:
         "lens_hfov": None,
         "labels_tracked": tracked,
         "thresholds": _filters(probes.mapping(camera.get("objects")).get("filters"), set(tracked)),
-        "zones": sorted((_zone(zone) for zone in zones.zone_facts(camera)), key=lambda zone: zone["key"]),
+        "zones": sorted((_zone(zone) for zone in zones.zone_facts(camera) if zone.key), key=lambda zone: zone["key"]),
         "masks": _all_masks(camera),
         "profile": _text(profile),
     }

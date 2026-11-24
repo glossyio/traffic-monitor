@@ -149,6 +149,26 @@ def test_camera_facts_thresholds_are_the_tracked_labels_filters():
     assert list(found["car"]) == ["min_area", "max_area", "min_ratio", "max_ratio", "threshold", "min_score"]
 
 
+def test_camera_facts_leaves_out_what_the_validator_would_refuse():
+    """A filter number that isn't a finite number, and a zone with no key, are never sent."""
+    inf = float("inf")
+    camera = {
+        "objects": {"track": ["car", "bus"], "filters": {"car": {"min_area": inf, "threshold": 0.5},
+                                                          "bus": {"max_area": float("nan")}}},
+        "zones": {"": {"coordinates": "0,0,1,0,1,1"}, "zone_a": {"filters": {"car": {"min_score": -inf}}}},
+    }
+    found = camera_facts(camera, None)
+    assert found["thresholds"] == {"car": {"threshold": 0.5}}
+    assert [zone["key"] for zone in found["zones"]] == ["zone_a"] and found["zones"][0]["filters"] == {}
+
+
+def test_filters_leave_out_a_number_that_comes_out_none(monkeypatch):
+    """The snapshot's own number check can be stricter than the zone reader's; what it refuses is left out."""
+    monkeypatch.setattr(snapshot, "_number", lambda value: None if value == 3 else value)
+    found = snapshot._filters({"car": {"min_area": 3, "max_area": 4}, "bus": {"min_area": 3}}, None)
+    assert found == {"car": {"max_area": 4}}
+
+
 def test_camera_facts_masks():
     motion = {
         "m1": {"friendly_name": "12 Oak St drive", "enabled": True, "coordinates": "0,0,1,0,1,1"},

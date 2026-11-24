@@ -117,3 +117,12 @@ def test_corners_and_object_filters_are_public_and_give_what_a_zone_holds():
     assert object_filters({"car": {"min_area": 500, "colour": "x", "threshold": "high"}, "bus": 3}) == {
         "car": {"min_area": 500}}
     assert object_filters(None) == {}
+
+
+def test_a_number_that_is_not_finite_is_no_number():
+    """A filter number or a speed threshold of infinity or NaN is left out, as a zone's corners and distances are."""
+    inf, nan = float("inf"), float("nan")
+    assert object_filters({"car": {"min_area": inf, "max_area": nan, "min_ratio": -inf, "threshold": 0.5}}) == {
+        "car": {"threshold": 0.5}}
+    [zone] = zone_facts({"zones": {"z": RADAR | {"speed_threshold": inf, "filters": {"car": {"min_area": nan}}}}})
+    assert zone.speed_threshold is None and zone.filters == {"car": {}}
