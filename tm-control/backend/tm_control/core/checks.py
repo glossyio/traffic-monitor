@@ -62,14 +62,18 @@ class Context:
 
     `probe(key, fn)` runs fn once per report (a command's output, an app's status) for every check that asks for
     the same key; `probes` holds the results.
+
+    `setup` is the setup poster's summary (whether a snapshot was gathered, and which names it flagged); None where a
+    check has no use for it.
     """
 
-    def __init__(self, settings, manifest, secrets, state=None, notice_version=None):
+    def __init__(self, settings, manifest, secrets, state=None, notice_version=None, setup=None):
         self.settings = settings
         self.manifest = manifest
         self.secrets = secrets
         self.state = state
         self.notice_version = notice_version
+        self.setup = setup
         self.probes: dict[str, Any] = {}
         self._errors: dict[str, Exception] = {}
         self._locks: dict[str, threading.Lock] = {}

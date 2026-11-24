@@ -50,12 +50,12 @@ def config_group_with(apps, preset: dict):
 def test_cameras_match(apps):
     checks = config_group(apps)
     assert list(checks) == [
-        "config.cameras", "config.zones", "config.zone_names", "config.radars", "config.deployment",
-        "config.thingsboard", "config.sharing", "config.frigate_plus",
+        "config.cameras", "config.zones", "config.zone_names", "config.setup_names", "config.radars",
+        "config.deployment", "config.thingsboard", "config.sharing", "config.frigate_plus",
     ]
     assert [c.title for c in checks.values()] == [
-        "Cameras in config.yml", "Zones", "Zone names", "Radar names", "Location", "ThingsBoard upload", "Sharing",
-        "Frigate+",
+        "Cameras in config.yml", "Zones", "Zone names", "Model and profile names", "Radar names", "Location",
+        "ThingsBoard upload", "Sharing", "Frigate+",
     ]
     assert {c.id: c.status for c in checks.values()} == dict.fromkeys(checks, "ok")
 
@@ -235,6 +235,8 @@ def test_every_check_is_unknown_when_config_yml_has_a_yaml_error(apps):
     # The Frigate+ check reads Frigate's config.yml only, which has no plus:// model, and no key is set.
     frigate_plus = checks.pop("config.frigate_plus")
     assert (frigate_plus.status, frigate_plus.detail) == ("ok", "Frigate+ isn't in use.")
+    # The names check reads the poster's summary, not config.yml.
+    assert checks.pop("config.setup_names").status == "ok"
     assert {c.status for c in checks.values()} == {"unknown"}
     assert checks["config.cameras"].detail == (
         "config.yml has a YAML error, so its cameras can't be compared with Frigate's."
@@ -1447,3 +1449,53 @@ def test_a_zone_key_frigate_made_up_isnt_checked_or_quoted(apps):
     detail = config_group(apps)["config.zone_names"].detail
     assert detail.startswith("1 zone name on camera picam_h265 looks like an address or a person's name.")
     assert "Main" not in detail and "a6669b83" not in detail
+
+
+# The model's and the active profile's names, from the poster's last snapshot
+
+MODEL_SENTENCE = "The running model's title looks like an address or a person's name. It is saved in the database."
+PROFILE_SENTENCE = (
+    "Frigate's active profile has a name that looks like an address or a person's name. It is saved in the database."
+)
+DETECTION_LINK = Fix(kind="link", text="Open the Detection page", href="/detection")
+
+
+@pytest.mark.parametrize(
+    "setup, status, detail, fix",
+    [
+        (None, "unknown", "The setup hasn't been read yet.", None),
+        ({"gathered": False, "flagged": []}, "unknown", "The setup hasn't been read yet.", None),
+        ({"gathered": False, "flagged": ["model_title"]}, "unknown", "The setup hasn't been read yet.", None),
+        ({"gathered": True, "flagged": []}, "ok",
+         "The running model's title and the active profile's name don't look like an address or a person's name.",
+         None),
+        ({"gathered": True, "flagged": ["model_title"]}, "warn", MODEL_SENTENCE, DETECTION_LINK),
+        ({"gathered": True, "flagged": ["profile"]}, "warn", PROFILE_SENTENCE, None),
+        ({"gathered": True, "flagged": ["profile", "model_title"]}, "warn", f"{MODEL_SENTENCE} {PROFILE_SENTENCE}",
+         DETECTION_LINK),
+    ],
+)
+def test_setup_names_check(apps, setup, status, detail, fix):
+    check = run_group(contracts.GROUP, apps.context(setup=setup)).checks
+    (check,) = [c for c in check if c.id == "config.setup_names"]
+    assert check.title == "Model and profile names"
+    assert (check.status, check.detail, check.fix) == (status, detail, fix)
+
+
+def test_no_check_quotes_a_name(apps):
+    """The poster keeps only which facts were flagged, so a flagged title never reaches a check's detail."""
+    from tm_control.modules.apps import checks as apps_module
+    from tm_control.modules.setup_history.poster import Poster
+    from tm_control.modules.setup_history.snapshot import Snapshot
+
+    title, profile = "17 Maple Avenue Eastbound", "jane_doe_driveway"
+    body = {"complete": True, "device": {"model_title": title}, "cameras": {"cam": {"profile": profile}}}
+    poster = Poster(lambda: Snapshot(body, ("model_title", "profile")), lambda body: None)
+    assert poster.run_once() is True
+    context = apps.context(setup=poster.summary())
+    details = [c.detail for c in run_group(contracts.GROUP, context).checks if c.id == "config.setup_names"]
+    details += [c.detail for c in run_group(apps_module.GROUP, context).checks if c.id == "apps.setup_history"]
+    assert len(details) == 2
+    words = [word.lower() for word in (title + " " + profile.replace("_", " ")).split()]
+    for detail in details:
+        assert not any(word in detail.lower().replace("'", " ").split() for word in words)

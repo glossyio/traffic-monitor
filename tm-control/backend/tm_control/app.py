@@ -90,7 +90,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.status = StatusCache(
         check_groups,
         lambda: Context(
-            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version
+            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version,
+            app.state.setup_poster.summary(),
         ),
         prepare=lambda: reconcile.for_status_report(app.state),
     )

@@ -34,6 +34,7 @@ from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consent
 ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone names the flows expect
 DIRECTION_ZONES = ("zone_near", "zone_far")
 CAMERAS_LINK = Fix(kind="link", href="/cameras", text="Open the Cameras page")
+DETECTION_LINK = Fix(kind="link", href="/detection", text="Open the Detection page")
 BEARINGS = ("n", "s", "e", "w", "ne", "nw", "se", "sw")
 CONFIG_YML_PROBLEM = {
     "missing": "config.yml is missing",
@@ -220,6 +221,32 @@ def zone_names(context: Context) -> list[Check]:
         f"{'it' if one else 'them'} in Frigate.",
         CAMERAS_LINK,
     )
+
+
+def setup_names(context: Context) -> list[Check]:
+    """The running model's title and the active profile's name don't look like an address or a person's name: both are
+    saved in the database, and shared with the data. The detail says which and never quotes either; it is read from the
+    setup poster's summary, never from the snapshot itself."""
+
+    def check(status, detail, fix=None):
+        return [Check(id="config.setup_names", title="Model and profile names", status=status, detail=detail, fix=fix)]
+
+    setup = context.setup
+    if not isinstance(setup, dict) or setup.get("gathered") is not True:
+        return check("unknown", "The setup hasn't been read yet.")
+    flagged = setup.get("flagged") or []
+    sentences = []
+    if "model_title" in flagged:
+        sentences.append("The running model's title looks like an address or a person's name. It is saved in the "
+                         "database.")
+    if "profile" in flagged:
+        sentences.append("Frigate's active profile has a name that looks like an address or a person's name. It is "
+                         "saved in the database.")
+    if not sentences:
+        return check("ok", "The running model's title and the active profile's name don't look like an address or a "
+                           "person's name.")
+    fix = DETECTION_LINK if "model_title" in flagged else None
+    return check("warn", " ".join(sentences), fix)
 
 
 def radar_names(context: Context) -> list[Check]:
@@ -618,5 +645,5 @@ def frigate_plus(context: Context) -> list[Check]:
 GROUP = CheckGroup(
     "config",
     "Configuration",
-    [cameras_in_config, zones, zone_names, radar_names, location, thingsboard, sharing, frigate_plus],
+    [cameras_in_config, zones, zone_names, setup_names, radar_names, location, thingsboard, sharing, frigate_plus],
 )

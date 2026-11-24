@@ -3,6 +3,7 @@ import json
 import shutil
 import signal
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -161,6 +162,10 @@ NODE_RED_STATUS = "http://127.0.0.1:1880/tm-internal/status"
 GO2RTC_STREAMS = "http://127.0.0.1:1984/api/streams"
 
 
+# What Poster.summary() says of a device whose setup was read and has no name worth a warning
+HEALTHY_SETUP = {"gathered": True, "flagged": []}
+
+
 class FakeApps:
     """The apps on a device as the apps adapters see them, from the synthetic fixtures: each URL's HTTP answer, ss's
     listening sockets, and a code directory with Node-RED's and Frigate's config.yml and the tmdb migrations.
@@ -179,7 +184,7 @@ class FakeApps:
             f"{FRIGATE_API}/version": (200, b"0.18.1-cf67f08"),
             f"{FRIGATE_API}/config": (200, (FIXTURES / "frigate_api_config.json").read_bytes()),
             f"{FRIGATE_API}/stats": (200, (FIXTURES / "frigate_api_stats.json").read_bytes()),
-            NODE_RED_STATUS: (200, (FIXTURES / "nodered_status.json").read_bytes()),
+            NODE_RED_STATUS: (200, self._nodered_status()),
             GO2RTC_STREAMS: (200, (FIXTURES / "go2rtc_streams.json").read_bytes()),
         }
         self.requests: list[tuple[str, dict]] = []
@@ -193,6 +198,14 @@ class FakeApps:
         self.migrations = codedir / "node-red-tm" / "schema" / "migrations"
         self.migrations.mkdir(parents=True)
         (self.migrations / "0001_baseline.sql").write_text("-- synthetic\n")
+
+    @staticmethod
+    def _nodered_status() -> bytes:
+        """The fixture's Node-RED status with the setup snapshot's time moved to now: the fixture's own date is fixed,
+        and the setup history check judges how old it is."""
+        body = json.loads((FIXTURES / "nodered_status.json").read_text())
+        body["setup"]["received_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        return json.dumps(body).encode()
 
     def get(self, url, headers=None, timeout=None):
         self.requests.append((url, dict(headers or {})))
@@ -220,13 +233,13 @@ class FakeApps:
     def asked(self, url) -> int:
         return sum(1 for asked, _ in self.requests if asked == url)
 
-    def context(self, state=None, notice_version=None):
+    def context(self, state=None, notice_version=None, setup=HEALTHY_SETUP):
         from tm_control.core.checks import Context
         from tm_control.core.manifest import load_manifest
 
         manifest = load_manifest(FIXTURES / "manifest.json").model_copy(update={"codedir": str(self.codedir)})
         return Context(settings=None, manifest=manifest, secrets=self.secrets, state=state,
-                       notice_version=notice_version)
+                       notice_version=notice_version, setup=setup)
 
 
 @pytest.fixture
