@@ -1309,12 +1309,12 @@ STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing",
-                     "/tm-internal/database/exact-copy"}
+                     "/tm-internal/database/exact-copy", "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post",
-                       "/tm-internal/database/exact-copy": "post"}
+                       "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
@@ -1340,7 +1340,10 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
-              "/tm-internal/database/exact-copy": "tm-internal: validate exact copy"}
+              "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
+              "/tm-internal/setup": "tm-internal: validate setup"}
+# A refusal's status: the response node's own, or "" where the validator sets msg.statusCode (setup answers 400 or 503)
+REFUSAL_STATUS = {"/tm-internal/setup": ""}
 
 
 def tm_internal_endpoints():
@@ -1392,7 +1395,8 @@ def test_refused_requests_reach_no_sql():
             assert (validator["type"], validator["name"], validator["outputs"]) == ("function", VALIDATORS[url], 2)
             refusals += validator["wires"][1]
             bad = reachable(by_id, validator["wires"][1])
-            assert [(node["type"], str(node["statusCode"])) for node in bad] == [("http response", "400")], url
+            expected = REFUSAL_STATUS.get(url, "400")
+            assert [(node["type"], str(node["statusCode"])) for node in bad] == [("http response", expected)], url
         assert [node["type"] for node in reachable(by_id, refusals) if node["type"] != "http response"] == [], url
 
 
@@ -1436,12 +1440,14 @@ def test_precision_rewrite_uses_two_statements():
 def test_survey_endpoints_sit_with_the_status_endpoint():
     flows, by_id, endpoints = tm_internal_endpoints()
     status_group = by_id[endpoints["/tm-internal/status"]["g"]]
-    new = reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS - {"/tm-internal/status"}])
-    groups = {node["g"] for node in new}
-    assert len(groups) == 1
-    [group_id] = groups
-    assert by_id[group_id]["g"] == status_group["id"] and group_id in status_group["nodes"]
-    assert set(by_id[group_id]["nodes"]) >= {node["id"] for node in new}
+    for urls in (TM_INTERNAL_PATHS - {"/tm-internal/status", "/tm-internal/setup"}, {"/tm-internal/setup"}):
+        new = reachable(by_id, [endpoints[url]["id"] for url in urls])
+        groups = {node["g"] for node in new}
+        assert len(groups) == 1
+        [group_id] = groups
+        assert by_id[group_id]["g"] == status_group["id"] and group_id in status_group["nodes"]
+        assert set(by_id[group_id]["nodes"]) >= {node["id"] for node in new}
+    assert by_id[endpoints["/tm-internal/setup"]["g"]]["name"] == "tm-control setup history: POST /tm-internal/setup"
 
 
 SURVEY_ID = "3f9a1c2e-si"
@@ -1656,6 +1662,153 @@ def test_exact_copy_list_keeps_only_three_keys_per_place():
     body = {"ticket": TICKET, "places": [{**PLACE, "description": "x"}]}
     [step] = run_functions([(validator, exact_copy_msg(body))])["results"]
     assert step["result"][0]["exactCopy"]["places"] == [PLACE]
+
+
+DEVICE_FACTS = ["tm_version", "tm_commit", "frigate_version", "unit_system", "detector", "model_id", "model_file",
+                "model_sha256", "model_kind", "model_title", "model_trained_at", "model_base", "model_type",
+                "model_width", "model_height", "labels_available"]
+CAMERA_FACTS = ["detect_width", "detect_height", "detect_fps", "stationary_threshold", "stationary_interval",
+                "lens_hfov", "labels_tracked", "thresholds", "zones", "masks", "profile"]
+SETUP_CONTEXT = {"config": {"sensors": {"cameras": {"cam_a": {"enabled": True}, "cam_b": {"enabled": False}}}},
+                 "tm_status": {"schema_version": 7}}
+GOOD_SETUP = {"complete": True,
+              "device": {**dict.fromkeys(DEVICE_FACTS), "tm_version": "0.8.0", "model_width": 320,
+                         "labels_available": ["car", "person"]},
+              "cameras": {"cam_a": {**dict.fromkeys(CAMERA_FACTS), "detect_width": 1536, "zones": [], "masks": {}}}}
+
+
+def validate_setup(body, context=SETUP_CONTEXT):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate setup")
+    [step] = run_functions([(validator, {"req": {"body": body}, "payload": body})], context=context)["results"]
+    return step
+
+
+def with_device(**changes):
+    return {**GOOD_SETUP, "device": {**GOOD_SETUP["device"], **changes}}
+
+
+def with_camera(**changes):
+    return {**GOOD_SETUP, "cameras": {"cam_a": {**GOOD_SETUP["cameras"]["cam_a"], **changes}}}
+
+
+@needs_node
+@pytest.mark.parametrize("body, status, detail", [
+    ("text", 400, "body"), ({}, 400, "complete"), ({"complete": "yes"}, 400, "complete"),
+    ({**GOOD_SETUP, "device": None}, 400, "device"),
+    (with_device(frigate_camera="x"), 400, "device.frigate_camera"),
+    (with_device(model_width="320"), 400, "device.model_width"),
+    (with_device(model_height=240.5), 400, "device.model_height"),
+    (with_device(labels_available="car"), 400, "device.labels_available"),
+    (with_device(labels_available=["car", 5]), 400, "device.labels_available"),
+    (with_device(tm_version="x" * 129), 400, "device.tm_version"),
+    (with_device(tm_version=""), 400, "device.tm_version"),
+    (with_device(model_kind=7), 400, "device.model_kind"),
+    ({**GOOD_SETUP, "cameras": None}, 400, "cameras"),
+    ({**GOOD_SETUP, "cameras": {"cam_a": "text"}}, 400, "cameras"),
+    (with_camera(friendly_name="x"), 400, "cameras.friendly_name"),
+    (with_camera(zones="z"), 400, "cameras.zones"),
+    (with_camera(masks=[]), 400, "cameras.masks"),
+    (with_camera(thresholds=[1]), 400, "cameras.thresholds"),
+    (with_camera(labels_tracked=[None]), 400, "cameras.labels_tracked"),
+    (with_camera(detect_fps=30.5), 400, "cameras.detect_fps"),
+    (with_camera(lens_hfov="90"), 400, "cameras.lens_hfov"),
+    (with_camera(profile="p" * 129), 400, "cameras.profile"),
+], ids=lambda value: value if isinstance(value, str) and len(value) < 24 else None)
+def test_validate_setup_refuses(body, status, detail):
+    step = validate_setup(body)
+    passed, refused = step["result"]
+    assert passed is None
+    assert refused["statusCode"] == status and refused["payload"] == bad_request(detail)
+    assert step["logged"] == []
+    assert "body" not in refused.get("req", {})
+
+
+@needs_node
+@pytest.mark.parametrize("where, fact", [("device", fact) for fact in DEVICE_FACTS]
+                         + [("cameras", fact) for fact in CAMERA_FACTS])
+def test_validate_setup_refuses_a_missing_fact(where, fact):
+    """Every fact key is present in a snapshot, so one that is missing is refused by name."""
+    body = json.loads(json.dumps(GOOD_SETUP))
+    target = body["device"] if where == "device" else body["cameras"]["cam_a"]
+    del target[fact]
+    passed, refused = validate_setup(body)["result"]
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(f"{where}.{fact}")
+
+
+@needs_node
+def test_validate_setup_accepts_a_complete_snapshot_and_keeps_the_listed_fields():
+    step = validate_setup(GOOD_SETUP)
+    passed, refused = step["result"]
+    assert refused is None and step["logged"] == []
+    assert passed["setup"] == GOOD_SETUP
+    assert list(passed["setup"]["device"]) == DEVICE_FACTS
+    assert list(passed["setup"]["cameras"]["cam_a"]) == CAMERA_FACTS
+    assert "payload" not in passed and "body" not in passed["req"]
+
+
+@needs_node
+def test_validate_setup_accepts_a_null_json_fact():
+    """Ruling R1: a JSON fact is null when unknown, as every other fact is."""
+    nulls = dict.fromkeys(["labels_available"])
+    body = {**with_device(**nulls), "cameras": {"cam_a": dict.fromkeys(CAMERA_FACTS)}}
+    passed, refused = validate_setup(body)["result"]
+    assert refused is None and passed["setup"] == body
+
+
+@needs_node
+@pytest.mark.parametrize("body", [{"complete": False}, {"complete": False, "device": {"frigate_camera": "x"},
+                                                         "cameras": {"street_cam": {}}, "extra": 1}])
+def test_validate_setup_accepts_an_incomplete_snapshot(body):
+    """Anything beside complete in such a body is dropped, and it needs neither the config nor the schema version."""
+    step = validate_setup(body, context={})
+    passed, refused = step["result"]
+    assert refused is None and passed["setup"] == {"complete": False}
+    assert "payload" not in passed and "body" not in passed["req"]
+    assert step["logged"] == []
+
+
+@needs_node
+def test_validate_setup_keeps_only_config_cameras():
+    camera = GOOD_SETUP["cameras"]["cam_a"]
+    body = {**GOOD_SETUP, "cameras": {"cam_a": camera, "street_cam": {"anything": "goes"}, "toString": camera}}
+    step = validate_setup(body)
+    passed, refused = step["result"]
+    assert refused is None
+    assert passed["setup"]["cameras"] == {"cam_a": camera}
+    assert step["logged"] == [] and "street_cam" not in json.dumps(passed)
+
+
+@needs_node
+@pytest.mark.parametrize("context", [{}, {"tm_status": {"schema_version": 7}},
+                                     {"config": SETUP_CONTEXT["config"]},
+                                     {"config": SETUP_CONTEXT["config"], "tm_status": {"schema_version": None}},
+                                     {"config": {"sensors": {}}, "tm_status": {"schema_version": 7}}],
+                         ids=["nothing", "no-config", "no-schema-version", "null-schema-version", "no-cameras"])
+def test_validate_setup_waits_for_the_config_and_the_schema_version(context):
+    step = validate_setup(GOOD_SETUP, context=context)
+    passed, refused = step["result"]
+    assert passed is None
+    assert refused["statusCode"] == 503 and refused["payload"] == {"error": "not_ready"}
+    assert step["logged"] == []
+
+
+@needs_node
+def test_validate_setup_caps_a_json_fact():
+    ok = [{"key": "z" * 100} for _ in range(100)]
+    assert len(json.dumps(ok, separators=(",", ":"))) < 16384
+    assert validate_setup(with_camera(zones=ok))["result"][1] is None
+    big = [{"key": "z" * 100} for _ in range(200)]
+    assert len(json.dumps(big, separators=(",", ":"))) > 16384
+    passed, refused = validate_setup(with_camera(zones=big))["result"]
+    assert passed is None and refused["payload"] == bad_request("cameras.zones")
+
+
+@needs_node
+def test_validate_setup_refuses_more_than_32_cameras():
+    body = {**GOOD_SETUP, "cameras": {f"c{n}": GOOD_SETUP["cameras"]["cam_a"] for n in range(33)}}
+    passed, refused = validate_setup(body)["result"]
+    assert passed is None and refused["payload"] == bad_request("cameras")
 
 
 def keep_node():
