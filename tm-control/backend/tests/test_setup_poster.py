@@ -3,6 +3,7 @@ functions here, and the loop's waits are injected, so nothing sleeps for real ex
 
 import logging
 import threading
+import time
 
 import pytest
 
@@ -117,3 +118,83 @@ def test_start_twice_runs_one_thread():
         poster.stop()
         first.join(2)
     assert not first.is_alive()
+
+
+# wake_soon: the snapshot a retry delay later, for a change whose restart is only queued.
+
+
+class Timed:
+    """A poster on a real thread with a tiny retry; every gather's time is kept. Stopped and joined at the end."""
+
+    def __init__(self, retry=0.3, interval=60.0):
+        self.times = []
+        self.calls = threading.Semaphore(0)
+
+        def gather():
+            self.times.append(time.monotonic())
+            self.calls.release()
+            return COMPLETE
+
+        self.poster = Poster(gather, lambda body: None, interval=interval, retry=retry)
+
+    def __enter__(self):
+        self.poster.start()
+        assert self.calls.acquire(timeout=2)  # the first snapshot, at start
+        return self
+
+    def __exit__(self, *exc):
+        self.poster.stop()
+        self.poster._thread.join(2)
+        assert not self.poster._thread.is_alive()
+
+
+def test_wake_soon_ends_the_wait_after_the_retry_delay_and_not_at_once():
+    with Timed(retry=0.3) as t:
+        called = time.monotonic()
+        t.poster.wake_soon()
+        assert not t.calls.acquire(timeout=0.15)  # not at once
+        assert t.calls.acquire(timeout=2)
+        assert 0.25 <= t.times[-1] - called < 1.0
+
+
+def test_a_wake_during_the_delay_ends_it_at_once():
+    with Timed(retry=5.0) as t:
+        t.poster.wake_soon()
+        assert not t.calls.acquire(timeout=0.1)
+        t.poster.wake()
+        assert t.calls.acquire(timeout=1)
+
+
+def test_stop_during_the_delay_ends_the_thread_at_once():
+    t = Timed(retry=30.0)
+    with t:
+        t.poster.wake_soon()
+        started = time.monotonic()
+    assert time.monotonic() - started < 2  # __exit__ stopped and joined it without waiting out the 30 seconds
+    assert len(t.times) == 1
+
+
+def test_a_second_wake_soon_does_not_move_the_deadline():
+    with Timed(retry=0.4) as t:
+        called = time.monotonic()
+        t.poster.wake_soon()
+        time.sleep(0.25)
+        t.poster.wake_soon()
+        assert t.calls.acquire(timeout=2)
+        assert t.times[-1] - called < 0.65  # 0.4 from the first call, not 0.65 from the second
+        assert not t.calls.acquire(timeout=0.3)  # one snapshot for both
+
+
+def test_the_loop_goes_on_as_before_after_the_delayed_snapshot():
+    with Timed(retry=0.1, interval=60.0) as t:
+        t.poster.wake_soon()
+        assert t.calls.acquire(timeout=2)
+        assert not t.calls.acquire(timeout=0.4)  # a complete post: back to the long interval
+
+
+def test_a_wake_soon_after_a_delayed_snapshot_starts_a_new_delay():
+    with Timed(retry=0.2) as t:
+        t.poster.wake_soon()
+        assert t.calls.acquire(timeout=2)
+        t.poster.wake_soon()
+        assert t.calls.acquire(timeout=2)

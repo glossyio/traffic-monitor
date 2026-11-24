@@ -7,6 +7,7 @@ Nothing here logs a camera, a zone, a title, a profile, or a value: a failure is
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 
 from tm_control.modules.setup_history.snapshot import Snapshot
@@ -29,9 +30,10 @@ class Poster:
         self._post = post
         self._interval = interval
         self._retry = retry
-        self._woken = threading.Event()
         self._stopped = threading.Event()
-        self._lock = threading.Lock()  # guards _thread and _summary
+        self._lock = threading.Condition()  # guards everything below; the loop waits on it
+        self._now = False  # a wake() came: the next wait ends at once
+        self._soon: float | None = None  # a wake_soon()'s deadline (monotonic), kept from the first call
         self._thread: threading.Thread | None = None
         self._summary = {"gathered": False, "flagged": []}
 
@@ -64,16 +66,36 @@ class Poster:
             self._thread.start()
 
     def stop(self) -> None:
-        self._stopped.set()
-        self._woken.set()
+        with self._lock:
+            self._stopped.set()
+            self._lock.notify_all()
 
     def wake(self) -> None:
         """End the current wait, so the next snapshot is made now."""
-        self._woken.set()
+        with self._lock:
+            self._now = True
+            self._lock.notify_all()
+
+    def wake_soon(self) -> None:
+        """End the current wait after the retry delay, so the next snapshot is made then. For a change that only queued
+        a restart: a snapshot right now could still see the old state. A wake() or stop() in the meantime still ends the
+        wait at once, and a second call while one is pending doesn't move the deadline."""
+        with self._lock:
+            if self._soon is None:
+                self._soon = time.monotonic() + self._retry
+            self._lock.notify_all()
 
     def _wait(self, seconds: float) -> None:
-        self._woken.wait(seconds)
-        self._woken.clear()
+        with self._lock:
+            end = time.monotonic() + seconds
+            while not self._now and not self._stopped.is_set():
+                target = end if self._soon is None else min(end, self._soon)
+                remaining = target - time.monotonic()
+                if remaining <= 0:
+                    break
+                self._lock.wait(remaining)
+            self._now = False
+            self._soon = None
 
     def _loop(self, wait: Callable[[float], None] | None = None) -> None:
         wait = wait or self._wait

@@ -601,9 +601,9 @@ def _use(request: Request, background: BackgroundTasks, admin: User, section: di
     Audit(request.app.state.state).record(admin.id, "models.use", detail=name)
     if not settings.fake:
         background.add_task(restart_or_log, FRIGATE_UNIT)
-    # After the restart task, so Frigate is already going down and the snapshot is incomplete; its 30-second retry then
-    # records the new model once Frigate answers.
-    background.add_task(request.app.state.setup_poster.wake)
+    # The restart is only queued (systemctl --no-block), so Frigate may still answer with the old model for a moment: the
+    # snapshot is taken a retry delay later, when Frigate is down (incomplete, so the poster retries) or back.
+    request.app.state.setup_poster.wake_soon()
     return UseQueued(name=name, applied=applied, restarts=[FRIGATE_UNIT])
 
 
@@ -730,7 +730,7 @@ def _use_plus(model_id: str, request: Request, background: BackgroundTasks, admi
         Audit(state).record(admin.id, "models.use", detail=model_id)
         if not settings.fake:
             restart_or_log(FRIGATE_UNIT)
-        poster.wake()  # after the restart, as _use does
+        poster.wake_soon()  # the restart is only queued; see _use
 
     if settings.fake:
         follow = partial(_fake_wait, fetches, settings, model_id, on_saved)

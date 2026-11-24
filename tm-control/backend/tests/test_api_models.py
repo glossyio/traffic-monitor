@@ -6,13 +6,14 @@ runs the real code paths, with Frigate not answering and the code directory unde
 
 import json
 import shutil
+import time
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
 from tm_control import fake
 from tm_control.core.auth import Users
+from tm_control.modules.setup_history.snapshot import Snapshot
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 PLUS_ID = "0123456789abcdef0123456789abcdef"
@@ -1652,16 +1653,21 @@ def test_out_of_safe_mode_the_answer_says_so(seeded, login):
     assert models_of(seeded)["frigate_safe_mode"] is False
 
 
-# A snapshot right after a change: every route that makes Frigate run another model wakes the setup poster once, after
-# it succeeded, and a refusal wakes nothing.
+# A snapshot after a change: every route that makes Frigate run another model calls the setup poster's wake_soon once,
+# after it succeeded (the restart is only queued, so the snapshot comes a retry delay later), and a refusal calls
+# nothing. The cameras' routes call wake.
 
 
 class Wakes:
     def __init__(self):
-        self.count = 0
+        self.soon = 0
+        self.now = 0
+
+    def wake_soon(self):
+        self.soon += 1
 
     def wake(self):
-        self.count += 1
+        self.now += 1
 
 
 def counting(client) -> Wakes:
@@ -1674,14 +1680,14 @@ def test_a_use_wakes_the_setup_poster_once(seeded, login, name):
     login(seeded, *ADMIN)
     poster = counting(seeded)
     assert use(seeded, name).status_code == 202
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
 def test_a_use_by_id_of_a_model_on_the_device_wakes_once(seeded, login):
     login(seeded, *ADMIN)
     poster = counting(seeded)
     assert plus_use(seeded, PLUS_ID).status_code == 202
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
 def test_a_refused_use_wakes_nothing(seeded, login):
@@ -1693,7 +1699,7 @@ def test_a_refused_use_wakes_nothing(seeded, login):
     seeded.app.state.fetches.start(NEW_ID)
     assert use(seeded, "mine.tflite").status_code == 409
     assert use(seeded, "default").status_code == 409
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
 
 
 def test_a_use_that_a_viewer_or_nobody_tries_wakes_nothing(seeded, login):
@@ -1702,7 +1708,7 @@ def test_a_use_that_a_viewer_or_nobody_tries_wakes_nothing(seeded, login):
     Users(seeded.app.state.state).create(*VIEWER, "viewer")
     login(seeded, *VIEWER)
     assert use(seeded, "mine.tflite").status_code == 403
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
 
 
 def test_a_use_on_a_device_wakes_once(device_client, login, tmp_path, systemctl, frigate_api):
@@ -1712,7 +1718,7 @@ def test_a_use_on_a_device_wakes_once(device_client, login, tmp_path, systemctl,
     login(device_client, *ADMIN)
     poster = counting(device_client)
     assert use(device_client, "mine.tflite").status_code == 202
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
 def test_a_use_of_a_model_for_another_detector_wakes_nothing_on_a_device(
@@ -1723,7 +1729,7 @@ def test_a_use_of_a_model_for_another_detector_wakes_nothing_on_a_device(
     login(device_client, *ADMIN)
     poster = counting(device_client)
     assert use(device_client, "h.tflite").status_code == 422
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
 
 
 def test_a_download_wakes_once_when_frigate_has_saved(device_client, login, plus_device, systemctl, frigate_api):
@@ -1731,7 +1737,7 @@ def test_a_download_wakes_once_when_frigate_has_saved(device_client, login, plus
     login(device_client, *ADMIN)
     poster = counting(device_client)
     assert plus_use(device_client, NEW_ID).status_code == 202
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
 def test_a_download_wakes_from_the_downloads_thread_after_the_answer(
@@ -1746,9 +1752,9 @@ def test_a_download_wakes_from_the_downloads_thread_after_the_answer(
     login(device_client, *ADMIN)
     poster = counting(device_client)
     assert plus_use(device_client, NEW_ID).status_code == 202
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
     held[0]()
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
 def test_a_refused_download_wakes_nothing(device_client, login, plus_device, systemctl, frigate_api):
@@ -1757,7 +1763,7 @@ def test_a_refused_download_wakes_nothing(device_client, login, plus_device, sys
     poster = counting(device_client)
     assert plus_use(device_client, NEW_ID).status_code == 202
     assert models_of(device_client)["fetch"]["state"] == "refused"
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
 
 
 def test_a_download_that_cannot_start_wakes_nothing(device_client, login, plus_device, systemctl, frigate_api):
@@ -1766,7 +1772,7 @@ def test_a_download_that_cannot_start_wakes_nothing(device_client, login, plus_d
     login(device_client, *ADMIN)
     poster = counting(device_client)
     assert plus_use(device_client, NEW_ID).status_code == 409
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
 
 
 def test_fake_mode_wakes_once_for_a_download_it_saved_and_not_for_one_it_refused(seeded, login, monkeypatch):
@@ -1780,18 +1786,43 @@ def test_fake_mode_wakes_once_for_a_download_it_saved_and_not_for_one_it_refused
     login(seeded, *ADMIN)
     poster = counting(seeded)
     assert plus_use(seeded, "a" * 32).status_code == 202  # refused by the fake Frigate
-    assert poster.count == 0
+    assert (poster.soon, poster.now) == (0, 0)
     assert plus_use(seeded, fake.FAKE_FETCHABLE_ID).status_code == 202
-    assert poster.count == 1
+    assert (poster.soon, poster.now) == (1, 0)
 
 
-def test_the_wake_comes_after_frigates_restart(device_client, login, plus_device, systemctl, frigate_api):
-    """So the snapshot finds Frigate going down, not still running the old model."""
-    write_pair(plus_device.parent / "model_cache", "mine.tflite")
-    frigate_api(PLUS_CONFIG)
-    login(device_client, *ADMIN)
-    seen = []
-    device_client.app.state.setup_poster = SimpleNamespace(wake=lambda: seen.append(systemctl.restarts()))
-    assert use(device_client, "mine.tflite").status_code == 202
-    assert plus_use(device_client, NEW_ID).status_code == 202
-    assert seen == [[FRIGATE_RESTART], [FRIGATE_RESTART, FRIGATE_RESTART]]
+def test_the_wake_does_not_make_a_snapshot_before_the_retry_delay(seeded, login):
+    """The restart is only queued, so Frigate still answers with the old model right after the route; an immediate
+    snapshot would record it. The route's wake_soon makes none before the retry delay."""
+    from tm_control.modules.setup_history.poster import Poster
+
+    gathered = []
+    poster = Poster(lambda: gathered.append(time.monotonic()) or COMPLETE_SNAPSHOT, lambda body: None, interval=60.0,
+                    retry=0.4)
+    seeded.app.state.setup_poster = poster
+    login(seeded, *ADMIN)
+    poster.start()
+    try:
+        assert wait_for(lambda: len(gathered) == 1)  # the one at start
+        used = time.monotonic()
+        assert use(seeded, "mine.tflite").status_code == 202
+        time.sleep(0.2)
+        assert len(gathered) == 1  # none yet
+        assert wait_for(lambda: len(gathered) == 2)
+        assert gathered[1] - used >= 0.35
+    finally:
+        poster.stop()
+        poster._thread.join(2)
+        assert not poster._thread.is_alive()
+
+
+COMPLETE_SNAPSHOT = Snapshot({"complete": True, "device": {}, "cameras": {}}, ())
+
+
+def wait_for(condition, seconds=3.0):
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        if condition():
+            return True
+        time.sleep(0.02)
+    return False
