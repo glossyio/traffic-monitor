@@ -915,11 +915,53 @@ def test_deployment_attribute_has_no_top_level_coordinates():
     """The deployments client attribute names the survey at the top level; only the per-sensor rows, which tmdb
     stores rounded, carry coordinates."""
     template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
-    for key in ("lat", "lon", "bearing"):
+    for key in ("lat", "lon", "heading_deg"):
         assert f"global.config.deployment.{key}" not in template
     top = template[template.index('"deploymentTopLevel"'):]
     assert '"survey_id": "{{global.config.deployment.survey_id}}"' in top
     assert '"database_precision": "{{global.config.deployment.database_precision}}"' in top
+
+
+def render_deployments_template(rows):
+    """What the template renders for these rows: Mustache's two forms the template uses, a section over a list and
+    a variable (a missing or null value is empty text, a number its digits)."""
+    template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
+    template = template.replace("{{global.config.deployment.survey_id}}", "s").replace(
+        "{{global.config.deployment.database_precision}}", "2")
+
+    def section(match):
+        return "".join(variables(match.group(1), row) for row in rows)
+
+    def variables(text, row):
+        return re.sub(r"\{\{(\w+)\}\}", lambda m: "" if row.get(m.group(1)) is None else str(row[m.group(1)]), text)
+
+    rendered = re.sub(r"\{\{#payload\.currentDeployment\}\}(.*?)\{\{/payload\.currentDeployment\}\}", section,
+                      template, flags=re.S)
+    return json.loads(rendered)["deployments"]
+
+
+def test_the_deployments_attribute_carries_the_heading():
+    rows = [{"sensorName": "picam_h265", "sensorType": "cameras", "lat": 45.52, "lon": -122.69, "heading_deg": 45,
+             "id": "a-d"},
+            {"sensorName": "TM_RADAR_SERIAL_PORT_00", "sensorType": "radars", "lat": 45.52, "lon": -122.69,
+             "heading_deg": None, "id": "b-d"},
+            {"sensorName": "aq", "sensorType": "airquality_monitors", "lat": 45.52, "lon": -122.69, "id": "c-d"},
+            {"sensorName": "TM_RADAR_SERIAL_PORT_01", "sensorType": "radars", "lat": 45.52, "lon": -122.69,
+             "heading_deg": 0, "id": "d-d"}]
+    sent = render_deployments_template(rows)
+    assert sent["picam_h265"]["heading_deg"] == "45"
+    assert sent["TM_RADAR_SERIAL_PORT_01"]["heading_deg"] == "0"  # north, the value a falsy check would lose
+    assert sent["TM_RADAR_SERIAL_PORT_00"]["heading_deg"] == ""
+    assert sent["aq"]["heading_deg"] == ""
+    assert all("bearing" not in value for value in sent.values())
+
+
+def test_only_the_config_reader_still_says_bearing():
+    """After PR 1 nothing writes a bearing: of every node (its name and info included), only the node that reads an
+    old config.yml's key still holds the word."""
+    flows = json.loads(FLOWS.read_text())
+    holders = {node["id"] for node in flows if "bearing" in json.dumps(node).lower()}
+    assert holders == {"94136e5a6f092bb6"}
 
 
 # The deployment engine on init-config: after each config load it compares every enabled sensor's open deployment
@@ -1383,12 +1425,12 @@ def test_the_radar_pickers_keep_a_selection_that_is_still_there():
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
-                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing",
+                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
                      "/tm-internal/database/exact-copy", "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
-                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post",
+                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
                        "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
@@ -1413,7 +1455,7 @@ PRECISION_SQL = {
 }
 VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
-              "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
+              "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -1666,7 +1708,7 @@ def test_flows_json_round_trips_through_json_dumps():
 
 def test_tm_internal_correction_endpoints_exist():
     flows, by_id, endpoints = tm_internal_endpoints()
-    for url in ("/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"):
+    for url in ("/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading"):
         assert endpoints[url]["method"] == "post", url
         [[check_id]] = endpoints[url]["wires"]
         assert by_id[check_id]["name"] == "tm-internal: check token", url
@@ -2462,8 +2504,8 @@ def correction_chain(url):
 
 def test_correction_chains_run_one_prepared_statement_and_answer_204():
     for url, name, sql in (("/tm-internal/surveys/:id/location", "re-round survey coordinates", LOCATION_SQL),
-                           ("/tm-internal/deployments/:id/bearing", "rewrite deployment bearing",
-                            "UPDATE deployment SET heading_deg = $bearing WHERE id = $id")):
+                           ("/tm-internal/deployments/:id/heading", "rewrite deployment heading",
+                            "UPDATE deployment SET heading_deg = $heading_deg WHERE id = $id")):
         validator, query, answer, response_id, by_id = correction_chain(url)
         assert validator["outputs"] == 2
         assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
@@ -2472,7 +2514,7 @@ def test_correction_chains_run_one_prepared_statement_and_answer_204():
 
 
 @needs_node
-@pytest.mark.parametrize("answer_url", ["/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"])
+@pytest.mark.parametrize("answer_url", ["/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading"])
 def test_correction_answers_204(answer_url):
     _, _, answer, *_ = correction_chain(answer_url)
     [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
@@ -2518,35 +2560,45 @@ DEPLOYMENT_ID = "1761800000000-0a1b2c3d-d"
 
 @needs_node
 @pytest.mark.parametrize("deployment_id, body, detail, stored", [
-    (DEPLOYMENT_ID, {"bearing": "ne"}, None, "ne"),
-    (DEPLOYMENT_ID, {"bearing": "NE"}, None, "ne"),
-    (DEPLOYMENT_ID, {"bearing": ""}, None, ""),
-    (DEPLOYMENT_ID, {"bearing": "s"}, None, "s"),
-    (DEPLOYMENT_ID, {"bearing": "north"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": "nn"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": " n"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": None}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": 1}, "bearing", None),
-    (DEPLOYMENT_ID, {}, "bearing", None),
-    (DEPLOYMENT_ID, "bearing=n", "bearing", None),
-    ("1761800000000-0A1B2C3D-d", {"bearing": "n"}, "deployment_id", None),
-    ("0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
-    ("x-1761800000000-0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
-    ("1761800000000-0a1b2c3d-d ", {"bearing": "n"}, "deployment_id", None),
-    ("1761800000000-0a1b2c3d-d", {"bearing": "north"}, "bearing", None),
-    ("nope", {"bearing": "north"}, "deployment_id", None),
+    (DEPLOYMENT_ID, {"heading_deg": 45}, None, 45),
+    (DEPLOYMENT_ID, {"heading_deg": 0}, None, 0),
+    (DEPLOYMENT_ID, {"heading_deg": 359}, None, 359),
+    (DEPLOYMENT_ID, {"heading_deg": 90.0}, None, 90),
+    (DEPLOYMENT_ID, {"heading_deg": None}, None, None),
+    (DEPLOYMENT_ID, {"heading_deg": 360}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": -1}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": 45.5}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": "45"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": "ne"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": True}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": False}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": [45]}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"bearing": "ne"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {}, "heading_deg", None),
+    (DEPLOYMENT_ID, "heading_deg=45", "heading_deg", None),
+    ("1761800000000-0A1B2C3D-d", {"heading_deg": 45}, "deployment_id", None),
+    ("0a1b2c3d-d", {"heading_deg": 45}, "deployment_id", None),
+    ("x-1761800000000-0a1b2c3d-d", {"heading_deg": 45}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d ", {"heading_deg": 45}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d", {"heading_deg": 360}, "heading_deg", None),
+    ("nope", {"heading_deg": 360}, "deployment_id", None),
 ])
-def test_bearing_correction_validates_the_id_and_the_bearing(deployment_id, body, detail, stored):
-    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate bearing correction")
+def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body, detail, stored):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate heading correction")
     msg = {"req": {"params": {"id": deployment_id}}, "payload": body}
     [step] = run_functions([(validator, msg)])["results"]
     passed, refused = step["result"]
     if detail is None:
         assert refused is None
-        assert passed["params"] == {"$id": deployment_id, "$bearing": stored}
+        assert passed["params"] == {"$id": deployment_id, "$heading_deg": stored}
         return
     assert passed is None
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+
+
+def test_the_old_bearing_correction_path_is_gone():
+    flows = json.loads(FLOWS.read_text())
+    assert not [node for node in flows if node["type"] == "http in" and node.get("url", "").endswith("/bearing")]
 
 
 def test_survey_usage_counts_rows_without_a_survey():
@@ -3038,7 +3090,7 @@ def upload_lists():
 
 TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
-            "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
+            "location_precision": 2, "heading_deg": 0, "sensorType": "cameras", "sensorName": "picam_h265",
             "survey_id": "3f9a1c2e-si"}
 TICK = 1761800100  # a five-minute mark
 TICK_MS = TICK * 1000
@@ -3085,7 +3137,7 @@ GATE_TELEMETRY = {
 }
 GATE_ATTRIBUTES = {
     "deployments": {
-        "picam_h265": {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "bearing": "n",
+        "picam_h265": {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "heading_deg": "0",
                        "id": "1761800000000-0a1b2c3d-d"},
         "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": "2"},
     },
@@ -3269,7 +3321,7 @@ def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
 def test_gate_re_rounds_the_deployments_attribute(given, unit, expected):
     """The attribute's per-sensor rows hold strings (a template renders them): they go out as strings, at the
     unit's precision. deploymentTopLevel names the survey and holds no coordinates."""
-    rows = {"picam_h265": {"sensorType": "cameras", "lat": given[0], "lon": given[1], "bearing": "n", "id": "x-d"},
+    rows = {"picam_h265": {"sensorType": "cameras", "lat": given[0], "lon": given[1], "heading_deg": "0", "id": "x-d"},
             "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": unit}}
     sent = attributes({"deployments": rows}, deployment={**GATE_PLACE, "database_precision": unit})["deployments"]
     assert (sent["picam_h265"]["lat"], sent["picam_h265"]["lon"]) == expected
