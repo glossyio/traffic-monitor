@@ -89,8 +89,9 @@ def reference_svg(clean: bytes, width: int, height: int, zones: list[ZoneFacts],
         )
 
     out.append(f'<rect x="0" y="{height}" width="{width}" height="{_px(strip)}" fill="#fff"/>')
+    caption_size = min(22 * s, (width - 80 * s) / (0.6 * max(len(caption), 1)))  # an average glyph is 0.6 em wide
     out.append(
-        f'<text x="{_px(40 * s)}" y="{_px(height + 34 * s)}" font-size="{_px(22 * s)}" fill="#000">'
+        f'<text x="{_px(40 * s)}" y="{_px(height + 34 * s)}" font-size="{_px(caption_size)}" fill="#000">'
         f"{escape(caption)}</text>"
     )
     for i, zone in enumerate(zones):

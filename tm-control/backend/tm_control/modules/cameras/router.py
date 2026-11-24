@@ -390,6 +390,7 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
     zones_picture = _live(frame(True), size)
     zones_at = time.time()
 
+    mounting = next((m for m in config.mountings() if (m.sensor_type, m.sensor_name) == ("cameras", name)), None)
     place = Places(app_state.state).in_use()
     point = (place.lat, place.lon) if place and place.lat is not None and place.lon is not None else None
     kept = app_state.references.keep(
@@ -399,6 +400,7 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         survey_id=place.id if place else None,
         point=point,
         deployment_id=_open_deployment(app_state, place.id, name) if place else None,
+        pose=reference.pose_of(mounting),
         clean=clean,
         zones_picture=zones_picture,
         clean_at=clean_at,

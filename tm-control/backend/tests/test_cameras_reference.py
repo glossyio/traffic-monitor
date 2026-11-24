@@ -14,20 +14,23 @@ import pytest
 from tests.jpegs import jpeg
 from tests.test_cameras_zones import CAMERA
 from tm_control.modules.cameras.reference import (
-    HideTickets, Reference, References, caption, data_file, jpeg_size, package, stem,
+    HideTickets, Reference, References, caption, data_file, jpeg_size, package, pose_of, stem,
 )
 from tm_control.modules.cameras.svg import reference_svg
 from tm_control.modules.cameras.zones import ZoneFacts, zone_facts
+from tm_control.modules.location.mounting import Mounting
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RADAR_FACTS = zone_facts(CAMERA)[0]
+POSE = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole",
+        "hfov_deg": None}
 
 
 def reference(**changes) -> Reference:
     """A Reference from made-up values; the clean picture's time is 2026-11-18 18:30:05 UTC."""
     values = dict(
         ticket="made-up-ticket", user_id=1, camera="camera_1_3fa9c2", survey_id="3f9a1c2e-si",
-        point=(45.5231, -122.6765), deployment_id="1795026000000-1a2b3c4d-d",
+        point=(45.5231, -122.6765), deployment_id="1795026000000-1a2b3c4d-d", pose=dict(POSE),
         clean=jpeg(1536, 864), zones_picture=jpeg(1536, 864)[:-2] + b"zones\xff\xd9",
         clean_at=1795026605.0, zones_at=1795026606.0, width=1536, height=864, unit="m",
         zones=[zone_facts(CAMERA)[0]], tm_version="0.8.0", frigate_version="0.18.2-abc1234",
@@ -96,7 +99,8 @@ def test_the_stem_names_the_place_the_camera_and_the_time():
 
 def test_the_data_file():
     found = data_file(reference(), with_location=True)
-    assert list(found) == ["format", "format_version", "survey_id", "camera", "deployment_id", "location", "pictures",
+    assert list(found) == ["format", "format_version", "survey_id", "camera", "deployment_id", "location", "pose",
+                           "pictures",
                            "traffic_monitor_version", "frigate_version", "detect", "distance_unit", "zones"]
     assert (found["format"], found["format_version"]) == ("traffic-monitor-reference", 1)
     assert (found["survey_id"], found["camera"]) == ("3f9a1c2e-si", "camera_1_3fa9c2")
@@ -113,6 +117,55 @@ def test_the_data_file():
     assert found["detect"] == {"width": 1536, "height": 864} and found["distance_unit"] == "m"
     assert found["zones"][0]["sides"][0] == {"start": "A", "end": "B", "length": 12.0}
     json.dumps(found)  # nothing in it that JSON can't hold
+
+
+def test_the_data_file_holds_the_pose():
+    found = data_file(reference(), with_location=True)
+    assert list(found).index("pose") == list(found).index("location") + 1
+    assert found["pose"] == POSE
+    assert list(found["pose"]) == ["heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount", "hfov_deg"]
+    assert data_file(reference(), with_location=False)["pose"] == POSE   # the pose isn't the place's location
+
+
+def test_the_pose_is_null_when_nothing_is_recorded():
+    assert data_file(reference(pose=None), with_location=True)["pose"] is None
+
+
+def test_pose_of_is_none_without_a_mounting_or_with_nothing_recorded():
+    assert pose_of(None) is None
+    empty = Mounting(sensor_type="cameras", sensor_name="camera_1_3fa9c2")
+    assert pose_of(empty) is None
+    assert pose_of(empty.model_copy(update={"measured": "pitch"})) is None
+
+
+def test_pose_of_with_only_the_mount_has_the_other_four_empty_and_never_measured():
+    only_mount = Mounting(sensor_type="cameras", sensor_name="camera_1_3fa9c2", mount="pole", measured="distance")
+    assert pose_of(only_mount) == {"heading_deg": None, "pitch_deg": None, "height_m": None, "view_distance_m": None,
+                                   "mount": "pole", "hfov_deg": None}
+    full = Mounting(sensor_type="cameras", sensor_name="camera_1_3fa9c2", heading_deg=40, pitch_deg=15.0,
+                    height_m=3.66, view_distance_m=13.66, mount="pole", measured="pitch")
+    assert pose_of(full) == POSE and "measured" not in pose_of(full)
+
+
+def test_the_pose_has_no_field_of_view_yet():
+    assert data_file(reference(), with_location=True)["pose"]["hfov_deg"] is None
+
+
+def test_the_caption_says_which_way_the_camera_faces():
+    assert caption(reference()).endswith("  \u00b7  facing NE (40\u00b0)")
+    assert caption(reference(pose=POSE | {"heading_deg": 359})).endswith("  \u00b7  facing N (359\u00b0)")
+    for pose in (None, POSE | {"heading_deg": None}):
+        assert "facing" not in caption(reference(pose=pose))
+        assert caption(reference(pose=pose)).endswith(" UTC")
+
+
+def test_the_drawing_still_fits_its_caption():
+    kept = reference(camera="<b>&", pose=POSE)
+    root = ElementTree.fromstring(reference_svg(jpeg(1536, 864), 1536, 864, [], "m", caption(kept)))
+    [strip] = [node for node in root.iter("{http://www.w3.org/2000/svg}text") if (node.text or "").startswith("Traffic")]
+    assert strip.text == caption(kept) and strip.text.endswith("facing NE (40\u00b0)") and "camera <b>&" in strip.text
+    # a caption this long at the base size would run past the frame's right edge
+    assert float(strip.get("x")) + len(strip.text) * 0.6 * float(strip.get("font-size")) <= 1536
 
 
 def test_unknowns_are_null():
@@ -212,8 +265,9 @@ def test_a_zone_with_no_colour_or_no_corners_doesnt_break_the_drawing():
 
 
 def test_the_caption():
-    assert caption(reference()) == (
+    assert caption(reference(pose=None)) == (
         "Traffic Monitor reference picture  ·  place 3f9a1c2e-si  ·  camera camera_1_3fa9c2  ·  2026-11-18 18:30:05 UTC")
+    assert caption(reference()).startswith(caption(reference(pose=None)))
     assert "place none" in caption(reference(survey_id=None))
 
 
