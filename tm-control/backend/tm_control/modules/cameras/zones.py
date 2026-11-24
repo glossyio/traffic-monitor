@@ -102,7 +102,7 @@ def _floats(parts: list) -> list[float] | None:
     return found
 
 
-def _corners(value) -> list[Corner]:
+def corners(value) -> list[Corner]:
     """coordinates as a string "x,y,x,y,..." or a list of "x,y" strings, as fractions of the detect frame. Frigate's
     /api/config gives fractions even for a zone its config.yml holds in pixels; a corner past the frame's edge is below
     0 or above 1, and is kept as it is."""
@@ -136,7 +136,7 @@ def _sides(corners: list[Corner], distances: list[float]) -> list[Side]:
     ]
 
 
-def _filters(value) -> dict[str, dict[str, int | float]]:
+def object_filters(value) -> dict[str, dict[str, int | float]]:
     """Each object's FILTER_KEYS that hold a number; an object whose filters aren't a mapping is left out."""
     return {
         name: {k: v for k, v in filters.items() if k in FILTER_KEYS and _number(v) is not None}
@@ -148,22 +148,22 @@ def _filters(value) -> dict[str, dict[str, int | float]]:
 def _zone(key: str, value) -> ZoneFacts:
     zone = mapping(value)
     enabled = zone.get("enabled") is not False
-    corners = _corners(zone.get("coordinates"))
+    shape = corners(zone.get("coordinates"))
     distances = _distances(zone.get("distances"))
     objects = zone.get("objects")
     return ZoneFacts(
         key=key,
         color=_color(zone.get("color")),
         enabled=enabled,
-        drawn=enabled and len(corners) >= 3,
-        corners=corners,
+        drawn=enabled and len(shape) >= 3,
+        corners=shape,
         distances=distances,
-        sides=_sides(corners, distances),
+        sides=_sides(shape, distances),
         inertia=_integer(zone.get("inertia")),
         loitering_time=_integer(zone.get("loitering_time")),
         speed_threshold=_number(zone.get("speed_threshold")),
         objects=[name for name in objects if isinstance(name, str)] if isinstance(objects, list) else [],
-        filters=_filters(zone.get("filters")),
+        filters=object_filters(zone.get("filters")),
     )
 
 

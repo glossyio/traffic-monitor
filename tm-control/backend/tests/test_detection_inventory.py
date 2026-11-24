@@ -69,13 +69,18 @@ def test_valid_names():
 def test_parse_sidecar_keeps_the_eight_fields_and_drops_the_rest():
     sidecar = parse_sidecar(SIDECAR)
     assert sidecar == inv.Sidecar(
-        id=PLUS_ID, name="Test site yolov9", trained_at="2026-10-01T12:00:00Z", type="yolo-generic",
-        detectors=("edgetpu",), width=320, height=320, input_shape="nhwc", pixel_format="rgb", input_dtype=None,
+        id=PLUS_ID, name="Test site yolov9", trained_at="2026-10-01T12:00:00Z", base_model="yolov9-s",
+        type="yolo-generic", detectors=("edgetpu",), width=320, height=320, input_shape="nhwc", pixel_format="rgb", input_dtype=None,
         labels=("person", "bicycle", "car"),
     )
     assert not hasattr(sidecar, "verifiedCounts") and not hasattr(sidecar, "verified_counts")
     assert "verifiedCounts" not in {field.name for field in dataclasses.fields(sidecar)}
     assert "front_door_cam" not in repr(sidecar)
+
+
+@pytest.mark.parametrize("value, expected", [("yolov9-s", "yolov9-s"), (3, None), (None, None), (["a"], None), (..., None)])
+def test_parse_sidecar_keeps_the_base_model_when_it_is_text(value, expected):
+    assert parse_sidecar(with_(baseModel=value)).base_model == expected
 
 
 def test_parse_sidecar_orders_labels_by_index_and_reads_the_data_type():

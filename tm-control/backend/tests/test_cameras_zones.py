@@ -3,7 +3,7 @@ person left it; detect_size and distance_unit."""
 
 import pytest
 
-from tm_control.modules.cameras.zones import detect_size, distance_unit, zone_facts
+from tm_control.modules.cameras.zones import corners, detect_size, distance_unit, object_filters, zone_facts
 
 RADAR = {
     "coordinates": "0.169,0.489,0.451,0.358,0.821,0.528,0.472,0.796", "color": [92, 160, 64],
@@ -106,3 +106,14 @@ def test_detect_size_and_distance_unit():
     assert detect_size({"detect": {"width": 0, "height": 864}}) is None and detect_size({}) is None
     assert distance_unit({"ui": {"unit_system": "imperial"}}) == "ft"
     assert distance_unit({"ui": {"unit_system": "metric"}}) == "m" and distance_unit({}) == "m"
+
+
+def test_corners_and_object_filters_are_public_and_give_what_a_zone_holds():
+    [zone] = zone_facts({"zones": {"z": RADAR}})
+    assert corners(RADAR["coordinates"]) == zone.corners
+    assert [(c.x, c.y) for c in corners(["0.1,0.2", "0.3,0.4", "0.5,0.6"])] == [(0.1, 0.2), (0.3, 0.4), (0.5, 0.6)]
+    assert corners("0.1,0.2") == [] and corners(None) == []
+    assert object_filters(RADAR["filters"]) == zone.filters == {"car": {"min_area": 500}}
+    assert object_filters({"car": {"min_area": 500, "colour": "x", "threshold": "high"}, "bus": 3}) == {
+        "car": {"min_area": 500}}
+    assert object_filters(None) == {}
