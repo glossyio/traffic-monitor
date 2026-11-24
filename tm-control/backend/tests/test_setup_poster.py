@@ -239,3 +239,86 @@ def test_a_deadline_that_passes_during_a_gather_ends_the_next_wait_at_once():
         assert t.calls.acquire(timeout=5)  # the delayed one follows without waiting a retry or an interval
         assert t.times[-1] - t.times[1] < 3.0
         assert not t.calls.acquire(timeout=0.4)
+
+
+# Logging: a failure is logged when it starts or its class changes, and once when it ends; never once per attempt.
+
+
+def _failing_post(errors):
+    """A post that raises each error of the list in turn, then answers."""
+    queue = list(errors)
+
+    def post(body):
+        if queue:
+            error = queue.pop(0)
+            if error is not None:
+                raise error
+
+    return post
+
+
+def test_ten_failed_posts_in_a_row_log_one_warning(caplog):
+    poster = Poster(lambda: COMPLETE, _failing_post([NodeRedError("unreachable")] * 10))
+    with caplog.at_level(logging.DEBUG):
+        results = [poster.run_once() for _ in range(10)]
+    assert results == [False] * 10
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    assert "NodeRedError" in caplog.records[0].getMessage()
+    assert "unreachable" not in caplog.text
+
+
+def test_a_recovery_logs_one_info_line_and_a_new_failure_warns_again(caplog):
+    poster = Poster(lambda: COMPLETE, _failing_post([NodeRedError("a"), NodeRedError("a"), None, NodeRedError("a")]))
+    with caplog.at_level(logging.DEBUG):
+        results = [poster.run_once() for _ in range(5)]
+    assert results == [False, False, True, False, True]
+    levels = [logging.WARNING, logging.INFO, logging.WARNING, logging.INFO]
+    assert [r.levelno for r in caplog.records] == levels
+    assert "NodeRedError" in caplog.records[1].getMessage()  # what had failed
+
+
+def test_a_class_change_logs_again(caplog):
+    poster = Poster(lambda: COMPLETE, _failing_post([NodeRedError("a"), NodeRedError("a"), OSError("b"), OSError("b")]))
+    with caplog.at_level(logging.DEBUG):
+        for _ in range(4):
+            poster.run_once()
+    assert [r.levelno for r in caplog.records] == [logging.WARNING, logging.WARNING]
+    assert "NodeRedError" in caplog.records[0].getMessage() and "OSError" in caplog.records[1].getMessage()
+
+
+def test_a_gather_that_raises_logs_its_class_once_and_never_its_text(caplog):
+    def gather():
+        raise RuntimeError("secret text")
+
+    poster = Poster(gather, lambda body: None)
+    with caplog.at_level(logging.DEBUG):
+        assert [poster.run_once() for _ in range(5)] == [False] * 5
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    assert "RuntimeError" in caplog.text and "secret text" not in caplog.text
+
+
+def test_a_failed_gather_that_comes_back_incomplete_is_logged_once_by_its_class(caplog):
+    failed = Snapshot({"complete": False}, (), "RuntimeError")
+    posted = []
+    poster = Poster(lambda: failed, posted.append)
+    with caplog.at_level(logging.DEBUG):
+        assert [poster.run_once() for _ in range(5)] == [False] * 5
+    assert posted == [failed.body] * 5  # still posted: Node-RED hears the snapshot was incomplete
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    assert "RuntimeError" in caplog.records[0].getMessage()
+
+
+def test_an_ordinary_incomplete_snapshot_is_not_a_failure(caplog):
+    poster = Poster(lambda: INCOMPLETE, lambda body: None)
+    with caplog.at_level(logging.DEBUG):
+        assert [poster.run_once() for _ in range(3)] == [False] * 3
+    assert caplog.records == []
+
+
+def test_an_ordinary_incomplete_snapshot_after_a_failure_ends_it(caplog):
+    snapshots = iter([Snapshot({"complete": False}, (), "RuntimeError"), INCOMPLETE, INCOMPLETE])
+    poster = Poster(lambda: next(snapshots), lambda body: None)
+    with caplog.at_level(logging.DEBUG):
+        for _ in range(3):
+            assert poster.run_once() is False
+    assert [r.levelno for r in caplog.records] == [logging.WARNING, logging.INFO]

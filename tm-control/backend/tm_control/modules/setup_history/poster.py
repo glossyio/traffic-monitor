@@ -2,7 +2,9 @@
 starts, whenever something wakes it (a model used, a camera entry saved), and every five minutes. After a snapshot that
 couldn't be completed or posted it tries again in 30 seconds.
 
-Nothing here logs a camera, a zone, a title, a profile, or a value: a failure is logged by its exception's class only.
+Nothing here logs a camera, a zone, a title, a profile, or a value: a failure is logged by its exception's class only,
+once when it starts or its class changes (a warning) and once when it ends (info), never once per attempt. A failure is a
+gather that raised or a post that failed; a snapshot that is merely incomplete (Frigate down) and posted fine is not one.
 """
 
 import logging
@@ -36,20 +38,35 @@ class Poster:
         self._soon: float | None = None  # a wake_soon()'s deadline (monotonic), kept from the first call
         self._thread: threading.Thread | None = None
         self._summary = {"gathered": False, "flagged": []}
+        self._failure: str | None = None  # the class name of the failure last logged, until it ends
 
     def run_once(self) -> bool:
         """Gather a snapshot and post it, an incomplete one too. True only when a complete snapshot was accepted.
-        Never raises: a failure is logged by its class and counts as not done."""
+        Never raises: a failure counts as not done, and is logged by its class once (see _note)."""
+        failure = None
+        complete = False
         try:
             snapshot = self._gather()
+            failure = snapshot.error
             with self._lock:
                 complete = snapshot.body.get("complete") is True
                 self._summary = {"gathered": complete, "flagged": list(snapshot.flagged) if complete else []}
             self._post(snapshot.body)
         except Exception as error:  # noqa: BLE001: the thread must go on; the text could name a camera
-            log.warning("The setup snapshot wasn't posted: %s", type(error).__name__)
-            return False
+            failure = failure or type(error).__name__
+            complete = False
+        self._note(failure)
         return complete
+
+    def _note(self, failure: str | None) -> None:
+        """Log a failure's class when it starts or changes, and once when it ends. `failure` is the class name of
+        this attempt's failure, or None when it went through."""
+        with self._lock:
+            before, self._failure = self._failure, failure
+        if failure is not None and failure != before:
+            log.warning("The setup snapshot wasn't posted: %s", failure)
+        elif failure is None and before is not None:
+            log.info("The setup snapshot is being posted again (it had failed: %s)", before)
 
     def summary(self) -> dict:
         """What the last snapshot found, for the status report: whether it was whole, and which facts the name check

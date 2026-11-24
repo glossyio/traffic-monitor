@@ -13,7 +13,7 @@ key, are left out. Nothing here logs a camera, a zone, a title, a profile, or a 
 
 import math
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from tm_control import fake
@@ -46,6 +46,7 @@ UNIT_SYSTEMS = ("metric", "imperial")
 class Snapshot:
     body: dict  # what is posted: {"complete": False}, or the device's and each camera's facts
     flagged: tuple[str, ...]  # of "model_title" and "profile": a value the name check found looks like a place or person
+    error: str | None = None  # the class name of the exception that made a gather fail; never its text
 
 
 INCOMPLETE = Snapshot({"complete": False}, ())
@@ -283,10 +284,12 @@ def _gather(app_state) -> Snapshot:
 
 
 def gather(app_state) -> Snapshot:
-    """The snapshot of the unit now, or INCOMPLETE when it can't be made whole: Frigate doesn't answer, runs in safe
-    mode, or doesn't say which profile is active, or config.yml can't be read. Never raises, so the thread that calls
-    it keeps going; nothing about what went wrong is kept, since it could name a camera."""
+    """The snapshot of the unit now, or an incomplete one when it can't be made whole: INCOMPLETE when Frigate doesn't
+    answer, runs in safe mode, or doesn't say which profile is active, or config.yml can't be read (not a failure, and
+    nothing to log), or INCOMPLETE with `error` set to the exception's class name when the gather itself raised. Never
+    raises, so the thread that calls it keeps going. It logs nothing: the poster does, once per failure, and the
+    exception's text is dropped, since it could name a camera."""
     try:
         return _gather(app_state)
-    except Exception:  # noqa: BLE001: a gather that fails for any reason is an incomplete one
-        return INCOMPLETE
+    except Exception as error:  # noqa: BLE001: a gather that fails for any reason is an incomplete one
+        return replace(INCOMPLETE, error=type(error).__name__)

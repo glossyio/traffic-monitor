@@ -4,6 +4,7 @@ and when a snapshot can't be completed."""
 import copy
 import hashlib
 import json
+import logging
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,7 +15,7 @@ from tm_control.core.manifest import load_manifest
 from tm_control.modules.detection.inventory import InstallerDefault, inventory
 from tm_control.modules.setup_history import snapshot
 from tm_control.modules.setup_history.snapshot import (
-    CAMERA_FACTS, DEVICE_FACTS, INCOMPLETE, TEXT_MAX, camera_facts, device_facts, flagged, gather,
+    CAMERA_FACTS, DEVICE_FACTS, INCOMPLETE, TEXT_MAX, Snapshot, camera_facts, device_facts, flagged, gather,
 )
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -420,7 +421,24 @@ def test_gather_does_not_raise(world, monkeypatch):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(snapshot.frigate, "version", broken)
-    assert gather(world.state) == INCOMPLETE
+    assert gather(world.state) == Snapshot({"complete": False}, (), "RuntimeError")
+
+
+def test_gather_names_the_class_of_a_failure_and_logs_nothing(world, monkeypatch, caplog):
+    def broken(*args):
+        raise RuntimeError("secret text")
+
+    monkeypatch.setattr(snapshot.frigate, "version", broken)
+    with caplog.at_level(logging.DEBUG):
+        result = gather(world.state)
+    assert result.body == {"complete": False} and result.flagged == ()
+    assert result.error == "RuntimeError"
+    assert caplog.records == [] and INCOMPLETE.error is None  # the poster logs; the shared INCOMPLETE stays clean
+
+
+def test_an_ordinary_incomplete_snapshot_carries_no_error(world):
+    world.answers["version"] = None
+    assert gather(world.state).error is None
 
 
 def test_gather_keys_cameras_by_config_key(world):
