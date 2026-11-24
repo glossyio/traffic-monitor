@@ -436,7 +436,7 @@ The test can't see these, so look them over before a release:
 
 * the apt packages in the role's `vars/main.yml`, and whether a package is worth a row (a new service or a new tool the installer relies on);
 * the Containerfiles, for the video tools they build, FFmpeg and its encoders (x264 and x265) among them, and the license each is built under;
-* the Coral model and where it comes from;
+* the Coral model and where it comes from. Its row gives YOLOv9's license, GPL-3.0, and not the MIT license of the repository that publishes the model: a unit holds only the model file and its labels, the model is built from YOLOv9, and its release states no license of its own. If a later release states one, use that;
 * the map source (`tmsetup_map_style_url`), and the credit the page gives for it;
 * the sentence about trademarks, which names each trademark's owner. Add a name when a new project's name appears on the page, and keep to naming projects, never showing their logos.
 
