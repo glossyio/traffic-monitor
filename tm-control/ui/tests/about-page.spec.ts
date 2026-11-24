@@ -141,4 +141,11 @@ describe('the About page', () => {
     )
     expect(page.find('a[href="/third-party-licenses.txt"]').text()).toBe('License texts of the libraries built into this app')
   })
+
+  it('hides the parade behind the cone at the very end', async () => {
+    const page = await aboutPage()
+    const buttons = page.find('main').findAll('button')
+    expect(buttons.at(-1)?.attributes('aria-label')).toBe('Count some traffic')
+    expect(page.text()).not.toContain('Counted so far')
+  })
 })

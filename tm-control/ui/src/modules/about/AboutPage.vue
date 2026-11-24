@@ -6,6 +6,7 @@
 -->
 <script setup lang="ts">
 import credits from './credits.json'
+import RoadParade from './RoadParade.vue'
 
 // Every link that leaves the device opens in a new tab and sends no referrer
 const OUTSIDE = { class: 'text-primary', target: '_blank', rel: 'noopener noreferrer' }
@@ -119,5 +120,7 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
         projects don't endorse Traffic Monitor.
       </p>
     </section>
+
+    <RoadParade />
   </div>
 </template>
