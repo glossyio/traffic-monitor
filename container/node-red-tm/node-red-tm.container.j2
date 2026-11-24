@@ -26,6 +26,10 @@ Restart=on-failure
 # The leading "-" starts Node-RED even if a migration fails; that migration is rolled back and logged.
 # "-" doesn't cover a start timeout, so timeout stops the runner first; an unfinished migration rolls back.
 ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/timeout 25m /usr/bin/python3 {{ tmsetup_codedir }}/node-red-tm/schema/tmdb_migrate.py --db {{ tmsetup_codedir }}/node-red-tm/db/tmdb.sqlite
+# Turn an old bearing in config.yml into heading_deg while no flow runs. The installer doesn't: it runs while the old
+# Node-RED is up, whose config watch would start a new deployment on the change. The "-" starts Node-RED anyway; the
+# flows read a bearing as its point's centre, and the next start tries again.
+ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate --node-red-headings {{ tmsetup_codedir }}/node-red-tm/config/config.yml
 # Backing up and migrating a large database can take minutes.
 TimeoutStartSec=30min
 

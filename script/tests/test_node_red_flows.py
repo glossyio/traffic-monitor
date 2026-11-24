@@ -19,6 +19,7 @@ from tmsetup_render import REPO, load_role_yaml, render
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
+from tm_control.modules.location.coordinates import read_heading  # noqa: E402  (needs tm-control/backend on sys.path)
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -665,6 +666,53 @@ def test_init_config_defaults_reads_an_old_bearing_as_its_centre(top, camera, ex
     blocks = [payload["deployment"], *(sensor["deployment"] for kind in payload["sensors"].values()
                                        for sensor in (kind or {}).values() if sensor.get("enabled") is True)]
     assert len(blocks) == 3 and not any("bearing" in block for block in blocks)
+
+
+# One table of top-level deployment blocks, read by the flows and by tm-control's read_heading. JavaScript can't tell
+# 40.0 from 40, so both read it as 40; the Status check and migrate go through read_heading.
+HEADING_BLOCKS = [
+    {},
+    {"heading_deg": 0},
+    {"heading_deg": 40},
+    {"heading_deg": 359},
+    {"heading_deg": 40.0},
+    {"heading_deg": 360},
+    {"heading_deg": -1},
+    {"heading_deg": 40.5},
+    {"heading_deg": "40"},
+    {"heading_deg": True},
+    {"heading_deg": False},
+    {"heading_deg": [40]},
+    {"heading_deg": None},
+    {"heading_deg": ""},
+    {"bearing": "ne"},
+    {"bearing": " SW "},
+    {"bearing": "n"},
+    {"bearing": "up"},
+    {"bearing": ""},
+    {"bearing": None},
+    {"bearing": 90},
+    {"bearing": True},
+    {"heading_deg": None, "bearing": "w"},
+    {"heading_deg": "", "bearing": "nw"},
+    {"heading_deg": 100, "bearing": "ne"},
+    {"heading_deg": 400, "bearing": "ne"},
+    {"heading_deg": "40", "bearing": "ne"},
+    {"heading_deg": 0, "bearing": "s"},
+]
+
+
+@needs_node
+def test_the_flows_read_a_heading_as_the_control_app_does():
+    """Each block goes through init config defaults, at the top level and as a camera's own block, and through
+    read_heading; the answers are the same. Moving one rule means moving both."""
+    for block in HEADING_BLOCKS:
+        expected = read_heading(block)
+        top, _ = init_defaults(heading_config(copy.deepcopy(block)))
+        assert top["deployment"]["heading_deg"] == expected, block
+        if block:  # an empty block takes the top level's heading
+            own, _ = init_defaults(heading_config({"heading_deg": 90}, copy.deepcopy(block)))
+            assert headings(own)[1] == expected, block
 
 
 def test_config_template_has_the_survey_keys():

@@ -46,6 +46,29 @@ def test_pod_opens_mqtt_to_the_network_only_with_a_broker_login():
     assert "127.0.0.1:1883:1883" not in published_ports(pod)
 
 
+def node_red_unit():
+    return render(
+        "container/node-red-tm/node-red-tm.container.j2",
+        tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_codeowner="tmowner",
+        tmsetup_codeowner_uid=1000,
+    ).splitlines()
+
+
+def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
+    """The installer's pass may not change a key that a running engine compares: the old Node-RED is still up then,
+    and its config watch would start a deployment. So the start converts config.yml's bearing, before any flow runs,
+    as the code owner (who owns config.yml), and a failure never keeps Node-RED down: the flows read a bearing too."""
+    starts = [line for line in node_red_unit() if line.startswith("ExecStartPre=")]
+    assert len(starts) == 2
+    assert all(line.startswith("ExecStartPre=-") for line in starts)
+    assert "tmdb_migrate.py" in starts[0]
+    assert starts[1] == (
+        "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
+        "--node-red-headings /opt/traffic-monitor/node-red-tm/config/config.yml"
+    )
+
+
 def revproxy_unit():
     return render(
         "container/revproxy/revproxy.container.j2",

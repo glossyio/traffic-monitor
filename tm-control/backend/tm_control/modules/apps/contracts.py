@@ -27,7 +27,7 @@ from tm_control.modules.location.config import (
     sharing_ignored,
     sharing_kind,
 )
-from tm_control.modules.location.coordinates import exact
+from tm_control.modules.location.coordinates import exact, point_centre, read_heading
 from tm_control.modules.location.places import Places
 from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents, target_key
 
@@ -35,7 +35,6 @@ ZONES = ("zone_capture", "zone_near", "zone_far", "zone_radar")  # the zone name
 DIRECTION_ZONES = ("zone_near", "zone_far")
 CAMERAS_LINK = Fix(kind="link", href="/cameras", text="Open the Cameras page")
 DETECTION_LINK = Fix(kind="link", href="/detection", text="Open the Detection page")
-BEARINGS = ("n", "s", "e", "w", "ne", "nw", "se", "sw")
 CONFIG_YML_PROBLEM = {
     "missing": "config.yml is missing",
     "unreadable": "tm-control can't read config.yml",
@@ -293,6 +292,7 @@ def radar_names(context: Context) -> list[Check]:
 
 
 LOCATION_LINK = Fix(kind="link", href="/location", text="Open the Location page")
+HEADINGS_JOURNAL = 'sudo journalctl -u node-red-tm | grep "tm-control migrate"'  # what the bearing conversion prints
 
 
 def _coordinate_problems(deployment: dict) -> list[str]:
@@ -311,10 +311,29 @@ def _coordinate_problems(deployment: dict) -> list[str]:
     return problems
 
 
-def _bearing_ok(value) -> bool:
-    """Node-RED's init config defaults lower-cases a bearing and looks it up as it is, with no trim: empty is fine,
-    ' n' and a run of spaces are not."""
-    return value is None or value == "" or (isinstance(value, str) and value.lower() in BEARINGS)
+def _heading_ok(value) -> bool:
+    """Node-RED's init config defaults takes a whole number from 0 to 359 (40.0 is 40 to it) or a blank one; anything
+    else it drops and reports."""
+    return value is None or value == "" or read_heading({"heading_deg": value}) is not None
+
+
+def _old_bearing(block: dict) -> bool:
+    """Whether the block still has a bearing key that holds something."""
+    return block.get("bearing") not in (None, "")
+
+
+def _bearing_warning(path: str, block: dict) -> str:
+    """What to do about the block's old bearing. Node-RED's start (tm-control migrate --node-red-headings) leaves one
+    it can't read in a block with no heading, where Node-RED reads it as no heading; it converts or removes every
+    other."""
+    if point_centre(block["bearing"]) is None and block.get("heading_deg") in (None, ""):
+        return (f"{path}.bearing, the old name for which way a sensor faces, isn't one of the eight compass points, so "
+                "it's read as no heading and Node-RED's start leaves it. Write heading_deg (whole degrees from north) "
+                "and delete the bearing.")
+    return (f"{path}.bearing is the old name for which way a sensor faces. Node-RED converts it to heading_deg when "
+            "it next starts: restart Node-RED, or write heading_deg (whole degrees from north) in its place. If it's "
+            f"still here after a restart, the conversion failed. See why with {HEADINGS_JOURNAL}, or in the "
+            "diagnostics.")
 
 
 def _sensor_deployments(data: dict) -> list[tuple[str, dict, bool]]:
@@ -329,7 +348,7 @@ def _sensor_deployments(data: dict) -> list[tuple[str, dict, bool]]:
 
 
 def location(context: Context) -> list[Check]:
-    """The deployment block holds values Node-RED accepts (coordinates, bearings, survey id, stored precision), no
+    """The deployment block holds values Node-RED accepts (coordinates, headings, survey id, stored precision), no
     sensor carries its own coordinates, and the survey id in the file is a place this device has. Never shows a
     value."""
 
@@ -342,9 +361,9 @@ def location(context: Context) -> list[Check]:
     deployment = probes.mapping(read.data.get("deployment"))
     settings = read_deployment(read)
     problems = _coordinate_problems(deployment)
-    bearing_message = "isn't one of " + ", ".join(BEARINGS) + ", or empty"
-    if not _bearing_ok(deployment.get("bearing")):
-        problems.append(f"deployment.bearing {bearing_message}")
+    heading_message = "isn't a whole number from 0 to 359, or empty"
+    if not _heading_ok(deployment.get("heading_deg")):
+        problems.append(f"deployment.heading_deg {heading_message}")
     if settings.survey_id_invalid:
         problems.append("deployment.survey_id isn't a survey id (8 hex characters and -si)")
     meanwhile = ""
@@ -353,15 +372,18 @@ def location(context: Context) -> list[Check]:
         # Node-RED compares the text exactly (no case folding), so it stores the default instead
         meanwhile = " Until then, Node-RED stores the default, about 1 km."
     ignored = []
+    old_bearings = [_bearing_warning("deployment", deployment)] if _old_bearing(deployment) else []
     for path, own, enabled in _sensor_deployments(read.data):
-        if enabled and not _bearing_ok(own.get("bearing")):
-            problems.append(f"{path}.bearing {bearing_message}")
+        if enabled and not _heading_ok(own.get("heading_deg")):
+            problems.append(f"{path}.heading_deg {heading_message}")
+        if enabled and _old_bearing(own):
+            old_bearings.append(_bearing_warning(path, own))
         ignored += [f"{path}.{key}" for key in ("lat", "lon") if key in own]
     if problems:
         fix = "Correct it, or leave it empty." if len(problems) == 1 else "Correct them, or leave them empty."
         return check("error", f"In config.yml, {'; '.join(problems)}. {fix}{meanwhile}")
 
-    warnings = []
+    warnings = old_bearings
     if ignored:
         warnings.append(f"In config.yml, {listed(ignored)} {'is' if len(ignored) == 1 else 'are'} ignored; the "
                         "location is per unit; tmsetup removes it.")

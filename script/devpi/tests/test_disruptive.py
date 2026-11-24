@@ -853,10 +853,12 @@ def test_set_time_from_the_api(host, address, expect, tm_login):
     assert back in (None, []), f"setting the clock back restarted {back}"
 
 
-# Clears node-red-tm.service's ExecStartPre, which is only tmdb_migrate.py, for the next start, so Node-RED runs on a
-# database that the migration hasn't brought up to date, as after a failed one. Without it, the migration would run again
-# from version 0, fail on a migration that isn't idempotent (0002's ADD COLUMN), and Node-RED wouldn't start. So the test
-# sets user_version back itself, and if it's cut off, that has to be done by hand.
+# Clears node-red-tm.service's ExecStartPre, which is tmdb_migrate.py and tm-control migrate --node-red-headings, for the
+# next start, so Node-RED runs on a database that the migration hasn't brought up to date, as after a failed one. Without
+# it, the migration would run again from version 0, fail on a migration that isn't idempotent (0002's ADD COLUMN), and
+# Node-RED wouldn't start. So the test sets user_version back itself, and if it's cut off, that has to be done by hand.
+# Skipping the heading conversion for that one start is harmless: the flows read an old bearing as its point's centre,
+# and the next start converts it.
 SKIP_MIGRATION = "/run/systemd/system/node-red-tm.service.d/tmdev-skip-migration.conf"
 SKIP_MIGRATION_CONF = "[Service]\nExecStartPre=\n"
 NODE_RED_DB = "node-red-tm/db/tmdb.sqlite"
@@ -894,8 +896,10 @@ def test_schema_behind_shows_an_error(host, address, expect, codedir, codeowner,
     before = status_checks(address, cookie).get("apps.nodered.schema")
     assert before and before[0] == "ok", f"apps.nodered.schema before the test: {before}"
     pre = host.check_output("systemctl show -p ExecStartPre --value node-red-tm.service")
-    only_migration = pre.count("path=") == 1 and "tmdb_migrate.py" in pre
-    assert only_migration, "node-red-tm.service's ExecStartPre isn't only tmdb_migrate.py; the drop-in would skip more"
+    entries = pre.split("path=")[1:]  # one per ExecStartPre, in order
+    expected = len(entries) == 2 and "tmdb_migrate.py" in entries[0] and "--node-red-headings" in entries[1]
+    assert expected, ("node-red-tm.service's ExecStartPre isn't tmdb_migrate.py then tm-control migrate "
+                      f"--node-red-headings; the drop-in would skip something else: {pre}")
     original = None
     try:
         with host.sudo():

@@ -47,6 +47,8 @@ def run_migrate(args):
         codes.append(migrate.run(args.frigate_config, dry_run=args.dry_run))
     if args.node_red_config:
         codes.append(migrate.run_node_red(args.node_red_config, secrets_dir, dry_run=args.dry_run))
+    if args.node_red_headings:
+        codes.append(migrate.run_node_red_headings(args.node_red_headings, dry_run=args.dry_run))
     if args.plate_recognizer_env:
         codes.append(migrate.run_plate_recognizer_env(args.plate_recognizer_env, secrets_dir, dry_run=args.dry_run))
     if args.frigate_env:
@@ -63,7 +65,14 @@ def main(argv=None):
     migrate_parser.add_argument(
         "--node-red-config",
         type=Path,
-        help="path to Node-RED's config.yml: move its secrets out and update the deployment keys",
+        help="path to Node-RED's config.yml: move its secrets out and update the deployment keys (the installer's "
+        "pass; never a bearing)",
+    )
+    migrate_parser.add_argument(
+        "--node-red-headings",
+        type=Path,
+        help="path to Node-RED's config.yml: turn each old bearing into heading_deg, and nothing else (Node-RED's "
+        "start runs this before any flow does; it needs no secrets)",
     )
     migrate_parser.add_argument(
         "--plate-recognizer-env",
@@ -139,9 +148,11 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
     if args.command == "migrate":
-        if not (args.frigate_config or args.node_red_config or args.plate_recognizer_env or args.frigate_env):
+        if not (args.frigate_config or args.node_red_config or args.node_red_headings or args.plate_recognizer_env
+                or args.frigate_env):
             migrate_parser.error(
-                "give at least one of --frigate-config, --node-red-config, --plate-recognizer-env, --frigate-env"
+                "give at least one of --frigate-config, --node-red-config, --node-red-headings, "
+                "--plate-recognizer-env, --frigate-env"
             )
         return run_migrate(args)
     if args.command == "serve":

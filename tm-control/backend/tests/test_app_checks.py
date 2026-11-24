@@ -306,7 +306,7 @@ def test_nodered_uptime_reads_as_a_duration(apps, seconds, expected):
 def test_nodered_config_errors_are_a_warning(apps):
     errors = [
         "bad indentation of a mapping entry (7:4)",
-        "Invalid bearing value 'up' for sensor 'cameras.picam_h265'",
+        "sensors.cameras.picam_h265.deployment.heading_deg isn't a whole number from 0 to 359",
         "third message",
         "fourth message",
         "fifth message",
