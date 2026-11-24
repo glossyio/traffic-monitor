@@ -824,11 +824,27 @@ def test_plate_recognizer_env_template_renders_from_the_secrets():
 def test_node_red_config_template_has_no_secret_key():
     """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Sharing page."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
-              "tmsetup_bearing": "n"}
+              "tmsetup_heading_deg": 0}
     text = render("container/node-red-tm/config/config.yml.j2", **values)
     assert "access_token" not in text
     assert "addons" not in text
     assert set(yaml.safe_load(text)["thingsboard"]) == {"enabled", "host", "protocol"}
+
+
+@pytest.mark.parametrize("heading, expected", [(90, 90), (0, 0), ("", None)], ids=["90", "0", "blank"])
+def test_node_red_config_template_writes_the_heading(heading, expected):
+    """A heading in whole degrees, and a blank one as null (no heading yet); a compass point is never written."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_heading_deg": heading}
+    text = render("container/node-red-tm/config/config.yml.j2", **values)
+    deployment = yaml.safe_load(text)["deployment"]
+    assert "heading_deg" in deployment and deployment["heading_deg"] == expected
+    assert "bearing" not in deployment and "bearing" not in text
+
+
+def test_node_red_config_template_has_no_heading_by_default():
+    deployment = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2",
+                                       **load_role_yaml("defaults/main.yml")))["deployment"]
+    assert "heading_deg" in deployment and deployment["heading_deg"] is None
 
 
 def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_page():
