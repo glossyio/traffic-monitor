@@ -154,6 +154,7 @@ describe('the About page', () => {
   it('carries the notices', async () => {
     const text = (await aboutPage()).text()
     for (const sentence of [
+      'Copyright © TrafficMonitor.ai (Traffic Monitor), Roadway Biome, and Green Dormer Solutions, LLC.',
       'GNU General Public License, version 3',
       'It comes with no warranty',
       'write to info@roadwaybiome.com',

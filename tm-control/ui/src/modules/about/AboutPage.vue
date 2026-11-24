@@ -102,7 +102,8 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
     <section class="mt-10">
       <h2 class="text-h6 mb-2">Licenses and source code</h2>
       <p class="text-body-1 mb-3">
-        Copyright © Traffic Monitor contributors. Traffic Monitor is free software under the
+        Copyright © TrafficMonitor.ai (Traffic Monitor), Roadway Biome, and Green Dormer Solutions, LLC. Traffic Monitor is
+        free software under the
         <a :href="`${REPO}/blob/main/LICENSE`" v-bind="OUTSIDE">GNU General Public License, version 3</a>. It comes with no
         warranty. Its source code is at <a :href="REPO" v-bind="OUTSIDE">github.com/glossyio/traffic-monitor</a>.
       </p>
