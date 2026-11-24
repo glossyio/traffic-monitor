@@ -493,6 +493,8 @@ class FakeNodeRed(NodeRed):
         self.config_path = Path(config_path)
         self.rows: list[dict] = []
         self.exact_copies: dict[str, list[dict]] = {}  # ticket -> the places a database copy was asked for
+        self.setup: dict | None = None  # the last setup snapshot posted
+        self._setup_received_at: str | None = None
         self._lock = threading.RLock()
         self._seen = None  # the file's (inode, size, mtime) when the engine last ran
         self._deployment = None  # config.yml's deployment keys as last read (the engine's global.config.deployment)
@@ -591,9 +593,19 @@ class FakeNodeRed(NodeRed):
         if not isinstance(survey_id, str) or not SURVEY_ID.fullmatch(survey_id):
             raise NodeRedError("bad_request", 400)
 
+    def post_setup(self, body: dict) -> None:
+        with self._lock:
+            self.setup = body
+            self._setup_received_at = _iso(time.time())
+
     def report(self) -> dict:
         self._watch()
         place = self._deployment
+        with self._lock:
+            setup = None
+            if self.setup is not None:
+                complete = self.setup.get("complete") is True
+                setup = {"received_at": self._setup_received_at, "complete": complete, "changed_at": None}
         return {
             "status": "ok",
             "schema_version": self.SCHEMA_VERSION,
@@ -609,6 +621,7 @@ class FakeNodeRed(NodeRed):
                 "last_failure_at": None,
                 "last_failure": None,
             },
+            "setup": setup,
         }
 
     def deployments(self, survey_id: str) -> list[dict]:

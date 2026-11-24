@@ -126,6 +126,10 @@ class NodeRed:
         """Hand Node-RED the exact locations of places for one database copy, under a ticket it keeps for ten minutes."""
         self._call("POST", "/database/exact-copy", body={"ticket": ticket, "places": places})
 
+    def post_setup(self, body: dict) -> None:
+        """Hand Node-RED a setup snapshot (the control app's setup history); it answers 204 when it took it."""
+        self._call("POST", "/setup", body=body)
+
     def after_config_write(self) -> None:
         """Called after config.yml is saved. Node-RED's watch node re-reads the file by itself, so this does nothing;
         a test double overrides it to apply the change."""

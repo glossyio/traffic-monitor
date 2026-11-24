@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -178,3 +179,31 @@ def test_serve_hides_tickets_in_the_access_log(monkeypatch, settings):
     monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: None)
     assert main(["serve"]) == 0
     assert [type(f) for f in access.filters] == [HideTickets]
+
+
+def _serve_with(monkeypatch, settings):
+    """Run serve with uvicorn and the app's poster replaced; the list records the order of the poster's start and
+    the server's run."""
+    import uvicorn
+
+    from tm_control import app as app_module
+    from tm_control.core.settings import Settings
+
+    started = []
+    poster = SimpleNamespace(start=lambda: started.append("poster"))
+    fake_app = SimpleNamespace(state=SimpleNamespace(setup_poster=poster))
+    monkeypatch.setattr(Settings, "from_env", classmethod(lambda cls: settings))
+    monkeypatch.setattr(app_module, "create_app", lambda given: fake_app)
+    monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: started.append("run"))
+    assert main(["serve"]) == 0
+    return started
+
+
+def test_serve_starts_the_setup_poster_on_a_device_before_the_server_runs(monkeypatch, settings):
+    import dataclasses
+
+    assert _serve_with(monkeypatch, dataclasses.replace(settings, fake=False)) == ["poster", "run"]
+
+
+def test_serve_does_not_start_the_setup_poster_in_fake_mode(monkeypatch, settings):
+    assert _serve_with(monkeypatch, settings) == ["run"]
