@@ -1564,15 +1564,22 @@ def test_precision_rewrite_answers_204(params):
 
 
 def test_database_errors_answer_500():
-    """A failed query must still answer, or tm-control waits for a reply that never comes."""
+    """A failed query must still answer, or tm-control waits for a reply that never comes. The setup history's four
+    writes carry no request (their messages hold only params), so only its two reads can answer: the request is
+    already answered by then, and a failed write is tried again with the next snapshot."""
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 7
-    [catch] = [node for node in flows if node["type"] == "catch" and set(node.get("scope") or []) & queries]
-    assert set(catch["scope"]) == queries
-    answers = [node for node in reachable(by_id, [catch["id"]]) if node["type"] == "http response"]
-    assert [str(node["statusCode"]) for node in answers] == ["500"]
+    assert len(queries) == 13
+    writes = {node["id"] for node in flows if node["type"] == "sqlite"
+              and node.get("name") in ("close setup_device", "insert setup_device", "close setup_camera",
+                                       "insert setup_camera")}
+    assert len(writes) == 4 and writes < queries
+    catches = [node for node in flows if node["type"] == "catch" and set(node.get("scope") or []) & queries]
+    assert set().union(*(set(node["scope"]) for node in catches)) == queries - writes
+    for catch in catches:
+        answers = [node for node in reachable(by_id, [catch["id"]]) if node["type"] == "http response"]
+        assert [str(node["statusCode"]) for node in answers] == ["500"]
 
 
 def test_flows_json_round_trips_through_json_dumps():
@@ -1809,6 +1816,296 @@ def test_validate_setup_refuses_more_than_32_cameras():
     body = {**GOOD_SETUP, "cameras": {f"c{n}": GOOD_SETUP["cameras"]["cam_a"] for n in range(33)}}
     passed, refused = validate_setup(body)["result"]
     assert passed is None and refused["payload"] == bad_request("cameras")
+
+
+# The setup engine: after the validator and two reads of the open rows, it compares the snapshot with the open
+# rows and writes only what differs.
+
+SETUP_JSON = {"labels_available", "labels_tracked", "thresholds", "zones", "masks"}
+SETUP_DEVICE_COLUMNS = ["id", "started", "ended", *[
+    fact for name in DEVICE_FACTS for fact in ([name, "schema_version"] if name == "tm_commit" else [name])]]
+SETUP_CAMERA_COLUMNS = ["id", "started", "ended", "camera", *CAMERA_FACTS]
+SETUP_ZONE = {"key": "zone_capture", "enabled": True, "corners": [[0.1, 0.2], [0.9, 0.2], [0.9, 0.8]],
+              "distances": [4.5, 4.5], "inertia": 3, "loitering_time": 0, "speed_threshold": 3.0,
+              "objects": ["car", "person"], "filters": {}}
+SETUP_SNAPSHOT = {
+    "complete": True,
+    "device": {**dict.fromkeys(DEVICE_FACTS), "tm_version": "0.8.0", "frigate_version": "0.16.2",
+               "model_sha256": "aa" * 32, "model_kind": "local", "model_width": 320, "model_height": 320,
+               "labels_available": ["car", "person"]},
+    "cameras": {"cam_a": {**dict.fromkeys(CAMERA_FACTS), "detect_width": 1536, "detect_height": 864,
+                          "detect_fps": 5, "stationary_threshold": 10, "labels_tracked": ["car", "person"],
+                          "thresholds": {"person": {"min_area": 100}, "car": {"min_area": 50}},
+                          "zones": [SETUP_ZONE], "masks": {"motion": [], "objects": [], "object_filters": {}}}},
+}
+
+
+def canon(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def setup_row(facts, columns, row_id, started=100, **more):
+    """An open row as SELECT * returns it: the JSON facts as canonical text."""
+    row = dict.fromkeys(columns)
+    row.update({column: canon(value) if column in SETUP_JSON and value is not None and not isinstance(value, str)
+                else value
+                for column, value in {**facts, **more}.items()})
+    return {**row, "id": row_id, "started": started}
+
+
+def open_device(schema=7, started=100, row_id="100-aaaaaaaa-sd", **changes):
+    facts = {**SETUP_SNAPSHOT["device"], "schema_version": schema, **changes}
+    return setup_row(facts, SETUP_DEVICE_COLUMNS, row_id, started)
+
+
+def open_camera(key="cam_a", started=100, row_id="100-bbbbbbbb-sc", **changes):
+    facts = {**SETUP_SNAPSHOT["cameras"]["cam_a"], **changes}
+    return setup_row(facts, SETUP_CAMERA_COLUMNS, row_id, started, camera=key)
+
+
+class SetupRun:
+    """One run of the setup engine: its five outputs as lists of messages, the global context, and the log."""
+
+    def __init__(self, out, before, after):
+        [step] = out["results"]
+        (self.close_device, self.insert_device, self.close_camera, self.insert_camera, self.answers) = (
+            [] if output is None else output if isinstance(output, list) else [output] for output in step["result"])
+        self.global_context, self.logged = out["global"], step["logged"]
+        self.before, self.after = before, after
+
+    @property
+    def answer(self):
+        [message] = self.answers
+        return message
+
+    def written(self):
+        return self.close_device + self.insert_device + self.close_camera + self.insert_camera
+
+    def in_time(self, value):
+        return isinstance(value, int) and self.before <= value <= self.after
+
+
+def setup_engine(setup, devices=(), cameras=(), context=None):
+    before = int(time.time() * 1000)
+    msg = {"req": {"headers": {}}, "res": {}, "setup": setup, "openDevice": list(devices),
+           "openCameras": list(cameras)}
+    node = named(json.loads(FLOWS.read_text()), "setup engine")
+    out = run_functions([(node, msg)], context=SETUP_CONTEXT if context is None else context)
+    return SetupRun(out, before, int(time.time() * 1000) + 1)
+
+
+def test_setup_chain_is_wired():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    [[check_id]] = endpoints["/tm-internal/setup"]["wires"]
+    [[validate_id], _] = by_id[check_id]["wires"]
+    [[read_device]] = by_id[validate_id]["wires"][:1]
+    expected = [("read open setup_device", "SELECT * FROM setup_device WHERE ended IS NULL ORDER BY started DESC, "
+                                           "id DESC", "openDevice"),
+                ("read open setup_camera", "SELECT * FROM setup_camera WHERE ended IS NULL ORDER BY started DESC, "
+                                           "id DESC", "openCameras")]
+    node_id = read_device
+    for name, sql, target in expected:
+        query = by_id[node_id]
+        assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
+        assert sql_text(query) == sql
+        [[change_id]] = query["wires"]
+        change = by_id[change_id]
+        assert change["type"] == "change"
+        assert [(rule["t"], rule["p"], rule["pt"], rule["to"], rule["tot"]) for rule in change["rules"]] == [
+            ("set", target, "msg", "payload", "msg")]
+        [[node_id]] = change["wires"]
+    engine = by_id[node_id]
+    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "setup engine", 5)
+    names = ["close setup_device", "insert setup_device", "close setup_camera", "insert setup_camera"]
+    for output, name in zip(engine["wires"][:4], names):
+        [target] = output
+        assert (by_id[target]["type"], by_id[target]["name"], by_id[target]["sqlquery"]) == ("sqlite", name, "prepared")
+        assert by_id[target]["mydb"] == TMDB and by_id[target]["wires"] == [[]]
+    [answer] = engine["wires"][4]
+    assert (by_id[answer]["type"], by_id[answer]["statusCode"]) == ("http response", "")
+
+
+@needs_node
+def test_setup_engine_starts_rows_on_an_empty_database():
+    run = setup_engine(SETUP_SNAPSHOT)
+    [device], [camera] = run.insert_device, run.insert_camera
+    assert run.close_device == [] and run.close_camera == []
+    assert set(device) == {"params"} and set(camera) == {"params"}
+    assert set(device["params"]) == {"$" + column for column in SETUP_DEVICE_COLUMNS if column != "ended"}
+    assert set(camera["params"]) == {"$" + column for column in SETUP_CAMERA_COLUMNS if column != "ended"}
+    d, c = device["params"], camera["params"]
+    assert run.in_time(d["$started"]) and run.in_time(c["$started"]) and d["$started"] == c["$started"]
+    assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-sd", d["$id"]) and re.fullmatch(r"\d{13}-[0-9a-f]{8}-sc", c["$id"])
+    assert d["$schema_version"] == 7 and c["$camera"] == "cam_a"
+    assert (d["$tm_version"], d["$model_width"], c["$detect_fps"], c["$lens_hfov"]) == ("0.8.0", 320, 5, None)
+    assert d["$labels_available"] == '["car","person"]'
+    assert c["$thresholds"] == '{"car":{"min_area":50},"person":{"min_area":100}}'
+    assert c["$zones"] == canon([{**SETUP_ZONE, "speed_threshold": 3}])
+    assert c["$masks"] == '{"motion":[],"object_filters":{},"objects":[]}'
+    assert all(isinstance(c["$" + name], str) for name in SETUP_JSON - {"labels_available"})
+    assert run.answer["statusCode"] == 200 and run.answer["payload"] == {"changed": 2}
+    assert set(run.answer) >= {"req", "res"} and "setup" not in run.answer
+
+
+@needs_node
+def test_setup_engine_changes_nothing_when_nothing_differs():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera()])
+    assert run.written() == [] and run.answer["payload"] == {"changed": 0} and run.answer["statusCode"] == 200
+
+
+@needs_node
+def test_setup_engine_ignores_order_and_number_form():
+    zones = '[{"speed_threshold": 3, "objects": ["car","person"], "key": "zone_capture", "inertia": 3, ' \
+            '"filters": {}, "enabled": true, "distances": [4.5,4.5], "loitering_time": 0, ' \
+            '"corners": [[0.1, 0.2], [0.9, 0.2], [0.9, 0.8]]}]'
+    thresholds = '{"person": {"min_area": 100}, "car": {"min_area": 50}}'
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(zones=zones, thresholds=thresholds)])
+    assert run.written() == [] and run.answer["payload"] == {"changed": 0}
+    assert SETUP_ZONE["speed_threshold"] == 3.0 and '"speed_threshold": 3,' in zones
+
+
+@needs_node
+def test_setup_engine_treats_null_and_a_missing_value_alike_and_writes_null_as_sql_null():
+    snapshot = {**SETUP_SNAPSHOT, "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"], "zones": None}}}
+    row = open_camera(zones=None)
+    del row["lens_hfov"]
+    assert setup_engine(snapshot, [open_device()], [row]).written() == []
+    fresh = setup_engine(snapshot)
+    params = fresh.insert_camera[0]["params"]
+    assert params["$zones"] is None and params["$profile"] is None and params["$lens_hfov"] is None
+
+
+@needs_node
+@pytest.mark.parametrize("which, change, schema", [
+    ("device", {"device": {"model_sha256": "bb" * 32}}, 7),
+    ("device", {}, 8),
+    ("camera", {"cameras": {"cam_a": {"zones": [{**SETUP_ZONE, "inertia": 4}]}}}, 7),
+], ids=["a device fact", "the schema version", "a camera fact"])
+def test_setup_engine_closes_and_opens_when_a_fact_differs(which, change, schema):
+    snapshot = {**SETUP_SNAPSHOT, "device": {**SETUP_SNAPSHOT["device"], **change.get("device", {})},
+                "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"],
+                             **change.get("cameras", {}).get("cam_a", {})}}}
+    context = {**SETUP_CONTEXT, "tm_status": {"schema_version": schema}}
+    run = setup_engine(snapshot, [open_device()], [open_camera()], context=context)
+    if which == "device":
+        closed, opened, untouched = run.close_device, run.insert_device, (run.close_camera, run.insert_camera)
+        old_id = "100-aaaaaaaa-sd"
+    else:
+        closed, opened, untouched = run.close_camera, run.insert_camera, (run.close_device, run.insert_device)
+        old_id = "100-bbbbbbbb-sc"
+    assert untouched == ([], [])
+    [close], [insert] = closed, opened
+    assert close["params"]["$id"] == old_id and set(close["params"]) == {"$ended", "$id"} and set(close) == {"params"}
+    assert run.in_time(close["params"]["$ended"]) and close["params"]["$ended"] == insert["params"]["$started"]
+    assert insert["params"]["$id"] != old_id and run.answer["payload"] == {"changed": 1}
+
+
+@needs_node
+def test_setup_engine_leaves_everything_alone_for_an_incomplete_snapshot():
+    run = setup_engine({"complete": False}, [open_device()], [open_camera()])
+    assert run.written() == [] and run.answer["statusCode"] == 200 and run.answer["payload"] == {"changed": 0}
+
+
+@needs_node
+def test_setup_engine_keeps_the_row_of_a_camera_the_snapshot_leaves_out():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(), open_camera("cam_b", row_id="1-cccccccc-sc")])
+    assert run.written() == [] and run.answer["payload"] == {"changed": 0}
+
+
+@needs_node
+@pytest.mark.parametrize("setup", [{"complete": False}, SETUP_SNAPSHOT], ids=["incomplete", "complete"])
+def test_setup_engine_ends_the_row_of_a_camera_that_left_the_config(setup):
+    gone = open_camera("cam_gone", row_id="1-dddddddd-sc")
+    run = setup_engine(setup, [open_device()], [open_camera(), gone])
+    assert run.close_device == [] and run.insert_device == [] and run.insert_camera == []
+    [close] = run.close_camera
+    assert close["params"]["$id"] == "1-dddddddd-sc" and run.in_time(close["params"]["$ended"])
+    assert run.answer["payload"] == {"changed": 0}
+
+
+@needs_node
+@pytest.mark.parametrize("context", [{"tm_status": {"schema_version": 7}},
+                                     {"config": {"sensors": {"cameras": ["cam_a"]}}, "tm_status": {"schema_version": 7}},
+                                     {"config": {"sensors": {"cameras": None}}, "tm_status": {"schema_version": 7}},
+                                     {"config": {}, "tm_status": {"schema_version": 7}}],
+                         ids=["no config", "a list", "null", "no sensors"])
+def test_setup_engine_ends_no_row_without_a_cameras_mapping(context):
+    run = setup_engine({"complete": False}, [open_device()], [open_camera("cam_gone", row_id="1-dddddddd-sc")],
+                       context=context)
+    assert run.written() == []
+
+
+@needs_node
+def test_setup_engine_closes_the_older_of_two_open_rows():
+    older_device, newer_device = open_device(started=50, row_id="50-aaaaaaaa-sd"), open_device()
+    older_camera, newer_camera = open_camera(started=50, row_id="50-bbbbbbbb-sc"), open_camera()
+    for devices, cameras in [([older_device, newer_device], [older_camera, newer_camera]),
+                             ([newer_device, older_device], [newer_camera, older_camera])]:
+        run = setup_engine(SETUP_SNAPSHOT, devices, cameras)
+        assert [m["params"]["$id"] for m in run.close_device] == ["50-aaaaaaaa-sd"]
+        assert [m["params"]["$id"] for m in run.close_camera] == ["50-bbbbbbbb-sc"]
+        assert run.insert_device == [] and run.insert_camera == [] and run.answer["payload"] == {"changed": 0}
+    # the newer row is the one compared: it differs, so it closes too and a row opens
+    differs = {**SETUP_SNAPSHOT, "device": {**SETUP_SNAPSHOT["device"], "model_height": 240}}
+    run = setup_engine(differs, [older_device, newer_device], [])
+    assert sorted(m["params"]["$id"] for m in run.close_device) == ["100-aaaaaaaa-sd", "50-aaaaaaaa-sd"]
+    assert len(run.insert_device) == 1
+
+
+def iso_ms(text):
+    return int(datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp() * 1000)
+
+
+@needs_node
+def test_setup_engine_records_what_arrived():
+    first = setup_engine(SETUP_SNAPSHOT)
+    status = first.global_context["tm_status"]["setup"]
+    assert set(status) == {"received_at", "complete", "changed_at"}
+    assert status["complete"] is True and status["received_at"].endswith("Z")
+    assert first.before <= iso_ms(status["received_at"]) <= first.after
+    assert status["changed_at"] == status["received_at"]
+    seen = {"received_at": "2026-01-01T00:00:00.000Z", "complete": True, "changed_at": "2026-01-01T00:00:00.000Z"}
+    context = {**SETUP_CONTEXT, "tm_status": {"schema_version": 7, "setup": seen}}
+    same = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera()], context=context)
+    status = same.global_context["tm_status"]["setup"]
+    assert same.before <= iso_ms(status["received_at"]) <= same.after
+    assert (status["complete"], status["changed_at"]) == (True, seen["changed_at"])
+    assert same.global_context["tm_status"]["schema_version"] == 7
+    incomplete = setup_engine({"complete": False}, [open_device()], [open_camera()], context=context)
+    status = incomplete.global_context["tm_status"]["setup"]
+    assert (status["complete"], status["changed_at"]) == (False, seen["changed_at"])
+    assert incomplete.before <= iso_ms(status["received_at"]) <= incomplete.after
+
+
+@needs_node
+def test_setup_engine_logs_nothing():
+    for run in [setup_engine(SETUP_SNAPSHOT), setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera()]),
+                setup_engine({"complete": False}, [open_device()], [open_camera("cam_gone")]),
+                setup_engine(SETUP_SNAPSHOT, [open_device(schema=6)], [open_camera(zones=[])])]:
+        assert run.logged == []
+
+
+def test_setup_inserts_name_every_column():
+    """The field rule's Node-RED half: each insert names the table's columns but ended, and the engine's parameters
+    are those names with a dollar sign."""
+    flows = json.loads(FLOWS.read_text())
+    for name, columns in (("insert setup_device", SETUP_DEVICE_COLUMNS), ("insert setup_camera", SETUP_CAMERA_COLUMNS)):
+        expected = [column for column in columns if column != "ended"]
+        match = re.fullmatch(r"INSERT INTO (\w+) \(([^)]*)\) VALUES \(([^)]*)\)", sql_text(named(flows, name)))
+        assert match and match[1] == name.split()[1]
+        assert match[2].split(", ") == expected
+        assert match[3].split(", ") == ["$" + column for column in expected]
+    for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera")):
+        assert sql_text(named(flows, name)) == f"UPDATE {table} SET ended = $ended WHERE id = $id"
+
+
+@needs_node
+def test_status_reports_the_setup_history():
+    [step] = run_functions([status_step()])["results"]
+    assert step["result"]["payload"]["setup"] is None
+    seen = {"received_at": "2026-10-28T22:54:55.000Z", "complete": True, "changed_at": None}
+    [step] = run_functions([status_step()], context={"tm_status": {"setup": seen}})["results"]
+    assert step["result"]["payload"]["setup"] == seen
 
 
 def keep_node():
