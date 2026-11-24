@@ -4,7 +4,7 @@ description: How the control app (tm-control) is built: its backend modules, the
 
 # tm-control
 
-`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, and Location pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Wi-Fi and the hotspot](../use/wifi-hotspot.md), [Choose the detection model](../use/detection.md), [Cameras](../use/cameras.md), and [Places and location](../use/location.md) describe it from the operator's side. This page is for changing it.
+`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, and About pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Wi-Fi and the hotspot](../use/wifi-hotspot.md), [Choose the detection model](../use/detection.md), [Cameras](../use/cameras.md), and [Places and location](../use/location.md) describe it from the operator's side. This page is for changing it.
 
 It has three parts, all in the repository's [`tm-control/`](https://github.com/glossyio/traffic-monitor/tree/main/tm-control) folder:
 
@@ -417,6 +417,30 @@ nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dn
 * The HEVC decoder check compares `/dev/rpi-hevc-dec` with the media device whose `/sys/bus/media/devices/mediaN/model` names the decoder.
 * `timedatectl show` prints its times as local strings; tm-control reads the clock itself.
 * tm-control never writes the secrets directory; the `set-secret` and `network` jobs do. It reads the hotspot's password file (mode 0640, the secrets directory's group) for the one admin-only route.
+
+## Keeping the credits current
+
+The About page lists the open source projects the device is built on. Its list is one file, `tm-control/ui/src/modules/about/credits.json`, with a row for each project: its name, license type, address, the group it is shown in, and sometimes a short note. The two rows in the group `built-on` (Frigate NVR and Node-RED) also have a sentence in `does`, which the page shows under "Built on".
+
+The list credits only what Traffic Monitor names itself, not what those projects bring with them:
+
+* the direct dependencies of the control app's pages (`tm-control/ui/package.json`), of its backend (`tm-control/backend/requirements.txt`), and of Node-RED (`container/node-red-tm/data/package.json`);
+* the components the installer records in the manifest (`components` in the role's `tm-control_service.yml`), such as Frigate, go2rtc, and nginx;
+* a few things the installer puts on the unit by name, such as FFmpeg, Podman, and Cockpit.
+
+Each row's `covers` list says which dependencies and components the row answers for, as `ui:<npm name>`, `node-red:<npm name>`, `python:<pip name>`, or `component:<manifest key>`. A row with no `covers` is one the test can't check.
+
+`script/tests/test_about_credits.py` fails when a dependency or a component has no row, and when a row answers for something that is gone. Its message names each one, so it tells you what to add or remove. To add a row, copy the license type from the project's own license file, not from a package listing, and use the project's own page as the address. If the project states no license, ask the maintainer rather than guessing. Open the address to check that it works.
+
+The test can't see these, so look them over before a release:
+
+* the apt packages in the role's `vars/main.yml`, and whether a package is worth a row (a new service or a new tool the installer relies on);
+* the Containerfiles, for the video tools they build, FFmpeg and its encoders (x264 and x265) among them, and the license each is built under;
+* the Coral model and where it comes from;
+* the map source (`tmsetup_map_style_url`), and the credit the page gives for it;
+* the sentence about trademarks, which names each trademark's owner. Add a name when a new project's name appears on the page, and keep to naming projects, never showing their logos.
+
+The same page links to `third-party-licenses.txt`, the license texts of the libraries bundled into the control app's pages. The UI build makes it (`build.license` in `tm-control/ui/vite.config.ts`) and writes it to `dist/`. It is generated, so never edit it or add it to git.
 
 ## Run it on a laptop
 
