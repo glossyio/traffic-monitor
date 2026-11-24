@@ -514,6 +514,174 @@ def test_correct_heading_on_an_open_row_updates_the_file(admin):
     assert [tuple(row) for row in found] == [("heading_deg", "0", "225")]
 
 
+FIVE = ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")
+FOUR = FIVE[1:]
+POLE = {"heading_deg": 0, "pitch_deg": 15.0, "height_m": 3.66, "measured": "pitch", "mount": "pole"}
+POLE_FIVE = [0, 15.0, 3.66, 13.66, "pole"]  # 13.66 m: 3.66 m / tan(15 degrees)
+TRIPOD = {"heading_deg": 0, "pitch_deg": 15.0, "height_m": 2.13, "measured": "pitch", "mount": "tripod"}
+
+
+def mounted(sensor, **values):
+    return {"sensor_type": sensor[0], "sensor_name": sensor[1], **values}
+
+
+def save_mounting(client, survey_id, *sensors):
+    r = client.put(
+        f"/api/v1/surveys/{survey_id}/mounting", json={"sensors": list(sensors), "dry_run": False}, headers=ORIGIN
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def own_block(client, sensor) -> dict:
+    return file_data(client)["sensors"][sensor[0]][sensor[1]].get("deployment") or {}
+
+
+def stored_mounting(client, survey_id, sensor):
+    return next(
+        found for found in Places(client.app.state.state).mountings(survey_id)
+        if (found.sensor_type, found.sensor_name) == sensor
+    )
+
+
+def open_rows_by_sensor(found: list[dict]) -> dict:
+    return {(row["sensor_type"], row["sensor_name"]): row for row in found if row["ended"] is None}
+
+
+POLE_PREVIOUS = {"pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "measured": "pitch", "mount": "pole"}
+
+
+def mounting_of(client, survey_id, sensor) -> dict:
+    r = client.get(f"/api/v1/surveys/{survey_id}/mounting")
+    assert r.status_code == 200, r.text
+    return next(s for s in r.json()["sensors"] if (s["sensor_type"], s["sensor_name"]) == sensor)
+
+
+def key_of(sensor) -> dict:
+    return {"sensor_type": sensor[0], "sensor_name": sensor[1]}
+
+
+def test_a_new_place_starts_with_no_mounting(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == POLE_FIVE
+    second = create(admin)["id"]
+    result = deploy(admin, second)
+    assert not any(key in own_block(admin, sensor) for sensor in (CAMERA, RADAR) for key in FOUR)
+    assert len(result["deployments"]) == 2
+    assert all(row[key] is None for row in result["deployments"] for key in FOUR)
+    assert result["previous"] == []
+    assert all(mounting_of(admin, second, sensor)["previous"] is None for sensor in (CAMERA, RADAR))
+    kept = stored_mounting(admin, first, CAMERA)
+    assert [getattr(kept, key) for key in FIVE] == POLE_FIVE and kept.measured == "pitch"
+
+
+def test_a_return_offers_the_places_mounting_and_records_none(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    earlier = {row["id"] for row in rows(admin, first)}
+    second = create(admin)["id"]
+    deploy(admin, second)
+    save_mounting(admin, second, mounted(CAMERA, **TRIPOD))  # what the second place has must not come along
+    result = deploy(admin, first)
+    camera = open_rows_by_sensor(result["deployments"])[CAMERA]
+    assert camera["id"] not in earlier
+    assert [camera[key] for key in FIVE] == [0, None, None, None, None]
+    assert not any(key in own_block(admin, CAMERA) for key in FOUR)
+    assert result["previous"] == [key_of(CAMERA)]  # the radar had a heading only
+    found = mounting_of(admin, first, CAMERA)
+    assert [found[key] for key in FIVE] == [0, None, None, None, None] and found["measured"] is None
+    assert found["previous"] == POLE_PREVIOUS
+    assert found["deployment_id"] == camera["id"]
+    kept = stored_mounting(admin, first, CAMERA)
+    assert [getattr(kept, key) for key in FIVE] == POLE_FIVE and kept.measured == "pitch"
+
+
+def test_a_return_takes_the_heading_chosen_at_the_deploy_and_offers_the_rest(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **{**POLE, "heading_deg": 40}))
+    second = create(admin)["id"]
+    deploy(admin, second)
+    save_mounting(admin, second, mounted(CAMERA, **TRIPOD))
+    result = deploy(admin, first, headings=[heading(CAMERA, 200)])
+    camera = open_rows_by_sensor(result["deployments"])[CAMERA]
+    assert [camera[key] for key in FIVE] == [200, None, None, None, None]
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == [200, None, None, None, None]
+    kept = stored_mounting(admin, first, CAMERA)
+    assert [getattr(kept, key) for key in FIVE] == [200, *POLE_FIVE[1:]] and kept.measured == "pitch"
+    assert mounting_of(admin, first, CAMERA)["previous"] == POLE_PREVIOUS
+    assert result["previous"] == [key_of(CAMERA)]
+
+
+def test_a_return_gives_a_sensor_the_place_never_had_no_mounting(admin):
+    first = first_place(admin)  # the radar has a heading there and none of the other four
+    second = create(admin)["id"]  # no headings: the store has no row for either sensor
+    deploy(admin, second)
+    save_mounting(admin, second, mounted(RADAR, **TRIPOD))
+    assert own_block(admin, RADAR)["height_m"] == 2.13
+    result = deploy(admin, first)
+    assert not any(key in own_block(admin, RADAR) for key in FOUR)
+    assert all(open_rows_by_sensor(result["deployments"])[RADAR][key] is None for key in FOUR)
+    assert stored_mounting(admin, second, RADAR).height_m == 2.13  # the store keeps its rows
+    assert mounting_of(admin, first, RADAR)["previous"] is None
+    assert result["previous"] == []
+
+
+def test_a_deploy_to_the_place_in_use_offers_nothing(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    result = deploy(admin, first, headings=[heading(CAMERA, 90)])
+    assert result["previous"] == []
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == [90, *POLE_FIVE[1:]]
+    assert mounting_of(admin, first, CAMERA)["previous"] is None
+
+
+def test_a_deploy_to_the_place_in_use_keeps_the_four_when_the_file_names_no_place(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    row = open_rows_by_sensor(rows(admin, first))[CAMERA]
+    path = admin.app.state.config_path
+    path.write_text(path.read_text().replace(f"survey_id: {first}\n", "survey_id: main street\n"))
+    result = deploy(admin, first)
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == POLE_FIVE
+    assert open_rows_by_sensor(result["deployments"])[CAMERA]["id"] == row["id"]
+    assert result["previous"] == []
+    assert mounting_of(admin, first, CAMERA)["previous"] is None
+
+
+def test_a_deploy_where_values_wait_offers_nothing_new(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    second = create(admin)["id"]
+    deploy(admin, second)
+    assert deploy(admin, first)["previous"] == [key_of(CAMERA)]
+    result = deploy(admin, first, headings=[heading(CAMERA, 90)])
+    assert result["previous"] == []
+    assert mounting_of(admin, first, CAMERA)["previous"] == POLE_PREVIOUS
+
+
+def test_correct_heading_leaves_the_other_four_alone(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    row = open_rows_by_sensor(rows(admin, first))[CAMERA]
+    r = admin.post(f"/api/v1/surveys/{first}/deployments/{row['id']}/heading", json={"heading_deg": 90}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert [r.json()[key] for key in FIVE] == [90, *POLE_FIVE[1:]]
+    after = open_rows_by_sensor(rows(admin, first))[CAMERA]
+    assert after["id"] == row["id"] and [after[key] for key in FIVE] == [90, *POLE_FIVE[1:]]
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == [90, *POLE_FIVE[1:]]
+    kept = stored_mounting(admin, first, CAMERA)
+    assert [getattr(kept, key) for key in FIVE] == [90, *POLE_FIVE[1:]] and kept.measured == "pitch"
+
+
+def test_deployments_list_their_mounting(admin):
+    first = first_place(admin)
+    save_mounting(admin, first, mounted(CAMERA, **POLE))
+    found = open_rows_by_sensor(rows(admin, first))
+    assert [found[CAMERA][key] for key in FIVE] == POLE_FIVE
+    assert [found[RADAR][key] for key in FIVE] == [0, None, None, None, None]
+
+
 def test_correct_heading_on_a_closed_row_leaves_the_file(admin):
     old = first_place(admin)
     place = create(admin)
@@ -877,6 +1045,16 @@ def test_no_coordinate_in_any_log_line(admin, caplog, monkeypatch):
     row = rows(admin, place["id"])[0]
     admin.post(f"/api/v1/surveys/{place['id']}/deployments/{row['id']}/heading", json={"heading_deg": 270,
                "reason": "Secret reason"}, headers=ORIGIN)
+    admin.get(f"/api/v1/surveys/{place['id']}/mounting")
+    for body in (
+        {"sensors": [mounted(CAMERA, **{**POLE, "heading_deg": 90})], "dry_run": True},
+        {"sensors": [mounted(CAMERA, **{**POLE, "heading_deg": 90})], "dry_run": False, "moved": False},
+        {"sensors": [mounted(RADAR, **{**POLE, "heading_deg": 0})], "dry_run": False, "moved": True},
+        {"sensors": [mounted(CAMERA, pitch_deg="40", measured="pitch")], "dry_run": False},
+        {"sensors": [mounted(CAMERA, pitch_deg=95.0, measured="pitch")], "dry_run": False},
+    ):
+        admin.put(f"/api/v1/surveys/{place['id']}/mounting", json=body, headers=ORIGIN)
+    admin.get(f"/api/v1/surveys/{in_use}/mounting")  # not in use: refused
     admin.put("/api/v1/surveys/precision", json={"precision": "2", "round_stored": True}, headers=ORIGIN)
     admin.post("/api/v1/surveys/import", json={"csv": IMPORT_CSV, "dry_run": False}, headers=ORIGIN)
     admin.post("/api/v1/surveys/import", json={"csv": IMPORT_CSV + "Bad,45,52252,,\n", "dry_run": False},
