@@ -1692,7 +1692,7 @@
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1562
+        "h": 1762
     },
     {
         "id": "484071aff09e5ec2",
@@ -3389,12 +3389,28 @@
             "19330a26e7147ec2",
             "90f459bbf47fedaa",
             "74bbeec1de9cbb88",
-            "4c3e0ddb6be3f58c"
+            "4c3e0ddb6be3f58c",
+            "37ab1d73c75eb7fe",
+            "fda2bc56cf81f3c1",
+            "d9ed245627b029a5",
+            "0204bc17a2650741",
+            "44b25f69bd8939dd",
+            "335e56f9abae8238",
+            "b3f4169eb8fabae6",
+            "a2d32f765150f7da",
+            "1302b2050d34200f",
+            "9ffe2f7cfb45d5d0",
+            "ed0ecb1f09613d24",
+            "52facc3cf1d876db",
+            "a5836f2e218cb9c6",
+            "6578a61853b78e20",
+            "f27bb7d2bc4643b9",
+            "2fba6a580459637e"
         ],
         "x": 94,
         "y": 1419,
         "w": 1786,
-        "h": 842
+        "h": 1042
     },
     {
         "id": "fc8558ca801e2e70",
@@ -3426,7 +3442,7 @@
             "14a96b9cab881583"
         ],
         "x": 94,
-        "y": 2281,
+        "y": 2481,
         "w": 1786,
         "h": 360
     },
@@ -3441,7 +3457,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 290,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "6b382c2da7bcd551"
@@ -3462,7 +3478,7 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "91884d5e4502aca4"
@@ -3486,7 +3502,7 @@
         "finalize": "",
         "libs": [],
         "x": 820,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "81e08b68e847f62b"
@@ -3505,7 +3521,7 @@
         "statusCode": "401",
         "headers": {},
         "x": 820,
-        "y": 2360,
+        "y": 2560,
         "wires": []
     },
     {
@@ -3517,7 +3533,7 @@
         "statusCode": "",
         "headers": {},
         "x": 1080,
-        "y": 2360,
+        "y": 2560,
         "wires": []
     },
     {
@@ -4125,7 +4141,9 @@
             "db7c70a85f045770",
             "e1ed1757d394e260",
             "5815e04433eba419",
-            "ac9c1f431f070f3a"
+            "ac9c1f431f070f3a",
+            "0204bc17a2650741",
+            "52facc3cf1d876db"
         ],
         "uncaught": false,
         "x": 310,
@@ -15982,6 +16000,286 @@
         "wires": []
     },
     {
+        "id": "37ab1d73c75eb7fe",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/deployments/:id/mounting",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2280,
+        "wires": [
+            [
+                "fda2bc56cf81f3c1"
+            ]
+        ]
+    },
+    {
+        "id": "fda2bc56cf81f3c1",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2280,
+        "wires": [
+            [
+                "d9ed245627b029a5"
+            ],
+            [
+                "b3f4169eb8fabae6"
+            ]
+        ]
+    },
+    {
+        "id": "d9ed245627b029a5",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate mounting correction",
+        "func": "// tm-control corrects the mounting of one deployment row in place: all five keys, each null or within its limits.\n// The limits are those \"init config defaults\" checks on what it reads from config.yml. A number is rounded half away\n// from zero (one decimal for the tilt, two for the lengths) and the rounded value is checked. A refusal names the key\n// and never its value.\nconst id = msg.req.params.id;\nif (typeof id !== \"string\" || !/^\\d+-[0-9a-f]{8}-d$/.test(id)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"deployment_id\" };\n    return [null, msg];\n}\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nconst refuse = (key) => {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: key };\n    return [null, msg];\n};\nconst limits = {\n    pitch_deg: { places: 1, within: (value) => value >= 0 && value <= 90 },\n    height_m: { places: 2, within: (value) => value > 0 && value <= 100 },\n    view_distance_m: { places: 2, within: (value) => value >= 0 && value <= 1000 },\n};\nconst heading = body.heading_deg;\nif (heading !== null && !(typeof heading === \"number\" && Number.isInteger(heading) && heading >= 0 && heading <= 359)) {\n    return refuse(\"heading_deg\");\n}\nconst values = { heading_deg: heading };\nfor (const [key, limit] of Object.entries(limits)) {\n    const value = body[key];\n    if (value === null) {\n        values[key] = null;\n        continue;\n    }\n    // + 0 turns a -0 into 0\n    const rounded = (typeof value === \"number\" && Number.isFinite(value)) ? Number(value.toFixed(limit.places)) + 0 : null;\n    if (rounded === null || !limit.within(rounded)) {\n        return refuse(key);\n    }\n    values[key] = rounded;\n}\nconst mount = body.mount;\nif (mount !== null && !(typeof mount === \"string\" && /^[a-z0-9_]{1,32}$/.test(mount))) {\n    return refuse(\"mount\");\n}\nvalues.mount = mount;\nmsg.params = {\n    $id: id,\n    $heading_deg: values.heading_deg,\n    $pitch_deg: values.pitch_deg,\n    $height_m: values.height_m,\n    $view_distance_m: values.view_distance_m,\n    $mount: values.mount,\n};\nreturn [msg, null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2280,
+        "wires": [
+            [
+                "0204bc17a2650741"
+            ],
+            [
+                "a2d32f765150f7da"
+            ]
+        ]
+    },
+    {
+        "id": "0204bc17a2650741",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment SET heading_deg = $heading_deg, pitch_deg = $pitch_deg, height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount WHERE id = $id;\n",
+        "name": "rewrite deployment mounting",
+        "x": 1080,
+        "y": 2280,
+        "wires": [
+            [
+                "44b25f69bd8939dd"
+            ]
+        ]
+    },
+    {
+        "id": "44b25f69bd8939dd",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer mounting correction",
+        "func": "// The correction answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 2280,
+        "wires": [
+            [
+                "335e56f9abae8238"
+            ]
+        ]
+    },
+    {
+        "id": "335e56f9abae8238",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 2280,
+        "wires": []
+    },
+    {
+        "id": "b3f4169eb8fabae6",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2320,
+        "wires": []
+    },
+    {
+        "id": "a2d32f765150f7da",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2320,
+        "wires": []
+    },
+    {
+        "id": "1302b2050d34200f",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/:id/recorded",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2380,
+        "wires": [
+            [
+                "9ffe2f7cfb45d5d0"
+            ]
+        ]
+    },
+    {
+        "id": "9ffe2f7cfb45d5d0",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2380,
+        "wires": [
+            [
+                "ed0ecb1f09613d24"
+            ],
+            [
+                "f27bb7d2bc4643b9"
+            ]
+        ]
+    },
+    {
+        "id": "ed0ecb1f09613d24",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate recorded path",
+        "func": "// Only a survey id reaches the query, so a malformed path answers 400 without touching tmdb.\nconst surveyId = (msg.req.params || {}).id;\nif (typeof surveyId === \"string\" && /^[0-9a-f]{8}-si$/.test(surveyId)) {\n    msg.params = { $survey_id: surveyId };\n    return [msg, null];\n}\nmsg.statusCode = 400;\nmsg.payload = { error: \"bad_request\", detail: \"survey_id\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2380,
+        "wires": [
+            [
+                "52facc3cf1d876db"
+            ],
+            [
+                "2fba6a580459637e"
+            ]
+        ]
+    },
+    {
+        "id": "52facc3cf1d876db",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "SELECT d.id AS id,\n    CASE d.sensorType\n        WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id)\n        WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov\n            WHERE time >= d.entryStartDateTime / 1000.0 - 86400 AND deployment_id = d.id)\n    END AS recorded\nFROM deployment d\nWHERE d.survey_id = $survey_id AND d.entryEndDateTime IS NULL;\n",
+        "name": "read survey recorded",
+        "x": 1080,
+        "y": 2380,
+        "wires": [
+            [
+                "a5836f2e218cb9c6"
+            ]
+        ]
+    },
+    {
+        "id": "a5836f2e218cb9c6",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer survey recorded",
+        "func": "// Which of the survey's open deployments have recorded traffic: true or false, and null for a sensor type that has no\n// rule (the query answers NULL). Keyed by deployment id.\nconst deployments = {};\nfor (const row of Array.isArray(msg.payload) ? msg.payload : []) {\n    deployments[row.id] = row.recorded == null ? null : row.recorded === 1;\n}\nmsg.payload = { deployments };\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 2380,
+        "wires": [
+            [
+                "6578a61853b78e20"
+            ]
+        ]
+    },
+    {
+        "id": "6578a61853b78e20",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 2380,
+        "wires": []
+    },
+    {
+        "id": "f27bb7d2bc4643b9",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2420,
+        "wires": []
+    },
+    {
+        "id": "2fba6a580459637e",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2420,
+        "wires": []
+    },
+    {
         "id": "42ab4681bb24d9f1",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -16357,7 +16655,7 @@
         "sql": "SELECT * FROM setup_device WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
         "name": "read open setup_device",
         "x": 1090,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "47ad2479608c5f08"
@@ -16385,7 +16683,7 @@
         "to": "",
         "reg": false,
         "x": 1340,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "ea82e1bc3f359912"
@@ -16402,7 +16700,7 @@
         "sql": "SELECT * FROM setup_camera WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
         "name": "read open setup_camera",
         "x": 1590,
-        "y": 2320,
+        "y": 2520,
         "wires": [
             [
                 "64a84c0c2197e5eb"
@@ -16430,7 +16728,7 @@
         "to": "",
         "reg": false,
         "x": 360,
-        "y": 2480,
+        "y": 2680,
         "wires": [
             [
                 "02692ea73db6605b"
@@ -16451,7 +16749,7 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 2480,
+        "y": 2680,
         "wires": [
             [
                 "b20cf5f74c76ef7a"
@@ -16480,7 +16778,7 @@
         "sql": "UPDATE setup_device SET ended = $ended WHERE id = $id;\n",
         "name": "close setup_device",
         "x": 880,
-        "y": 2420,
+        "y": 2620,
         "wires": [
             []
         ]
@@ -16495,7 +16793,7 @@
         "sql": "INSERT INTO setup_device (id, started, tm_version, tm_commit, schema_version, frigate_version, unit_system, detector, model_id, model_file, model_sha256, model_kind, model_title, model_trained_at, model_base, model_type, model_width, model_height, labels_available)\nVALUES ($id, $started, $tm_version, $tm_commit, $schema_version, $frigate_version, $unit_system, $detector, $model_id, $model_file, $model_sha256, $model_kind, $model_title, $model_trained_at, $model_base, $model_type, $model_width, $model_height, $labels_available);\n",
         "name": "insert setup_device",
         "x": 880,
-        "y": 2460,
+        "y": 2660,
         "wires": [
             []
         ]
@@ -16510,7 +16808,7 @@
         "sql": "UPDATE setup_camera SET ended = $ended WHERE id = $id;\n",
         "name": "close setup_camera",
         "x": 880,
-        "y": 2500,
+        "y": 2700,
         "wires": [
             []
         ]
@@ -16525,7 +16823,7 @@
         "sql": "INSERT INTO setup_camera (id, started, camera, detect_width, detect_height, detect_fps, stationary_threshold, stationary_interval, lens_hfov, labels_tracked, thresholds, zones, masks, profile)\nVALUES ($id, $started, $camera, $detect_width, $detect_height, $detect_fps, $stationary_threshold, $stationary_interval, $lens_hfov, $labels_tracked, $thresholds, $zones, $masks, $profile);\n",
         "name": "insert setup_camera",
         "x": 880,
-        "y": 2540,
+        "y": 2740,
         "wires": [
             []
         ]
@@ -16539,7 +16837,7 @@
         "statusCode": "",
         "headers": {},
         "x": 880,
-        "y": 2580,
+        "y": 2780,
         "wires": []
     },
     {
@@ -16554,7 +16852,7 @@
         ],
         "uncaught": false,
         "x": 1090,
-        "y": 2420,
+        "y": 2620,
         "wires": [
             [
                 "c1cca813e49a5808"
@@ -16575,7 +16873,7 @@
         "finalize": "",
         "libs": [],
         "x": 1340,
-        "y": 2420,
+        "y": 2620,
         "wires": [
             [
                 "14a96b9cab881583"
@@ -16591,7 +16889,7 @@
         "statusCode": "500",
         "headers": {},
         "x": 1590,
-        "y": 2420,
+        "y": 2620,
         "wires": []
     }
 ]

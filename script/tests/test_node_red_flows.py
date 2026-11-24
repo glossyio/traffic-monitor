@@ -1610,12 +1610,19 @@ STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
+                     "/tm-internal/deployments/:id/mounting", "/tm-internal/surveys/:id/recorded",
                      "/tm-internal/database/exact-copy", "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
+                       "/tm-internal/deployments/:id/mounting": "post", "/tm-internal/surveys/:id/recorded": "get",
                        "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
+RECORDED_SQL = (
+    "SELECT d.id AS id, CASE d.sensorType WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id) "
+    "WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov WHERE time >= d.entryStartDateTime / 1000.0 - 86400 "
+    "AND deployment_id = d.id) END AS recorded FROM deployment d "
+    "WHERE d.survey_id = $survey_id AND d.entryEndDateTime IS NULL")
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
@@ -1630,6 +1637,7 @@ SURVEY_SQL = {
                                         "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, "
                                         "MAX(start_time) AS last_event FROM events WHERE deployment_id IN (SELECT id "
                                         "FROM deployment WHERE survey_id = $survey_id)"),
+    "/tm-internal/surveys/:id/recorded": ("read survey recorded", RECORDED_SQL),
 }
 PRECISION_SQL = {
     "rewrite precision": "UPDATE deployment SET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p "
@@ -1640,6 +1648,8 @@ PRECISION_SQL = {
 VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
               "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
+              "/tm-internal/deployments/:id/mounting": "tm-internal: validate mounting correction",
+              "/tm-internal/surveys/:id/recorded": "tm-internal: validate recorded path",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -1769,6 +1779,9 @@ def bad_request(detail):
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "2"}}, True),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "1"}}, True),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "none"}}, True),
@@ -1872,7 +1885,7 @@ def test_database_errors_answer_500():
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 13
+    assert len(queries) == 15
     writes = {node["id"] for node in flows if node["type"] == "sqlite"
               and node.get("name") in ("close setup_device", "insert setup_device", "close setup_camera",
                                        "insert setup_camera")}
@@ -2778,6 +2791,162 @@ def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body
         return
     assert passed is None
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+
+
+FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
+MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+
+
+def mounting_body(**changes):
+    return {**FULL_MOUNTING, **changes}
+
+
+def without(body, key):
+    return {name: value for name, value in body.items() if name != key}
+
+
+@needs_node
+@pytest.mark.parametrize("deployment_id, body, detail", [
+    (DEPLOYMENT_ID, mounting_body(), None),
+    (DEPLOYMENT_ID, {key: None for key in FULL_MOUNTING}, None),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=0, pitch_deg=0, view_distance_m=0), None),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=359, pitch_deg=90, height_m=100, view_distance_m=1000), None),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=14.9, height_m=3.67, view_distance_m=13.66, mount="a_" * 16), None),
+    (DEPLOYMENT_ID, mounting_body(mount="x" * 32), None),
+    (DEPLOYMENT_ID, without(mounting_body(), "heading_deg"), "heading_deg"),
+    (DEPLOYMENT_ID, without(mounting_body(), "pitch_deg"), "pitch_deg"),
+    (DEPLOYMENT_ID, without(mounting_body(), "height_m"), "height_m"),
+    (DEPLOYMENT_ID, without(mounting_body(), "view_distance_m"), "view_distance_m"),
+    (DEPLOYMENT_ID, without(mounting_body(), "mount"), "mount"),
+    (DEPLOYMENT_ID, {}, "heading_deg"),
+    (DEPLOYMENT_ID, "heading_deg=40", "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=360), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=-1), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=40.5), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=90.06), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=-0.05), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m=0), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(height_m=0.004), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(height_m=100.006), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=-0.005), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=1000.006), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(mount=""), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="Pole"), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="x" * 33), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="a b"), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount=5), "mount"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg="40"), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg="40"), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m="3.66"), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m="13"), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=True), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m=False), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=[1]), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg="40", height_m=0), "pitch_deg"),
+    ("1761800000000-0A1B2C3D-d", mounting_body(), "deployment_id"),
+    ("0a1b2c3d-d", mounting_body(), "deployment_id"),
+    ("1761800000000-0a1b2c3d-d ", mounting_body(), "deployment_id"),
+    ("nope", mounting_body(heading_deg=360), "deployment_id"),
+])
+def test_mounting_correction_is_validated(deployment_id, body, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
+    msg = {"req": {"params": {"id": deployment_id}}, "payload": body}
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert list(passed["params"]) == ["$id", *MOUNTING_PARAMS]
+        assert passed["params"]["$id"] == deployment_id
+        assert {name[1:]: value for name, value in passed["params"].items() if name != "$id"} == body
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert json.dumps(body) not in json.dumps(refused["payload"])
+
+
+@needs_node
+def test_mounting_correction_rounds_as_the_defaults_node_does():
+    """The same limits, checked after rounding (one decimal for tilt, two for lengths), so the two never disagree."""
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
+    for given, stored in (((14.96, 3.665, 13.664), (15.0, 3.67, 13.66)),
+                          ((90.04, 100.004, 1000.004), (90.0, 100.0, 1000.0)),
+                          ((-0.04, 0.005, -0.004), (0, 0.01, 0))):
+        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2])
+        [step] = run_functions([(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": body})])["results"]
+        params = step["result"][0]["params"]
+        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"]) == stored
+
+
+def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
+    validator, query, answer, response_id, by_id = correction_chain("/tm-internal/deployments/:id/mounting")
+    assert validator["outputs"] == 2
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
+        "sqlite", "rewrite deployment mounting", "prepared", TMDB)
+    assert sql_text(query) == ("UPDATE deployment SET heading_deg = $heading_deg, pitch_deg = $pitch_deg, "
+                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount "
+                               "WHERE id = $id")
+    assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+    assert answer["name"] == "tm-internal: answer mounting correction"
+
+
+@needs_node
+def test_mounting_correction_answers_204():
+    _, _, answer, *_ = correction_chain("/tm-internal/deployments/:id/mounting")
+    [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_the_mounting_correction_leaves_the_heading_correction_alone():
+    validator, query, *_ = correction_chain("/tm-internal/deployments/:id/heading")
+    assert validator["name"] == "tm-internal: validate heading correction"
+    assert query["name"] == "rewrite deployment heading"
+
+
+def recorded_database():
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    start = 1761800000000
+    rows = [("c-open", "cameras", None, "3f9a1c2e-si"), ("c-quiet", "cameras", None, "3f9a1c2e-si"),
+            ("r-open", "radars", None, "3f9a1c2e-si"), ("r-quiet", "radars", None, "3f9a1c2e-si"),
+            ("r-old", "radars", None, "3f9a1c2e-si"), ("r-day", "radars", None, "3f9a1c2e-si"),
+            ("a-open", "airquality_monitors", None, "3f9a1c2e-si"),
+            ("c-closed", "cameras", start + 5000, "3f9a1c2e-si"), ("c-other", "cameras", None, "7b2e9d41-si")]
+    for deployment_id, sensor_type, ended, survey_id in rows:
+        con.execute("INSERT INTO deployment (id, entryStartDateTime, entryEndDateTime, sensorType, sensorName, "
+                    "survey_id) VALUES (?, ?, ?, ?, 'x', ?)", (deployment_id, start, ended, sensor_type, survey_id))
+    for deployment_id in ("c-open", "c-closed", "c-other"):
+        con.execute("INSERT INTO events (id, camera, deployment_id) VALUES (?, 'camera_1', ?)",
+                    ("e-" + deployment_id, deployment_id))
+    seconds = start / 1000.0
+    for deployment_id, time in (("r-open", seconds + 60), ("r-old", seconds - 86401), ("r-day", seconds - 86399),
+                                ("a-open", seconds + 60)):
+        con.execute("INSERT INTO radar_dov (time, deployment_id) VALUES (?, ?)", (time, deployment_id))
+    con.row_factory = sqlite3.Row
+    return con
+
+
+def test_survey_recorded_statement():
+    query = named(json.loads(FLOWS.read_text()), "read survey recorded")
+    assert sql_text(query) == RECORDED_SQL
+    con = recorded_database()
+    rows = {row["id"]: row["recorded"] for row in con.execute(query["sql"], {"survey_id": "3f9a1c2e-si"})}
+    assert rows == {"c-open": 1, "c-quiet": 0, "r-open": 1, "r-quiet": 0, "r-old": 0, "r-day": 1, "a-open": None}
+    plan = " ".join(row[3] for row in con.execute("EXPLAIN QUERY PLAN " + query["sql"], {"survey_id": "x"}))
+    assert "radar_dov" in plan and "time" in plan
+
+
+@needs_node
+@pytest.mark.parametrize("rows, expected", [
+    ([{"id": "a-d", "recorded": 1}, {"id": "b-d", "recorded": 0}, {"id": "c-d", "recorded": None}],
+     {"a-d": True, "b-d": False, "c-d": None}),
+    ([{"id": "a-d", "recorded": 1}], {"a-d": True}),
+    ([], {}),
+], ids=["all-three", "one", "none"])
+def test_survey_recorded_answer(rows, expected):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/surveys/:id/recorded"), msg)])["results"]
+    assert step["result"]["payload"] == {"deployments": expected}
+    assert step["result"].get("statusCode") in (None, 200)
 
 
 def test_the_old_bearing_correction_path_is_gone():
