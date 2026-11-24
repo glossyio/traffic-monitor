@@ -1899,6 +1899,26 @@ def setup_engine(setup, devices=(), cameras=(), context=None):
     return SetupRun(out, before, int(time.time() * 1000) + 1)
 
 
+# Prepared sqlite nodes with nothing to bind: an upstream function sets msg.params = {} for them ("tm-internal: usage
+# params", and the precision validator on the way to "rewrite precision to none"). Anywhere else a statement with
+# no parameter is fixed, because a prepared node refuses a message without msg.params.
+PREPARED_WITHOUT_PARAMETERS = {"dce8e3e7d11d02ac", "e1ed1757d394e260"}
+
+
+def test_prepared_sqlite_nodes_bind_something_and_fixed_ones_do_not():
+    flows = json.loads(FLOWS.read_text())
+    bad = []
+    for node in flows:
+        if node["type"] != "sqlite" or node.get("sqlquery") not in ("prepared", "fixed"):
+            continue
+        binds = re.search(r"\$\w+", node.get("sql", "")) is not None
+        if node["sqlquery"] == "prepared" and not binds and node["id"] not in PREPARED_WITHOUT_PARAMETERS:
+            bad.append((node["id"], node.get("name"), "prepared, no parameter"))
+        if node["sqlquery"] == "fixed" and binds:
+            bad.append((node["id"], node.get("name"), "fixed, binds a parameter"))
+    assert bad == []
+
+
 def test_setup_chain_is_wired():
     flows, by_id, endpoints = tm_internal_endpoints()
     [[check_id]] = endpoints["/tm-internal/setup"]["wires"]
@@ -1911,7 +1931,7 @@ def test_setup_chain_is_wired():
     node_id = read_device
     for name, sql, target in expected:
         query = by_id[node_id]
-        assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
+        assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "fixed", TMDB)
         assert sql_text(query) == sql
         [[change_id]] = query["wires"]
         change = by_id[change_id]
