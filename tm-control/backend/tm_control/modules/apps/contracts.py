@@ -224,9 +224,10 @@ def zone_names(context: Context) -> list[Check]:
 
 
 def setup_names(context: Context) -> list[Check]:
-    """The running model's title and the active profile's name don't look like an address or a person's name: both are
-    saved in the database, and shared with the data. The detail says which and never quotes either; it is read from the
-    setup poster's summary, never from the snapshot itself."""
+    """The running model's title, a local model's file name, and the active profile's name don't look like an address or
+    a person's name: all three are saved in the database, and shared with the data. The detail says which and never
+    quotes any; it is read from the setup poster's summary, never from the snapshot itself. The Detection link goes
+    with the title and the file name, which a different model replaces."""
 
     def check(status, detail, fix=None):
         return [Check(id="config.setup_names", title="Model and profile names", status=status, detail=detail, fix=fix)]
@@ -239,13 +240,16 @@ def setup_names(context: Context) -> list[Check]:
     if "model_title" in flagged:
         sentences.append("The running model's title looks like an address or a person's name. It is saved in the "
                          "database.")
+    if "model_file" in flagged:
+        sentences.append("The running model's file name looks like an address or a person's name. It is saved in the "
+                         "database.")
     if "profile" in flagged:
         sentences.append("Frigate's active profile has a name that looks like an address or a person's name. It is "
                          "saved in the database.")
     if not sentences:
-        return check("ok", "The running model's title and the active profile's name don't look like an address or a "
-                           "person's name.")
-    fix = DETECTION_LINK if "model_title" in flagged else None
+        return check("ok", "The running model's title and file name, and the active profile's name, don't look like an "
+                           "address or a person's name.")
+    fix = DETECTION_LINK if "model_title" in flagged or "model_file" in flagged else None
     return check("warn", " ".join(sentences), fix)
 
 

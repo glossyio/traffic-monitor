@@ -158,7 +158,7 @@
                     "id": "config.setup_names",
                     "title": "Model and profile names",
                     "status": "ok",
-                    "detail": "The running model's title and the active profile's name don't look like an address or a person's name."
+                    "detail": "The running model's title and file name, and the active profile's name, don't look like an address or a person's name."
                 },
                 {
                     "id": "config.radars",

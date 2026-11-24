@@ -172,6 +172,6 @@ To compare two models, compare their counts over periods of similar traffic, and
 
 ## What an operator typed
 
-The rows hold a few names a person chose, and they are saved with your data. They are a zone's `key`, a model's title (`model_title`) and file name (`model_file`), and a profile's key (`profile`). A zone's key is saved with every event already; see [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data). Don't name any of these after a street, a house number, or a person. The Status page's **Model and profile names** check warns when a model's title or a profile's key looks like an address or a person's name, and never shows the name.
+The rows hold a few names a person chose, and they are saved with your data. They are a zone's `key`, a model's title (`model_title`) and file name (`model_file`), and a profile's key (`profile`). A zone's key is saved with every event already; see [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data). Don't name any of these after a street, a house number, or a person. The Status page's **Model and profile names** check warns when a model's title, the file name of a model you uploaded (the part before its last dot), or a profile's key looks like an address or a person's name, and never shows the name.
 
 The names Frigate shows for zones, masks, and cameras are not kept. Frigate's own name for a camera, a camera's stream address, and a mask's id aren't either. The rows say which camera by its key in `config.yml`.

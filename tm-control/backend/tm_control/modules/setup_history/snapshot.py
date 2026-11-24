@@ -16,6 +16,7 @@ zone, a title, a profile, or a value.
 
 import json
 import math
+import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -51,7 +52,8 @@ UNIT_SYSTEMS = ("metric", "imperial")
 @dataclass(frozen=True)
 class Snapshot:
     body: dict  # what is posted: {"complete": False}, or the device's and each camera's facts
-    flagged: tuple[str, ...]  # of "model_title" and "profile": a value the name check found looks like a place or person
+    # of "model_title", "model_file", and "profile": a value the name check found looks like a place or a person
+    flagged: tuple[str, ...]
     error: str | None = None  # the class name of the exception that made a gather fail; never its text
 
 
@@ -245,12 +247,18 @@ def device_facts(
 
 
 def flagged(device: dict, profiles: Iterable[str]) -> tuple[str, ...]:
-    """Which recorded values look like an address or a person's name: "model_title" by the title rule, "profile" by the
-    zone-name rule (at the pattern level only) for any of the profile keys a row holds."""
+    """Which recorded values look like an address or a person's name: "model_title" by the title rule, "model_file" by
+    the same rule for a local model's file name without its last extension (an operator named it; an extension is an
+    unknown word, which beside an address word would be a false pattern), and "profile" by the zone-name rule (at the
+    pattern level only) for any of the profile keys a row holds."""
     found = []
     title = device.get("model_title")
     if isinstance(title, str) and check_title(title) == "pattern":
         found.append("model_title")
+    file = device.get("model_file")
+    if device.get("model_kind") == "local" and isinstance(file, str):
+        if check_title(os.path.splitext(file)[0]) == "pattern":
+            found.append("model_file")
     if any(check_name(profile) == "pattern" for profile in profiles):
         found.append("profile")
     return tuple(found)

@@ -390,6 +390,33 @@ def test_flagged():
     assert flagged({}, []) == ()
 
 
+@pytest.mark.parametrize(
+    "device, expected",
+    [
+        ({"model_kind": "local", "model_file": "oak_st_bikes.tflite"}, ("model_file",)),
+        ({"model_kind": "local", "model_file": "Jane O'Brien.tflite"}, ("model_file",)),
+        ({"model_kind": "local", "model_file": "oak_st_bikes.v2.tflite"}, ("model_file",)),  # only the last extension
+        ({"model_kind": "local", "model_file": "oak st"}, ("model_file",)),  # no extension: checked whole
+        ({"model_kind": "local", "model_file": "yolov9_512.tflite"}, ()),  # a number is a size
+        ({"model_kind": "local", "model_file": "bikes.lane"}, ()),  # an extension is not part of the name
+        ({"model_kind": "local", "model_file": None}, ()),
+        ({"model_kind": "local"}, ()),
+        ({"model_kind": "installer_default", "model_file": "oak_st_bikes.tflite"}, ()),  # not typed by an operator
+        ({"model_kind": "frigate_default", "model_file": "oak_st_bikes.tflite"}, ()),
+        ({"model_kind": "frigate_plus", "model_file": "oak_st_bikes.tflite"}, ()),
+        ({"model_kind": "local", "model_title": "Oak St bikes", "model_file": "oak_st_bikes.tflite"},
+         ("model_title", "model_file")),
+    ],
+)
+def test_flagged_checks_a_local_models_file_name(device, expected):
+    assert flagged(device, []) == expected
+
+
+def test_flagged_orders_title_file_and_profile():
+    device = {"model_kind": "local", "model_title": "Oak St bikes", "model_file": "oak_st_bikes.tflite"}
+    assert flagged(device, ["1420_oak_st"]) == ("model_title", "model_file", "profile")
+
+
 # gather
 
 def write_config(path, entries):
@@ -533,6 +560,15 @@ def test_gather_flags_only_profiles_in_use(world):
     world.answers["profile"] = (True, "night")
     world.answers["config"]["cameras"]["oak_ave"]["profiles"] = {"night": {}}
     assert gather(world.state).flagged == ()
+
+
+def test_gather_flags_a_local_models_file_name(world):
+    cache = world.tmp / "frigate" / "config" / "model_cache"
+    pair(cache, "oak_st_bikes.tflite", id="not an id!", name="bikes")
+    world.answers["config"]["detectors"]["coral"]["model"] = {"path": "/config/model_cache/oak_st_bikes.tflite"}
+    found = gather(world.state)
+    assert found.body["device"]["model_kind"] == "local"
+    assert found.flagged == ("model_file",)
 
 
 def test_gather_flags_a_model_title_that_looks_like_an_address(world):

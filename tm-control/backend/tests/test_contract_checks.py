@@ -1454,6 +1454,7 @@ def test_a_zone_key_frigate_made_up_isnt_checked_or_quoted(apps):
 # The model's and the active profile's names, from the poster's last snapshot
 
 MODEL_SENTENCE = "The running model's title looks like an address or a person's name. It is saved in the database."
+FILE_SENTENCE = "The running model's file name looks like an address or a person's name. It is saved in the database."
 PROFILE_SENTENCE = (
     "Frigate's active profile has a name that looks like an address or a person's name. It is saved in the database."
 )
@@ -1467,11 +1468,17 @@ DETECTION_LINK = Fix(kind="link", text="Open the Detection page", href="/detecti
         ({"gathered": False, "flagged": []}, "unknown", "The setup hasn't been read yet.", None),
         ({"gathered": False, "flagged": ["model_title"]}, "unknown", "The setup hasn't been read yet.", None),
         ({"gathered": True, "flagged": []}, "ok",
-         "The running model's title and the active profile's name don't look like an address or a person's name.",
+         "The running model's title and file name, and the active profile's name, don't look like an address or a "
+         "person's name.",
          None),
         ({"gathered": True, "flagged": ["model_title"]}, "warn", MODEL_SENTENCE, DETECTION_LINK),
+        ({"gathered": True, "flagged": ["model_file"]}, "warn", FILE_SENTENCE, DETECTION_LINK),
         ({"gathered": True, "flagged": ["profile"]}, "warn", PROFILE_SENTENCE, None),
         ({"gathered": True, "flagged": ["profile", "model_title"]}, "warn", f"{MODEL_SENTENCE} {PROFILE_SENTENCE}",
+         DETECTION_LINK),
+        ({"gathered": True, "flagged": ["model_title", "model_file", "profile"]}, "warn",
+         f"{MODEL_SENTENCE} {FILE_SENTENCE} {PROFILE_SENTENCE}", DETECTION_LINK),
+        ({"gathered": True, "flagged": ["profile", "model_file"]}, "warn", f"{FILE_SENTENCE} {PROFILE_SENTENCE}",
          DETECTION_LINK),
     ],
 )
