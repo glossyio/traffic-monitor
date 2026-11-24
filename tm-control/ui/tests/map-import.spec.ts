@@ -17,6 +17,8 @@ function files(directory: string): string[] {
 it('only PinMap.vue imports maplibre-gl', () => {
   const all = files(src)
   expect(all.length).toBeGreaterThan(20) // the scan found the sources
-  const naming = all.filter((file) => readFileSync(file, 'utf8').includes('maplibre-gl')).map((f) => relative(src, f))
+  // Code only: the About page's credits.json names the package as the dependency it credits
+  const code = all.filter((file) => /\.(ts|vue)$/.test(file))
+  const naming = code.filter((file) => readFileSync(file, 'utf8').includes('maplibre-gl')).map((f) => relative(src, f))
   expect(naming).toEqual(['modules/location/PinMap.vue'])
 })

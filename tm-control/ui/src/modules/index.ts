@@ -1,5 +1,6 @@
 // The app's features. Each module's index.ts lists its pages (routes) and its entries in the menu (nav).
 import type { RouteRecordRaw } from 'vue-router'
+import about from './about'
 import account from './account'
 import auth from './auth'
 import cameras from './cameras'
@@ -27,4 +28,4 @@ export interface Module {
 }
 
 // In menu order
-export const MODULES: Module[] = [home, status, device, network, detection, cameras, location, sharing, time, account, auth, setup]
+export const MODULES: Module[] = [home, status, device, network, detection, cameras, location, sharing, time, account, about, auth, setup]

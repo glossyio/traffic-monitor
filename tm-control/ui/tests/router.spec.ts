@@ -71,6 +71,13 @@ describe('router', () => {
     expect(titles.indexOf('Sharing')).toBe(titles.indexOf('Location') + 1)
   })
 
+  it('lets a viewer open the About page, and lists it last in the menu', async () => {
+    device(true, VIEWER)
+    expect(await landing('/about')).toBe('/about')
+    const titles = MODULES.flatMap((module) => module.nav).map((item) => item.title)
+    expect(titles.at(-1)).toBe('About')
+  })
+
   it('lets an admin open the users page', async () => {
     device(true, ADMIN)
     expect(await landing('/users')).toBe('/users')
