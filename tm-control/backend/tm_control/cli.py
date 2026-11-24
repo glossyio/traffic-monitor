@@ -21,8 +21,11 @@ def serve():
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     logging.getLogger("uvicorn.access").addFilter(HideTickets())
     settings = Settings.from_env()
+    app = create_app(settings)
+    if not settings.fake:
+        app.state.setup_poster.start()  # a daemon thread, so it ends with the process
     uvicorn.run(
-        create_app(settings),
+        app,
         host=settings.host,
         port=settings.port,
         proxy_headers=True,

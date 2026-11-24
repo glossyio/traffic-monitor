@@ -74,11 +74,12 @@ def test_all_apps_checks_are_ok_on_a_healthy_device(apps):
         "apps.go2rtc.streams",
         "apps.broker.login",
         "apps.sharing_server",
+        "apps.setup_history",
     ]
     assert {c.id: c.status for c in checks.values() if c.status != "ok"} == {}
     assert [c.title for c in checks.values()] == [
         "Frigate", "Cameras", "Node-RED", "Node-RED configuration", "Database schema", "Camera streams", "MQTT broker",
-        "Sharing server",
+        "Sharing server", "Setup history",
     ]
     # Each Frigate and go2rtc read happens once per report, however many checks use it.
     assert all(apps.asked(url) == 1 for url in (VERSION, CONFIG, STATS, NODE_RED_STATUS, GO2RTC_STREAMS))
@@ -931,3 +932,65 @@ def test_sharing_server_check_shows_no_host(apps):
         upload_status(apps, **upload)
         check = apps_group(apps)["apps.sharing_server"]
         assert "example" not in check.detail and "invalid" not in check.detail
+
+
+# The setup history: when the last snapshot of the setup arrived, from Node-RED's status
+
+
+def setup_section(apps, **setup):
+    """Node-RED's setup section with each key ending in _ago given as seconds before now."""
+    given = {key[:-4] + "_at" if key.endswith("_ago") else key: ago(value) if key.endswith("_ago") else value
+             for key, value in setup.items()}
+    apps.edit_json(NODE_RED_STATUS, lambda body: body.update(setup={"complete": True, "changed_at": None} | given))
+
+
+@pytest.mark.parametrize(
+    "edit, status, detail",
+    [
+        (lambda apps: apps.edit_json(NODE_RED_STATUS, lambda body: body.pop("setup")),
+         "warn", "Node-RED's flows don't keep the setup history. Re-run the installer with tmsetup.sh -t node-red-tm."),
+        (lambda apps: apps.edit_json(NODE_RED_STATUS, lambda body: body.update(setup=None, uptime_seconds=599)),
+         "ok", "Waiting for the first snapshot since Node-RED started."),
+        (lambda apps: apps.edit_json(NODE_RED_STATUS, lambda body: body.update(setup=None, uptime_seconds=600)),
+         "warn", "No snapshot of the setup has arrived since Node-RED started; if it stays this way, download the "
+                 "diagnostics on the Device page."),
+        (lambda apps: setup_section(apps, received_ago=1200),
+         "warn", "The last snapshot of the setup arrived 20 minutes ago."),
+        (lambda apps: setup_section(apps, received_ago=901, complete=True),
+         "warn", "The last snapshot of the setup arrived 15 minutes ago."),
+        (lambda apps: setup_section(apps, received_ago=890, complete=False),
+         "ok", "The setup couldn't be read whole, so the recorded setup stays as it is. "
+               "Look at the Frigate check and the Node-RED configuration check."),
+        (lambda apps: setup_section(apps, received_ago=10, complete=False),
+         "ok", "The setup couldn't be read whole, so the recorded setup stays as it is. "
+               "Look at the Frigate check and the Node-RED configuration check."),
+        (lambda apps: setup_section(apps, received_ago=10, complete=True),
+         "ok", "The model, the versions, and each camera's settings are recorded."),
+    ],
+)
+def test_setup_history_check(apps, edit, status, detail):
+    edit(apps)
+    check = apps_group(apps)["apps.setup_history"]
+    assert check.title == "Setup history"
+    assert (check.status, check.detail, check.fix) == (status, detail, None)
+
+
+def test_setup_history_check_is_unknown_when_node_red_does_not_answer(apps):
+    apps.answers[NODE_RED_STATUS] = (None, None)
+    check = apps_group(apps)["apps.setup_history"]
+    assert (check.status, check.fix) == ("unknown", None)
+    assert check.detail == "Node-RED didn't answer, so the setup history's state isn't known."
+
+
+def test_setup_history_check_uses_the_one_status_read(apps):
+    apps_group(apps)
+    assert apps.asked(NODE_RED_STATUS) == 1
+
+
+def test_setup_history_check_is_unknown_for_a_time_it_cannot_read(apps):
+    setup_section(apps, received_at="not a time")
+    assert apps_group(apps)["apps.setup_history"].status == "unknown"
+
+
+def test_setup_history_is_the_last_check_of_the_apps_group():
+    assert apps_checks.GROUP.fns[-1] is apps_checks.setup_history

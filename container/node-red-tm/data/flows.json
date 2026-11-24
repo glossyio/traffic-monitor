@@ -1686,12 +1686,13 @@
             "11d84b6cc7755d49",
             "e813005490ef2e46",
             "2b50b0bfb900ff09",
-            "3da2c0e89c06736d"
+            "3da2c0e89c06736d",
+            "fc8558ca801e2e70"
         ],
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1182
+        "h": 1562
     },
     {
         "id": "484071aff09e5ec2",
@@ -3165,7 +3166,7 @@
         "z": "3dae026ab340962a",
         "g": "d9d94c0d493873b9",
         "name": "tm-internal: build status",
-        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst upload = status.upload || {};\nconst thingsboard = (global.get(\"config\") || {}).thingsboard || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n    // enabled after init config defaults (off without a host or a token); the rest since the last config load\n    upload: {\n        enabled: thingsboard.enabled === true,\n        last_ok_at: upload.last_ok_at || null,\n        last_failure_at: upload.last_failure_at || null,\n        last_failure: upload.last_failure || null,\n    },\n};\nreturn msg;",
+        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst upload = status.upload || {};\nconst thingsboard = (global.get(\"config\") || {}).thingsboard || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n    // enabled after init config defaults (off without a host or a token); the rest since the last config load\n    upload: {\n        enabled: thingsboard.enabled === true,\n        last_ok_at: upload.last_ok_at || null,\n        last_failure_at: upload.last_failure_at || null,\n        last_failure: upload.last_failure || null,\n    },\n    setup: status.setup || null,\n};\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -3394,6 +3395,130 @@
         "y": 1419,
         "w": 1786,
         "h": 842
+    },
+    {
+        "id": "fc8558ca801e2e70",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-control setup history: POST /tm-internal/setup",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "ce1a90578e83b741",
+            "6b382c2da7bcd551",
+            "91884d5e4502aca4",
+            "88b5ebbb6fa7be93",
+            "d4019fd82540881a",
+            "81e08b68e847f62b",
+            "47ad2479608c5f08",
+            "ea82e1bc3f359912",
+            "64a84c0c2197e5eb",
+            "02692ea73db6605b",
+            "b20cf5f74c76ef7a",
+            "8741f9a8b1c5633f",
+            "1960204d55a41e0b",
+            "08aa26bb6072988c",
+            "1e23d3f89be4f296",
+            "fa1140227f364dba",
+            "c1cca813e49a5808",
+            "14a96b9cab881583"
+        ],
+        "x": 94,
+        "y": 2281,
+        "w": 1786,
+        "h": 360
+    },
+    {
+        "id": "ce1a90578e83b741",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "url": "/tm-internal/setup",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2320,
+        "wires": [
+            [
+                "6b382c2da7bcd551"
+            ]
+        ]
+    },
+    {
+        "id": "6b382c2da7bcd551",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2320,
+        "wires": [
+            [
+                "91884d5e4502aca4"
+            ],
+            [
+                "88b5ebbb6fa7be93"
+            ]
+        ]
+    },
+    {
+        "id": "91884d5e4502aca4",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "tm-internal: validate setup",
+        "func": "// tm-control posts a snapshot of the unit's setup (the model and the camera settings it read from Frigate) every few\n// minutes. Only the listed facts pass: a fact outside the lists is refused by name, and a camera that config.yml\n// doesn't have is left out without a word. Inside zones, masks, and thresholds only the listed keys pass too, each of\n// the type the control app builds (a zone, a mask, a filter set, and the masks mapping hold exactly their keys, and\n// every number is finite); anything else in them is refused as the fact's name, and nothing is said of where. A\n// snapshot that says complete: false carries nothing else, and is accepted before the config or the schema version is\n// known. A complete one waits (503) for both, so a row is never written for a camera key that can't be checked. Nothing\n// is logged, and a refusal names a field, never a camera or a value. The snapshot goes on in msg.setup; msg.payload and\n// msg.req.body (a copy of it) are removed, because the tab's catch-all debug node shows whole messages.\nconst TEXT = [\"tm_version\", \"tm_commit\", \"frigate_version\", \"unit_system\", \"detector\", \"model_id\", \"model_file\",\n    \"model_sha256\", \"model_kind\", \"model_title\", \"model_trained_at\", \"model_base\", \"model_type\"];\nconst WHOLE = [\"model_width\", \"model_height\"];\nconst DEVICE = [...TEXT, ...WHOLE, \"labels_available\"];\nconst CAMERA = [\"detect_width\", \"detect_height\", \"detect_fps\", \"stationary_threshold\", \"stationary_interval\",\n    \"lens_hfov\", \"labels_tracked\", \"thresholds\", \"zones\", \"masks\", \"profile\"];\nconst CAMERA_WHOLE = [\"detect_width\", \"detect_height\", \"detect_fps\", \"stationary_threshold\", \"stationary_interval\"];\nconst LISTS_OF_TEXT = [\"labels_available\", \"labels_tracked\"];\nconst FILTER_KEYS = [\"min_area\", \"max_area\", \"min_ratio\", \"max_ratio\", \"threshold\", \"min_score\"];\nconst ZONE_KEYS = [\"key\", \"enabled\", \"corners\", \"distances\", \"inertia\", \"loitering_time\", \"speed_threshold\", \"objects\",\n    \"filters\"];\nconst MASK_KEYS = [\"enabled\", \"corners\"];\nconst MASKS_KEYS = [\"motion\", \"objects\", \"object_filters\"];\nconst MAX_JSON = 16384;\nconst MAX_CAMERAS = 32;\n\nconst has = (mapping, key) => Object.prototype.hasOwnProperty.call(mapping, key);\nconst isMapping = (value) => value !== null && typeof value === \"object\" && !Array.isArray(value);\n\n// what the control app builds inside zones, masks, and thresholds: each check answers true when the value is right\nconst isNumber = (value) => typeof value === \"number\" && Number.isFinite(value);\nconst isWhole = (value) => Number.isInteger(value);\nconst isListOf = (value, check) => Array.isArray(value) && value.every(check);\nconst isMappingOf = (value, check) => isMapping(value) && Object.values(value).every(check);\nconst hasExactly = (value, keys) => isMapping(value) && Object.keys(value).length === keys.length\n    && keys.every((key) => has(value, key));\nconst isFilterSet = (value) => isMapping(value) && Object.keys(value).every((key) => FILTER_KEYS.includes(key))\n    && Object.values(value).every(isNumber);\nconst isCorner = (value) => Array.isArray(value) && value.length === 2 && value.every(isNumber);\nconst isMask = (value) => hasExactly(value, MASK_KEYS) && typeof value.enabled === \"boolean\"\n    && isListOf(value.corners, isCorner);\nconst isZone = (value) => hasExactly(value, ZONE_KEYS) && typeof value.key === \"string\" && value.key.length > 0\n    && typeof value.enabled === \"boolean\" && isListOf(value.corners, isCorner) && isListOf(value.distances, isNumber)\n    && (value.inertia === null || isWhole(value.inertia))\n    && (value.loitering_time === null || isWhole(value.loitering_time))\n    && (value.speed_threshold === null || isNumber(value.speed_threshold))\n    && isListOf(value.objects, (item) => typeof item === \"string\") && isMappingOf(value.filters, isFilterSet);\nconst isMasks = (value) => isMapping(value) && (Object.keys(value).length === 0\n    || (hasExactly(value, MASKS_KEYS) && isListOf(value.motion, isMask) && isListOf(value.objects, isMask)\n        && isMappingOf(value.object_filters, (masks) => isListOf(masks, isMask))));\n\nconst done = (status, payload) => {\n    delete msg.req.body;\n    delete msg.payload;\n    msg.statusCode = status;\n    msg.payload = payload;\n    return [null, msg];\n};\nconst refuse = (detail) => done(400, { error: \"bad_request\", detail });\n\n// a field's name, as the snapshot sends it: only a plain name is echoed back\nconst named = (where, key) => (/^[a-z][a-z0-9_]{0,31}$/.test(key) ? `${where}.${key}` : where);\n\n// null (unknown) is accepted for every fact\nfunction factError(key, value) {\n    if (value === null) {\n        return false;\n    }\n    if (TEXT.includes(key) || key === \"profile\") {\n        return typeof value !== \"string\" || value.length < 1 || value.length > 128;\n    }\n    if (WHOLE.includes(key) || CAMERA_WHOLE.includes(key)) {\n        return !Number.isInteger(value);\n    }\n    if (key === \"lens_hfov\") {\n        return typeof value !== \"number\" || !Number.isFinite(value);\n    }\n    if (LISTS_OF_TEXT.includes(key)) {\n        return !Array.isArray(value) || !value.every((item) => typeof item === \"string\")\n            || JSON.stringify(value).length > MAX_JSON;\n    }\n    if (key === \"zones\") {\n        return !isListOf(value, isZone) || JSON.stringify(value).length > MAX_JSON;\n    }\n    if (key === \"thresholds\") {\n        return !isMappingOf(value, isFilterSet) || JSON.stringify(value).length > MAX_JSON;\n    }\n    if (key === \"masks\") {\n        return !isMasks(value) || JSON.stringify(value).length > MAX_JSON;\n    }\n    return true;\n}\n\n// the listed facts of one mapping, in the listed order; an unlisted or missing one is the refusal's field\nfunction facts(where, source, keys) {\n    for (const key of Object.keys(source)) {\n        if (!keys.includes(key)) {\n            return { detail: named(where, key) };\n        }\n    }\n    const kept = {};\n    for (const key of keys) {\n        if (!has(source, key)) {\n            return { detail: `${where}.${key}` };\n        }\n        if (factError(key, source[key])) {\n            return { detail: `${where}.${key}` };\n        }\n        kept[key] = source[key];\n    }\n    return { kept };\n}\n\nconst body = msg.payload;\nif (!isMapping(body)) {\n    return refuse(\"body\");\n}\nif (typeof body.complete !== \"boolean\") {\n    return refuse(\"complete\");\n}\nif (body.complete === false) {\n    delete msg.req.body;\n    delete msg.payload;\n    msg.setup = { complete: false };\n    return [msg, null];\n}\nif (!isMapping(body.device)) {\n    return refuse(\"device\");\n}\nif (!isMapping(body.cameras) || Object.keys(body.cameras).length > MAX_CAMERAS) {\n    return refuse(\"cameras\");\n}\nconst device = facts(\"device\", body.device, DEVICE);\nif (device.detail) {\n    return refuse(device.detail);\n}\nconst config = global.get(\"config\");\nconst known = isMapping(config) && isMapping(config.sensors) ? config.sensors.cameras : undefined;\nconst schema = global.get(\"tm_status.schema_version\");\nif (!isMapping(known) || !Number.isInteger(schema)) {\n    return done(503, { error: \"not_ready\" });\n}\nconst cameras = {};\nfor (const key of Object.keys(body.cameras)) {\n    if (key === \"__proto__\" || !has(known, key)) {\n        continue;\n    }\n    if (!isMapping(body.cameras[key])) {\n        return refuse(\"cameras\");\n    }\n    const camera = facts(\"cameras\", body.cameras[key], CAMERA);\n    if (camera.detail) {\n        return refuse(camera.detail);\n    }\n    cameras[key] = camera.kept;\n}\ndelete msg.req.body;\ndelete msg.payload;\nmsg.setup = { complete: true, device: device.kept, cameras };\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2320,
+        "wires": [
+            [
+                "81e08b68e847f62b"
+            ],
+            [
+                "d4019fd82540881a"
+            ]
+        ]
+    },
+    {
+        "id": "88b5ebbb6fa7be93",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2360,
+        "wires": []
+    },
+    {
+        "id": "d4019fd82540881a",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1080,
+        "y": 2360,
+        "wires": []
     },
     {
         "id": "13e034c27f12073e",
@@ -16221,5 +16346,252 @@
                 "8c521232f464d27a"
             ]
         ]
+    },
+    {
+        "id": "81e08b68e847f62b",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "fixed",
+        "sql": "SELECT * FROM setup_device WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
+        "name": "read open setup_device",
+        "x": 1090,
+        "y": 2320,
+        "wires": [
+            [
+                "47ad2479608c5f08"
+            ]
+        ]
+    },
+    {
+        "id": "47ad2479608c5f08",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "openDevice",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1340,
+        "y": 2320,
+        "wires": [
+            [
+                "ea82e1bc3f359912"
+            ]
+        ]
+    },
+    {
+        "id": "ea82e1bc3f359912",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "fixed",
+        "sql": "SELECT * FROM setup_camera WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
+        "name": "read open setup_camera",
+        "x": 1590,
+        "y": 2320,
+        "wires": [
+            [
+                "64a84c0c2197e5eb"
+            ]
+        ]
+    },
+    {
+        "id": "64a84c0c2197e5eb",
+        "type": "change",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "openCameras",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 360,
+        "y": 2480,
+        "wires": [
+            [
+                "02692ea73db6605b"
+            ]
+        ]
+    },
+    {
+        "id": "02692ea73db6605b",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "setup engine",
+        "func": "// tm-control's snapshot of the setup (msg.setup) against the open rows (msg.openDevice, msg.openCameras: every row\n// whose ended is empty, newest first). A row is closed and a new one started only when a fact differs, so the\n// tables say when the model, the software versions, or a camera's settings changed and nothing else.\n// A snapshot that says complete: false changes nothing, except that the row of a camera that config.yml no longer\n// has still ends: the config is Node-RED's own, not something Frigate said.\n// Outputs: 1 close a device row, 2 insert a device row, 3 close a camera row, 4 insert a camera row, 5 the answer.\n// The writes carry only params. Nothing is logged: a camera's key, a model's title, and the values are not for logs.\n\nconst DEVICE = [\"tm_version\", \"tm_commit\", \"schema_version\", \"frigate_version\", \"unit_system\", \"detector\", \"model_id\", \"model_file\", \"model_sha256\", \"model_kind\", \"model_title\", \"model_trained_at\", \"model_base\", \"model_type\", \"model_width\", \"model_height\", \"labels_available\"];\nconst CAMERA = [\"detect_width\", \"detect_height\", \"detect_fps\", \"stationary_threshold\", \"stationary_interval\", \"lens_hfov\", \"labels_tracked\", \"thresholds\", \"zones\", \"masks\", \"profile\"];\nconst JSON_COLUMNS = [\"labels_available\", \"labels_tracked\", \"thresholds\", \"zones\", \"masks\"];\n\nconst now = Date.now();\nconst has = (mapping, key) => Object.prototype.hasOwnProperty.call(mapping, key);\nconst isMapping = (value) => value !== null && typeof value === \"object\" && !Array.isArray(value);\n\n// JSON with every mapping's keys sorted, at any depth, and no spaces: the one way a JSON fact is written and compared\nfunction canonical(value) {\n    if (Array.isArray(value)) {\n        return \"[\" + value.map((item) => (item === undefined ? \"null\" : canonical(item))).join(\",\") + \"]\";\n    }\n    if (isMapping(value)) {\n        return \"{\" + Object.keys(value).sort().filter((key) => value[key] !== undefined)\n            .map((key) => JSON.stringify(key) + \":\" + canonical(value[key])).join(\",\") + \"}\";\n    }\n    return value === undefined ? \"null\" : JSON.stringify(value);\n}\n\n// what a fact is stored as: a JSON fact as canonical text, null (not the text \"null\") when unknown\nfunction stored(column, value) {\n    if (value === undefined || value === null) {\n        return null;\n    }\n    return JSON_COLUMNS.includes(column) ? canonical(value) : value;\n}\n\n// what an open row holds for a fact, in the form stored() gives: a JSON fact's text is parsed and written again\nfunction held(column, value) {\n    if (value === undefined || value === null) {\n        return null;\n    }\n    if (!JSON_COLUMNS.includes(column)) {\n        return value;\n    }\n    try {\n        const parsed = JSON.parse(value);\n        return parsed === null ? null : canonical(parsed);\n    } catch (err) {\n        return \"unreadable:\" + String(value);\n    }\n}\n\nfunction differs(columns, row, want) {\n    return columns.some((column) => held(column, row[column]) !== stored(column, want[column]));\n}\n\nconst newest = (a, b) => (b.started - a.started) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);\nconst rowsOf = (rows) => (Array.isArray(rows) ? rows : []).filter((row) => isMapping(row)).sort(newest);\n\nfunction closeRow(row, out) {\n    out.push({ params: { $ended: now, $id: row.id } });\n}\n\nfunction insertRow(suffix, columns, want, extra) {\n    const params = {\n        $id: now + \"-\" + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, \"0\") + \"-\" + suffix,\n        $started: now,\n    };\n    for (const [name, value] of Object.entries(extra)) {\n        params[\"$\" + name] = value;\n    }\n    for (const column of columns) {\n        params[\"$\" + column] = stored(column, want[column]);\n    }\n    return { params };\n}\n\nconst setup = isMapping(msg.setup) ? msg.setup : { complete: false };\nconst complete = setup.complete === true;\nconst schema = global.get(\"tm_status.schema_version\");\nconst config = global.get(\"config\");\nconst known = isMapping(config) && isMapping(config.sensors) && isMapping(config.sensors.cameras)\n    ? config.sensors.cameras : null;\n\nconst closeDevice = [];\nconst insertDevice = [];\nconst closeCamera = [];\nconst insertCamera = [];\n\n// 1. one open row per key: every open row after the newest is closed\nconst [deviceRow, ...olderDevice] = rowsOf(msg.openDevice);\nolderDevice.forEach((row) => closeRow(row, closeDevice));\nconst cameraRows = {};\nfor (const row of rowsOf(msg.openCameras)) {\n    const key = String(row.camera);\n    if (has(cameraRows, key)) {\n        closeRow(row, closeCamera);\n    } else {\n        cameraRows[key] = row;\n    }\n}\n\n// 2. a camera that config.yml no longer has ends. Without a cameras mapping nothing ends for this reason.\nfor (const key of Object.keys(cameraRows)) {\n    if (known !== null && !has(known, key)) {\n        closeRow(cameraRows[key], closeCamera);\n        delete cameraRows[key];\n    }\n}\n\n// 3. an incomplete snapshot changes nothing more\nif (complete && Number.isInteger(schema)) {\n    // 4. the unit: the snapshot's device facts and the schema version Node-RED read\n    const device = { ...(isMapping(setup.device) ? setup.device : {}), schema_version: schema };\n    if (!deviceRow || differs(DEVICE, deviceRow, device)) {\n        if (deviceRow) {\n            closeRow(deviceRow, closeDevice);\n        }\n        insertDevice.push(insertRow(\"sd\", DEVICE, device, {}));\n    }\n    // 5. each camera the snapshot has\n    const cameras = isMapping(setup.cameras) ? setup.cameras : {};\n    for (const key of Object.keys(cameras)) {\n        if (key === \"__proto__\" || !isMapping(cameras[key]) || (known !== null && !has(known, key))) {\n            continue;\n        }\n        const row = has(cameraRows, key) ? cameraRows[key] : null;\n        if (!row || differs(CAMERA, row, cameras[key])) {\n            if (row) {\n                closeRow(row, closeCamera);\n            }\n            insertCamera.push(insertRow(\"sc\", CAMERA, cameras[key], { camera: key }));\n        }\n    }\n}\n\n// 6. what arrived, for the status page; changed_at moves only when a row did\nconst written = closeDevice.length + insertDevice.length + closeCamera.length + insertCamera.length;\nconst received = new Date(now).toISOString();\nconst before = global.get(\"tm_status.setup\") || {};\nglobal.set(\"tm_status.setup\", {\n    received_at: received,\n    complete,\n    changed_at: written > 0 ? received : (before.changed_at || null),\n});\n\ndelete msg.setup;\ndelete msg.openDevice;\ndelete msg.openCameras;\nmsg.statusCode = 200;\nmsg.payload = { changed: insertDevice.length + insertCamera.length };\nreturn [closeDevice, insertDevice, closeCamera, insertCamera, msg];\n",
+        "outputs": 5,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 2480,
+        "wires": [
+            [
+                "b20cf5f74c76ef7a"
+            ],
+            [
+                "8741f9a8b1c5633f"
+            ],
+            [
+                "1960204d55a41e0b"
+            ],
+            [
+                "08aa26bb6072988c"
+            ],
+            [
+                "1e23d3f89be4f296"
+            ]
+        ]
+    },
+    {
+        "id": "b20cf5f74c76ef7a",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE setup_device SET ended = $ended WHERE id = $id;\n",
+        "name": "close setup_device",
+        "x": 880,
+        "y": 2420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8741f9a8b1c5633f",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO setup_device (id, started, tm_version, tm_commit, schema_version, frigate_version, unit_system, detector, model_id, model_file, model_sha256, model_kind, model_title, model_trained_at, model_base, model_type, model_width, model_height, labels_available)\nVALUES ($id, $started, $tm_version, $tm_commit, $schema_version, $frigate_version, $unit_system, $detector, $model_id, $model_file, $model_sha256, $model_kind, $model_title, $model_trained_at, $model_base, $model_type, $model_width, $model_height, $labels_available);\n",
+        "name": "insert setup_device",
+        "x": 880,
+        "y": 2460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1960204d55a41e0b",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE setup_camera SET ended = $ended WHERE id = $id;\n",
+        "name": "close setup_camera",
+        "x": 880,
+        "y": 2500,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "08aa26bb6072988c",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO setup_camera (id, started, camera, detect_width, detect_height, detect_fps, stationary_threshold, stationary_interval, lens_hfov, labels_tracked, thresholds, zones, masks, profile)\nVALUES ($id, $started, $camera, $detect_width, $detect_height, $detect_fps, $stationary_threshold, $stationary_interval, $lens_hfov, $labels_tracked, $thresholds, $zones, $masks, $profile);\n",
+        "name": "insert setup_camera",
+        "x": 880,
+        "y": 2540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1e23d3f89be4f296",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 880,
+        "y": 2580,
+        "wires": []
+    },
+    {
+        "id": "fa1140227f364dba",
+        "type": "catch",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "catch: setup history query errors",
+        "scope": [
+            "81e08b68e847f62b",
+            "ea82e1bc3f359912"
+        ],
+        "uncaught": false,
+        "x": 1090,
+        "y": 2420,
+        "wires": [
+            [
+                "c1cca813e49a5808"
+            ]
+        ]
+    },
+    {
+        "id": "c1cca813e49a5808",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "tm-internal: database error",
+        "func": "// The sqlite node has logged the error; tm-control gets a 500 rather than waiting for a reply that\n// never comes\nmsg.statusCode = 500;\nmsg.payload = { error: \"database_error\" };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 2420,
+        "wires": [
+            [
+                "14a96b9cab881583"
+            ]
+        ]
+    },
+    {
+        "id": "14a96b9cab881583",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "fc8558ca801e2e70",
+        "name": "",
+        "statusCode": "500",
+        "headers": {},
+        "x": 1590,
+        "y": 2420,
+        "wires": []
     }
 ]

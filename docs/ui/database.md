@@ -37,6 +37,6 @@ Exports part of the data as JSON files in a compressed archive named `<hostname>
 | Air quality | The `airquality` table |
 | Radar | The radar tables |
 
-The [watch log](../data-and-payloads/watch-log.md) isn't one of the exports; it is in the database download.
+The [watch log](../data-and-payloads/watch-log.md) and the [setup history](../data-and-payloads/setup-history.md) aren't among the exports; they are in the database download.
 
 The files are plain JSON, readable in any text editor or loaded straight into a notebook.

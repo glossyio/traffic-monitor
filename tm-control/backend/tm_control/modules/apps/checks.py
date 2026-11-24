@@ -397,8 +397,49 @@ def sharing_server(context: Context) -> list[Check]:
     return check("unknown", "Node-RED didn't answer, so the server's status isn't known.")
 
 
+# The setup history
+
+
+SETUP_STALE_AFTER = 900  # seconds: three of the five-minute snapshots missed
+SETUP_WAIT = 600  # seconds of Node-RED's uptime before a missing first snapshot is worth a warning
+
+
+def setup_history(context: Context) -> list[Check]:
+    """The control app's snapshot of the setup reached Node-RED recently, from the setup section of Node-RED's status
+    (the one read the other checks share). Never a camera, a zone, a title, or a profile."""
+
+    def check(status, detail):
+        return [Check(id="apps.setup_history", title="Setup history", status=status, detail=detail)]
+
+    body = probes.nodered_report(context)
+    if body is None:
+        return check("unknown", "Node-RED didn't answer, so the setup history's state isn't known.")
+    if "setup" not in body:
+        return check("warn", f"Node-RED's flows don't keep the setup history. {RERUN_NODE_RED}.")
+    setup = body["setup"]
+    if setup is None:
+        uptime = body.get("uptime_seconds")
+        if isinstance(uptime, int) and not isinstance(uptime, bool) and uptime >= SETUP_WAIT:
+            return check("warn", "No snapshot of the setup has arrived since Node-RED started; if it stays this way, "
+                                 "download the diagnostics on the Device page.")
+        return check("ok", "Waiting for the first snapshot since Node-RED started.")
+    age = seconds_since(setup.get("received_at"), time.time()) if isinstance(setup, dict) else None
+    if age is None:
+        return check("unknown", "Node-RED's report of the setup history can't be read, so its state isn't known.")
+    if age > SETUP_STALE_AFTER:
+        return check("warn", f"The last snapshot of the setup arrived {duration(age)} ago.")
+    if setup.get("complete") is not True:
+        return check(
+            "ok",
+            "The setup couldn't be read whole, so the recorded setup stays as it is. "
+            "Look at the Frigate check and the Node-RED configuration check.",
+        )
+    return check("ok", "The model, the versions, and each camera's settings are recorded.")
+
+
 GROUP = CheckGroup(
     "apps",
     "Apps",
-    [frigate, cameras, node_red, node_red_configuration, database_schema, camera_streams, mqtt_broker, sharing_server],
+    [frigate, cameras, node_red, node_red_configuration, database_schema, camera_streams, mqtt_broker, sharing_server,
+     setup_history],
 )

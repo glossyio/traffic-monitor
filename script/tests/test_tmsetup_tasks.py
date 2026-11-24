@@ -629,6 +629,31 @@ def test_node_red_env_gains_the_internal_token_on_every_run():
     assert names.index(stat["name"]) < names.index(token["name"]) < quadlets
 
 
+def test_node_red_env_refreshes_tm_version_on_every_run():
+    """Node-RED reports TM_VERSION in its status and the upload's device attribute, and an existing node-red-tm.env
+    isn't rewritten without -f, so an upgraded unit would keep reporting its old version. The version isn't a secret,
+    so the task logs."""
+    tasks = load_role_yaml("tasks/node-red-tm_setup.yml")
+    names = [task["name"] for task in tasks]
+    (version,) = [task for task in tasks
+                  if task["name"] == "TMSetup - Node-RED-TM Setup - Refresh TM_VERSION in node-red-tm.env"]
+    stat = tasks[names.index("TMSetup - Node-RED-TM Setup - Check for node-red-tm.env")]
+    assert version["when"] == f"{stat['register']}.stat.exists"
+    assert version["become"] is True
+    assert "no_log" not in version
+    assert version["notify"] == "Restart node-red-tm.service"
+    assert version["ansible.builtin.lineinfile"] == {
+        "path": "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env",
+        "regexp": "^TM_VERSION=",
+        "line": "TM_VERSION={{ tmsetup_tm_version }}",
+    }
+    assert "loop" not in version and "tags" not in version
+    quadlets = names.index("TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red")
+    token = names.index("TMSetup - Node-RED-TM Setup - Add the internal status token to node-red-tm.env")
+    assert names.index(stat["name"]) < token < names.index(version["name"]) < quadlets
+    assert "tmsetup_tm_version" in load_role_yaml("vars/main.yml")
+
+
 def test_installer_says_when_an_update_closes_mqtt_to_the_network():
     tasks = mqtt_broker_tasks()
     stat = tasks["TMSetup - MQTT Broker - Check for the installed pod unit"]

@@ -24,10 +24,10 @@ from pathlib import Path
 
 import pytest
 import yaml
-from devpi_checks import (API, UNCLAIMED, NoRedirect, Redacted, broker_login, db_query, detector_name,
-                          entered_secret_states, is_claimed, places_state, read_root_file, request_from_this_machine,
-                          require_pii_free, retry_after, role_vars, session, set_secret_table, status_checks,
-                          tm_internal_token, tm_login_or_none)
+from devpi_checks import (API, TM_INTERNAL_STATUS, UNCLAIMED, NoRedirect, Redacted, broker_login, db_query,
+                          detector_name, entered_secret_states, is_claimed, places_state, read_root_file,
+                          request_from_this_machine, require_pii_free, retry_after, role_vars, session,
+                          set_secret_table, status_checks, tm_internal_answer, tm_internal_token, tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -1200,28 +1200,6 @@ def test_tm_internal_is_hidden_behind_the_proxy(address, admin_session, path):
     from_nginx = (answer.headers.get("Content-Type", "").startswith("text/html") and answer.json() is None
                   and b"<center>nginx" in answer.body)
     assert (answer.status, from_nginx) == (404, True), f"{path} with the admin session: (status, nginx's own 404 page)"
-
-
-TM_INTERNAL_STATUS = "http://127.0.0.1:1880/tm-internal/status"
-TM_INTERNAL_HEADER = "X-TM-Internal-Token"  # tm_control/adapters/nodered.py
-
-
-def tm_internal_answer(host, token=None, url=TM_INTERNAL_STATUS, body=None):
-    """(HTTP status, JSON body or None) of one of Node-RED's internal endpoints, asked on the Pi with this token or
-    none: a GET, or a POST of this JSON body.
-
-    The token is on curl's command line, never under sudo, whose log would keep it; the CommandResult holds it, so it
-    stays in here, where neither an assertion nor pytest -l in the test can print it.
-    """
-    header = "" if token is None else "-H " + shlex.quote(f"{TM_INTERNAL_HEADER}: {token}") + " "
-    post = "" if body is None else "-X POST -H 'Content-Type: application/json' -d " + shlex.quote(json.dumps(body)) + " "
-    result = host.run(f"curl -s --max-time 10 -w '\\n%{{http_code}}' {header}{post}{url}")
-    text, _, status = result.stdout.rpartition("\n")
-    del result
-    try:
-        return status, json.loads(text)
-    except ValueError:
-        return status, None
 
 
 def test_tm_internal_needs_the_token_on_the_pi(host, expect):

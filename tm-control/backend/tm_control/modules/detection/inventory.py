@@ -4,8 +4,8 @@ A model is a file plus a sidecar named <file>.json, in the shape of a Frigate+ m
 names relative to a descriptor for the directory (opened without following a link at the end), never follows a link
 on a file, and never lets one bad entry stop the others from being listed.
 
-Sidecars are read for the eight fields Frigate reads and nothing else: a record's other fields, such as the counts
-Frigate+ keeps per camera, are never kept.
+Sidecars are read for the eight fields Frigate reads, and for the record's baseModel (the setup history records it);
+nothing else is kept: a record's other fields, such as the counts Frigate+ keeps per camera, are never kept.
 """
 
 import errno
@@ -56,6 +56,7 @@ class Sidecar:
     id: str | None
     name: str | None
     trained_at: str | None
+    base_model: str | None  # the record's baseModel, when it is text
     type: str
     detectors: tuple[str, ...]
     width: int
@@ -119,7 +120,8 @@ def parse_sidecar(data: bytes) -> Sidecar:
     labels = tuple(label_map[key] for key in sorted(label_map, key=int))
     return Sidecar(
         id=_optional_text(document, "id"), name=_optional_text(document, "name"),
-        trained_at=_optional_text(document, "trainDate"), type=kind, detectors=tuple(detectors), width=width,
+        trained_at=_optional_text(document, "trainDate"),
+        base_model=_optional_text(document, "baseModel"), type=kind, detectors=tuple(detectors), width=width,
         height=height, input_shape=input_shape, pixel_format=pixel_format, input_dtype=input_dtype, labels=labels,
     )
 

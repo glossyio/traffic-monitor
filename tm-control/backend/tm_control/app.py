@@ -23,6 +23,8 @@ from tm_control.modules.detection.inventory import MODEL_FILE_MAX
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.reconcile import backup_dir
 from tm_control.modules.setup.eula import load_eula
+from tm_control.modules.setup_history import snapshot
+from tm_control.modules.setup_history.poster import Poster
 from tm_control.modules.sharing.notice import load_notice
 
 API_PREFIX = "/api/v1"
@@ -81,12 +83,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.nodered = NodeRed(secrets.node_red_internal_token)
         app.state.backup_dir = backup_dir(manifest)
     app.state.reconcile_lock = threading.Lock()
+    # The setup history's thread: built here in both modes, started by serve() on a device only.
+    app.state.setup_poster = Poster(lambda: snapshot.gather(app.state), lambda body: app.state.nodered.post_setup(body))
     check_groups = fake.status_groups() if settings.fake else [g for m in modules.MODULES for g in m.check_groups]
     # Each report reconciles the places first (decision 5), so the Location check reads the result.
     app.state.status = StatusCache(
         check_groups,
         lambda: Context(
-            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version
+            app.state.settings, app.state.manifest, app.state.secrets, app.state.state, app.state.notice.version,
+            app.state.setup_poster.summary(),
         ),
         prepare=lambda: reconcile.for_status_report(app.state),
     )

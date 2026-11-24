@@ -39,7 +39,9 @@ def test_0004_adds_the_two_tables_and_rewrites_nothing(tmp_path):
     assert user_version(db_path) == 3 and tables(db_path) == BASELINE_TABLES
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == LATEST_VERSION
-    assert tables(db_path) == ALL_TABLES == BASELINE_TABLES | {"watch_camera", "watch_radar"}
+    # later migrations add tables too; this one added these two
+    assert tables(db_path) == ALL_TABLES
+    assert {"watch_camera", "watch_radar"} <= ALL_TABLES - BASELINE_TABLES
     for table, expected in (("watch_camera", WATCH_CAMERA), ("watch_radar", WATCH_RADAR)):
         info = query(db_path, f"PRAGMA table_info({table})")
         assert {row[1]: row[2] for row in info} == expected

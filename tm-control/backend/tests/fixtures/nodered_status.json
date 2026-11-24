@@ -38,5 +38,10 @@
         "last_ok_at": null,
         "last_failure_at": null,
         "last_failure": null
+    },
+    "setup": {
+        "received_at": "2026-10-28T22:54:55.000Z",
+        "complete": true,
+        "changed_at": null
     }
 }

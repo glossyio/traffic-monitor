@@ -148,6 +148,7 @@ nav:
           - Events: data-and-payloads/events-payload.md
           - Object paths: data-and-payloads/object-paths.md
           - Watch log: data-and-payloads/watch-log.md
+          - Setup history: data-and-payloads/setup-history.md
           - Radar: data-and-payloads/radar-payload.md
           - Air quality: data-and-payloads/air-quality-aq-payload.md
           - MQTT and ThingsBoard: data-and-payloads/integrations.md

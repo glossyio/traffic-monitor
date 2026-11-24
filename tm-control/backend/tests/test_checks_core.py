@@ -14,6 +14,12 @@ def context():
     return Context(settings=None, manifest=None, secrets=None)
 
 
+def test_context_setup_defaults_to_none_and_is_kept():
+    assert context().setup is None
+    summary = {"gathered": True, "flagged": []}
+    assert Context(settings=None, manifest=None, secrets=None, setup=summary).setup is summary
+
+
 def ok_check(check_id, status="ok"):
     return Check(id=check_id, title=check_id, status=status, detail=f"{check_id} detail")
 

@@ -93,3 +93,26 @@ def test_serve_is_a_cli_command():
     with pytest.raises(SystemExit) as e:
         main(["serve", "--help"])
     assert e.value.code == 0
+
+
+def test_create_app_builds_the_setup_poster_and_starts_no_thread(settings):
+    import threading
+
+    from tm_control.modules.setup_history.poster import Poster
+
+    app = create_app(settings)
+    assert isinstance(app.state.setup_poster, Poster)
+    assert [t for t in threading.enumerate() if t.name == "setup-poster"] == []
+    assert app.state.setup_poster._thread is None
+
+
+def test_the_fake_nodered_keeps_the_setup_it_is_posted(settings):
+    app = create_app(settings)
+    nodered = app.state.nodered
+    assert nodered.report()["setup"] is None
+    nodered.post_setup({"complete": True})
+    report = nodered.report()["setup"]
+    assert report["complete"] is True and report["changed_at"] is None and report["received_at"].endswith("Z")
+    nodered.post_setup({"complete": False})
+    assert nodered.report()["setup"]["complete"] is False
+    assert nodered.setup == {"complete": False}

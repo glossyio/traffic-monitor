@@ -601,6 +601,9 @@ def _use(request: Request, background: BackgroundTasks, admin: User, section: di
     Audit(request.app.state.state).record(admin.id, "models.use", detail=name)
     if not settings.fake:
         background.add_task(restart_or_log, FRIGATE_UNIT)
+    # The restart is only queued (systemctl --no-block), so Frigate may still answer with the old model for a moment: the
+    # snapshot is taken a retry delay later, when Frigate is down (incomplete, so the poster retries) or back.
+    request.app.state.setup_poster.wake_soon()
     return UseQueued(name=name, applied=applied, restarts=[FRIGATE_UNIT])
 
 
@@ -721,11 +724,13 @@ def _use_plus(model_id: str, request: Request, background: BackgroundTasks, admi
         raise ApiError(409, "no_key", NO_KEY)
     fetches: Fetches = request.app.state.fetches
     state = request.app.state.state
+    poster = request.app.state.setup_poster
 
     def on_saved() -> None:  # on the download's thread: Audit opens a connection of its own
         Audit(state).record(admin.id, "models.use", detail=model_id)
         if not settings.fake:
             restart_or_log(FRIGATE_UNIT)
+        poster.wake_soon()  # the restart is only queued; see _use
 
     if settings.fake:
         follow = partial(_fake_wait, fetches, settings, model_id, on_saved)

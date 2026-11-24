@@ -70,6 +70,26 @@ def config() -> dict | None:
     return _object("config", FRESH)
 
 
+def active_profile() -> tuple[bool, str | None]:
+    """The key of the profile Frigate has switched on, as (answered, key): (True, key) when one is active, (True, None)
+    when none is, and for a Frigate that has no such route (404, a version without profiles); (False, None) when Frigate
+    doesn't answer or answers anything else. Read past Frigate's API cache.
+
+    In Frigate 0.18.2, frigate/api/app.py line 416 has @router.get("/profile/active"), answering
+    {"active_profile": config_obj.active_profile}; it is on the same router as /config (line 290), so it is under /api."""
+    status, body = httpjson.get_json(f"{BASE}/profile/active", FRESH)
+    if status == 404:
+        return True, None
+    if status != 200 or not isinstance(body, dict) or "active_profile" not in body:
+        return False, None
+    key = body["active_profile"]
+    if key is None:
+        return True, None
+    if isinstance(key, str) and key:
+        return True, key
+    return False, None
+
+
 def stats() -> dict | None:
     """cameras.<name>.camera_fps and detectors.<name>.inference_speed and .pid, among others."""
     return _object("stats")

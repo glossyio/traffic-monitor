@@ -175,3 +175,20 @@ def test_open_config_is_a_round_trip_file_indented_by_four(tmp_path):
     assert config.path == path
     config.data["sensors"]["cameras"]["b"] = 2
     assert config.render() == "sensors:\n    cameras:\n        a: 1\n        b: 2\n"
+
+
+def test_post_setup_posts_the_body_with_the_token(wire):
+    wire.answer = (204, b"")
+    body = {"complete": False}
+    assert NodeRed(TOKEN).post_setup(body) is None
+    method, url, headers, sent, content_type = wire.calls[0]
+    assert (method, url, content_type) == ("POST", f"{BASE}/setup", "application/json")
+    assert headers == {"X-TM-Internal-Token": TOKEN}
+    assert json.loads(sent) == body
+
+
+def test_post_setup_raises_on_a_503(wire):
+    wire.answer = (503, b"{}")
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).post_setup({"complete": False})
+    assert (raised.value.code, raised.value.status) == ("unexpected", 503)

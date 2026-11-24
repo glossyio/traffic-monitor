@@ -63,6 +63,49 @@ def test_anything_but_a_jpeg_is_no_frame(answering, answer):
     assert frigate.latest_frame("picam_h265") is None
 
 
+# active_profile
+
+
+@pytest.fixture
+def json_answer(monkeypatch):
+    """Patch httpjson.get_json to record each call as (url, headers) and answer what the test gives."""
+
+    def setup(answer):
+        calls = []
+
+        def get_json(url, headers=None, timeout=None):
+            calls.append((url, headers))
+            return answer
+
+        monkeypatch.setattr(httpjson, "get_json", get_json)
+        return calls
+
+    return setup
+
+
+def test_active_profile_asks_past_the_cache_and_answers_the_key(json_answer):
+    calls = json_answer((200, {"active_profile": "night"}))
+    assert frigate.active_profile() == (True, "night")
+    assert calls == [("http://127.0.0.1:5000/api/profile/active", {"X-Cache-Bypass": "1"})]
+
+
+@pytest.mark.parametrize("answer, expected", [
+    ((200, {"active_profile": None}), (True, None)),         # no profile is active
+    ((404, {"detail": "Not Found"}), (True, None)),          # a Frigate without profiles
+    ((404, None), (True, None)),
+    ((500, {"active_profile": "night"}), (False, None)),
+    ((None, None), (False, None)),                           # Frigate didn't answer
+    ((200, None), (False, None)),                            # not JSON
+    ((200, ["night"]), (False, None)),                       # not a mapping
+    ((200, {}), (False, None)),                              # no active_profile key
+    ((200, {"active_profile": ""}), (False, None)),
+    ((200, {"active_profile": 3}), (False, None)),
+])
+def test_active_profile_answers(json_answer, answer, expected):
+    json_answer(answer)
+    assert frigate.active_profile() == expected
+
+
 # get_with_headers against a real server
 
 

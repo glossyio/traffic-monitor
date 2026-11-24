@@ -5,10 +5,13 @@ Every test here reads tmdb.sqlite, so they run only on units marked pii_free, an
 print only counts, timestamps, sensor names, and survey ids.
 """
 
+import json
 import re
+from datetime import datetime
 
 import pytest
-from devpi_checks import db_query, pi_now, places_state, read_root_file, require_pii_free, session
+from devpi_checks import (db_query, pi_now, places_state, read_root_file, require_pii_free, role_vars, session,
+                          tm_internal_answer, tm_internal_token)
 
 MAX_RADAR_AGE_SECONDS = 15 * 60
 MAX_EVENT_AGE_SECONDS = 60 * 60
@@ -140,12 +143,16 @@ WATCH_MAX_AGE_SECONDS = 400
 WATCH_FIRST_ROWS_SECONDS = 11 * 60
 
 
-def node_red_active_seconds(host):
-    """How long node-red-tm.service has been active, from systemd's monotonic stamp against the Pi's uptime,
+def service_active_seconds(host, unit):
+    """How long a service has been active, from systemd's monotonic stamp against the Pi's uptime,
     so a jump of the wall clock since the start doesn't change it."""
-    entered = int(host.check_output("systemctl show -p ActiveEnterTimestampMonotonic --value node-red-tm.service"))
+    entered = int(host.check_output(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}"))
     uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
     return uptime - entered / 1e6
+
+
+def node_red_active_seconds(host):
+    return service_active_seconds(host, "node-red-tm.service")
 
 
 def newest_watch_rows(host, codedir, table, sensor_column, columns):
@@ -245,4 +252,100 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
                     if row["radar_on"] not in (0, 1):
                         problems.append(f"watch_radar.radar_on for radar {radar['env_name']} is "
                                         f"{row['radar_on']}, it should be 1 or 0")
+    assert not problems, "; ".join(problems)
+
+
+# The first snapshot is posted when tm-control starts and Frigate answers (the retry is 30 seconds); two minutes
+# after both services are up is the longest the first rows take
+SETUP_FIRST_ROWS_SECONDS = 2 * 60
+SETUP_MAX_AGE_SECONDS = 400  # a snapshot every 300 seconds, plus the time to gather and post
+MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
+
+
+def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, frigate_config):
+    """The setup history has exactly one open setup_device row, matching the manifest's version, the database's
+    schema version, and Frigate's version; each camera in config.yml that Frigate has (the first key for each Frigate
+    camera) has one open setup_camera row, matching Frigate's detect size and zone keys; events_with_setup lists each
+    event once; and Node-RED's status says the last snapshot was complete and arrived within 400 seconds. Reads only.
+    Messages name columns and config.yml's camera keys, never Frigate's name for a camera."""
+    for unit in ("tm-control.service", "node-red-tm.service"):
+        active = service_active_seconds(host, unit)
+        if active < SETUP_FIRST_ROWS_SECONDS:
+            pytest.skip(f"{unit} has been active for {active:.0f} seconds; the first setup rows come within "
+                        f"{SETUP_FIRST_ROWS_SECONDS} seconds of both services being up, so check again then")
+    problems = []
+
+    # the unit
+    device_columns = ["tm_version", "schema_version", "frigate_version"]
+    device = db_query(host, codedir, f"SELECT {', '.join(device_columns)} FROM setup_device WHERE ended IS NULL")
+    if len(device) != 1:
+        problems.append(f"setup_device has {len(device)} rows with no ended, not 1")
+    else:
+        row = dict(zip(device_columns, device[0]))
+        manifest = json.loads(read_root_file(host, MANIFEST))
+        if row["tm_version"] != manifest.get("tm_version"):
+            problems.append("setup_device.tm_version isn't the manifest's tm_version")
+        user_version = db_query(host, codedir, "PRAGMA user_version")[0][0]
+        if row["schema_version"] != user_version:
+            problems.append(f"setup_device.schema_version is {row['schema_version']}, PRAGMA user_version is "
+                            f"{user_version}")
+        version = host.check_output("curl -fsS --max-time 10 http://localhost:5000/api/version").strip().strip('"')
+        if row["frigate_version"] != version:
+            problems.append("setup_device.frigate_version isn't what Frigate's /api/version answers")
+
+    # each camera
+    cameras = (node_red_config.get("sensors") or {}).get("cameras") or {}
+    frigate_cameras = frigate_config.get("cameras") or {}
+    camera_columns = ["camera", "detect_width", "detect_height", "zones"]
+    open_rows = {}
+    for row in db_query(host, codedir, f"SELECT {', '.join(camera_columns)} FROM setup_camera WHERE ended IS NULL"):
+        open_rows.setdefault(row[0], []).append(dict(zip(camera_columns, row)))
+    paired = set()
+    for key, entry in cameras.items():
+        frigate_name = (entry or {}).get("frigate_camera") or key
+        frigate_camera = frigate_cameras.get(frigate_name)
+        if frigate_camera is None:
+            continue
+        if frigate_name in paired:
+            continue  # a second key for the same Frigate camera is a duplicate, which the snapshot leaves out
+        paired.add(frigate_name)
+        rows = open_rows.get(key, [])
+        if len(rows) != 1:
+            problems.append(f"setup_camera has {len(rows)} rows with no ended for camera {key}, not 1")
+            continue
+        row, detect = rows[0], frigate_camera.get("detect") or {}
+        if (row["detect_width"], row["detect_height"]) != (detect.get("width"), detect.get("height")):
+            problems.append(f"setup_camera.detect_width and detect_height for camera {key} aren't Frigate's detect "
+                            "size")
+        try:
+            keys = sorted(zone["key"] for zone in json.loads(row["zones"]))
+        except (TypeError, ValueError, KeyError):
+            problems.append(f"setup_camera.zones for camera {key} isn't a JSON list of zones with a key")
+            continue
+        if keys != sorted(frigate_camera.get("zones") or {}):
+            problems.append(f"the keys in setup_camera.zones for camera {key} aren't the zone keys Frigate lists")
+
+    # the view
+    in_view = db_query(host, codedir, "SELECT count(*) FROM events_with_setup")[0][0]
+    events = db_query(host, codedir, "SELECT count(*) FROM events")[0][0]
+    if in_view != events:
+        problems.append(f"events_with_setup has {in_view} rows, events has {events}")
+
+    # Node-RED's status: only the setup section is kept, which holds no camera or value
+    status, body = tm_internal_answer(host, tm_internal_token(host))
+    setup = body.get("setup") if isinstance(body, dict) else None
+    del body
+    if status != "200" or not isinstance(setup, dict):
+        problems.append(f"Node-RED's status answered {status} and has no setup section")
+    else:
+        if setup.get("complete") is not True:
+            problems.append("setup.complete in Node-RED's status isn't true")
+        try:
+            age = pi_now(host) - datetime.fromisoformat(setup["received_at"].replace("Z", "+00:00")).timestamp()
+        except (KeyError, AttributeError, ValueError):
+            problems.append("setup.received_at in Node-RED's status isn't a time")
+        else:
+            if not -5 <= age <= SETUP_MAX_AGE_SECONDS:
+                problems.append(f"setup.received_at is {age:.0f} seconds before now, not within "
+                                f"{SETUP_MAX_AGE_SECONDS}")
     assert not problems, "; ".join(problems)

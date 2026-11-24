@@ -113,6 +113,12 @@
                     "title": "Sharing server",
                     "status": "ok",
                     "detail": "Nothing is being uploaded."
+                },
+                {
+                    "id": "apps.setup_history",
+                    "title": "Setup history",
+                    "status": "ok",
+                    "detail": "The model, the versions, and each camera's settings are recorded."
                 }
             ]
         },
@@ -147,6 +153,12 @@
                         "text": "Open the Cameras page",
                         "href": "/cameras"
                     }
+                },
+                {
+                    "id": "config.setup_names",
+                    "title": "Model and profile names",
+                    "status": "ok",
+                    "detail": "The running model's title and file name, and the active profile's name, don't look like an address or a person's name."
                 },
                 {
                     "id": "config.radars",
