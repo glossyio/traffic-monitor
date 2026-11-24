@@ -715,6 +715,60 @@ def test_the_flows_read_a_heading_as_the_control_app_does():
             assert headings(own)[1] == expected, block
 
 
+# The other four facts of how a sensor is mounted, beside its heading: each a value within its limits, rounded, or
+# None for none yet. A config error names the key's path and never the value.
+MOUNTING_KEYS = ("pitch_deg", "height_m", "view_distance_m", "mount")
+MOUNTING_ERRORS = {
+    "pitch_deg": "isn't a number from 0 to 90",
+    "height_m": "isn't a number above 0 and at most 100",
+    "view_distance_m": "isn't a number from 0 to 1000",
+    "mount": "isn't 1 to 32 lower-case letters, digits, or underscores",
+}
+GIVEN_MOUNTING = {"pitch_deg": 14.94, "height_m": 2.134, "view_distance_m": 7.951, "mount": "tripod"}
+KEPT_MOUNTING = {"pitch_deg": 14.9, "height_m": 2.13, "view_distance_m": 7.95, "mount": "tripod"}
+BAD_MOUNTING = [("pitch_deg", 91), ("pitch_deg", -1), ("pitch_deg", "15"), ("pitch_deg", True), ("height_m", 0),
+                ("height_m", 101), ("height_m", "2"), ("view_distance_m", -1), ("view_distance_m", 1001),
+                ("mount", "Tripod!"), ("mount", "m" * 33), ("mount", 5)]
+
+
+def camera_mounting(payload):
+    """The camera's heading and its other four."""
+    deployment = payload["sensors"]["cameras"]["picam_h265"]["deployment"]
+    return {key: deployment[key] for key in ("heading_deg", *MOUNTING_KEYS)}
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, dict.fromkeys(MOUNTING_KEYS), []),
+    (dict.fromkeys(MOUNTING_KEYS), dict.fromkeys(MOUNTING_KEYS), []),
+    (dict.fromkeys(MOUNTING_KEYS, ""), dict.fromkeys(MOUNTING_KEYS), []),
+    (GIVEN_MOUNTING, KEPT_MOUNTING, []),
+    *[({**GIVEN_MOUNTING, key: bad}, {**KEPT_MOUNTING, key: None}, [key]) for key, bad in BAD_MOUNTING],
+], ids=["no-key", "null", "empty", "rounded", *[f"{key}-{bad!r}"[:40] for key, bad in BAD_MOUNTING]])
+def test_init_config_defaults_mounting_keys(given, expected, errors):
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40, **given}))
+    assert camera_mounting(payload) == {"heading_deg": 40, **expected}
+    assert logged == [(f"{CAMERA_PATH}.{key} {MOUNTING_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+def test_init_config_defaults_mounting_keys_reach_every_enabled_sensor():
+    """A sensor with no block of its own (the radar) gets the four too, each None when nothing sets it."""
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40}))
+    radar = payload["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"]
+    assert {key: radar[key] for key in MOUNTING_KEYS} == dict.fromkeys(MOUNTING_KEYS)
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("key, value", [("pitch_deg", 0), ("pitch_deg", 90), ("height_m", 0.01), ("height_m", 100),
+                                        ("view_distance_m", 0), ("view_distance_m", 1000)])
+def test_init_config_defaults_limits_are_inclusive(key, value):
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40, key: value}))
+    assert camera_mounting(payload)[key] == value
+    assert logged == []
+
+
 def test_config_template_has_the_survey_keys():
     """A new device starts with no survey and two decimal places stored; the Location page sets survey_id later."""
     deployment = new_device_config()["deployment"]
@@ -1020,16 +1074,18 @@ ENGINE_PLACE = {"survey_id": ENGINE_SURVEY, "database_precision": "1", "lat": 45
 ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
-                         "sensorName, deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, "
-                         "$heading_deg, $sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
+                         "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
+                         "mount) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
+                         "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
+                         "$mount)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
                           "location_precision = $location_precision, heading_deg = $heading_deg WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision FROM deployment WHERE entryEndDateTime IS NULL "
-                 "ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount FROM deployment "
+                 "WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
-            "deviceName", "survey_id", "location_precision"}
+            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount"}
 
 
 def engine_sensors(camera_deployment=None):
@@ -1040,12 +1096,13 @@ def engine_sensors(camera_deployment=None):
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
-             started=10, row_id=None):
+             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
-            "location_precision": precision}
+            "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
+            "view_distance_m": view_distance_m, "mount": mount}
 
 
 def camera_row(**kwargs):
@@ -1198,6 +1255,85 @@ def test_engine_adopts_only_when_the_heading_matches(row_heading):
     assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
     assert [message["params"]["$sensorName"] for message in run.insert] == ["picam_h265"]
     assert run.rewrite == []
+
+
+# How the camera is mounted, as a row stores it and as config.yml says it (the file's tilt as 15.0)
+MOUNTED = {"heading_deg": 40, "pitch_deg": 15, "height_m": 2.13, "view_distance_m": 7.95, "mount": "tripod"}
+MOUNTED_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+
+
+def mounted_row(**values):
+    """An open camera row mounted as MOUNTED, but for values."""
+    mounted = {**MOUNTED, **values}
+    return camera_row(heading=mounted.pop("heading_deg"), **mounted)
+
+
+@needs_node
+def test_engine_keeps_rows_from_before_the_columns():
+    """An open row read before the four columns existed has none of their keys; a sensor with none set matches it."""
+    rows = [{key: value for key, value in row.items() if key not in MOUNTING_KEYS}
+            for row in (camera_row(), radar_row())]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_keeps_a_row_whose_mounting_matches():
+    camera = mounted_row()
+    run = engine(engine_sensors({**MOUNTED, "pitch_deg": 15.0}), [camera, radar_row()], ENGINE_PLACE)
+    assert run.written() == []
+
+
+MOUNTING_CHANGES = [
+    ("heading_deg", 40, 41), ("heading_deg", 40, None), ("heading_deg", None, 40),
+    ("pitch_deg", 15, 14.9), ("pitch_deg", 15, None), ("pitch_deg", None, 15),
+    ("height_m", 2.13, 2.14), ("height_m", 2.13, None), ("height_m", None, 2.13),
+    ("view_distance_m", 7.95, 0), ("view_distance_m", 7.95, None), ("view_distance_m", None, 7.95),
+    ("mount", "tripod", "pole"), ("mount", "tripod", None), ("mount", None, "tripod"),
+]
+
+
+@needs_node
+@pytest.mark.parametrize("key, row_value, file_value", MOUNTING_CHANGES)
+def test_engine_starts_a_deployment_when_a_mounting_value_changes(key, row_value, file_value):
+    camera = mounted_row(**{key: row_value})
+    sensor = {**MOUNTED, key: file_value}
+    run = engine(engine_sensors(sensor), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    [inserted] = run.insert
+    assert tuple(inserted["params"][param] for param in MOUNTED_PARAMS) == tuple(sensor.values())
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_adopts_only_when_the_mounting_matches_too():
+    """A row from before any survey is adopted only when it is mounted as the file says; else it ends."""
+    camera = mounted_row(survey_id=None)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], ENGINE_PLACE)
+    assert run.close == [] and run.insert == [] and [m["params"]["$id"] for m in run.rewrite] == [camera["id"]]
+    camera = mounted_row(survey_id=None, height_m=3.66)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    assert [message["params"]["$height_m"] for message in run.insert] == [2.13]
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_holds_a_mounting_change():
+    camera = mounted_row(height_m=3.66)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], {**ENGINE_PLACE, "survey_id": None})
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_rows_for_thingsboard_carry_the_mounting():
+    run = engine(engine_sensors(MOUNTED), [mounted_row(height_m=3.66), radar_row()], ENGINE_PLACE)
+    rows = run.payload["updatedDeployment"] + run.payload["currentDeployment"]
+    assert len(rows) == 3 and all(set(row) == ROW_KEYS for row in rows)
+    [ended] = run.payload["updatedDeployment"]
+    assert ended["height_m"] == 3.66
+    [started] = [row for row in run.payload["currentDeployment"] if row["sensorName"] == "picam_h265"]
+    assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
 @needs_node
@@ -1483,9 +1619,9 @@ TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments":
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
-                                 "sensorType, "
-                                 "sensorName, survey_id, location_precision FROM deployment WHERE survey_id = "
-                                 "$survey_id ORDER BY entryStartDateTime"),
+                                 "sensorType, sensorName, survey_id, location_precision, pitch_deg, height_m, "
+                                 "view_distance_m, mount FROM deployment WHERE survey_id = $survey_id "
+                                 "ORDER BY entryStartDateTime"),
     "/tm-internal/surveys/usage": ("read survey usage",
                                    "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
                                    "AS last_end, SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS "
