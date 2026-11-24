@@ -60,10 +60,10 @@ Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, c
 The location is optional. If the device stays in one place and you never share its data, it can count without one. To record where the device is and which way it faces:
 
 1. Open **Location** from the control app's menu, as the administrator.
-2. Choose **Add a place**. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose the way each sensor faces. Choose **Save**.
+2. Choose **Add a place**. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose which way each sensor faces, as a compass point. Choose **Save**.
 3. Open the new place in the list, choose **Deploy here**, check the review, and choose **Deploy**.
 
-To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the bearings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
+To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the headings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
 
 Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open **Cameras** in the control app, open the camera's **Settings**, and set **Radar** to **No radar**. The camera's other settings are there too, and [Cameras](use/cameras.md) explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:
 
