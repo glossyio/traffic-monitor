@@ -191,10 +191,7 @@ class FakeApps:
         self.ss = "LISTEN 0      4096       127.0.0.1:1883      0.0.0.0:*\n"
         self.config_yml = codedir / "node-red-tm" / "config" / "config.yml"
         self.config_yml.parent.mkdir(parents=True)
-        # The fixture the store tests share still says bearing, which the control app's store reads until it moves to
-        # headings; the checks read a unit's file as the installer writes it now.
-        fixture = (FIXTURES / "node_red_config_ok.yml").read_text()
-        self.config_yml.write_text(fixture.replace("    bearing: 'n'\n", "    heading_deg: 0\n"))
+        shutil.copy(FIXTURES / "node_red_config_ok.yml", self.config_yml)
         self.frigate_config_yml = codedir / "frigate" / "config" / "config.yml"  # the CPU detector's: no model section
         self.frigate_config_yml.parent.mkdir(parents=True)
         shutil.copy(FIXTURES / "frigate_config_v0.18.yml", self.frigate_config_yml)

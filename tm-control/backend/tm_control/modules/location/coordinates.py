@@ -14,7 +14,6 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 SURVEY_ID = re.compile(r"^[0-9a-f]{8}-si$")
 DEPLOYMENT_ID = re.compile(r"^\d+-[0-9a-f]{8}-d$")
-BEARINGS = ("n", "s", "e", "w", "ne", "nw", "se", "sw")
 POINTS = ("n", "ne", "e", "se", "s", "sw", "w", "nw")
 HEADING_MAX = 359
 PRECISIONS = ("none", "1", "2")
@@ -57,16 +56,6 @@ def normalize_precision(value) -> str | None:
     return text if text in PRECISIONS else None
 
 
-def normalize_bearing(value) -> str | None:
-    """The trimmed, lower-cased bearing; "" for empty or None; None when it isn't one of BEARINGS."""
-    if value is None:
-        return ""
-    if not isinstance(value, str):
-        return None
-    text = value.strip().lower()
-    return text if text == "" or text in BEARINGS else None
-
-
 def valid_heading(value) -> bool:
     """Whether value is a heading: an int (not a bool) from 0 to HEADING_MAX."""
     return type(value) is int and 0 <= value <= HEADING_MAX
@@ -107,6 +96,8 @@ def read_heading(block) -> int | None:
         return point_centre(block.get("bearing"))
     if isinstance(heading, float) and heading.is_integer():
         heading = int(heading)
+    elif isinstance(heading, int) and not isinstance(heading, bool):
+        heading = int(heading)  # the round-trip loader's ScalarInt, which valid_heading's strict check refuses
     return heading if valid_heading(heading) else None
 
 

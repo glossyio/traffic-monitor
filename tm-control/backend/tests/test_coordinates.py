@@ -55,12 +55,9 @@ def test_normalize_precision(value, expected):
     assert c.normalize_precision(value) == expected
 
 
-@pytest.mark.parametrize(
-    "value, expected",
-    [("n", "n"), (" NE ", "ne"), ("", ""), (None, ""), ("  ", ""), ("up", None), ("north", None), (5, None)],
-)
-def test_normalize_bearing(value, expected):
-    assert c.normalize_bearing(value) == expected
+def test_the_old_bearing_helpers_are_gone():
+    """Nothing stores or takes a bearing any more: an old one is read only through read_heading."""
+    assert not hasattr(c, "BEARINGS") and not hasattr(c, "normalize_bearing")
 
 
 @pytest.mark.parametrize(
@@ -268,6 +265,16 @@ def test_read_heading(block, expected):
     result = c.read_heading(block)
     assert result == expected
     assert result is None or (type(result) is int)
+
+
+def test_read_heading_reads_a_block_loaded_for_editing():
+    """The control app edits config.yml with ruamel's round-trip loader, whose numbers are int and float subclasses."""
+    from ruamel.yaml import YAML
+
+    data = YAML().load("a:\n    heading_deg: 0\nb:\n    heading_deg: 40.0\nc:\n    heading_deg: 359\nd:\n    heading_deg: true\n")
+    found = [c.read_heading(data[key]) for key in "abcd"]
+    assert found == [0, 40, 359, None]
+    assert all(type(value) is int for value in found[:3])
 
 
 @pytest.mark.parametrize("block", [None, "n", 90, ["heading_deg"], True])

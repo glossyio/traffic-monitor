@@ -2,10 +2,10 @@ import pytest
 
 from tm_control.core.auth import Device
 from tm_control.core.state import State
-from tm_control.modules.location.places import Bearing, Places
+from tm_control.modules.location.places import Places, SensorHeading
 
-BEARINGS = [Bearing(sensor_type="cameras", sensor_name="picam_h265", bearing="n"),
-            Bearing(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", bearing="")]
+HEADINGS = [SensorHeading(sensor_type="cameras", sensor_name="picam_h265", heading_deg=0),
+            SensorHeading(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", heading_deg=None)]
 
 
 @pytest.fixture
@@ -20,8 +20,8 @@ def places(state):
     return Places(state)
 
 
-def _create(places, survey_id, status="planned", now=None, bearings=(), lat=None, lon=None):
-    return places.create(survey_id, "a note", lat, lon, list(bearings), "ui", status, None, now=now)
+def _create(places, survey_id, status="planned", now=None, headings=(), lat=None, lon=None):
+    return places.create(survey_id, "a note", lat, lon, list(headings), "ui", status, None, now=now)
 
 
 def test_create_and_list_order(places):
@@ -59,14 +59,22 @@ def test_set_in_use_refuses_an_unknown_place(places):
     assert places.in_use().id == "00000001-si"
 
 
-def test_bearings_round_trip(places):
-    created = _create(places, "00000001-si", bearings=BEARINGS)
-    assert created.bearings == BEARINGS
-    assert places.get("00000001-si").bearings == BEARINGS
-    places.set_bearing("00000001-si", "cameras", "picam_h265", "sw")
-    got = places.get("00000001-si").bearings
-    assert [b.bearing for b in got] == ["sw", ""]
-    assert [b.sensor_name for b in got] == ["picam_h265", "TM_RADAR_SERIAL_PORT_00"]
+def test_headings_round_trip(places, state):
+    created = _create(places, "00000001-si", headings=HEADINGS)
+    assert created.headings == HEADINGS
+    assert places.get("00000001-si").headings == HEADINGS
+    places.set_heading("00000001-si", "cameras", "picam_h265", 225)
+    places.set_heading("00000001-si", "radars", "TM_RADAR_SERIAL_PORT_00", 0)
+    got = places.get("00000001-si").headings
+    assert [h.heading_deg for h in got] == [225, 0]
+    assert [h.sensor_name for h in got] == ["picam_h265", "TM_RADAR_SERIAL_PORT_00"]
+    places.set_heading("00000001-si", "cameras", "picam_h265", None)  # blank is NULL in the store
+    places.set_heading("00000001-si", "airquality_monitors", "sensorname01", 90)  # a new sensor goes last
+    assert [(h.sensor_name, h.heading_deg) for h in places.get("00000001-si").headings] == [
+        ("picam_h265", None), ("TM_RADAR_SERIAL_PORT_00", 0), ("sensorname01", 90),
+    ]
+    stored = state.connect().execute("SELECT heading_deg FROM survey_sensors ORDER BY rowid").fetchall()
+    assert [row["heading_deg"] for row in stored] == [None, 0, 90]
 
 
 def test_location_round_trips_and_may_be_absent(places):
@@ -77,10 +85,10 @@ def test_location_round_trips_and_may_be_absent(places):
 
 
 def test_update_planned(places):
-    _create(places, "00000001-si", bearings=BEARINGS)
-    updated = places.update_planned("00000001-si", "new note", 45.0, -122.0, BEARINGS[:1])
+    _create(places, "00000001-si", headings=HEADINGS)
+    updated = places.update_planned("00000001-si", "new note", 45.0, -122.0, HEADINGS[:1])
     assert (updated.description, updated.lat, updated.lon) == ("new note", 45.0, -122.0)
-    assert updated.bearings == BEARINGS[:1]
+    assert updated.headings == HEADINGS[:1]
     assert places.get("00000001-si") == updated
 
 
@@ -95,11 +103,11 @@ def test_update_planned_refuses_a_used_place(places):
 
 
 def test_set_point_changes_the_location_only(places):
-    _create(places, "00000001-si", "in_use", now=100, bearings=BEARINGS)
+    _create(places, "00000001-si", "in_use", now=100, headings=HEADINGS)
     places.set_point("00000001-si", 45.52252, -122.6912, now=200)
     survey = places.get("00000001-si")
     assert (survey.lat, survey.lon) == (45.52252, -122.6912)
-    assert survey.bearings == BEARINGS
+    assert survey.headings == HEADINGS
     assert survey.updated_at > survey.created_at
     places.set_point("00000001-si", None, None)
     assert (places.get("00000001-si").lat, places.get("00000001-si").lon) == (None, None)
@@ -112,13 +120,13 @@ def test_delete_refuses_the_place_in_use(places):
     assert places.get("00000001-si") is not None
 
 
-def test_delete_removes_its_bearings_and_corrections(places, state):
-    _create(places, "00000001-si", "used", bearings=BEARINGS)
-    places.record_correction("00000001-si", "1-0123abcd-d", "bearing", "n", "s", None, "ui", None)
+def test_delete_removes_its_headings_and_corrections(places, state):
+    _create(places, "00000001-si", "used", headings=HEADINGS)
+    places.record_correction("00000001-si", "1-0123abcd-d", "heading_deg", "0", "180", None, "ui", None)
     places.delete("00000001-si")
     assert places.get("00000001-si") is None
     con = state.connect()
-    assert con.execute("SELECT count(*) FROM survey_bearings").fetchone()[0] == 0
+    assert con.execute("SELECT count(*) FROM survey_sensors").fetchone()[0] == 0
     assert con.execute("SELECT count(*) FROM survey_corrections").fetchone()[0] == 0
 
 
@@ -150,22 +158,22 @@ def test_create_can_set_updated_at_apart_from_created_at(places):
     assert _create(places, "00000002-si", now=1000).updated_at == "1970-01-01T00:16:40+00:00"
 
 
-def test_rename_sensor_moves_every_places_bearing(places, state):
-    radar = Bearing(sensor_type="radars", sensor_name="main_st", bearing="e")  # another type, the same name
-    _create(places, "00000001-si", "used", now=100, bearings=[*BEARINGS, radar])
-    _create(places, "00000002-si", "in_use", now=200, bearings=BEARINGS)
-    taken = Bearing(sensor_type="cameras", sensor_name="camera_1_3fa9c2", bearing="w")
-    _create(places, "00000003-si", "planned", now=300, bearings=[taken, *BEARINGS])
+def test_rename_sensor_moves_every_places_heading(places, state):
+    radar = SensorHeading(sensor_type="radars", sensor_name="main_st", heading_deg=90)  # another type, the same name
+    _create(places, "00000001-si", "used", now=100, headings=[*HEADINGS, radar])
+    _create(places, "00000002-si", "in_use", now=200, headings=HEADINGS)
+    taken = SensorHeading(sensor_type="cameras", sensor_name="camera_1_3fa9c2", heading_deg=270)
+    _create(places, "00000003-si", "planned", now=300, headings=[taken, *HEADINGS])
     places.rename_sensor("cameras", "picam_h265", "camera_1_3fa9c2")
-    renamed = Bearing(sensor_type="cameras", sensor_name="camera_1_3fa9c2", bearing="n")
-    assert places.get("00000001-si").bearings == [renamed, BEARINGS[1], radar]  # same order, other types untouched
-    assert places.get("00000002-si").bearings == [renamed, BEARINGS[1]]
-    assert places.get("00000003-si").bearings == [taken, BEARINGS[1]]  # already had the new name: that row stays
+    renamed = SensorHeading(sensor_type="cameras", sensor_name="camera_1_3fa9c2", heading_deg=0)
+    assert places.get("00000001-si").headings == [renamed, HEADINGS[1], radar]  # same order, other types untouched
+    assert places.get("00000002-si").headings == [renamed, HEADINGS[1]]
+    assert places.get("00000003-si").headings == [taken, HEADINGS[1]]  # already had the new name: that row stays
     places.rename_sensor("cameras", "oak_ave_wide", "camera_2_b07e11")  # nothing under the old name: nothing changes
-    assert places.get("00000002-si").bearings == [renamed, BEARINGS[1]]
+    assert places.get("00000002-si").headings == [renamed, HEADINGS[1]]
 
 
 def test_rename_sensor_to_the_same_name_changes_nothing(places):
-    _create(places, "00000001-si", "used", now=100, bearings=BEARINGS)
+    _create(places, "00000001-si", "used", now=100, headings=HEADINGS)
     places.rename_sensor("cameras", "picam_h265", "picam_h265")
-    assert places.get("00000001-si").bearings == BEARINGS
+    assert places.get("00000001-si").headings == HEADINGS

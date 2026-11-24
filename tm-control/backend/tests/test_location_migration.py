@@ -37,19 +37,10 @@ def secrets_dir(tmp_path):
     return path
 
 
-def converted_fixture(path):
-    """node_red_config_ok.yml as a file already converted to a heading (the shared fixture still has the old bearing,
-    which the control app's store reads until it moves to headings)."""
-    shutil.copy(FIXTURES / "node_red_config_ok.yml", path)
-    text = path.read_text()
-    assert "    bearing: 'n'\n" in text
-    path.write_text(text.replace("    bearing: 'n'\n", "    heading_deg: 0\n"))
-
-
 @pytest.fixture
 def config_yml(tmp_path):
     path = tmp_path / "config.yml"
-    converted_fixture(path)
+    shutil.copy(FIXTURES / "node_red_config_ok.yml", path)
     return path
 
 
@@ -450,7 +441,7 @@ def test_the_installer_pass_places_database_precision_after_a_bearing_it_leaves(
     assert migrate.run_node_red_headings(config_yml) == 0
     assert "    heading_deg: 135\n    database_precision: '2'\n\nsensors:" in config_yml.read_text()
 
-    converted_fixture(config_yml)
+    shutil.copy(FIXTURES / "node_red_config_ok.yml", config_yml)
     old_bearings(config_yml, "    bearing: 'se'\n    survey_id: 0123abcd-si\n", precision=False)
     assert migrate.run_node_red(config_yml, secrets_dir) == 0
     assert "    survey_id: 0123abcd-si\n    database_precision: '2'\n" in config_yml.read_text()

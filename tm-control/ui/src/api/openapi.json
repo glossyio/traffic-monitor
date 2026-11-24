@@ -1143,7 +1143,7 @@
           "location"
         ],
         "summary": "Import Places",
-        "description": "Check a CSV of planned places (description,lat,lon, then a column per sensor holding its bearing) and, unless\ndry_run, create them all, or none when any line is refused (422 with the problems in detail).",
+        "description": "Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless\ndry_run, create them all, or none when any line is refused (422 with the problems in detail).",
         "operationId": "import_places_api_v1_surveys_import_post",
         "requestBody": {
           "content": {
@@ -1272,7 +1272,7 @@
           "location"
         ],
         "summary": "Deploy Place",
-        "description": "Put the place in use: its id, point, and each enabled sensor's bearing into config.yml (a sensor the body leaves\nout takes the place's stored bearing, else the file's), then wait for Node-RED to start the deployments.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false.",
+        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false.",
         "operationId": "deploy_place_api_v1_surveys__survey_id__deploy_post",
         "parameters": [
           {
@@ -1458,14 +1458,14 @@
         }
       }
     },
-    "/api/v1/surveys/{survey_id}/deployments/{deployment_id}/bearing": {
+    "/api/v1/surveys/{survey_id}/deployments/{deployment_id}/heading": {
       "post": {
         "tags": [
           "location"
         ],
-        "summary": "Correct Bearing",
-        "description": "Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's bearing\nand config.yml's change too, after Node-RED's row, so Node-RED doesn't start a new deployment. Refused (502) while\nNode-RED doesn't answer (decision 12).",
-        "operationId": "correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post",
+        "summary": "Correct Heading",
+        "description": "Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's heading\nand config.yml's change too, after Node-RED's row, so Node-RED doesn't start a new deployment. Refused (502) while\nNode-RED doesn't answer (decision 12).",
+        "operationId": "correct_heading_api_v1_surveys__survey_id__deployments__deployment_id__heading_post",
         "parameters": [
           {
             "name": "survey_id",
@@ -1491,7 +1491,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BearingCorrection"
+                "$ref": "#/components/schemas/HeadingCorrection"
               }
             }
           }
@@ -1832,7 +1832,7 @@
           "cameras"
         ],
         "summary": "Neutral Name",
-        "description": "Re-key an entry to a new neutral name, and move its bearings in every place to the new name.",
+        "description": "Re-key an entry to a new neutral name, and move its headings in every place to the new name.",
         "operationId": "neutral_name_api_v1_cameras__name__neutral_name_post",
         "parameters": [
           {
@@ -2806,55 +2806,6 @@
   },
   "components": {
     "schemas": {
-      "Bearing": {
-        "properties": {
-          "sensor_type": {
-            "type": "string",
-            "title": "Sensor Type"
-          },
-          "sensor_name": {
-            "type": "string",
-            "title": "Sensor Name"
-          },
-          "bearing": {
-            "type": "string",
-            "title": "Bearing"
-          }
-        },
-        "type": "object",
-        "required": [
-          "sensor_type",
-          "sensor_name",
-          "bearing"
-        ],
-        "title": "Bearing"
-      },
-      "BearingCorrection": {
-        "properties": {
-          "bearing": {
-            "type": "string",
-            "maxLength": 16,
-            "title": "Bearing"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "bearing"
-        ],
-        "title": "BearingCorrection"
-      },
       "CameraAdd": {
         "properties": {
           "frigate_camera": {
@@ -3408,13 +3359,13 @@
       },
       "DeployIn": {
         "properties": {
-          "bearings": {
+          "headings": {
             "items": {
-              "$ref": "#/components/schemas/Bearing"
+              "$ref": "#/components/schemas/SensorHeading"
             },
             "type": "array",
             "maxItems": 32,
-            "title": "Bearings"
+            "title": "Headings"
           }
         },
         "type": "object",
@@ -3496,9 +3447,16 @@
             ],
             "title": "Lon"
           },
-          "bearing": {
-            "type": "string",
-            "title": "Bearing"
+          "heading_deg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Deg"
           },
           "sensor_type": {
             "type": "string",
@@ -3527,7 +3485,7 @@
           "ended",
           "lat",
           "lon",
-          "bearing",
+          "heading_deg",
           "sensor_type",
           "sensor_name",
           "location_precision"
@@ -3798,6 +3756,38 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HeadingCorrection": {
+        "properties": {
+          "heading_deg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Deg"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "heading_deg"
+        ],
+        "title": "HeadingCorrection"
+      },
       "HotspotChange": {
         "properties": {
           "enabled": {
@@ -4021,12 +4011,12 @@
             ],
             "title": "Lon"
           },
-          "bearings": {
+          "headings": {
             "items": {
-              "$ref": "#/components/schemas/Bearing"
+              "$ref": "#/components/schemas/SensorHeading"
             },
             "type": "array",
-            "title": "Bearings"
+            "title": "Headings"
           }
         },
         "type": "object",
@@ -4035,7 +4025,7 @@
           "description",
           "lat",
           "lon",
-          "bearings"
+          "headings"
         ],
         "title": "ImportRow"
       },
@@ -4952,7 +4942,7 @@
           },
           "sensors": {
             "items": {
-              "$ref": "#/components/schemas/Bearing"
+              "$ref": "#/components/schemas/SensorHeading"
             },
             "type": "array",
             "title": "Sensors"
@@ -5387,6 +5377,36 @@
           "secrets"
         ],
         "title": "SecretsState"
+      },
+      "SensorHeading": {
+        "properties": {
+          "sensor_type": {
+            "type": "string",
+            "title": "Sensor Type"
+          },
+          "sensor_name": {
+            "type": "string",
+            "title": "Sensor Name"
+          },
+          "heading_deg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Deg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensor_type",
+          "sensor_name",
+          "heading_deg"
+        ],
+        "title": "SensorHeading"
       },
       "ServerStatus": {
         "properties": {
@@ -5831,13 +5851,13 @@
             ],
             "title": "Lon"
           },
-          "bearings": {
+          "headings": {
             "items": {
-              "$ref": "#/components/schemas/Bearing"
+              "$ref": "#/components/schemas/SensorHeading"
             },
             "type": "array",
             "maxItems": 32,
-            "title": "Bearings"
+            "title": "Headings"
           }
         },
         "type": "object",
@@ -5898,12 +5918,12 @@
             "type": "string",
             "title": "Updated At"
           },
-          "bearings": {
+          "headings": {
             "items": {
-              "$ref": "#/components/schemas/Bearing"
+              "$ref": "#/components/schemas/SensorHeading"
             },
             "type": "array",
-            "title": "Bearings"
+            "title": "Headings"
           },
           "stored_lat": {
             "anyOf": [
@@ -5972,7 +5992,7 @@
           "source",
           "created_at",
           "updated_at",
-          "bearings",
+          "headings",
           "stored_lat",
           "stored_lon",
           "first_used",

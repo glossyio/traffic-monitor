@@ -668,7 +668,7 @@ export interface paths {
         put?: never;
         /**
          * Import Places
-         * @description Check a CSV of planned places (description,lat,lon, then a column per sensor holding its bearing) and, unless
+         * @description Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless
          *     dry_run, create them all, or none when any line is refused (422 with the problems in detail).
          */
         post: operations["import_places_api_v1_surveys_import_post"];
@@ -713,8 +713,8 @@ export interface paths {
         put?: never;
         /**
          * Deploy Place
-         * @description Put the place in use: its id, point, and each enabled sensor's bearing into config.yml (a sensor the body leaves
-         *     out takes the place's stored bearing, else the file's), then wait for Node-RED to start the deployments.
+         * @description Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
+         *     out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.
          *
          *     Node-RED not answering isn't an error: the file is written, and `reloaded` is false.
          */
@@ -787,7 +787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{survey_id}/deployments/{deployment_id}/bearing": {
+    "/api/v1/surveys/{survey_id}/deployments/{deployment_id}/heading": {
         parameters: {
             query?: never;
             header?: never;
@@ -797,12 +797,12 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Correct Bearing
-         * @description Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's bearing
+         * Correct Heading
+         * @description Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's heading
          *     and config.yml's change too, after Node-RED's row, so Node-RED doesn't start a new deployment. Refused (502) while
          *     Node-RED doesn't answer (decision 12).
          */
-        post: operations["correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post"];
+        post: operations["correct_heading_api_v1_surveys__survey_id__deployments__deployment_id__heading_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -948,7 +948,7 @@ export interface paths {
         put?: never;
         /**
          * Neutral Name
-         * @description Re-key an entry to a new neutral name, and move its bearings in every place to the new name.
+         * @description Re-key an entry to a new neutral name, and move its headings in every place to the new name.
          */
         post: operations["neutral_name_api_v1_cameras__name__neutral_name_post"];
         delete?: never;
@@ -1488,22 +1488,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** Bearing */
-        Bearing: {
-            /** Sensor Type */
-            sensor_type: string;
-            /** Sensor Name */
-            sensor_name: string;
-            /** Bearing */
-            bearing: string;
-        };
-        /** BearingCorrection */
-        BearingCorrection: {
-            /** Bearing */
-            bearing: string;
-            /** Reason */
-            reason?: string | null;
-        };
         /** CameraAdd */
         CameraAdd: {
             /** Frigate Camera */
@@ -1673,8 +1657,8 @@ export interface components {
         };
         /** DeployIn */
         DeployIn: {
-            /** Bearings */
-            bearings?: components["schemas"]["Bearing"][];
+            /** Headings */
+            headings?: components["schemas"]["SensorHeading"][];
         };
         /** DeployOut */
         DeployOut: {
@@ -1697,8 +1681,8 @@ export interface components {
             lat: number | null;
             /** Lon */
             lon: number | null;
-            /** Bearing */
-            bearing: string;
+            /** Heading Deg */
+            heading_deg: number | null;
             /** Sensor Type */
             sensor_type: string;
             /** Sensor Name */
@@ -1799,6 +1783,13 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeadingCorrection */
+        HeadingCorrection: {
+            /** Heading Deg */
+            heading_deg: number | null;
+            /** Reason */
+            reason?: string | null;
+        };
         /** HotspotChange */
         HotspotChange: {
             /** Enabled */
@@ -1869,8 +1860,8 @@ export interface components {
             lat: number | null;
             /** Lon */
             lon: number | null;
-            /** Bearings */
-            bearings: components["schemas"]["Bearing"][];
+            /** Headings */
+            headings: components["schemas"]["SensorHeading"][];
         };
         /** Job */
         Job: {
@@ -2126,7 +2117,7 @@ export interface components {
             /** In Use */
             in_use: string | null;
             /** Sensors */
-            sensors: components["schemas"]["Bearing"][];
+            sensors: components["schemas"]["SensorHeading"][];
             /**
              * Sharing
              * @enum {string}
@@ -2270,6 +2261,15 @@ export interface components {
             /** Secrets */
             secrets: components["schemas"]["SecretState"][];
         };
+        /** SensorHeading */
+        SensorHeading: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Heading Deg */
+            heading_deg: number | null;
+        };
         /** ServerStatus */
         ServerStatus: {
             /**
@@ -2405,8 +2405,8 @@ export interface components {
             lat?: number | null;
             /** Lon */
             lon?: number | null;
-            /** Bearings */
-            bearings?: components["schemas"]["Bearing"][];
+            /** Headings */
+            headings?: components["schemas"]["SensorHeading"][];
         };
         /** SurveyOut */
         SurveyOut: {
@@ -2426,8 +2426,8 @@ export interface components {
             created_at: string;
             /** Updated At */
             updated_at: string;
-            /** Bearings */
-            bearings: components["schemas"]["Bearing"][];
+            /** Headings */
+            headings: components["schemas"]["SensorHeading"][];
             /** Stored Lat */
             stored_lat: number | null;
             /** Stored Lon */
@@ -3835,7 +3835,7 @@ export interface operations {
             };
         };
     };
-    correct_bearing_api_v1_surveys__survey_id__deployments__deployment_id__bearing_post: {
+    correct_heading_api_v1_surveys__survey_id__deployments__deployment_id__heading_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3847,7 +3847,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BearingCorrection"];
+                "application/json": components["schemas"]["HeadingCorrection"];
             };
         };
         responses: {

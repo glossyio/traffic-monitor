@@ -1,10 +1,10 @@
 """/api/v1/surveys: the Location page's places, for admins only.
 
 GET lists the places (after reconcile.ensure has brought the store and config.yml into step). An admin can plan a
-place (POST), edit or delete one, deploy one (write it and its bearings into Node-RED's config.yml, then wait for
-Node-RED to start the deployments), correct a used place's location or one deployment's bearing, change the precision
-tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds them
-(a one-time download link; Node-RED makes the copy), and import planned places from CSV.
+place (POST), edit or delete one, deploy one (write it and its sensors' headings into Node-RED's config.yml, then wait
+for Node-RED to start the deployments), correct a used place's location or one deployment's heading, change the
+precision tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds
+them (a one-time download link; Node-RED makes the copy), and import planned places from CSV.
 
 Every write to config.yml or the places store holds app.state.reconcile_lock, so a GET's reconcile never sees half of
 one. config.yml is written before the store, so a refused or failed save leaves both as they were. No coordinate,
@@ -16,10 +16,11 @@ import csv
 import io
 import logging
 import math
+import re
 import secrets
 import time
 from time import sleep
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
@@ -38,10 +39,11 @@ from tm_control.modules.location.coordinates import (
     SURVEY_ID,
     exact,
     new_survey_id,
-    normalize_bearing,
+    point_centre,
     stored,
+    valid_heading,
 )
-from tm_control.modules.location.places import Bearing, Places, Survey
+from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.location.region import LatLon, region
 
 log = logging.getLogger(__name__)
@@ -52,7 +54,9 @@ POLL_INTERVAL = 1.0  # seconds between asks for a deploy's new rows
 DEPLOY_TIMEOUT = 20.0  # how long a deploy waits for them (decision 6; nginx's read timeout is 60 s)
 TEXT_MAX = 200
 SENSOR_NAME_MAX = 64
-BEARING_TEXT = "one of n, s, e, w, ne, nw, se, sw, or blank"
+HEADING_TEXT = "a whole number from 0 to 359"
+CSV_HEADING_TEXT = f"{HEADING_TEXT}, a compass point (n, ne, e, se, s, sw, w, nw), or blank"
+_DIGITS = re.compile(r"[0-9]{1,3}", re.ASCII)  # at most three, so int() never meets a string too long for it
 
 NODERED_MESSAGES = {
     "unreachable": "Node-RED didn't answer.",
@@ -91,7 +95,7 @@ class MapSources(BaseModel):
 class PlacesState(BaseModel):
     precision: Literal["none", "1", "2"]
     in_use: str | None
-    sensors: list[Bearing]  # the enabled sensors in config.yml, each with its bearing there
+    sensors: list[SensorHeading]  # the enabled sensors in config.yml, each with its heading there
     sharing: Literal["none", "data", "exact"]  # what the upload sends: nothing, data, or data and the exact location
     surveys: list[SurveyOut]
     unassigned: Unassigned | None
@@ -104,11 +108,11 @@ class SurveyIn(BaseModel):
     description: str | None = Field(default=None, max_length=TEXT_MAX)
     lat: float | None = None
     lon: float | None = None
-    bearings: list[Bearing] = Field(default_factory=list, max_length=32)
+    headings: list[SensorHeading] = Field(default_factory=list, max_length=32)
 
 
 class DeployIn(BaseModel):
-    bearings: list[Bearing] = Field(default_factory=list, max_length=32)
+    headings: list[SensorHeading] = Field(default_factory=list, max_length=32)
 
 
 class DeploymentOut(BaseModel):
@@ -117,7 +121,7 @@ class DeploymentOut(BaseModel):
     ended: int | None
     lat: float | None
     lon: float | None
-    bearing: str
+    heading_deg: int | None
     sensor_type: str
     sensor_name: str
     location_precision: int | None
@@ -150,8 +154,8 @@ class LocationCorrection(BaseModel):
     reason: str | None = Field(default=None, max_length=TEXT_MAX)
 
 
-class BearingCorrection(BaseModel):
-    bearing: str = Field(max_length=16)
+class HeadingCorrection(BaseModel):
+    heading_deg: Annotated[int, Field(strict=True)] | None  # whole degrees from 0 to 359; null for none
     reason: str | None = Field(default=None, max_length=TEXT_MAX)
 
 
@@ -170,7 +174,7 @@ class ImportRow(BaseModel):
     description: str | None
     lat: float | None
     lon: float | None
-    bearings: list[Bearing]
+    headings: list[SensorHeading]
 
 
 class ImportProblem(BaseModel):
@@ -273,7 +277,7 @@ def _deployment(row: dict) -> DeploymentOut | None:
         ended=_int(row.get("entryEndDateTime")),
         lat=number("lat"),
         lon=number("lon"),
-        bearing=row["bearing"] if isinstance(row.get("bearing"), str) else "",
+        heading_deg=row["heading_deg"] if valid_heading(row.get("heading_deg")) else None,
         sensor_type=str(row.get("sensorType") or ""),
         sensor_name=str(row.get("sensorName") or ""),
         location_precision=_int(precision) if precision is not None else None,
@@ -352,24 +356,24 @@ def _pair(lat, lon) -> tuple[float | None, float | None]:
     return lat, lon
 
 
-def _bearing(value) -> str:
-    bearing = normalize_bearing(value)
-    if bearing is None:
-        raise _invalid(f"A bearing is {BEARING_TEXT}.", "bearings")
-    return bearing
+def _heading(value) -> int | None:
+    if value is not None and not valid_heading(value):
+        raise _invalid(f"A heading is {HEADING_TEXT}, or blank.", "headings")
+    return value
 
 
-def _bearings(given: list[Bearing]) -> list[Bearing]:
-    """The bearings normalised, each sensor once, each sensor type one the file can have."""
+def _headings(given: list[SensorHeading]) -> list[SensorHeading]:
+    """The headings checked, each sensor once, each sensor type one the file can have."""
     found, seen = [], set()
     for item in given:
         key = (item.sensor_type, item.sensor_name)
         if item.sensor_type not in SENSOR_TYPES or not 0 < len(item.sensor_name) <= SENSOR_NAME_MAX:
-            raise _invalid("A bearing names a sensor type and a sensor.", "bearings")
+            raise _invalid("A heading names a sensor type and a sensor.", "headings")
         if key in seen:
-            raise _invalid("A sensor has more than one bearing.", "bearings")
+            raise _invalid("A sensor has more than one heading.", "headings")
         seen.add(key)
-        found.append(item.model_copy(update={"bearing": _bearing(item.bearing)}))
+        _heading(item.heading_deg)
+        found.append(item)
     return found
 
 
@@ -393,11 +397,11 @@ def create_place(body: SurveyIn, request: Request, admin: User = Depends(require
     """Plan a place."""
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
-    bearings = _bearings(body.bearings)
+    headings = _headings(body.headings)
     survey_id = new_survey_id()
     with app_state.reconcile_lock:
         survey = Places(app_state.state).create(
-            survey_id, _description(body.description), lat, lon, bearings, "ui", "planned", admin.id
+            survey_id, _description(body.description), lat, lon, headings, "ui", "planned", admin.id
         )
     Audit(app_state.state).record(admin.id, "survey.create", survey_id)
     return _one(app_state, survey, ask_nodered=False)
@@ -499,7 +503,7 @@ def database_copy(request: Request, response: Response, admin: User = Depends(re
 
 @router.post("/import", response_model=ImportOut)
 def import_places(body: ImportIn, request: Request, admin: User = Depends(require_admin)):
-    """Check a CSV of planned places (description,lat,lon, then a column per sensor holding its bearing) and, unless
+    """Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless
     dry_run, create them all, or none when any line is refused (422 with the problems in detail)."""
     app_state = request.app.state
     sensors = load_config(app_state).sensors()
@@ -516,7 +520,7 @@ def import_places(body: ImportIn, request: Request, admin: User = Depends(requir
         places = Places(app_state.state)
         for row in rows:
             survey_id = new_survey_id()
-            places.create(survey_id, row.description, row.lat, row.lon, row.bearings, "csv", "planned", admin.id)
+            places.create(survey_id, row.description, row.lat, row.lon, row.headings, "csv", "planned", admin.id)
             created.append(survey_id)
     audit = Audit(app_state.state)
     for survey_id in created:
@@ -529,13 +533,13 @@ def edit_place(survey_id: str, body: SurveyIn, request: Request, admin: User = D
     """Edit a planned place (409 not_planned for one in use or used: correct those instead)."""
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
-    bearings = _bearings(body.bearings)
+    headings = _headings(body.headings)
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         if place.status != "planned":
             raise ApiError(409, "not_planned", "Only a planned place can be edited. Correct a used place instead.")
         survey = Places(app_state.state).update_planned(
-            place.id, _description(body.description), lat, lon, bearings
+            place.id, _description(body.description), lat, lon, headings
         )
     Audit(app_state.state).record(admin.id, "survey.update", place.id)
     return _one(app_state, survey, ask_nodered=False)
@@ -556,46 +560,46 @@ def delete_place(survey_id: str, request: Request, admin: User = Depends(require
 
 @router.post("/{survey_id}/deploy", response_model=DeployOut)
 def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User = Depends(require_admin)):
-    """Put the place in use: its id, point, and each enabled sensor's bearing into config.yml (a sensor the body leaves
-    out takes the place's stored bearing, else the file's), then wait for Node-RED to start the deployments.
+    """Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
+    out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.
 
     Node-RED not answering isn't an error: the file is written, and `reloaded` is false."""
     app_state = request.app.state
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         config = load_config(app_state)
-        enabled = {(s.sensor_type, s.sensor_name): s.bearing for s in config.sensors()}
+        enabled = {(s.sensor_type, s.sensor_name): s.heading_deg for s in config.sensors()}
         named = {}
-        for item in _bearings(body.bearings):
+        for item in _headings(body.headings):
             key = (item.sensor_type, item.sensor_name)
             if key not in enabled:
-                raise _invalid("A bearing names a sensor that isn't enabled in config.yml.", "bearings")
-            named[key] = item.bearing
-        kept = {(b.sensor_type, b.sensor_name): b.bearing for b in place.bearings}
+                raise _invalid("A heading names a sensor that isn't enabled in config.yml.", "headings")
+            named[key] = item.heading_deg
+        kept = {(h.sensor_type, h.sensor_name): h.heading_deg for h in place.headings}
         chosen = {key: named.get(key, kept.get(key, current)) for key, current in enabled.items()}
         switching = config.deployment().survey_id != place.id
-        waiting = {key: bearing for key, bearing in chosen.items() if switching or bearing != enabled[key]}
+        waiting = {key: heading for key, heading in chosen.items() if switching or heading != enabled[key]}
 
         deployed_at = int(time.time() * 1000)
         config.set_place(place.id, place.lat, place.lon)
-        for (sensor_type, sensor_name), bearing in chosen.items():
-            config.set_sensor_bearing(sensor_type, sensor_name, bearing)
+        for (sensor_type, sensor_name), heading in chosen.items():
+            config.set_sensor_heading(sensor_type, sensor_name, heading)
         save_config(app_state, config)  # the file first: a refused save leaves the store as it was
         places = Places(app_state.state)
         places.set_in_use(place.id)
-        for (sensor_type, sensor_name), bearing in chosen.items():
-            places.set_bearing(place.id, sensor_type, sensor_name, bearing)
+        for (sensor_type, sensor_name), heading in chosen.items():
+            places.set_heading(place.id, sensor_type, sensor_name, heading)
     Audit(app_state.state).record(admin.id, "survey.deploy", place.id)
     reloaded, rows = _wait_for_rows(app_state.nodered, place.id, waiting, deployed_at)
     return DeployOut(deployed_at=deployed_at, reloaded=reloaded, deployments=rows)
 
 
 def _wait_for_rows(nodered, survey_id: str, waiting: dict, deployed_at: int) -> tuple[bool, list[DeploymentOut]]:
-    """Ask Node-RED for the place's rows until every sensor in `waiting` (sensor -> the bearing deployed) has its row,
+    """Ask Node-RED for the place's rows until every sensor in `waiting` (sensor -> the heading deployed) has its row,
     for up to DEPLOY_TIMEOUT; stop at once when Node-RED doesn't answer. Returns whether they all appeared (and Node-RED
     answered), and the place's open rows as last seen.
 
-    A sensor's row is an open one of this place with that bearing that started at or after deployed_at, or one Node-RED
+    A sensor's row is an open one of this place with that heading that started at or after deployed_at, or one Node-RED
     adopted: a row open from before any survey takes the survey's id and keeps its start (the engine's rule 4)."""
     deadline = time.monotonic() + DEPLOY_TIMEOUT
     rows: list[DeploymentOut] = []
@@ -610,8 +614,8 @@ def _wait_for_rows(nodered, survey_id: str, waiting: dict, deployed_at: int) -> 
                 (row.sensor_type, row.sensor_name) for row in rows
                 if row.started is not None and row.started >= deployed_at
             }
-            facing = {(row.sensor_type, row.sensor_name): row.bearing.strip().lower() for row in rows}
-            if all(key in started or facing.get(key) == bearing for key, bearing in waiting.items()):
+            facing = {(row.sensor_type, row.sensor_name): row.heading_deg for row in rows}
+            if all(key in started or (key in facing and facing[key] == heading) for key, heading in waiting.items()):
                 return True, rows
             if time.monotonic() >= deadline:
                 return False, rows
@@ -683,16 +687,16 @@ def correct_location(survey_id: str, body: LocationCorrection, request: Request,
     return _one(app_state, survey)
 
 
-@router.post("/{survey_id}/deployments/{deployment_id}/bearing", response_model=DeploymentOut)
-def correct_bearing(
-    survey_id: str, deployment_id: str, body: BearingCorrection, request: Request,
+@router.post("/{survey_id}/deployments/{deployment_id}/heading", response_model=DeploymentOut)
+def correct_heading(
+    survey_id: str, deployment_id: str, body: HeadingCorrection, request: Request,
     admin: User = Depends(require_admin),
 ):
-    """Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's bearing
+    """Correct which way one deployment's sensor faced. For an open deployment of the place in use, the place's heading
     and config.yml's change too, after Node-RED's row, so Node-RED doesn't start a new deployment. Refused (502) while
     Node-RED doesn't answer (decision 12)."""
     app_state = request.app.state
-    bearing = _bearing(body.bearing)
+    heading = _heading(body.heading_deg)
     if not DEPLOYMENT_ID.fullmatch(deployment_id):
         raise ApiError(404, "not_found", "There is no such deployment.")
     with app_state.reconcile_lock:
@@ -706,30 +710,36 @@ def correct_bearing(
             raise ApiError(404, "not_found", "There is no such deployment.")
         open_here = row.ended is None and place.status == "in_use"
         try:
-            app_state.nodered.correct_bearing(row.id, bearing)
+            app_state.nodered.correct_heading(row.id, heading)
         except NodeRedError as error:
             raise _nodered_error(error) from None
         places = Places(app_state.state)
         if open_here:
             try:
-                _write_bearing(app_state, row, bearing)
+                _write_heading(app_state, row, heading)
             except ApiError:
                 _put_row_back(app_state.nodered, row)
                 raise
-            places.set_bearing(place.id, row.sensor_type, row.sensor_name, bearing)
+            places.set_heading(place.id, row.sensor_type, row.sensor_name, heading)
         places.record_correction(
-            place.id, row.id, "bearing", row.bearing, bearing, _description(body.reason), "ui", admin.id
+            place.id, row.id, "heading_deg", _heading_text(row.heading_deg), _heading_text(heading),
+            _description(body.reason), "ui", admin.id,
         )
-    Audit(app_state.state).record(admin.id, "survey.correct_bearing", f"{place.id} {row.id}")
-    return row.model_copy(update={"bearing": bearing})
+    Audit(app_state.state).record(admin.id, "survey.correct_heading", f"{place.id} {row.id}")
+    return row.model_copy(update={"heading_deg": heading})
 
 
-def _write_bearing(app_state, row: DeploymentOut, bearing: str) -> None:
-    """The sensor's bearing into config.yml, read now so an edit made while Node-RED answered isn't a conflict. A sensor
+def _heading_text(heading_deg: int | None) -> str | None:
+    """A heading as a correction row keeps it: the degrees as text, or NULL for none."""
+    return None if heading_deg is None else str(heading_deg)
+
+
+def _write_heading(app_state, row: DeploymentOut, heading_deg: int | None) -> None:
+    """The sensor's heading into config.yml, read now so an edit made while Node-RED answered isn't a conflict. A sensor
     no longer in the file has nothing to change: only the row and the place do."""
     config = load_config(app_state)
     try:
-        config.set_sensor_bearing(row.sensor_type, row.sensor_name, bearing)
+        config.set_sensor_heading(row.sensor_type, row.sensor_name, heading_deg)
     except KeyError:
         return
     except ConfigError as error:
@@ -738,18 +748,18 @@ def _write_bearing(app_state, row: DeploymentOut, bearing: str) -> None:
 
 
 def _put_row_back(nodered, row: DeploymentOut) -> None:
-    """The file refused the bearing, so the row keeps its old one, and a retry records the real old value. Best effort:
+    """The file refused the heading, so the row keeps its old one, and a retry records the real old value. Best effort:
     the refusal is what the caller answers."""
     try:
-        nodered.correct_bearing(row.id, row.bearing)
+        nodered.correct_heading(row.id, row.heading_deg)
     except NodeRedError as error:
-        log.warning("putting a deployment's bearing back in Node-RED failed: %s", type(error).__name__)
+        log.warning("putting a deployment's heading back in Node-RED failed: %s", type(error).__name__)
 
 
 # CSV import
 
 
-def _sensor_columns(fields: list[str], sensors: list[Bearing]) -> tuple[dict, list[str]]:
+def _sensor_columns(fields: list[str], sensors: list[SensorHeading]) -> tuple[dict, list[str]]:
     """Each sensor column's (sensor_type, sensor_name), from `<type>.<name>` or a `<name>` only one sensor has; and the
     columns that name no enabled sensor."""
     enabled = [(s.sensor_type, s.sensor_name) for s in sensors]
@@ -767,7 +777,7 @@ def _sensor_columns(fields: list[str], sensors: list[Bearing]) -> tuple[dict, li
     return columns, unknown
 
 
-def _parse_csv(text: str, sensors: list[Bearing]) -> tuple[list[ImportRow], list[ImportProblem]]:
+def _parse_csv(text: str, sensors: list[SensorHeading]) -> tuple[list[ImportRow], list[ImportProblem]]:
     """The places a CSV describes and, by line, what is wrong with the rest; one problem per line, naming the column,
     never the value."""
     reader = csv.DictReader(io.StringIO(text))
@@ -809,14 +819,18 @@ def _import_row(line: int, record: dict, columns: dict) -> ImportRow:
     description = _description(record.get("description"))
     if description is not None and len(description) > TEXT_MAX:
         raise ValueError(f"The description is longer than {TEXT_MAX} characters.")
-    bearings = []
+    headings = []
     for column, (sensor_type, sensor_name) in columns.items():
-        bearing = normalize_bearing(record.get(column))
-        if bearing is None:
-            raise ValueError(f"The bearing for {column} must be {BEARING_TEXT}.")
-        if bearing:
-            bearings.append(Bearing(sensor_type=sensor_type, sensor_name=sensor_name, bearing=bearing))
+        text = (record.get(column) or "").strip()
+        if not text:
+            continue
+        heading = point_centre(text)
+        if heading is None and _DIGITS.fullmatch(text) and valid_heading(int(text)):
+            heading = int(text)
+        if heading is None:
+            raise ValueError(f"The heading for {column} must be {CSV_HEADING_TEXT}.")
+        headings.append(SensorHeading(sensor_type=sensor_type, sensor_name=sensor_name, heading_deg=heading))
     if record.get(None):
         raise ValueError("This line has more values than the header has columns.")
-    return ImportRow(line=line, description=description, lat=lat, lon=lon, bearings=bearings)
+    return ImportRow(line=line, description=description, lat=lat, lon=lon, headings=headings)
 
