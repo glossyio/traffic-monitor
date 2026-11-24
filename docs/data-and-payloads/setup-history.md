@@ -165,7 +165,7 @@ To compare two models, compare their counts over periods of similar traffic, and
 ## What to know
 
 * **A change made in Frigate's own screens is recorded within five minutes.** Events in between are tied to the earlier row.
-* **A change made on the control app's pages is recorded sooner.** A camera entry you save on the [Cameras](../use/cameras.md) page is recorded at once. When you use another model on the [Detection](../use/detection.md) page, the device records it about 30 seconds later, and the new model's row starts when Frigate has restarted and answers.
+* **A change made on the control app's pages is recorded sooner.** A camera entry you save on the [Cameras](../use/cameras.md) page is recorded within seconds, and at the latest about 30 seconds later. When you use another model on the [Detection](../use/detection.md) page, the device records it about 30 seconds later, and the new model's row starts when Frigate has restarted and answers.
 * **While Frigate is down, nothing is recorded as changed.** When Frigate doesn't answer, runs in safe mode, or can't say which profile is active, the rows stay as they are, and the row for the new setup starts once it answers. A camera's row ends when its key leaves `config.yml`, whatever Frigate says.
 * **Events from before this was installed have no row.** Their setup columns in the view are empty. The first rows start within a few minutes of an upgrade.
 * **The Status page says when it stops.** The **Setup history** check on the [Status](../use/device-health.md#the-setup-history-checks) page warns when no snapshot has arrived for 15 minutes.

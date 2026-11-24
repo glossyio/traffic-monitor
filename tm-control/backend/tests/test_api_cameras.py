@@ -572,15 +572,21 @@ def test_detection_of_an_unknown_entry_is_a_404(admin):
 
 
 # A snapshot right after a change: every write that saves config.yml wakes the setup poster once, after the file was
-# written; a refusal and Frigate's detection switch wake nothing.
+# written; the routes that add, point, re-key, or remove an entry also ask for a second snapshot a retry delay later,
+# because the first can reach Node-RED before it has reloaded config.yml. A refusal and Frigate's detection switch
+# wake nothing.
 
 
 class Wakes:
     def __init__(self):
         self.count = 0
+        self.soon = 0
 
     def wake(self):
         self.count += 1
+
+    def wake_soon(self):
+        self.soon += 1
 
 
 @pytest.fixture
@@ -591,32 +597,32 @@ def wakes(admin) -> Wakes:
 
 def test_add_wakes_the_setup_poster_once(admin, wakes, token):
     assert add(admin).status_code == 200
-    assert wakes.count == 1
+    assert (wakes.count, wakes.soon) == (1, 1)
 
 
 def test_put_wakes_the_setup_poster_once_even_for_the_same_settings(admin, wakes):
     body = {"enabled": False}
     assert admin.put("/api/v1/cameras/picam_h265", json=body, headers=ORIGIN).status_code == 200
     assert admin.put("/api/v1/cameras/picam_h265", json=body, headers=ORIGIN).status_code == 200
-    assert wakes.count == 2
+    assert (wakes.count, wakes.soon) == (2, 0)  # a settings save is read by Node-RED's reload in time: no second one
 
 
 def test_point_wakes_the_setup_poster_once(admin, wakes, monkeypatch):
     rekey(admin, "picam_h265", "oak_ave_wide")
     r = admin.post("/api/v1/cameras/oak_ave_wide/frigate-camera", json={"to": "picam_h265"}, headers=ORIGIN)
     assert r.status_code == 200, r.text
-    assert wakes.count == 1
+    assert (wakes.count, wakes.soon) == (1, 1)
 
 
 def test_neutral_name_wakes_the_setup_poster_once(admin, wakes, token):
     assert admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS).status_code == 200
-    assert wakes.count == 1
+    assert (wakes.count, wakes.soon) == (1, 1)
 
 
 def test_remove_wakes_the_setup_poster_once(admin, wakes):
     rekey(admin, "picam_h265", "oak_ave_wide")
     assert admin.delete("/api/v1/cameras/oak_ave_wide", headers=JSON_HEADERS).status_code == 200
-    assert wakes.count == 1
+    assert (wakes.count, wakes.soon) == (1, 1)
 
 
 def test_a_refusal_wakes_nothing(admin, wakes, monkeypatch):
@@ -629,7 +635,7 @@ def test_a_refusal_wakes_nothing(admin, wakes, monkeypatch):
                       headers=ORIGIN).status_code == 409
     frigate_says(monkeypatch, None)
     assert admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS).status_code == 409
-    assert wakes.count == 0
+    assert (wakes.count, wakes.soon) == (0, 0)
 
 
 def test_a_changed_file_wakes_nothing(admin, wakes, monkeypatch):
@@ -643,10 +649,10 @@ def test_a_changed_file_wakes_nothing(admin, wakes, monkeypatch):
     monkeypatch.setattr(location_config.NodeRedConfig, "save", edited_first)
     assert add(admin).status_code == 409
     assert admin.put("/api/v1/cameras/picam_h265", json={"enabled": False}, headers=ORIGIN).status_code == 409
-    assert wakes.count == 0
+    assert (wakes.count, wakes.soon) == (0, 0)
 
 
 def test_the_detection_switch_wakes_nothing(admin, wakes):
     assert detection(admin, "picam_h265", False).status_code == 200
     assert detection(admin, "picam_h265", True).status_code == 200
-    assert wakes.count == 0
+    assert (wakes.count, wakes.soon) == (0, 0)

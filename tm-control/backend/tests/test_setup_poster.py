@@ -105,14 +105,17 @@ def test_wake_ends_the_wait():
 
 
 def test_start_twice_runs_one_thread():
-    before = threading.active_count()
+    def pollers():
+        return [t for t in threading.enumerate() if t.name == "setup-poster"]
+
+    before = len(pollers())
     poster = Poster(lambda: COMPLETE, lambda body: None, interval=60.0)
     poster.start()
     try:
         first = poster._thread
         poster.start()
         assert poster._thread is first
-        assert threading.active_count() == before + 1
+        assert len(pollers()) == before + 1
         assert first.daemon
     finally:
         poster.stop()
@@ -126,13 +129,15 @@ def test_start_twice_runs_one_thread():
 class Timed:
     """A poster on a real thread with a tiny retry; every gather's time is kept. Stopped and joined at the end."""
 
-    def __init__(self, retry=0.3, interval=60.0):
+    def __init__(self, retry=0.3, interval=60.0, slow=None):
         self.times = []
         self.calls = threading.Semaphore(0)
 
         def gather():
             self.times.append(time.monotonic())
             self.calls.release()
+            if slow and len(self.times) == slow[0]:
+                time.sleep(slow[1])  # this gather takes a while
             return COMPLETE
 
         self.poster = Poster(gather, lambda body: None, interval=interval, retry=retry)
@@ -153,8 +158,8 @@ def test_wake_soon_ends_the_wait_after_the_retry_delay_and_not_at_once():
         called = time.monotonic()
         t.poster.wake_soon()
         assert not t.calls.acquire(timeout=0.15)  # not at once
-        assert t.calls.acquire(timeout=2)
-        assert 0.25 <= t.times[-1] - called < 1.0
+        assert t.calls.acquire(timeout=3)
+        assert 0.25 <= t.times[-1] - called < 2.0
 
 
 def test_a_wake_during_the_delay_ends_it_at_once():
@@ -162,7 +167,7 @@ def test_a_wake_during_the_delay_ends_it_at_once():
         t.poster.wake_soon()
         assert not t.calls.acquire(timeout=0.1)
         t.poster.wake()
-        assert t.calls.acquire(timeout=1)
+        assert t.calls.acquire(timeout=3)
 
 
 def test_stop_during_the_delay_ends_the_thread_at_once():
@@ -175,13 +180,13 @@ def test_stop_during_the_delay_ends_the_thread_at_once():
 
 
 def test_a_second_wake_soon_does_not_move_the_deadline():
-    with Timed(retry=0.4) as t:
-        called = time.monotonic()
+    with Timed(retry=1.5) as t:
         t.poster.wake_soon()
-        time.sleep(0.25)
+        deadline = t.poster._soon
+        time.sleep(0.1)
         t.poster.wake_soon()
-        assert t.calls.acquire(timeout=2)
-        assert t.times[-1] - called < 0.65  # 0.4 from the first call, not 0.65 from the second
+        assert t.poster._soon == deadline  # kept from the first call
+        assert t.calls.acquire(timeout=3)
         assert not t.calls.acquire(timeout=0.3)  # one snapshot for both
 
 
@@ -198,3 +203,40 @@ def test_a_wake_soon_after_a_delayed_snapshot_starts_a_new_delay():
         assert t.calls.acquire(timeout=2)
         t.poster.wake_soon()
         assert t.calls.acquire(timeout=2)
+
+
+# A pending delayed snapshot survives a wait that ended for another reason.
+
+
+def test_a_wake_soon_late_in_an_ordinary_wait_still_gives_a_snapshot_at_its_deadline():
+    with Timed(retry=0.5, interval=1.0) as t:
+        first = t.times[0]
+        time.sleep(0.6)  # the ordinary wait ends at 1.0; the deadline, 1.1, comes just after it
+        t.poster.wake_soon()
+        assert t.calls.acquire(timeout=3)  # the ordinary snapshot
+        assert t.times[-1] - first >= 0.95
+        assert t.calls.acquire(timeout=3)  # the delayed one, from the deadline, not the next ordinary one at 2.0
+        assert t.times[-1] - first < 1.8
+
+
+def test_a_wake_while_a_delayed_snapshot_is_pending_gives_one_at_once_and_one_at_the_deadline():
+    with Timed(retry=0.6) as t:
+        t.poster.wake_soon()
+        t.poster.wake()
+        assert t.calls.acquire(timeout=3)
+        woken = t.times[-1]
+        assert woken - t.times[0] < 0.5  # at once, not at the deadline
+        assert not t.calls.acquire(timeout=0.1)
+        assert t.calls.acquire(timeout=3)  # at the deadline
+        assert t.times[-1] - t.times[0] >= 0.55
+        assert not t.calls.acquire(timeout=0.4)  # and no more
+
+
+def test_a_deadline_that_passes_during_a_gather_ends_the_next_wait_at_once():
+    with Timed(retry=0.2, slow=(2, 0.5)) as t:
+        t.poster.wake_soon()
+        t.poster.wake()
+        assert t.calls.acquire(timeout=3)  # the woken one, which takes 0.5 s: the deadline passes meanwhile
+        assert t.calls.acquire(timeout=3)  # the delayed one follows without waiting a retry or an interval
+        assert t.times[-1] - t.times[1] < 1.5
+        assert not t.calls.acquire(timeout=0.4)

@@ -79,7 +79,8 @@ class Poster:
     def wake_soon(self) -> None:
         """End the current wait after the retry delay, so the next snapshot is made then. For a change that only queued
         a restart: a snapshot right now could still see the old state. A wake() or stop() in the meantime still ends the
-        wait at once, and a second call while one is pending doesn't move the deadline."""
+        wait at once (the deadline is kept for the wait after it), and a second call while one is pending doesn't move
+        the deadline."""
         with self._lock:
             if self._soon is None:
                 self._soon = time.monotonic() + self._retry
@@ -95,7 +96,8 @@ class Poster:
                     break
                 self._lock.wait(remaining)
             self._now = False
-            self._soon = None
+            if self._soon is not None and time.monotonic() >= self._soon:
+                self._soon = None  # its snapshot is due; a wait that ended for another reason keeps it
 
     def _loop(self, wait: Callable[[float], None] | None = None) -> None:
         wait = wait or self._wait

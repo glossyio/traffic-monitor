@@ -168,6 +168,13 @@ def _save(app_state, config: NodeRedConfig, must_change: bool = True) -> None:
         raise config_error(ConfigError("changed"))
 
 
+def _snapshot_twice(app_state) -> None:
+    """A snapshot now, and another a retry delay later. The first can reach Node-RED before its watch node has reloaded
+    config.yml, which drops a key it doesn't know yet without a word; the second can't."""
+    app_state.setup_poster.wake()
+    app_state.setup_poster.wake_soon()
+
+
 @router.post("", response_model=CamerasState)
 def add_camera(body: CameraAdd, request: Request, admin: User = Depends(require_admin)) -> CamerasState:
     """Add an entry under a new neutral name for a Frigate camera that no entry points at."""
@@ -184,7 +191,7 @@ def add_camera(body: CameraAdd, request: Request, admin: User = Depends(require_
         )
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.add", name)
-    app_state.setup_poster.wake()
+    _snapshot_twice(app_state)
     return cameras_state(request)
 
 
@@ -220,7 +227,7 @@ def point_camera(
         _edit(config.point_camera, name, body.to)
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.point", name)
-    app_state.setup_poster.wake()
+    _snapshot_twice(app_state)
     return cameras_state(request)
 
 
@@ -239,7 +246,7 @@ def neutral_name(name: str, request: Request, admin: User = Depends(require_admi
         _save(app_state, config)
         Places(app_state.state).rename_sensor("cameras", name, new)  # config.yml first, the store second
     Audit(app_state.state).record(admin.id, "camera.neutral_name", new)
-    app_state.setup_poster.wake()
+    _snapshot_twice(app_state)
     return cameras_state(request)
 
 
@@ -284,7 +291,7 @@ def remove_camera(name: str, request: Request, admin: User = Depends(require_adm
         _edit(config.remove_camera, name)
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.remove", name)
-    app_state.setup_poster.wake()
+    _snapshot_twice(app_state)
     return cameras_state(request)
 
 
