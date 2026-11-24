@@ -5,6 +5,7 @@ import json
 import re
 import sqlite3
 import subprocess
+import sys
 import textwrap
 import time
 from datetime import datetime
@@ -13,7 +14,11 @@ from pathlib import Path
 import pytest
 import yaml
 from required_tools import missing_tool, needs, needs_node_sqlite, node_has_sqlite
-from tmsetup_render import load_role_yaml, render
+from tmsetup_render import REPO, load_role_yaml, render
+
+sys.path.insert(0, str(REPO / "tm-control" / "backend"))
+
+from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -2097,6 +2102,39 @@ def test_setup_inserts_name_every_column():
         assert match[3].split(", ") == ["$" + column for column in expected]
     for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera")):
         assert sql_text(named(flows, name)) == f"UPDATE {table} SET ended = $ended WHERE id = $id"
+
+
+@needs_node
+def test_setup_fields_agree():
+    """The field rule: the snapshot's fact lists (the control app's constants, not copies), the fields the validator
+    accepts, the engine's insert parameters, the tables' columns, and the view's columns say the same thing."""
+    device_facts, camera_facts = list(snapshot.DEVICE_FACTS), list(snapshot.CAMERA_FACTS)
+    assert (device_facts, camera_facts) == (DEVICE_FACTS, CAMERA_FACTS)
+    device_columns = ["id", "started", "ended", *[
+        column for name in device_facts for column in ([name, "schema_version"] if name == "tm_commit" else [name])]]
+    camera_columns = ["id", "started", "ended", "camera", *camera_facts]
+    body = {"complete": True, "device": dict.fromkeys(device_facts),
+            "cameras": {"cam_a": dict.fromkeys(camera_facts)}}
+    passed, refused = validate_setup(body)["result"]
+    assert refused is None and passed["setup"] == body
+    for where, bad in (("device", {**body, "device": {**body["device"], "extra": None}}),
+                       ("cameras", {**body, "cameras": {"cam_a": {**body["cameras"]["cam_a"], "extra": None}}})):
+        passed, refused = validate_setup(bad)["result"]
+        assert passed is None and refused["payload"] == bad_request(f"{where}.extra")
+    run = setup_engine(body)
+    [device], [camera] = run.insert_device, run.insert_camera
+    assert set(device["params"]) == {"$" + column for column in device_columns if column != "ended"}
+    assert set(camera["params"]) == {"$" + column for column in camera_columns if column != "ended"}
+    db = sqlite3.connect(":memory:")
+    db.executescript(SCHEMA_SQL.read_text())
+    columns = lambda table: [row[1] for row in db.execute(f"PRAGMA table_info({table})")]
+    assert columns("setup_device") == device_columns
+    assert columns("setup_camera") == camera_columns
+    view = columns("events_with_setup")
+    own = len(columns("events"))
+    assert view[own:] == (["setup_device_id", *["setup_" + name for name in device_columns[3:]],
+                          "setup_camera_id", *["camera_" + name for name in camera_facts]])
+    db.close()
 
 
 @needs_node
