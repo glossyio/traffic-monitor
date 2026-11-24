@@ -846,7 +846,7 @@ To change the entries by hand, see [`sensors.cameras`](https://docs.trafficmonit
 
 # Control app and login
 
-The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](https://docs.trafficmonitor.ai/dev/use/system-admin/#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). Its Cameras page keeps each camera's settings in step with Frigate; see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md). Its Sharing page chooses whether the device uploads its data to a server and how much of its location goes with it; see [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
+The device's [home page](https://docs.trafficmonitor.ai/dev/use/home-page/index.md) is its control app. It holds the device's accounts, and one login there opens the apps your account may use: the dashboards, Frigate, the Node-RED editor, and the camera feeds. [Cockpit](https://docs.trafficmonitor.ai/dev/use/system-admin/#cockpit) has its own address and its own login. Its Status, Device, and Date and time pages show whether the device works and help you fix it; see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md). Its Detection page shows the object detection model and lets the administrator change it; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md). Its Cameras page keeps each camera's settings in step with Frigate; see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md). Its Location page records where the device is and how precisely the database stores it; see [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md). Its Sharing page chooses whether the device uploads its data to a server and how much of its location goes with it; see [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). Its About page names the open source projects the device is built on and gives the license notices. These accounts belong to the device. They're separate from the Raspberry Pi user account you created when you imaged the card. That account's password is the **system password**.
 
 What the login protects
 
@@ -915,6 +915,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Cameras** page                                                                         | Yes           | No                                                                                                        |
 | The **Location** page                                                                        | Yes           | No                                                                                                        |
 | The **Sharing** page                                                                         | Yes           | Read only; see [What viewers see](https://docs.trafficmonitor.ai/dev/use/device-health/#what-viewers-see) |
+| The **About** page                                                                           | Yes           | Yes                                                                                                       |
 
 A viewer who opens an administrator's app from a link sees a page that says so, with a way back to the home page.
 
@@ -1254,7 +1255,7 @@ ______________________________________________________________________
 
 Open `http://<device>/` in a browser on the same network. `<device>` is the hostname you set when you imaged the card, followed by `.local` (for example `http://tm-01.local/`), or the device's IP address.
 
-The home page is the device's [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, a one-line summary of its health, and links to the apps your account can open. Its menu has **Status**, **Device**, and **Date and time** (see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md)), **Detection** (see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md)), **Cameras** and **Location** for administrators (see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md) and [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md)), your **Account**, the **Users** page for administrators, and **Log out**.
+The home page is the device's [control app](https://docs.trafficmonitor.ai/dev/use/control-app/index.md). A new device first asks you to claim it with its setup code; after that, the home page and every app ask you to log in. The home page shows the device's name, software version, serial number, and time, a one-line summary of its health, and links to the apps your account can open. Its menu has **Status**, **Device**, and **Date and time** (see [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md)), **Network** (see [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md)), **Detection** (see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md)), **Cameras** and **Location** for administrators (see [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md) and [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md)), **Sharing** (see [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/index.md)), your **Account**, the **Users** page for administrators, **About**, and **Log out**.
 
 | Link             | Path                    | What it is                                                                                                                                                                                                                                                                                                                                                                | Who can open it                                                                    |
 | ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -3788,7 +3789,7 @@ ______________________________________________________________________
 
 # tm-control
 
-`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, and Location pages. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md), [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md), [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md), [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md), and [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md) describe it from the operator's side. This page is for changing it.
+`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, and About pages. [Control app and login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), [Check and fix the device](https://docs.trafficmonitor.ai/dev/use/device-health/index.md), [Wi-Fi and the hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/index.md), [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/index.md), [Cameras](https://docs.trafficmonitor.ai/dev/use/cameras/index.md), and [Places and location](https://docs.trafficmonitor.ai/dev/use/location/index.md) describe it from the operator's side. This page is for changing it.
 
 It has three parts, all in the repository's [`tm-control/`](https://github.com/glossyio/traffic-monitor/tree/main/tm-control) folder:
 
@@ -4201,6 +4202,30 @@ nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dn
 - The HEVC decoder check compares `/dev/rpi-hevc-dec` with the media device whose `/sys/bus/media/devices/mediaN/model` names the decoder.
 - `timedatectl show` prints its times as local strings; tm-control reads the clock itself.
 - tm-control never writes the secrets directory; the `set-secret` and `network` jobs do. It reads the hotspot's password file (mode 0640, the secrets directory's group) for the one admin-only route.
+
+## Keeping the credits current
+
+The About page lists the open source projects the device is built on. Its list is one file, `tm-control/ui/src/modules/about/credits.json`, with a row for each project: its name, license type, address, the group it is shown in, and sometimes a short note. The two rows in the group `built-on` (Frigate NVR and Node-RED) also have a sentence in `does`, which the page shows under "Built on".
+
+The list credits only what Traffic Monitor names itself, not what those projects bring with them:
+
+- the direct dependencies of the control app's pages (`tm-control/ui/package.json`), of its backend (`tm-control/backend/requirements.txt`), and of Node-RED (`container/node-red-tm/data/package.json`);
+- the components the installer records in the manifest (`components` in the role's `tm-control_service.yml`), such as Frigate, go2rtc, and nginx;
+- a few things the installer puts on the unit by name, such as FFmpeg, Podman, and Cockpit.
+
+Each row's `covers` list says which dependencies and components the row answers for, as `ui:<npm name>`, `node-red:<npm name>`, `python:<pip name>`, or `component:<manifest key>`. A row with no `covers` is one the test can't check.
+
+`script/tests/test_about_credits.py` fails when a dependency or a component has no row, and when a row answers for something that is gone. Its message names each one, so it tells you what to add or remove. To add a row, copy the license type from the project's own license file, not from a package listing, and use the project's own page as the address. If the project states no license, ask the maintainer rather than guessing. Open the address to check that it works.
+
+The test can't see these, so look them over before a release:
+
+- the apt packages in the role's `vars/main.yml`, and whether a package is worth a row (a new service or a new tool the installer relies on);
+- the Containerfiles, for the video tools they build, FFmpeg and its encoders (x264 and x265) among them, and the license each is built under;
+- the Coral model and where it comes from. Its row gives YOLOv9's license, GPL-3.0, and not the MIT license of the repository that publishes the model: a unit holds only the model file and its labels, the model is built from YOLOv9, and its release states no license of its own. If a later release states one, use that;
+- the map source (`tmsetup_map_style_url`), and the credit the page gives for it;
+- the sentence about trademarks, which names each trademark's owner. Add a name when a new project's name appears on the page, and keep to naming projects, never showing their logos.
+
+The same page links to `third-party-licenses.txt`, the license texts of the libraries bundled into the control app's pages. The UI build makes it (`build.license` in `tm-control/ui/vite.config.ts`) and writes it to `dist/`. It is generated, so never edit it or add it to git.
 
 ## Run it on a laptop
 

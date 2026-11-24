@@ -2414,6 +2414,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#keeping-the-credits-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping the credits current
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#run-it-on-a-laptop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2765,6 +2776,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#keeping-the-credits-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping the credits current
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#run-it-on-a-laptop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2821,7 +2843,7 @@
   <hr />
 <h2 id="description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check">description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, the status checks, root jobs and polkit, fake mode, and how to add a module or a check.<a class="headerlink" href="#description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check" title="Permanent link">&para;</a></h2>
 <h1 id="tm-control">tm-control<a class="headerlink" href="#tm-control" title="Permanent link">&para;</a></h1>
-<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, and Location pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, <a href="../../use/cameras/">Cameras</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
+<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, and About pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, <a href="../../use/cameras/">Cameras</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
 <p>It has three parts, all in the repository's <a href="https://github.com/glossyio/traffic-monitor/tree/main/tm-control"><code>tm-control/</code></a> folder:</p>
 <table>
 <thead>
@@ -3502,6 +3524,25 @@
 <li><code>timedatectl show</code> prints its times as local strings; tm-control reads the clock itself.</li>
 <li>tm-control never writes the secrets directory; the <code>set-secret</code> and <code>network</code> jobs do. It reads the hotspot's password file (mode 0640, the secrets directory's group) for the one admin-only route.</li>
 </ul>
+<h2 id="keeping-the-credits-current">Keeping the credits current<a class="headerlink" href="#keeping-the-credits-current" title="Permanent link">&para;</a></h2>
+<p>The About page lists the open source projects the device is built on. Its list is one file, <code>tm-control/ui/src/modules/about/credits.json</code>, with a row for each project: its name, license type, address, the group it is shown in, and sometimes a short note. The two rows in the group <code>built-on</code> (Frigate NVR and Node-RED) also have a sentence in <code>does</code>, which the page shows under "Built on".</p>
+<p>The list credits only what Traffic Monitor names itself, not what those projects bring with them:</p>
+<ul>
+<li>the direct dependencies of the control app's pages (<code>tm-control/ui/package.json</code>), of its backend (<code>tm-control/backend/requirements.txt</code>), and of Node-RED (<code>container/node-red-tm/data/package.json</code>);</li>
+<li>the components the installer records in the manifest (<code>components</code> in the role's <code>tm-control_service.yml</code>), such as Frigate, go2rtc, and nginx;</li>
+<li>a few things the installer puts on the unit by name, such as FFmpeg, Podman, and Cockpit.</li>
+</ul>
+<p>Each row's <code>covers</code> list says which dependencies and components the row answers for, as <code>ui:&lt;npm name&gt;</code>, <code>node-red:&lt;npm name&gt;</code>, <code>python:&lt;pip name&gt;</code>, or <code>component:&lt;manifest key&gt;</code>. A row with no <code>covers</code> is one the test can't check.</p>
+<p><code>script/tests/test_about_credits.py</code> fails when a dependency or a component has no row, and when a row answers for something that is gone. Its message names each one, so it tells you what to add or remove. To add a row, copy the license type from the project's own license file, not from a package listing, and use the project's own page as the address. If the project states no license, ask the maintainer rather than guessing. Open the address to check that it works.</p>
+<p>The test can't see these, so look them over before a release:</p>
+<ul>
+<li>the apt packages in the role's <code>vars/main.yml</code>, and whether a package is worth a row (a new service or a new tool the installer relies on);</li>
+<li>the Containerfiles, for the video tools they build, FFmpeg and its encoders (x264 and x265) among them, and the license each is built under;</li>
+<li>the Coral model and where it comes from. Its row gives YOLOv9's license, GPL-3.0, and not the MIT license of the repository that publishes the model: a unit holds only the model file and its labels, the model is built from YOLOv9, and its release states no license of its own. If a later release states one, use that;</li>
+<li>the map source (<code>tmsetup_map_style_url</code>), and the credit the page gives for it;</li>
+<li>the sentence about trademarks, which names each trademark's owner. Add a name when a new project's name appears on the page, and keep to naming projects, never showing their logos.</li>
+</ul>
+<p>The same page links to <code>third-party-licenses.txt</code>, the license texts of the libraries bundled into the control app's pages. The UI build makes it (<code>build.license</code> in <code>tm-control/ui/vite.config.ts</code>) and writes it to <code>dist/</code>. It is generated, so never edit it or add it to git.</p>
 <h2 id="run-it-on-a-laptop">Run it on a laptop<a class="headerlink" href="#run-it-on-a-laptop" title="Permanent link">&para;</a></h2>
 <p>Fake mode runs the whole app without a Pi: it uses the test manifest, fixed secrets that aren't secret, a job runner that pretends, a clock in memory for the Date and time page, a status report from <code>tests/fixtures/status_fake.json</code>, whose groups show every status and kind of fix, a fake Node-RED for the Location page, and a fake Frigate with a second camera, <code>oak_ave_tele</code>, that no entry in the seeded <code>config.yml</code> points at, so the Cameras page's actions work. Its state goes in <code>./.tm-control-fake/</code>. From the repository root, in the dev environment from <a href="../contributing/">Contributing</a>:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>fake-reset<span class="w">   </span><span class="c1"># an unclaimed device; prints its setup code</span>
