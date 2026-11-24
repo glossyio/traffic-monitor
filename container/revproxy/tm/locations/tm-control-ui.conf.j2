@@ -8,6 +8,8 @@ location / {
     root /usr/share/nginx/ui;
     try_files $uri $uri/ /index.html;
     add_header Cache-Control "no-cache" always;
+    # third-party-licenses.txt holds non-ASCII text (©): without this, text/plain has no charset.
+    charset utf-8;
 }
 
 # The built scripts and styles. Their names carry a hash of their content, so they can be cached

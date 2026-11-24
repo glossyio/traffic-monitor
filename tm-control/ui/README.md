@@ -1,7 +1,7 @@
 # tm-control UI
 
 The control app's web pages: first-run setup, login, the home page with the device card and app tiles, the Status,
-Device, Detection, and Date and time pages, the admin's Location page, the account page, and the admin's user list. It's a Vue 3 + Vuetify 3 + TypeScript
+Device, Detection, and Date and time pages, the admin's Location page, the account page, the admin's user list, and the About page. It's a Vue 3 + Vuetify 3 + TypeScript
 app built with Vite. The UI only
 shows what the API returns and posts what the operator types; the rules live in the Python backend
 (`tm-control/backend`).
@@ -38,7 +38,9 @@ you left it. Logged in on the same address, it shows the fake device's name and 
 the backend or a login, it's the icon alone. The build leaves this page out.
 
 `npm run build` writes the site to `dist/`, and the home button's script beside it as `dist/home-button.js` (the
-build fails if that grows past 10 240 bytes). `npm test` runs the Vitest tests in `tests/`. To use the same Node
+build fails if that grows past 10 240 bytes), and `dist/third-party-licenses.txt`, the license texts of the libraries
+bundled into the pages. The build tool writes that file (`build.license` in `vite.config.ts`); it is generated and never
+edited, and the About page links to it. `npm test` runs the Vitest tests in `tests/`. To use the same Node
 as the device's build, run them in the pinned image:
 
 ```bash
@@ -144,7 +146,21 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - The `sharing` module is the Sharing page (`SharingPage.vue`: the summary card, the review alert, and the polling after
   a save), its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three
   sample payloads the "See an example" buttons show.
+- The `about` module is the About page (`AboutPage.vue`), open to every signed-in user and last in the menu. It makes no
+  request of its own. `credits.json` is its list of credits, one row per project; `script/tests/test_about_credits.py`
+  checks it against the dependencies. `RoadParade.vue` and `parade.ts` are the parade, described in "The About page" below.
 - `src/next.ts` decides where to go after login, and refuses to send anyone off the device.
+
+## The About page
+
+The page asks the device for nothing and fetches nothing, so it reads the same on the hotspot with no internet. Its
+sentences and the order of its groups are in `AboutPage.vue`; the credits are the rows of `credits.json`, kept current
+as `docs/development/tm-control.md` describes.
+
+The parade is deliberate. After the page's last line sits a traffic cone with no visible label (a button whose
+`aria-label` is "Count some traffic"). A click opens a strip of road, one traveler crosses it every 2 seconds, and a
+tally counts them; a second click closes it. It stores and sends nothing, it stops when the page is left, and with
+reduced motion nothing moves but the tally still counts. It is an Easter egg, so it is not in the user docs.
 
 ## Design notes
 

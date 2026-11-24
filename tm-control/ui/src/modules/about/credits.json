@@ -1,0 +1,360 @@
+[
+  {
+    "name": "Frigate NVR",
+    "license": "MIT",
+    "url": "https://frigate.video/",
+    "group": "built-on",
+    "does": "Watches the camera and finds the people, bicycles, and vehicles that Traffic Monitor counts.",
+    "covers": [
+      "component:frigate"
+    ]
+  },
+  {
+    "name": "Node-RED",
+    "license": "Apache-2.0",
+    "url": "https://nodered.org/",
+    "group": "built-on",
+    "does": "Runs Traffic Monitor's logic: it joins what the camera saw with the radar's speeds, stores the records, and draws the dashboards.",
+    "covers": [
+      "component:node_red",
+      "node-red:node-red"
+    ]
+  },
+  {
+    "name": "go2rtc",
+    "license": "MIT",
+    "url": "https://github.com/AlexxIT/go2rtc",
+    "group": "video",
+    "covers": [
+      "component:go2rtc"
+    ]
+  },
+  {
+    "name": "FFmpeg",
+    "license": "GPL-2.0-or-later",
+    "url": "https://ffmpeg.org/",
+    "group": "video",
+    "note": "Raspberry Pi build (jc-kynesim/rpi-ffmpeg)"
+  },
+  {
+    "name": "x264",
+    "license": "GPL-2.0-or-later",
+    "url": "https://www.videolan.org/developers/x264.html",
+    "group": "video"
+  },
+  {
+    "name": "x265",
+    "license": "GPL-2.0-or-later",
+    "url": "https://www.x265.org/",
+    "group": "video"
+  },
+  {
+    "name": "rpicam-apps",
+    "license": "BSD-2-Clause",
+    "url": "https://github.com/raspberrypi/rpicam-apps",
+    "group": "video"
+  },
+  {
+    "name": "Hailo PCIe driver",
+    "license": "GPL-2.0",
+    "url": "https://github.com/hailo-ai/hailort-drivers",
+    "group": "video",
+    "note": "For the Hailo-8L accelerator",
+    "covers": [
+      "component:hailo"
+    ]
+  },
+  {
+    "name": "Coral gasket driver",
+    "license": "GPL-2.0",
+    "url": "https://github.com/google/gasket-driver",
+    "group": "video",
+    "note": "For the Coral PCIe accelerator"
+  },
+  {
+    "name": "YOLOv9 model for Coral",
+    "license": "GPL-3.0",
+    "url": "https://github.com/dbro/frigate-detector-edgetpu-yolo9",
+    "group": "video",
+    "note": "By dbro, built from YOLOv9"
+  },
+  {
+    "name": "FlowFuse Dashboard",
+    "license": "Apache-2.0",
+    "url": "https://dashboard.flowfuse.com/",
+    "group": "data",
+    "covers": [
+      "node-red:@flowfuse/node-red-dashboard"
+    ]
+  },
+  {
+    "name": "Node-RED Dashboard",
+    "license": "Apache-2.0",
+    "url": "https://github.com/node-red/node-red-dashboard",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-dashboard"
+    ]
+  },
+  {
+    "name": "Aedes MQTT broker",
+    "license": "MIT",
+    "url": "https://github.com/moscajs/aedes",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-contrib-aedes"
+    ]
+  },
+  {
+    "name": "SQLite",
+    "license": "Public domain",
+    "url": "https://sqlite.org/",
+    "group": "data"
+  },
+  {
+    "name": "node-red-node-sqlite",
+    "license": "Apache-2.0",
+    "url": "https://flows.nodered.org/node/node-red-node-sqlite",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-node-sqlite"
+    ]
+  },
+  {
+    "name": "node-red-node-serialport",
+    "license": "Apache-2.0",
+    "url": "https://flows.nodered.org/node/node-red-node-serialport",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-node-serialport"
+    ]
+  },
+  {
+    "name": "node-red-node-base64",
+    "license": "Apache-2.0",
+    "url": "https://flows.nodered.org/node/node-red-node-base64",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-node-base64"
+    ]
+  },
+  {
+    "name": "node-red-contrib-os",
+    "license": "BSD-3-Clause",
+    "url": "https://flows.nodered.org/node/node-red-contrib-os",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-contrib-os"
+    ]
+  },
+  {
+    "name": "node-red-contrib-image-output",
+    "license": "MIT",
+    "url": "https://flows.nodered.org/node/node-red-contrib-image-output",
+    "group": "data",
+    "covers": [
+      "node-red:node-red-contrib-image-output"
+    ]
+  },
+  {
+    "name": "Vue",
+    "license": "MIT",
+    "url": "https://vuejs.org/",
+    "group": "app",
+    "covers": [
+      "ui:vue"
+    ]
+  },
+  {
+    "name": "Vue Router",
+    "license": "MIT",
+    "url": "https://router.vuejs.org/",
+    "group": "app",
+    "covers": [
+      "ui:vue-router"
+    ]
+  },
+  {
+    "name": "Pinia",
+    "license": "MIT",
+    "url": "https://pinia.vuejs.org/",
+    "group": "app",
+    "covers": [
+      "ui:pinia"
+    ]
+  },
+  {
+    "name": "Vuetify",
+    "license": "MIT",
+    "url": "https://vuetifyjs.com/",
+    "group": "app",
+    "covers": [
+      "ui:vuetify"
+    ]
+  },
+  {
+    "name": "Material Design Icons",
+    "license": "Apache-2.0",
+    "url": "https://pictogrammers.com/library/mdi/",
+    "group": "app",
+    "note": "By Pictogrammers",
+    "covers": [
+      "ui:@mdi/js"
+    ]
+  },
+  {
+    "name": "MapLibre GL JS",
+    "license": "BSD-3-Clause",
+    "url": "https://maplibre.org/",
+    "group": "app",
+    "covers": [
+      "ui:maplibre-gl"
+    ]
+  },
+  {
+    "name": "Marked",
+    "license": "MIT",
+    "url": "https://marked.js.org/",
+    "group": "app",
+    "covers": [
+      "ui:marked"
+    ]
+  },
+  {
+    "name": "openapi-fetch",
+    "license": "MIT",
+    "url": "https://openapi-ts.dev/openapi-fetch/",
+    "group": "app",
+    "covers": [
+      "ui:openapi-fetch"
+    ]
+  },
+  {
+    "name": "FastAPI",
+    "license": "MIT",
+    "url": "https://fastapi.tiangolo.com/",
+    "group": "app",
+    "covers": [
+      "python:fastapi"
+    ]
+  },
+  {
+    "name": "Starlette",
+    "license": "BSD-3-Clause",
+    "url": "https://starlette.dev/",
+    "group": "app",
+    "covers": [
+      "python:starlette"
+    ]
+  },
+  {
+    "name": "Uvicorn",
+    "license": "BSD-3-Clause",
+    "url": "https://uvicorn.dev/",
+    "group": "app",
+    "covers": [
+      "python:uvicorn"
+    ]
+  },
+  {
+    "name": "Pydantic",
+    "license": "MIT",
+    "url": "https://docs.pydantic.dev/",
+    "group": "app",
+    "covers": [
+      "python:pydantic"
+    ]
+  },
+  {
+    "name": "ruamel.yaml",
+    "license": "MIT",
+    "url": "https://pypi.org/project/ruamel.yaml/",
+    "group": "app",
+    "covers": [
+      "python:ruamel.yaml"
+    ]
+  },
+  {
+    "name": "itsdangerous",
+    "license": "BSD-3-Clause",
+    "url": "https://itsdangerous.palletsprojects.com/",
+    "group": "app",
+    "covers": [
+      "python:itsdangerous"
+    ]
+  },
+  {
+    "name": "argon2-cffi",
+    "license": "MIT",
+    "url": "https://argon2-cffi.readthedocs.io/",
+    "group": "app",
+    "covers": [
+      "python:argon2-cffi"
+    ]
+  },
+  {
+    "name": "Raspberry Pi OS",
+    "license": "Various",
+    "url": "https://www.raspberrypi.com/software/",
+    "group": "device",
+    "note": "Traffic Monitor runs on Raspberry Pi OS, which is based on Debian"
+  },
+  {
+    "name": "Linux",
+    "license": "GPL-2.0",
+    "url": "https://www.kernel.org/",
+    "group": "device"
+  },
+  {
+    "name": "Podman",
+    "license": "Apache-2.0",
+    "url": "https://podman.io/",
+    "group": "device"
+  },
+  {
+    "name": "nginx",
+    "license": "BSD-2-Clause",
+    "url": "https://nginx.org/",
+    "group": "device",
+    "covers": [
+      "component:nginx"
+    ]
+  },
+  {
+    "name": "Cockpit",
+    "license": "LGPL-2.1-or-later",
+    "url": "https://cockpit-project.org/",
+    "group": "device"
+  },
+  {
+    "name": "NetworkManager",
+    "license": "GPL-2.0-or-later",
+    "url": "https://networkmanager.dev/",
+    "group": "device"
+  },
+  {
+    "name": "dnsmasq",
+    "license": "GPL-2.0 or GPL-3.0",
+    "url": "https://thekelleys.org.uk/dnsmasq/doc.html",
+    "group": "device"
+  },
+  {
+    "name": "nftables",
+    "license": "GPL-2.0",
+    "url": "https://netfilter.org/projects/nftables/",
+    "group": "device"
+  },
+  {
+    "name": "Python",
+    "license": "PSF-2.0",
+    "url": "https://www.python.org/",
+    "group": "device"
+  },
+  {
+    "name": "Ansible",
+    "license": "GPL-3.0-or-later",
+    "url": "https://www.ansible.com/",
+    "group": "device",
+    "note": "Runs the installer"
+  }
+]
