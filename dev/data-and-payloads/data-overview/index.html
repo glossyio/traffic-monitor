@@ -1457,6 +1457,8 @@
       
         
       
+        
+      
     
     
     
@@ -1739,6 +1741,34 @@
     
   
     Watch log
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup history
   
 
     
@@ -2436,7 +2466,7 @@
 <tbody>
 <tr>
 <td><code>/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite</code></td>
-<td>The database: <a href="../events-payload/">events</a>, <a href="../radar-payload/">radar readings</a>, <a href="../air-quality-aq-payload/">air quality readings</a>, the device's deployment history, the <a href="../watch-log/">watch log</a> of whether each camera and radar was working, and operator comments</td>
+<td>The database: <a href="../events-payload/">events</a>, <a href="../radar-payload/">radar readings</a>, <a href="../air-quality-aq-payload/">air quality readings</a>, the device's deployment history, the <a href="../watch-log/">watch log</a> of whether each camera and radar was working, the <a href="../setup-history/">setup history</a> of which model, versions, and camera settings were in force, and operator comments</td>
 <td>Until you delete it</td>
 </tr>
 <tr>
@@ -2526,6 +2556,21 @@
 <td><code>watch_radar</code></td>
 <td>Whether each radar was working, every five minutes. See <a href="../watch-log/">Watch log</a>.</td>
 <td>No</td>
+</tr>
+<tr>
+<td><code>setup_device</code></td>
+<td>Which detection model, software versions, and unit settings were in force, and when. See <a href="../setup-history/">Setup history</a>.</td>
+<td>Only text a person chose: a model's title and file name</td>
+</tr>
+<tr>
+<td><code>setup_camera</code></td>
+<td>Each camera's detect size, zones, masks, and filters, and when they were in force. See <a href="../setup-history/">Setup history</a>.</td>
+<td>Only text a person chose: a zone's key and the key of a profile</td>
+</tr>
+<tr>
+<td><code>events_with_setup</code> (a view)</td>
+<td>Every column of <code>events</code>, with the setup in force when the event started. See <a href="../setup-history/">Setup history</a>.</td>
+<td>The same as <code>events</code> and the two tables above</td>
 </tr>
 <tr>
 <td><code>comments</code></td>

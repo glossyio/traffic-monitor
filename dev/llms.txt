@@ -51,6 +51,7 @@ The Traffic Monitor turns a Raspberry Pi 5 with a camera, Doppler radar, and an 
 - [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md)
 - [Object paths](https://docs.trafficmonitor.ai/dev/data-and-payloads/object-paths/index.md)
 - [Radar](https://docs.trafficmonitor.ai/dev/data-and-payloads/radar-payload/index.md)
+- [Setup history](https://docs.trafficmonitor.ai/dev/data-and-payloads/setup-history/index.md)
 - [Watch log](https://docs.trafficmonitor.ai/dev/data-and-payloads/watch-log/index.md)
 
 ## Add-ons
