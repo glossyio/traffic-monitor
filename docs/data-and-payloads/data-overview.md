@@ -10,7 +10,7 @@ The Traffic Monitor is a data collection tool. Everything it collects is process
 
 | Where | What | How long |
 |---|---|---|
-| `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite` | The database: [events](events-payload.md), [radar readings](radar-payload.md), [air quality readings](air-quality-aq-payload.md), the device's deployment history, the [watch log](watch-log.md) of whether each camera and radar was working, and operator comments | Until you delete it |
+| `/opt/traffic-monitor/node-red-tm/db/tmdb.sqlite` | The database: [events](events-payload.md), [radar readings](radar-payload.md), [air quality readings](air-quality-aq-payload.md), the device's deployment history, the [watch log](watch-log.md) of whether each camera and radar was working, the [setup history](setup-history.md) of which model, versions, and camera settings were in force, and operator comments | Until you delete it |
 | `/opt/traffic-monitor/frigate/storage/` | Frigate's cropped snapshots of each detection, and recordings of alerts and detections | About an hour, by default |
 | Your ThingsBoard server | A copy of the data above, plus system metrics | If you turn on the [ThingsBoard upload](integrations.md#thingsboard) |
 
@@ -52,6 +52,9 @@ Tables for sensors the device doesn't have stay empty.
 | `deployment` | Where each sensor was, and when | No, except where homes are far apart: the location is rounded to about 1 km (two decimal places) by default and never stored more precisely, which in a rural area can point to a single home (see [Privacy](#privacy)) |
 | `watch_camera` | Whether each camera was working, every five minutes. See [Watch log](watch-log.md). | No |
 | `watch_radar` | Whether each radar was working, every five minutes. See [Watch log](watch-log.md). | No |
+| `setup_device` | Which detection model, software versions, and unit settings were in force, and when. See [Setup history](setup-history.md). | Only text a person chose: a model's title and file name |
+| `setup_camera` | Each camera's detect size, zones, masks, and filters, and when they were in force. See [Setup history](setup-history.md). | Only text a person chose: a zone's key and the key of a profile |
+| `events_with_setup` (a view) | Every column of `events`, with the setup in force when the event started. See [Setup history](setup-history.md). | The same as `events` and the two tables above |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 

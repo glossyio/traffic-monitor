@@ -423,6 +423,28 @@ def tm_internal_token(host):
     return token
 
 
+TM_INTERNAL_STATUS = "http://127.0.0.1:1880/tm-internal/status"
+TM_INTERNAL_HEADER = "X-TM-Internal-Token"  # tm_control/adapters/nodered.py
+
+
+def tm_internal_answer(host, token=None, url=TM_INTERNAL_STATUS, body=None):
+    """(HTTP status, JSON body or None) of one of Node-RED's internal endpoints, asked on the Pi with this token or
+    none: a GET, or a POST of this JSON body.
+
+    The token is on curl's command line, never under sudo, whose log would keep it; the CommandResult holds it, so it
+    stays in here, where neither an assertion nor pytest -l in the test can print it.
+    """
+    header = "" if token is None else "-H " + shlex.quote(f"{TM_INTERNAL_HEADER}: {token}") + " "
+    post = "" if body is None else "-X POST -H 'Content-Type: application/json' -d " + shlex.quote(json.dumps(body)) + " "
+    result = host.run(f"curl -s --max-time 10 -w '\\n%{{http_code}}' {header}{post}{url}")
+    text, _, status = result.stdout.rpartition("\n")
+    del result
+    try:
+        return status, json.loads(text)
+    except ValueError:
+        return status, None
+
+
 # --- The entered secrets (the ThingsBoard token, the Plate Recognizer token and license key) -----------------------
 
 @functools.cache
