@@ -179,14 +179,15 @@ def test_stop_during_the_delay_ends_the_thread_at_once():
     assert len(t.times) == 1
 
 
-def test_a_second_wake_soon_does_not_move_the_deadline():
+def test_a_second_wake_soon_moves_the_deadline_to_the_delay_after_it():
     with Timed(retry=1.5) as t:
         t.poster.wake_soon()
-        deadline = t.poster._soon
+        first = t.poster._soon
         time.sleep(0.1)
         t.poster.wake_soon()
-        assert t.poster._soon == deadline  # kept from the first call
+        assert t.poster._soon > first  # the retry delay after the second call, so neither change is read too soon
         assert t.calls.acquire(timeout=3)
+        assert t.times[-1] - t.times[0] >= 1.55
         assert not t.calls.acquire(timeout=0.3)  # one snapshot for both
 
 
@@ -209,14 +210,14 @@ def test_a_wake_soon_after_a_delayed_snapshot_starts_a_new_delay():
 
 
 def test_a_wake_soon_late_in_an_ordinary_wait_still_gives_a_snapshot_at_its_deadline():
-    with Timed(retry=1.5, interval=2.0) as t:
+    with Timed(retry=1.5, interval=4.0) as t:
         first = t.times[0]
-        time.sleep(1.5)  # the ordinary wait ends at 2.0; the deadline, 3.0, comes a second after it
+        time.sleep(3.5)  # the ordinary wait ends at 4.0; the deadline, 5.0, comes a second after it
         t.poster.wake_soon()
         assert t.calls.acquire(timeout=5)  # the ordinary snapshot
-        assert t.times[-1] - first >= 1.95
-        assert t.calls.acquire(timeout=5)  # the delayed one, from the deadline, not the next ordinary one at 4.0
-        assert t.times[-1] - first < 3.8
+        assert t.times[-1] - first >= 3.95
+        assert t.calls.acquire(timeout=5)  # the delayed one, from the deadline, not the next ordinary one at 8.0
+        assert t.times[-1] - first < 7.0
 
 
 def test_a_wake_while_a_delayed_snapshot_is_pending_gives_one_at_once_and_one_at_the_deadline():

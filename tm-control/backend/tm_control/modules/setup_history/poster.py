@@ -35,7 +35,7 @@ class Poster:
         self._stopped = threading.Event()
         self._lock = threading.Condition()  # guards everything below; the loop waits on it
         self._now = False  # a wake() came: the next wait ends at once
-        self._soon: float | None = None  # a wake_soon()'s deadline (monotonic), kept from the first call
+        self._soon: float | None = None  # a wake_soon()'s deadline (monotonic), set by the latest call
         self._thread: threading.Thread | None = None
         self._summary = {"gathered": False, "flagged": []}
         self._failure: str | None = None  # the class name of the failure last logged, until it ends
@@ -96,11 +96,10 @@ class Poster:
     def wake_soon(self) -> None:
         """End the current wait after the retry delay, so the next snapshot is made then. For a change that only queued
         a restart: a snapshot right now could still see the old state. A wake() or stop() in the meantime still ends the
-        wait at once (the deadline is kept for the wait after it), and a second call while one is pending doesn't move
-        the deadline."""
+        wait at once (the deadline is kept for the wait after it). A second call while one is pending moves the deadline
+        to the retry delay after it: each caller wants its snapshot no sooner than that after its own change."""
         with self._lock:
-            if self._soon is None:
-                self._soon = time.monotonic() + self._retry
+            self._soon = time.monotonic() + self._retry
             self._lock.notify_all()
 
     def _wait(self, seconds: float) -> None:
