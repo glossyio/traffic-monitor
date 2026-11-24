@@ -32,8 +32,8 @@ One row for each period in which these facts were the same. The primary key is `
 | `unit_system` | TEXT | Frigate's unit system, which names the unit of a zone's `distances` | `metric` (metres) or `imperial` (feet) |
 | `detector` | TEXT | The kind of detector Frigate uses | Such as `edgetpu`, `hailo8l`, or `cpu` |
 | `model_id` | TEXT | The Frigate+ model's id | Empty for a model that isn't from Frigate+ |
-| `model_file` | TEXT | The model file's name in Frigate's model folder | Empty when Frigate runs its own built-in model |
-| `model_sha256` | TEXT | The SHA-256 of the model file | Identifies the file whatever its name. Empty when the file isn't there. |
+| `model_file` | TEXT | The model file's name | Empty when the model has no file, as with Frigate's built-in model on a unit that detects on the processor |
+| `model_sha256` | TEXT | The SHA-256 of the model file | Identifies the file whatever its name. Empty when `model_file` is, or when the file isn't there. |
 | `model_kind` | TEXT | Where the model comes from | `frigate_plus` (a Frigate+ model), `local` (a file someone uploaded), `installer_default` (the model the installer sets up for your accelerator), or `frigate_default` (the model that comes with Frigate) |
 | `model_title` | TEXT | The title the model was given | Empty for a model with no title. It's text a person typed. |
 | `model_trained_at` | TEXT | When a Frigate+ model was trained, as Frigate+ wrote it | Empty for other models |
@@ -86,7 +86,7 @@ A list of the camera's zones, sorted by `key`. Each zone has these fields, and n
 |---|---|
 | `key` | The zone's key in Frigate, such as `zone_capture` |
 | `enabled` | Whether the zone is on |
-| `corners` | The zone's corners as `[x, y]`, fractions of the picture from its top left corner (0 to 1), in the order Frigate stores them |
+| `corners` | The zone's corners as `[x, y]`, fractions of the picture from its top left corner, in the order Frigate stores them. Usually 0 to 1; a corner past the picture's edge is kept as it is, so a value can be below 0 or above 1 |
 | `distances` | The lengths of the zone's sides as entered in Frigate, in the unit `unit_system` names; `[]` when none |
 | `inertia`, `loitering_time`, `speed_threshold` | The zone's settings in Frigate; `null` when not set |
 | `objects` | The labels the zone counts, sorted |
@@ -110,7 +110,7 @@ A list of the camera's zones, sorted by `key`. Each zone has these fields, and n
 
 ### masks
 
-A mask is an area where Frigate ignores motion or objects. The column is `{}` for a camera with no masks. Otherwise it has these three keys, each a list of masks, and a mask is `{"enabled": <true or false>, "corners": [[x, y], ...]}`. The corners are fractions of the picture, as in `zones`. Frigate's own id and name for a mask aren't kept.
+A mask is an area where Frigate ignores motion or objects. The column is `{}` for a camera with no masks. Otherwise it has these three keys, each a list of masks, and a mask is `{"enabled": <true or false>, "corners": [[x, y], ...]}`. The corners are fractions of the picture, as in `zones`. Frigate's own id and name for a mask aren't kept, and a mask with no shape (empty, or fewer than three corners) isn't recorded.
 
 | Key | Meaning |
 |---|---|

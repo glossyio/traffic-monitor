@@ -127,7 +127,7 @@ class NodeRed:
         self._call("POST", "/database/exact-copy", body={"ticket": ticket, "places": places})
 
     def post_setup(self, body: dict) -> None:
-        """Hand Node-RED a setup snapshot (the control app's setup history); it answers 204 when it took it."""
+        """Hand Node-RED a setup snapshot (the control app's setup history); it answers 200 with {"changed": n}, the number of rows it opened."""
         self._call("POST", "/setup", body=body)
 
     def after_config_write(self) -> None:

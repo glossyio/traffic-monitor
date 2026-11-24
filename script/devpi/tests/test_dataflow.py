@@ -264,10 +264,10 @@ MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
 
 def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, frigate_config):
     """The setup history has exactly one open setup_device row, matching the manifest's version, the database's
-    schema version, and Frigate's version; each camera in config.yml that Frigate has one open setup_camera row,
-    matching Frigate's detect size and zone keys; events_with_setup lists each event once; and Node-RED's status says
-    the last snapshot was complete and arrived within 400 seconds. Reads only. Messages name columns and config.yml's
-    camera keys, never Frigate's name for a camera."""
+    schema version, and Frigate's version; each camera in config.yml that Frigate has (the first key for each Frigate
+    camera) has one open setup_camera row, matching Frigate's detect size and zone keys; events_with_setup lists each
+    event once; and Node-RED's status says the last snapshot was complete and arrived within 400 seconds. Reads only.
+    Messages name columns and config.yml's camera keys, never Frigate's name for a camera."""
     for unit in ("tm-control.service", "node-red-tm.service"):
         active = service_active_seconds(host, unit)
         if active < SETUP_FIRST_ROWS_SECONDS:
@@ -300,10 +300,15 @@ def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, fr
     open_rows = {}
     for row in db_query(host, codedir, f"SELECT {', '.join(camera_columns)} FROM setup_camera WHERE ended IS NULL"):
         open_rows.setdefault(row[0], []).append(dict(zip(camera_columns, row)))
+    paired = set()
     for key, entry in cameras.items():
-        frigate_camera = frigate_cameras.get((entry or {}).get("frigate_camera") or key)
+        frigate_name = (entry or {}).get("frigate_camera") or key
+        frigate_camera = frigate_cameras.get(frigate_name)
         if frigate_camera is None:
             continue
+        if frigate_name in paired:
+            continue  # a second key for the same Frigate camera is a duplicate, which the snapshot leaves out
+        paired.add(frigate_name)
         rows = open_rows.get(key, [])
         if len(rows) != 1:
             problems.append(f"setup_camera has {len(rows)} rows with no ended for camera {key}, not 1")
