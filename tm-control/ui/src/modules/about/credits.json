@@ -73,10 +73,10 @@
   },
   {
     "name": "YOLOv9 model for Coral",
-    "license": "MIT (code), GPL-3.0 (model)",
+    "license": "GPL-3.0",
     "url": "https://github.com/dbro/frigate-detector-edgetpu-yolo9",
     "group": "video",
-    "note": "By dbro"
+    "note": "By dbro, built from YOLOv9"
   },
   {
     "name": "FlowFuse Dashboard",

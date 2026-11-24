@@ -51,13 +51,19 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
 
     <section class="mt-10">
       <h2 class="text-h6 mb-2">Built on</h2>
-      <v-list class="bg-transparent">
+      <!--
+        A list item hides whatever reaches past its edge, and the keyboard's focus ring is drawn 4 px outside a link.
+        So each row has 4 px of padding (pa-1, px-1) to hold the ring, and the list moves 4 px left (ms-n1) to keep the
+        names in line with the headings.
+      -->
+      <v-list class="bg-transparent ms-n1">
         <v-list-item v-for="row in builtOn" :key="row.name" class="px-0">
-          <div class="d-flex flex-wrap align-baseline gc-3">
+          <div class="d-flex flex-wrap align-baseline gc-3 pa-1">
+            <!-- This class is added to the one in OUTSIDE; it doesn't replace it -->
             <a :href="row.url" v-bind="OUTSIDE" class="font-weight-medium">{{ row.name }}</a>
             <span class="text-body-2 text-medium-emphasis">{{ row.license }}</span>
           </div>
-          <div class="text-body-1">{{ row.does }}</div>
+          <div class="text-body-1 px-1">{{ row.does }}</div>
         </v-list-item>
       </v-list>
     </section>
@@ -66,14 +72,14 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
       <h2 class="text-h6 mb-2">Also on this device</h2>
       <div v-for="group in GROUPS" :key="group.id" class="mb-4">
         <h3 class="text-subtitle-1 font-weight-medium">{{ group.title }}</h3>
-        <v-list class="bg-transparent" density="compact">
+        <v-list class="bg-transparent ms-n1" density="compact">
           <v-list-item v-for="row in rowsOf(group.id)" :key="row.name" class="px-0">
             <!-- The name, then its license; a long license wraps to its own line on a narrow screen -->
-            <div class="d-flex flex-wrap align-baseline gc-3">
+            <div class="d-flex flex-wrap align-baseline gc-3 pa-1">
               <a :href="row.url" v-bind="OUTSIDE">{{ row.name }}</a>
               <span class="text-body-2 text-medium-emphasis">{{ row.license }}</span>
             </div>
-            <div v-if="'note' in row" class="text-body-2">{{ row.note }}</div>
+            <div v-if="'note' in row" class="text-body-2 px-1">{{ row.note }}</div>
           </v-list-item>
         </v-list>
       </div>

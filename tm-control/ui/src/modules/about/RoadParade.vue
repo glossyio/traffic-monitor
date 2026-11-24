@@ -5,7 +5,7 @@
 -->
 <script setup lang="ts">
 import { mdiTrafficCone } from '@mdi/js'
-import { onBeforeUnmount, reactive, ref } from 'vue'
+import { nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import { PASS_MS, pickTraveler, tallyText, type Traveler } from './parade'
 
 // `pick` is a prop so a test can send a chosen traveler instead of a random one
@@ -16,6 +16,7 @@ const counts = reactive<Record<string, number>>({})
 const crossing = ref<Traveler | null>(null) // the one on the road now
 const pass = ref(0) // a new key for each traveler, so the animation starts again from the left
 const still = ref(false) // the browser asks for reduced motion: the traveler stays put, the tally still counts
+const road = ref<HTMLElement | null>(null) // the road and its tally, once open
 let timer: ReturnType<typeof setInterval> | undefined
 
 function send() {
@@ -47,6 +48,9 @@ function toggle() {
   open.value = true
   send()
   timer = setInterval(tick, PASS_MS)
+  // The cone is the last thing on the page, so the road opens below the screen's edge. Once it is drawn, scroll
+  // only as far as it takes to show it. Some old browsers and the tests have no scrollIntoView; then nothing scrolls.
+  nextTick(() => road.value?.scrollIntoView?.({ block: 'nearest' }))
 }
 
 onBeforeUnmount(stop)
@@ -64,7 +68,7 @@ onBeforeUnmount(stop)
       <v-icon :icon="mdiTrafficCone" />
     </v-btn>
 
-    <div v-if="open" class="mt-2">
+    <div v-if="open" ref="road" class="mt-2">
       <v-sheet border rounded class="parade-road d-flex align-center justify-center">
         <v-icon
           v-if="crossing"

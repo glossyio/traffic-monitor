@@ -114,6 +114,16 @@ describe('the About page', () => {
     }
   })
 
+  // The list item hides what overflows it, and the focus ring is drawn 4 px outside a link (pa-1 is 4 px)
+  it('lets each credit’s row wrap, and leaves room around its link for the focus ring', async () => {
+    const page = await aboutPage()
+    for (const row of page.find('.v-main').findAll('.v-list-item')) {
+      const line = row.find('a').element.parentElement!
+      expect(line.classList.contains('flex-wrap'), row.find('a').text()).toBe(true)
+      expect(line.classList.contains('pa-1'), row.find('a').text()).toBe(true)
+    }
+  })
+
   it('opens every outside link in a new tab without a referrer', async () => {
     const page = await aboutPage()
     const outside = page.findAll('a[href^="https://"]')

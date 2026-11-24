@@ -75,7 +75,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | The **Cameras** page | Yes | No |
 | The **Location** page | Yes | No |
 | The **Sharing** page | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
-| The **About** page | Yes | Read only |
+| The **About** page | Yes | Yes |
 
 A viewer who opens an administrator's app from a link sees a page that says so, with a way back to the home page.
 

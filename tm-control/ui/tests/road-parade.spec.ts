@@ -57,6 +57,22 @@ describe('the parade', () => {
     expect(wrapper.text()).toContain('Counted so far: 3 cars')
   })
 
+  // jsdom has no scrollIntoView, like some old browsers, so the other tests here also show the parade opens without it
+  it('brings the road into view when it opens, because the cone is the last thing on the page', async () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      const wrapper = parade()
+      await click(wrapper)
+      await flushPromises()
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+      expect((scrollIntoView.mock.instances[0] as Element).textContent).toContain('Counted so far')
+    } finally {
+      delete (Element.prototype as Partial<Element>).scrollIntoView
+    }
+  })
+
   it('closes on a second click and stops counting', async () => {
     const wrapper = parade()
     await click(wrapper)
