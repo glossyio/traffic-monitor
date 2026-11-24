@@ -184,6 +184,7 @@ def add_camera(body: CameraAdd, request: Request, admin: User = Depends(require_
         )
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.add", name)
+    app_state.setup_poster.wake()
     return cameras_state(request)
 
 
@@ -200,6 +201,7 @@ def set_camera(
         _edit(config.set_camera, name, body.enabled, body.camera_radar, body.plate_recognizer)
         _save(app_state, config, must_change=False)  # the same settings again is not a conflict
     Audit(app_state.state).record(admin.id, "camera.update", name)
+    app_state.setup_poster.wake()
     return cameras_state(request)
 
 
@@ -218,6 +220,7 @@ def point_camera(
         _edit(config.point_camera, name, body.to)
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.point", name)
+    app_state.setup_poster.wake()
     return cameras_state(request)
 
 
@@ -236,6 +239,7 @@ def neutral_name(name: str, request: Request, admin: User = Depends(require_admi
         _save(app_state, config)
         Places(app_state.state).rename_sensor("cameras", name, new)  # config.yml first, the store second
     Audit(app_state.state).record(admin.id, "camera.neutral_name", new)
+    app_state.setup_poster.wake()
     return cameras_state(request)
 
 
@@ -280,6 +284,7 @@ def remove_camera(name: str, request: Request, admin: User = Depends(require_adm
         _edit(config.remove_camera, name)
         _save(app_state, config)
     Audit(app_state.state).record(admin.id, "camera.remove", name)
+    app_state.setup_poster.wake()
     return cameras_state(request)
 
 

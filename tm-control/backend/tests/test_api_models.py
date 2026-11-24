@@ -7,6 +7,7 @@ runs the real code paths, with Frigate not answering and the code directory unde
 import json
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -1649,3 +1650,148 @@ def test_in_safe_mode_the_page_reads_the_config_file_and_says_so(
 def test_out_of_safe_mode_the_answer_says_so(seeded, login):
     login(seeded, *ADMIN)
     assert models_of(seeded)["frigate_safe_mode"] is False
+
+
+# A snapshot right after a change: every route that makes Frigate run another model wakes the setup poster once, after
+# it succeeded, and a refusal wakes nothing.
+
+
+class Wakes:
+    def __init__(self):
+        self.count = 0
+
+    def wake(self):
+        self.count += 1
+
+
+def counting(client) -> Wakes:
+    client.app.state.setup_poster = poster = Wakes()
+    return poster
+
+
+@pytest.mark.parametrize("name", ["mine.tflite", "default", INSTALLER_FILE, PLUS_ID])
+def test_a_use_wakes_the_setup_poster_once(seeded, login, name):
+    login(seeded, *ADMIN)
+    poster = counting(seeded)
+    assert use(seeded, name).status_code == 202
+    assert poster.count == 1
+
+
+def test_a_use_by_id_of_a_model_on_the_device_wakes_once(seeded, login):
+    login(seeded, *ADMIN)
+    poster = counting(seeded)
+    assert plus_use(seeded, PLUS_ID).status_code == 202
+    assert poster.count == 1
+
+
+def test_a_refused_use_wakes_nothing(seeded, login):
+    login(seeded, *ADMIN)
+    poster = counting(seeded)
+    assert use(seeded, "nothing.tflite").status_code == 404
+    assert use(seeded, "bad name").status_code == 422
+    assert plus_use(seeded, "abc").status_code == 422
+    seeded.app.state.fetches.start(NEW_ID)
+    assert use(seeded, "mine.tflite").status_code == 409
+    assert use(seeded, "default").status_code == 409
+    assert poster.count == 0
+
+
+def test_a_use_that_a_viewer_or_nobody_tries_wakes_nothing(seeded, login):
+    poster = counting(seeded)
+    assert use(seeded, "mine.tflite").status_code == 401
+    Users(seeded.app.state.state).create(*VIEWER, "viewer")
+    login(seeded, *VIEWER)
+    assert use(seeded, "mine.tflite").status_code == 403
+    assert poster.count == 0
+
+
+def test_a_use_on_a_device_wakes_once(device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    write_pair(codedir / "frigate" / "config" / "model_cache", "mine.tflite")
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert use(device_client, "mine.tflite").status_code == 202
+    assert poster.count == 1
+
+
+def test_a_use_of_a_model_for_another_detector_wakes_nothing_on_a_device(
+        device_client, login, tmp_path, systemctl, frigate_api):
+    codedir = device_with_codedir(device_client, tmp_path, PLUS_CONFIG)
+    write_pair(codedir / "frigate" / "config" / "model_cache", "h.tflite", supportedDetectors=["hailo8l"])
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert use(device_client, "h.tflite").status_code == 422
+    assert poster.count == 0
+
+
+def test_a_download_wakes_once_when_frigate_has_saved(device_client, login, plus_device, systemctl, frigate_api):
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert plus_use(device_client, NEW_ID).status_code == 202
+    assert poster.count == 1
+
+
+def test_a_download_wakes_from_the_downloads_thread_after_the_answer(
+        device_client, login, plus_device, systemctl, frigate_api, monkeypatch):
+    """The wake belongs to the callback that runs once Frigate has saved, not to the request: held back here, as the
+    download's own thread holds it, the route's answer wakes nothing."""
+    from tm_control.modules.detection import fetch
+
+    held = []
+    monkeypatch.setattr(fetch, "spawn", held.append)
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert plus_use(device_client, NEW_ID).status_code == 202
+    assert poster.count == 0
+    held[0]()
+    assert poster.count == 1
+
+
+def test_a_refused_download_wakes_nothing(device_client, login, plus_device, systemctl, frigate_api):
+    frigate_api(PLUS_CONFIG, save=(400, {"success": False, "message": "no"}))
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert plus_use(device_client, NEW_ID).status_code == 202
+    assert models_of(device_client)["fetch"]["state"] == "refused"
+    assert poster.count == 0
+
+
+def test_a_download_that_cannot_start_wakes_nothing(device_client, login, plus_device, systemctl, frigate_api):
+    set_key(device_client, "")
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    poster = counting(device_client)
+    assert plus_use(device_client, NEW_ID).status_code == 409
+    assert poster.count == 0
+
+
+def test_fake_mode_wakes_once_for_a_download_it_saved_and_not_for_one_it_refused(seeded, login, monkeypatch):
+    from tm_control.core.secrets import FRIGATE_PLUS_API_KEY
+    from placeholders import PLACEHOLDER_KEY
+    from tm_control.modules.detection import fetch
+
+    monkeypatch.setattr(fake, "FAKE_FETCH_SECONDS", 0)
+    monkeypatch.setattr(fetch, "spawn", lambda target: target())
+    seeded.app.state.secrets.entered[FRIGATE_PLUS_API_KEY] = PLACEHOLDER_KEY
+    login(seeded, *ADMIN)
+    poster = counting(seeded)
+    assert plus_use(seeded, "a" * 32).status_code == 202  # refused by the fake Frigate
+    assert poster.count == 0
+    assert plus_use(seeded, fake.FAKE_FETCHABLE_ID).status_code == 202
+    assert poster.count == 1
+
+
+def test_the_wake_comes_after_frigates_restart(device_client, login, plus_device, systemctl, frigate_api):
+    """So the snapshot finds Frigate going down, not still running the old model."""
+    write_pair(plus_device.parent / "model_cache", "mine.tflite")
+    frigate_api(PLUS_CONFIG)
+    login(device_client, *ADMIN)
+    seen = []
+    device_client.app.state.setup_poster = SimpleNamespace(wake=lambda: seen.append(systemctl.restarts()))
+    assert use(device_client, "mine.tflite").status_code == 202
+    assert plus_use(device_client, NEW_ID).status_code == 202
+    assert seen == [[FRIGATE_RESTART], [FRIGATE_RESTART, FRIGATE_RESTART]]
