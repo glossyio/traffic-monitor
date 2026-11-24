@@ -41,8 +41,8 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
       vehicles and measures speeds, on the device, with a camera and a radar. It is maintained by Roadway Biome, which
       also sells assembled units and runs the server that units can share data with.
     </p>
-    <!-- A wrapping row, so four links fit a 360 px phone on two lines -->
-    <div class="d-flex flex-wrap ga-x-6 ga-y-2 my-4 text-body-1">
+    <!-- A wrapping row with a gap, so the four links stay apart and fit a 360 px phone on two lines -->
+    <div class="d-flex flex-wrap gc-6 gr-2 my-4 text-body-1">
       <a v-for="place in PLACES" :key="place.href" :href="place.href" v-bind="OUTSIDE">{{ place.text }}</a>
     </div>
     <p class="text-body-1">
@@ -53,7 +53,7 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
       <h2 class="text-h6 mb-2">Built on</h2>
       <v-list class="bg-transparent">
         <v-list-item v-for="row in builtOn" :key="row.name" class="px-0">
-          <div class="d-flex flex-wrap align-baseline ga-x-3">
+          <div class="d-flex flex-wrap align-baseline gc-3">
             <a :href="row.url" v-bind="OUTSIDE" class="font-weight-medium">{{ row.name }}</a>
             <span class="text-body-2 text-medium-emphasis">{{ row.license }}</span>
           </div>
@@ -69,7 +69,7 @@ const rowsOf = (group: string) => credits.filter((row) => row.group === group)
         <v-list class="bg-transparent" density="compact">
           <v-list-item v-for="row in rowsOf(group.id)" :key="row.name" class="px-0">
             <!-- The name, then its license; a long license wraps to its own line on a narrow screen -->
-            <div class="d-flex flex-wrap align-baseline ga-x-3">
+            <div class="d-flex flex-wrap align-baseline gc-3">
               <a :href="row.url" v-bind="OUTSIDE">{{ row.name }}</a>
               <span class="text-body-2 text-medium-emphasis">{{ row.license }}</span>
             </div>

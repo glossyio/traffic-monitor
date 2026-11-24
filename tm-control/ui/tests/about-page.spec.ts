@@ -100,6 +100,20 @@ describe('the About page', () => {
     }
   })
 
+  // Whitespace between inline elements doesn't survive Vue's template condensing, so the gap is a Vuetify class
+  it('spaces the four links, and each credit’s name from its license, with gap classes', async () => {
+    const page = await aboutPage()
+    const places = page.find('a[href="https://www.trafficmonitor.ai/"]').element.parentElement!
+    expect(places.querySelectorAll('a')).toHaveLength(4)
+    expect(places.className).toMatch(/\bgc-\d+\b/)
+    const rows = page.find('.v-main').findAll('.v-list-item')
+    expect(rows).toHaveLength(credits.length)
+    for (const row of rows) {
+      const line = row.find('a').element.parentElement!
+      expect(line.className, row.find('a').text()).toMatch(/\bgc-\d+\b/)
+    }
+  })
+
   it('opens every outside link in a new tab without a referrer', async () => {
     const page = await aboutPage()
     const outside = page.findAll('a[href^="https://"]')
