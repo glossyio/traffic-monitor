@@ -2304,6 +2304,15 @@ def test_setup_fields_agree():
     db.close()
 
 
+def test_the_control_apps_json_limit_is_below_the_validators():
+    """The snapshot records a JSON fact over JSON_MAX as empty; the validator refuses one over its own MAX_JSON, so the
+    control app's limit must leave room under it."""
+    func = named(json.loads(FLOWS.read_text()), "tm-internal: validate setup")["func"]
+    limit = int(re.search(r"const MAX_JSON = (\d+);", func)[1])
+    assert snapshot.JSON_MAX < limit
+    assert snapshot.TEXT_MAX == int(re.search(r"value\.length > (\d+)", func)[1])
+
+
 @needs_node
 def test_status_reports_the_setup_history():
     [step] = run_functions([status_step()])["results"]

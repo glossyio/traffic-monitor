@@ -7,10 +7,14 @@ mask's id are never read into the snapshot. A zone's, a mask's, and a filter set
 from the listed keys and nothing else), and Node-RED's validator checks that they are exactly those.
 
 Values Node-RED's validator would refuse are never sent: a text fact that isn't a string, is empty, or is longer than
-TEXT_MAX is None; a whole-number fact is an int or None, never a float; a number that isn't finite, and a zone with no
-key, are left out. Nothing here logs a camera, a zone, a title, a profile, or a value.
+TEXT_MAX is None; a JSON fact whose compact JSON is longer than JSON_MAX is None (both lengths in UTF-16 units, as the
+validator's JavaScript counts them, and recorded as empty, never cut); a whole-number fact is an int or None, never a
+float; a number that isn't finite, and a zone with no key, are left out. What the validator checks inside a zone, a
+mask, and a filter set is built here from the listed keys, so it can't refuse them. Nothing here logs a camera, a
+zone, a title, a profile, or a value.
 """
 
+import json
 import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
@@ -30,6 +34,8 @@ from tm_control.modules.detection.picker import detector_type, first_detector, r
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 
 TEXT_MAX = 128  # a longer text fact is recorded as empty, never cut
+JSON_MAX = 16000  # a JSON fact whose compact JSON is longer is recorded as empty; under the validator's 16384, which
+# leaves room for the two sides writing a number differently
 DEVICE_FACTS = (
     "tm_version", "tm_commit", "frigate_version", "unit_system", "detector", "model_id", "model_file", "model_sha256",
     "model_kind", "model_title", "model_trained_at", "model_base", "model_type", "model_width", "model_height",
@@ -54,8 +60,19 @@ INCOMPLETE = Snapshot({"complete": False}, ())
 
 # Single values
 
+def _units(text: str) -> int:
+    """The length of a text as JavaScript counts it: UTF-16 code units, so a character outside the basic plane is two."""
+    return len(text.encode("utf-16-le", "surrogatepass")) // 2
+
+
 def _text(value) -> str | None:
-    return value if isinstance(value, str) and 0 < len(value) <= TEXT_MAX else None
+    return value if isinstance(value, str) and 0 < _units(value) <= TEXT_MAX else None
+
+
+def _json(value):
+    """A JSON fact, or None when its compact JSON (no spaces, non-ASCII kept as itself, as JSON.stringify writes it)
+    is longer than JSON_MAX units: recorded as empty, never cut."""
+    return value if _units(json.dumps(value, separators=(",", ":"), ensure_ascii=False)) <= JSON_MAX else None
 
 
 def _whole(value) -> int | None:
@@ -161,10 +178,11 @@ def camera_facts(camera: Mapping, active_profile: str | None) -> dict:
         "stationary_threshold": _whole(stationary.get("threshold")),
         "stationary_interval": _whole(stationary.get("interval")),
         "lens_hfov": None,
-        "labels_tracked": tracked,
-        "thresholds": _filters(probes.mapping(camera.get("objects")).get("filters"), set(tracked)),
-        "zones": sorted((_zone(zone) for zone in zones.zone_facts(camera) if zone.key), key=lambda zone: zone["key"]),
-        "masks": _all_masks(camera),
+        "labels_tracked": _json(tracked),
+        "thresholds": _json(_filters(probes.mapping(camera.get("objects")).get("filters"), set(tracked))),
+        "zones": _json(sorted((_zone(zone) for zone in zones.zone_facts(camera) if zone.key),
+                              key=lambda zone: zone["key"])),
+        "masks": _json(_all_masks(camera)),
         "profile": _text(profile),
     }
 
@@ -222,7 +240,7 @@ def device_facts(
         "model_type": _text(section.get("model_type")),
         "model_width": _whole(section.get("width")),
         "model_height": _whole(section.get("height")),
-        "labels_available": _names(labels),
+        "labels_available": _json(_names(labels)) if isinstance(labels, list) else None,
     }
 
 

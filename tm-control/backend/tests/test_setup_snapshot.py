@@ -15,7 +15,7 @@ from tm_control.core.manifest import load_manifest
 from tm_control.modules.detection.inventory import InstallerDefault, inventory
 from tm_control.modules.setup_history import snapshot
 from tm_control.modules.setup_history.snapshot import (
-    CAMERA_FACTS, DEVICE_FACTS, INCOMPLETE, TEXT_MAX, Snapshot, camera_facts, device_facts, flagged, gather,
+    CAMERA_FACTS, DEVICE_FACTS, INCOMPLETE, JSON_MAX, TEXT_MAX, Snapshot, camera_facts, device_facts, flagged, gather,
 )
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -92,7 +92,7 @@ def test_device_facts_has_exactly_the_listed_keys(manifest):
     )
     assert found["tm_version"] == "0.7.1-test"
     assert found["frigate_version"] is None
-    assert found["labels_available"] in EMPTY
+    assert found["labels_available"] is None
 
 
 def test_camera_facts_reads_detect_and_stationary():
@@ -311,6 +311,68 @@ def test_a_long_text_is_left_out(manifest, cache):
     found = facts(manifest, cache, frigate_config("/config/model_cache/yours.tflite"))
     assert found["model_title"] == "x" * TEXT_MAX
     assert camera_facts({"profiles": {"p" * 129: {}}}, "p" * 129)["profile"] is None
+
+
+def utf16(text):
+    return len(text.encode("utf-16-le")) // 2
+
+
+def test_a_text_is_measured_in_utf16_units_as_javascript_measures_it():
+    """A character outside the basic plane is two units in JavaScript: 64 of them are 128 units, 65 are 130."""
+    fits, over = "\U0001F697" * 64, "\U0001F697" * 65
+    assert len(over) <= TEXT_MAX < utf16(over) and utf16(fits) == TEXT_MAX
+    assert camera_facts({"profiles": {fits: {}}}, fits)["profile"] == fits
+    assert camera_facts({"profiles": {over: {}}}, over)["profile"] is None
+    assert snapshot._text("\u00e9" * TEXT_MAX) == "\u00e9" * TEXT_MAX  # one unit each
+
+
+def big_zones(count, key="zone_"):
+    return {f"{key}{index:03d}": {"coordinates": "0.1,0.1,0.9,0.1,0.9,0.9,0.1,0.9"} for index in range(count)}
+
+
+def compact(value):
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+
+
+def test_a_json_fact_over_the_limit_is_none_never_cut():
+    small = camera_facts({"zones": big_zones(10)}, None)["zones"]
+    assert len(small) == 10 and utf16(compact(small)) <= JSON_MAX
+    found = camera_facts({"zones": big_zones(300)}, None)
+    assert found["zones"] is None
+    assert found["labels_tracked"] == [] and found["masks"] == {}  # the others are untouched
+
+
+def test_the_limit_is_on_the_compact_json_in_utf16_units():
+    """Compact JSON, non-ASCII kept as itself, and a character outside the basic plane counts two: one label of 7998 of
+    them is exactly JSON_MAX units (8002 by Python's length) and fits; one more character and it is None."""
+    label = "\U0001F697" * ((JSON_MAX - 4) // 2)
+    assert utf16(compact([label])) == JSON_MAX and len(compact([label])) < JSON_MAX
+    assert camera_facts({"objects": {"track": [label]}}, None)["labels_tracked"] == [label]
+    assert camera_facts({"objects": {"track": [label + "a"]}}, None)["labels_tracked"] is None
+
+
+def test_every_json_fact_has_the_limit(manifest, cache):
+    camera = {
+        "objects": {"track": [f"label_{index:04d}_" + "x" * 20 for index in range(600)]},
+        "zones": big_zones(300),
+        "motion": {"mask": {f"m{index}": {"coordinates": "0.1,0.1,0.9,0.1,0.9,0.9,0.1,0.9"} for index in range(500)}},
+    }
+    camera["objects"]["filters"] = {label: {"min_area": 100.5, "max_area": 20000.25, "min_ratio": 0.1234567}
+                                    for label in camera["objects"]["track"]}
+    found = camera_facts(camera, None)
+    assert [found[key] for key in ("labels_tracked", "thresholds", "zones", "masks")] == [None] * 4
+    labels = {str(index): f"label_{index:04d}_" + "x" * 20 for index in range(600)}
+    pair(cache, "mine.tflite", labelMap=labels)
+    found = facts(manifest, cache, frigate_config("/config/model_cache/mine.tflite"))
+    assert found["labels_available"] is None
+
+
+def test_an_unknown_label_list_is_none_and_a_known_one_is_the_list(manifest, cache):
+    found = facts(manifest, cache, {"detectors": {"cpu": {"type": "cpu"}}, "cameras": {}})
+    assert found["labels_available"] is None
+    pair(cache, "mine.tflite", labelMap={"0": "person"})
+    found = facts(manifest, cache, frigate_config("/config/model_cache/mine.tflite"))
+    assert found["labels_available"] == ["person"]
 
 
 def test_an_empty_or_odd_text_is_none(manifest, cache):

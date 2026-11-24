@@ -40,9 +40,9 @@ One row for each period in which these facts were the same. The primary key is `
 | `model_base` | TEXT | The Frigate+ model's base model | Empty for other models |
 | `model_type` | TEXT | The model's type, as Frigate reports it | Such as `yolonas` |
 | `model_width`, `model_height` | INTEGER | The size of the picture the model takes in, in pixels | |
-| `labels_available` | TEXT | The object labels the model can recognise | A JSON list, sorted, such as `["bicycle","car","person"]`. `[]` when the labels can't be read. |
+| `labels_available` | TEXT | The object labels the model can recognise | A JSON list, sorted, such as `["bicycle","car","person"]`. Empty (`NULL`) when the labels can't be read. |
 
-An empty column is `NULL`: the device couldn't read the fact, or it doesn't apply. A text fact longer than 128 characters is recorded as empty, never cut.
+An empty column is `NULL`: the device couldn't read the fact, or it doesn't apply. A text fact longer than 128 characters, and a JSON fact (a list of labels, the zones, the masks, the thresholds) whose JSON is longer than 16,000 characters, are recorded as empty, never cut.
 
 ## setup_camera
 
