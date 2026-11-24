@@ -24,7 +24,7 @@ ramp bridge tunnel track tracks rail tram busway bikeway cycleway greenway share
 oncoming direction flow
 car cars truck trucks lorry van vans bus buses bike bikes bicycle bicycles motorcycle motorbike scooter person people
 pedestrian pedestrians ped peds cyclist cyclists vehicle vehicles rider riders
-count counting counter speed slow fast test temp new old one two three four five six and or of the to from at on by for
+count counting counter model speed slow fast test temp new old one two three four five six and or of the to from at on by for
 with no not school loading delivery taxi
 """.split())
 
@@ -57,11 +57,15 @@ def _known(word: str) -> bool:
     return (len(word) == 1 and word.isascii()) or word in KNOWN_WORDS or word in ADDRESS_WORDS
 
 
+def _words(name: str) -> list[str]:
+    return _WORDS.findall(name.casefold())
+
+
 def check_name(name: str) -> Literal["unknown_word", "pattern"] | None:
     """"pattern" when the name looks like an address or a person's name: a number or an ordinal of three or more
     digits, an apostrophe, a shortened street kind, or an address word together with a word the lists don't know or
     an ordinal (5th). Otherwise "unknown_word" when a word isn't in the lists, and None when every word is."""
-    words = _WORDS.findall(name.casefold())
+    words = _words(name)
     numbers = [number for word in words if (number := _number(word))]
     unknown = [word for word in words if not _known(word)]
     if (
@@ -75,3 +79,20 @@ def check_name(name: str) -> Literal["unknown_word", "pattern"] | None:
     ):
         return "pattern"
     return "unknown_word" if unknown else None
+
+
+def check_title(title: str) -> Literal["pattern"] | None:
+    """"pattern" when a model's title looks like an address or a person's name: an apostrophe, a shortened street kind,
+    or an address word together with a word that is neither a number nor known. A title is a made-up name, so an
+    unknown word alone is nothing, and a number of any length is a size or a date."""
+    words = _words(title)
+    if (
+        any(mark in title for mark in _APOSTROPHES)
+        or any(word in STREET_ABBREVIATIONS for word in words)
+        or (
+            any(word in ADDRESS_WORDS for word in words)
+            and any(not _number(word) and not _known(word) for word in words)
+        )
+    ):
+        return "pattern"
+    return None

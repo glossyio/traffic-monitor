@@ -2,13 +2,13 @@
 
 import pytest
 
-from tm_control.modules.apps.name_check import ADDRESS_WORDS, KNOWN_WORDS, STREET_ABBREVIATIONS, check_name
+from tm_control.modules.apps.name_check import ADDRESS_WORDS, KNOWN_WORDS, STREET_ABBREVIATIONS, check_name, check_title
 
 
 @pytest.mark.parametrize("name", [
     "zone_north", "zone_lane_bus", "zone_capture", "zone_near", "zone_far", "zone_radar", "zone_2", "lane_12",
     "zone_a", "Zone_NORTH", "zone-north east", "zone_bus_lane", "zone_main_road", "crosswalk_north", "", "___",
-    "zone_1st", "zone_2nd", "zone_3rd", "zone_4th", "zone_22ND",
+    "zone_1st", "zone_2nd", "zone_3rd", "zone_4th", "zone_22ND", "model zone", "model_capture",
 ])
 def test_a_name_made_of_known_words_passes(name):
     assert check_name(name) is None
@@ -36,3 +36,12 @@ def test_the_lists_are_small_lower_case_and_apart():
     assert 150 <= len(KNOWN_WORDS) <= 220
     assert not KNOWN_WORDS & ADDRESS_WORDS
     assert not STREET_ABBREVIATIONS & (KNOWN_WORDS | ADDRESS_WORDS)
+
+
+@pytest.mark.parametrize("title, expected", [
+    ("yolov9s-512", None), ("mobiledet 320x320", None), ("Fall 2026 retrain", None), ("model 1420", None),
+    ("O'Brien bikes", "pattern"), ("Oak St bikes", "pattern"), ("1420 Oak Street", "pattern"),
+    ("Maple Avenue v2", "pattern"), ("street model", None), ("", None),
+])
+def test_check_title(title, expected):
+    assert check_title(title) == expected
