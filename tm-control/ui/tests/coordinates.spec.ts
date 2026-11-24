@@ -1,7 +1,6 @@
 // The Location page's coordinate helpers: the form's quick check of a pasted pair, and how places are shown.
 import { describe, expect, it } from 'vitest'
 import {
-  BEARINGS,
   FEW_DECIMALS,
   PRECISIONS,
   decimalsTyped,
@@ -12,6 +11,7 @@ import {
   isCoarser,
   parsePair,
   roundedTo,
+  startingHeadings,
 } from '../src/modules/location/coordinates'
 
 describe('parsePair', () => {
@@ -73,11 +73,6 @@ describe('distanceKm', () => {
 })
 
 describe('the choices', () => {
-  it('names the bearings, with Not set last', () => {
-    expect(BEARINGS.map((b) => b.title)).toEqual(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'Not set'])
-    expect(BEARINGS.at(-1)?.value).toBe('')
-  })
-
   it('names the precisions, coarsest first', () => {
     expect(PRECISIONS.map((p) => p.title)).toEqual([
       'No location stored',
@@ -128,5 +123,31 @@ describe('fewDecimalsWarning', () => {
     expect(fewDecimalsWarning('45.52252, -122.69120')).toBe('')
     expect(fewDecimalsWarning('')).toBe('')
     expect(fewDecimalsWarning('abc')).toBe('')
+  })
+})
+
+describe('startingHeadings', () => {
+  const NOW = [
+    { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
+  ]
+
+  it("starts each sensor at the sensor's heading in config.yml now with no place", () => {
+    expect(startingHeadings(NOW)).toEqual(NOW)
+  })
+
+  it("starts each sensor at the place's own heading where it has one, else the current one", () => {
+    const place = { headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 40 }] }
+    expect(startingHeadings(NOW, place)).toEqual([{ ...NOW[0], heading_deg: 40 }, NOW[1]])
+  })
+
+  it("keeps a place's own empty heading rather than the sensor's", () => {
+    const place = { headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: null }] }
+    expect(startingHeadings(NOW, place)[0].heading_deg).toBeNull()
+  })
+
+  it('returns copies, so changing a choice leaves the sensors alone', () => {
+    startingHeadings(NOW)[0].heading_deg = 90
+    expect(NOW[0].heading_deg).toBe(0)
   })
 })

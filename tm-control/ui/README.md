@@ -80,10 +80,11 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
   module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
   editing a place (`PlaceForm.vue`), the deploy review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
-  importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the bearing and precision choices,
+  importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the precision choices,
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
-  form's check.
+  form's check. `heading.ts` is the compass rule (`compassPoint`, `pointCentre`, `facing`, `headingChoices`) and
+  `HeadingPick.vue` the one pick that uses it.
 - The `cameras` module is the Cameras page (`CamerasPage.vue`), a camera's settings form (`CameraEdit.vue`), and `rows.ts`,
   which holds the rules the page asks of a row (`rowState`, `zonesText`, `radarChoices`, `pointChoices`) so the page and
   its actions ask the same questions. Design notes: the page is a bordered `v-expansion-panels` accordion, one panel
@@ -826,7 +827,9 @@ importing places open dialogs from this page, so they move nothing on it.
 | | 45.52, -122.69               | |
 | | Exact location               | |
 | | 45.52252, -122.69120         | |
-| | Sharing      Bearing, picam  | |
+| | Sharing      Not sharing     | |
+| | Facing, picam_h265           | |
+| | NE (40°)                     | |
 | +------------------------------+ |
 | Places                      (h6) |
 | [Add a place] [Import places]    |
@@ -843,9 +846,11 @@ importing places open dialogs from this page, so they move nothing on it.
 | | | Deployed Nov 7, 10:15 PM,  | |  newest first; the running one
 | | | running now                | |  has a blue left border
 | | | picam_h265                 | |
-| | | Facing N  Correct bearing  | |
+| | | Facing N (0°)              | |
+| | |   Correct heading          | |
 | | |   TM_RADAR_SERIAL_PORT_00  | |  indented under its camera
-| | |   Facing N  Correct bearing| |
+| | |   No heading set           | |
+| | |   Correct heading          | |
 | | | Deployed Nov 2, ... to ... | |  grey left border
 | | | picam_h265 ...             | |
 | | [Re-deploy here]             | |  by status, see below
@@ -911,7 +916,7 @@ importing places open dialogs from this page, so they move nothing on it.
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events
   and deployments once.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
-  four columns at 375 px, and each deployment has a "Correct bearing" button.
+  four columns at 375 px, and each deployment has a "Correct heading" button.
 - The list is grouped by the deploy each row came from, newest first, so a place with four deployments reads as two
   deploys of a camera and its radar, and the current one is on top on a phone. Rows that start within a second of a
   group's first row are one deploy: this version's engine starts every row of a config load at the same instant, and
@@ -921,7 +926,7 @@ importing places open dialogs from this page, so they move nothing on it.
   radar deployed with a camera is indented under it. That's order, not pairing: on a device with two cameras the
   radars sit under the last one, since the API doesn't send `camera_radar`.
 - The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place, "Re-deploy here"
-  for a used one, and "Modify deployment" for the place in use, where only bearings can change. The review's title and
+  for a used one, and "Modify deployment" for the place in use, where only headings can change. The review's title and
   its dialog's name use the same words, and its button reads "Deploy", "Re-deploy", or "Modify".
 - Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
   rounded one stored with each record. The place in use has no Delete.
@@ -943,13 +948,13 @@ importing places open dialogs from this page, so they move nothing on it.
 |  device                          |   |                                  |
 | [Coordinates                   ] |   | picam_h265                       |
 |  Paste latitude, longitude ...   |   | New deployment starts      (blue)|
-|  (under 4 decimals: a warning)   |   | Was N, now [NE  v]               |
+|  (under 4 decimals: a warning)   |   | Was N (0°), now [NE  v]          |
 | [Pick on a map]                  |   | TM_RADAR_SERIAL_PORT_00          |
 | [Use this phone's location]      |   | New deployment starts            |
 |  (HTTPS only; else one sentence) |   | Was not set, now [Not set v]     |
 | Which way each sensor faces here |   |                                  |
-| [Bearing, picam_h265         v]  |   | Stored in the database:          |
-| [Bearing, TM_RADAR_SERIAL_... v] |   | 45.0, -122.0                     |
+| [Facing, picam_h265          v]  |   | Stored in the database:          |
+| [Facing, TM_RADAR_SERIAL_...  v] |   | 45.0, -122.0                     |
 |                  [Cancel] [Save] |   | Not sharing                      |
 +----------------------------------+   | Counts from now on attach to the |
                                        | new deployment.                  |
@@ -968,18 +973,32 @@ importing places open dialogs from this page, so they move nothing on it.
   plain HTTP one sentence says so instead. It asks for the precise reading and writes it into the field at five
   decimal places, where the admin can still see and change it before saving. A refusal shows the browser's own
   reason.
-- Each sensor's bearing starts at the place's own, else at the sensor's bearing in `config.yml` now, in the form and
-  the review alike (`startingBearings`). A new place starting at "Not set" would have saved a blank bearing that the
+- Each sensor's heading starts at the place's own, else at the sensor's heading in `config.yml` now, in the form and
+  the review alike (`startingHeadings`). A new place starting at "Not set" would have saved a blank heading that the
   review then offered as the place's choice.
+- A sensor's heading is whole degrees, 0 to 359, clockwise from north; a compass point is only a way to pick one and
+  to read one, and nothing stores a point. `HeadingPick.vue` is the one eight-point pick, used by the place form, the
+  review, and the correction, so the three can't drift apart. Choosing a point gives its centre (N is 0, NE 45, and
+  so on). It lists a heading that isn't a centre first, titled by `facing` ("NE (40°)"), so a heading set elsewhere
+  (the CSV, a later page, a file someone edited) is shown as it is, and opening the pick and leaving it never rounds
+  it to a point; the Correct button stays off until the heading differs from the deployment's. The pick remembers
+  the last such heading it was given while it is mounted, so after a tap on a point the measured one is still listed
+  and can be chosen again (in the review, the row goes back to "Unchanged"). Because of that memory, the place form
+  keys each pick by the place and the correction keys its pick by the deployment: both dialogs stay mounted and are
+  reused, and an unkeyed pick would offer one place's heading for another. The review needs no key, since the page
+  mounts a new one each time it opens. The card, the
+  deployment lines, the review's "Was ...", and the import's preview all read a heading with `facing`: "NE (40°)",
+  or "Not set" (the deployment line says "No heading set"). `heading.ts` repeats the backend's compass rule
+  (`coordinates.py`), because the UI needs it to title a pick; a test holds it to the same table.
 - The review (`DeployReview.vue`) is the one step on the page that changes what's recorded, so it says the
   consequences in words, one sensor at a time: "New deployment starts" (in the heading blue) or "Unchanged", the
-  bearing it had, and a select for the one to deploy with. Moving to another place starts a new deployment for every
+  heading it had (in words, "Was NE (40°)"), and a pick for the one to deploy with. Moving to another place starts a new deployment for every
   sensor, as the deployment engine does. Then what the database will store for the place, rounded by the API, what's
   shared, and that counts from now on attach to the new deployment (only when one starts).
-- The place in use has "Modify deployment", to record a turn of the unit. There the review starts from the bearings
-  `config.yml` has now, each sensor reads "Unchanged" until its bearing changes, and Modify stays disabled until one
+- The place in use has "Modify deployment", to record a turn of the unit. There the review starts from the headings
+  `config.yml` has now, each sensor reads "Unchanged" until its heading changes, and Modify stays disabled until one
   does, with a line that says so.
-- Deploy sends every enabled sensor's bearing, so what's recorded is what the review showed. While the API waits for
+- Deploy sends every enabled sensor's heading, so what's recorded is what the review showed. While the API waits for
   Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
   dialog doesn't close it (`persistent`), so the answer isn't lost. The review then gives way to the result: the new
   deployment ids, each with Copy, or, when Node-RED hasn't reloaded the settings, a warning that the settings are
@@ -1064,15 +1083,15 @@ importing places open dialogs from this page, so they move nothing on it.
 
 - A correction is for a value entered wrong, never for a move, and both dialogs (`CorrectDialog.vue`) open by saying
   so: "Use this only if the location was entered wrong. Every record from this place will say it was at the new
-  point. If the unit moved, deploy it to the place it moved to instead." The bearing's says the same of its deployment
+  point. If the unit moved, deploy it to the place it moved to instead." The heading's says the same of its deployment
   and points to Modify deployment, and both end with
   "Copies and uploads that already left the device keep the old values." The button reads "Correct", not "Save".
 - "Correct location" shows only for a used place or the place in use that has a point: a correction needs one, and
   a place with none is planned anew. The field starts at the exact point and can't be left blank. A new point more
   than about 1 km from the old one (`distanceKm`) gets a second confirmation, with a red button, that gives the
   distance and says to deploy instead. The same point again is allowed, because correcting again is how a correction
-  whose stored rows weren't re-rounded (502) is finished; the same bearing isn't, because there's nothing to finish.
-- "Correct bearing" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
+  whose stored rows weren't re-rounded (502) is finished; the same heading isn't, because there's nothing to finish.
+- "Correct heading" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
 - The import is preview, then import. Preview sends the text as a dry run and lists the places the API read, by
   line, with the lines it couldn't read in an error above them. Import sends the same text again and is enabled only
   when the preview found places and no errors; any change to the text forgets the preview. The API creates every
@@ -1094,7 +1113,8 @@ result were checked at the same widths. The place form, the review, and the resu
   "kept only on this device, outside the database", and a line under the checkbox says what happens without it.
 - At 375 px the review's "Stored in the database: 45.0, -122.0" broke between the two numbers, which read as two
   values. The pair now stays on one line.
-- "Correct bearing" was a small button, in smaller type than the "Facing N" beside it. It's the normal size now.
+- "Correct heading" (it was "Correct bearing") was a small button, in smaller type than the "Facing N" beside it.
+  It's the normal size now.
 - At 375 px the import's example header broke inside a sensor's name; it now breaks only after a comma. The preview
   appeared below the fold, with Preview and Import scrolled away; the dialog now scrolls its content instead.
 
@@ -1110,6 +1130,16 @@ on one place, the precision panel open, and No location stored chosen:
 - "Also round the rows" read wrong for No location stored, which removes the location. It has its own words now.
 - `column-gap-2` isn't a Vuetify class, so the deployment line's gap came only from its button's padding. It's `gc-2`
   now.
+
+Headings in degrees (checked in fake mode at 375 px and 1280 px wide: the card for the place in use, a deployment's
+line with Correct heading and its dialog, the deploy review, the place form, and a pick opened on a measured heading):
+
+- At 375 px the review's row, "Was NE (40°), now" and its pick, squeezed the pick to "NE (4..." because the words
+  don't wrap. The row wraps now, so the pick drops under the words on a phone and stays beside them on a wide screen,
+  and the pick is wide enough for "NE (40°)" (11 rem, not 9).
+- Looked at and kept: a pick on a measured heading lists it first and again by its point below ("NE (40°)", then
+  "NE"), so a person can see that choosing NE changes the heading to 45. It stays listed after a point is chosen,
+  so a tap on the wrong point can be undone without Cancel.
 
 The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: the section, the confirmation, the
 "making the copy" alert, the failure alert, and the disabled button):

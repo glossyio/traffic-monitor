@@ -7,15 +7,15 @@ import ImportPlaces from '../src/modules/location/ImportPlaces.vue'
 import { fakeApi } from './fake-api'
 import { button, click, field, mountAlone } from './mount'
 
-type Bearing = components['schemas']['Bearing']
+type SensorHeading = components['schemas']['SensorHeading']
 type ImportOut = components['schemas']['ImportOut']
 type ImportRow = components['schemas']['ImportRow']
 
 const IMPORT = 'POST /api/v1/surveys/import'
 
-const SENSORS: Bearing[] = [
-  { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },
-  { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+const SENSORS: SensorHeading[] = [
+  { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+  { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
 ]
 
 const CSV = [
@@ -31,12 +31,13 @@ const ROWS: ImportRow[] = [
     description: 'Corner by the park',
     lat: 45.0,
     lon: -122.0,
-    bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' }],
+    headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 }],
   },
-  { line: 3, description: 'Bus stop on the hill', lat: null, lon: null, bearings: [] },
+  { line: 3, description: 'Bus stop on the hill', lat: null, lon: null, headings: [] },
 ]
 
-const BEARING_ERROR = 'The bearing for picam_h265 must be one of n, ne, e, se, s, sw, w, nw, or blank.'
+const HEADING_ERROR =
+  'The heading for picam_h265 must be a whole number from 0 to 359, a compass point (n, ne, e, se, s, sw, w, nw), or blank.'
 
 function mountImport() {
   return mountAlone(ImportPlaces, { sensors: SENSORS })
@@ -64,13 +65,15 @@ describe('importing places', () => {
   it("says the format, with this unit's sensor names as the columns", () => {
     const wrapper = mountImport()
     expect(wrapper.text()).toContain('description,lat,lon,picam_h265,TM_RADAR_SERIAL_PORT_00')
-    expect(wrapper.text()).toContain('n, ne, e, se, s, sw, w, nw')
+    expect(wrapper.text()).toContain(
+      'with the way it faces: a compass point (n, ne, e, se, s, sw, w, nw), whole degrees from north (0 to 359), or blank.',
+    )
     expect(wrapper.text()).toContain('Leave lat and lon blank for a place with no location.')
   })
 
   it('previews the pasted rows and the errors by line', async () => {
     const api = fakeApi(
-      importAnswers({ rows: [ROWS[0]], errors: [{ line: 3, message: BEARING_ERROR }], created: [] }),
+      importAnswers({ rows: [ROWS[0]], errors: [{ line: 3, message: HEADING_ERROR }], created: [] }),
     )
     const wrapper = mountImport()
     expect(button(wrapper, 'Preview').element.disabled).toBe(true) // nothing to preview yet
@@ -80,9 +83,9 @@ describe('importing places', () => {
     const text = wrapper.text()
     expect(text).toContain('Corner by the park')
     expect(text).toContain('45.00000, -122.00000')
-    expect(text).toContain('picam_h265 faces NE')
+    expect(text).toContain('picam_h265 faces NE (45°)')
     expect(text).toContain('Line 3')
-    expect(text).toContain(BEARING_ERROR)
+    expect(text).toContain(HEADING_ERROR)
     expect(button(wrapper, 'Import').element.disabled).toBe(true)
   })
 
