@@ -3433,6 +3433,10 @@ EVENT_COLUMNS = [
     "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
     "stationary_time", "stops", "zone_times",
 ]
+DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
+                      "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
+                      "view_distance_m", "mount"]
+MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
 
@@ -3900,12 +3904,13 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event", "watch_camera", "watch_radar"]
+    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar"]
     assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert lists["deployment"] == DEPLOYMENT_COLUMNS
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
@@ -3925,8 +3930,10 @@ def test_the_gate_holds_no_list_of_its_own():
     {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
     {key: names for key, names in upload_lists().items() if key != "watch_camera"},
     {**upload_lists(), "watch_radar": ["time", 7]},
+    {key: names for key, names in upload_lists().items() if key != "deployment"},
+    {**upload_lists(), "deployment": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
-        "no-watch-camera-list", "watch-radar-name-not-text"])
+        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -3965,6 +3972,70 @@ WATCH_VALUE = {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]}
 
 def watch_item(value):
     return {"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value}}}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_deployment_fields():
+    """A telemetry row goes out with the listed fields, the five among them, and a key that isn't listed is named
+    once as deployment.<key>, never with its value."""
+    row = {**GATE_ROW, **MOUNTING}
+    unlisted = {**row, "note": "kept-on-the-unit"}
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [unlisted], "currentDeployment": [unlisted]}}}
+    out, logged = gate({"type": "telemetry", "payload": payload})
+    assert out["payload"]["values"]["deployments"] == {"updatedDeployment": [row], "currentDeployment": [row]}
+    assert logged == [["warn", "ThingsBoard upload: left out deployment.note, which isn't on the list of what is "
+                               "shared.", False]]
+    assert "kept-on-the-unit" not in json.dumps(logged)
+
+
+@needs_node
+def test_gate_cuts_the_deployments_attribute_rows_too():
+    """Each sensor's entry is cut to the list; deploymentTopLevel is as it was."""
+    top = {"survey_id": "3f9a1c2e-si", "database_precision": "2"}
+    sensor = {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "heading_deg": "0", "id": "x-d",
+              "note": "kept-on-the-unit"}
+    sent = attributes({"deployments": {"picam_h265": sensor, "deploymentTopLevel": top}})["deployments"]
+    assert sent["deploymentTopLevel"] == top
+    assert sent["picam_h265"] == {key: value for key, value in sensor.items() if key != "note"}
+    out, logged = gate({"type": "attributes", "payload": {"deployments": {"picam_h265": sensor,
+                                                                          "deploymentTopLevel": top}}})
+    assert [text for _, text, _ in logged] == [
+        "ThingsBoard upload: left out deployment.note, which isn't on the list of what is shared."]
+    assert "kept-on-the-unit" not in json.dumps(logged)
+
+
+@needs_node
+def test_gate_drops_a_deployment_row_with_no_listed_field():
+    rows = [{"surprise": "kept-on-the-unit"}, GATE_ROW]
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": rows, "currentDeployment": [GATE_ROW]}}}
+    out, logged = gate({"type": "telemetry", "payload": payload})
+    assert out["payload"]["values"]["deployments"] == {"updatedDeployment": [GATE_ROW], "currentDeployment": [GATE_ROW]}
+    assert "kept-on-the-unit" not in json.dumps(logged)
+    sent = attributes({"deployments": {"picam_h265": {"surprise": "kept-on-the-unit"},
+                                       "deploymentTopLevel": {"survey_id": "x-si"}}})["deployments"]
+    assert set(sent) == {"deploymentTopLevel"}
+
+
+@needs_node
+def test_gate_still_re_rounds_a_cut_row():
+    """location_precision is on the list, so the row is cut first and then re-rounded by it."""
+    row = {**deployment_row(location_precision=1), **MOUNTING, "note": "kept-on-the-unit"}
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [row], "currentDeployment": [row]}}}
+    out, _ = gate({"type": "telemetry", "payload": payload}, deployment={**GATE_PLACE, "database_precision": "2"})
+    deployments = out["payload"]["values"]["deployments"]
+    for rows in deployments.values():
+        [sent] = rows
+        assert (sent["lat"], sent["lon"]) == (45.5, -122.7)
+        assert {key: sent[key] for key in MOUNTING} == MOUNTING and "note" not in sent
+
+
+def test_every_deployment_row_key_is_on_the_upload_list():
+    """What the engine's rows and the attribute's template write is all on the list, so no key is left out unseen."""
+    listed = set(upload_lists()["deployment"])
+    assert ROW_KEYS <= listed
+    template = named(json.loads(FLOWS.read_text()), "set deployment client side attribute payload")["template"]
+    written = set(re.findall(r'^\s*"(\w+)": "\{\{', template, re.M)) - {"survey_id", "database_precision"}
+    assert written and written <= listed
 
 
 @needs_node
