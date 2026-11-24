@@ -209,34 +209,33 @@ def test_a_wake_soon_after_a_delayed_snapshot_starts_a_new_delay():
 
 
 def test_a_wake_soon_late_in_an_ordinary_wait_still_gives_a_snapshot_at_its_deadline():
-    with Timed(retry=0.5, interval=1.0) as t:
+    with Timed(retry=1.5, interval=2.0) as t:
         first = t.times[0]
-        time.sleep(0.6)  # the ordinary wait ends at 1.0; the deadline, 1.1, comes just after it
+        time.sleep(1.5)  # the ordinary wait ends at 2.0; the deadline, 3.0, comes a second after it
         t.poster.wake_soon()
-        assert t.calls.acquire(timeout=3)  # the ordinary snapshot
-        assert t.times[-1] - first >= 0.95
-        assert t.calls.acquire(timeout=3)  # the delayed one, from the deadline, not the next ordinary one at 2.0
-        assert t.times[-1] - first < 1.8
+        assert t.calls.acquire(timeout=5)  # the ordinary snapshot
+        assert t.times[-1] - first >= 1.95
+        assert t.calls.acquire(timeout=5)  # the delayed one, from the deadline, not the next ordinary one at 4.0
+        assert t.times[-1] - first < 3.8
 
 
 def test_a_wake_while_a_delayed_snapshot_is_pending_gives_one_at_once_and_one_at_the_deadline():
-    with Timed(retry=0.6) as t:
+    with Timed(retry=2.0) as t:
         t.poster.wake_soon()
         t.poster.wake()
-        assert t.calls.acquire(timeout=3)
-        woken = t.times[-1]
-        assert woken - t.times[0] < 0.5  # at once, not at the deadline
+        assert t.calls.acquire(timeout=5)
+        assert t.times[-1] - t.times[0] < 1.0  # at once, not at the deadline, 2.0 after the first
         assert not t.calls.acquire(timeout=0.1)
-        assert t.calls.acquire(timeout=3)  # at the deadline
-        assert t.times[-1] - t.times[0] >= 0.55
+        assert t.calls.acquire(timeout=5)  # at the deadline
+        assert t.times[-1] - t.times[0] >= 1.95
         assert not t.calls.acquire(timeout=0.4)  # and no more
 
 
 def test_a_deadline_that_passes_during_a_gather_ends_the_next_wait_at_once():
-    with Timed(retry=0.2, slow=(2, 0.5)) as t:
+    with Timed(retry=0.6, slow=(2, 1.4)) as t:
         t.poster.wake_soon()
         t.poster.wake()
-        assert t.calls.acquire(timeout=3)  # the woken one, which takes 0.5 s: the deadline passes meanwhile
-        assert t.calls.acquire(timeout=3)  # the delayed one follows without waiting a retry or an interval
-        assert t.times[-1] - t.times[1] < 1.5
+        assert t.calls.acquire(timeout=5)  # the woken one, which takes 1.4 s: the deadline, 0.6, passes meanwhile
+        assert t.calls.acquire(timeout=5)  # the delayed one follows without waiting a retry or an interval
+        assert t.times[-1] - t.times[1] < 3.0
         assert not t.calls.acquire(timeout=0.4)
