@@ -630,8 +630,9 @@ def test_node_red_env_gains_the_internal_token_on_every_run():
 
 
 def test_node_red_env_refreshes_tm_version_on_every_run():
-    """Node-RED reports TM_VERSION in the setup history, and an existing node-red-tm.env isn't rewritten without -f,
-    so an upgraded unit would keep reporting its old version. The version isn't a secret, so the task logs."""
+    """Node-RED reports TM_VERSION in its status and the upload's device attribute, and an existing node-red-tm.env
+    isn't rewritten without -f, so an upgraded unit would keep reporting its old version. The version isn't a secret,
+    so the task logs."""
     tasks = load_role_yaml("tasks/node-red-tm_setup.yml")
     names = [task["name"] for task in tasks]
     (version,) = [task for task in tasks

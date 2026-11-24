@@ -263,7 +263,7 @@ def test_ten_failed_posts_in_a_row_log_one_warning(caplog):
         results = [poster.run_once() for _ in range(10)]
     assert results == [False] * 10
     assert [r.levelno for r in caplog.records] == [logging.WARNING]
-    assert "NodeRedError" in caplog.records[0].getMessage()
+    assert caplog.records[0].getMessage() == "The setup snapshot failed: NodeRedError"
     assert "unreachable" not in caplog.text
 
 
@@ -274,7 +274,7 @@ def test_a_recovery_logs_one_info_line_and_a_new_failure_warns_again(caplog):
     assert results == [False, False, True, False, True]
     levels = [logging.WARNING, logging.INFO, logging.WARNING, logging.INFO]
     assert [r.levelno for r in caplog.records] == levels
-    assert "NodeRedError" in caplog.records[1].getMessage()  # what had failed
+    assert caplog.records[1].getMessage() == "The setup snapshot works again (it had failed: NodeRedError)"
 
 
 def test_a_class_change_logs_again(caplog):

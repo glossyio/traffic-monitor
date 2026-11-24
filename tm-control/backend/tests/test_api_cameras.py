@@ -573,8 +573,8 @@ def test_detection_of_an_unknown_entry_is_a_404(admin):
 
 # A snapshot right after a change: every write that saves config.yml wakes the setup poster once, after the file was
 # written; the routes that add, point, re-key, or remove an entry also ask for a second snapshot a retry delay later,
-# because the first can reach Node-RED before it has reloaded config.yml. A refusal and Frigate's detection switch
-# wake nothing.
+# because the first can reach Node-RED before it has reloaded config.yml. A settings save wakes it once and asks for no
+# second one (it adds no key Node-RED could drop). A refusal and Frigate's detection switch wake nothing.
 
 
 class Wakes:

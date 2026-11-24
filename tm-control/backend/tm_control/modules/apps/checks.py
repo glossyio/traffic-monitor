@@ -429,7 +429,11 @@ def setup_history(context: Context) -> list[Check]:
     if age > SETUP_STALE_AFTER:
         return check("warn", f"The last snapshot of the setup arrived {duration(age)} ago.")
     if setup.get("complete") is not True:
-        return check("ok", "Frigate isn't answering, so the recorded setup stays as it is.")
+        return check(
+            "ok",
+            "The setup couldn't be read whole, so the recorded setup stays as it is. "
+            "Look at the Frigate check and the Node-RED configuration check.",
+        )
     return check("ok", "The model, the versions, and each camera's settings are recorded.")
 
 

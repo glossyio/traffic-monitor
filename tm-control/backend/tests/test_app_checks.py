@@ -959,9 +959,11 @@ def setup_section(apps, **setup):
         (lambda apps: setup_section(apps, received_ago=901, complete=True),
          "warn", "The last snapshot of the setup arrived 15 minutes ago."),
         (lambda apps: setup_section(apps, received_ago=890, complete=False),
-         "ok", "Frigate isn't answering, so the recorded setup stays as it is."),
+         "ok", "The setup couldn't be read whole, so the recorded setup stays as it is. "
+               "Look at the Frigate check and the Node-RED configuration check."),
         (lambda apps: setup_section(apps, received_ago=10, complete=False),
-         "ok", "Frigate isn't answering, so the recorded setup stays as it is."),
+         "ok", "The setup couldn't be read whole, so the recorded setup stays as it is. "
+               "Look at the Frigate check and the Node-RED configuration check."),
         (lambda apps: setup_section(apps, received_ago=10, complete=True),
          "ok", "The model, the versions, and each camera's settings are recorded."),
     ],

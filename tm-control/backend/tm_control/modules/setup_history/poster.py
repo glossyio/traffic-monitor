@@ -64,9 +64,9 @@ class Poster:
         with self._lock:
             before, self._failure = self._failure, failure
         if failure is not None and failure != before:
-            log.warning("The setup snapshot wasn't posted: %s", failure)
+            log.warning("The setup snapshot failed: %s", failure)
         elif failure is None and before is not None:
-            log.info("The setup snapshot is being posted again (it had failed: %s)", before)
+            log.info("The setup snapshot works again (it had failed: %s)", before)
 
     def summary(self) -> dict:
         """What the last snapshot found, for the status report: whether it was whole, and which facts the name check

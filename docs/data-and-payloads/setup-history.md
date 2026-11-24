@@ -14,7 +14,7 @@ A row says what was true from `started` until `ended`. The row in force has no `
 
 Times in these tables are Unix time in milliseconds, as in the deployment history. An event's `start_time` is in seconds, so the view compares `start_time * 1000`.
 
-A camera has a row for each key under `sensors.cameras` in [config.yml](../configuration/node-red-config.md#sensorscameras), named by that key, the same name as `events.camera`. A camera's row ends when its key leaves `config.yml`.
+A camera has a row for each key under `sensors.cameras` in [config.yml](../configuration/node-red-config.md#sensorscameras) whose Frigate camera exists, named by that key, the same name as `events.camera`. If two keys point at one Frigate camera, only the one that comes first in `config.yml` gets a row. A camera's row ends when its key leaves `config.yml`.
 
 ## setup_device
 
@@ -42,7 +42,7 @@ One row for each period in which these facts were the same. The primary key is `
 | `model_width`, `model_height` | INTEGER | The size of the picture the model takes in, in pixels | |
 | `labels_available` | TEXT | The object labels the model can recognise | A JSON list, sorted, such as `["bicycle","car","person"]`. Empty (`NULL`) when the labels can't be read. |
 
-An empty column is `NULL`: the device couldn't read the fact, or it doesn't apply. A text fact longer than 128 characters, and a JSON fact (a list of labels, the zones, the masks, the thresholds) whose JSON is longer than 16,000 characters, are recorded as empty, never cut.
+An empty column is `NULL`: the device couldn't read the fact, or it doesn't apply. A text fact longer than 128 characters, and a JSON fact (a list of labels, the zones, the masks, the thresholds) whose JSON is longer than 16,000 characters, are recorded as empty, never cut. The limits are counted as Node-RED counts them, so a character outside the basic plane, such as an emoji, counts as two.
 
 ## setup_camera
 

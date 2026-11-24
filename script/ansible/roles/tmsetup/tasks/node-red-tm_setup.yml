@@ -149,8 +149,9 @@
     line: "TM_INTERNAL_TOKEN={{ tmsetup_secrets['node_red_internal_token'] }}"
   notify: Restart node-red-tm.service
 
-# TM_VERSION is the installer's own version, which the setup history records, so an upgraded unit's env file takes it
-# on every run. It isn't a secret.
+# TM_VERSION is the installer's own version. An existing node-red-tm.env isn't rewritten without -f, so an upgraded
+# unit's Node-RED would keep reporting the old version in its status and in the upload's device attribute. The task
+# sets it on every run. It isn't a secret. (The setup history takes its version from the control app's manifest.)
 - name: TMSetup - Node-RED-TM Setup - Refresh TM_VERSION in node-red-tm.env
   become: true
   when: tmsetup_node_red_env_stat_register.stat.exists

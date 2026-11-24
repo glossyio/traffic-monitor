@@ -35,8 +35,9 @@ from tm_control.modules.detection.picker import detector_type, first_detector, r
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 
 TEXT_MAX = 128  # a longer text fact is recorded as empty, never cut
-JSON_MAX = 16000  # a JSON fact whose compact JSON is longer is recorded as empty; under the validator's 16384, which
-# leaves room for the two sides writing a number differently
+JSON_MAX = 16000  # a JSON fact whose compact JSON is longer is recorded as empty. Python and JavaScript write some
+# numbers at different lengths (very large or very small floats), and a lone surrogate is one unit here but six in
+# JavaScript's JSON, so this must stay well below the validator's MAX_JSON (16384)
 DEVICE_FACTS = (
     "tm_version", "tm_commit", "frigate_version", "unit_system", "detector", "model_id", "model_file", "model_sha256",
     "model_kind", "model_title", "model_trained_at", "model_base", "model_type", "model_width", "model_height",

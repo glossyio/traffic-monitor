@@ -82,7 +82,7 @@ The **Setup history** check, in the Apps group:
 | Result | Meaning and what to do |
 |---|---|
 | Passed: the model, the versions, and each camera's settings are recorded | A snapshot of the setup arrived in the last 15 minutes and was complete. |
-| Passed: Frigate isn't answering, so the recorded setup stays as it is | The snapshots arrive, but Frigate didn't answer, is in safe mode, or `config.yml` couldn't be read, so nothing was compared. Look at the Frigate and Node-RED configuration checks. The setup is recorded again once Frigate answers. |
+| Passed: the setup couldn't be read whole, so the recorded setup stays as it is | The snapshots arrive, but one couldn't be made whole: Frigate didn't answer, is in safe mode, or didn't say which profile is active, `config.yml` couldn't be read, or the control app failed to gather the snapshot. Nothing was compared. Look at the Frigate check and the Node-RED configuration check. The setup is recorded again once the snapshot can be read whole. |
 | Passed: waiting for the first snapshot | Node-RED started less than 10 minutes ago. |
 | Warning: no snapshot has arrived since Node-RED started | Nothing has reached Node-RED for 10 minutes. The control app sends a snapshot every five minutes, so look at the Services group for the control app, and if it stays this way, [download the diagnostics](#download-diagnostics). |
 | Warning: the last snapshot arrived a while ago | The same, after a snapshot had arrived. Nothing is lost: the rows stay as they are, and the next snapshot brings them up to date. |

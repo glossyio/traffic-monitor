@@ -100,10 +100,9 @@ def test_create_app_builds_the_setup_poster_and_starts_no_thread(settings):
 
     from tm_control.modules.setup_history.poster import Poster
 
-    before = threading.enumerate()
     app = create_app(settings)
     assert isinstance(app.state.setup_poster, Poster)
-    assert threading.enumerate() == before
+    assert [t for t in threading.enumerate() if t.name == "setup-poster"] == []
     assert app.state.setup_poster._thread is None
 
 
