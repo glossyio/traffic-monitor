@@ -1326,6 +1326,10 @@ def test_database_copy_needs_a_located_place(admin):
     grants = len(admin.app.state.download_grants)
     r = admin.post(COPY, headers=JSON_HEADERS)
     assert r.status_code == 409 and r.json()["error"]["code"] == "no_exact_locations"
+    assert r.json()["error"]["message"] == (
+        "No place this device has been at has an exact location, so a copy would hold nothing more than the "
+        "download without the box ticked."
+    )
     assert admin.app.state.nodered.exact_copies == {}
     assert len(admin.app.state.download_grants) == grants
     assert not [row for row in audit_rows(admin) if row[0] == "survey.database_copy"]

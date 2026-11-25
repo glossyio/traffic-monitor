@@ -43,6 +43,14 @@ def test_create_and_list_order(places):
     assert places.get("ffffffff-si") is None
 
 
+def test_located_lists_the_places_the_device_has_been_at_with_a_location(places):
+    _create(places, "00000001-si", "in_use", now=500, lat=45.0, lon=-122.0)
+    _create(places, "00000002-si", "used", now=100, lat=45.0, lon=-122.0)
+    _create(places, "00000003-si", "used", now=200)
+    _create(places, "00000004-si", "planned", now=300, lat=45.0, lon=-122.0)
+    assert [s.id for s in places.located()] == ["00000001-si", "00000002-si"]
+
+
 def test_only_one_place_is_in_use(places):
     _create(places, "00000001-si", "in_use", now=100)
     _create(places, "00000002-si", "planned", now=200)

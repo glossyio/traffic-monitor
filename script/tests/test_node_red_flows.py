@@ -21,6 +21,7 @@ sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
 from tm_control.modules.location import mounting  # noqa: E402
 from tm_control.modules.location.coordinates import read_heading  # noqa: E402
+from tm_control.modules.sharing.download import DATABASE_FILES  # noqa: E402
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -54,6 +55,16 @@ def test_database_download_tars_a_copy():
     assert "VACUUM INTO" in one("copy database first?")["func"]
     assert set(one("catch database copy")["scope"]) == {copy["id"], one("copy database first?")["id"],
                                                         one("write exact locations into the copy")["id"]}
+
+
+def test_the_control_app_names_the_database_as_the_download_flow_does():
+    """The plain database download's link is for the name "Validate filenames, setup tar" takes for the whole database,
+    and that name is the file the status reports the size of."""
+    flows = json.loads(FLOWS.read_text())
+    [validate] = [node for node in flows if node.get("name") == "Validate filenames, setup tar"]
+    assert f'files == "{DATABASE_FILES}"' in validate["func"]
+    env = (FLOWS.parents[1] / "node-red-tm.env.j2").read_text().splitlines()
+    assert f"TM_DATABASE_PATH_TMDB={DATABASE_FILES}" in env
 
 
 def test_download_names_cannot_become_tar_options():

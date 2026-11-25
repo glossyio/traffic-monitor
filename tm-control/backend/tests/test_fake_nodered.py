@@ -191,3 +191,9 @@ def test_fake_correct_mounting_accepts_the_limits_themselves(fake):
     ):
         fake.correct_mounting(row["id"], values)
         assert [row[key] for key in FIVE] == list(values.values())
+
+
+def test_the_report_has_the_database_size(fake):
+    report = fake.report()
+    assert report["database_bytes"] == FakeNodeRed.DATABASE_BYTES == 734_003_200
+    assert list(report)[:3] == ["status", "schema_version", "database_bytes"]

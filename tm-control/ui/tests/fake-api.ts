@@ -390,6 +390,7 @@ export const SHARING_STATE: SharingState = {
   precision: '1',
   writable: true,
   server: { state: 'off', at: null },
+  download: null,
 }
 
 export function sharingState(changes: Partial<SharingState> = {}): SharingState {
