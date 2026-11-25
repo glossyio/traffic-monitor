@@ -395,3 +395,40 @@ def test_a_refused_delete_logs_no_ticket(admin, caplog):
     logged = [record.getMessage() for record in caplog.records if record.name == "tm_control.core.csrf"]
     assert logged == ["403 cross-site check (not JSON or a byte stream) on DELETE"]
     assert admin.get(f"{base(found)}/clean.jpg").status_code == 200
+
+
+# The pose
+
+
+def write_pose(client, lines: str):
+    """Put mounting keys under the seeded camera's `deployment:` block, as an operator's hand edit would."""
+    path = client.app.state.config_path
+    text = path.read_text()
+    marker = "        picam_h265:\n"
+    assert text.count(marker) == 1
+    path.write_text(text.replace(marker, marker + lines, 1))
+    client.app.state.nodered.after_config_write()
+
+
+def test_a_reference_takes_the_pose_from_the_file(admin):
+    write_pose(admin, "            deployment:\n                heading_deg: 40\n                height_m: 3.66\n"
+                      "                pitch_deg: 15\n                mount: pole\n")
+    written = data(admin, taken(admin), location=False)
+    assert written["pose"] == {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": None,
+                               "mount": "pole", "hfov_deg": None}
+    zip_files = files(package(admin, taken(admin), location=False))
+    svg = next(content for name, content in zip_files.items() if name.endswith(".svg")).decode()
+    assert "facing NE (40°)" in svg
+
+
+def test_a_camera_with_no_mounting_has_a_null_pose_and_no_facing(admin):
+    path = admin.app.state.config_path   # the seeded file's top-level block holds a heading; take it out
+    text = path.read_text()
+    assert text.count("    heading_deg: 0\n") == 1
+    path.write_text(text.replace("    heading_deg: 0\n", ""))
+    admin.app.state.nodered.after_config_write()
+    zip_files = files(package(admin, taken(admin), location=False))
+    written = next(json.loads(content) for name, content in zip_files.items() if name.endswith(".json"))
+    assert written["pose"] is None and "pose" in written
+    svg = next(content for name, content in zip_files.items() if name.endswith(".svg")).decode()
+    assert "facing" not in svg

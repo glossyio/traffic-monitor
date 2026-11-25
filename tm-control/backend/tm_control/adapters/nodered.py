@@ -6,6 +6,7 @@ status and never what was sent or answered, because that can hold a survey's coo
 """
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
@@ -19,6 +20,7 @@ from tm_control.adapters.yamlfile import (  # ConfigRead: what config() returns,
 BASE = "http://127.0.0.1:1880/tm-internal"
 STATUS_URL = f"{BASE}/status"
 TOKEN_HEADER = "X-TM-Internal-Token"
+MOUNTING_KEYS = ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")  # what a correction carries
 
 
 def status(token: str) -> tuple[int | None, dict | None]:
@@ -124,6 +126,24 @@ class NodeRed:
         self._call(
             "POST", f"/deployments/{quote(deployment_id, safe='')}/heading", body={"heading_deg": heading_deg}
         )
+
+    def correct_mounting(self, deployment_id: str, values: Mapping) -> None:
+        """Rewrite one deployment row's heading, tilt, height, view distance, and mount in place; a value of None clears
+        it. `values` must hold all five (a KeyError for a missing one, so a left-out key is never sent as a clear);
+        anything else in it is not sent."""
+        self._call(
+            "POST",
+            f"/deployments/{quote(deployment_id, safe='')}/mounting",
+            body={key: values[key] for key in MOUNTING_KEYS},
+        )
+
+    def recorded(self, survey_id: str) -> dict[str, bool | None]:
+        """For each open deployment of the survey: whether it has recorded traffic (True or False), or None when
+        Node-RED can't say (a sensor type with no rule)."""
+        found = self._object(f"/surveys/{quote(survey_id, safe='')}/recorded").get("deployments")
+        if not isinstance(found, dict) or not all(value is None or isinstance(value, bool) for value in found.values()):
+            raise NodeRedError("unexpected")
+        return dict(found)
 
     def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
         """Hand Node-RED the exact locations of places for one database copy, under a ticket it keeps for ten minutes."""

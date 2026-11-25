@@ -53,6 +53,23 @@
         "stops",
         "zone_times"
     ],
+    "deployment": [
+        "id",
+        "entryStartDateTime",
+        "entryEndDateTime",
+        "lat",
+        "lon",
+        "sensorType",
+        "sensorName",
+        "deviceName",
+        "survey_id",
+        "location_precision",
+        "heading_deg",
+        "pitch_deg",
+        "height_m",
+        "view_distance_m",
+        "mount"
+    ],
     "watch_camera": [
         "time",
         "camera",

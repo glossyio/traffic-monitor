@@ -1,4 +1,5 @@
-"""The places store: the unit's surveys, the way each of their sensors faced, and the corrections made to them.
+"""The places store: the unit's surveys, the way each of their sensors faced and how it was mounted, and the
+corrections made to them.
 
 This is the exact history (design section 5): coordinates, descriptions and reasons are kept here at full precision
 and nowhere else but config.yml. Nothing in this module logs, audits or puts any of them in an error message.
@@ -10,11 +11,18 @@ from pydantic import BaseModel, Field
 
 from tm_control.core.auth import _reading, _timestamp, _writing
 from tm_control.core.state import State
+from tm_control.modules.location.mounting import Mounting
 
 STATUSES = ("planned", "in_use", "used")
 SOURCES = ("ui", "csv", "default", "imported_config", "imported_backup")
 
 _SURVEY_COLUMNS = "id, description, lat, lon, status, source, created_at, updated_at"
+_MOUNTING_COLUMNS = ("pitch_deg", "height_m", "view_distance_m", "measured", "mount")  # beside heading_deg
+_HOLDS_THE_FOUR = "(pitch_deg IS NOT NULL OR height_m IS NOT NULL OR view_distance_m IS NOT NULL OR mount IS NOT NULL)"
+_MOUNTING_SELECT = (
+    "SELECT sensor_type, sensor_name, heading_deg, pitch_deg, height_m, view_distance_m, measured, mount "
+    "FROM survey_sensors WHERE survey_id = ?"
+)
 # In use first, then planned (newest first), then used (most recently changed first).
 _LIST_ORDER = """
     ORDER BY CASE status WHEN 'in_use' THEN 0 WHEN 'planned' THEN 1 ELSE 2 END,
@@ -66,8 +74,9 @@ def _surveys(con, where: str = "", args: tuple = ()) -> list[Survey]:
 
 
 # `list` is a method of Places, so inside the class body the name no longer means the builtin; before Python 3.14
-# evaluates annotations lazily, `list[SensorHeading]` in a signature below it would fail.
+# evaluates annotations lazily, `list[SensorHeading]` or `list[Mounting]` in a signature below it would fail.
 _HeadingList = list[SensorHeading]
+_MountingList = list[Mounting]
 
 
 class Places:
@@ -126,12 +135,27 @@ class Places:
                 "UPDATE surveys SET description = ?, lat = ?, lon = ?, updated_at = ? WHERE id = ?",
                 (description, lat, lon, _timestamp(), survey_id),
             )
+            kept_columns = (*_MOUNTING_COLUMNS, "unconfirmed")
+            kept = {
+                (row["sensor_type"], row["sensor_name"]): tuple(row[column] for column in kept_columns)
+                for row in con.execute(
+                    f"SELECT sensor_type, sensor_name, {', '.join(kept_columns)} FROM survey_sensors "
+                    "WHERE survey_id = ?", (survey_id,)
+                )
+            }
             con.execute("DELETE FROM survey_sensors WHERE survey_id = ?", (survey_id,))
             _insert_headings(con, survey_id, headings)
+            for (sensor_type, sensor_name), values in kept.items():  # a sensor that stays keeps its other four
+                con.execute(
+                    f"UPDATE survey_sensors SET {', '.join(f'{column} = ?' for column in kept_columns)} "
+                    "WHERE survey_id = ? AND sensor_type = ? AND sensor_name = ?",
+                    (*values, survey_id, sensor_type, sensor_name),
+                )
             return _surveys(con, "WHERE id = ?", (survey_id,))[0]
 
     def set_in_use(self, survey_id: str, now: float | None = None) -> None:
-        """Make this place the one in use; the previous one becomes used."""
+        """Make this place the one in use; the previous one becomes used. A place that wasn't in use has each row that
+        holds any of the other four marked unconfirmed: a move records none of them until a save confirms them."""
         at = _timestamp(now)
         with _writing(self.state) as con:
             row = con.execute("SELECT status FROM surveys WHERE id = ?", (survey_id,)).fetchone()
@@ -142,6 +166,9 @@ class Places:
             con.execute("UPDATE surveys SET status = 'used', updated_at = ? WHERE status = 'in_use' AND id != ?",
                         (at, survey_id))
             con.execute("UPDATE surveys SET status = 'in_use', updated_at = ? WHERE id = ?", (at, survey_id))
+            con.execute(
+                f"UPDATE survey_sensors SET unconfirmed = 1 WHERE survey_id = ? AND {_HOLDS_THE_FOUR}", (survey_id,)
+            )
 
     def set_point(self, survey_id: str, lat: float | None, lon: float | None, now: float | None = None) -> None:
         with _writing(self.state) as con:
@@ -151,7 +178,8 @@ class Places:
             )
 
     def set_heading(self, survey_id: str, sensor_type: str, sensor_name: str, heading_deg: int | None) -> None:
-        """Replace one sensor's heading in place (so its order among the place's sensors is kept); None for none."""
+        """Replace one sensor's heading in place (so its order among the place's sensors is kept); None for none. The
+        other four, and whether they are confirmed, stay as they are."""
         with _writing(self.state) as con:
             cursor = con.execute(
                 "UPDATE survey_sensors SET heading_deg = ? WHERE survey_id = ? AND sensor_type = ? AND sensor_name = ?",
@@ -160,6 +188,41 @@ class Places:
             if cursor.rowcount == 0:
                 new = SensorHeading(sensor_type=sensor_type, sensor_name=sensor_name, heading_deg=heading_deg)
                 _insert_headings(con, survey_id, [new])
+
+    def mountings(self, survey_id: str) -> _MountingList:
+        """The place's sensors with how each is mounted, as stored, confirmed or not, in the order they were
+        inserted."""
+        with _reading(self.state) as con:
+            return [Mounting(**dict(row)) for row in con.execute(f"{_MOUNTING_SELECT} ORDER BY rowid", (survey_id,))]
+
+    def unconfirmed(self, survey_id: str) -> _MountingList:
+        """The place's sensors whose other four wait to be confirmed (see set_in_use), as stored, in the order they
+        were inserted."""
+        with _reading(self.state) as con:
+            return [
+                Mounting(**dict(row))
+                for row in con.execute(f"{_MOUNTING_SELECT} AND unconfirmed = 1 ORDER BY rowid", (survey_id,))
+            ]
+
+    def set_mounting(self, survey_id: str, mounting: Mounting) -> None:
+        """Replace one sensor's heading and the other four in place (so its order among the place's sensors is kept),
+        inserting the row when the sensor has none. What it stores is confirmed."""
+        values = (
+            mounting.heading_deg, mounting.pitch_deg, mounting.height_m, mounting.view_distance_m, mounting.measured,
+            mounting.mount,
+        )
+        with _writing(self.state) as con:
+            cursor = con.execute(
+                "UPDATE survey_sensors SET heading_deg = ?, pitch_deg = ?, height_m = ?, view_distance_m = ?, "
+                "measured = ?, mount = ?, unconfirmed = 0 WHERE survey_id = ? AND sensor_type = ? AND sensor_name = ?",
+                (*values, survey_id, mounting.sensor_type, mounting.sensor_name),
+            )
+            if cursor.rowcount == 0:
+                con.execute(
+                    "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg, pitch_deg, "
+                    "height_m, view_distance_m, measured, mount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (survey_id, mounting.sensor_type, mounting.sensor_name, *values),
+                )
 
     def rename_sensor(self, sensor_type: str, old: str, new: str) -> None:
         """Move every place's heading for a sensor to its new name, keeping each row's place in the order. A place

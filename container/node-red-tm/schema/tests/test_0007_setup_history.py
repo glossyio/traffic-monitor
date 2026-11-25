@@ -57,7 +57,7 @@ def test_0007_adds_the_two_tables_and_nothing_else(tmp_path):
     (migrations / "0007_setup_history.sql").write_text((SCHEMA_DIR / "migrations" / "0007_setup_history.sql").read_text())
     assert migrate("--db", db_path, "--migrations", migrations, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == 7
-    assert tables(db_path) == ALL_TABLES
+    assert tables(db_path) == set(before) | {"setup_device", "setup_camera"}
     assert {"setup_device", "setup_camera"} <= ALL_TABLES - BASELINE_TABLES
     for table, expected in (("setup_device", SETUP_DEVICE), ("setup_camera", SETUP_CAMERA)):
         info = query(db_path, f"PRAGMA table_info({table})")

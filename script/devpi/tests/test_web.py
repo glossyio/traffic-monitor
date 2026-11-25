@@ -25,9 +25,10 @@ from pathlib import Path
 import pytest
 import yaml
 from devpi_checks import (API, TM_INTERNAL_STATUS, UNCLAIMED, NoRedirect, Redacted, broker_login, db_query,
-                          detector_name, entered_secret_states, is_claimed, places_state, read_root_file,
-                          request_from_this_machine, require_pii_free, retry_after, role_vars, session,
-                          set_secret_table, status_checks, tm_internal_answer, tm_internal_token, tm_login_or_none)
+                          detector_name, entered_secret_states, is_claimed, mounting_state, places_state,
+                          read_root_file, request_from_this_machine, require_pii_free, retry_after, role_vars,
+                          session, set_secret_table, status_checks, tm_internal_answer, tm_internal_token,
+                          tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
 SECRETS_DIR = role_vars()["tmsetup_secrets_dir"]
@@ -1036,6 +1037,8 @@ VIEWER_ACTIONS = [
     ("GET", f"{API}/cameras/picam_h265/reference/made-up-ticket/clean.jpg", 403),
     ("GET", f"{API}/cameras/picam_h265/reference/made-up-ticket/package?location=false", 403),
     ("DELETE", f"{API}/cameras/picam_h265/reference/made-up-ticket", 403),
+    # The place's id is made up: require_admin answers before the route looks for the place
+    ("PUT", f"{API}/surveys/made-up-place/mounting", 403),
     ("GET", f"{API}/status", 200),
     ("GET", f"{API}/services", 200),
     ("GET", f"{API}/system/info", 200),
@@ -1516,6 +1519,75 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
     assert len(in_use) == 1 and state.get("in_use") == in_use[0], (
         f"GET {API}/surveys: in_use is {state.get('in_use')!r} and the places in use are {in_use}")
     assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
+
+
+# The keys of one sensor in GET and PUT /surveys/<place>/mounting (SensorMounting in the Location module's router)
+MOUNTING_SENSOR_KEYS = {
+    "sensor_type", "sensor_name", "heading_deg", "pitch_deg", "height_m", "view_distance_m", "measured", "mount",
+    "camera", "same_as_camera", "deployment_id", "recorded", "previous",
+}
+# What a PUT sends back for each sensor: the five facts and `measured`, and which sensor it is
+MOUNTING_SENT_KEYS = ("sensor_type", "sensor_name", "heading_deg", "pitch_deg", "height_m", "view_distance_m",
+                      "measured", "mount")
+# The keys of one usual mount in the answer's `mounts`
+MOUNT_KEYS = {"key", "title", "height_m", "pitch_deg"}
+
+
+def test_mounting_needs_an_admin(address, admin_session, viewer_session):
+    """How each sensor is mounted is for admins: a viewer's read and save of the place in use's mounting get
+    require_admin's 403, and the admin's read answers 200. The viewer's save is a dry run with an empty list, so it
+    would change nothing if it were let through."""
+    place, _ = mounting_state(address, admin_session)
+    path = f"{API}/surveys/{place}/mounting"
+    for method, body in (("GET", None), ("PUT", {"sensors": [], "dry_run": True})):
+        refusal = admin_refusal(request_from_this_machine(address, path, method, viewer_session, body))
+        assert refusal == (403, ADMIN_ONLY), (
+            f"{method} {API}/surveys/<place in use>/mounting with a viewer session (status, message)")
+
+
+def test_mounting_lists_every_enabled_sensor(address, admin_session):
+    """GET /surveys/<place in use>/mounting lists each enabled sensor with the keys of SensorMounting and the usual
+    mounts with theirs, and says whether Node-RED answered. Each sensor appears once."""
+    _, state = mounting_state(address, admin_session)
+    assert isinstance(state.get("nodered"), bool), "GET .../mounting: nodered isn't true or false"
+    wrong = [f"{sensor.get('sensor_type')}.{sensor.get('sensor_name')}: {sorted(set(sensor) ^ MOUNTING_SENSOR_KEYS)}"
+             for sensor in state["sensors"] if not isinstance(sensor, dict) or set(sensor) != MOUNTING_SENSOR_KEYS]
+    assert not wrong, f"GET .../mounting: sensors whose keys differ from SensorMounting's (the difference): {wrong}"
+    names = [(sensor["sensor_type"], sensor["sensor_name"]) for sensor in state["sensors"]]
+    assert len(names) == len(set(names)), f"GET .../mounting lists a sensor more than once: {names}"
+    mounts = state.get("mounts")
+    assert isinstance(mounts, list) and [mount.get("key") for mount in mounts] == ["tripod", "pole", "window"], (
+        "GET .../mounting: mounts aren't tripod, pole, and window")
+    assert all(set(mount) == MOUNT_KEYS for mount in mounts), (
+        f"GET .../mounting: a mount's keys aren't {sorted(MOUNT_KEYS)}")
+
+
+def test_a_mounting_dry_run_changes_nothing(address, admin_session):
+    """Sending every sensor's values back as they are, as a dry run, answers saved: false with no change, no question,
+    no new deployment, and the place's deployments are the same before and after. Skips while Node-RED isn't
+    answering, because the deployments can't be listed then."""
+    place, state = mounting_state(address, admin_session)
+    if not state.get("nodered"):
+        pytest.skip("Node-RED didn't answer GET .../mounting")
+
+    def deployment_ids():
+        answer = request_from_this_machine(address, f"{API}/surveys/{place}/deployments", cookie=admin_session)
+        found = answer.json() if answer.status == 200 else None
+        rows = found.get("deployments") if isinstance(found, dict) else None
+        assert isinstance(rows, list), f"GET {API}/surveys/<place in use>/deployments answered HTTP {answer.status}"
+        return sorted(row.get("id") for row in rows)
+
+    before = deployment_ids()
+    sent = [{key: sensor[key] for key in MOUNTING_SENT_KEYS} for sensor in state["sensors"]]
+    answer = request_from_this_machine(address, f"{API}/surveys/{place}/mounting", "PUT", admin_session,
+                                       {"sensors": sent, "dry_run": True})
+    result = answer.json() if answer.status == 200 else None
+    assert isinstance(result, dict), (
+        f"the dry run of PUT {API}/surveys/<place in use>/mounting answered HTTP {answer.status}")
+    found = {key: result.get(key) for key in ("saved", "changes", "ask", "suggested", "new_deployments")}
+    assert found == {"saved": False, "changes": [], "ask": False, "suggested": None, "new_deployments": []}, (
+        "the dry run's (saved, changes, ask, suggested, new_deployments)")
+    assert deployment_ids() == before, "the place's deployments differ after a dry run"
 
 
 def test_surveys_name_the_roles_map_sources(address, admin_session):

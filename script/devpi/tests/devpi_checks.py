@@ -410,6 +410,23 @@ def places_state(address, cookie, wait=30):
         time.sleep(2)
 
 
+def mounting_state(address, cookie):
+    """The place in use's mounting (GET /surveys/<id>/mounting, admin only) as (the place's id, the answer as a dict).
+
+    Fails, without showing the body, when the unit has no place in use or the answer isn't a mounting state. The
+    five facts hold no coordinate, name, or description, so a failure may show them; the place's id isn't one either.
+    """
+    place = places_state(address, cookie).get("in_use")
+    if not isinstance(place, str) or not place:
+        pytest.fail(f"GET {API}/surveys names no place in use", pytrace=False)
+    answer = request_from_this_machine(address, f"{API}/surveys/{place}/mounting", cookie=cookie)
+    state = answer.json() if answer.status == 200 else None
+    if not isinstance(state, dict) or not isinstance(state.get("sensors"), list):
+        pytest.fail(f"GET {API}/surveys/<place in use>/mounting answered HTTP {answer.status}, not a mounting state",
+                    pytrace=False)
+    return place, state
+
+
 def tm_internal_token(host):
     """Node-RED's internal token, which tm-control sends with each read of 127.0.0.1:1880/tm-internal/status, read as
     root and Redacted. Never print it; only tests on pii_free units read it."""

@@ -86,6 +86,8 @@ In **Modify deployment**, the review starts with each sensor's heading as it is,
 
     If Node-RED hasn't loaded the new settings within about 20 seconds, the page says the settings are saved and the deployments appear once Node-RED loads them. If the connection drops while the page waits, it says the settings may already be saved. In both cases, close the dialog and check the place in the list before you deploy again.
 
+Deploying at another place records none of a sensor's tilt, height, distance, or mount, at a place the unit was at before just as at a new one, because the unit was taken down and put up again. **Modify deployment** keeps them, because the unit stayed where it was. The sensors have none of the four until you record them (see [How a sensor is mounted](../configuration/node-red-config.md#how-a-sensor-is-mounted)). At a place used before, the control app keeps the values last saved for each sensor there and offers them, and they are recorded when someone saves them, which for now is a save through the control app's API. There is no way to dismiss them: they are offered until a save records that sensor's mounting. A value typed into `config.yml` by hand isn't remembered. The heading is the one you choose in the review, which starts from the place's last one.
+
 A move usually also needs the camera's zones adjusted; see [First-time setup](../setup-guide.md#3-adjust-the-zones).
 
 ## Correct a wrong location or heading

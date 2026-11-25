@@ -14,6 +14,7 @@ import tempfile
 import threading
 import time
 import uuid as uuid_module
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -497,6 +498,7 @@ class FakeNodeRed(NodeRed):
     """
 
     SCHEMA_VERSION = 2
+    RECORDS_AFTER = 30.0  # seconds after which a camera's or a radar's open row counts as having recorded traffic
 
     def __init__(self, config_path: Path):
         super().__init__("fake")
@@ -539,10 +541,11 @@ class FakeNodeRed(NodeRed):
             return  # as init-config: a file that doesn't load leaves the previous config in place
         self._deployment = config.deployment()
         self._upload = config.upload().enabled
-        self._engine(self._deployment, config.sensors(), config.listed_sensors())
+        self._engine(self._deployment, config.mountings(), config.listed_sensors())
 
     def _engine(self, place, sensors, listed) -> None:
         from tm_control.modules.location.coordinates import round_half_away
+        from tm_control.modules.location.mounting import FIELDS
 
         places = {"none": None, "1": 1, "2": 2}[place.precision]
         now = int(time.time() * 1000)
@@ -559,11 +562,11 @@ class FakeNodeRed(NodeRed):
 
         stored = location(place.lat, place.lon, places)
 
-        def insert(sensor, survey_id, heading_deg):
+        def insert(sensor, survey_id):
             row = {
                 "id": f"{now}-{secrets.token_hex(4)}-d", "entryStartDateTime": now, "entryEndDateTime": None,
-                **stored, "heading_deg": heading_deg, "sensorType": sensor.sensor_type,
-                "sensorName": sensor.sensor_name, "survey_id": survey_id,
+                **stored, "sensorType": sensor.sensor_type, "sensorName": sensor.sensor_name, "survey_id": survey_id,
+                **{key: getattr(sensor, key) for key in FIELDS},
             }
             self.rows.append(row)
 
@@ -573,19 +576,22 @@ class FakeNodeRed(NodeRed):
                  and (row["sensorType"], row["sensorName"]) == (sensor.sensor_type, sensor.sensor_name)),
                 key=lambda row: row["entryStartDateTime"], reverse=True,
             )
-            want_survey, want_heading = place.survey_id, sensor.heading_deg
+            want_survey = place.survey_id
             for older in open_rows[1:]:  # 1. one open row per sensor
                 older["entryEndDateTime"] = now
             row = open_rows[0] if open_rows else None
             if row is None:  # 2. no open row
-                insert(sensor, want_survey, want_heading)
+                insert(sensor, want_survey)
                 continue
-            same_heading = _heading_of(row.get("heading_deg")) == want_heading
-            if want_survey is not None and row["survey_id"] is None and same_heading:  # 4. adopt
+            # the heading as the engine reads a row's, the other four as the row has them (none for a row from before)
+            same_mounting = _heading_of(row.get("heading_deg")) == sensor.heading_deg and all(
+                row.get(key) == getattr(sensor, key) for key in FIELDS[1:]
+            )
+            if want_survey is not None and row["survey_id"] is None and same_mounting:  # 4. adopt
                 row.update(stored, survey_id=want_survey)
-            elif want_survey is not None and (row["survey_id"] != want_survey or not same_heading):  # 5. new
+            elif want_survey is not None and (row["survey_id"] != want_survey or not same_mounting):  # 5. new
                 row["entryEndDateTime"] = now
-                insert(sensor, want_survey, want_heading)
+                insert(sensor, want_survey)
             elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
                 row.update(location(row["lat"], row["lon"], places))
 
@@ -713,3 +719,38 @@ class FakeNodeRed(NodeRed):
             for row in self.rows:
                 if row["id"] == deployment_id:
                     row["heading_deg"] = heading
+
+    def correct_mounting(self, deployment_id: str, values: Mapping) -> None:
+        """What the flows' validator refuses is refused: a body without all five keys, a heading that isn't a whole
+        number from 0 to 359, a number outside its limits once rounded (the limits are mounting.py's), a mount that
+        isn't a key. A number is stored rounded."""
+        from tm_control.modules.location.coordinates import DEPLOYMENT_ID
+        from tm_control.modules.location.mounting import FIELDS, read
+
+        if not isinstance(deployment_id, str) or not DEPLOYMENT_ID.fullmatch(deployment_id) \
+                or not isinstance(values, Mapping) or any(key not in values for key in FIELDS):
+            raise NodeRedError("bad_request", 400)
+        settled = read("", "", values)
+        found = {"heading_deg": _heading_of(values["heading_deg"])}
+        found.update({key: getattr(settled, key) for key in FIELDS[1:]})
+        if any(values[key] is not None and found[key] is None for key in FIELDS):
+            raise NodeRedError("bad_request", 400)
+        self._watch()
+        with self._lock:
+            for row in self.rows:
+                if row["id"] == deployment_id:
+                    row.update(found)
+
+    def recorded(self, survey_id: str) -> dict[str, bool | None]:
+        """Each open deployment of the survey: True once it has been open RECORDS_AFTER seconds, for a camera or a radar
+        (no event or reading is ever kept here, so age stands in for traffic); None for any other sensor."""
+        self._check_survey(survey_id)
+        self._watch()
+        now = time.time()
+        with self._lock:
+            return {
+                row["id"]: now - row["entryStartDateTime"] / 1000 >= self.RECORDS_AFTER
+                if row["sensorType"] in ("cameras", "radars") else None
+                for row in self.rows
+                if row["survey_id"] == survey_id and row["entryEndDateTime"] is None
+            }

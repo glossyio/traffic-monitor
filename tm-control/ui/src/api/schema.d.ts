@@ -714,9 +714,13 @@ export interface paths {
         /**
          * Deploy Place
          * @description Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
-         *     out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.
+         *     out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to
+         *     another place also removes each sensor's other four from the file, at a place used before as at a new one: the
+         *     store keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a
+         *     mounting save.
          *
-         *     Node-RED not answering isn't an error: the file is written, and `reloaded` is false.
+         *     Node-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see
+         *     _reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.
          */
         post: operations["deploy_place_api_v1_surveys__survey_id__deploy_post"];
         delete?: never;
@@ -778,7 +782,9 @@ export interface paths {
          * Correct Location
          * @description Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,
          *     and Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed
-         *     and the rows didn't; correcting again with the same pair re-rounds them.
+         *     and the rows didn't; correcting again with the same pair re-rounds them. The reconcile runs first (see
+         *     _reconciled), and for the place in use a file that no longer names it by the time the lock is held is refused (409
+         *     config_changed).
          */
         post: operations["correct_location_api_v1_surveys__survey_id__location_post"];
         delete?: never;
@@ -803,6 +809,42 @@ export interface paths {
          *     Node-RED doesn't answer (decision 12).
          */
         post: operations["correct_heading_api_v1_surveys__survey_id__deployments__deployment_id__heading_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/mounting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Place Mounting
+         * @description How each enabled sensor is mounted at the place in use, as config.yml has it (with which of tilt and distance
+         *     was measured, from the store), each sensor's `previous`, and the usual mounts. Node-RED not answering isn't an
+         *     error: `nodered` is false and no sensor has a deployment or a recorded.
+         */
+        get: operations["place_mounting_api_v1_surveys__survey_id__mounting_get"];
+        /**
+         * Save Mounting
+         * @description Check (dry_run) or save how the sensors are mounted at the place in use; a sensor the body leaves out keeps its
+         *     values, and nothing is written for it: not its row, its block in config.yml, or its stored mounting. The answer
+         *     lists what changed, whether "Did the unit move or turn?" must be answered (409 answer_needed for a save without
+         *     `moved`), the answer chosen in advance, and which sensors would start a new deployment.
+         *
+         *     A save corrects the open row of each sensor whose change is corrected in place, then writes config.yml, then the
+         *     store, so Node-RED starts a deployment only for a sensor that moved. A refused correction or file save puts the
+         *     rows already corrected back. A sensor the save writes has its stored values confirmed, so its `previous` is null
+         *     from then on. A save is refused (502) while Node-RED doesn't answer; a dry run then answers with every sensor's
+         *     recorded unknown. The reconcile runs first (see _reconciled), and a save whose file no longer names
+         *     the place by the time it holds the lock is refused (409 config_changed).
+         */
+        put: operations["save_mounting_api_v1_surveys__survey_id__mounting_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1594,6 +1636,17 @@ export interface components {
             /** Radars */
             radars: components["schemas"]["CameraRadar"][];
         };
+        /** Change */
+        Change: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Field */
+            field: string;
+            /** Counts */
+            counts: boolean;
+        };
         /** Check */
         Check: {
             /** Id */
@@ -1668,6 +1721,8 @@ export interface components {
             reloaded: boolean;
             /** Deployments */
             deployments: components["schemas"]["DeploymentOut"][];
+            /** Previous */
+            previous: components["schemas"]["SensorKey"][];
         };
         /** DeploymentOut */
         DeploymentOut: {
@@ -1683,6 +1738,14 @@ export interface components {
             lon: number | null;
             /** Heading Deg */
             heading_deg: number | null;
+            /** Pitch Deg */
+            pitch_deg: number | null;
+            /** Height M */
+            height_m: number | null;
+            /** View Distance M */
+            view_distance_m: number | null;
+            /** Mount */
+            mount: string | null;
             /** Sensor Type */
             sensor_type: string;
             /** Sensor Name */
@@ -2034,6 +2097,55 @@ export interface components {
             labels: components["schemas"]["LabelsOut"];
             fetch: components["schemas"]["FetchOut"] | null;
         };
+        /** Mount */
+        Mount: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Height M */
+            height_m: number;
+            /** Pitch Deg */
+            pitch_deg: number;
+        };
+        /** MountingIn */
+        MountingIn: {
+            /** Sensors */
+            sensors: components["schemas"]["SensorMountingIn"][];
+            /** Moved */
+            moved?: boolean | null;
+            /**
+             * Dry Run
+             * @default true
+             */
+            dry_run: boolean;
+        };
+        /** MountingOut */
+        MountingOut: {
+            /** Saved */
+            saved: boolean;
+            /** Sensors */
+            sensors: components["schemas"]["SensorMounting"][];
+            /** Changes */
+            changes: components["schemas"]["Change"][];
+            /** Ask */
+            ask: boolean;
+            /** Suggested */
+            suggested: ("moved" | "measured") | null;
+            /** New Deployments */
+            new_deployments: components["schemas"]["SensorKey"][];
+            /** Reloaded */
+            reloaded: boolean | null;
+        };
+        /** MountingState */
+        MountingState: {
+            /** Sensors */
+            sensors: components["schemas"]["SensorMounting"][];
+            /** Mounts */
+            mounts: components["schemas"]["Mount"][];
+            /** Nodered */
+            nodered: boolean;
+        };
         /** Nearby */
         Nearby: {
             /** Name */
@@ -2168,6 +2280,23 @@ export interface components {
              */
             round_stored: boolean;
         };
+        /**
+         * PreviousMounting
+         * @description What was last saved for a sensor at the place, beside its heading. A move there records none of it; it is
+         *     offered until a save writes that sensor.
+         */
+        PreviousMounting: {
+            /** Pitch Deg */
+            pitch_deg: number | null;
+            /** Height M */
+            height_m: number | null;
+            /** View Distance M */
+            view_distance_m: number | null;
+            /** Measured */
+            measured: ("pitch" | "distance") | null;
+            /** Mount */
+            mount: string | null;
+        };
         /** ReferenceOut */
         ReferenceOut: {
             /** Ticket */
@@ -2269,6 +2398,65 @@ export interface components {
             sensor_name: string;
             /** Heading Deg */
             heading_deg: number | null;
+        };
+        /** SensorKey */
+        SensorKey: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+        };
+        /** SensorMounting */
+        SensorMounting: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Heading Deg */
+            heading_deg?: number | null;
+            /** Pitch Deg */
+            pitch_deg?: number | null;
+            /** Height M */
+            height_m?: number | null;
+            /** View Distance M */
+            view_distance_m?: number | null;
+            /** Measured */
+            measured?: ("pitch" | "distance") | null;
+            /** Mount */
+            mount?: string | null;
+            /** Camera */
+            camera: string | null;
+            /** Same As Camera */
+            same_as_camera: boolean;
+            /** Deployment Id */
+            deployment_id: string | null;
+            /** Recorded */
+            recorded: boolean | null;
+            previous: components["schemas"]["PreviousMounting"] | null;
+        };
+        /** SensorMountingIn */
+        SensorMountingIn: {
+            /** Sensor Type */
+            sensor_type: string;
+            /** Sensor Name */
+            sensor_name: string;
+            /** Heading Deg */
+            heading_deg?: number | null;
+            /** Pitch Deg */
+            pitch_deg?: number | null;
+            /** Height M */
+            height_m?: number | null;
+            /** View Distance M */
+            view_distance_m?: number | null;
+            /** Measured */
+            measured?: ("pitch" | "distance") | null;
+            /** Mount */
+            mount?: string | null;
+            /**
+             * Same As Camera
+             * @default false
+             */
+            same_as_camera: boolean;
         };
         /** ServerStatus */
         ServerStatus: {
@@ -3858,6 +4046,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeploymentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    place_mounting_api_v1_surveys__survey_id__mounting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MountingState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_mounting_api_v1_surveys__survey_id__mounting_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MountingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MountingOut"];
                 };
             };
             /** @description Validation Error */

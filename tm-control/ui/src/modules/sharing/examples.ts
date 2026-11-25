@@ -2,8 +2,9 @@
 // coordinates are an example, not a place this device is); the shapes are the ones the upload uses.
 
 // Share data: an event with its speed, its path across the picture, its box, and how long it stood still and spent in
-// each zone (stationary_time, stops, zone_times), a deployment row whose location is rounded to the stored precision,
-// and the watch log, which every five minutes says whether each camera and radar was working
+// each zone (stationary_time, stops, zone_times), a deployment row whose location is rounded to the stored precision
+// and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount), and the watch
+// log, which every five minutes says whether each camera and radar was working
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -31,6 +32,11 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
       lat: 45.52,
       lon: -122.69,
       location_precision: 2,
+      heading_deg: 135,
+      pitch_deg: 12,
+      height_m: 3.6,
+      view_distance_m: 16.94,
+      mount: 'pole',
     },
     watch: {
       cameras: [
