@@ -82,6 +82,16 @@ def make_world(tmp_path, *, manifest_data=None, with_manifest=True):
     return paths, tree
 
 
+def one_row_per_name(images):
+    """`podman images --format json` as Podman 5.4.2 prints it: an image with three names is three rows, each with the
+    same id and all three names."""
+    rows = []
+    for image in images:
+        names = image.get("Names") if isinstance(image, dict) else None
+        rows.extend([image] * (len(names) if isinstance(names, list) and names else 1))
+    return rows
+
+
 class FakeRun:
     """Replaces proc.run: records every call and answers from a function, which gets the argv."""
 
@@ -174,7 +184,7 @@ class Device:
         argv = call["argv"]
         self.events.append(argv)
         if argv[:2] == ["podman", "images"]:
-            return completed(argv, stdout=json.dumps(self.images))
+            return completed(argv, stdout=json.dumps(one_row_per_name(self.images)))
         if argv[:2] == ["systemctl", "is-active"]:
             state = self.unit_state.get(argv[2], "active")
             return completed(argv, 0 if state == "active" else 3, state + "\n")

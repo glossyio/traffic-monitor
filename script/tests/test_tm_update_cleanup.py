@@ -8,7 +8,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tm_update_support import COMMIT, OLD_COMMIT, RUN, Device, FakeRun, completed, handover, installed, make_world
+from tm_update_support import (COMMIT, OLD_COMMIT, RUN, Device, FakeRun, completed, handover, installed, make_world,
+                               one_row_per_name)
 
 from tm_update import cleanup, cli, playbook, proc
 from tm_update.cli import Context
@@ -86,7 +87,7 @@ class Podman:
         if answer is not None:
             return completed(argv, answer)
         if argv[:2] == ["podman", "images"]:
-            return completed(argv, stdout=json.dumps(self.images))
+            return completed(argv, stdout=json.dumps(one_row_per_name(self.images)))
         if argv[:3] == ["podman", "image", "inspect"]:
             if argv[3] in self.inspect:
                 return completed(argv, stdout=json.dumps([{"Id": self.inspect[argv[3]]}]))
@@ -135,6 +136,35 @@ def test_a_throwaway_tag_is_removed_by_image_id_and_full_name(world):
     for image_id, repository in (("frigate2", "frigate-tm"), ("nodered", "node-red-tm"), ("revproxy", "revproxy")):
         assert ["podman", "untag", image_id, f"localhost/{repository}:prepare-0123456"] in untags
     assert not any("localhost/frigate-tm:prepare-0123456" in argv for argv in podman_calls(run, "podman", "rmi"))
+
+
+def test_podman_lists_an_image_once_for_each_of_its_names():
+    rows = one_row_per_name(IMAGES)
+    assert [row["Id"] for row in rows if isinstance(row, dict) and row["Id"] == "frigate2"] == ["frigate2"] * 2
+    assert len(rows) > len(IMAGES)
+
+
+def test_an_image_listed_once_for_each_name_is_one_image(world):
+    ctx, podman, run = world
+    images = cleanup.list_images(ctx.log)
+    assert [image.id for image in images].count("frigate2") == 1
+    frigate = next(image for image in images if image.id == "frigate2")
+    assert frigate.names == ("localhost/frigate-tm:0.18.2", "localhost/frigate-tm:prepare-0123456")
+    assert len({image.id for image in images}) == len(images)
+
+
+def test_no_command_is_issued_twice_and_each_throwaway_tag_is_untagged_once(world):
+    ctx, podman, run = world
+    notes = cleanup.run(ctx)
+    commands = [tuple(argv) for argv in run.argvs() if argv[:2] != ["podman", "images"]]
+    assert len(commands) == len(set(commands))
+    for image_id, repository in (("frigate2", "frigate-tm"), ("nodered", "node-red-tm"), ("revproxy", "revproxy")):
+        assert commands.count(("podman", "untag", image_id, f"localhost/{repository}:prepare-0123456")) == 1
+    assert not [note for note in notes if note.startswith("kept:")]
+    for old in ("localhost/frigate-tm:0.18.1", "localhost/frigate-tm:stage-old"):
+        assert commands.count(("podman", "rmi", old)) == 1
+    for old_base in ("frigatebase1", "debian1"):
+        assert commands.count(("podman", "rmi", old_base)) == 1
 
 
 def test_no_command_untags_with_a_single_argument(world):

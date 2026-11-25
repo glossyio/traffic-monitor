@@ -68,7 +68,7 @@ def _texts(value: object) -> "tuple[str, ...]":
 
 
 def list_images(log) -> "list[Image] | None":
-    """`podman images`, type-checked. None when it can't be listed."""
+    """`podman images`, type-checked, each image once. None when it can't be listed."""
     try:
         listing = proc.run(["podman", "images", "--format", "json"], timeout=_LIST_TIMEOUT)
         images = json.loads(listing.stdout) if listing.returncode == 0 else None
@@ -77,12 +77,18 @@ def list_images(log) -> "list[Image] | None":
     if not isinstance(images, list):
         say(log, "could not list the images")
         return None
-    found = []
+    # Podman lists an image once for each of its names, so one image can be several rows with the same id
+    found: "dict[str, Image]" = {}
     for image in images:
         if not isinstance(image, dict) or not isinstance(image.get("Id"), str) or not _IMAGE_ID.fullmatch(image["Id"]):
             continue
-        found.append(Image(image["Id"], _texts(image.get("Names")), _texts(image.get("RepoDigests"))))
-    return found
+        names, digests = _texts(image.get("Names")), _texts(image.get("RepoDigests"))
+        earlier = found.get(image["Id"])
+        if earlier is not None:
+            names = earlier.names + tuple(name for name in names if name not in earlier.names)
+            digests = earlier.digests + tuple(digest for digest in digests if digest not in earlier.digests)
+        found[image["Id"]] = Image(image["Id"], names, digests)
+    return list(found.values())
 
 
 def untag(image_id: str, name: str, log) -> bool:
