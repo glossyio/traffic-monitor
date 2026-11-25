@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, import places from a CSV file, and export or download the exact locations.">
+        <meta name="description" content="Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.">
       
       
       
@@ -1105,6 +1105,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-way-a-sensor-faces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which way a sensor faces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#move-or-turn-the-device" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1116,10 +1127,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#correct-a-wrong-location-or-bearing" class="md-nav__link">
+  <a href="#correct-a-wrong-location-or-heading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Correct a wrong location or bearing
+        Correct a wrong location or heading
       
     </span>
   </a>
@@ -2437,6 +2448,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#which-way-a-sensor-faces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which way a sensor faces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#move-or-turn-the-device" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2448,10 +2470,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#correct-a-wrong-location-or-bearing" class="md-nav__link">
+  <a href="#correct-a-wrong-location-or-heading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Correct a wrong location or bearing
+        Correct a wrong location or heading
       
     </span>
   </a>
@@ -2572,7 +2594,7 @@
   
   
   <h1 id="places-and-location">Places and location<a class="headerlink" href="#places-and-location" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, import places from a CSV file, and export or download the exact locations.</p>
+<p class="tm-description">Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.</p>
 <p>The control app's <strong>Location</strong> page records where the device is and which way its sensors face. It also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.</p>
 <h2 id="places-and-deployments">Places and deployments<a class="headerlink" href="#places-and-deployments" title="Permanent link">&para;</a></h2>
 <p>A <em>place</em> is somewhere the device has been, is, or will be. Each place has an id such as <code>3f9a1c2e-si</code>, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts and records its data, only without saying where. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.</p>
@@ -2587,7 +2609,7 @@
 <li><strong>Imported from your previous settings</strong> for a place that came from an older version's data; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Update the software</a>.</li>
 <li>When the place was first and last used, or <strong>Not used yet</strong>.</li>
 <li>How many events were recorded there, and between which dates.</li>
-<li>Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with the way it faced and <strong>Correct bearing</strong>. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when.</li>
+<li>Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with the way it faced and <strong>Correct heading</strong>. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when.</li>
 <li>The buttons for what you can do with the place: <strong>Deploy here</strong> for a planned place, <strong>Re-deploy here</strong> for a used one, or <strong>Modify deployment</strong> for the place in use; <strong>Edit</strong> for a planned place; <strong>Correct location</strong> for a used place or the place in use that has a location; and <strong>Delete</strong> for any place but the one in use.</li>
 </ul>
 <p><strong>Before any place was recorded</strong> counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.</p>
@@ -2597,7 +2619,7 @@
 <ul>
 <li><strong>Description</strong>: a name for the place, such as "Front of the school". It never leaves the device.</li>
 <li><strong>Coordinates</strong>: the latitude and longitude, pasted from a maps app as one value, such as <code>45.52252, -122.69120</code>, or <a href="#pick-the-point-on-a-map">picked on a map</a>. Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.</li>
-<li><strong>Which way each sensor faces here</strong>: <code>N</code>, <code>NE</code>, <code>E</code>, <code>SE</code>, <code>S</code>, <code>SW</code>, <code>W</code>, <code>NW</code>, or <strong>Not set</strong>, for each sensor turned on in the settings.</li>
+<li><strong>Facing</strong>, for each sensor turned on in the settings: a compass point, <code>N</code>, <code>NE</code>, <code>E</code>, <code>SE</code>, <code>S</code>, <code>SW</code>, <code>W</code>, or <code>NW</code>, or <strong>Not set</strong>. See <a href="#which-way-a-sensor-faces">Which way a sensor faces</a>.</li>
 </ul>
 <p><strong>Use this phone's location</strong> fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.</p>
 <h3 id="pick-the-point-on-a-map">Pick the point on a map<a class="headerlink" href="#pick-the-point-on-a-map" title="Permanent link">&para;</a></h3>
@@ -2606,7 +2628,12 @@
 <p>The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer sets the time zone (its <code>-z</code> option, <code>America/Los_Angeles</code> unless you give another), so a device left on the installer's time zone and Wi-Fi country opens over Los Angeles until you set its time zone on the <a href="../device-health/#the-date-and-time-page">Date and time page</a>. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers <strong>Try again</strong>; type or paste the coordinates instead.</p>
 <p>The map isn't offered while your phone is on the device's own <a href="../wifi-hotspot/#phones">hotspot</a>, because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.</p>
 <p>To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.</p>
-<p>To change a planned place, open it and choose <strong>Edit</strong>. A place that has been used can't be edited; <a href="#correct-a-wrong-location-or-bearing">correct it</a> instead.</p>
+<p>To change a planned place, open it and choose <strong>Edit</strong>. A place that has been used can't be edited; <a href="#correct-a-wrong-location-or-heading">correct it</a> instead.</p>
+<h2 id="which-way-a-sensor-faces">Which way a sensor faces<a class="headerlink" href="#which-way-a-sensor-faces" title="Permanent link">&para;</a></h2>
+<p>A sensor's <em>heading</em> is the way it faces, in whole degrees clockwise from true north, from 0 to 359: 0 is north, 90 is east, 180 is south, and 270 is west. The page shows it with the nearest compass point, such as <strong>NE (40°)</strong>. A point covers the 45 degrees around its centre, so 23 to 67 degrees is <code>NE</code>, and 338 to 359 and 0 to 22 is <code>N</code>.</p>
+<p>The page lets you pick one of the eight points, which sets the heading to the point's centre, as the <a href="../../configuration/node-red-config/#if-your-file-still-says-bearing">table of centres</a> lists. Nothing stores the point itself, only the number. A heading you measured more closely, such as 40 from a compass app, or typed into <a href="../../configuration/node-red-config/#deployment"><code>config.yml</code></a> or an <a href="#import-places-from-a-file">imported file</a>, is kept as it is and listed first in the choices as <strong>NE (40°)</strong>, so opening the choice and closing it changes nothing. Pick a point only to replace it. Until you save or close the form, the measured heading stays in the list, so you can choose it again if you picked a point by mistake.</p>
+<p>Use true north, not magnetic north, because the two differ by several degrees in many places, and a phone's compass app can show either. A heading is optional. <strong>Not set</strong> records that you haven't said.</p>
+<p>A device updated from an older release has its earlier headings converted; see <a href="../../build-your-own-device-diy/update/#headings-after-an-update">Headings after an update</a>.</p>
 <h2 id="move-or-turn-the-device">Move or turn the device<a class="headerlink" href="#move-or-turn-the-device" title="Permanent link">&para;</a></h2>
 <p>When the device moves to another place, record it from that place: <strong>Deploy here</strong> if the place is planned, or <strong>Re-deploy here</strong> if the device has been there before. When a sensor is turned to face another way, record it with <strong>Modify deployment</strong> on the place in use.</p>
 <ol>
@@ -2614,26 +2641,26 @@
 <li>Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are what the database will store for the place and whether the device shares its data.</li>
 <li>Choose <strong>Deploy</strong>, <strong>Re-deploy</strong>, or <strong>Modify</strong>.</li>
 </ol>
-<p><img alt="The Deploy here review on a phone: each sensor with &quot;New deployment starts&quot; and its bearing before and after, the location the database will store, and Cancel and Deploy" src="../../assets/images/location-deploy-review.png" width="300" /></p>
+<p><img alt="The Deploy here review on a phone: each sensor with &quot;New deployment starts&quot; and its heading before and after, the location the database will store, and Cancel and Deploy" src="../../assets/images/location-deploy-review.png" width="300" /></p>
 <p>The page waits while Node-RED starts the new deployments, then lists their ids, each with <strong>Copy</strong>. Counts from then on belong to the new deployments.</p>
-<p>In <strong>Modify deployment</strong>, the review starts with each sensor's bearing as it is, and each sensor reads <strong>Unchanged</strong> until you change its bearing. <strong>Modify</strong> stays off until at least one bearing changes, and only the sensors you turned start a new deployment.</p>
+<p>In <strong>Modify deployment</strong>, the review starts with each sensor's heading as it is, and each sensor reads <strong>Unchanged</strong> until you change its heading. <strong>Modify</strong> stays off until at least one heading changes, and only the sensors you turned start a new deployment.</p>
 <div class="admonition warning">
 <p class="admonition-title">Don't deploy twice</p>
 <p>If Node-RED hasn't loaded the new settings within about 20 seconds, the page says the settings are saved and the deployments appear once Node-RED loads them. If the connection drops while the page waits, it says the settings may already be saved. In both cases, close the dialog and check the place in the list before you deploy again.</p>
 </div>
 <p>A move usually also needs the camera's zones adjusted; see <a href="../../setup-guide/#3-adjust-the-zones">First-time setup</a>.</p>
-<h2 id="correct-a-wrong-location-or-bearing">Correct a wrong location or bearing<a class="headerlink" href="#correct-a-wrong-location-or-bearing" title="Permanent link">&para;</a></h2>
+<h2 id="correct-a-wrong-location-or-heading">Correct a wrong location or heading<a class="headerlink" href="#correct-a-wrong-location-or-heading" title="Permanent link">&para;</a></h2>
 <p>A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, <a href="#move-or-turn-the-device">record that</a> instead.</p>
 <ul>
 <li><strong>Correct location</strong>, on a used place or the place in use, takes a new latitude and longitude, typed or <a href="#pick-the-point-on-a-map">picked on a map</a>. Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, <code>config.yml</code> takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.</li>
-<li><strong>Correct bearing</strong>, on each deployment in an open place, takes the way the sensor really faced. Every record from that deployment then says so. For a deployment that is still running, <code>config.yml</code> takes the new bearing too.</li>
+<li><strong>Correct heading</strong>, on each deployment in an open place, takes the way the sensor really faced, as a compass point or <strong>Not set</strong>. Every record from that deployment then says so. For a deployment that is still running, <code>config.yml</code> takes the new heading too.</li>
 </ul>
 <p>Each correction can have a <strong>Reason</strong>, which is kept with the correction on the device. Copies of the database already downloaded, and data already uploaded, keep the old values.</p>
 <h2 id="import-places-from-a-file">Import places from a file<a class="headerlink" href="#import-places-from-a-file" title="Permanent link">&para;</a></h2>
 <p>To plan several places at once, choose <strong>Import places</strong>. Pick a CSV file, or paste its lines into the box.</p>
 <ul>
 <li>The first line is the header. It starts with <code>description,lat,lon</code>, then has one column for each sensor turned on in the settings, named as in the settings. The dialog shows this device's header.</li>
-<li>Each further line is one place. Leave <code>lat</code> and <code>lon</code> both empty for a place with no location. A sensor's column holds the way it faces, <code>n</code>, <code>ne</code>, <code>e</code>, <code>se</code>, <code>s</code>, <code>sw</code>, <code>w</code>, or <code>nw</code>, or nothing.</li>
+<li>Each further line is one place. Leave <code>lat</code> and <code>lon</code> both empty for a place with no location. A sensor's column holds the way it faces: a compass point (<code>n</code>, <code>ne</code>, <code>e</code>, <code>se</code>, <code>s</code>, <code>sw</code>, <code>w</code>, or <code>nw</code>), a heading in whole degrees from north (0 to 359, such as <code>40</code>), or nothing. A point is saved as its centre, so <code>e</code> is 90.</li>
 <li>A file can be up to 64 KiB.</li>
 </ul>
 <p>For a device with the Pi camera and one radar:</p>
@@ -2674,7 +2701,7 @@ Corner by the park,,,e,e
 <li>A place the control app no longer has, because you deleted it.</li>
 <li>A deployment from <a href="#the-location-page">before any place was recorded</a>, which names no place.</li>
 </ul>
-<p>A <a href="#correct-a-wrong-location-or-bearing">correction</a> shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.</p>
+<p>A <a href="#correct-a-wrong-location-or-heading">correction</a> shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.</p>
 <p>The database on the device is unchanged: it never holds the table or the view, and the <strong>Download the database</strong> button on the <a href="../../ui/database/#download-the-database">Data export</a> page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the <a href="../../data-and-payloads/data-overview/#the-exact-location-in-a-database-copy"><code>exact_location</code></a> attribute holds when you share the exact location.</p>
 <h2 id="choose-the-precision">Choose the precision<a class="headerlink" href="#choose-the-precision" title="Permanent link">&para;</a></h2>
 <p><strong>Precision</strong>, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open <strong>Change the precision</strong>, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:</p>

@@ -1421,6 +1421,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#if-your-file-still-says-bearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If your file still says bearing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#edit-the-location-by-hand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2360,6 +2371,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#if-your-file-still-says-bearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If your file still says bearing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#edit-the-location-by-hand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2577,23 +2599,69 @@
 <td>Longitude, optional, with the same rules as <code>lat</code>. Set both or neither: a row with only one gets neither.</td>
 </tr>
 <tr>
-<td><code>bearing</code></td>
-<td><code>n</code>, <code>s</code>, <code>e</code>, <code>w</code>, <code>ne</code>, <code>nw</code>, <code>se</code>, or <code>sw</code></td>
+<td><code>heading_deg</code></td>
+<td>a whole number from 0 to 359</td>
 <td>empty</td>
-<td>The compass direction the camera and radar face. Optional; a value that isn't one of these, including one with spaces around it, is logged as an error.</td>
+<td>The way the camera and radar face, in degrees clockwise from true north: 0 is north, 90 is east, 180 is south, and 270 is west. Optional; a value that isn't a whole number in that range is logged as an error.</td>
 </tr>
 </tbody>
 </table>
-<p>A change of <code>survey_id</code>, or of a sensor's <code>bearing</code>, closes that sensor's current deployment and starts a new one. A change of <code>lat</code> or <code>lon</code> doesn't. While <code>survey_id</code> is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set <code>survey_id</code>, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id.</p>
+<p>A change of <code>survey_id</code>, or of a sensor's <code>heading_deg</code>, closes that sensor's current deployment and starts a new one. A change of <code>lat</code> or <code>lon</code> doesn't. While <code>survey_id</code> is empty, current deployments stay as they are, and a heading change waits until you set one. When you first set <code>survey_id</code>, a current deployment with no survey id and the same heading takes it over and keeps its deployment id.</p>
 <p>Lowering <code>database_precision</code> rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer. The Location page can also round the rows already stored; see <a href="../../use/location/#choose-the-precision">Choose the precision</a>.</p>
-<p>A <code>deployment:</code> block under a camera or radar can hold <code>bearing</code>, for a device whose cameras face different ways. A <code>lat</code> or <code>lon</code> there isn't read, because the location belongs to the whole device. The installer removes it, and the Status page's Location check warns about it until then.</p>
+<p>A <code>deployment:</code> block under a camera or radar can hold <code>heading_deg</code>, for a device whose cameras face different ways. A <code>lat</code> or <code>lon</code> there isn't read, because the location belongs to the whole device. The installer removes it, and the Status page's Location check warns about it until then.</p>
+<h3 id="if-your-file-still-says-bearing">If your file still says <code>bearing</code><a class="headerlink" href="#if-your-file-still-says-bearing" title="Permanent link">&para;</a></h3>
+<p>Before this release, the file held <code>bearing</code>, one of eight compass points (<code>n</code>, <code>ne</code>, <code>e</code>, <code>se</code>, <code>s</code>, <code>sw</code>, <code>w</code>, <code>nw</code>), in place of <code>heading_deg</code>. Node-RED converts it for you each time it starts, before it records anything: each <code>bearing</code> becomes <code>heading_deg</code>, written as the centre of its point.</p>
+<table>
+<thead>
+<tr>
+<th>Old <code>bearing</code></th>
+<th><code>heading_deg</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>n</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>ne</code></td>
+<td>45</td>
+</tr>
+<tr>
+<td><code>e</code></td>
+<td>90</td>
+</tr>
+<tr>
+<td><code>se</code></td>
+<td>135</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>180</td>
+</tr>
+<tr>
+<td><code>sw</code></td>
+<td>225</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>270</td>
+</tr>
+<tr>
+<td><code>nw</code></td>
+<td>315</td>
+</tr>
+</tbody>
+</table>
+<p>A <code>bearing</code> that is empty becomes an empty <code>heading_deg</code>. One that isn't one of the eight, such as <code>north</code>, is left in the file as it is, with a warning in the <code>node-red-tm.service</code> log that names the key but not its value. Write <code>heading_deg</code> in its place.</p>
+<p>A <code>bearing</code> written into the file while Node-RED runs stays there until Node-RED next starts. Meanwhile Node-RED reads one of the eight points as its centre, so the device keeps recording, and any other value as no heading. The Status page's Location check warns about a <code>bearing</code> that holds a value, in the top-level <code>deployment</code> block and in the block of each sensor that is enabled. For one of the eight points it says to restart Node-RED, which converts it, and that if the warning is still there after the restart, the conversion failed and the <code>node-red-tm.service</code> log says why. For any other value, which Node-RED leaves, it says to write <code>heading_deg</code> and delete the <code>bearing</code>. An empty <code>bearing</code> isn't reported. Nothing writes <code>bearing</code> any more.</p>
 <h3 id="edit-the-location-by-hand">Edit the location by hand<a class="headerlink" href="#edit-the-location-by-hand" title="Permanent link">&para;</a></h3>
 <p>Use the <a href="../../use/location/">Location page</a> to move the device or fix a value. If you edit this section by hand instead, Node-RED applies the change as soon as you save the file, and the control app records it the next time it's opened, on its home page, Status page, or Location page:</p>
 <ul>
 <li><strong><code>survey_id</code> set to a place the page lists</strong> is a move there. The file takes that place's location, replacing any <code>lat</code> or <code>lon</code> you changed in the same edit. Node-RED starts the new deployments as soon as you save, at the location the file held then, and the control app gives them the place's location when it records the move. If the place has no location, those deployments keep the one the file held.</li>
 <li><strong><code>survey_id</code> set to an id the page doesn't list</strong> becomes a new place, in use, at this file's <code>lat</code> and <code>lon</code>.</li>
 <li><strong>Only <code>lat</code> or <code>lon</code> changed</strong> is a correction of the place in use, as <strong>Correct location</strong> would be: the place's stored rows take the new location.</li>
-<li><strong><code>survey_id</code> emptied</strong>, as <code>tmsetup.sh -f</code> leaves it, is put back: the control app writes the place in use's id into the file again, and gives each sensor with an empty bearing the way it faces at that place. A bearing you set stays. <code>database_precision</code> goes back to the last value the control app saw while the file named a place, because after a reset the file holds the template's <code>'2'</code>. A coarser value you typed into the reset file stays. To choose a finer one, use the Location page, or edit the file once <code>survey_id</code> is back. If the place has a location, <code>lat</code> and <code>lon</code> get it back, whatever the file holds, because after a reset they come from the installer, not from you; correct a place's location on the Location page. If the place has none, a location in the file is a correction, as above. A typo stays as you typed it.</li>
+<li><strong><code>survey_id</code> emptied</strong>, as <code>tmsetup.sh -f</code> leaves it, is put back: the control app writes the place in use's id into the file again, and gives each sensor with an empty heading the way it faces at that place. A heading you set stays. <code>database_precision</code> goes back to the last value the control app saw while the file named a place, because after a reset the file holds the template's <code>'2'</code>. A coarser value you typed into the reset file stays. To choose a finer one, use the Location page, or edit the file once <code>survey_id</code> is back. If the place has a location, <code>lat</code> and <code>lon</code> get it back, whatever the file holds, because after a reset they come from the installer, not from you; correct a place's location on the Location page. If the place has none, a location in the file is a correction, as above. A typo stays as you typed it.</li>
 <li><strong><code>lat</code> and <code>lon</code> both emptied</strong>, when the place in use has a location, are put back too, because a place's location can be corrected but not removed. To keep the location out of the database, choose <strong>No location stored</strong> as the <a href="../../use/location/#choose-the-precision">precision</a>.</li>
 <li><strong>A <code>lat</code> or <code>lon</code> that isn't a number in range</strong>, such as one with a typo, stays in the file as you typed it. New deployments store no location until you fix it, and the Status page's Location check names the key.</li>
 </ul>
@@ -2639,7 +2707,7 @@
 <td><code>deployment</code></td>
 <td>block</td>
 <td>inherited</td>
-<td>Per-camera <code>bearing</code>.</td>
+<td>Per-camera <code>heading_deg</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -2671,7 +2739,7 @@
 <td><code>deployment</code></td>
 <td>block</td>
 <td>inherited</td>
-<td>Per-radar <code>bearing</code>.</td>
+<td>Per-radar <code>heading_deg</code>.</td>
 </tr>
 </tbody>
 </table>

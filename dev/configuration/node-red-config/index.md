@@ -50,13 +50,32 @@ Where the device is. Every event and reading is stored with a deployment id that
 | `database_precision` | `none`, `1`, or `2`                                   | `'2'`   | How many decimal places of `lat` and `lon` the database keeps: `none` stores no coordinates, `1` about 10 km, `2` about 1 km. A number without quotes works too.                                                                                 |
 | `lat`                | decimal degrees, such as `45.52252`                   | empty   | Latitude of the place in use, optional, with five decimal places at most. The database stores it rounded to `database_precision`; this file and the control app keep the exact value.                                                            |
 | `lon`                | decimal degrees, such as `-122.69120`                 | empty   | Longitude, optional, with the same rules as `lat`. Set both or neither: a row with only one gets neither.                                                                                                                                        |
-| `bearing`            | `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`         | empty   | The compass direction the camera and radar face. Optional; a value that isn't one of these, including one with spaces around it, is logged as an error.                                                                                          |
+| `heading_deg`        | a whole number from 0 to 359                          | empty   | The way the camera and radar face, in degrees clockwise from true north: 0 is north, 90 is east, 180 is south, and 270 is west. Optional; a value that isn't a whole number in that range is logged as an error.                                 |
 
-A change of `survey_id`, or of a sensor's `bearing`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a bearing change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same bearing takes it over and keeps its deployment id.
+A change of `survey_id`, or of a sensor's `heading_deg`, closes that sensor's current deployment and starts a new one. A change of `lat` or `lon` doesn't. While `survey_id` is empty, current deployments stay as they are, and a heading change waits until you set one. When you first set `survey_id`, a current deployment with no survey id and the same heading takes it over and keeps its deployment id.
 
 Lowering `database_precision` rewrites the current deployments in place. Raising it takes effect from the next new deployment, because coordinates already rounded can't be made finer. The Location page can also round the rows already stored; see [Choose the precision](https://docs.trafficmonitor.ai/dev/use/location/#choose-the-precision).
 
-A `deployment:` block under a camera or radar can hold `bearing`, for a device whose cameras face different ways. A `lat` or `lon` there isn't read, because the location belongs to the whole device. The installer removes it, and the Status page's Location check warns about it until then.
+A `deployment:` block under a camera or radar can hold `heading_deg`, for a device whose cameras face different ways. A `lat` or `lon` there isn't read, because the location belongs to the whole device. The installer removes it, and the Status page's Location check warns about it until then.
+
+### If your file still says `bearing`
+
+Before this release, the file held `bearing`, one of eight compass points (`n`, `ne`, `e`, `se`, `s`, `sw`, `w`, `nw`), in place of `heading_deg`. Node-RED converts it for you each time it starts, before it records anything: each `bearing` becomes `heading_deg`, written as the centre of its point.
+
+| Old `bearing` | `heading_deg` |
+| ------------- | ------------- |
+| `n`           | 0             |
+| `ne`          | 45            |
+| `e`           | 90            |
+| `se`          | 135           |
+| `s`           | 180           |
+| `sw`          | 225           |
+| `w`           | 270           |
+| `nw`          | 315           |
+
+A `bearing` that is empty becomes an empty `heading_deg`. One that isn't one of the eight, such as `north`, is left in the file as it is, with a warning in the `node-red-tm.service` log that names the key but not its value. Write `heading_deg` in its place.
+
+A `bearing` written into the file while Node-RED runs stays there until Node-RED next starts. Meanwhile Node-RED reads one of the eight points as its centre, so the device keeps recording, and any other value as no heading. The Status page's Location check warns about a `bearing` that holds a value, in the top-level `deployment` block and in the block of each sensor that is enabled. For one of the eight points it says to restart Node-RED, which converts it, and that if the warning is still there after the restart, the conversion failed and the `node-red-tm.service` log says why. For any other value, which Node-RED leaves, it says to write `heading_deg` and delete the `bearing`. An empty `bearing` isn't reported. Nothing writes `bearing` any more.
 
 ### Edit the location by hand
 
@@ -65,7 +84,7 @@ Use the [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md
 - **`survey_id` set to a place the page lists** is a move there. The file takes that place's location, replacing any `lat` or `lon` you changed in the same edit. Node-RED starts the new deployments as soon as you save, at the location the file held then, and the control app gives them the place's location when it records the move. If the place has no location, those deployments keep the one the file held.
 - **`survey_id` set to an id the page doesn't list** becomes a new place, in use, at this file's `lat` and `lon`.
 - **Only `lat` or `lon` changed** is a correction of the place in use, as **Correct location** would be: the place's stored rows take the new location.
-- **`survey_id` emptied**, as `tmsetup.sh -f` leaves it, is put back: the control app writes the place in use's id into the file again, and gives each sensor with an empty bearing the way it faces at that place. A bearing you set stays. `database_precision` goes back to the last value the control app saw while the file named a place, because after a reset the file holds the template's `'2'`. A coarser value you typed into the reset file stays. To choose a finer one, use the Location page, or edit the file once `survey_id` is back. If the place has a location, `lat` and `lon` get it back, whatever the file holds, because after a reset they come from the installer, not from you; correct a place's location on the Location page. If the place has none, a location in the file is a correction, as above. A typo stays as you typed it.
+- **`survey_id` emptied**, as `tmsetup.sh -f` leaves it, is put back: the control app writes the place in use's id into the file again, and gives each sensor with an empty heading the way it faces at that place. A heading you set stays. `database_precision` goes back to the last value the control app saw while the file named a place, because after a reset the file holds the template's `'2'`. A coarser value you typed into the reset file stays. To choose a finer one, use the Location page, or edit the file once `survey_id` is back. If the place has a location, `lat` and `lon` get it back, whatever the file holds, because after a reset they come from the installer, not from you; correct a place's location on the Location page. If the place has none, a location in the file is a correction, as above. A typo stays as you typed it.
 - **`lat` and `lon` both emptied**, when the place in use has a location, are put back too, because a place's location can be corrected but not removed. To keep the location out of the database, choose **No location stored** as the [precision](https://docs.trafficmonitor.ai/dev/use/location/#choose-the-precision).
 - **A `lat` or `lon` that isn't a number in range**, such as one with a typo, stays in the file as you typed it. New deployments store no location until you fix it, and the Status page's Location check names the key.
 
@@ -83,7 +102,7 @@ To rename a camera in Frigate, rename it in Frigate's config and choose **Save &
 | `enabled`          | `true` or `false`                   | `true` for `picam_h265`   | Record this camera's events. Frigate keeps running either way.                                                                    |
 | `camera_radar`     | a radar name from `sensors.radars`  | `TM_RADAR_SERIAL_PORT_00` | The radar that supplies speeds for this camera. One radar can serve several cameras. Leave it out on a device without a radar.    |
 | `plate_recognizer` | `true` or `false`                   | `false`                   | Send this camera's events to the [Plate Recognizer](https://docs.trafficmonitor.ai/dev/add-ons/plate-recognizer/index.md) add-on. |
-| `deployment`       | block                               | inherited                 | Per-camera `bearing`.                                                                                                             |
+| `deployment`       | block                               | inherited                 | Per-camera `heading_deg`.                                                                                                         |
 
 ## sensors.radars
 
@@ -93,7 +112,7 @@ One entry per radar. A radar's name is the name of the variable that holds its s
 | ------------------------ | ------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enabled`                | `true` or `false`        | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar.                                                                                                                                                                                                                                                |
 | `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'`       | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
-| `deployment`             | block                    | inherited                            | Per-radar `bearing`.                                                                                                                                                                                                                                                                                           |
+| `deployment`             | block                    | inherited                            | Per-radar `heading_deg`.                                                                                                                                                                                                                                                                                       |
 
 ## sensors.airquality_monitors
 

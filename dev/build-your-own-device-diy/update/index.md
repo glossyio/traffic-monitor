@@ -76,6 +76,16 @@ A device whose sensors had their own coordinates
 
 The update gives each sensor's own location a place of its own. Once the control app writes the place in use into `config.yml`, each sensor whose location differed from the device's starts a new deployment there. Its earlier records stay with their own place, which the Location page lists as used.
 
+## Headings after an update
+
+A release that records which way each sensor faces in whole degrees replaces the compass point called `bearing`. The update converts what the device holds, and starts no new deployment:
+
+- When Node-RED next starts, before it records anything, it rewrites each `bearing` in `config.yml` as `heading_deg`, the centre of its compass point. A value that isn't one of the eight points stays as it is, with a warning in Node-RED's log. [If your file still says `bearing`](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#if-your-file-still-says-bearing) has the table of centres and what to do about such a value.
+- At the same start, the database migration fills each deployment row's `heading_deg` the same way and removes the `bearing` column. It first saves a copy of the database, when there is room for one, and that copy keeps the old values.
+- The control app's places keep their sensors' headings in the same way.
+
+A dashboard or script that read `bearing`, from the database or from ThingsBoard, has to read `heading_deg` now; see [Integrations](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#thingsboard).
+
 ## Sharing after an update
 
 A device that was already uploading to ThingsBoard keeps uploading after an update, with the location as the database stores it: about 1 km unless you changed the precision. The exact location stops until an administrator turns it on. Open the control app's [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), check the choices, and choose **I've reviewed this** or **Save**; until then the Status page shows **Review sharing**. A device that doesn't upload isn't affected. An old placeholder server address in `config.yml` (`tb.server.com`) changes to Traffic Monitor's server, and only while the upload is off.
@@ -86,7 +96,7 @@ The upload of the device's settings to ThingsBoard, and the Backup & Restore sec
 
 An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With `-f`, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. The fresh `config.yml` has the upload off, which turns off every [sharing](https://docs.trafficmonitor.ai/dev/use/sharing/#what-the-installers-f-does-to-sharing) choice. [What `-f` replaces](https://docs.trafficmonitor.ai/dev/reference/tmsetup/#what-f-replaces) lists the files.
 
-Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the `sensors` section of `config.yml`, and zones in Frigate. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) walks through each. You don't need to copy back `survey_id`, `lat`, `lon`, `database_precision`, or the bearings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).
+Use `-f` when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the `sensors` section of `config.yml`, and zones in Frigate. [First-time setup](https://docs.trafficmonitor.ai/dev/setup-guide/index.md) walks through each. You don't need to copy back `survey_id`, `lat`, `lon`, `database_precision`, or the headings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).
 
 Node-RED flow changes made in the editor on the device are replaced on every update. Commit them to the repository instead; see [Dev environment](https://docs.trafficmonitor.ai/dev/development/dev-environment/index.md).
 

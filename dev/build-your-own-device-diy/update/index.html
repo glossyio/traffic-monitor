@@ -688,6 +688,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#headings-after-an-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Headings after an update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sharing-after-an-update" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2331,6 +2342,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#headings-after-an-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Headings after an update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sharing-after-an-update" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2451,12 +2473,20 @@ bash<span class="w"> </span>script/tmsetup.sh
 <summary>A device whose sensors had their own coordinates</summary>
 <p>The update gives each sensor's own location a place of its own. Once the control app writes the place in use into <code>config.yml</code>, each sensor whose location differed from the device's starts a new deployment there. Its earlier records stay with their own place, which the Location page lists as used.</p>
 </details>
+<h2 id="headings-after-an-update">Headings after an update<a class="headerlink" href="#headings-after-an-update" title="Permanent link">&para;</a></h2>
+<p>A release that records which way each sensor faces in whole degrees replaces the compass point called <code>bearing</code>. The update converts what the device holds, and starts no new deployment:</p>
+<ul>
+<li>When Node-RED next starts, before it records anything, it rewrites each <code>bearing</code> in <code>config.yml</code> as <code>heading_deg</code>, the centre of its compass point. A value that isn't one of the eight points stays as it is, with a warning in Node-RED's log. <a href="../../configuration/node-red-config/#if-your-file-still-says-bearing">If your file still says <code>bearing</code></a> has the table of centres and what to do about such a value.</li>
+<li>At the same start, the database migration fills each deployment row's <code>heading_deg</code> the same way and removes the <code>bearing</code> column. It first saves a copy of the database, when there is room for one, and that copy keeps the old values.</li>
+<li>The control app's places keep their sensors' headings in the same way.</li>
+</ul>
+<p>A dashboard or script that read <code>bearing</code>, from the database or from ThingsBoard, has to read <code>heading_deg</code> now; see <a href="../../data-and-payloads/integrations/#thingsboard">Integrations</a>.</p>
 <h2 id="sharing-after-an-update">Sharing after an update<a class="headerlink" href="#sharing-after-an-update" title="Permanent link">&para;</a></h2>
 <p>A device that was already uploading to ThingsBoard keeps uploading after an update, with the location as the database stores it: about 1 km unless you changed the precision. The exact location stops until an administrator turns it on. Open the control app's <a href="../../use/sharing/">Sharing page</a>, check the choices, and choose <strong>I've reviewed this</strong> or <strong>Save</strong>; until then the Status page shows <strong>Review sharing</strong>. A device that doesn't upload isn't affected. An old placeholder server address in <code>config.yml</code> (<code>tb.server.com</code>) changes to Traffic Monitor's server, and only while the upload is off.</p>
 <p>The upload of the device's settings to ThingsBoard, and the Backup &amp; Restore section of the legacy dashboard, are removed while they are reworked.</p>
 <h2 id="what-an-update-changes">What an update changes<a class="headerlink" href="#what-an-update-changes" title="Permanent link">&para;</a></h2>
 <p>An update replaces the container images, service units, Node-RED flows, and the reverse proxy configuration. It keeps your settings files, the database, Frigate's recordings, and the device's accounts. With <code>-f</code>, it also replaces the settings files with fresh copies from the templates and keeps each old file beside the new one with a timestamp. The fresh <code>config.yml</code> has the upload off, which turns off every <a href="../../use/sharing/#what-the-installers-f-does-to-sharing">sharing</a> choice. <a href="../../reference/tmsetup/#what-f-replaces">What <code>-f</code> replaces</a> lists the files.</p>
-<p>Use <code>-f</code> when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the <code>sensors</code> section of <code>config.yml</code>, and zones in Frigate. <a href="../../setup-guide/">First-time setup</a> walks through each. You don't need to copy back <code>survey_id</code>, <code>lat</code>, <code>lon</code>, <code>database_precision</code>, or the bearings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>
+<p>Use <code>-f</code> when a release changes the settings files and you want the new template. Afterwards, turn Frigate's detection back on and redo your settings from the timestamped copies: the <code>sensors</code> section of <code>config.yml</code>, and zones in Frigate. <a href="../../setup-guide/">First-time setup</a> walks through each. You don't need to copy back <code>survey_id</code>, <code>lat</code>, <code>lon</code>, <code>database_precision</code>, or the headings: the next time the control app is opened, it puts back the place in use, its location, the precision you chose, and the way each sensor faces there; see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>
 <p>Node-RED flow changes made in the editor on the device are replaced on every update. Commit them to the repository instead; see <a href="../../development/dev-environment/">Dev environment</a>.</p>
 <h2 id="update-one-component">Update one component<a class="headerlink" href="#update-one-component" title="Permanent link">&para;</a></h2>
 <p>Each installer tag reruns one component, plus anything that has to change with it; see <a href="../../reference/tmsetup/#tags">Tags</a>. For example, after plugging in a radar:</p>
