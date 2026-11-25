@@ -8,14 +8,15 @@
   the place in use can have its location, or a deployment's heading, corrected in CorrectDialog. "Import places" adds
   planned places from a CSV in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a
   confirmation; the place in use can't. "Exact locations" saves the places' exact locations as a CSV (GET /surveys/export)
-  or starts the download of a database copy that holds them (POST /surveys/database-copy), each after a confirmation.
+  after a confirmation. The download of a database copy that holds them is on the Sharing page (Download your data),
+  which the "Exact locations" and Precision paragraphs link to.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
-import { openDownload, saveBlob } from '../../components/download'
+import { saveBlob } from '../../components/download'
 import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import {
@@ -162,34 +163,6 @@ async function exportExact() {
     exportError.value = messageOf(error)
   } finally {
     exporting.value = false
-  }
-}
-
-// A copy of the database with each place's exact location, after a confirmation. The API hands Node-RED the places and
-// answers with the address to download from; the browser opens it and the device makes the copy, which can take minutes
-// for a large database. The copy has something to say only for a place the device has been at (in use or used) that
-// has both coordinates, so the button waits for one.
-const confirmCopy = ref(false)
-const copying = ref(false)
-const copyError = ref('')
-const copyStarted = ref(false) // set once the request is answered; stays set until the page is reloaded
-const hasLocatedPlace = computed(() =>
-  (state.value?.surveys ?? []).some(
-    (survey) => (survey.status === 'in_use' || survey.status === 'used') && survey.lat !== null && survey.lon !== null,
-  ),
-)
-
-async function downloadCopy() {
-  copying.value = true
-  copyError.value = ''
-  try {
-    const { data } = await api.POST('/api/v1/surveys/database-copy')
-    openDownload(data!.url)
-    copyStarted.value = true
-  } catch (error) {
-    copyError.value = messageOf(error)
-  } finally {
-    copying.value = false
   }
 }
 
@@ -470,8 +443,9 @@ onMounted(load)
       <section class="mt-10">
         <h2 class="text-h6 mb-2">Exact locations</h2>
         <p class="text-body-1 mb-4">
-          The database keeps a rounded location. You can save each place's exact one as a list, or download a copy of the
-          database that has the exact locations in it.
+          The database keeps a rounded location. You can save each place's exact one as a list here. To download the
+          database with the exact locations in it, go to
+          <router-link to="/sharing" class="text-primary">Sharing</router-link>.
         </p>
         <div class="d-flex flex-wrap ga-3">
           <v-btn
@@ -484,32 +458,8 @@ onMounted(load)
           >
             Export exact locations
           </v-btn>
-          <!-- The long name wraps on a narrow phone instead of being cut off (the button's own text doesn't wrap).
-               Once a copy has started the button stays off until the page is reloaded: the device may still be making
-               a large copy, and a second one with the exact locations would sit on the card too. A failed request
-               doesn't count as started, so it can be tried again. -->
-          <v-btn
-            variant="outlined"
-            color="primary"
-            size="large"
-            height="auto"
-            class="py-2"
-            :loading="copying"
-            :disabled="copying || copyStarted || !hasLocatedPlace"
-            @click="confirmCopy = true"
-          >
-            <span class="text-wrap text-center">Download the database with exact locations</span>
-          </v-btn>
         </div>
-        <p v-if="!hasLocatedPlace" class="text-body-1 mt-3">
-          No place this device has been at has an exact location yet.
-        </p>
         <v-alert v-if="exportError" type="error" class="mt-4">{{ exportError }}</v-alert>
-        <v-alert v-if="copyError" type="error" class="mt-4">{{ copyError }}</v-alert>
-        <v-alert v-if="copyStarted" type="info" class="mt-4">
-          The device is making the copy. The download starts by itself when the copy is ready, which can take a few
-          minutes for a large database. The file's name ends in tmdb-exact-locations.tar.gz.
-        </v-alert>
       </section>
 
       <section class="mt-10">
@@ -518,7 +468,8 @@ onMounted(load)
           To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A
           shared copy of the database holds only the rounded location. This device keeps the exact location you enter,
           outside the database. To give someone a copy of the database with each place's exact location, for analysis and
-          mapping, use Download the database with exact locations, above.
+          mapping, tick Include each place's exact location under Download your data on
+          <router-link to="/sharing" class="text-primary">the Sharing page</router-link>.
         </p>
         <!-- One panel, styled as a place's: most devices never need to change this -->
         <v-expansion-panels v-model="precisionOpen" flat bg-color="background">
@@ -641,14 +592,6 @@ onMounted(load)
       confirm-text="Export"
       confirm-color="primary"
       @confirm="exportExact"
-    />
-    <ConfirmDialog
-      v-model="confirmCopy"
-      title="Download the database with exact locations?"
-      text="This copy of the database includes the exact location of each place the device has been at. The database on this device keeps its rounded locations. Give the copy only to someone who should know where the device was."
-      confirm-text="Download"
-      confirm-color="primary"
-      @confirm="downloadCopy"
     />
     <ConfirmDialog
       v-model="deleteOpen"
