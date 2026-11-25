@@ -1779,13 +1779,15 @@ TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-int
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
                      "/tm-internal/deployments/:id/mounting", "/tm-internal/surveys/:id/recorded",
-                     "/tm-internal/database/exact-copy", "/tm-internal/setup"}
+                     "/tm-internal/surveys/:id/timezone", "/tm-internal/database/exact-copy",
+                     "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
                        "/tm-internal/deployments/:id/mounting": "post", "/tm-internal/surveys/:id/recorded": "get",
-                       "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
+                       "/tm-internal/surveys/:id/timezone": "post", "/tm-internal/database/exact-copy": "post",
+                       "/tm-internal/setup": "post"}
 RECORDED_SQL = (
     "SELECT d.id AS id, CASE d.sensorType WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id) "
     "WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov WHERE time >= d.entryStartDateTime / 1000.0 - 86400 "
@@ -1818,6 +1820,7 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
               "/tm-internal/deployments/:id/mounting": "tm-internal: validate mounting correction",
               "/tm-internal/surveys/:id/recorded": "tm-internal: validate recorded path",
+              "/tm-internal/surveys/:id/timezone": "tm-internal: validate timezone correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -2053,7 +2056,7 @@ def test_database_errors_answer_500():
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 15
+    assert len(queries) == 16
     writes = {node["id"] for node in flows if node["type"] == "sqlite"
               and node.get("name") in ("close setup_device", "insert setup_device", "close setup_camera",
                                        "insert setup_camera")}
@@ -3068,6 +3071,92 @@ def test_the_mounting_correction_leaves_the_heading_correction_alone():
     validator, query, *_ = correction_chain("/tm-internal/deployments/:id/heading")
     assert validator["name"] == "tm-internal: validate heading correction"
     assert query["name"] == "rewrite deployment heading"
+
+
+TIMEZONE_SQL = "UPDATE deployment SET timezone = $timezone WHERE survey_id = $survey_id"
+
+
+def test_timezone_correction_runs_one_prepared_statement_and_answers_204():
+    validator, query, answer, response_id, by_id = correction_chain("/tm-internal/surveys/:id/timezone")
+    assert validator["outputs"] == 2
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
+        "sqlite", "rewrite survey timezone", "prepared", TMDB)
+    assert sql_text(query) == TIMEZONE_SQL
+    assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+    assert answer["name"] == "tm-internal: answer timezone correction"
+
+
+@needs_node
+def test_timezone_correction_answers_204():
+    _, _, answer, *_ = correction_chain("/tm-internal/surveys/:id/timezone")
+    [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_timezone_statement_is_in_the_database_error_catch():
+    flows = json.loads(FLOWS.read_text())
+    query = named(flows, "rewrite survey timezone")
+    catch = named(flows, "catch: tm-internal query errors")
+    assert query["id"] in catch["scope"] and query["g"] == catch["g"]
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id, body, zone, detail", [
+    (SURVEY_ID, {"timezone": "America/New_York"}, "America/New_York", None),
+    (SURVEY_ID, {"timezone": None}, None, None),
+    (SURVEY_ID, {"timezone": " Asia/Tokyo "}, "Asia/Tokyo", None),
+    (SURVEY_ID, {"timezone": "UTC"}, "UTC", None),
+    (SURVEY_ID, {"timezone": "Etc/GMT+5"}, "Etc/GMT+5", None),
+    (SURVEY_ID, {"timezone": "America/Argentina/Buenos_Aires"}, "America/Argentina/Buenos_Aires", None),
+    (SURVEY_ID, {"timezone": "x" * 64}, "x" * 64, None),
+    (SURVEY_ID, {}, None, "timezone"),
+    (SURVEY_ID, {"zone": "Europe/Berlin"}, None, "timezone"),
+    (SURVEY_ID, "timezone=Europe/Berlin", None, "timezone"),
+    (SURVEY_ID, {"timezone": 5}, None, "timezone"),
+    (SURVEY_ID, {"timezone": True}, None, "timezone"),
+    (SURVEY_ID, {"timezone": ["Europe/Berlin"]}, None, "timezone"),
+    (SURVEY_ID, {"timezone": ""}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "   "}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "not a zone!"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "../../etc/passwd"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "A/B/C/D"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "Europe/"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "x" * 65}, None, "timezone"),
+    (SURVEY_ID.upper(), {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    ("3f9a1c2e", {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    ("3f9a1c2e-si ", {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    (SURVEY_ID.upper(), {"timezone": 5}, None, "survey_id"),
+])
+def test_timezone_correction_is_validated(survey_id, body, zone, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate timezone correction")
+    msg = {"req": {"params": {"id": survey_id}}, "payload": body}
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["params"] == {"$survey_id": survey_id, "$timezone": zone}
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert json.dumps(body) not in json.dumps(refused["payload"])
+
+
+def test_timezone_correction_rewrites_every_row_of_the_place():
+    query = named(json.loads(FLOWS.read_text()), "rewrite survey timezone")
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for deployment_id, ended, survey_id, zone in (("open-d", None, SURVEY_ID, "Asia/Tokyo"),
+                                                  ("closed-d", 1761800005000, SURVEY_ID, None),
+                                                  ("other-d", None, "7b2e9d41-si", "Asia/Tokyo")):
+        con.execute("INSERT INTO deployment (id, entryStartDateTime, entryEndDateTime, sensorType, sensorName, "
+                    "survey_id, timezone) VALUES (?, 1761800000000, ?, 'cameras', 'x', ?, ?)",
+                    (deployment_id, ended, survey_id, zone))
+    con.execute(query["sql"], {"survey_id": SURVEY_ID, "timezone": "Europe/Berlin"})
+    zones = dict(con.execute("SELECT id, timezone FROM deployment"))
+    assert zones == {"open-d": "Europe/Berlin", "closed-d": "Europe/Berlin", "other-d": "Asia/Tokyo"}
+    con.execute(query["sql"], {"survey_id": SURVEY_ID, "timezone": None})
+    zones = dict(con.execute("SELECT id, timezone FROM deployment"))
+    assert zones == {"open-d": None, "closed-d": None, "other-d": "Asia/Tokyo"}
 
 
 def recorded_database():

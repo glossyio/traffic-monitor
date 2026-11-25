@@ -1692,7 +1692,7 @@
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1762
+        "h": 1882
     },
     {
         "id": "484071aff09e5ec2",
@@ -3405,12 +3405,20 @@
             "a5836f2e218cb9c6",
             "6578a61853b78e20",
             "f27bb7d2bc4643b9",
-            "2fba6a580459637e"
+            "2fba6a580459637e",
+            "7b32a79988c5ce39",
+            "7342031a60396a47",
+            "44cdd86764d1ffdc",
+            "b773eb1df09cc254",
+            "82504a20bd8b043f",
+            "712fa247a928d654",
+            "b8602cd7a771d4d4",
+            "9e1579a5e79ef7a4"
         ],
         "x": 94,
         "y": 1419,
         "w": 1786,
-        "h": 1042
+        "h": 1162
     },
     {
         "id": "fc8558ca801e2e70",
@@ -3442,7 +3450,7 @@
             "14a96b9cab881583"
         ],
         "x": 94,
-        "y": 2481,
+        "y": 2601,
         "w": 1786,
         "h": 360
     },
@@ -3457,7 +3465,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 290,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "6b382c2da7bcd551"
@@ -3478,7 +3486,7 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "91884d5e4502aca4"
@@ -3502,7 +3510,7 @@
         "finalize": "",
         "libs": [],
         "x": 820,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "81e08b68e847f62b"
@@ -3521,7 +3529,7 @@
         "statusCode": "401",
         "headers": {},
         "x": 820,
-        "y": 2560,
+        "y": 2680,
         "wires": []
     },
     {
@@ -3533,7 +3541,7 @@
         "statusCode": "",
         "headers": {},
         "x": 1080,
-        "y": 2560,
+        "y": 2680,
         "wires": []
     },
     {
@@ -4143,7 +4151,8 @@
             "5815e04433eba419",
             "ac9c1f431f070f3a",
             "0204bc17a2650741",
-            "52facc3cf1d876db"
+            "52facc3cf1d876db",
+            "b773eb1df09cc254"
         ],
         "uncaught": false,
         "x": 310,
@@ -16280,6 +16289,146 @@
         "wires": []
     },
     {
+        "id": "7b32a79988c5ce39",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "url": "/tm-internal/surveys/:id/timezone",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 2480,
+        "wires": [
+            [
+                "7342031a60396a47"
+            ]
+        ]
+    },
+    {
+        "id": "7342031a60396a47",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 2480,
+        "wires": [
+            [
+                "44cdd86764d1ffdc"
+            ],
+            [
+                "b8602cd7a771d4d4"
+            ]
+        ]
+    },
+    {
+        "id": "44cdd86764d1ffdc",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: validate timezone correction",
+        "func": "// tm-control sets or clears the time zone of one place: every deployment row of the survey takes it, the ended ones too.\n// A zone is trimmed text of 1 to 64 characters in the shape of an IANA name (up to three parts); null clears it, and the\n// key must be there. The control app checks the name against the device's list; this is the shape rule only.\n// Nothing is logged or echoed back, so no zone leaves the request.\nconst id = msg.req.params.id;\nif (typeof id !== \"string\" || !/^[0-9a-f]{8}-si$/.test(id)) {\n    msg.statusCode = 400;\n    msg.payload = { error: \"bad_request\", detail: \"survey_id\" };\n    return [null, msg];\n}\nconst body = msg.payload !== null && typeof msg.payload === \"object\" ? msg.payload : {};\nlet zone = body.timezone;\nif (zone !== null) {\n    zone = typeof zone === \"string\" ? zone.trim() : null;\n    if (zone === null || zone.length < 1 || zone.length > 64 || !/^[A-Za-z0-9_+-]+(\\/[A-Za-z0-9_+-]+){0,2}$/.test(zone)) {\n        msg.statusCode = 400;\n        msg.payload = { error: \"bad_request\", detail: \"timezone\" };\n        return [null, msg];\n    }\n}\nmsg.params = { $survey_id: id, $timezone: zone };\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 2480,
+        "wires": [
+            [
+                "b773eb1df09cc254"
+            ],
+            [
+                "9e1579a5e79ef7a4"
+            ]
+        ]
+    },
+    {
+        "id": "b773eb1df09cc254",
+        "type": "sqlite",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE deployment\nSET timezone = $timezone\nWHERE survey_id = $survey_id;\n",
+        "name": "rewrite survey timezone",
+        "x": 1080,
+        "y": 2480,
+        "wires": [
+            [
+                "82504a20bd8b043f"
+            ]
+        ]
+    },
+    {
+        "id": "82504a20bd8b043f",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "tm-internal: answer timezone correction",
+        "func": "// The correction answers with no body\nmsg.statusCode = 204;\nmsg.payload = \"\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 2480,
+        "wires": [
+            [
+                "712fa247a928d654"
+            ]
+        ]
+    },
+    {
+        "id": "712fa247a928d654",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1580,
+        "y": 2480,
+        "wires": []
+    },
+    {
+        "id": "b8602cd7a771d4d4",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 2520,
+        "wires": []
+    },
+    {
+        "id": "9e1579a5e79ef7a4",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "3da2c0e89c06736d",
+        "name": "",
+        "statusCode": "400",
+        "headers": {},
+        "x": 1080,
+        "y": 2520,
+        "wires": []
+    },
+    {
         "id": "42ab4681bb24d9f1",
         "type": "group",
         "z": "05fcb02c571dcfee",
@@ -16655,7 +16804,7 @@
         "sql": "SELECT * FROM setup_device WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
         "name": "read open setup_device",
         "x": 1090,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "47ad2479608c5f08"
@@ -16683,7 +16832,7 @@
         "to": "",
         "reg": false,
         "x": 1340,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "ea82e1bc3f359912"
@@ -16700,7 +16849,7 @@
         "sql": "SELECT * FROM setup_camera WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
         "name": "read open setup_camera",
         "x": 1590,
-        "y": 2520,
+        "y": 2640,
         "wires": [
             [
                 "64a84c0c2197e5eb"
@@ -16728,7 +16877,7 @@
         "to": "",
         "reg": false,
         "x": 360,
-        "y": 2680,
+        "y": 2800,
         "wires": [
             [
                 "02692ea73db6605b"
@@ -16749,7 +16898,7 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 2680,
+        "y": 2800,
         "wires": [
             [
                 "b20cf5f74c76ef7a"
@@ -16778,7 +16927,7 @@
         "sql": "UPDATE setup_device SET ended = $ended WHERE id = $id;\n",
         "name": "close setup_device",
         "x": 880,
-        "y": 2620,
+        "y": 2740,
         "wires": [
             []
         ]
@@ -16793,7 +16942,7 @@
         "sql": "INSERT INTO setup_device (id, started, tm_version, tm_commit, schema_version, frigate_version, unit_system, detector, model_id, model_file, model_sha256, model_kind, model_title, model_trained_at, model_base, model_type, model_width, model_height, labels_available)\nVALUES ($id, $started, $tm_version, $tm_commit, $schema_version, $frigate_version, $unit_system, $detector, $model_id, $model_file, $model_sha256, $model_kind, $model_title, $model_trained_at, $model_base, $model_type, $model_width, $model_height, $labels_available);\n",
         "name": "insert setup_device",
         "x": 880,
-        "y": 2660,
+        "y": 2780,
         "wires": [
             []
         ]
@@ -16808,7 +16957,7 @@
         "sql": "UPDATE setup_camera SET ended = $ended WHERE id = $id;\n",
         "name": "close setup_camera",
         "x": 880,
-        "y": 2700,
+        "y": 2820,
         "wires": [
             []
         ]
@@ -16823,7 +16972,7 @@
         "sql": "INSERT INTO setup_camera (id, started, camera, detect_width, detect_height, detect_fps, stationary_threshold, stationary_interval, lens_hfov, labels_tracked, thresholds, zones, masks, profile)\nVALUES ($id, $started, $camera, $detect_width, $detect_height, $detect_fps, $stationary_threshold, $stationary_interval, $lens_hfov, $labels_tracked, $thresholds, $zones, $masks, $profile);\n",
         "name": "insert setup_camera",
         "x": 880,
-        "y": 2740,
+        "y": 2860,
         "wires": [
             []
         ]
@@ -16837,7 +16986,7 @@
         "statusCode": "",
         "headers": {},
         "x": 880,
-        "y": 2780,
+        "y": 2900,
         "wires": []
     },
     {
@@ -16852,7 +17001,7 @@
         ],
         "uncaught": false,
         "x": 1090,
-        "y": 2620,
+        "y": 2740,
         "wires": [
             [
                 "c1cca813e49a5808"
@@ -16873,7 +17022,7 @@
         "finalize": "",
         "libs": [],
         "x": 1340,
-        "y": 2620,
+        "y": 2740,
         "wires": [
             [
                 "14a96b9cab881583"
@@ -16889,7 +17038,7 @@
         "statusCode": "500",
         "headers": {},
         "x": 1590,
-        "y": 2620,
+        "y": 2740,
         "wires": []
     }
 ]
