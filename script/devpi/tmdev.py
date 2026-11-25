@@ -357,10 +357,12 @@ def deploy_remote(name, hostvars, src, tmsetup_args, log_file):
 
 
 def source_args(src):
-    """tmsetup.sh arguments that hand the installer the commit and branch of src, since the copy on the Pi has no .git.
+    """tmsetup.sh arguments that hand the installer the commit and branch of src, and whether src has changes, since
+    the copy on the Pi has no .git.
 
     The branch is left out when it has a character the role wouldn't record (tmsetup.sh splits its arguments on
-    spaces and lets the shell expand them), and both are left out when src isn't a checkout.
+    spaces and lets the shell expand them), and everything is left out when src isn't a checkout. Changes are an
+    edited tracked file or a new file git doesn't ignore, which is what `git status --porcelain` lists.
     """
     def git(*args):
         result = subprocess.run(["git", "-C", str(src), "rev-parse", *args], capture_output=True, text=True)
@@ -373,6 +375,9 @@ def source_args(src):
     branch = git("--abbrev-ref", "HEAD")
     if branch and re.fullmatch(r"[A-Za-z0-9._/-]{1,200}", branch):
         args += ["-a", f"e tmsetup_source_branch={branch}"]
+    status = subprocess.run(["git", "-C", str(src), "status", "--porcelain"], capture_output=True, text=True)
+    if status.returncode == 0 and status.stdout.strip():
+        args += ["-a", "e tmsetup_source_modified=true"]
     return args
 
 

@@ -82,6 +82,7 @@ The two modes:
 - **On-Pi** copies the working tree, including uncommitted changes, to `~/tm-src` on the Pi, then runs `tmsetup.sh` there as a local install. Use it when a test plan calls for a run on the device, such as a sudo prompt or a non-root run.
   - The copy leaves out `.git`, `docs/`, `static/`, and git-ignored files.
   - The installer gets the copied tree's commit and branch (`tmsetup_source_commit` and `tmsetup_source_branch`), so the unit's install manifest names them even without `.git`. A branch name with a character other than letters, digits, `.`, `_`, `/`, and `-` is left out, and the manifest then says `unknown` for it.
+  - When the tree has an edited tracked file or a new file that git doesn't ignore, the installer also gets `tmsetup_source_modified=true`, and the manifest records `git.modified`, which the Device page shows next to the commit.
 
 Both modes:
 - pass everything after `--` to `tmsetup.sh`;

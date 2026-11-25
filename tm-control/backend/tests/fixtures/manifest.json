@@ -3,7 +3,8 @@
     "tm_version": "0.7.1-test",
     "git": {
         "commit": "0000000000000000000000000000000000000000",
-        "branch": "test"
+        "branch": "test",
+        "modified": false
     },
     "installing_user": "pi",
     "codedir": "/opt/traffic-monitor",

@@ -26,6 +26,7 @@ class TmInstall(BaseModel):
     version: str
     commit: str
     branch: str
+    modified: bool  # the installed tree had changes that aren't in the commit
     installing_user: str | None  # the system account, for Cockpit and SSH; None in the answer to a viewer
 
 
@@ -80,6 +81,7 @@ def system_info(app_state, hostname: str, serial: str) -> SystemInfo:
             version=manifest.tm_version,
             commit=manifest.git.commit,
             branch=manifest.git.branch,
+            modified=manifest.git.modified,
             installing_user=manifest.installing_user,
         ),
         components=dict(manifest.components),
