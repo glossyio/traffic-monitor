@@ -95,12 +95,12 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 
 **Reference picture** gives you one zip for a tool that places recorded paths on a street: a still picture of what the camera sees, the same view with its zones marked, and the zones' shapes and sizes. Both pictures are the size of Frigate's detect frame, so paths and boxes recorded as fractions of that frame line up with them.
 
-| File               | What it holds                                                                                                           |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `<name>_clean.jpg` | The camera's current frame from Frigate, with nothing drawn on it                                                       |
-| `<name>_zones.jpg` | The same view a moment later, drawn by Frigate with the outline of each zone that is on, in the zone's colour           |
-| `<name>.json`      | The data file: the place, the camera, when the pictures were taken, and every zone; see [The data file](#the-data-file) |
-| `<name>_zones.svg` | A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it           |
+| File               | What it holds                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `<name>_clean.jpg` | The camera's current frame from Frigate, with nothing drawn on it                                                                          |
+| `<name>_zones.jpg` | The same view a moment later, drawn by Frigate with the outline of each zone that is on, in the zone's colour                              |
+| `<name>.json`      | The data file: the place, the camera, how it is mounted, when the pictures were taken, and every zone; see [The data file](#the-data-file) |
+| `<name>_zones.svg` | A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it                              |
 
 The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name (the one in bold on its row), and when the clean picture was taken, in UTC.
 
@@ -134,18 +134,30 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 
 ### The data file
 
-| Field                                        | What it holds                                                                                                              |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `format`, `format_version`                   | `traffic-monitor-reference` and `1`                                                                                        |
-| `survey_id`                                  | The ID of the place in use, or `null`                                                                                      |
-| `camera`                                     | The camera's name (the one in bold on its row)                                                                             |
-| `deployment_id`                              | The camera's open deployment at the place, or `null`                                                                       |
-| `location`                                   | `{"lat": …, "lon": …}`, the place's exact location, or `null` when the box was cleared or there was no location to include |
-| `pictures`                                   | Each file's name, and for the two pictures `taken_at`, in UTC, such as `2026-11-18T18:30:05Z`                              |
-| `traffic_monitor_version`, `frigate_version` | The versions running when the pictures were taken                                                                          |
-| `detect`                                     | The `width` and `height` of Frigate's detect frame in pixels, which is the pictures' size                                  |
-| `distance_unit`                              | The unit of the zones' side lengths: `ft` when Frigate's interface is set to imperial units, else `m`                      |
-| `zones`                                      | Every zone of the camera, in Frigate's order, with the fields below                                                        |
+| Field                                        | What it holds                                                                                                                                                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`, `format_version`                   | `traffic-monitor-reference` and `1`                                                                                                                                                                                              |
+| `survey_id`                                  | The ID of the place in use, or `null`                                                                                                                                                                                            |
+| `camera`                                     | The camera's name (the one in bold on its row)                                                                                                                                                                                   |
+| `deployment_id`                              | The camera's open deployment at the place, or `null`                                                                                                                                                                             |
+| `location`                                   | `{"lat": …, "lon": …}`, the place's exact location, or `null` when the box was cleared or there was no location to include                                                                                                       |
+| `pose`                                       | How the camera is mounted, as the control app records it for the camera when the picture is taken (see the Pose field table below), or `null` when nothing is recorded for the camera or its entry is turned off in `config.yml` |
+| `pictures`                                   | Each file's name, and for the two pictures `taken_at`, in UTC, such as `2026-11-18T18:30:05Z`                                                                                                                                    |
+| `traffic_monitor_version`, `frigate_version` | The versions running when the pictures were taken                                                                                                                                                                                |
+| `detect`                                     | The `width` and `height` of Frigate's detect frame in pixels, which is the pictures' size                                                                                                                                        |
+| `distance_unit`                              | The unit of the zones' side lengths: `ft` when Frigate's interface is set to imperial units, else `m`                                                                                                                            |
+| `zones`                                      | Every zone of the camera, in Frigate's order, with the fields in the Zone field table below                                                                                                                                      |
+
+| Pose field        | What it holds                                                                                 |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `heading_deg`     | The way the camera faces, in degrees clockwise from true north (0 to 359), or `null`          |
+| `pitch_deg`       | How far below level the camera is tilted, in degrees (0 to 90), or `null`                     |
+| `height_m`        | The camera's height above the road, in metres, or `null`                                      |
+| `view_distance_m` | The distance along the ground from the camera to the centre of its view, in metres, or `null` |
+| `mount`           | The usual mount the recording started from, such as `pole`, or `null`                         |
+| `hfov_deg`        | Always `null` for now. It is kept for the camera's horizontal field of view                   |
+
+The pose is for placing the recorded paths on a street plan. It holds no coordinate, name, or description, so it goes into the data file whether or not the box for the place's exact location is ticked. The drawing's caption says which way the camera faces, such as `facing NE (40°)`, when a heading is recorded.
 
 | Zone field                                                | What it holds                                                                                                                                                                                                                                                                                   |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

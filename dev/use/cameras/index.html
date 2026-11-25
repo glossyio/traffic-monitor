@@ -2724,7 +2724,7 @@
 </tr>
 <tr>
 <td><code>&lt;name&gt;.json</code></td>
-<td>The data file: the place, the camera, when the pictures were taken, and every zone; see <a href="#the-data-file">The data file</a></td>
+<td>The data file: the place, the camera, how it is mounted, when the pictures were taken, and every zone; see <a href="#the-data-file">The data file</a></td>
 </tr>
 <tr>
 <td><code>&lt;name&gt;_zones.svg</code></td>
@@ -2790,6 +2790,10 @@
 <td><code>{"lat": …, "lon": …}</code>, the place's exact location, or <code>null</code> when the box was cleared or there was no location to include</td>
 </tr>
 <tr>
+<td><code>pose</code></td>
+<td>How the camera is mounted, as the control app records it for the camera when the picture is taken (see the Pose field table below), or <code>null</code> when nothing is recorded for the camera or its entry is turned off in <code>config.yml</code></td>
+</tr>
+<tr>
 <td><code>pictures</code></td>
 <td>Each file's name, and for the two pictures <code>taken_at</code>, in UTC, such as <code>2026-11-18T18:30:05Z</code></td>
 </tr>
@@ -2807,10 +2811,45 @@
 </tr>
 <tr>
 <td><code>zones</code></td>
-<td>Every zone of the camera, in Frigate's order, with the fields below</td>
+<td>Every zone of the camera, in Frigate's order, with the fields in the Zone field table below</td>
 </tr>
 </tbody>
 </table>
+<table>
+<thead>
+<tr>
+<th>Pose field</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>heading_deg</code></td>
+<td>The way the camera faces, in degrees clockwise from true north (0 to 359), or <code>null</code></td>
+</tr>
+<tr>
+<td><code>pitch_deg</code></td>
+<td>How far below level the camera is tilted, in degrees (0 to 90), or <code>null</code></td>
+</tr>
+<tr>
+<td><code>height_m</code></td>
+<td>The camera's height above the road, in metres, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>view_distance_m</code></td>
+<td>The distance along the ground from the camera to the centre of its view, in metres, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>mount</code></td>
+<td>The usual mount the recording started from, such as <code>pole</code>, or <code>null</code></td>
+</tr>
+<tr>
+<td><code>hfov_deg</code></td>
+<td>Always <code>null</code> for now. It is kept for the camera's horizontal field of view</td>
+</tr>
+</tbody>
+</table>
+<p>The pose is for placing the recorded paths on a street plan. It holds no coordinate, name, or description, so it goes into the data file whether or not the box for the place's exact location is ticked. The drawing's caption says which way the camera faces, such as <code>facing NE (40°)</code>, when a heading is recorded.</p>
 <table>
 <thead>
 <tr>
