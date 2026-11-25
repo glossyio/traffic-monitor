@@ -281,6 +281,62 @@ def test_the_file_naming_an_imported_survey_puts_that_one_in_use(unit):
     places = Places(unit.state)
     assert places.in_use().id == SECOND and places.get(FIRST).status == "used"
     assert len(places.list()) == 2 and corrections(unit) == []
+    assert places.in_use().headings == SENSORS
+
+
+def imported_at_the_files_point(unit):
+    """An upgraded unit whose file is at the backup's FIRST place, after the first run: FIRST is in use."""
+    write_backup(unit, BACKUP_ROWS)
+    answer_usage(unit.nodered)
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    assert reconcile.ensure(unit).imported == 2
+    assert Places(unit.state).in_use().id == FIRST
+
+
+def test_an_imported_place_at_the_files_point_takes_the_files_headings(unit):
+    imported_at_the_files_point(unit)
+    places = Places(unit.state)
+    assert places.in_use().headings == SENSORS
+    assert places.get(SECOND).headings == []  # a place left used keeps none
+    assert corrections(unit) == []
+
+
+def test_a_reset_after_the_upgrade_gets_the_headings_back(unit):
+    """A place the upgrade put in use has its sensors' headings stored, so tmsetup.sh -f before any deploy or save
+    gets them back and the engine starts no deployment with no heading."""
+    imported_at_the_files_point(unit)
+    unit.nodered = FakeNodeRed(unit.config_path)
+    assert {(row["sensorName"], row["survey_id"], row["heading_deg"]) for row in unit.nodered.rows} == {
+        ("picam_h265", FIRST, 0), ("TM_RADAR_SERIAL_PORT_00", FIRST, 0)}
+    edit(unit, f"heading_deg: 0\n    survey_id: {FIRST}\n", "heading_deg:\n    survey_id:\n")
+    unit.nodered.after_config_write()  # no survey id, so the open rows are kept
+    rows = [dict(row) for row in unit.nodered.rows]
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == FIRST
+    assert sensor_heading(unit, "cameras", "picam_h265") == 0
+    assert sensor_heading(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == 0
+    unit.nodered.after_config_write()
+    assert unit.nodered.rows == rows  # the same two rows: none new, none closed
+
+
+def test_a_place_put_in_use_keeps_the_rows_it_has(unit):
+    """A move by hand stores a heading only for a sensor the place has no row for; a row it has stays as it is, and
+    the heading typed into the file stays unremembered."""
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", None, 45.0, -122.0, [SensorHeading(sensor_type="cameras", sensor_name="picam_h265",
+                                                                  heading_deg=40)], "ui", "planned", None)
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    edit(unit, "            camera_radar: TM_RADAR_SERIAL_PORT_00\n",
+         "            camera_radar: TM_RADAR_SERIAL_PORT_00\n            deployment:\n"
+         "                heading_deg: 90\n")
+    reconcile.ensure(unit)
+    current = places.in_use()
+    assert current.id == "3f9a1c2e-si"
+    assert [(h.sensor_name, h.heading_deg) for h in current.headings] == [
+        ("picam_h265", 40), ("TM_RADAR_SERIAL_PORT_00", 0)]
+    assert sensor_heading(unit, "cameras", "picam_h265") == 90
 
 
 @pytest.mark.parametrize(

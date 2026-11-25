@@ -3,12 +3,13 @@
 Once per unit (the device table's surveys_reconciled_at): on a fresh unit with nothing in the file and no tmdb backup,
 create the first place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb
 backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
-place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
-use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, the precision
-last seen with a survey named unless the file's is coarser, the place's headings where the file's are blank, the
-mounting stored and confirmed for the place where a sensor has none in the file and faces as stored, and the place's
-point, if it has one, over whatever the installer rendered; blank lat and lon get the place's point back too, since a
-place with a point is never corrected to none (decision 9).
+place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in use.
+A place that already existed and is put in use, by the import or by a hand edit, stores the file's heading for each
+enabled sensor it has no row for. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets
+its id back, the precision last seen with a survey named unless the file's is coarser, the place's headings where the
+file's are blank, the mounting stored and confirmed for the place where a sensor has none in the file and faces as
+stored, and the place's point, if it has one, over whatever the installer rendered; blank lat and lon get the place's
+point back too, since a place with a point is never corrected to none (decision 9).
 
 Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock,
 and so does the sharing follow step after it (modules/sharing/follow.py).
@@ -276,6 +277,7 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
     if deployment.survey_id is not None:
         if places.get(deployment.survey_id) is not None:
             places.set_in_use(deployment.survey_id)
+            _store_missing_headings(places, config, deployment.survey_id)
         else:
             _create_from_file(places, config, deployment, deployment.survey_id, user_id)
         return
@@ -287,6 +289,7 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
     config.save()
     if match is not None:
         places.set_in_use(match.id)
+        _store_missing_headings(places, config, match.id)
     elif point == (None, None) and not deployment.coordinates_invalid and not places.list():
         # Nothing in the file, and nothing imported (the backup couldn't be read): as a fresh unit starts
         _create_in_use(places, survey_id, DEFAULT_DESCRIPTION, point, config.sensors(), "default", user_id)
@@ -314,6 +317,16 @@ def _create_in_use(
     places.set_in_use(survey_id)
 
 
+def _store_missing_headings(places: Places, config: NodeRedConfig, survey_id: str) -> None:
+    """A place that already existed is now in use (one the upgrade imported has no sensors at all): each enabled sensor
+    it has no row for gets one with its heading as the engine reads it from the file, so a reset gives it back. A row
+    the place has is never changed, and only the store is written, so no deployment can start."""
+    have = {(h.sensor_type, h.sensor_name) for h in places.get(survey_id).headings}
+    for sensor in config.sensors():
+        if (sensor.sensor_type, sensor.sensor_name) not in have:
+            places.set_heading(survey_id, sensor.sensor_type, sensor.sensor_name, sensor.heading_deg)
+
+
 # Every run
 
 
@@ -332,6 +345,7 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             config.set_place(named.id, named.lat, named.lon)
             config.save()
             places.set_in_use(named.id)
+            _store_missing_headings(places, config, named.id)
             # Node-RED's watch fired on the hand edit and started the new deployments at the coordinates the file
             # held then; they take the place's point. Residual: a place with no point has nothing to give them, so
             # those rows keep the coordinates the hand edit left (the engine starts no new rows when only lat and lon
