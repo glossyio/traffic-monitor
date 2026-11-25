@@ -61,7 +61,11 @@ tmsetup_perform_apt_upgrade: false
 tmsetup_force_configs: false
 tmsetup_reboot_now: false
 tmsetup_tmp_dir: ~/.tmsetup
-tmsetup_reboot_touch_file: "{{ tmsetup_tmpdir }}/reboot-required"
+tmsetup_reboot_touch_file: "{{ tmsetup_tmp_dir }}/reboot-required"
+
+# The GitHub repository this install came from, as <owner>/<repo>, recorded in the install manifest. A fork that
+# publishes its own releases sets its own. Only a GitHub repository is meant.
+tmsetup_update_repo: 'glossyio/traffic-monitor'
 
 tmsetup_bool_plate_recognizer: false
 # Creates an MQTT broker login in node-red-tm.env if it has none (tmsetup.sh -C mqtt_lan).

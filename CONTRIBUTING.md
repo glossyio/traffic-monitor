@@ -117,6 +117,8 @@ When a user performs a `git clone`, it will pull down the `main` branch, which s
 
 Maintainers: to release, fast-forward `main` to `dev` with `git fetch origin && git push origin origin/dev:main`, then tag the release on `main`. GitHub marks the release PR as merged when the push lands. Don't use the PR's merge button: every merge method adds a commit to `main` that `dev` doesn't have, which also keeps the release tag out of `dev`'s history.
 
+On `dev`, `tmsetup_tm_version` (in `script/ansible/roles/tmsetup/vars/main.yml`) is the next release's version with `-dev` on the end, such as `0.8.0-dev`. The release's last commit on `dev` takes the `-dev` off, and the first commit after the release sets the next version with `-dev`.
+
 ![Git flow branching strategy diagram](static/img/gitflow-trans-dark.drawio.png)
 
 ## Git naming convention / branch naming

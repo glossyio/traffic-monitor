@@ -1,7 +1,7 @@
 """The database: schema current, no plate reads, new radar and event rows when there's traffic, and
 deployment rows that are rounded, one open per enabled sensor, and on the configured survey.
 
-Every test here reads tmdb.sqlite, so they run only on units marked pii_free, and they
+Every test here but the manifest's reads tmdb.sqlite, so they run only on units marked pii_free, and they
 print only counts, timestamps, sensor names, and survey ids.
 """
 
@@ -260,6 +260,26 @@ def test_the_watch_log_has_a_row_for_each_sensor(host, expect, codedir, node_red
 SETUP_FIRST_ROWS_SECONDS = 2 * 60
 SETUP_MAX_AGE_SECONDS = 400  # a snapshot every 300 seconds, plus the time to gather and post
 MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
+
+
+def test_the_manifest_says_what_the_unit_runs(host):
+    """The manifest's version is a release's (X.Y.Z) or dev's (X.Y.Z-dev), its update channel is development exactly
+    when the version ends in -dev, its update repository is <owner>/<repo>, and its commit is a full commit id or
+    unknown. Reads only."""
+    manifest = json.loads(read_root_file(host, MANIFEST))
+    version = manifest.get("tm_version")
+    update = manifest.get("update") or {}
+    problems = []
+    if not isinstance(version, str) or not re.fullmatch(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-dev)?", version):
+        problems.append(f"tm_version {version!r} is neither X.Y.Z nor X.Y.Z-dev")
+    elif update.get("channel") != ("development" if version.endswith("-dev") else "stable"):
+        problems.append(f"update.channel {update.get('channel')!r} doesn't follow tm_version {version!r}")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", str(update.get("repo"))):
+        problems.append(f"update.repo {update.get('repo')!r} isn't <owner>/<repo>")
+    commit = (manifest.get("git") or {}).get("commit")
+    if commit != "unknown" and not re.fullmatch(r"[0-9a-f]{40}", str(commit)):
+        problems.append(f"git.commit {commit!r} is neither a full commit id nor unknown")
+    assert not problems, "; ".join(problems)
 
 
 def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, frigate_config):

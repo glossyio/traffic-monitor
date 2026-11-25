@@ -39,7 +39,16 @@
 
 # The repo is on the machine running tmsetup.sh, which for -H installs isn't the device. git may refuse a repo
 # another user owns (safe.directory); the manifest then says unknown rather than failing the install.
+# A caller that copies a tree without .git (tmdev.py deploy --on-pi) passes tmsetup_source_commit and
+# tmsetup_source_branch instead, and git isn't asked. Only a full commit id (40 lowercase hex characters) counts as
+# passed: any other value is ignored, never recorded, and git is asked as before. A passed branch is recorded only
+# when it is 1 to 200 of A-Z a-z 0-9 . _ / -, else unknown. Both must be text: a JSON or YAML -e can pass a number,
+# a boolean, or null, which is never recorded (`| string` would make 123 or 40 digits fit the pattern, and None
+# stays None). (?!.) under (?s) ends the match at the very end of the text, where $ would also allow a final newline.
 - name: TMSetup - tm-control Service - Read the git commit
+  when: >-
+    not (tmsetup_source_commit is defined and tmsetup_source_commit is string
+         and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)'))
   become: false
   delegate_to: localhost
   ansible.builtin.command:
@@ -54,6 +63,9 @@
   failed_when: false
 
 - name: TMSetup - tm-control Service - Read the git branch
+  when: >-
+    not (tmsetup_source_commit is defined and tmsetup_source_commit is string
+         and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)'))
   become: false
   delegate_to: localhost
   ansible.builtin.command:
@@ -83,10 +95,19 @@
       tm_version: '{{ tmsetup_tm_version }}'
       git:
         commit: >-
-          {{ tmsetup_tm_control_git_commit_register.stdout
+          {{ tmsetup_source_commit
+             if tmsetup_source_commit is defined and tmsetup_source_commit is string
+                and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)')
+             else tmsetup_tm_control_git_commit_register.stdout
              if tmsetup_tm_control_git_commit_register.rc | default(1) == 0 else 'unknown' }}
         branch: >-
-          {{ tmsetup_tm_control_git_branch_register.stdout
+          {{ (tmsetup_source_branch
+              if tmsetup_source_branch is defined and tmsetup_source_branch is string
+                 and tmsetup_source_branch is match('(?s)[A-Za-z0-9._/-]{1,200}(?!.)')
+              else 'unknown')
+             if tmsetup_source_commit is defined and tmsetup_source_commit is string
+                and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)')
+             else tmsetup_tm_control_git_branch_register.stdout
              if tmsetup_tm_control_git_branch_register.rc | default(1) == 0 else 'unknown' }}
       installing_user: "{{ ansible_facts['user_id'] }}"
       codedir: '{{ tmsetup_codedir }}'
@@ -113,6 +134,10 @@
         public_map_live: '{{ tmsetup_sharing_public_map_live | bool }}'
       map:
         style_url: '{{ tmsetup_map_style_url }}'
+      update:
+        repo: '{{ tmsetup_update_repo }}'
+        # A version ending in -dev is an install from the dev branch
+        channel: "{{ 'development' if (tmsetup_tm_version | string).endswith('-dev') else 'stable' }}"
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results
