@@ -459,6 +459,8 @@ def test_entered_secrets_move_before_any_config_template_renders():
         rendered = evaluate(argv, tmsetup_entered_secrets_stat_register=stat_results(*exists), **paths)
         assert rendered == base + options, exists
         assert "runuser" not in " ".join(rendered)  # root writes the secret files
+        # Node-RED's start converts a bearing (node-red-tm.container.j2): the old Node-RED runs during this pass
+        assert "--node-red-headings" not in rendered
     for exists, runs in [((False, False, False), False), ((True, False, False), True), ((False, True, False), True),
                          ((False, False, True), True), ((True, True, True), True)]:
         assert evaluate("{{ %s }}" % move["when"],
@@ -473,6 +475,20 @@ def test_entered_secrets_move_before_any_config_template_renders():
                     tmsetup_entered_secret_names=["thingsboard_access_token", "plate_recognizer_token"],
                     tmsetup_entered_secrets_slurp_register=slurped) == {
         "generated": "kept", "thingsboard_access_token": "tb-placeholder-345", "plate_recognizer_token": ""}
+
+
+def test_only_node_red_s_start_converts_a_bearing():
+    """The installer pass may not change a key a running engine compares, and the old Node-RED runs while it does, so
+    no installer task passes --node-red-headings. Only node-red-tm.service's pre-start line does
+    (node-red-tm.container.j2), before any flow runs."""
+    tasks = [path for path in (ROLE / "tasks").rglob("*") if path.is_file()]
+    assert tasks
+    assert [path for path in tasks if "--node-red-headings" in path.read_text(encoding="utf-8")] == []
+    templates = (ROLE / "templates").resolve()
+    container = (ROLE / "templates" / "container").resolve()  # a symlink to the top-level container/
+    found = sorted({path.resolve() for root in (templates, container) for path in root.rglob("*")
+                    if path.is_file() and "--node-red-headings" in path.read_text(encoding="utf-8", errors="replace")})
+    assert found == [REPO / "container" / "node-red-tm" / "node-red-tm.container.j2"]
 
 
 def test_a_typed_frigate_plus_key_moves_before_frigate_env_is_written():

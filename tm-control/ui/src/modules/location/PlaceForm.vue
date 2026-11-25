@@ -1,6 +1,6 @@
 <!--
   The dialog that adds a place (POST /surveys) or, given a planned `survey`, edits it (PATCH /surveys/{id}): a private
-  description, the coordinates as one "latitude, longitude" field, and a bearing for each enabled sensor. On a secure
+  description, the coordinates as one "latitude, longitude" field, and a heading for each enabled sensor. On a secure
   (HTTPS) page the phone can fill in the coordinates; on plain HTTP browsers don't share a location, and the form says
   so. A map button under the field picks the point on a map instead, and a line warns when fewer than four decimal
   places are typed (about 10 m): advice, never an error. The form starts over each time it opens. Emits `saved` with
@@ -13,16 +13,17 @@
 import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
-import { BEARINGS, fewDecimalsWarning, formatExact, parsePair, startingBearings, type LatLon } from './coordinates'
+import { fewDecimalsWarning, formatExact, parsePair, startingHeadings, type LatLon } from './coordinates'
+import HeadingPick from './HeadingPick.vue'
 import MapPickButton from './MapPickButton.vue'
 
-type Bearing = components['schemas']['Bearing']
+type SensorHeading = components['schemas']['SensorHeading']
 type SurveyOut = components['schemas']['SurveyOut']
 type MapSources = components['schemas']['MapSources']
 
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{
-  sensors: Bearing[] // the enabled sensors, each with its bearing in config.yml now
+  sensors: SensorHeading[] // the enabled sensors, each with its heading in config.yml now
   survey?: SurveyOut // the planned place to edit; none to add one
   map: MapSources // where the map comes from; null style_url is no map
   centre: LatLon | null // where the map looks first with no point: the place in use
@@ -32,7 +33,7 @@ const emit = defineEmits<{ saved: [survey: SurveyOut, onMap: boolean]; stale: []
 const description = ref('')
 const coordinates = ref('')
 const onMap = ref(false) // whether the map set the coordinates last
-const bearings = ref<Bearing[]>([])
+const headings = ref<SensorHeading[]>([])
 const saving = ref(false)
 const error = ref('')
 const locating = ref(false)
@@ -46,7 +47,7 @@ watch(
     const survey = props.survey
     description.value = survey?.description ?? ''
     coordinates.value = survey && survey.lat !== null ? formatExact(survey.lat, survey.lon) : ''
-    bearings.value = startingBearings(props.sensors, survey)
+    headings.value = startingHeadings(props.sensors, survey)
     onMap.value = false
     error.value = ''
     locateError.value = ''
@@ -94,7 +95,7 @@ async function save() {
     description: description.value.trim() || null,
     lat: pair.value?.lat ?? null,
     lon: pair.value?.lon ?? null,
-    bearings: bearings.value,
+    headings: headings.value,
   }
   try {
     const { data } = props.survey
@@ -167,16 +168,14 @@ const title = computed(() => {
           </p>
           <v-alert v-if="locateError" type="warning" class="mt-4">{{ locateError }}</v-alert>
 
-          <template v-if="bearings.length">
+          <template v-if="headings.length">
             <h3 class="text-subtitle-1 font-weight-medium mt-6">Which way each sensor faces here</h3>
-            <v-select
-              v-for="bearing in bearings"
-              :key="`${bearing.sensor_type}/${bearing.sensor_name}`"
-              v-model="bearing.bearing"
-              :label="`Bearing, ${bearing.sensor_name}`"
-              :items="BEARINGS"
-              variant="outlined"
-              hide-details
+            <!-- Keyed by the place too: a pick remembers a measured heading, and this dialog is reused for other places -->
+            <HeadingPick
+              v-for="sensor in headings"
+              :key="`${survey?.id ?? 'new'}/${sensor.sensor_type}/${sensor.sensor_name}`"
+              v-model="sensor.heading_deg"
+              :label="`Facing, ${sensor.sensor_name}`"
               class="mt-4"
             />
           </template>

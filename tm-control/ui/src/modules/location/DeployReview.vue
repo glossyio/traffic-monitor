@@ -1,10 +1,10 @@
 <!--
   The review step before a deploy (POST /surveys/{id}/deploy), the content of the page's dialog, named by the place's
-  status (deployWords: Deploy here, Re-deploy here, or Modify deployment). It shows what deploying does rather than how: for each enabled sensor whether a new deployment starts, with its bearing then and
+  status (deployWords: Deploy here, Re-deploy here, or Modify deployment). It shows what deploying does rather than how: for each enabled sensor whether a new deployment starts, with its heading then and
   the one to deploy with (which can be changed here); what the database stores for the place; what's shared. Deploy
-  sends every sensor's bearing and waits, inside the request, for Node-RED to start the deployments. Then the review
+  sends every sensor's heading and waits, inside the request, for Node-RED to start the deployments. Then the review
   gives way to the result: the new deployment ids to copy, or, when Node-RED hasn't reloaded the settings yet, a line
-  that says the deploy is done and shouldn't be repeated. At the place in use, only a sensor whose bearing changes
+  that says the deploy is done and shouldn't be repeated. At the place in use, only a sensor whose heading changes
   starts a new deployment (the unit was turned), and Modify waits for one to change.
 
   Emits `deployed` once the API has answered, or once the connection dropped while it waited (the settings may be
@@ -16,7 +16,9 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import { copyText } from '../../components/clipboard'
-import { BEARINGS, PRECISIONS, bearingTitle, deployWords, formatStored, startingBearings } from './coordinates'
+import { PRECISIONS, deployWords, formatStored, startingHeadings } from './coordinates'
+import { facing } from './heading'
+import HeadingPick from './HeadingPick.vue'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -33,19 +35,19 @@ const precision = props.state.precision
 const sharing = props.state.sharing
 const words = deployWords(props.place.status)
 
-// The bearing to deploy each sensor with: the place's own, else the sensor's current one. At the place in use, the
+// The heading to deploy each sensor with: the place's own, else the sensor's current one. At the place in use, the
 // current one: that's what runs, and the review starts from no change.
-const chosen = ref(startingBearings(sensors, inUse === props.place.id ? undefined : props.place))
+const chosen = ref(startingHeadings(sensors, inUse === props.place.id ? undefined : props.place))
 
 // Whether each sensor starts a new deployment: every one when the unit moves to another place, else only those whose
-// bearing changes
+// heading changes
 const startsNew = computed(() =>
-  chosen.value.map((choice, index) => inUse !== props.place.id || choice.bearing !== sensors[index].bearing),
+  chosen.value.map((choice, index) => inUse !== props.place.id || choice.heading_deg !== sensors[index].heading_deg),
 )
 const anyNew = computed(() => startsNew.value.some((starts) => starts))
 
-function was(bearing: string) {
-  return bearing ? bearingTitle(bearing) : 'not set'
+function was(heading: number | null) {
+  return heading === null ? 'not set' : facing(heading)
 }
 
 // What the database stores for the place, as the API rounded it; null when it stores nothing
@@ -75,7 +77,7 @@ async function deploy() {
   try {
     const { data } = await api.POST('/api/v1/surveys/{survey_id}/deploy', {
       params: { path: { survey_id: props.place.id } },
-      body: { bearings: chosen.value },
+      body: { headings: chosen.value },
     })
     result.value = data as DeployOut
     emit('deployed')
@@ -128,17 +130,14 @@ async function copy(id: string) {
             <div :class="['text-body-2', startsNew[index] ? 'text-primary' : 'text-secondary']">
               {{ startsNew[index] ? 'New deployment starts' : 'Unchanged' }}
             </div>
-            <div class="d-flex align-center ga-3 mt-2">
-              <span class="text-body-1 text-no-wrap">Was {{ was(sensor.bearing) }}, now</span>
-              <v-select
-                v-model="chosen[index].bearing"
-                :items="BEARINGS"
-                :aria-label="`Bearing to deploy ${sensor.sensor_name} with`"
+            <div class="d-flex flex-wrap align-center ga-2 mt-2">
+              <span class="text-body-1 text-no-wrap">Was {{ was(sensor.heading_deg) }}, now</span>
+              <HeadingPick
+                v-model="chosen[index].heading_deg"
+                :aria-label="`Heading to deploy ${sensor.sensor_name} with`"
                 :disabled="deploying"
-                variant="outlined"
                 density="compact"
-                hide-details
-                class="bearing"
+                class="heading"
               />
             </div>
           </li>
@@ -150,7 +149,7 @@ async function copy(id: string) {
         <p v-else class="text-body-1">Nothing stored in the database</p>
         <p class="text-body-1">{{ sharingLine }}</p>
         <p v-if="anyNew" class="text-body-1 mt-4">Counts from now on attach to the new deployment.</p>
-        <p v-else class="text-body-1 mt-4">Every sensor keeps its deployment. Change a bearing to start a new one.</p>
+        <p v-else class="text-body-1 mt-4">Every sensor keeps its deployment. Change a heading to start a new one.</p>
 
         <div v-if="deploying" role="status" class="mt-6">
           <v-progress-linear indeterminate color="primary" class="mb-2" />
@@ -205,8 +204,10 @@ async function copy(id: string) {
   padding: 0;
 }
 
-/* Wide enough for "Not set" and the menu's arrow */
-.bearing {
-  max-width: 9rem;
+/* Wide enough for "NE (40°)" and the menu's arrow. The row wraps rather than squeeze it when the words before it are
+   long, as "Was NE (40°), now" is on a phone. */
+.heading {
+  flex: none;
+  width: 11rem;
 }
 </style>

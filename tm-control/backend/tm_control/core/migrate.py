@@ -557,9 +557,88 @@ def _next_entry(parents, path, depth, keys, index):
     return None
 
 
+# The eight compass points in the order of their centres (index times 45); modules/location/coordinates.py has the
+# same tuple, which this module can't import (see _normalized_host), and a test keeps them equal.
+COMPASS_POINTS = ("n", "ne", "e", "se", "s", "sw", "w", "nw")
+BEARING_UNREADABLE = (
+    "isn't one of the eight compass points; left as it is. Write heading_deg (whole degrees from north) in its place."
+)
+
+
+def _unset(value):
+    return value is None or value == ""
+
+
+def _bearing_centre(value):
+    """The heading at the centre of an old bearing that is one of the eight points (trimmed, lower-cased), else None."""
+    if not isinstance(value, str):
+        return None
+    text = value.strip().lower()
+    return COMPASS_POINTS.index(text) * 45 if text in COMPASS_POINTS else None
+
+
+def _heading_blocks(config):
+    """(path, block) for the top-level deployment block and every sensor's own, enabled or not."""
+    found = []
+    if isinstance(config, dict) and isinstance(config.get("deployment"), dict):
+        found.append((("deployment",), config["deployment"]))
+    sensors = config.get("sensors") if isinstance(config, dict) else None
+    for sensor_type, named in (sensors.items() if isinstance(sensors, dict) else ()):
+        for name, sensor in (named.items() if isinstance(named, dict) else ()):
+            own = sensor.get("deployment") if isinstance(sensor, dict) else None
+            if isinstance(own, dict):
+                found.append((("sensors", sensor_type, name, "deployment"), own))
+    return found
+
+
+def _bearing_changes(config, config_path):
+    """What to do about each old bearing key: a list of (kind, path, block, centre) for kind "convert" (rename it to
+    heading_deg, in place, with the centre or a blank), "fill" (heading_deg is blank, so it takes the centre, and the
+    bearing goes) or "remove" (heading_deg is there, so the bearing is only extra). A bearing that is neither blank nor
+    a point is left as it is, with a warning that names the key's path and nothing else."""
+    changes = []
+    for path, block in _heading_blocks(config):
+        if "bearing" not in block:
+            continue
+        bearing = block["bearing"]
+        dotted = ".".join(str(part) for part in path)
+        centre = None if _unset(bearing) else _bearing_centre(bearing)
+        if "heading_deg" not in block:
+            kind = "convert"
+        elif not _unset(block["heading_deg"]):
+            kind = "remove"
+        elif _unset(bearing):
+            kind = "remove"
+        else:
+            kind = "fill"
+        if kind != "remove" and not _unset(bearing) and centre is None:
+            _warn_secret(config_path, f"{dotted}.bearing {BEARING_UNREADABLE}")
+            continue
+        changes.append((kind, path, block, centre))
+    return changes
+
+
+def _apply_bearing_change(config, kind, path, block, centre):
+    if kind == "convert":
+        # heading_deg takes the bearing's place and comment; the comment keeps two spaces before it
+        position = list(block).index("bearing")
+        block.insert(position, "heading_deg", centre)
+        tokens = block.ca.items.pop("bearing", None)
+        del block["bearing"]
+        if tokens is not None:
+            block.ca.items["heading_deg"] = tokens
+            if tokens[2] is not None:
+                text = "heading_deg:" + ("" if centre is None else f" {centre}")
+                tokens[2].start_mark = CommentMark(block.lc.col + len(text) + 2)
+        return
+    if kind == "fill":
+        block["heading_deg"] = centre
+    _delete(config, (*path, "bearing"), False)
+
+
 def _sensor_coordinates(config):
     """(path, own deployment block) of every sensor under sensors.<type>.<name> whose deployment block still holds a lat
-    or lon: the location is per unit, so tmsetup removes them (a sensor's own bearing stays)."""
+    or lon: the location is per unit, so tmsetup removes them (a sensor's own heading stays)."""
     found = []
     sensors = config.get("sensors") if isinstance(config, dict) else None
     for sensor_type, named in (sensors.items() if isinstance(sensors, dict) else ()):
@@ -626,27 +705,80 @@ def _unexpected(path, step, *args):
         return 1
 
 
+def _load_node_red(config_path):
+    """Node-RED's config.yml loaded for a round trip, or None after printing why it can't be."""
+    try:
+        return RoundTripFile(config_path, mapping_indent=4)  # as config.yml.j2 indents
+    except OSError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {error}", file=sys.stderr)
+    except YAMLError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {_describe_yaml_error(error)}", file=sys.stderr)
+    except UnicodeError as error:
+        print(f"{PREFIX} ERROR reading {config_path}: {_not_utf8(error)}", file=sys.stderr)
+    return None
+
+
+def _save_node_red(document, config_path, steps):
+    """Save the document with a backup and print what was done; return a process exit code."""
+    try:
+        backup = document.save(keep=True)
+    except (OSError, ConcurrentEditError) as error:
+        print(f"{PREFIX} ERROR writing {config_path}: {error}", file=sys.stderr)
+        return 1
+    print(f"{PREFIX} {config_path}: " + ", ".join(done for _, done in steps) + f" (backup: {backup})")
+    return 0
+
+
 def run_node_red(config_path, secrets_dir, dry_run=False):
-    """Move thingsboard.access_token and addons.plate_recognizer.token from Node-RED's config.yml to the secret files,
-    and delete keys left with no value. Return a process exit code.
+    """The installer's pass over Node-RED's config.yml: move thingsboard.access_token and addons.plate_recognizer.token
+    to the secret files and delete keys left with no value, add deployment.database_precision, point the old
+    placeholder ThingsBoard host at the maintainer's, and remove a sensor's own lat/lon. Return a process exit code.
 
     A secret file that already holds a value keeps it, and the key is deleted all the same (with a warning when the
     two differ; the backup keeps the other value). Nothing printed holds a value or the file's text.
+
+    It never touches a bearing: the installer runs this while the old Node-RED is still up, and that Node-RED's config
+    watch compares each block's bearing with the open deployment and starts a new one when it changes. A key that a
+    running engine compares changes at Node-RED's start instead (run_node_red_headings).
     """
     return _unexpected(config_path, _run_node_red, Path(config_path), Path(secrets_dir), dry_run)
 
 
+def run_node_red_headings(config_path, dry_run=False):
+    """Node-RED's start, before any flow runs: turn each old bearing in config.yml into heading_deg, and nothing else.
+    A bearing that is one of the eight points becomes its centre in the key's place; a blank heading_deg beside one
+    takes its centre; a bearing beside a heading is removed; one that is neither blank nor a point is left, with a
+    warning by key path. Return a process exit code. It needs no secrets, so the code owner can run it."""
+    return _unexpected(config_path, _run_node_red_headings, Path(config_path), dry_run)
+
+
+def _run_node_red_headings(config_path, dry_run):
+    document = _load_node_red(config_path)
+    if document is None:
+        return 1
+    steps = []  # (what a dry run would do, what was done)
+    bearing_changes = _bearing_changes(document.data, config_path)
+    for kind, path, _, _ in bearing_changes:
+        dotted = ".".join(str(part) for part in path)
+        if kind == "remove":
+            steps.append((f"remove {dotted}.bearing, which sits beside heading_deg",
+                          f"removed {dotted}.bearing, which sits beside heading_deg"))
+        else:
+            steps.append((f"convert {dotted}.bearing to heading_deg", f"converted {dotted}.bearing to heading_deg"))
+    if not steps:
+        print(f"{PREFIX} {config_path}: up to date")
+        return 0
+    if dry_run:
+        print(f"{PREFIX} {config_path}: would " + ", ".join(would for would, _ in steps))
+        return 0
+    for kind, path, block, centre in bearing_changes:
+        _apply_bearing_change(document.data, kind, path, block, centre)
+    return _save_node_red(document, config_path, steps)
+
+
 def _run_node_red(config_path, secrets_dir, dry_run):
-    try:
-        document = RoundTripFile(config_path, mapping_indent=4)  # as config.yml.j2 indents
-    except OSError as error:
-        print(f"{PREFIX} ERROR reading {config_path}: {error}", file=sys.stderr)
-        return 1
-    except YAMLError as error:
-        print(f"{PREFIX} ERROR reading {config_path}: {_describe_yaml_error(error)}", file=sys.stderr)
-        return 1
-    except UnicodeError as error:
-        print(f"{PREFIX} ERROR reading {config_path}: {_not_utf8(error)}", file=sys.stderr)
+    document = _load_node_red(config_path)
+    if document is None:
         return 1
 
     steps = []  # (what a dry run would do, what was done)
@@ -726,20 +858,15 @@ def _run_node_red(config_path, secrets_dir, dry_run):
     for path, prune in deletions:
         _delete(document.data, path, prune)
     if add_precision:
-        # After survey_id, as config.yml.j2 orders them; else after bearing.
-        after = "survey_id" if "survey_id" in deployment else "bearing"
+        # After survey_id, as config.yml.j2 orders them; else after the heading, or after the bearing that Node-RED's
+        # start converts in its place.
+        after = next((key for key in ("survey_id", "heading_deg", "bearing") if key in deployment), None)
         put_after(deployment, "database_precision", SingleQuotedScalarString("2"), after)  # the default, about 1 km
     if placeholder_host is not None:
         placeholder_host["host"] = _requoted(placeholder_host["host"], MAINTAINER_HOST)
     for path, own in sensor_coordinates:
         _remove_sensor_coordinates(document.data, path, own)
-    try:
-        backup = document.save(keep=True)
-    except (OSError, ConcurrentEditError) as error:
-        print(f"{PREFIX} ERROR writing {config_path}: {error}", file=sys.stderr)
-        return 1
-    print(f"{PREFIX} {config_path}: " + ", ".join(done for _, done in steps) + f" (backup: {backup})")
-    return 0
+    return _save_node_red(document, config_path, steps)
 
 
 def _env_values(text):

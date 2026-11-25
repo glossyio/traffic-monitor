@@ -1,0 +1,36 @@
+thingsboard:
+    # The access token isn't kept in this file. Set it, and choose what's shared, on the control app's Sharing page.
+    enabled: false
+    host: tb.example.invalid
+    protocol: https
+    # port: 443
+
+deployment:
+    lat: 45.0
+    lon: -122.0
+    bearing: 's'
+    survey_id: 0123abcd-si  # names the place the device is used at (set on the control app's Location page); a change here starts a new deployment
+
+sensors:
+    cameras:
+        picam_h265:
+            enabled: true
+            camera_radar: TM_RADAR_SERIAL_PORT_00
+            deployment:
+                heading_deg:
+                bearing: 'w'
+
+    radars:
+        TM_RADAR_SERIAL_PORT_00:
+            enabled: true
+            opt_api_commands_array: '["^/+0.00\n", "^/-0.00\n"]'
+            deployment:
+                heading_deg: 90
+                bearing: 'n'
+
+    airquality_monitors:
+        sensorname01:
+            enabled: false
+            mqtt_topic_incoming: readings
+            deployment:
+                bearing: ''

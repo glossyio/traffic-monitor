@@ -62,7 +62,7 @@ The [radar](radar-payload.md) tables are described on their own page. The two ta
 
 ### deployment
 
-A row for each combination of sensor, survey, and bearing the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id or the sensor's bearing changes; moving the coordinates alone does not start one. Removing a sensor's entry from `config.yml` ends its row; disabling the sensor doesn't. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+A row for each combination of sensor, survey, and heading the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id or the sensor's heading changes; moving the coordinates alone does not start one. Removing a sensor's entry from `config.yml` ends its row; disabling the sensor doesn't. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
 
 | Column | Type | Meaning |
 |---|---|---|
@@ -73,10 +73,14 @@ A row for each combination of sensor, survey, and bearing the device has had, ta
 | `location_precision` | INTEGER | The number of decimal places kept in `lat` and `lon`: `1` (about 10 km) or `2` (about 1 km). Empty when the row has no coordinates. |
 | `lat` | REAL | Latitude in decimal degrees, rounded to `location_precision` decimal places; empty when no location was given or the precision is `none` |
 | `lon` | REAL | Longitude in decimal degrees, rounded the same way |
-| `bearing` | TEXT | Compass direction the sensor faces: `n`, `s`, `e`, `w`, `ne`, `nw`, `se`, or `sw`. Empty when no bearing was set; closed rows written by earlier releases can hold `null` or `undefined` instead. |
+| `heading_deg` | INTEGER | The way the sensor faces, in whole degrees clockwise from true north: 0 is north, 90 is east, 180 is south, 270 is west. From 0 to 359. Empty when no heading was set. |
 | `sensorType` | TEXT | `cameras`, `radars`, or `airquality_monitors` |
 | `sensorName` | TEXT | The sensor's name in `config.yml`. For a camera, that's its entry's name under `sensors.cameras`, which can differ from its name in Frigate. |
 | `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written by earlier releases can hold `undefined` instead. |
+
+!!! note "Older exports have `bearing`"
+
+    Before this release the table had a `bearing` column instead of `heading_deg`. It held one of eight compass points, and older closed rows can hold `null` or `undefined` there. The upgrade writes each row's `heading_deg` as the centre of its point, from the [table of centres](../configuration/node-red-config.md#if-your-file-still-says-bearing), and leaves it empty when the row had no point. It then removes `bearing` from the database. A copy made before the upgrade, or an export from an older device, keeps `bearing`, so a query that reads an older copy has to convert the point. A converted heading is only as exact as the point it came from: a sensor that was recorded as facing `n` reads 0, even if it really faced a little to one side.
 
 The database holds shareable data only, so the exact location is never written to it. A database upgraded from a release that stored exact coordinates holds rounded ones. When Node-RED first starts after the upgrade, the database migration copies the database to `db/backup/tmdb-v<N>-<time>.sqlite` in the `node-red-tm` directory, where N is the schema version the device was on before, and that copy holds the exact rows. A device upgrading from a release (0.7.1 or earlier) has `tmdb-v0-…`, and a device that already ran a development build with the first schema version has `tmdb-v1-…`. The copy is kept until the next schema change succeeds. You can delete it sooner, once the control app has read the past places from it; see [Places after an update](../build-your-own-device-diy/update.md#places-after-an-update). The first upgrade from a release copies the whole database, so it needs free space of about 1.2 times the database's size. If the disk was too full for the copy, it was skipped and the exact coordinates are gone.
 

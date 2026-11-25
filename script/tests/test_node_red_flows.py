@@ -19,6 +19,7 @@ from tmsetup_render import REPO, load_role_yaml, render
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
+from tm_control.modules.location.coordinates import read_heading  # noqa: E402  (needs tm-control/backend on sys.path)
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -397,7 +398,7 @@ def test_init_config_no_longer_reads_time():
 def test_init_config_defaults_loads_the_new_config_template():
     """A new device's config.yml has no time: section; init config defaults must still pass it on."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
-              "tmsetup_bearing": "n"}
+              "tmsetup_heading_deg": 0}
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
     defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
     [step] = run_functions([(defaults, {"payload": config})])["results"]
@@ -410,29 +411,28 @@ TB_ENV = {"TM_THINGSBOARD_ACCESS_TOKEN": "tb-placeholder-0001"}
 
 @needs_node
 def test_thingsboard_without_a_host_is_a_config_error():
-    """Only this init config defaults error passes msg, so the catch records it in tm_status.config.errors. The lat,
-    lon, and bearing checks stay log-only: they flag values that aren't coordinates or bearings, and tm-control checks
-    those keys."""
+    """This init config defaults error passes msg, so the catch records it in tm_status.config.errors. The lat and
+    lon checks stay log-only: they flag values that aren't coordinates, and tm-control checks those keys. An old
+    bearing that isn't a compass point is no error here: it reads as no heading, and tm-control reports it."""
     flows = json.loads(FLOWS.read_text())
     defaults = named(flows, "init config defaults")
     assert INIT_DEFAULTS in named(flows, "catch: config.yml load errors")["scope"]
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
-              "tmsetup_bearing": "n"}
+              "tmsetup_heading_deg": 0}
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
     config["thingsboard"] = {"enabled": True}
     config["deployment"] = {"lat": "north", "lon": "west", "bearing": "up"}
     [step] = run_functions([(defaults, {"payload": config})], env=TB_ENV)["results"]
     # The key each message names ("Node-RED config.yml key thingsboard.host needs ..."), and whether msg came with it
     errors = {text.split()[3]: with_msg for level, text, with_msg in step["logged"] if level == "error"}
-    assert errors == {"thingsboard.host": True, "deployment.lat": False, "deployment.lon": False,
-                      "deployment.bearing": False}
+    assert errors == {"thingsboard.host": True, "deployment.lat": False, "deployment.lon": False}
     assert step["result"]["payload"]["thingsboard"]["enabled"] is False
 
 
 def new_device_config():
-    """The config.yml a new device gets, with its coordinates set to 0.0 and its bearing to n."""
+    """The config.yml a new device gets, with its coordinates set to 0.0 and its heading to 0."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
-              "tmsetup_bearing": "n"}
+              "tmsetup_heading_deg": 0}
     return yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **values))
 
 
@@ -564,7 +564,7 @@ def test_init_config_defaults_survey_keys(given, expected, errors):
 def test_init_config_defaults_allows_blank_coordinates(coordinates):
     """Blank coordinates mean no location yet, and a number quoted in YAML is still a number; neither is an error."""
     config = new_device_config()
-    config["deployment"] = {"bearing": "", **coordinates}
+    config["deployment"] = {"heading_deg": None, **coordinates}
     defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
     [step] = run_functions([(defaults, {"payload": config})])["results"]
     assert [text for level, text, _ in step["logged"] if level == "error"] == []
@@ -576,40 +576,143 @@ def test_init_config_defaults_allows_blank_coordinates(coordinates):
 MISSING = object()
 
 
-@needs_node
-@pytest.mark.parametrize("top, sensor, expected_top, expected_sensor, errors", [
-    ("", None, "", "", []),
-    (None, None, "", "", []),
-    (MISSING, None, "", "", []),
-    ("NE", None, "ne", "ne", []),
-    ("up", None, "up", "up", ["top-level"]),
-    ("n", {"bearing": ""}, "n", "", []),
-    ("n", {"bearing": None}, "n", "", []),
-    ("n", {}, "n", "n", []),
-    (None, {}, "", "", []),
-    (None, {"lat": 0.0}, "", "", []),
-    (None, {"bearing": None}, "", "", []),
-    ("n", {"bearing": "up"}, "n", "", ["sensor"]),
-], ids=["top-empty", "top-null", "top-missing", "top-upper-case", "top-invalid", "sensor-empty", "sensor-null",
-        "sensor-block-empty", "top-null-sensor-block-empty", "top-null-sensor-block", "both-null", "sensor-invalid"])
-def test_init_config_defaults_allows_a_blank_bearing(top, sensor, expected_top, expected_sensor, errors):
-    """A blank bearing means none yet, at the top level and per sensor; only a bearing that isn't one is an error."""
-    config = new_device_config()
-    if top is MISSING:
-        del config["deployment"]["bearing"]
-    else:
-        config["deployment"]["bearing"] = top
-    camera = config["sensors"]["cameras"]["picam_h265"]
-    if sensor is not None:
-        camera["deployment"] = sensor
+def init_defaults(config):
+    """Run init config defaults on config; returns its payload and its errors, each with whether msg came with it."""
     defaults = named(json.loads(FLOWS.read_text()), "init config defaults")
     [step] = run_functions([(defaults, {"payload": config})])["results"]
-    logged = [text for level, text, _ in step["logged"] if level == "error"]
-    assert ["top-level" if "top-level deployment.bearing" in text else "sensor" if text.startswith("Invalid bearing")
-            else text for text in logged] == errors
-    payload = step["result"]["payload"]
-    assert payload["deployment"]["bearing"] == expected_top
-    assert payload["sensors"]["cameras"]["picam_h265"]["deployment"]["bearing"] == expected_sensor
+    return step["result"]["payload"], [(text, with_msg) for level, text, with_msg in step["logged"] if level == "error"]
+
+
+def heading_config(top, camera=None):
+    """A new device's config.yml with this top-level deployment block, and this one for the camera unless None (the
+    radar has none)."""
+    config = new_device_config()
+    config["deployment"] = {key: value for key, value in config["deployment"].items() if key != "heading_deg"}
+    config["deployment"].update(top)
+    if camera is not None:
+        config["sensors"]["cameras"]["picam_h265"]["deployment"] = camera
+    return config
+
+
+def headings(payload):
+    """The top level's heading, the camera's, and the radar's."""
+    sensors = payload["sensors"]
+    return (payload["deployment"]["heading_deg"], sensors["cameras"]["picam_h265"]["deployment"]["heading_deg"],
+            sensors["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"]["heading_deg"])
+
+
+def heading_error(path):
+    return (f"{path}.heading_deg isn't a whole number from 0 to 359", True)
+
+
+CAMERA_PATH = "sensors.cameras.picam_h265.deployment"
+BAD_HEADINGS = [360, -1, 40.5, "40", True]
+
+
+@needs_node
+@pytest.mark.parametrize("top, sensor, expected, errors", [
+    ({}, None, (None, None, None), []),
+    ({"heading_deg": 90}, None, (90, 90, 90), []),
+    ({"heading_deg": 90}, {}, (90, 90, 90), []),
+    ({"heading_deg": 90}, {"lat": 0.0}, (90, 90, 90), []),
+    ({"heading_deg": 90}, {"heading_deg": 40}, (90, 40, 90), []),
+    ({"heading_deg": 90}, {"heading_deg": None}, (90, None, 90), []),
+    ({"heading_deg": 90}, {"heading_deg": ""}, (90, None, 90), []),
+    ({"heading_deg": 0}, {"heading_deg": 359}, (0, 359, 0), []),
+    ({"heading_deg": 359}, None, (359, 359, 359), []),
+    *[({"heading_deg": bad}, None, (None, None, None), ["deployment"]) for bad in BAD_HEADINGS],
+    *[({"heading_deg": 90}, {"heading_deg": bad}, (90, None, 90), [CAMERA_PATH]) for bad in BAD_HEADINGS],
+], ids=["no-key", "top-reaches-no-block", "top-reaches-empty-block", "top-reaches-block-without-a-heading",
+        "sensor-wins", "sensor-null-overrides", "sensor-blank-overrides", "zero-and-359", "top-359",
+        *[f"top-{bad!r}" for bad in BAD_HEADINGS], *[f"sensor-{bad!r}" for bad in BAD_HEADINGS]])
+def test_init_config_defaults_heading(top, sensor, expected, errors):
+    """A whole number from 0 to 359 is kept, a blank one is none, and anything else is none and a config error (given
+    with msg, so the catch records it) that names the key's path and never the value. A sensor's block that has a
+    heading (or an old bearing) settles its own; one without takes the top level's."""
+    payload, logged = init_defaults(heading_config(top, sensor))
+    assert headings(payload) == expected
+    assert logged == [heading_error(path) for path in errors]
+
+
+@needs_node
+@pytest.mark.parametrize("top", ["", None, MISSING], ids=["empty", "null", "missing"])
+@pytest.mark.parametrize("sensor", [None, {"heading_deg": ""}, {"heading_deg": None}],
+                         ids=["no-block", "sensor-empty", "sensor-null"])
+def test_init_config_defaults_allows_a_blank_heading(top, sensor):
+    """A blank heading means none yet, at the top level and per sensor, and is no error."""
+    payload, logged = init_defaults(heading_config({} if top is MISSING else {"heading_deg": top}, sensor))
+    assert headings(payload) == (None, None, None)
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("top, camera, expected", [
+    ({"bearing": "NE"}, None, (45, 45, 45)),
+    ({"heading_deg": 90}, {"bearing": " NE "}, (90, 45, 90)),
+    ({"bearing": "sw", "heading_deg": None}, {"bearing": "nw", "heading_deg": ""}, (225, 315, 225)),
+    ({"bearing": "ne", "heading_deg": 100}, {"bearing": "ne", "heading_deg": 100}, (100, 100, 100)),
+    ({"bearing": "up"}, None, (None, None, None)),
+    ({"heading_deg": 90}, {"bearing": "up"}, (90, None, 90)),
+    ({"heading_deg": 90}, {"bearing": None}, (90, None, 90)),
+], ids=["top-ne", "sensor-ne", "blank-heading-beside-a-bearing", "heading-wins", "top-not-a-point",
+        "sensor-not-a-point", "sensor-blank-bearing"])
+def test_init_config_defaults_reads_an_old_bearing_as_its_centre(top, camera, expected):
+    """A file from before headings may still say bearing: one of the eight points, trimmed and lower-cased, is its
+    centre, and anything else is none. It is no error here (tm-control's Status page reports it), and the bearing key
+    is gone afterwards."""
+    payload, logged = init_defaults(heading_config(top, camera))
+    assert headings(payload) == expected
+    assert logged == []
+    blocks = [payload["deployment"], *(sensor["deployment"] for kind in payload["sensors"].values()
+                                       for sensor in (kind or {}).values() if sensor.get("enabled") is True)]
+    assert len(blocks) == 3 and not any("bearing" in block for block in blocks)
+
+
+# One table of top-level deployment blocks, read by the flows and by tm-control's read_heading. JavaScript can't tell
+# 40.0 from 40, so both read it as 40; the Status check and migrate go through read_heading.
+HEADING_BLOCKS = [
+    {},
+    {"heading_deg": 0},
+    {"heading_deg": 40},
+    {"heading_deg": 359},
+    {"heading_deg": 40.0},
+    {"heading_deg": 360},
+    {"heading_deg": -1},
+    {"heading_deg": 40.5},
+    {"heading_deg": "40"},
+    {"heading_deg": True},
+    {"heading_deg": False},
+    {"heading_deg": [40]},
+    {"heading_deg": None},
+    {"heading_deg": ""},
+    {"bearing": "ne"},
+    {"bearing": " SW "},
+    {"bearing": "n"},
+    {"bearing": "up"},
+    {"bearing": ""},
+    {"bearing": None},
+    {"bearing": 90},
+    {"bearing": True},
+    {"heading_deg": None, "bearing": "w"},
+    {"heading_deg": "", "bearing": "nw"},
+    {"heading_deg": 100, "bearing": "ne"},
+    {"heading_deg": 400, "bearing": "ne"},
+    {"heading_deg": "40", "bearing": "ne"},
+    {"heading_deg": 0, "bearing": "s"},
+]
+
+
+@needs_node
+def test_the_flows_read_a_heading_as_the_control_app_does():
+    """Each block goes through init config defaults, at the top level and as a camera's own block, and through
+    read_heading; the answers are the same. Moving one rule means moving both."""
+    for block in HEADING_BLOCKS:
+        expected = read_heading(block)
+        top, _ = init_defaults(heading_config(copy.deepcopy(block)))
+        assert top["deployment"]["heading_deg"] == expected, block
+        if block:  # an empty block takes the top level's heading
+            own, _ = init_defaults(heading_config({"heading_deg": 90}, copy.deepcopy(block)))
+            assert headings(own)[1] == expected, block
 
 
 def test_config_template_has_the_survey_keys():
@@ -736,7 +839,7 @@ def test_radars_report_config_port_and_last_reading():
     def port(serial_id, text):
         return (port_status, {"status": {"text": text, "source": {"id": serial_id, "type": "serial in"}}})
 
-    config = {"deployment": {"survey_id": None, "database_precision": "1", "lat": 0.0, "lon": 0.0, "bearing": "n"},
+    config = {"deployment": {"survey_id": None, "database_precision": "1", "lat": 0.0, "lon": 0.0, "heading_deg": 0},
               "sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True},
                                      "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
     out = run_functions([
@@ -821,7 +924,8 @@ def test_a_radar_removed_from_the_config_is_no_longer_enabled():
     flows = json.loads(FLOWS.read_text())
     loaded = named(flows, "tm-internal: config loaded")
     before = {"sensors": {"radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True}}}}
-    after = {"deployment": {"survey_id": None, "database_precision": "none", "lat": None, "lon": None, "bearing": ""},
+    after = {"deployment": {"survey_id": None, "database_precision": "none", "lat": None, "lon": None,
+                            "heading_deg": None},
              "sensors": {"radars": {}}}
     out = run_functions([(loaded, {}), status_step()], context={"config": before})
     assert out["results"][1]["result"]["payload"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
@@ -837,7 +941,7 @@ def test_config_loaded_records_the_survey_not_the_coordinates():
     flows = json.loads(FLOWS.read_text())
     loaded = named(flows, "tm-internal: config loaded")
     config = {"deployment": {"survey_id": "3f9a1c2e-si", "database_precision": "1", "lat": 45.52252,
-                             "lon": -122.69120, "bearing": "n"},
+                             "lon": -122.69120, "heading_deg": 0},
               "sensors": {"radars": {}}}
     out = run_functions([(loaded, {}), status_step()], context={"config": config})
     assert out["global"]["tm_status"]["deployment"] == {"survey_id": "3f9a1c2e-si", "database_precision": "1"}
@@ -859,55 +963,97 @@ def test_deployment_attribute_has_no_top_level_coordinates():
     """The deployments client attribute names the survey at the top level; only the per-sensor rows, which tmdb
     stores rounded, carry coordinates."""
     template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
-    for key in ("lat", "lon", "bearing"):
+    for key in ("lat", "lon", "heading_deg"):
         assert f"global.config.deployment.{key}" not in template
     top = template[template.index('"deploymentTopLevel"'):]
     assert '"survey_id": "{{global.config.deployment.survey_id}}"' in top
     assert '"database_precision": "{{global.config.deployment.database_precision}}"' in top
 
 
+def render_deployments_template(rows):
+    """What the template renders for these rows: Mustache's two forms the template uses, a section over a list and
+    a variable (a missing or null value is empty text, a number its digits)."""
+    template = {node["id"]: node for node in json.loads(FLOWS.read_text())}["9b0f7197fe82bbfa"]["template"]
+    template = template.replace("{{global.config.deployment.survey_id}}", "s").replace(
+        "{{global.config.deployment.database_precision}}", "2")
+
+    def section(match):
+        return "".join(variables(match.group(1), row) for row in rows)
+
+    def variables(text, row):
+        return re.sub(r"\{\{(\w+)\}\}", lambda m: "" if row.get(m.group(1)) is None else str(row[m.group(1)]), text)
+
+    rendered = re.sub(r"\{\{#payload\.currentDeployment\}\}(.*?)\{\{/payload\.currentDeployment\}\}", section,
+                      template, flags=re.S)
+    return json.loads(rendered)["deployments"]
+
+
+def test_the_deployments_attribute_carries_the_heading():
+    rows = [{"sensorName": "picam_h265", "sensorType": "cameras", "lat": 45.52, "lon": -122.69, "heading_deg": 45,
+             "id": "a-d"},
+            {"sensorName": "TM_RADAR_SERIAL_PORT_00", "sensorType": "radars", "lat": 45.52, "lon": -122.69,
+             "heading_deg": None, "id": "b-d"},
+            {"sensorName": "aq", "sensorType": "airquality_monitors", "lat": 45.52, "lon": -122.69, "id": "c-d"},
+            {"sensorName": "TM_RADAR_SERIAL_PORT_01", "sensorType": "radars", "lat": 45.52, "lon": -122.69,
+             "heading_deg": 0, "id": "d-d"}]
+    sent = render_deployments_template(rows)
+    assert sent["picam_h265"]["heading_deg"] == "45"
+    assert sent["TM_RADAR_SERIAL_PORT_01"]["heading_deg"] == "0"  # north, the value a falsy check would lose
+    assert sent["TM_RADAR_SERIAL_PORT_00"]["heading_deg"] == ""
+    assert sent["aq"]["heading_deg"] == ""
+    assert all("bearing" not in value for value in sent.values())
+
+
+def test_only_the_config_reader_still_says_bearing():
+    """After PR 1 nothing writes a bearing: of every node (its name and info included), only the node that reads an
+    old config.yml's key still holds the word."""
+    flows = json.loads(FLOWS.read_text())
+    holders = {node["id"] for node in flows if "bearing" in json.dumps(node).lower()}
+    assert holders == {"94136e5a6f092bb6"}
+
+
 # The deployment engine on init-config: after each config load it compares every enabled sensor's open deployment
-# row with config.yml's survey id and that sensor's bearing, and writes the rows that start, end, or change.
+# row with config.yml's survey id and that sensor's heading, and writes the rows that start, end, or change.
 
 ENGINE_SURVEY = "3f9a1c2e-si"
 ENGINE_PLACE = {"survey_id": ENGINE_SURVEY, "database_precision": "1", "lat": 45.52252, "lon": -122.69120}
 ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
-    "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, "
-                         "deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, $bearing, "
-                         "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
+    "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
+                         "sensorName, deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, "
+                         "$heading_deg, $sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
-                          "location_precision = $location_precision, bearing = $bearing WHERE id = $id",
+                          "location_precision = $location_precision, heading_deg = $heading_deg WHERE id = $id",
 }
-OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, bearing, sensorType, sensorName, deviceName, survey_id, "
-                 "location_precision FROM deployment WHERE entryEndDateTime IS NULL "
+OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
+                 "survey_id, location_precision FROM deployment WHERE entryEndDateTime IS NULL "
                  "ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
-ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "bearing", "sensorType", "sensorName",
+ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
             "deviceName", "survey_id", "location_precision"}
 
 
 def engine_sensors(camera_deployment=None):
-    camera_deployment = {"bearing": "n"} if camera_deployment is None else camera_deployment
+    camera_deployment = {"heading_deg": 0} if camera_deployment is None else camera_deployment
     return {"cameras": {"picam_h265": {"enabled": True, "deployment": camera_deployment}},
-            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"bearing": "s"}},
+            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"heading_deg": 180}},
                        "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}
 
 
-def open_row(sensor_type, sensor_name, bearing, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
+def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
              started=10, row_id=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
-            "entryStartDateTime": started, "lat": lat, "lon": lon, "bearing": bearing, "sensorType": sensor_type,
+            "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
             "location_precision": precision}
 
 
 def camera_row(**kwargs):
-    return open_row("cameras", "picam_h265", kwargs.pop("bearing", "n"), **kwargs)
+    return open_row("cameras", "picam_h265", kwargs.pop("heading", 0), **kwargs)
 
 
 def radar_row(**kwargs):
-    return open_row("radars", "TM_RADAR_SERIAL_PORT_00", kwargs.pop("bearing", "s"), **kwargs)
+    return open_row("radars", "TM_RADAR_SERIAL_PORT_00", kwargs.pop("heading", 180), **kwargs)
 
 
 class EngineRun:
@@ -948,12 +1094,12 @@ def test_engine_inserts_a_row_per_enabled_sensor_on_a_fresh_database():
     assert run.close == [] and run.rewrite == []
     params = {message["params"]["$sensorName"]: message["params"] for message in run.insert}
     assert set(params) == {"picam_h265", "TM_RADAR_SERIAL_PORT_00"}
-    for name, bearing, sensor_type in [("picam_h265", "n", "cameras"), ("TM_RADAR_SERIAL_PORT_00", "s", "radars")]:
+    for name, heading, sensor_type in [("picam_h265", 0, "cameras"), ("TM_RADAR_SERIAL_PORT_00", 180, "radars")]:
         row = params[name]
         assert {key: row[key] for key in ("$survey_id", "$lat", "$lon", "$location_precision", "$deviceName",
-                                          "$bearing", "$sensorType")} == {
+                                          "$heading_deg", "$sensorType")} == {
             "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-            "$deviceName": "serial-1", "$bearing": bearing, "$sensorType": sensor_type}
+            "$deviceName": "serial-1", "$heading_deg": heading, "$sensorType": sensor_type}
         assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-d", row["$id"])
         assert isinstance(row["$started"], int)
     current = run.payload["currentDeployment"]
@@ -994,31 +1140,60 @@ def test_engine_adopts_an_open_row_without_a_survey():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$bearing": "n"}]
+         "$heading_deg": 0}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
 
 
 @needs_node
-def test_engine_starts_a_deployment_on_a_new_survey_or_bearing():
-    rows = [camera_row(survey_id="aaaaaaaa-si"), radar_row(bearing="e")]
+def test_engine_starts_a_deployment_on_a_new_survey_or_heading():
+    rows = [camera_row(survey_id="aaaaaaaa-si"), radar_row(heading=90)]
     run = engine(engine_sensors(), rows, ENGINE_PLACE)
     assert {message["params"]["$id"] for message in run.close} == {row["id"] for row in rows}
     assert all(isinstance(message["params"]["$ended"], int) for message in run.close)
-    assert {(m["params"]["$sensorName"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.insert} == {
-        ("picam_h265", ENGINE_SURVEY, "n"), ("TM_RADAR_SERIAL_PORT_00", ENGINE_SURVEY, "s")}
+    assert {(m["params"]["$sensorName"], m["params"]["$survey_id"], m["params"]["$heading_deg"])
+            for m in run.insert} == {("picam_h265", ENGINE_SURVEY, 0), ("TM_RADAR_SERIAL_PORT_00", ENGINE_SURVEY, 180)}
     assert run.rewrite == []
     updated = run.payload["updatedDeployment"]
     assert {row["id"] for row in updated} == {row["id"] for row in rows}
     ended = {message["params"]["$id"]: message["params"]["$ended"] for message in run.close}
     assert all(row["entryEndDateTime"] == ended[row["id"]] for row in updated)
     assert {row["id"] for row in run.payload["currentDeployment"]} == {m["params"]["$id"] for m in run.insert}
+    # from no heading to one, and back
+    for row_heading, sensor_heading in ((None, 0), (0, None)):
+        camera = camera_row(heading=row_heading)
+        run = engine(engine_sensors({"heading_deg": sensor_heading}), [camera, radar_row()], ENGINE_PLACE)
+        assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+        assert [(m["params"]["$sensorName"], m["params"]["$heading_deg"]) for m in run.insert] == [
+            ("picam_h265", sensor_heading)]
+        assert run.rewrite == []
 
 
 @needs_node
-def test_engine_adopts_only_when_the_bearing_matches():
-    camera = camera_row(survey_id=None, bearing="w")
+@pytest.mark.parametrize("row_heading, sensor_heading", [(0, 1), (359, 0), (45, 315)],
+                         ids=["one-degree", "across-north", "across-the-dial"])
+def test_engine_starts_a_deployment_on_any_change_of_heading(row_heading, sensor_heading):
+    camera = camera_row(heading=row_heading)
+    run = engine(engine_sensors({"heading_deg": sensor_heading}), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    assert [m["params"]["$heading_deg"] for m in run.insert] == [sensor_heading]
+
+
+@needs_node
+@pytest.mark.parametrize("given", ["45", 45.5, 360, -1, True, "ne"])
+def test_engine_reads_only_a_whole_heading_from_0_to_359(given):
+    """The engine checks a heading itself, as init config defaults does: anything else is none."""
+    run = engine(engine_sensors({"heading_deg": given}), [camera_row(heading=None), radar_row()], ENGINE_PLACE)
+    assert run.written() == []
+    run = engine(engine_sensors({"heading_deg": given}), [], ENGINE_PLACE)
+    assert [m["params"]["$heading_deg"] for m in run.insert if m["params"]["$sensorName"] == "picam_h265"] == [None]
+
+
+@needs_node
+@pytest.mark.parametrize("row_heading", [270, 1, None])
+def test_engine_adopts_only_when_the_heading_matches(row_heading):
+    camera = camera_row(survey_id=None, heading=row_heading)
     run = engine(engine_sensors(), [camera, radar_row()], ENGINE_PLACE)
     assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
     assert [message["params"]["$sensorName"] for message in run.insert] == ["picam_h265"]
@@ -1033,7 +1208,7 @@ def test_engine_never_compares_coordinates():
 
 @needs_node
 def test_engine_ignores_coordinates_under_a_sensor():
-    sensors = engine_sensors({"bearing": "n", "lat": 40.0, "lon": -100.0})
+    sensors = engine_sensors({"heading_deg": 0, "lat": 40.0, "lon": -100.0})
     run = engine(sensors, [], ENGINE_PLACE)
     [camera] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "picam_h265"]
     assert (camera["$lat"], camera["$lon"]) == (45.5, -122.7)
@@ -1046,7 +1221,7 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -1061,13 +1236,13 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$bearing": "n"}]
+         "$heading_deg": 0}]
     rows = [camera_row(), radar_row()]
     run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
-          "$bearing": row["bearing"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
 
 
 @needs_node
@@ -1088,12 +1263,40 @@ def test_engine_stores_null_for_none_or_missing_coordinates(place):
 
 @needs_node
 def test_engine_without_a_survey_id_creates_missing_rows_and_closes_nothing():
-    camera = camera_row(survey_id="aaaaaaaa-si", bearing="w")
+    camera = camera_row(survey_id="aaaaaaaa-si", heading=270)
     run = engine(engine_sensors(), [camera], {**ENGINE_PLACE, "survey_id": None})
     assert run.close == [] and run.rewrite == []
     assert [(m["params"]["$sensorName"], m["params"]["$survey_id"]) for m in run.insert] == [
         ("TM_RADAR_SERIAL_PORT_00", None)]
     assert camera["id"] in {row["id"] for row in run.payload["currentDeployment"]}
+
+
+@needs_node
+def test_engine_without_a_survey_id_holds_a_heading_change():
+    """With no survey_id in the file a turned sensor keeps its open row, heading and all, until a place is chosen."""
+    rows = [camera_row(heading=90), radar_row(heading=None)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "survey_id": None})
+    assert run.written() == []
+    assert {row["id"]: row["heading_deg"] for row in run.payload["currentDeployment"]} == {
+        rows[0]["id"]: 90, rows[1]["id"]: None}
+
+
+@needs_node
+def test_engine_keeps_a_converted_row_with_an_unconverted_file():
+    """The upgrade converts each row's bearing to its centre, and config.yml may still say bearing when Node-RED
+    reads it: init config defaults reads the same heading from it, so no deployment starts."""
+    config = new_device_config()
+    config["deployment"] = {key: value for key, value in config["deployment"].items() if key != "heading_deg"}
+    config["deployment"].update({**ENGINE_PLACE, "bearing": "ne"})
+    config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"] = {"bearing": "SW"}
+    payload, logged = init_defaults(config)
+    assert logged == []
+    rows = [camera_row(heading=45), radar_row(heading=225)]
+    run = engine(payload["sensors"], rows, payload["deployment"])
+    assert run.written() == []
+    assert [text for level, text, _ in run.logged if level == "error"] == []
+    turned = engine(payload["sensors"], [camera_row(heading=90), radar_row(heading=225)], payload["deployment"])
+    assert [(m["params"]["$sensorName"], m["params"]["$heading_deg"]) for m in turned.insert] == [("picam_h265", 45)]
 
 
 @needs_node
@@ -1131,7 +1334,7 @@ def test_engine_closes_duplicate_open_rows(survey_id):
 
 @needs_node
 def test_engine_skips_disabled_sensors():
-    disabled = open_row("radars", "TM_RADAR_SERIAL_PORT_01", "e", survey_id="aaaaaaaa-si")
+    disabled = open_row("radars", "TM_RADAR_SERIAL_PORT_01", 90, survey_id="aaaaaaaa-si")
     run = engine(engine_sensors(), [camera_row(), radar_row(), disabled], ENGINE_PLACE)
     assert run.written() == []
     assert disabled["id"] not in {row["id"] for row in run.payload["currentDeployment"]}
@@ -1139,7 +1342,7 @@ def test_engine_skips_disabled_sensors():
 
 @needs_node
 def test_engine_closes_the_row_of_a_sensor_that_left_the_file():
-    gone = open_row("cameras", "main_st", "n")
+    gone = open_row("cameras", "main_st", 0)
     run = engine(engine_sensors(), [camera_row(), radar_row(), gone], ENGINE_PLACE)
     assert [c["params"]["$id"] for c in run.close] == [gone["id"]] and run.insert == []
     assert gone["id"] in {row["id"] for row in run.payload["updatedDeployment"]}
@@ -1158,54 +1361,11 @@ def test_engine_closes_an_empty_blocks_rows_and_keeps_an_empty_entrys_row():
     radars = engine_sensors()["radars"]
     run = engine({"cameras": None, "radars": radars}, [camera_row(), radar_row()], ENGINE_PLACE)
     assert [c["params"]["$id"] for c in run.close] == [camera_row()["id"]] and run.insert == []
-    off = open_row("cameras", "main_st", "n")
-    run = engine({"cameras": {"picam_h265": {"enabled": True, "deployment": {"bearing": "n"}}, "main_st": None},
+    off = open_row("cameras", "main_st", 0)
+    run = engine({"cameras": {"picam_h265": {"enabled": True, "deployment": {"heading_deg": 0}}, "main_st": None},
                   "radars": radars}, [camera_row(), radar_row(), off], ENGINE_PLACE)
     assert run.written() == []
     assert [text for level, text, _ in run.logged if level == "error"] == []
-
-
-@needs_node
-@pytest.mark.parametrize("row_bearing, sensor_bearing",
-                         [(None, ""), ("", ""), ("N", "n"), ("n", "N"), ("null", ""), ("undefined", None),
-                          (" NULL ", ""), ("Undefined", "null")],
-                         ids=["null-row", "blank", "upper-case-row", "upper-case-config", "null-string-row",
-                              "undefined-string-row", "padded-upper-case-null-row", "null-string-config"])
-def test_engine_treats_blank_and_upper_case_bearings_as_equal(row_bearing, sensor_bearing):
-    """Releases 0.6.0 to 0.7.1 stored a blank bearing as the string 'null' (or 'undefined')."""
-    rows = [camera_row(bearing=row_bearing), radar_row()]
-    run = engine(engine_sensors({"bearing": sensor_bearing}), rows, ENGINE_PLACE)
-    assert run.close == [] and run.insert == []
-    legacy = (row_bearing or "").strip().lower() in ("null", "undefined")  # stored as '' once; see the next test
-    assert [m["params"]["$id"] for m in run.rewrite] == ([rows[0]["id"]] if legacy else [])
-
-
-@needs_node
-@pytest.mark.parametrize("survey_id", [ENGINE_SURVEY, None], ids=["survey", "no-survey"])
-@pytest.mark.parametrize("row_bearing", ["null", "undefined", " NULL "])
-def test_engine_stores_a_legacy_blank_bearing_as_blank(survey_id, row_bearing):
-    """An open row keeps its deployment, and its 'null' or 'undefined' bearing is written back as ''."""
-    camera = camera_row(bearing=row_bearing)
-    run = engine(engine_sensors({"bearing": ""}), [camera, radar_row()], {**ENGINE_PLACE, "survey_id": survey_id})
-    assert run.close == [] and run.insert == []
-    assert [m["params"] for m in run.rewrite] == [
-        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$bearing": ""}]
-    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
-    assert current["bearing"] == ""
-    again = engine(engine_sensors({"bearing": ""}), [{**camera, "bearing": ""}, radar_row()],
-                   {**ENGINE_PLACE, "survey_id": survey_id})
-    assert again.written() == []
-
-
-@needs_node
-@pytest.mark.parametrize("row_bearing", ["null", "undefined"])
-def test_engine_adopts_a_row_with_a_legacy_blank_bearing(row_bearing):
-    rows = [camera_row(bearing=row_bearing, survey_id=None), radar_row()]
-    run = engine(engine_sensors({"bearing": ""}), rows, ENGINE_PLACE)
-    assert run.close == [] and run.insert == []
-    assert [(m["params"]["$id"], m["params"]["$survey_id"], m["params"]["$bearing"]) for m in run.rewrite] == [
-        (rows[0]["id"], ENGINE_SURVEY, "")]
 
 
 def test_engine_wiring():
@@ -1313,16 +1473,17 @@ def test_the_radar_pickers_keep_a_selection_that_is_still_there():
 STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
-                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing",
+                     "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
                      "/tm-internal/database/exact-copy", "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
-                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/bearing": "post",
+                       "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
                        "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
-                                 "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, bearing, sensorType, "
+                                 "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
+                                 "sensorType, "
                                  "sensorName, survey_id, location_precision FROM deployment WHERE survey_id = "
                                  "$survey_id ORDER BY entryStartDateTime"),
     "/tm-internal/surveys/usage": ("read survey usage",
@@ -1342,7 +1503,7 @@ PRECISION_SQL = {
 }
 VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
-              "/tm-internal/deployments/:id/bearing": "tm-internal: validate bearing correction",
+              "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -1522,7 +1683,7 @@ def shape(url):
 
 
 DEPLOYMENT_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": "2026-10-30T12:00:00.000Z",
-                  "entryEndDateTime": None, "lat": 45.5, "lon": -122.7, "bearing": "n", "sensorType": "camera",
+                  "entryEndDateTime": None, "lat": 45.5, "lon": -122.7, "heading_deg": 0, "sensorType": "camera",
                   "sensorName": "picam_h265", "survey_id": SURVEY_ID, "location_precision": 1}
 
 
@@ -1595,7 +1756,7 @@ def test_flows_json_round_trips_through_json_dumps():
 
 def test_tm_internal_correction_endpoints_exist():
     flows, by_id, endpoints = tm_internal_endpoints()
-    for url in ("/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"):
+    for url in ("/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading"):
         assert endpoints[url]["method"] == "post", url
         [[check_id]] = endpoints[url]["wires"]
         assert by_id[check_id]["name"] == "tm-internal: check token", url
@@ -2391,8 +2552,8 @@ def correction_chain(url):
 
 def test_correction_chains_run_one_prepared_statement_and_answer_204():
     for url, name, sql in (("/tm-internal/surveys/:id/location", "re-round survey coordinates", LOCATION_SQL),
-                           ("/tm-internal/deployments/:id/bearing", "rewrite deployment bearing",
-                            "UPDATE deployment SET bearing = $bearing WHERE id = $id")):
+                           ("/tm-internal/deployments/:id/heading", "rewrite deployment heading",
+                            "UPDATE deployment SET heading_deg = $heading_deg WHERE id = $id")):
         validator, query, answer, response_id, by_id = correction_chain(url)
         assert validator["outputs"] == 2
         assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == ("sqlite", name, "prepared", TMDB)
@@ -2401,7 +2562,7 @@ def test_correction_chains_run_one_prepared_statement_and_answer_204():
 
 
 @needs_node
-@pytest.mark.parametrize("answer_url", ["/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/bearing"])
+@pytest.mark.parametrize("answer_url", ["/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading"])
 def test_correction_answers_204(answer_url):
     _, _, answer, *_ = correction_chain(answer_url)
     [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
@@ -2447,35 +2608,45 @@ DEPLOYMENT_ID = "1761800000000-0a1b2c3d-d"
 
 @needs_node
 @pytest.mark.parametrize("deployment_id, body, detail, stored", [
-    (DEPLOYMENT_ID, {"bearing": "ne"}, None, "ne"),
-    (DEPLOYMENT_ID, {"bearing": "NE"}, None, "ne"),
-    (DEPLOYMENT_ID, {"bearing": ""}, None, ""),
-    (DEPLOYMENT_ID, {"bearing": "s"}, None, "s"),
-    (DEPLOYMENT_ID, {"bearing": "north"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": "nn"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": " n"}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": None}, "bearing", None),
-    (DEPLOYMENT_ID, {"bearing": 1}, "bearing", None),
-    (DEPLOYMENT_ID, {}, "bearing", None),
-    (DEPLOYMENT_ID, "bearing=n", "bearing", None),
-    ("1761800000000-0A1B2C3D-d", {"bearing": "n"}, "deployment_id", None),
-    ("0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
-    ("x-1761800000000-0a1b2c3d-d", {"bearing": "n"}, "deployment_id", None),
-    ("1761800000000-0a1b2c3d-d ", {"bearing": "n"}, "deployment_id", None),
-    ("1761800000000-0a1b2c3d-d", {"bearing": "north"}, "bearing", None),
-    ("nope", {"bearing": "north"}, "deployment_id", None),
+    (DEPLOYMENT_ID, {"heading_deg": 45}, None, 45),
+    (DEPLOYMENT_ID, {"heading_deg": 0}, None, 0),
+    (DEPLOYMENT_ID, {"heading_deg": 359}, None, 359),
+    (DEPLOYMENT_ID, {"heading_deg": 90.0}, None, 90),
+    (DEPLOYMENT_ID, {"heading_deg": None}, None, None),
+    (DEPLOYMENT_ID, {"heading_deg": 360}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": -1}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": 45.5}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": "45"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": "ne"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": True}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": False}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"heading_deg": [45]}, "heading_deg", None),
+    (DEPLOYMENT_ID, {"bearing": "ne"}, "heading_deg", None),
+    (DEPLOYMENT_ID, {}, "heading_deg", None),
+    (DEPLOYMENT_ID, "heading_deg=45", "heading_deg", None),
+    ("1761800000000-0A1B2C3D-d", {"heading_deg": 45}, "deployment_id", None),
+    ("0a1b2c3d-d", {"heading_deg": 45}, "deployment_id", None),
+    ("x-1761800000000-0a1b2c3d-d", {"heading_deg": 45}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d ", {"heading_deg": 45}, "deployment_id", None),
+    ("1761800000000-0a1b2c3d-d", {"heading_deg": 360}, "heading_deg", None),
+    ("nope", {"heading_deg": 360}, "deployment_id", None),
 ])
-def test_bearing_correction_validates_the_id_and_the_bearing(deployment_id, body, detail, stored):
-    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate bearing correction")
+def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body, detail, stored):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate heading correction")
     msg = {"req": {"params": {"id": deployment_id}}, "payload": body}
     [step] = run_functions([(validator, msg)])["results"]
     passed, refused = step["result"]
     if detail is None:
         assert refused is None
-        assert passed["params"] == {"$id": deployment_id, "$bearing": stored}
+        assert passed["params"] == {"$id": deployment_id, "$heading_deg": stored}
         return
     assert passed is None
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+
+
+def test_the_old_bearing_correction_path_is_gone():
+    flows = json.loads(FLOWS.read_text())
+    assert not [node for node in flows if node["type"] == "http in" and node.get("url", "").endswith("/bearing")]
 
 
 def test_survey_usage_counts_rows_without_a_survey():
@@ -2967,7 +3138,7 @@ def upload_lists():
 
 TS = 1761800000000
 GATE_ROW = {"id": "1761800000000-0a1b2c3d-d", "entryStartDateTime": TS, "lat": 45.52, "lon": -122.69,
-            "location_precision": 2, "bearing": "n", "sensorType": "cameras", "sensorName": "picam_h265",
+            "location_precision": 2, "heading_deg": 0, "sensorType": "cameras", "sensorName": "picam_h265",
             "survey_id": "3f9a1c2e-si"}
 TICK = 1761800100  # a five-minute mark
 TICK_MS = TICK * 1000
@@ -3014,7 +3185,7 @@ GATE_TELEMETRY = {
 }
 GATE_ATTRIBUTES = {
     "deployments": {
-        "picam_h265": {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "bearing": "n",
+        "picam_h265": {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "heading_deg": "0",
                        "id": "1761800000000-0a1b2c3d-d"},
         "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": "2"},
     },
@@ -3177,7 +3348,8 @@ def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
     """The engine rounds the same way, so the rows it sends at the unit's precision (a new one, one it closes, one it
     keeps) pass unchanged. A closed row stored finer than the unit's precision now goes out at the unit's."""
     place = {**ENGINE_PLACE, "database_precision": precision}
-    run = engine(engine_sensors({"bearing": "w"}), [camera_row(lat=lat, lon=lon, precision=places), radar_row()],
+    run = engine(engine_sensors({"heading_deg": 270}), [camera_row(lat=lat, lon=lon, precision=places),
+                                                         radar_row()],
                  place)
     [step] = run_functions([(named(json.loads(FLOWS.read_text()), "format deployment telemetry"),
                              {"payload": run.payload})])["results"]
@@ -3197,7 +3369,7 @@ def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
 def test_gate_re_rounds_the_deployments_attribute(given, unit, expected):
     """The attribute's per-sensor rows hold strings (a template renders them): they go out as strings, at the
     unit's precision. deploymentTopLevel names the survey and holds no coordinates."""
-    rows = {"picam_h265": {"sensorType": "cameras", "lat": given[0], "lon": given[1], "bearing": "n", "id": "x-d"},
+    rows = {"picam_h265": {"sensorType": "cameras", "lat": given[0], "lon": given[1], "heading_deg": "0", "id": "x-d"},
             "deploymentTopLevel": {"survey_id": "3f9a1c2e-si", "database_precision": unit}}
     sent = attributes({"deployments": rows}, deployment={**GATE_PLACE, "database_precision": unit})["deployments"]
     assert (sent["picam_h265"]["lat"], sent["picam_h265"]["lon"]) == expected

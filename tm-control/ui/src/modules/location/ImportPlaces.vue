@@ -9,16 +9,17 @@
 import { computed, ref, watch } from 'vue'
 import { api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
-import { bearingTitle, formatExact } from './coordinates'
+import { formatExact } from './coordinates'
+import { facing } from './heading'
 
-type Bearing = components['schemas']['Bearing']
+type SensorHeading = components['schemas']['SensorHeading']
 type ImportOut = components['schemas']['ImportOut']
 
 // 64 KiB, the most the API takes (ImportIn's csv has max_length=65536). A file that size holds at most that many
 // characters, so checking a file's bytes and a pasted text's characters against it both stay within the API's limit.
 const MAX_LENGTH = 65536
 
-const props = defineProps<{ sensors: Bearing[] }>()
+const props = defineProps<{ sensors: SensorHeading[] }>()
 const emit = defineEmits<{ imported: []; close: [] }>()
 
 // The header's columns for this unit: the three place columns, then one per enabled sensor, named as in the settings
@@ -85,8 +86,9 @@ function places(count: number) {
       <template v-else>
         <p class="text-body-1 mb-2">
           One place per line, after a header line. The columns are description, lat, and lon, then one per sensor,
-          named as in the settings, with the way it faces: n, ne, e, se, s, sw, w, nw, or blank. Leave lat and lon
-          blank for a place with no location. The places are added as planned.
+          named as in the settings, with the way it faces: a compass point (n, ne, e, se, s, sw, w, nw), whole
+          degrees from north (0 to 359), or blank. Leave lat and lon blank for a place with no location. The places are
+          added as planned.
         </p>
         <!-- A narrow screen breaks the header after a comma (<wbr>), not inside a sensor's name -->
         <p class="text-body-1 mb-6">
@@ -142,8 +144,8 @@ function places(count: number) {
                 <div class="text-body-2 text-secondary">Line {{ row.line }}</div>
                 <div class="text-body-1 text-break">{{ row.description ?? 'No description' }}</div>
                 <div class="text-body-2 text-no-wrap">{{ formatExact(row.lat, row.lon) }}</div>
-                <div v-for="bearing in row.bearings" :key="bearing.sensor_name" class="text-body-2 text-break">
-                  {{ bearing.sensor_name }} faces {{ bearingTitle(bearing.bearing) }}
+                <div v-for="sensor in row.headings" :key="sensor.sensor_name" class="text-body-2 text-break">
+                  {{ sensor.sensor_name }} faces {{ facing(sensor.heading_deg) }}
                 </div>
               </li>
             </ul>

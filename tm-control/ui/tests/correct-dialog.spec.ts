@@ -1,5 +1,5 @@
 // The correction dialog: a used place's location (POST /surveys/{id}/location), with a second confirmation for a
-// point far enough to look like a move, or one deployment's bearing (POST /surveys/{id}/deployments/{id}/bearing).
+// point far enough to look like a move, or one deployment's heading (POST /surveys/{id}/deployments/{id}/heading).
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
@@ -20,7 +20,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     source: 'ui',
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
-    bearings: [],
+    headings: [],
     stored_lat: 45.52,
     stored_lon: -122.69,
     first_used: null,
@@ -61,18 +61,18 @@ const DEPLOYMENT: DeploymentOut = {
   ended: 1790500000000,
   lat: 45.52,
   lon: -122.69,
-  bearing: 'ne',
+  heading_deg: 45,
   sensor_type: 'cameras',
   sensor_name: 'picam_h265',
   location_precision: 2,
 }
 
 const LOCATION = 'POST /api/v1/surveys/c0ffee01-si/location'
-const BEARING = 'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/bearing'
+const HEADING = 'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/heading'
 const FAR_TEXT = "That's far enough to look like a move. Correct it anyway?"
 
 function mountCorrect(
-  kind: 'location' | 'bearing',
+  kind: 'location' | 'heading',
   survey: SurveyOut,
   deployment?: DeploymentOut,
   map: { style_url: string | null } = MAP,
@@ -86,9 +86,9 @@ function correctButton() {
   return buttons[0]
 }
 
-// Choose a bearing in the dialog's select, as picking from its menu would
-async function choose(wrapper: VueWrapper, bearing: string) {
-  await wrapper.findComponent({ name: 'VSelect' }).setValue(bearing)
+// Choose a heading in the dialog's select, as picking from its menu would
+async function choose(wrapper: VueWrapper, heading: number | null) {
+  await wrapper.findComponent({ name: 'VSelect' }).setValue(heading)
   await flushPromises()
 }
 
@@ -232,37 +232,63 @@ describe('correcting a location', () => {
   })
 })
 
-describe('correcting a bearing', () => {
+describe('correcting a heading', () => {
   beforeEach(() => document.body.replaceChildren())
 
-  it('posts the bearing and the reason', async () => {
-    const api = fakeApi({ [BEARING]: { ...DEPLOYMENT, bearing: 'se' } })
-    const dialog = mountCorrect('bearing', NEAR, DEPLOYMENT)
+  it('posts the heading and the reason', async () => {
+    const api = fakeApi({ [HEADING]: { ...DEPLOYMENT, heading_deg: 135 } })
+    const dialog = mountCorrect('heading', NEAR, DEPLOYMENT)
     await flushPromises()
     expect(dialogText()).toContain('picam_h265')
     expect(dialogText()).toContain('If the unit was turned, use Modify deployment on the place in use instead.')
     expect(dialogText()).toContain('Copies and uploads that already left the device keep the old values.')
-    expect(correctButton().disabled).toBe(true) // nothing to correct until the bearing changes
-    await choose(dialog, 'se')
+    expect(correctButton().disabled).toBe(true) // nothing to correct until the heading changes
+    await choose(dialog, 135)
     await typeInto(dialogField('Reason'), 'The compass was read wrong')
     await clickInDialog('Correct')
     expect(api.sent).toEqual([
       {
         method: 'POST',
-        path: '/api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/bearing',
-        body: { bearing: 'se', reason: 'The compass was read wrong' },
+        path: '/api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/heading',
+        body: { heading_deg: 135, reason: 'The compass was read wrong' },
       },
     ])
     expect(dialog.emitted('corrected')).toHaveLength(1)
     expect(dialog.emitted('update:open')).toEqual([[false]])
   })
 
-  it('sends no reason when the field is left blank', async () => {
-    const api = fakeApi({ [BEARING]: { ...DEPLOYMENT, bearing: '' } })
-    const dialog = mountCorrect('bearing', NEAR, DEPLOYMENT)
+  it('says the heading was entered wrong, and keeps a measured heading until another is chosen', async () => {
+    const dialog = mountCorrect('heading', NEAR, { ...DEPLOYMENT, heading_deg: 40 })
     await flushPromises()
-    await choose(dialog, '')
+    expect(dialogText()).toContain('Use this only if the heading was entered wrong.')
+    expect(dialogText()).not.toMatch(/bearing/i)
+    expect(dialogText()).toContain('NE (40°)')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe(
+      'Correct heading',
+    )
+    expect(correctButton().disabled).toBe(true)
+    await choose(dialog, 45)
+    expect(correctButton().disabled).toBe(false)
+  })
+
+  it("doesn't offer one deployment's measured heading when it opens on another", async () => {
+    const dialog = mountCorrect('heading', NEAR, { ...DEPLOYMENT, heading_deg: 40 })
+    await flushPromises()
+    const titles = () =>
+      (dialog.findComponent({ name: 'VSelect' }).props('items') as { title: string }[]).map((item) => item.title)
+    expect(titles()).toContain('NE (40°)')
+    await dialog.setProps({ open: false })
+    await dialog.setProps({ deployment: { ...DEPLOYMENT, id: '1790600000000-0a1b2c3d-d' }, open: true })
+    await flushPromises()
+    expect(titles()).not.toContain('NE (40°)')
+  })
+
+  it('sends no reason when the field is left blank', async () => {
+    const api = fakeApi({ [HEADING]: { ...DEPLOYMENT, heading_deg: null } })
+    const dialog = mountCorrect('heading', NEAR, DEPLOYMENT)
+    await flushPromises()
+    await choose(dialog, null)
     await clickInDialog('Correct')
-    expect(api.sent[0].body).toEqual({ bearing: '', reason: null })
+    expect(api.sent[0].body).toEqual({ heading_deg: null, reason: null })
   })
 })

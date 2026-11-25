@@ -119,8 +119,11 @@ class NodeRed:
     def correct_location(self, survey_id: str, lat: float, lon: float) -> None:
         self._call("POST", f"/surveys/{quote(survey_id, safe='')}/location", body={"lat": lat, "lon": lon})
 
-    def correct_bearing(self, deployment_id: str, bearing: str) -> None:
-        self._call("POST", f"/deployments/{quote(deployment_id, safe='')}/bearing", body={"bearing": bearing})
+    def correct_heading(self, deployment_id: str, heading_deg: int | None) -> None:
+        """Rewrite one deployment row's heading (whole degrees from 0 to 359, or None for none)."""
+        self._call(
+            "POST", f"/deployments/{quote(deployment_id, safe='')}/heading", body={"heading_deg": heading_deg}
+        )
 
     def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
         """Hand Node-RED the exact locations of places for one database copy, under a ticket it keeps for ten minutes."""

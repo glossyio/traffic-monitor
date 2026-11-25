@@ -13,14 +13,14 @@ from tm_control.core.auth import Users
 from tm_control.core.manifest import load_manifest
 from tm_control.core.state import State
 from tm_control.modules.location import reconcile
-from tm_control.modules.location.places import Bearing, Places
+from tm_control.modules.location.places import Places, SensorHeading
 from tm_control.modules.sharing import follow
 from tm_control.modules.sharing.consents import MAINTAINER, PRE_CONSENT, Consents
 
 FIXTURES = Path(__file__).parent / "fixtures"
 FIXTURE_POINT = "lat: 45.0\n    lon: -122.0\n"
-SENSORS = [Bearing(sensor_type="cameras", sensor_name="picam_h265", bearing="n"),
-           Bearing(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", bearing="n")]
+SENSORS = [SensorHeading(sensor_type="cameras", sensor_name="picam_h265", heading_deg=0),
+           SensorHeading(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", heading_deg=0)]
 FIRST, SECOND = "0000000a-si", "0000000b-si"
 # 2023-11-14T22:13:20Z and a day later, in ms, as Node-RED's usage answers them
 FIRST_START, FIRST_END, SECOND_START = 1_700_000_000_000, 1_700_086_400_000, 1_700_172_800_000
@@ -97,10 +97,10 @@ def file_deployment(unit):
     return read_config(unit.config_path).data["deployment"]
 
 
-def sensor_bearing(unit, sensor_type, name):
-    """The bearing in the sensor's own deployment block, or None when it has none."""
+def sensor_heading(unit, sensor_type, name):
+    """The heading in the sensor's own deployment block, or None when it has none."""
     sensor = read_config(unit.config_path).data["sensors"][sensor_type][name]
-    return (sensor.get("deployment") or {}).get("bearing")
+    return (sensor.get("deployment") or {}).get("heading_deg")
 
 
 RADAR = "        TM_RADAR_SERIAL_PORT_00:\n            enabled: true\n"
@@ -156,13 +156,13 @@ def test_first_run_creates_the_default_place_and_writes_its_id(unit):
     (place,) = places.list()
     assert (place.status, place.description, place.source) == ("in_use", "First location", "default")
     assert (place.lat, place.lon) == (None, None)
-    assert place.bearings == SENSORS
+    assert place.headings == SENSORS
     deployment = file_deployment(unit)
     assert deployment["survey_id"] == place.id
     assert deployment["database_precision"] == "2"
     assert (deployment["lat"], deployment["lon"]) == (None, None)
     assert unit.config_path.read_text() == before.replace(
-        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {place.id}\n    database_precision: '2'\n", 1
+        "    heading_deg: 0\n", f"    heading_deg: 0\n    survey_id: {place.id}\n    database_precision: '2'\n", 1
     )
     assert places.reconciled_at() is not None
     assert unit.nodered.calls == []
@@ -201,7 +201,7 @@ def test_waits_for_nodered_when_the_file_has_coordinates(unit):
     assert outcome == reconcile.Outcome(state="done", imported=0, created_default=False, followed="none")
     (place,) = places.list()
     assert (place.status, place.source, place.lat, place.lon) == ("in_use", "imported_config", 45.0, -122.0)
-    assert place.bearings == SENSORS
+    assert place.headings == SENSORS
     assert file_deployment(unit)["survey_id"] == place.id
     assert (file_deployment(unit)["lat"], file_deployment(unit)["lon"]) == (45.0, -122.0)
     assert places.reconciled_at() is not None
@@ -216,14 +216,14 @@ def test_import_from_the_backup_groups_places_by_survey_id(unit):
     outcome = reconcile.ensure(unit, user_id=unit.admin)
     assert outcome == reconcile.Outcome(state="done", imported=2, created_default=False, followed="none")
     assert unit.config_path.read_text() == before.replace(
-        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {FIRST}\n", 1
+        "    heading_deg: 0\n", f"    heading_deg: 0\n    survey_id: {FIRST}\n", 1
     )
     places = Places(unit.state)
     first, second = places.get(FIRST), places.get(SECOND)
     assert len(places.list()) == 2
     assert (first.status, first.source, first.lat, first.lon) == ("in_use", "imported_backup", 45.52252, -122.6912)
     assert (second.status, second.source, second.lat, second.lon) == ("used", "imported_backup", 45.0, -122.0)
-    assert (first.description, second.description, second.bearings) == (None, None, [])
+    assert (first.description, second.description, second.headings) == (None, None, [])
     assert first.created_at == "2023-11-14T22:13:20+00:00"
     assert (second.created_at, second.updated_at) == ("2023-11-16T22:13:20+00:00", "2023-11-16T22:13:20+00:00")
     assert file_deployment(unit)["survey_id"] == FIRST
@@ -246,7 +246,7 @@ def test_an_upgraded_unit_with_no_location_still_imports(unit):
     places = Places(unit.state)
     current = places.in_use()
     assert (current.source, current.description, current.lat, current.lon) == ("imported_config", None, None, None)
-    assert current.id not in (FIRST, SECOND) and current.bearings == SENSORS
+    assert current.id not in (FIRST, SECOND) and current.headings == SENSORS
     assert {places.get(FIRST).status, places.get(SECOND).status} == {"used"}
     assert [place.status for place in places.list()].count("in_use") == 1
     deployment = file_deployment(unit)
@@ -265,7 +265,7 @@ def test_no_matching_point_creates_the_place_from_the_file(unit):
     current = places.in_use()
     assert (current.source, current.lat, current.lon) == ("imported_config", 45.5, -122.7)
     assert current.id not in (FIRST, SECOND)
-    assert current.bearings == SENSORS
+    assert current.headings == SENSORS
     assert file_deployment(unit)["survey_id"] == current.id
     assert {places.get(FIRST).status, places.get(SECOND).status} == {"used"}
 
@@ -273,7 +273,7 @@ def test_no_matching_point_creates_the_place_from_the_file(unit):
 def test_the_file_naming_an_imported_survey_puts_that_one_in_use(unit):
     write_backup(unit, BACKUP_ROWS)
     answer_usage(unit.nodered)
-    edit(unit, "bearing: 'n'\n", f"bearing: 'n'\n    survey_id: {SECOND}\n")  # the file stays at 45.0, -122.0
+    edit(unit, "heading_deg: 0\n", f"heading_deg: 0\n    survey_id: {SECOND}\n")  # the file stays at 45.0, -122.0
     reconcile.ensure(unit)
     places = Places(unit.state)
     assert places.in_use().id == SECOND and places.get(FIRST).status == "used"
@@ -409,7 +409,7 @@ def test_following_an_unknown_survey_id_in_the_file(unit):
     assert outcome == reconcile.Outcome(state="done", imported=0, created_default=False, followed="unknown_id")
     current = places.in_use()
     assert (current.id, current.source, current.lat, current.lon) == ("3f9a1c2e-si", "imported_config", None, None)
-    assert current.bearings == SENSORS
+    assert current.headings == SENSORS
     assert places.get(previous.id).status == "used"
     assert reconcile.ensure(unit).followed == "none"
 
@@ -512,22 +512,22 @@ def test_coordinates_blanked_by_hand_are_put_back(unit):
 
 
 def test_a_file_reset_from_the_template_gets_the_place_in_use_back(unit):
-    """After tmsetup.sh -f the file has the template's blank survey_id, location, and bearing: the place in use goes
-    back in with its stored point, and each sensor with a blank bearing gets the place's back under its own block, so
-    the engine starts no deployment with no bearing. The top-level bearing stays as the file has it, and so does a
+    """After tmsetup.sh -f the file has the template's blank survey_id, location, and heading: the place in use goes
+    back in with its stored point, and each sensor with a blank heading gets the place's back under its own block, so
+    the engine starts no deployment with no heading. The top-level heading stays as the file has it, and so does a
     precision when none was ever seen with a survey named (this file had none)."""
     reconcile.ensure(unit)  # the place in use, at 45.0, -122.0
     place = Places(unit.state).in_use()
     unit.nodered.calls.clear()
-    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    survey_id: {place.id}\n",
-         "lat:\n    lon:\n    bearing: ''\n    survey_id:  # names the place\n    database_precision: '1'\n")
+    edit(unit, f"{FIXTURE_POINT}    heading_deg: 0\n    survey_id: {place.id}\n",
+         "lat:\n    lon:\n    heading_deg:\n    survey_id:  # names the place\n    database_precision: '1'\n")
     outcome = reconcile.ensure(unit)
     assert (outcome.state, outcome.followed) == ("done", "restored")
     deployment = file_deployment(unit)
     assert (deployment["survey_id"], deployment["lat"], deployment["lon"]) == (place.id, 45.0, -122.0)
-    assert (deployment["bearing"], deployment["database_precision"]) == ("", "1")
-    assert sensor_bearing(unit, "cameras", "picam_h265") == "n"
-    assert sensor_bearing(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == "n"
+    assert (deployment["heading_deg"], deployment["database_precision"]) == (None, "1")
+    assert sensor_heading(unit, "cameras", "picam_h265") == 0  # the place's heading of 0 is a heading, not a blank
+    assert sensor_heading(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == 0
     assert "# names the place" in unit.config_path.read_text()
     current = Places(unit.state).in_use()
     assert (current.id, current.lat, current.lon) == (place.id, 45.0, -122.0)
@@ -589,7 +589,7 @@ def test_the_next_reset_gives_back_a_coarser_precision_that_stood(unit):
 def test_a_reset_file_gets_the_precision_back_when_it_also_gets_the_point_back(unit):
     named = named_with_precision(unit, "none")
     reconcile.ensure(unit)
-    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    {named}", "lat:\n    lon:\n    bearing: 'n'\n    survey_id:\n"
+    edit(unit, f"{FIXTURE_POINT}    heading_deg: 0\n    {named}", "lat:\n    lon:\n    heading_deg: 0\n    survey_id:\n"
          "    database_precision: '2'\n")
     assert reconcile.ensure(unit).followed == "restored"
     deployment = file_deployment(unit)
@@ -599,7 +599,7 @@ def test_a_reset_file_gets_the_precision_back_when_it_also_gets_the_point_back(u
 def test_a_reset_file_with_a_typo_in_its_coordinates_still_gets_the_precision_back(unit):
     named = named_with_precision(unit, "1")
     reconcile.ensure(unit)
-    edit(unit, f"{FIXTURE_POINT}    bearing: 'n'\n    {named}", "lat: nope\n    lon: -122.0\n    bearing: 'n'\n"
+    edit(unit, f"{FIXTURE_POINT}    heading_deg: 0\n    {named}", "lat: nope\n    lon: -122.0\n    heading_deg: 0\n"
          "    survey_id:\n    database_precision: '2'\n")
     assert reconcile.ensure(unit).followed == "restored"
     assert file_deployment(unit)["database_precision"] == "1"
@@ -628,16 +628,16 @@ def test_a_precision_node_red_refuses_is_not_the_one_a_reset_gives_back(unit, ba
     assert file_deployment(unit)["database_precision"] == "1"
 
 
-def test_a_reset_file_leaves_a_bearing_the_operator_set(unit):
-    reconcile.ensure(unit)  # the place in use, its sensors facing n
+def test_a_reset_file_leaves_a_heading_the_operator_set(unit):
+    reconcile.ensure(unit)  # the place in use, its sensors facing 0
     place = Places(unit.state).in_use()
-    edit(unit, f"bearing: 'n'\n    survey_id: {place.id}\n", "bearing: ''\n    survey_id:\n")
-    edit(unit, RADAR, RADAR + "            deployment:\n                bearing: 'e'\n")
+    edit(unit, f"heading_deg: 0\n    survey_id: {place.id}\n", "heading_deg:\n    survey_id:\n")
+    edit(unit, RADAR, RADAR + "            deployment:\n                heading_deg: 90\n")
     assert reconcile.ensure(unit).followed == "restored"
-    assert sensor_bearing(unit, "cameras", "picam_h265") == "n"
-    assert sensor_bearing(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == "e"
+    assert sensor_heading(unit, "cameras", "picam_h265") == 0
+    assert sensor_heading(unit, "radars", "TM_RADAR_SERIAL_PORT_00") == 90
     assert file_deployment(unit)["survey_id"] == place.id
-    assert Places(unit.state).in_use().bearings == SENSORS  # the store keeps the place's own
+    assert Places(unit.state).in_use().headings == SENSORS  # the store keeps the place's own
 
 
 @pytest.mark.parametrize("block", INVALID_POINTS)
@@ -723,7 +723,7 @@ def test_invalid_coordinates_take_the_import_path_and_survive(unit, block):
     assert (current.source, current.lat, current.lon) == ("imported_config", None, None)
     assert len(places.list()) == 3
     assert unit.config_path.read_text() == before.replace(
-        "    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {current.id}\n", 1
+        "    heading_deg: 0\n", f"    heading_deg: 0\n    survey_id: {current.id}\n", 1
     )
     assert corrections(unit) == [] and unit.nodered.named("correct_location") == []
 

@@ -54,7 +54,8 @@ tmsetup_thingsboard_port: '443'
 
 tmsetup_latitude: ''
 tmsetup_longitude: ''
-tmsetup_bearing: ''
+# The way the sensors face, in whole degrees clockwise from true north (0 to 359); blank for none yet
+tmsetup_heading_deg: ''
 
 tmsetup_perform_apt_upgrade: false
 tmsetup_force_configs: false

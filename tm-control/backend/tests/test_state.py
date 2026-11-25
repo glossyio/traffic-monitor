@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version() == 4
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 5
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -98,7 +98,7 @@ def test_jobs_refer_to_existing_users(tmp_path):
 def test_migration_3_creates_the_survey_tables(tmp_path):
     con = _migrated(tmp_path).connect()
     tables = {row["name"] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-    assert {"surveys", "survey_bearings", "survey_corrections"} <= tables
+    assert {"surveys", "survey_sensors", "survey_corrections"} <= tables
     with pytest.raises(sqlite3.IntegrityError):
         with con:
             con.execute(
@@ -119,3 +119,83 @@ def test_migration_four_creates_the_consents_table(tmp_path):
                 "VALUES ('maintainer', 'other', 1, 'v1', ?)",
                 (NOW,),
             )
+
+
+def test_migration_five_turns_bearings_into_headings(tmp_path, monkeypatch):
+    """survey_bearings becomes survey_sensors with a heading in degrees (an old bearing's centre, else NULL), each
+    place's rows in their order and the map columns kept; a bearing correction becomes a heading_deg one."""
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:4])
+    state = _migrated(tmp_path)
+    con = state.connect()
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+        con.executemany(
+            "INSERT INTO survey_bearings (survey_id, sensor_type, sensor_name, bearing, map_block_ref, map_side) "
+            "VALUES ('0123abcd-si', ?, ?, ?, ?, ?)",
+            [
+                ("radars", "TM_RADAR_SERIAL_PORT_00", "ne", None, None),
+                ("cameras", "picam_h265", "", "block-7", "left"),
+                ("airquality_monitors", "sensorname01", " NW ", None, "both"),
+            ],
+        )
+        con.executemany(
+            "INSERT INTO survey_corrections "
+            "(id, survey_id, deployment_id, field, old_value, new_value, reason, source, at) "
+            "VALUES (?, '0123abcd-si', ?, ?, ?, ?, ?, 'ui', ?)",
+            [
+                (7, "1-0123abcd-d", "bearing", "n", "e", "Compass check", NOW),
+                (9, None, "location", "45.0,-122.0", None, None, NOW),
+                (11, "2-0123abcd-d", "bearing", "", "up", None, NOW),
+            ],
+        )
+    con.close()
+
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
+    assert state.migrate() == 5
+    con = state.connect()
+    tables = {row["name"] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert "survey_bearings" not in tables
+    rows = [tuple(row) for row in con.execute(
+        "SELECT survey_id, sensor_type, sensor_name, heading_deg, map_block_ref, map_side FROM survey_sensors "
+        "ORDER BY rowid"
+    )]
+    assert rows == [
+        ("0123abcd-si", "radars", "TM_RADAR_SERIAL_PORT_00", 45, None, None),
+        ("0123abcd-si", "cameras", "picam_h265", None, "block-7", "left"),
+        ("0123abcd-si", "airquality_monitors", "sensorname01", 315, None, "both"),
+    ]
+    corrections = [tuple(row) for row in con.execute(
+        "SELECT id, survey_id, deployment_id, field, old_value, new_value, reason, source, at FROM survey_corrections "
+        "ORDER BY id"
+    )]
+    assert corrections == [
+        (7, "0123abcd-si", "1-0123abcd-d", "heading_deg", "0", "90", "Compass check", "ui", NOW),
+        (9, "0123abcd-si", None, "location", "45.0,-122.0", None, None, "ui", NOW),
+        (11, "0123abcd-si", "2-0123abcd-d", "heading_deg", None, None, None, "ui", NOW),
+    ]
+    indexes = {row["name"] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'index'")}
+    assert "survey_corrections_survey" in indexes
+
+    with pytest.raises(sqlite3.IntegrityError), con:
+        con.execute(
+            "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg) "
+            "VALUES ('0123abcd-si', 'cameras', 'other', 360)"
+        )
+    with pytest.raises(sqlite3.IntegrityError), con:
+        con.execute(
+            "INSERT INTO survey_corrections (survey_id, field, source, at) VALUES ('0123abcd-si', 'bearing', 'ui', ?)",
+            (NOW,),
+        )
+    with pytest.raises(sqlite3.IntegrityError), con:
+        con.execute(
+            "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, map_side) "
+            "VALUES ('0123abcd-si', 'cameras', 'other', 'middle')"
+        )
+    with con:
+        con.execute("DELETE FROM surveys WHERE id = '0123abcd-si'")  # the rows go with their place, as before
+    assert con.execute("SELECT count(*) FROM survey_sensors").fetchone()[0] == 0
+    assert con.execute("SELECT count(*) FROM survey_corrections").fetchone()[0] == 0
