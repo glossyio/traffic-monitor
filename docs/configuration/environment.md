@@ -28,7 +28,7 @@ sudo systemctl restart node-red-tm.service
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `TM_VERSION` | the installed release | The Traffic Monitor version, shown on the dashboards and sent with telemetry. The installer sets it; don't edit it. |
+| `TM_VERSION` | the installed version, such as `0.8.0`, or `0.8.0-dev` on an install made from the `dev` branch | The Traffic Monitor version, shown on the dashboards and sent with telemetry. The installer sets it; don't edit it. |
 | `TM_RPI_SN` | the Raspberry Pi's serial number | Identifies the device in ThingsBoard, and fills `deviceName` in [deployment](../data-and-payloads/data-overview.md#deployment) records. Set by the installer. |
 | `TM_HOSTNAME` | the device's hostname at install | Prefix for the file names of [data exports](../ui/database.md). Set by the installer. |
 | `NODE_RED_CREDENTIAL_SECRET` | `myNodeRED1234` | Encrypts the credentials saved in the Node-RED editor. Leave it as it is: every installer run copies in the repository's credentials file, which is encrypted with this default, so a changed value leaves Node-RED unable to read it. |
