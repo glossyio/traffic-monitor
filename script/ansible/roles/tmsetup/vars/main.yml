@@ -14,6 +14,12 @@ tmsetup_frigate_ffmpeg_commit: 'f60aae17021abae85b1ba9759e8b2da33f723902'
 # The open source yolov9 model the installer downloads for a Coral, in Frigate's model_cache. The installer's own
 # model section names it, so tmsetup -f doesn't carry that section over (frigate_setup.yml).
 tmsetup_frigate_coral_model_file: yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite
+# The release of dbro/frigate-detector-edgetpu-yolo9 that the model and its labels come from, and the SHA-256 of each
+# file as taken on 2026-11-24. The tag is the same for both URLs. To update, change the tag and take both checksums
+# from freshly downloaded files with `sha256sum`.
+tmsetup_frigate_coral_model_release: v1.5
+tmsetup_frigate_coral_model_sha256: 'f634f60259101556825fd69662f96282e74364b507f83e6382cc34d5d0e6170e'
+tmsetup_frigate_coral_labels_sha256: '94758f79386e9122776f8fdca3583184d0ad7c94c7c87f661ae513fec45dd8d6'
 # The model section Frigate's config gets on a device with a Coral; tm-control puts it back from the manifest.
 tmsetup_frigate_coral_model:
   model_type: yolo-generic

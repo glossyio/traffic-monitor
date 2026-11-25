@@ -1,6 +1,7 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
 import base64
+import re
 import subprocess
 
 import pytest
@@ -360,6 +361,20 @@ def test_the_coral_model_file_is_one_variable():
         if path.is_file() and not path.is_symlink() and CORAL_FILE in path.read_text(errors="ignore")
     ]
     assert holders == ["script/ansible/roles/tmsetup/vars/main.yml"]
+
+
+@pytest.mark.parametrize("task, variable, url_part", [
+    ("TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model",
+     "tmsetup_frigate_coral_model_sha256", "/releases/download/{{ tmsetup_frigate_coral_model_release }}/"),
+    ("TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model",
+     "tmsetup_frigate_coral_labels_sha256", "/{{ tmsetup_frigate_coral_model_release }}/labels-coco17.txt"),
+])
+def test_coral_downloads_are_checked_and_come_from_the_release(task, variable, url_part):
+    get_url = frigate_tasks()[task]["ansible.builtin.get_url"]
+    assert get_url["checksum"] == "sha256:{{ %s }}" % variable
+    assert url_part in get_url["url"] and "refs/heads" not in get_url["url"]
+    assert get_url["force"] is False  # a file that matches is left alone, with or without the internet
+    assert re.fullmatch(r"[0-9a-f]{64}", load_role_yaml("vars/main.yml")[variable])
 
 
 def test_existing_frigate_config_is_migrated_as_the_code_owner():
