@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 from . import playbook, proc
 from .handover import Handover
-from .installed import check_database_space
+from .installed import Refusal, check_database_space
 from .paths import Paths
 from .state import Failed, clear_marker, write_marker
 
@@ -63,16 +63,28 @@ def _reset_flag(handover: Handover) -> None:
     flag.chmod(0o644)
 
 
-def start_again(ctx) -> None:
+def start_again(log) -> None:
     """Start the control app, the pod, and the revproxy, each tried whatever happened to the others."""
     for unit in STARTED_AFTER_A_FAILURE:
         try:
-            status = proc.run(["systemctl", "start", unit], log=ctx.log, timeout=_START_TIMEOUT).returncode
+            status = proc.run(["systemctl", "start", unit], log=log, timeout=_START_TIMEOUT).returncode
         except (OSError, subprocess.SubprocessError) as error:
-            say(ctx.log, f"could not start {unit}: {type(error).__name__}")
+            say(log, f"could not start {unit}: {type(error).__name__}")
             continue
         if status != 0:
-            say(ctx.log, f"starting {unit} ended with status {status}")
+            say(log, f"starting {unit} ended with status {status}")
+
+
+def _after_a_failure(ctx, error: BaseException, detail: str) -> None:
+    """Start the three units again and remove the marker, then raise Failed("switch_failed", detail) (or the error
+    itself when it is not an Exception, such as KeyboardInterrupt)."""
+    if not isinstance(error, Failed):
+        traceback.print_exc(file=ctx.log)
+    start_again(ctx.log)
+    clear_marker(ctx.paths)
+    if not isinstance(error, Exception):
+        raise error
+    raise Failed("switch_failed", detail) from None
 
 
 def _install(ctx) -> None:
@@ -86,31 +98,42 @@ def _install(ctx) -> None:
 
 
 def run(ctx) -> None:
-    """Switch to the tree. Before anything stops it raises Refusal("low_space"), or Failed("switch_failed") when the
-    installer's environment can't be made ready. Once the marker is written, any failure starts the three units again
-    and removes the marker before it raises Failed("switch_failed")."""
-    check_database_space(ctx.installed, ctx.paths)
+    """Switch to the tree.
+
+    A first attempt (switch_attempts 0) changes nothing before the stop: it raises Refusal("low_space") when the
+    migration runner's copy of the database has no room, or Failed("switch_failed") when the installer can't be made
+    ready, and stops nothing. A repeated attempt (a restart cut the first one off, which may have stopped the units and
+    run part of the installer) skips the space check, which the first passed and whose copy the runner replaces, and
+    treats any failure before its marker like one after the stop. After the stop, or on a repeated attempt, any failure
+    starts the three units again and removes the marker before it raises Failed("switch_failed")."""
+    redo = ctx.state.data["switch_attempts"] > 0
+    step = "space"
     try:
+        if not redo:
+            check_database_space(ctx.installed, ctx.paths)
+        step = "venv"
         if ctx.venv is None:
             ctx.venv = playbook.ensure_venv(ctx.tree, ctx.paths, ctx.log)
+        step = "vars"
         ctx.vars_file = playbook.write_vars(ctx.handover, ctx.installed, ctx.tree, update_mode=True)
-    except Failed as failure:
-        raise Failed("switch_failed", failure.detail) from None
-    ctx.state.set(switch_attempts=ctx.state.data["switch_attempts"] + 1)
-    write_marker(ctx.paths, ctx.tree, ctx.handover_path)
+        step = "marker"
+        ctx.state.set(switch_attempts=ctx.state.data["switch_attempts"] + 1)
+        write_marker(ctx.paths, ctx.tree, ctx.handover_path)
+    except BaseException as error:
+        if redo:
+            _after_a_failure(ctx, error, step)
+        if isinstance(error, Refusal):
+            raise
+        if isinstance(error, Failed):
+            raise Failed("switch_failed", error.detail) from None
+        raise
     ctx.switch_monotonic_usec = _monotonic_usec()
     try:
         _install(ctx)
     except BaseException as error:
-        if not isinstance(error, Failed):
-            traceback.print_exc(file=ctx.log)
-        start_again(ctx)
-        clear_marker(ctx.paths)
         if isinstance(error, Failed):
-            raise
-        if not isinstance(error, Exception):
-            raise
-        raise Failed("switch_failed", f"unexpected {type(error).__name__}") from None
+            _after_a_failure(ctx, error, error.detail)
+        _after_a_failure(ctx, error, f"unexpected {type(error).__name__}")
 
 
 def restart(ctx) -> None:
@@ -127,6 +150,6 @@ def restart(ctx) -> None:
         say(ctx.log, f"the restart request failed: {type(error).__name__}")
         status = None
     if status != 0:
-        start_again(ctx)
+        start_again(ctx.log)
         clear_marker(ctx.paths)
         raise Failed("switch_failed", "restart request")

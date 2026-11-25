@@ -236,7 +236,7 @@ def _carry_on(ctx: Context, stage: str) -> bool:
         ctx.state.finish("switch")
         attempts = ctx.state.data["switch_attempts"]
         if attempts >= switch.ATTEMPTS:
-            switch.start_again(ctx)
+            switch.start_again(ctx.log)
             raise Failed("switch_failed", f"{attempts} attempts")
         return _from_the_switch(ctx)
     if stage == "health":
@@ -367,8 +367,13 @@ def _resume(paths: Paths, tree: Path, handover: Handover, handover_path: Path, l
             return 0
         try:
             installed = installed_module.read(paths)
-        except Refusal as refusal:
-            return _fail(state, log, refusal, paths)
+        except Failed as refusal:
+            if stage != "switch":
+                return _fail(state, log, refusal, paths)
+            # A switch a restart cut off may have stopped the units and run part of the installer
+            _say(log, f"resume at stage {stage}: the manifest can't be used")
+            switch.start_again(log)
+            return _fail(state, log, Failed("switch_failed", "manifest"), paths)
         _give_log_to_group(log, installed.codegroup)
         _say(log, f"resume at stage {stage}")
         ctx = Context(paths, tree, handover, handover_path, installed, state, log)

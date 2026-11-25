@@ -512,3 +512,85 @@ def test_after_a_restart_the_copy_is_the_newest_made_since_the_first_switch_bega
         os.utime(folder / name, (when, when))
     assert device.resume() == 0
     assert device.state()["tmdb_backup"] == str(folder / "tmdb-v10-c.sqlite")
+
+
+# A repeated switch: the first attempt may have stopped the units and run part of the installer
+
+STARTS = [["systemctl", "start", unit] for unit in ("tm-control.service", "traffic-monitor.service",
+                                                     "revproxy.service")]
+
+
+def test_a_repeated_switch_skips_the_space_check_for_the_database_copy(device, monkeypatch):
+    _cut_off(device, "switch", attempts=1, switched=False)
+    db = device.paths.root / "opt" / "traffic-monitor" / "node-red-tm" / "db"
+    (db / "tmdb.sqlite").write_bytes(b"x" * 5_000_000)
+    monkeypatch.setattr(installed_module, "_free_bytes", lambda path: 0)
+    assert device.resume() == 0
+    assert ("setup.yml", ()) in device.stages
+    state = device.state()
+    assert (state["result"], state["switch_attempts"]) == ("ok", 2)
+
+
+@pytest.mark.parametrize(("breaks", "detail"), [("ensure_venv", "venv"), ("write_vars", "vars")])
+def test_a_repeated_switch_that_fails_before_its_marker_starts_the_three_services(device, monkeypatch, breaks,
+                                                                                    detail):
+    _cut_off(device, "switch", attempts=1, switched=False)
+
+    def broken(*args, **kwargs):
+        if breaks == "ensure_venv":
+            raise Failed("prepare_failed", "ansible environment")
+        raise OSError("disk trouble")
+
+    monkeypatch.setattr(playbook, breaks, broken)
+    assert device.resume() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["detail"]) == ("failed", "switch_failed", detail)
+    assert device.systemctl_calls("start") == STARTS
+    assert device.systemctl_calls("stop") == [] and ("setup.yml", ()) not in device.stages
+    assert state["switch_attempts"] == 1
+    assert not device.paths.resume.exists()
+    assert all(row["finished_at"] for row in state["stages"])
+
+
+@pytest.mark.parametrize("problem", ["missing", "root"])
+def test_a_resumed_switch_whose_manifest_cannot_be_used_starts_the_three_services(device, problem):
+    _cut_off(device, "switch", attempts=1, switched=False)
+    if problem == "missing":
+        device.paths.manifest.unlink()
+    else:
+        device.paths.manifest.write_text(json.dumps(manifest(installing_user="root")))
+    assert device.resume() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["detail"]) == ("failed", "switch_failed", "manifest")
+    assert device.systemctl_calls("start") == STARTS
+    assert ("setup.yml", ()) not in device.stages
+    assert not device.paths.resume.exists()
+    assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
+
+
+@pytest.mark.parametrize("stage", ["reboot", "health", "cleanup"])
+def test_a_manifest_that_cannot_be_used_after_the_switch_keeps_its_own_code(device, stage):
+    _cut_off(device, stage, boot_id=OTHER_BOOT)
+    device.paths.manifest.unlink()
+    assert device.resume() == 1
+    assert device.state()["reason"] == "needs_manual_update"
+    assert device.systemctl_calls("start") == []
+
+
+def test_a_first_switch_that_fails_before_its_marker_stops_and_starts_nothing(device, monkeypatch):
+    real = playbook.write_vars
+    calls = []
+
+    def third_call_breaks(hand, installed, tree, *, update_mode):
+        calls.append(update_mode)
+        if len(calls) == 3:  # Prepare writes it twice; the switch is the third
+            raise OSError("disk trouble")
+        return real(hand, installed, tree, update_mode=update_mode)
+
+    monkeypatch.setattr(playbook, "write_vars", third_call_breaks)
+    assert device.main() == 1
+    state = device.state()
+    assert (state["reason"], state["stage"], state["detail"]) == ("switch_failed", "switch", "unexpected OSError")
+    assert state["switch_attempts"] == 0
+    assert device.systemctl_calls("stop") == [] and device.systemctl_calls("start") == []
+    assert not device.paths.resume.exists()
