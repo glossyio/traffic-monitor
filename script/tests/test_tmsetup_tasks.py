@@ -3,6 +3,7 @@
 import base64
 import subprocess
 
+import jinja2
 import pytest
 from tmsetup_render import REPO, ROLE, evaluate, load_role_yaml
 
@@ -1287,3 +1288,12 @@ def test_the_upload_lists_file_is_copied_and_restarts_node_red():
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
     assert "node-red-tm/data/upload-lists.json" in task["loop"]
     assert task["notify"] == "Restart node-red-tm.service"
+
+
+def test_the_reboot_flag_default_resolves_from_the_defaults_alone():
+    """tmsetup.sh always passes the path; a run without it (the tests, an unattended run) gets the default."""
+    defaults = load_role_yaml("defaults/main.yml")
+    assert defaults["tmsetup_tmp_dir"] == "~/.tmsetup"
+    # A template with text around the expression, which evaluate() leaves as it is; StrictUndefined fails on a typo
+    path = jinja2.Environment(undefined=jinja2.StrictUndefined).from_string(defaults["tmsetup_reboot_touch_file"])
+    assert path.render(**defaults) == "~/.tmsetup/reboot-required"
