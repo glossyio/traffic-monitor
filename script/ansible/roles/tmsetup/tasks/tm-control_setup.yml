@@ -40,11 +40,17 @@
 - name: TMSetup - tm-control Setup - Copy pinned requirements
   become: true
   ansible.builtin.copy:
-    src: tm-control/backend/requirements.txt
-    dest: '{{ tmsetup_tm_control_dir }}/requirements.txt'
+    src: tm-control/backend/requirements.lock
+    dest: '{{ tmsetup_tm_control_dir }}/requirements.lock'
     owner: root
     group: root
     mode: '0644'
+
+- name: TMSetup - tm-control Setup - Remove the old unhashed requirements
+  become: true
+  ansible.builtin.file:
+    path: '{{ tmsetup_tm_control_dir }}/requirements.txt'
+    state: absent
 
 - name: TMSetup - tm-control Setup - Create virtual environment
   become: true
@@ -60,8 +66,9 @@
       - install
       - --no-input
       - --disable-pip-version-check
+      - --require-hashes
       - --requirement
-      - '{{ tmsetup_tm_control_dir }}/requirements.txt'
+      - '{{ tmsetup_tm_control_dir }}/requirements.lock'
   register: tmsetup_tm_control_pip_register
   changed_when: "'Successfully installed' in tmsetup_tm_control_pip_register.stdout"
   notify: Restart tm-control.service

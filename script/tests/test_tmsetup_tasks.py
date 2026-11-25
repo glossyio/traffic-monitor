@@ -140,7 +140,7 @@ def test_tm_control_code_lives_outside_the_code_owners_directory():
 def test_tm_control_files_are_root_owned():
     for task in load_role_yaml("tasks/tm-control_setup.yml"):
         for module in ("ansible.builtin.file", "ansible.builtin.copy", "ansible.builtin.template"):
-            if module in task:
+            if module in task and task[module].get("state") != "absent":  # a removed file has no owner
                 assert task[module]["owner"] == "root", task["name"]
 
 
@@ -754,6 +754,22 @@ def test_changes_to_what_tm_control_reads_at_startup_restart_it():
     for name in ["TMSetup - tm-control Service - Install the unit files",
                  "TMSetup - tm-control Service - Write the install manifest"]:
         assert service[name]["notify"] == "Restart tm-control.service", name
+
+
+def test_tm_control_installs_only_from_its_hashed_lock():
+    """The device's venv gets exactly the lock's packages, each checked against its hash; the old unhashed list goes."""
+    tasks = tm_control_setup_tasks()
+    copy = tasks["TMSetup - tm-control Setup - Copy pinned requirements"]["ansible.builtin.copy"]
+    assert copy["src"] == "tm-control/backend/requirements.lock"
+    lock = copy["dest"]
+    assert lock == "{{ tmsetup_tm_control_dir }}/requirements.lock"
+    install = tasks["TMSetup - tm-control Setup - Install pinned requirements"]
+    argv = install["ansible.builtin.command"]["argv"]
+    assert "--require-hashes" in argv and argv[-1] == lock
+    assert install["notify"] == "Restart tm-control.service"
+    assert "'Successfully installed' in tmsetup_tm_control_pip_register.stdout" in install["changed_when"]
+    removed = [task["ansible.builtin.file"] for task in tasks.values() if "ansible.builtin.file" in task]
+    assert {"path": "{{ tmsetup_tm_control_dir }}/requirements.txt", "state": "absent"} in removed
 
 
 def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():

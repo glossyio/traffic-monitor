@@ -152,3 +152,27 @@ exit {code}
     assert result.returncode == code
     assert log.read_text() == "first\nlast line\n"
     assert shown.read_text() == "first\nlast line\n"
+
+
+def test_both_install_paths_install_ansible_from_the_hashed_lock():
+    installs = [line.strip() for line in script_code_lines() if "pip3 install" in line]
+    assert installs == ['pip3 install --require-hashes -r "${script_dir}/requirements.lock" || return 1'] * 2
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="runs as a normal user")
+def test_a_remote_run_from_an_old_python_says_so_and_makes_nothing(tmp_path):
+    """The lock was made for Python 3.13 and Ansible 14 needs 3.12; an older python3 stops the run before a venv."""
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    python = fake / "python3"
+    python.write_text("#!/bin/sh\nif [ \"$1\" = -c ]; then echo 3.11; exit 0; fi\nexit 1\n")
+    python.chmod(0o755)
+    home = tmp_path / "home"
+    home.mkdir()
+    env = {"HOME": str(home), "PATH": f"{fake}:{os.environ.get('PATH', '/usr/bin:/bin')}"}
+    result = subprocess.run(["bash", str(SCRIPT), "-y", "-H", "192.0.2.1"], env=env, capture_output=True, text=True,
+                            timeout=30, check=False)
+    output = result.stdout + result.stderr
+    assert result.returncode == 1, output
+    assert "Python 3.12 or later" in output and "3.11" in output
+    assert not (home / ".tmsetup" / "tm_venv").exists()

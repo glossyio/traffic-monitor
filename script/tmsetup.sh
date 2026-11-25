@@ -25,7 +25,6 @@ _EXTRA_ARGS=""
 _FORCE=false
 _CONFIRM=false
 _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
-_MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
 _WIFI_COUNTRY=''
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy" "tm-control")
@@ -94,16 +93,27 @@ _install_ansible_local() { # check and install python3-venv and setup venv
       python3 -m venv "${venvd}" || return 1
   fi
   . "${venvd}/bin/activate" || return 1
-  pip3 install -r "${script_dir}/requirements" || return 1
+  pip3 install --require-hashes -r "${script_dir}/requirements.lock" || return 1
   return 0
 }
 
 _install_ansible_remote() { # check and install python3-venv and setup venv
   local venvd=$1
   local script_dir=$2
+  local found major minor
+  # The installer's Ansible (script/requirements.lock) needs Python 3.12 or later
+  found=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null) || found=''
+  if [[ "${found}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    major=${BASH_REMATCH[1]}
+    minor=${BASH_REMATCH[2]}
+    if (( major < 3 || (major == 3 && minor < 12) )); then
+      printf "ERROR: The installer's Ansible needs Python 3.12 or later on this computer; this one has Python %s.\n" "${found}"
+      exit 1
+    fi
+  fi
   if python3 -m venv ${venvd} ; then
     . "${venvd}/bin/activate" || return 1
-    pip3 install -r "${script_dir}/requirements" || return 1
+    pip3 install --require-hashes -r "${script_dir}/requirements.lock" || return 1
   else
     cat << EOF
 ERROR: Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
