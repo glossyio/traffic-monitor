@@ -1197,6 +1197,71 @@ Defaults rejected for the dial:
 - Points in compass order for Tab (N, NE, E, ...): it needs `tabindex` juggling, and reading order matches what's seen.
 - A larger dial on a wide screen: one size is one set of numbers to test, and a mouse doesn't need more room.
 
+#### Lengths and the side view
+
+The control app stores metres. Feet exist only on the page, in `lengths.ts`: `shown` (the text of a field: one decimal
+in feet, two in metres, empty for no length), `decimal` (a plain number as typed, with one comma and no dot read as
+the decimal mark, since many phones' keypads have no dot, but not a comma before exactly three digits, "1,000", which
+may be a thousands separator), `typed` (what was typed, as metres to two decimals, null for nothing or for text that
+isn't a number), `both` ("7.0 ft (2.13 m)", the chosen unit first), and `savedUnit` and `saveUnit`. A foot
+is 0.3048 m, and rounding is half away from zero, as the backend rounds (`toFixed` works on the number's exact value, as
+the backend does). The unit is feet until someone chooses metres, because the usual mounts are whole feet (7, 12, and
+16), so feet are the unit they are round in; each length is shown in both, so metres are always there. The browser
+remembers the choice in `localStorage` under `tm.mounting.unit`. A browser may refuse its storage, so every read and
+write is inside `try`, and a refusal means feet and a choice that lasts until the page is closed.
+
+`MountSideView.vue` is the page's drawing of one sensor: `heightM`, `pitchDeg`, `distanceM`, and `unit` in, nothing out.
+It is a picture, not a calculator. The page passes the API's dry-run values, where the API has already worked out
+whichever of tilt and distance isn't measured, and the drawing lays out the three it is given.
+
+```text
++------------------------------------+
+|              15°                   |  the tilt, above the unit
+|        7.0 ft [#]__                |  the height beside the support, the unit on it
+|               |    ----____        |  the line of sight, in the primary color
+|               |            ----o   |  o: the centre of the view, on the road
+|  -------------+-----------------   |  the road
+|               |<--- 26.1 ft --->|  |  the distance along the ground
++------------------------------------+
+```
+
+- One scale for both directions, so the support and the ground point both fit in the 300 by 180 drawing: the smaller
+  of what the height and what the distance allow. A distance that is missing asks for no room. The unit keeps its size
+  when the support is short (0.5 m at 286 m is a unit sitting on the road), and the height's label moves up to stay
+  clear of the road.
+- Colors are Vuetify's, as in the dial: the road, the support, and the distance's ruler are `text-secondary`; the unit,
+  the line of sight, and the ground point are `text-primary`; labels are the text color. All of it is `currentColor`,
+  with `width`, `height`, and `viewBox` attributes and no CSS. The drawing is a fixed 300 px wide, like the dial's 200,
+  which leaves room inside a card's padding on a phone's 343 px.
+- A missing value leaves its part dashed and unlabelled. With no tilt, the line of sight is dashed (it still runs to the
+  ground point, if the distance is there); with no distance, the ruler under the road is dashed and has no label,
+  which is also what a tilt of 0 looks like, since the centre of the view is then at the horizon and the line runs level
+  to the edge. With a tilt above 0 and no distance (the API gives none when it would be over 1,000 m), the line of
+  sight is solid and runs at that tilt to the right edge or the road, whichever it meets first, and a tilt of 90
+  draws it straight down. With neither value, the line of sight is a dashed stand-in. A tilt of 90 with a distance of
+  0 also draws the line straight down over the support. With no height there is nothing to draw: one line, "Enter the
+  height to see the side view."
+- The text alternative says what the labels say: "Side view. The unit is 7.0 ft above the road. Its tilt is 15° below
+  level. The centre of its view is 26.1 ft along the ground.", and "not set" for a missing tilt or distance. The SVG is
+  `role="img"` with that as its `aria-label`; the text inside it is for people who can see it.
+
+The side view was checked in a scratch mount at 375 px and 1280 px wide: a full set of values in feet and in metres, a
+tilt of 0, a tilt of 90, no height, a height of 100 m and one of 0.5 m, 0.5 m with a 286 m distance, a missing tilt, a
+missing distance, and only a height.
+
+- At 0.5 m and 286 m the height's label sat on the road line, over a support too short to hold it. It now stays above
+  the road.
+- Looked at and kept: at a tilt of 90 the line of sight lies over the support, so the support shows a blue stripe; and
+  at 1280 px the drawing stays at 300 px on the left, like the dial.
+
+Defaults rejected for the side view:
+
+- A drawing that stretches to the card's width: its text would scale with it, and a label that is 12 px on a phone is
+  17 px on a desktop.
+- A separate scale for height and distance, so a tall support and a far ground point both look large: it draws the wrong
+  tilt, and the tilt is what the drawing is for.
+- Working the missing value out in the drawing: the API already does, and a second copy would drift from it.
+
 #### What the screenshot review changed
 
 The page was checked in fake mode at 375 px and 1280 px wide, with a used place opened, the coarser precision
