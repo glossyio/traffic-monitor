@@ -3,7 +3,8 @@
 #   - the docs build's Python packages (docs-site/requirements.txt)
 #   - tm-control's Python packages (tm-control/backend/requirements.txt)
 #   - tm-control's UI packages (tm-control/ui/package-lock.json)
-#   - Node-RED's add-on nodes (container/node-red-tm/data/package.json)
+#   - Node-RED's add-on nodes (container/node-red-tm/data/package.json and
+#     package-lock.json)
 # Each ecosystem's minor and patch updates come as one grouped pull request.
 # For the UI and Node-RED, each major update gets its own pull request.
 # Updates skip releases younger than two weeks.
@@ -11,7 +12,8 @@
 # Dependabot reads this file only from the default branch (main), so a change
 # here takes effect at the next release.
 #
-# Not covered: the images and tools pinned in
+# Not covered: the installer's Ansible (script/requirements and its lock),
+# which Dependabot doesn't read, and the images and tools pinned in
 # script/ansible/roles/tmsetup/vars/main.yml (Frigate, Node-RED, nginx, Node,
 # go2rtc, Hailo). Dependabot can't read Ansible variables or the Jinja
 # Containerfile templates that use them.
@@ -44,6 +46,9 @@ updates:
         update-types: ["version-update:semver-major"]
 
   # Installed on the device. Test an update on a bench Pi before merging it.
+  # Dependabot moves requirements.txt only, so its pull request fails
+  # script/tests/test_requirement_locks.py until someone remakes
+  # requirements.lock on that branch (the command is in the lock's first lines).
   - package-ecosystem: pip
     directory: /tm-control/backend
     target-branch: dev
@@ -67,10 +72,9 @@ updates:
         patterns: ["*"]
         update-types: ["minor", "patch"]
 
-  # No lockfile, so Dependabot moves a range only when a release falls outside
-  # it. "node-red" is "*", so it never moves; Node-RED itself is updated with
-  # tmsetup_node_red_tm_version. The flows depend on how these nodes behave,
-  # so test an update on a bench Pi before merging it.
+  # Dependabot moves a node's version in package-lock.json, and its range in
+  # package.json only when a release falls outside it. The flows depend on how
+  # these nodes behave, so test an update on a bench Pi before merging it.
   - package-ecosystem: npm
     directory: /container/node-red-tm/data
     versioning-strategy: increase-if-necessary
@@ -83,3 +87,7 @@ updates:
       node-red-nodes:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      # Node-RED moves with tmsetup_node_red_tm_version and the image's digest.
+      # A lock that moved it alone would fail script/tests/test_node_red_lock.py.
+      - dependency-name: node-red

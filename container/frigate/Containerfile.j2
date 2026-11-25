@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS build-ffmpeg
+FROM docker.io/library/debian:bookworm-slim@{{ tmsetup_debian_image_digest }} AS build-ffmpeg
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -10,10 +10,10 @@ RUN apt-get update && \
 
 WORKDIR /build
 
-RUN git clone \
-    --branch test/8.1.2/main \
-    --depth 1 \
-    https://github.com/jc-kynesim/rpi-ffmpeg.git ffmpeg
+RUN git init ffmpeg && \
+    git -C ffmpeg fetch --depth 1 https://github.com/jc-kynesim/rpi-ffmpeg.git {{ tmsetup_frigate_ffmpeg_commit }} && \
+    git -C ffmpeg checkout --detach FETCH_HEAD && \
+    test "$(git -C ffmpeg rev-parse HEAD)" = {{ tmsetup_frigate_ffmpeg_commit }}
 
 WORKDIR /build/ffmpeg
 
@@ -30,7 +30,7 @@ RUN ./configure \
     make -j$(nproc) && \
     make install
 
-FROM ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
+FROM ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}@{{ tmsetup_frigate_image_digest }}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

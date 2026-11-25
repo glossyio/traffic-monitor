@@ -8,9 +8,19 @@ tmsetup_go2rtc_sha256:
   amd64: '32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6'
   arm64: '359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50'
 tmsetup_frigate_version: '0.18.2'
+# The commit of the Raspberry Pi ffmpeg fork (jc-kynesim/rpi-ffmpeg) that the Frigate image builds, the head of its
+# branch test/8.1.2/main on 2026-11-24. A branch moves; a commit doesn't. To update it, take the branch's new head
+# with `git ls-remote https://github.com/jc-kynesim/rpi-ffmpeg.git refs/heads/test/8.1.2/main`.
+tmsetup_frigate_ffmpeg_commit: 'f60aae17021abae85b1ba9759e8b2da33f723902'
 # The open source yolov9 model the installer downloads for a Coral, in Frigate's model_cache. The installer's own
 # model section names it, so tmsetup -f doesn't carry that section over (frigate_setup.yml).
 tmsetup_frigate_coral_model_file: yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite
+# The release of dbro/frigate-detector-edgetpu-yolo9 that the model and its labels come from, and the SHA-256 of each
+# file as taken on 2026-11-24. The tag is the same for both URLs. To update, change the tag and take both checksums
+# from freshly downloaded files with `sha256sum`.
+tmsetup_frigate_coral_model_release: v1.5
+tmsetup_frigate_coral_model_sha256: 'f634f60259101556825fd69662f96282e74364b507f83e6382cc34d5d0e6170e'
+tmsetup_frigate_coral_labels_sha256: '94758f79386e9122776f8fdca3583184d0ad7c94c7c87f661ae513fec45dd8d6'
 # The model section Frigate's config gets on a device with a Coral; tm-control puts it back from the manifest.
 tmsetup_frigate_coral_model:
   model_type: yolo-generic
@@ -24,6 +34,15 @@ tmsetup_nginx_version: '1.31.0'
 # Builds tm-control's UI in the revproxy image (container/revproxy/Containerfile.j2), with the Node release that
 # tm-control/ui/package-lock.json was made with
 tmsetup_node_image: docker.io/library/node:22.23.4-alpine
+# The digest of each base image the builds start from (the Containerfiles' FROM lines), as the registry served it on
+# 2026-11-24. Each is the registry's digest for the tag, the multi-arch list's for a tag that has one, and it changes
+# together with the version above it (debian's tag has no version here, so it changes by hand). The check that asks the
+# registries (script/tests/test_pins_resolve.py, run by .github/workflows/pins.yml) tells when one stops resolving.
+tmsetup_debian_image_digest: 'sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e'
+tmsetup_frigate_image_digest: 'sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a'
+tmsetup_node_red_tm_image_digest: 'sha256:3622786c15b6f57f61bf1d0ece59d06a18b742c5c8955f588d189b6bee8dc97d'
+tmsetup_node_image_digest: 'sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202'
+tmsetup_nginx_image_digest: 'sha256:800e7c98538c6bf725f5177e841aa720ae0ed1c378bbea368b6330bfe18a36b3'
 tmsetup_hailo_driver_repo: https://github.com/hailo-ai/hailort-drivers.git
 tmsetup_hailo_driver_dir: "{{ tmsetup_codedir }}/tmp/hailort-drivers"
 # udev symlink to the Pi 5 HEVC decoder (model rpi-hevc-dec); its /dev/media number changes between boots (#231).

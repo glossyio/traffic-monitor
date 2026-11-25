@@ -4,6 +4,7 @@ import re
 import subprocess
 from pathlib import Path
 
+import pins
 import pytest
 from tmsetup_render import REPO, load_role_yaml, render
 
@@ -69,6 +70,12 @@ def test_build_unit_sets_no_restart_or_start_limit_in_any_section(template):
     """StartLimit* lives in [Unit], which the [Service] check above doesn't read."""
     keys = [line for line in build_unit(template).splitlines() if line.startswith(("Restart", "StartLimit"))]
     assert keys == []
+
+
+@pytest.mark.parametrize("template", pins.PINNED_BUILD_UNITS)
+def test_build_unit_pulls_a_base_image_only_when_it_is_missing(template):
+    pulls = [line for line in build_unit(template).splitlines() if line.startswith("Pull=")]
+    assert pulls == ["Pull=missing"]
 
 
 def test_a_quadlet_older_than_build_units_is_a_skip(tmp_path):

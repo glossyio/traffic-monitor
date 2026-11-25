@@ -1,6 +1,7 @@
 """Checks on the tmsetup role's task and handler files that guard against upgrade mistakes."""
 
 import base64
+import re
 import subprocess
 
 import jinja2
@@ -140,7 +141,7 @@ def test_tm_control_code_lives_outside_the_code_owners_directory():
 def test_tm_control_files_are_root_owned():
     for task in load_role_yaml("tasks/tm-control_setup.yml"):
         for module in ("ansible.builtin.file", "ansible.builtin.copy", "ansible.builtin.template"):
-            if module in task:
+            if module in task and task[module].get("state") != "absent":  # a removed file has no owner
                 assert task[module]["owner"] == "root", task["name"]
 
 
@@ -361,6 +362,20 @@ def test_the_coral_model_file_is_one_variable():
         if path.is_file() and not path.is_symlink() and CORAL_FILE in path.read_text(errors="ignore")
     ]
     assert holders == ["script/ansible/roles/tmsetup/vars/main.yml"]
+
+
+@pytest.mark.parametrize("task, variable, url_part", [
+    ("TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model",
+     "tmsetup_frigate_coral_model_sha256", "/releases/download/{{ tmsetup_frigate_coral_model_release }}/"),
+    ("TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model",
+     "tmsetup_frigate_coral_labels_sha256", "/{{ tmsetup_frigate_coral_model_release }}/labels-coco17.txt"),
+])
+def test_coral_downloads_are_checked_and_come_from_the_release(task, variable, url_part):
+    get_url = frigate_tasks()[task]["ansible.builtin.get_url"]
+    assert get_url["checksum"] == "sha256:{{ %s }}" % variable
+    assert url_part in get_url["url"] and "refs/heads" not in get_url["url"]
+    assert get_url["force"] is False  # a file that matches is left alone, with or without the internet
+    assert re.fullmatch(r"[0-9a-f]{64}", load_role_yaml("vars/main.yml")[variable])
 
 
 def test_existing_frigate_config_is_migrated_as_the_code_owner():
@@ -756,6 +771,22 @@ def test_changes_to_what_tm_control_reads_at_startup_restart_it():
     for name in ["TMSetup - tm-control Service - Install the unit files",
                  "TMSetup - tm-control Service - Write the install manifest"]:
         assert service[name]["notify"] == "Restart tm-control.service", name
+
+
+def test_tm_control_installs_only_from_its_hashed_lock():
+    """The device's venv gets exactly the lock's packages, each checked against its hash; the old unhashed list goes."""
+    tasks = tm_control_setup_tasks()
+    copy = tasks["TMSetup - tm-control Setup - Copy pinned requirements"]["ansible.builtin.copy"]
+    assert copy["src"] == "tm-control/backend/requirements.lock"
+    lock = copy["dest"]
+    assert lock == "{{ tmsetup_tm_control_dir }}/requirements.lock"
+    install = tasks["TMSetup - tm-control Setup - Install pinned requirements"]
+    argv = install["ansible.builtin.command"]["argv"]
+    assert "--require-hashes" in argv and argv[-1] == lock
+    assert install["notify"] == "Restart tm-control.service"
+    assert "'Successfully installed' in tmsetup_tm_control_pip_register.stdout" in install["changed_when"]
+    removed = [task["ansible.builtin.file"] for task in tasks.values() if "ansible.builtin.file" in task]
+    assert {"path": "{{ tmsetup_tm_control_dir }}/requirements.txt", "state": "absent"} in removed
 
 
 def test_tm_control_units_go_to_systemd_and_the_rules_to_polkit():
@@ -1313,3 +1344,10 @@ def test_the_reboot_flag_default_resolves_from_the_defaults_alone():
     # A template with text around the expression, which evaluate() leaves as it is; StrictUndefined fails on a typo
     path = jinja2.Environment(undefined=jinja2.StrictUndefined).from_string(defaults["tmsetup_reboot_touch_file"])
     assert path.render(**defaults) == "~/.tmsetup/reboot-required"
+
+
+def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
+    """The Containerfile copies both from data/ in the build folder, and npm ci installs what the lock lists."""
+    task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
+                if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
+    assert {"node-red-tm/data/package.json", "node-red-tm/data/package-lock.json"} <= set(task["loop"])

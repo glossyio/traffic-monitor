@@ -1,0 +1,1 @@
+Bearer realm="https://ghcr.io/token",service="ghcr.io",scope="repository:blakeblackshear/frigate:pull"

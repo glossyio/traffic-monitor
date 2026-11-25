@@ -25,8 +25,8 @@ _EXTRA_ARGS=""
 _FORCE=false
 _CONFIRM=false
 _LOGFILE=~/tmsetup-$(date +%Y%m%d-%H%M).log
-_MIN_ANSIBLE_VERSION=10.7.0
 _REMOTE_HOSTS=''
+_RUN_LOCK=/var/lib/traffic-monitor/update/lock
 _WIFI_COUNTRY=''
 declare _VALID_TAGS=("base" "full_upgrade" "wifi" "go2rtc" "detectors" "podman" "frigate" "node-red-tm" "plate-recognizer" "revproxy" "tm-control")
 declare -a _VALID_CUSTOM_VARS=("plate_recognizer" "mqtt_lan")
@@ -94,16 +94,27 @@ _install_ansible_local() { # check and install python3-venv and setup venv
       python3 -m venv "${venvd}" || return 1
   fi
   . "${venvd}/bin/activate" || return 1
-  pip3 install -r "${script_dir}/requirements" || return 1
+  pip3 install --require-hashes -r "${script_dir}/requirements.lock" || return 1
   return 0
 }
 
 _install_ansible_remote() { # check and install python3-venv and setup venv
   local venvd=$1
   local script_dir=$2
+  local found major minor
+  # The installer's Ansible (script/requirements.lock) needs Python 3.12 or later
+  found=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null) || found=''
+  if [[ "${found}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    major=${BASH_REMATCH[1]}
+    minor=${BASH_REMATCH[2]}
+    if (( major < 3 || (major == 3 && minor < 12) )); then
+      printf "ERROR: The installer's Ansible needs Python 3.12 or later on this computer; this one has Python %s.\n" "${found}"
+      exit 1
+    fi
+  fi
   if python3 -m venv ${venvd} ; then
     . "${venvd}/bin/activate" || return 1
-    pip3 install -r "${script_dir}/requirements" || return 1
+    pip3 install --require-hashes -r "${script_dir}/requirements.lock" || return 1
   else
     cat << EOF
 ERROR: Unable to create python3 venv to install ansible. Possbly python3 or venv module are not installed.
@@ -239,16 +250,39 @@ _show_card() { # Show the device's card on the terminal only: it has the hotspot
   return 0
 }
 
+_take_run_lock() { # Take the lock that lets one install or update run on this device; the kernel drops it when the script ends
+  local lock=$1
+  # Root's file, opened here read-only (enough for flock). Appending creates it without ever replacing it:
+  # a replaced file would be a different lock.
+  if [[ ! -e "${lock}" ]]; then
+    if ! sudo sh -c 'umask 022; mkdir -p "$1" && : >> "$2"' sh "$(dirname "${lock}")" "${lock}"; then
+      printf "Could not create the installer's lock file %s.\n" "${lock}"
+      return 1
+    fi
+  fi
+  # The descriptor stays open for the rest of the script, so the Ansible run inherits it
+  if ! exec {_RUN_LOCK_FD}< "${lock}"; then
+    printf "Could not open the installer's lock file %s.\n" "${lock}"
+    return 1
+  fi
+  if ! flock -n "${_RUN_LOCK_FD}"; then
+    printf "Another install or update is running on this device. Wait for it to finish, then run tmsetup.sh again.\n"
+    return 1
+  fi
+}
+
 _tmsetup_local(){ # Installation on localhost only
   printf "This will install the traffic monitor software on this device: %s\n" "$(hostname)"
-  _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
-  _ask_wifi_country
   # Check before anything uses sudo; once it caches a password, sudo -n would pass.
   # Without a terminal Ansible can't ask, so skip the check and let a failed run print the -K hint.
   if [[ -t 0 && " ${_EXTRA_ARGS} " != *" -K "* ]] && ! sudo -n true 2>/dev/null; then
     printf "sudo needs a password here, so Ansible will ask for it (BECOME password).\n"
     _add_arg "-K"
   fi
+  # Before "continue?" and any install: a second run is stopped here (with -f, after the overwrite question)
+  _take_run_lock "${_RUN_LOCK}" || return 1
+  _confirm_cont "Are you sure you wish to continue? [y|N] " || exit 2
+  _ask_wifi_country
   [[ -n "${TM_TMP_DIR}" ]] && _add_var tmsetup_tmp_dir "${TM_TMP_DIR}"
   _install_ansible_local "${VENV_DIR}" "${_SCRIPT_DIR}"
   _init_reboot_touchfile "${REBOOT_TOUCH_FILE}" || return 1
