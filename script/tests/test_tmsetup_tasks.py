@@ -933,7 +933,8 @@ def test_revproxy_renders_every_snippet_in_the_check_and_the_deployment():
     role_vars = load_role_yaml("vars/main.yml")
     snippets, locations = role_vars["tmsetup_revproxy_snippets"], role_vars["tmsetup_revproxy_locations"]
     tasks = revproxy_tasks()
-    check_block = {task["name"]: task for task in tasks["TMSetup - revproxy Setup - Check NGinx config before deploying it"]["block"]}
+    (check_file,) = load_role_yaml("tasks/revproxy_nginx_check.yml")
+    check_block = {task["name"]: task for task in check_file["block"]}
     check = check_block["TMSetup - revproxy Setup - Render NGinx config for the check"]
     assert evaluate(check["loop"], tmsetup_revproxy_snippets=snippets, tmsetup_revproxy_locations=locations) == (
         ["nginx.conf"] + [f"tm/snippets/{name}" for name in snippets] + [f"tm/locations/{name}" for name in locations])

@@ -1,0 +1,74 @@
+---
+# TMSetup - revproxy NGinx Check: nginx -t with this tree's nginx config on the image tmsetup_revproxy_check_image.
+# revproxy_setup.yml runs it on the installed image before it deploys the config, and an update's prepare
+# (update_images.yml) on the image it built.
+
+# Render the nginx config into a throwaway directory and check it there, so a
+# failed check leaves the deployed config and the running proxy untouched.
+- name: TMSetup - revproxy Setup - Check NGinx config before deploying it
+  block:
+    - name: TMSetup - revproxy Setup - Create NGinx check directory
+      become: true
+      ansible.builtin.tempfile:
+        path: '{{ tmsetup_codedir }}/revproxy'
+        prefix: '.nginx-check.'
+        state: directory
+      changed_when: false
+      register: tmsetup_revproxy_check_dir_register
+
+    - name: TMSetup - revproxy Setup - Create NGinx check subdirectories
+      become: true
+      loop:
+        - tm/locations
+        - tm/snippets
+      ansible.builtin.file:
+        mode: '0750'
+        path: '{{ tmsetup_revproxy_check_dir_register["path"] }}/{{ item }}'
+        state: directory
+      changed_when: false
+
+    - name: TMSetup - revproxy Setup - Render NGinx config for the check
+      become: true
+      loop: >-
+        {{ ['nginx.conf']
+           + tmsetup_revproxy_snippets | map('regex_replace', '^', 'tm/snippets/') | list
+           + tmsetup_revproxy_locations | map('regex_replace', '^', 'tm/locations/') | list }}
+      ansible.builtin.template:
+        dest: '{{ tmsetup_revproxy_check_dir_register["path"] }}/{{ item }}'
+        mode: '0640'
+        src: 'container/revproxy/{{ item }}.j2'
+      changed_when: false
+
+    # Runs nginx -t in a throwaway container and waits for it; a non-zero exit fails the task.
+    - name: TMSetup - revproxy Setup - Check NGinx config
+      become: true
+      containers.podman.podman_container:
+        command: -t
+        detach: false
+        entrypoint: nginx
+        image: '{{ tmsetup_revproxy_check_image }}'
+        name: revproxy-nginx-check
+        rm: true
+        state: started
+        volume: '{{ tmsetup_revproxy_check_volumes }}'
+      changed_when: false
+      vars:
+        # The shared mounts, read-only from the check directory, e.g.
+        # <check dir>/nginx.conf:/etc/nginx/nginx.conf:ro
+        tmsetup_revproxy_check_volumes: >-
+          {{ tmsetup_revproxy_config_mounts
+             | map(attribute='path')
+             | map('regex_replace', '^', tmsetup_revproxy_check_dir_register['path'] ~ '/')
+             | zip(tmsetup_revproxy_config_mounts | map(attribute='target'))
+             | map('join', ':')
+             | map('regex_replace', '$', ':ro')
+             | list }}
+  always:
+    - name: TMSetup - revproxy Setup - Remove NGinx check directory
+      become: true
+      ansible.builtin.file:
+        path: '{{ tmsetup_revproxy_check_dir_register["path"] }}'
+        state: absent
+      changed_when: false
+      when: tmsetup_revproxy_check_dir_register["path"] is defined
+...
