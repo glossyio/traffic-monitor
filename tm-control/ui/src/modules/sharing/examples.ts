@@ -6,7 +6,8 @@
 // and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount), the watch
 // log, which every five minutes says whether each camera and radar was working, and the setup history: a row for the
 // device and a row for each camera, sent when one opens or closes, with the model's fingerprint, the versions, and each
-// camera's detection settings, zones, and masks (never a model's title or file name, or a profile's key)
+// camera's detection settings, the zones that are on, and masks (never a model's title or file name, or a profile's
+// key)
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -63,17 +64,17 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
           started: 1_792_000_000_000,
           ended: null,
           tm_version: '0.8.0',
-          tm_commit: '7e4a91b0',
+          tm_commit: '7e4a91b03c5d28f6a1b9d47e0c32f58a6b1d9e74',
           schema_version: 11,
           frigate_version: '0.18.2',
           unit_system: 'imperial',
           detector: 'hailo8l',
-          model_id: 'a1b2c3d4e5f60718',
+          model_id: 'a1b2c3d4e5f60718293a4b5c6d7e8f90',
           model_sha256: '9f2c4a7e5b1d83a60c47e2f19d5b8a3c71e04f6a2b9d8c5e3f1a7b4d6c80e925',
           model_kind: 'frigate_plus',
           model_trained_at: '2026-09-14T10:22:31Z',
-          model_base: 'yolonas',
-          model_type: 'yolonas',
+          model_base: 'yolov9-s',
+          model_type: 'yolo-generic',
           model_width: 320,
           model_height: 320,
           labels_available: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'truck'],
@@ -103,7 +104,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
                 [0.8, 0.7],
                 [0.2, 0.7],
               ],
-              distances: [4.5, 12, 4.5, 12],
+              distances: [12, 40, 12, 40],
               inertia: 3,
               loitering_time: 0,
               speed_threshold: null,
