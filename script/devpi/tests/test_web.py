@@ -1222,6 +1222,21 @@ def test_tm_internal_needs_the_token_on_the_pi(host, expect):
         f"Node-RED's status gives schema_version as {type(version).__name__}, not an integer")
 
 
+def test_tm_internal_status_has_the_database_size(host, expect):
+    """With the token, Node-RED's internal status gives database_bytes, the size of tmdb.sqlite for the Sharing page's
+    Download your data card: a whole number above 0, not a boolean. Only the number is kept."""
+    if not expect["pii_free"]:
+        pytest.skip("reads a device secret; set tm_expect.pii_free: true (bench units only)")
+    token = tm_internal_token(host)
+    status, body = tm_internal_answer(host, token)
+    size = body.get("database_bytes") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
+    assert isinstance(size, int) and not isinstance(size, bool), (
+        f"Node-RED's status gives database_bytes as {type(size).__name__}, not an integer")
+    assert size > 0, "Node-RED's status gives database_bytes as 0 or less"
+
+
 def test_tm_internal_status_has_the_upload_section(host, expect):
     """With the token, Node-RED's internal status has the upload section tm-control's Sharing server check reads: its
     four keys, the switch a boolean, the two times null or text, and the last failure null or one of the four reasons.
@@ -1663,6 +1678,89 @@ def test_sharing_is_readable_by_a_viewer_and_writable_by_an_admin_only(address, 
     assert sharing_snapshot(after_state) == before, (
         "(enabled, target, share_data, exact_location, public_map granted) before and after a viewer's refused PUT: "
         f"{before} and {sharing_snapshot(after_state)}")
+
+
+SHARING_DOWNLOAD_LINK = "/storefiles?files=/db/tmdb.sqlite&tm_token="
+
+
+def test_the_sharing_download_is_for_admins(address, admin_session, viewer_session):
+    """The Download your data card is for admins. A viewer's GET /sharing has download null and their POST
+    /sharing/download is refused with require_admin's 403. The admin's GET gives the database's size and a whole count
+    of places with an exact location, and their POST a one-time link to the whole database (held as Redacted)."""
+    viewer_status, viewer_state = sharing_answer(address, viewer_session)
+    assert viewer_status == 200 and viewer_state is not None, (
+        f"GET {API}/sharing with a viewer session: HTTP {viewer_status}")
+    assert "download" in viewer_state and viewer_state["download"] is None, (
+        f"a viewer's GET {API}/sharing: download is {'missing' if 'download' not in viewer_state else 'not null'}")
+    refused = request_from_this_machine(address, f"{API}/sharing/download", "POST", viewer_session, {})
+    assert admin_refusal(refused) == (403, ADMIN_ONLY), (
+        f"POST {API}/sharing/download with a viewer session (status, message)")
+
+    admin_status, admin_state = sharing_answer(address, admin_session)
+    assert admin_status == 200 and admin_state is not None, (
+        f"GET {API}/sharing with the admin session: HTTP {admin_status}")
+    download = admin_state.get("download")
+    assert isinstance(download, dict), f"the admin's GET {API}/sharing: download is {type(download).__name__}"
+    size, places = download.get("database_bytes"), download.get("exact_places")
+    assert isinstance(size, int) and not isinstance(size, bool) and size > 0, (
+        f"download.database_bytes is {type(size).__name__}, not a whole number above 0")
+    assert isinstance(places, int) and not isinstance(places, bool) and places >= 0, (
+        f"download.exact_places is {type(places).__name__}, not a whole number from 0 up")
+
+    answer = request_from_this_machine(address, f"{API}/sharing/download", "POST", admin_session, {})
+    found = answer.json() if answer.status == 200 else None
+    link = Redacted(found["url"], "sharing download link") if isinstance(found, dict) and isinstance(
+        found.get("url"), str) else None
+    del found
+    assert link is not None, f"POST {API}/sharing/download with the admin session answered HTTP {answer.status}"
+    assert link.startswith(SHARING_DOWNLOAD_LINK), f"the link doesn't start {SHARING_DOWNLOAD_LINK}"
+
+
+def sharing_download_link(address, admin_session):
+    """A one-time link from POST /sharing/download (Redacted, so no failure prints it), or a failure."""
+    answer = request_from_this_machine(address, f"{API}/sharing/download", "POST", admin_session, {})
+    found = answer.json() if answer.status == 200 else None
+    url = Redacted(found["url"], "sharing download link") if isinstance(found, dict) and isinstance(
+        found.get("url"), str) else None
+    del found
+    assert url is not None and url.startswith(SHARING_DOWNLOAD_LINK), (
+        f"POST {API}/sharing/download answered HTTP {answer.status}")
+    return url
+
+
+def test_a_sharing_download_link_works_once_without_the_cookie(host, address, admin_session, expect):
+    """Android's sign-in window hands the Sharing page's download to a helper that sends no cookie; the link lets it in
+    once, from the address it was made for. The first use downloads the whole database (skipped above 500 MB),
+    unpacked here only to count its members; a second use is sent to the login with no token in it. A link used from
+    another address is refused and spent, so that check starts no copy."""
+    require_pii_free(expect)
+    state = sharing_answer(address, admin_session)[1] or {}
+    size = (state.get("download") or {}).get("database_bytes")
+    if not isinstance(size, int) or size > 500 * 1024 * 1024:
+        pytest.skip("the database is over 500 MB or its size is unknown; the download isn't started by a test")
+    url = sharing_download_link(address, admin_session)
+    folder = tempfile.mkdtemp(prefix="tmdev-sharing-download-")
+    try:
+        archive = Path(folder, "download.tar.gz")
+        # An empty Cookie header: the first use carries no session
+        fetched = download_to(address, "", url, archive)
+        assert fetched == 200, f"the link's first use without a cookie answered HTTP {fetched}"
+        with tarfile.open(archive) as packed:
+            members = packed.getnames()
+        assert members == ["tmdb.sqlite"], f"the download holds {len(members)} members, not just tmdb.sqlite"
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+    again = request_from_this_machine(address, url)
+    # Redacted: if the token ever leaked into the redirect, pytest -l mustn't print it
+    location = Redacted(again.headers.get("Location") or "", "login redirect")
+    to_login, holds_token = location.startswith("/login?next="), "tm_token" in urllib.parse.unquote(location)
+    assert (again.status, to_login, holds_token) == (302, True, False), (
+        "the link's second use: (status, to login, holds token)")
+
+    # From the Pi itself to its own address: another client address than this machine's
+    other = Redacted(shlex.quote(f"http://{address}{sharing_download_link(address, admin_session)}"), "download link")
+    status = host.run(f"curl -s -o /dev/null -w '%{{http_code}}' --max-time 10 {other}").stdout.strip()
+    assert status == "302", "a link used from another address"
 
 
 def test_the_notice_is_served(address, viewer_session):
