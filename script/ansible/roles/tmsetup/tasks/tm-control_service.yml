@@ -113,6 +113,10 @@
         public_map_live: '{{ tmsetup_sharing_public_map_live | bool }}'
       map:
         style_url: '{{ tmsetup_map_style_url }}'
+      update:
+        repo: '{{ tmsetup_update_repo }}'
+        # A version ending in -dev is an install from the dev branch
+        channel: "{{ 'development' if (tmsetup_tm_version | string).endswith('-dev') else 'stable' }}"
       revproxy_locations: '{{ tmsetup_revproxy_locations }}'
       probes:
         # Only each detector's static probe settings, not this run's results

@@ -6,6 +6,7 @@ stops collecting, or a name tm-control needs that the role doesn't generate, fai
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -142,6 +143,21 @@ def test_the_manifest_carries_the_map_values():
 
 def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
+
+
+def test_the_manifest_carries_the_update_source():
+    defaults = load_role_yaml("defaults/main.yml")
+    assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", defaults["tmsetup_update_repo"])
+    assert collected_manifest()["update"]["repo"] == defaults["tmsetup_update_repo"] == "glossyio/traffic-monitor"
+    parsed = Manifest.model_validate(json.loads(rendered_manifest())).update
+    assert parsed.repo == "glossyio/traffic-monitor"
+
+
+@pytest.mark.parametrize(("version", "channel"), [
+    ("0.8.0-dev", "development"), ("0.8.0", "stable"), ("1.12.3", "stable"), ("1.12.3-dev", "development"),
+])
+def test_the_manifest_channel_follows_the_version(version, channel):
+    assert collected_manifest(tmsetup_tm_version=version)["update"]["channel"] == channel
 
 
 @pytest.mark.parametrize(("enabled", "unit_exists", "expected"), [
