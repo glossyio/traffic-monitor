@@ -20,7 +20,7 @@ const PLACE: SurveyOut = {
   source: 'ui',
   created_at: '2026-10-01T12:00:00+00:00',
   updated_at: '2026-10-01T12:00:00+00:00',
-  bearings: [],
+  headings: [],
   stored_lat: 45.0,
   stored_lon: -122.0,
   first_used: FIRST,
@@ -37,7 +37,7 @@ function row(id: string, started: number | null, ended: number | null, type: str
     ended,
     lat: 45.0,
     lon: -122.0,
-    bearing: 'ne',
+    heading_deg: 45,
     sensor_type: type,
     sensor_name: name,
     location_precision: 1,
@@ -173,11 +173,23 @@ describe('the deployments in a place panel', () => {
     expect(deploys[1].find('[data-deployment="unknown"]').text()).toContain(`Ended ${dateTime(FIRST)}`)
   })
 
-  it('asks for a bearing correction for the row chosen', async () => {
+  it('asks for a heading correction for the row chosen', async () => {
     const wrapper = panel(FOUR)
     const row = wrapper.find('[data-deployment="b-radar"]')
-    await row.findAll('button').find((b) => b.text() === 'Correct bearing')!.trigger('click')
-    expect((wrapper.emitted('correctBearing') as DeploymentOut[][])[0][0].id).toBe('b-radar')
-    expect(row.text()).toContain('Facing NE')
+    await row.findAll('button').find((b) => b.text() === 'Correct heading')!.trigger('click')
+    expect((wrapper.emitted('correctHeading') as DeploymentOut[][])[0][0].id).toBe('b-radar')
+    expect(row.text()).toContain('Facing NE (45°)')
+  })
+
+  it('says No heading set for a deployment with none, and shows a measured heading as it is', () => {
+    const wrapper = panel([
+      { ...row('none', FIRST, null, 'radars', 'TM_RADAR_SERIAL_PORT_00'), heading_deg: null },
+      { ...row('measured', FIRST, null, 'cameras', 'picam_h265'), heading_deg: 40 },
+      { ...row('north', FIRST, null, 'cameras', 'other'), heading_deg: 0 },
+    ])
+    expect(wrapper.find('[data-deployment="none"]').text()).toContain('No heading set')
+    expect(wrapper.find('[data-deployment="measured"]').text()).toContain('Facing NE (40°)')
+    expect(wrapper.find('[data-deployment="north"]').text()).toContain('Facing N (0°)')
+    expect(wrapper.text()).not.toMatch(/bearing/i)
   })
 })

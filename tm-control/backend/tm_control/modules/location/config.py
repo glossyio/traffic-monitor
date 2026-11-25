@@ -1,5 +1,5 @@
 """The Location and Cameras pages' view of Node-RED's config.yml: the deployment keys and sensors they read, and the
-place, precision, per-sensor bearings, and sensors.cameras entries they write in place.
+place, precision, per-sensor headings, and sensors.cameras entries they write in place.
 
 Writes go through RoundTripFile (comments, key order, and quoting kept; a backup beside the file; an atomic replace).
 Nothing here puts a coordinate, or any of the file's text, in an error: ConfigError carries a code, and for invalid
@@ -23,11 +23,12 @@ from tm_control.adapters.yamlfile import ConcurrentEditError, ConfigRead, blank_
 from tm_control.modules.location.coordinates import (
     PRECISIONS,
     exact,
-    normalize_bearing,
     normalize_precision,
     normalize_survey_id,
+    read_heading,
+    valid_heading,
 )
-from tm_control.modules.location.places import Bearing
+from tm_control.modules.location.places import SensorHeading
 from tm_control.modules.sharing.consents import normalize_host
 
 SENSOR_TYPES = ("cameras", "radars", "airquality_monitors")
@@ -394,6 +395,30 @@ def _append(owner: CommentedMap, key, value, holder=None) -> None:
             _put_after(owner, keys[-1], "\n")
 
 
+def _heading_key(block: CommentedMap) -> str:
+    """The key survey_id follows: heading_deg, or an old bearing in a file not yet converted."""
+    return "bearing" if "bearing" in block and "heading_deg" not in block else "heading_deg"
+
+
+def _drop_bearing(owner: CommentedMap, key, block: CommentedMap, heading_deg: int | None) -> None:
+    """Remove an old bearing key from a sensor's deployment block (owner[key] is the sensor's entry, which holds the
+    block): heading_deg takes its place and comment when the block has none yet, and the text after the sensor's last
+    line stays where it was."""
+    if "heading_deg" in block:
+        after = _take_after(owner, key)
+        _remove(block, "bearing")
+        _put_after(owner, key, after)
+        return
+    block.insert(list(block.keys()).index("bearing"), "heading_deg", heading_deg)
+    tokens = block.ca.items.pop("bearing", None)
+    del block["bearing"]
+    if tokens is not None:
+        block.ca.items["heading_deg"] = tokens
+        if tokens[2] is not None:  # an end-of-line comment keeps two spaces before it
+            text = "heading_deg:" + ("" if heading_deg is None else f" {heading_deg}")
+            tokens[2].start_mark = CommentMark(block.lc.col + len(text) + 2)
+
+
 class NodeRedConfig:
     """config.yml loaded for reading and editing. Edit with the set_* methods, then save()."""
 
@@ -422,23 +447,29 @@ class NodeRedConfig:
         """The deployment keys, leniently: see read_deployment."""
         return _parse_deployment(self._file.data)
 
-    def sensors(self) -> list[Bearing]:
-        """Every enabled sensor with its bearing as the engine copies it down: the sensor's own deployment.bearing
-        when that key is there, else the top-level one; "" when blank or invalid."""
+    def _heading_blocks(self) -> list[tuple[str, str, Mapping]]:
+        """(type, name, block) for every enabled sensor, with the deployment block its heading comes from, as Node-RED's
+        init config defaults copies it down: the sensor's own block when that has a heading_deg or an old bearing key
+        (even a blank one), else the top-level block."""
         data = self._file.data
-        top = normalize_bearing(_mapping(data.get("deployment")).get("bearing"))
+        top = _mapping(data.get("deployment"))
         found = []
         for sensor_type in SENSOR_TYPES:
             for name, sensor in _mapping(_mapping(data.get("sensors")).get(sensor_type)).items():
                 if not isinstance(sensor, Mapping) or sensor.get("enabled") is not True:
                     continue
                 own = sensor.get("deployment")
-                if isinstance(own, Mapping) and "bearing" in own:
-                    bearing = normalize_bearing(own["bearing"])
-                else:
-                    bearing = top
-                found.append(Bearing(sensor_type=sensor_type, sensor_name=str(name), bearing=bearing or ""))
+                settles = isinstance(own, Mapping) and ("heading_deg" in own or "bearing" in own)
+                found.append((sensor_type, str(name), own if settles else top))
         return found
+
+    def sensors(self) -> list[SensorHeading]:
+        """Every enabled sensor with its heading as the engine reads it (see read_heading); None when blank or not a
+        heading."""
+        return [
+            SensorHeading(sensor_type=sensor_type, sensor_name=name, heading_deg=read_heading(block))
+            for sensor_type, name, block in self._heading_blocks()
+        ]
 
     def listed_sensors(self) -> set[tuple[str, str]] | None:
         """(type, name) of every sensor the file lists under any type, on or off; None when `sensors` isn't a mapping,
@@ -456,21 +487,15 @@ class NodeRedConfig:
         radars = _mapping(_mapping(self._file.data.get("sensors")).get("radars"))
         return {str(name): _mapping(radar).get("enabled") is True for name, radar in radars.items()}
 
-    def blank_bearings(self) -> list[tuple[str, str]]:
-        """(type, name) of every enabled sensor whose bearing, as the engine copies it down, is missing or empty; an
-        invalid one, which sensors() also reads as "", isn't blank."""
-        data = self._file.data
-        top = _mapping(data.get("deployment")).get("bearing")
-        found = []
-        for sensor_type in SENSOR_TYPES:
-            for name, sensor in _mapping(_mapping(data.get("sensors")).get(sensor_type)).items():
-                if not isinstance(sensor, Mapping) or sensor.get("enabled") is not True:
-                    continue
-                own = sensor.get("deployment")
-                value = own["bearing"] if isinstance(own, Mapping) and "bearing" in own else top
-                if _blank(value):
-                    found.append((sensor_type, str(name)))
-        return found
+    def blank_headings(self) -> list[tuple[str, str]]:
+        """(type, name) of every enabled sensor whose heading, as the engine copies it down, is missing or empty: the
+        block it comes from holds no heading_deg and no old bearing with a value. One that holds a value the reader
+        refuses, which sensors() also reads as None, isn't blank."""
+        return [
+            (sensor_type, name)
+            for sensor_type, name, block in self._heading_blocks()
+            if _blank(block.get("heading_deg")) and _blank(block.get("bearing"))
+        ]
 
     def upload(self) -> Upload:
         """The thingsboard: block, leniently: see _parse_upload."""
@@ -518,13 +543,14 @@ class NodeRedConfig:
         block = self._deployment_block()
         put_after(block, "lat", lat)
         put_after(block, "lon", lon, after="lat")
-        put_after(block, "survey_id", None if survey_id is None else survey_id.lower(), after="bearing")
+        put_after(block, "survey_id", None if survey_id is None else survey_id.lower(), after=_heading_key(block))
 
     def set_survey_id(self, survey_id: str) -> None:
         """Write deployment.survey_id (lower case) alone, leaving lat and lon as the file has them."""
         if normalize_survey_id(survey_id) is None:
             raise ValueError("survey_id must be a survey id")
-        put_after(self._deployment_block(), "survey_id", survey_id.lower(), after="bearing")
+        block = self._deployment_block()
+        put_after(block, "survey_id", survey_id.lower(), after=_heading_key(block))
 
     def set_precision(self, precision: str) -> None:
         if precision not in PRECISIONS:
@@ -532,15 +558,16 @@ class NodeRedConfig:
         block = self._deployment_block()
         put_after(block, "database_precision", SingleQuotedScalarString(precision), after="survey_id")
 
-    def set_sensor_bearing(self, sensor_type: str, sensor_name: str, bearing: str) -> None:
-        """Write sensors.<type>.<name>.deployment.bearing, creating the sensor's deployment block when it has none and
-        the bearing says something the top-level one doesn't.
+    def set_sensor_heading(self, sensor_type: str, sensor_name: str, heading_deg: int | None) -> None:
+        """Write sensors.<type>.<name>.deployment.heading_deg as a plain number, or blank for None, creating the sensor's
+        deployment block when it has none and the heading says something the top-level one doesn't. An old bearing key
+        in the block goes: heading_deg takes its place and comment when the block has no heading_deg yet.
 
-        Raises KeyError for a sensor that isn't in the file.
+        Raises ValueError for a value that isn't a heading, KeyError for a sensor that isn't in the file, and
+        ConfigError("invalid") for a deployment value that isn't a mapping.
         """
-        bearing = normalize_bearing(bearing)
-        if bearing is None:
-            raise ValueError("bearing must be a compass point or empty")
+        if heading_deg is not None and not valid_heading(heading_deg):
+            raise ValueError("heading_deg must be a whole number from 0 to 359, or None")
         if sensor_type not in SENSOR_TYPES:
             raise KeyError(sensor_type)
         sensors = _mapping(_mapping(self._file.data.get("sensors")).get(sensor_type))
@@ -549,16 +576,18 @@ class NodeRedConfig:
             raise KeyError(sensor_name)
         block = sensor.get("deployment")
         if block is None:
-            if bearing == "" and _blank(_mapping(self._file.data.get("deployment")).get("bearing")):
-                return  # it reads blank already (the engine copies the top-level bearing down): no block to add
+            if heading_deg is None and read_heading(_mapping(self._file.data.get("deployment"))) is None:
+                return  # it reads blank already (the engine copies the top-level heading down): no block to add
             block = CommentedMap()
             last = list(sensor.keys())[-1] if sensor else None
             sensor["deployment"] = block
-            block["bearing"] = None
-            blank_line_after(sensor, last, block, "bearing", move=True)
+            block["heading_deg"] = None
+            blank_line_after(sensor, last, block, "heading_deg", move=True)
         elif not isinstance(block, CommentedMap):
             raise ConfigError("invalid")
-        block["bearing"] = SingleQuotedScalarString(bearing)
+        if "bearing" in block:
+            _drop_bearing(sensors, sensor_name, block, heading_deg)
+        put_after(block, "heading_deg", heading_deg)
 
     def set_upload(self, enabled: bool, host: str, protocol: str, port: int | None) -> None:
         """Write thingsboard.enabled, host (trimmed), protocol and port, in that order, creating the block (first in

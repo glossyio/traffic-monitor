@@ -29,7 +29,7 @@ THREE_CAMERAS = """\
             enabled: true  # on since spring
             camera_radar: TM_RADAR_SERIAL_PORT_00
             deployment:
-                bearing: 'n'
+                heading_deg: 0
 
         oak_ave_tele:
             enabled: false
@@ -413,7 +413,7 @@ def test_rename_camera_keeps_place_comments_and_subkeys(path):
             enabled: true  # on since spring
             camera_radar: TM_RADAR_SERIAL_PORT_00
             deployment:
-                bearing: 'n'
+                heading_deg: 0
 
         oak_ave_tele:
             enabled: false
@@ -506,7 +506,7 @@ def test_remove_camera_first_hands_the_next_ones_comment_up(path, comment):
             enabled: true  # on since spring
             camera_radar: TM_RADAR_SERIAL_PORT_00
             deployment:
-                bearing: 'n'
+                heading_deg: 0
 
         oak_ave_tele:
             enabled: false
@@ -547,12 +547,12 @@ def test_the_edited_file_still_loads_in_safe_mode(path):
     assert read.data["sensors"]["cameras"] == {
         "oak_ave_wide": {"frigate_camera": "oak_ave_west", "enabled": True},
         "camera_2_b07e11": {
-            "frigate_camera": "main_st", "enabled": False, "deployment": {"bearing": "n"}, "plate_recognizer": False,
+            "frigate_camera": "main_st", "enabled": False, "deployment": {"heading_deg": 0}, "plate_recognizer": False,
         },
         "camera_1_3fa9c2": {"frigate_camera": "picam_h265", "enabled": True, "plate_recognizer": True},
     }
     assert read.data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
-    assert read.data["deployment"] == {"lat": 45.0, "lon": -122.0, "bearing": "n"}
+    assert read.data["deployment"] == {"lat": 45.0, "lon": -122.0, "heading_deg": 0}
 
 
 def test_an_entry_that_isnt_a_mapping_is_not_edited(path):

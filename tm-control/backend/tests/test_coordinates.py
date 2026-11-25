@@ -55,12 +55,9 @@ def test_normalize_precision(value, expected):
     assert c.normalize_precision(value) == expected
 
 
-@pytest.mark.parametrize(
-    "value, expected",
-    [("n", "n"), (" NE ", "ne"), ("", ""), (None, ""), ("  ", ""), ("up", None), ("north", None), (5, None)],
-)
-def test_normalize_bearing(value, expected):
-    assert c.normalize_bearing(value) == expected
+def test_the_old_bearing_helpers_are_gone():
+    """Nothing stores or takes a bearing any more: an old one is read only through read_heading."""
+    assert not hasattr(c, "BEARINGS") and not hasattr(c, "normalize_bearing")
 
 
 @pytest.mark.parametrize(
@@ -186,3 +183,100 @@ def test_parse_pair_refuses_a_decimal_comma():
 def test_parse_pair_refuses_anything_else(text):
     with pytest.raises(ValueError):
         c.parse_pair(text)
+
+
+@pytest.mark.parametrize(
+    "heading, point",
+    [(0, "n"), (22, "n"), (23, "ne"), (45, "ne"), (67, "ne"), (68, "e"), (90, "e"), (112, "e"), (113, "se"),
+     (135, "se"), (157, "se"), (158, "s"), (180, "s"), (202, "s"), (203, "sw"), (225, "sw"), (247, "sw"),
+     (248, "w"), (270, "w"), (292, "w"), (293, "nw"), (315, "nw"), (337, "nw"), (338, "n"), (359, "n")],
+)
+def test_compass_point(heading, point):
+    assert c.compass_point(heading) == point
+
+
+def test_every_heading_has_a_point_and_each_centre_is_its_own():
+    assert {c.compass_point(heading) for heading in range(c.HEADING_MAX + 1)} == set(c.POINTS)
+    assert [c.compass_point(c.point_centre(point)) for point in c.POINTS] == list(c.POINTS)
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [("n", 0), ("ne", 45), ("e", 90), ("se", 135), ("s", 180), ("sw", 225), ("w", 270), ("nw", 315),
+     (" N ", 0), ("NE", 45), (" Sw\n", 225), ("", None), ("  ", None), ("north", None), ("nne", None), (None, None),
+     (0, None), (45, None), (True, None), (["n"], None)],
+)
+def test_point_centre(value, expected):
+    assert c.point_centre(value) == expected
+
+
+@pytest.mark.parametrize("value", [0, 1, 40, 359])
+def test_valid_heading_accepts_a_whole_number_from_0_to_359(value):
+    assert c.valid_heading(value) is True
+
+
+@pytest.mark.parametrize("value", [360, -1, 40.5, 40.0, "40", "", True, False, None, [40], float("nan")])
+def test_valid_heading_refuses_anything_else(value):
+    assert c.valid_heading(value) is False
+
+
+def test_facing():
+    assert c.facing(40) == "NE (40°)"
+    assert c.facing(0) == "N (0°)"
+    assert c.facing(359) == "N (359°)"
+    assert c.facing(180) == "S (180°)"
+    assert c.facing(None) == ""
+
+
+@pytest.mark.parametrize(
+    "block, expected",
+    [
+        ({}, None),
+        ({"heading_deg": 40}, 40),
+        ({"heading_deg": 0}, 0),
+        ({"heading_deg": 359}, 359),
+        ({"heading_deg": 40.0}, 40),  # JavaScript can't tell 40.0 from 40, so the flows accept it
+        ({"heading_deg": 360}, None),
+        ({"heading_deg": -1}, None),
+        ({"heading_deg": 40.5}, None),
+        ({"heading_deg": "40"}, None),
+        ({"heading_deg": True}, None),
+        ({"heading_deg": False}, None),
+        ({"heading_deg": [40]}, None),
+        ({"heading_deg": float("nan")}, None),
+        ({"heading_deg": float("inf")}, None),
+        ({"heading_deg": None}, None),
+        ({"heading_deg": ""}, None),
+        ({"bearing": "ne"}, 45),
+        ({"bearing": " SW "}, 225),
+        ({"heading_deg": None, "bearing": "w"}, 270),
+        ({"heading_deg": "", "bearing": "nw"}, 315),
+        ({"heading_deg": 100, "bearing": "ne"}, 100),  # a usable heading wins
+        ({"heading_deg": 400, "bearing": "ne"}, None),  # an unusable one doesn't fall back
+        ({"heading_deg": "40", "bearing": "ne"}, None),
+        ({"bearing": "up"}, None),
+        ({"bearing": ""}, None),
+        ({"bearing": None}, None),
+        ({"bearing": 90}, None),
+        ({"bearing": True}, None),
+    ],
+)
+def test_read_heading(block, expected):
+    result = c.read_heading(block)
+    assert result == expected
+    assert result is None or (type(result) is int)
+
+
+def test_read_heading_reads_a_block_loaded_for_editing():
+    """The control app edits config.yml with ruamel's round-trip loader, whose numbers are int and float subclasses."""
+    from ruamel.yaml import YAML
+
+    data = YAML().load("a:\n    heading_deg: 0\nb:\n    heading_deg: 40.0\nc:\n    heading_deg: 359\nd:\n    heading_deg: true\n")
+    found = [c.read_heading(data[key]) for key in "abcd"]
+    assert found == [0, 40, 359, None]
+    assert all(type(value) is int for value in found[:3])
+
+
+@pytest.mark.parametrize("block", [None, "n", 90, ["heading_deg"], True])
+def test_read_heading_is_none_for_a_block_that_is_not_a_mapping(block):
+    assert c.read_heading(block) is None

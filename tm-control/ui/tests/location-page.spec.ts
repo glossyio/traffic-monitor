@@ -24,7 +24,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     source: 'ui',
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
-    bearings: [],
+    headings: [],
     stored_lat: null,
     stored_lon: null,
     first_used: null,
@@ -75,8 +75,8 @@ const PLACES: PlacesState = {
   precision: '1',
   in_use: IN_USE.id,
   sensors: [
-    { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },
-    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+    { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
   ],
   sharing: 'none',
   surveys: [IN_USE, PLANNED, USED],
@@ -93,7 +93,7 @@ const DEPLOYMENT = {
   ended: 1790500000000,
   lat: 45.0,
   lon: -122.0,
-  bearing: 'ne',
+  heading_deg: 45,
   sensor_type: 'cameras',
   sensor_name: 'picam_h265',
   location_precision: 1,
@@ -137,7 +137,7 @@ describe('the Location page', () => {
     expect(api.sent.some((r) => r.path === '/api/v1/surveys')).toBe(false)
   })
 
-  it('shows the place in use with its stored and exact coordinates and the bearings', async () => {
+  it('shows the place in use with its stored and exact coordinates and the headings', async () => {
     signedIn(ADMIN, { [SURVEYS]: PLACES })
     const { wrapper } = await mountApp('/location')
     expect(wrapper.find('h1').text()).toBe('Location')
@@ -151,9 +151,11 @@ describe('the Location page', () => {
     expect(text).toContain('Exact location')
     expect(text).toContain('45.52252, -122.69120')
     expect(text).toContain('Not sharing')
-    expect(text).toContain('Bearing, picam_h265')
-    expect(text).toContain('Bearing, TM_RADAR_SERIAL_PORT_00')
+    expect(text).toContain('Facing, picam_h265')
+    expect(text).toContain('N (0°)')
+    expect(text).toContain('Facing, TM_RADAR_SERIAL_PORT_00')
     expect(text).toContain('Not set')
+    expect(text).not.toMatch(/bearing/i)
   })
 
   it('says what is shared on the place in use: nothing, data, or data and the exact location', async () => {
@@ -411,7 +413,7 @@ describe('the Location page', () => {
             ended: 1790500000000,
             lat: 45.0,
             lon: -122.0,
-            bearing: 'ne',
+            heading_deg: 45,
             sensor_type: 'cameras',
             sensor_name: 'picam_h265',
             location_precision: 1,
@@ -793,7 +795,7 @@ describe('the Location page', () => {
     expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Correct location')).toBe(false)
   })
 
-  it('opens the bearing correction from Correct bearing on a deployment', async () => {
+  it('opens the heading correction from Correct heading on a deployment', async () => {
     signedIn(ADMIN, {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 1, first_event: 1790000000, last_event: 1790000000 },
@@ -801,10 +803,10 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Correct bearing')
-    expect(dialogText()).toContain('Use this only if the bearing was entered wrong.')
+    await click(wrapper, 'Correct heading')
+    expect(dialogText()).toContain('Use this only if the heading was entered wrong.')
     expect(dialogText()).toContain('picam_h265')
-    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Correct bearing')
+    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe('Correct heading')
   })
 
   it('loads the places and the open panel again after a correction', async () => {
@@ -812,12 +814,12 @@ describe('the Location page', () => {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 1, first_event: 1790000000, last_event: 1790000000 },
       'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [DEPLOYMENT] },
-      'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/bearing': { ...DEPLOYMENT, bearing: 'se' },
+      'POST /api/v1/surveys/c0ffee01-si/deployments/1790000000000-0a1b2c3d-d/heading': { ...DEPLOYMENT, heading_deg: 135 },
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')
-    await click(wrapper, 'Correct bearing')
-    await wrapper.findAllComponents({ name: 'VSelect' }).at(-1)!.setValue('se')
+    await click(wrapper, 'Correct heading')
+    await wrapper.findAllComponents({ name: 'VSelect' }).at(-1)!.setValue(135)
     await flushPromises()
     await clickInDialog('Correct')
     const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
@@ -826,7 +828,7 @@ describe('the Location page', () => {
   })
 
   it('opens the import from Import places and loads the places again after an import', async () => {
-    const preview = { rows: [{ line: 2, description: 'Bus stop on the hill', lat: null, lon: null, bearings: [] }] }
+    const preview = { rows: [{ line: 2, description: 'Bus stop on the hill', lat: null, lon: null, headings: [] }] }
     const api = signedIn(ADMIN, {
       [SURVEYS]: PLACES,
       'POST /api/v1/surveys/import': async (request: Request) => {

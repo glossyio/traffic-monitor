@@ -7,7 +7,7 @@ thingsboard:
 deployment:
     lat: 45.0
     lon: -122.0
-    bearing: 'n'
+    heading_deg: 0
 
 sensors:
     cameras:

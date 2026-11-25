@@ -18,7 +18,7 @@ from tm_control.adapters.yamlfile import ConfigRead
 from tm_control.core.auth import Users
 from tm_control.modules.cameras import names
 from tm_control.modules.location import config as location_config
-from tm_control.modules.location.places import Bearing, Places
+from tm_control.modules.location.places import Places, SensorHeading
 
 # The module, not the APIRouter the package's __init__ binds to the same name.
 cameras_router = importlib.import_module("tm_control.modules.cameras.router")
@@ -343,10 +343,10 @@ def test_point_for_a_camera_not_in_the_file_is_404(admin):
     assert r.status_code == 404 and error_code(r) == "not_found"
 
 
-def test_neutral_name_rekeys_moves_the_bearings_and_starts_a_deployment(admin, token):
+def test_neutral_name_rekeys_moves_the_headings_and_starts_a_deployment(admin, token):
     places = Places(admin.app.state.state)
-    places.create("00000001-si", "a note", None, None, [Bearing(sensor_type="cameras", sensor_name="picam_h265",
-                  bearing="n")], "ui", "planned", None)
+    places.create("00000001-si", "a note", None, None, [SensorHeading(sensor_type="cameras", sensor_name="picam_h265",
+                  heading_deg=0)], "ui", "planned", None)
     [old_row] = open_rows(admin, "picam_h265")
     r = admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS)
     assert r.status_code == 200, r.text
@@ -354,7 +354,7 @@ def test_neutral_name_rekeys_moves_the_bearings_and_starts_a_deployment(admin, t
     assert file_cameras(admin)[NEUTRAL] == {
         "frigate_camera": "picam_h265", "enabled": True, "camera_radar": "TM_RADAR_SERIAL_PORT_00",
     }
-    assert [b.sensor_name for b in places.get("00000001-si").bearings] == [NEUTRAL]
+    assert [h.sensor_name for h in places.get("00000001-si").headings] == [NEUTRAL]
     assert old_row["entryEndDateTime"] is not None and open_rows(admin, "picam_h265") == []
     assert len(open_rows(admin, NEUTRAL)) == 1
     row = r.json()["rows"][0]

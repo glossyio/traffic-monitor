@@ -4,8 +4,8 @@
   - kind 'location': the place's point (POST /surveys/{id}/location). A new point more than about 1 km from the old one
     looks more like a move than a typo, so Correct asks a second time before it sends. A correction needs a point: a
     place with none isn't offered one, and the field can't be left blank.
-  - kind 'bearing': which way the sensor faced in one of the place's deployments
-    (POST /surveys/{id}/deployments/{deployment_id}/bearing).
+  - kind 'heading': which way the sensor faced in one of the place's deployments, in degrees
+    (POST /surveys/{id}/deployments/{deployment_id}/heading).
   A map button under the coordinates picks the point on a map, and a line warns when fewer than four decimal places
   are typed; a point picked far away asks the second question like a typed one. The dialog starts over each time it
   opens. Emits `corrected` (with whether the map set the point last) once the API has answered, then closes; and `stale`
@@ -17,7 +17,8 @@ import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import type { components } from '../../api/schema'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
-import { BEARINGS, distanceKm, fewDecimalsWarning, formatExact, parsePair, type LatLon } from './coordinates'
+import { distanceKm, fewDecimalsWarning, formatExact, parsePair, type LatLon } from './coordinates'
+import HeadingPick from './HeadingPick.vue'
 import MapPickButton from './MapPickButton.vue'
 
 type SurveyOut = components['schemas']['SurveyOut']
@@ -29,9 +30,9 @@ const FAR_KM = 1
 
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{
-  kind: 'location' | 'bearing'
+  kind: 'location' | 'heading'
   place: SurveyOut // a used place or the place in use; with a point, for a location correction
-  deployment?: DeploymentOut // the deployment whose bearing to correct
+  deployment?: DeploymentOut // the deployment whose heading to correct
   map: MapSources // where the map comes from; null style_url is no map
   centre: LatLon | null // where the map looks first with no point: the place in use
 }>()
@@ -39,19 +40,19 @@ const emit = defineEmits<{ corrected: [onMap: boolean]; stale: [] }>()
 
 const coordinates = ref('')
 const onMap = ref(false) // whether the map set the coordinates last
-const bearing = ref('')
+const heading = ref<number | null>(null)
 const reason = ref('')
 const saving = ref(false)
 const error = ref('')
 const confirmFar = ref(false)
 
-// Start over from the place's point or the deployment's bearing each time the dialog opens
+// Start over from the place's point or the deployment's heading each time the dialog opens
 watch(
   open,
   (isOpen) => {
     if (!isOpen) return
     coordinates.value = props.place.lat !== null ? formatExact(props.place.lat, props.place.lon) : ''
-    bearing.value = props.deployment?.bearing ?? ''
+    heading.value = props.deployment?.heading_deg ?? null
     reason.value = ''
     onMap.value = false
     error.value = ''
@@ -59,7 +60,7 @@ watch(
   { immediate: true },
 )
 
-const title = computed(() => (props.kind === 'location' ? 'Correct location' : 'Correct bearing'))
+const title = computed(() => (props.kind === 'location' ? 'Correct location' : 'Correct heading'))
 
 // The pair typed or pasted, checked as in the place form
 const pair = computed(() => parsePair(coordinates.value))
@@ -75,10 +76,10 @@ const distance = computed(() => {
   return distanceKm({ lat, lon }, pair.value)
 })
 
-// The same point again is allowed: after a 502, correcting again with it finishes the job. The same bearing isn't,
+// The same point again is allowed: after a 502, correcting again with it finishes the job. The same heading isn't,
 // because nothing has changed by the time that request fails.
 const canCorrect = computed(() =>
-  props.kind === 'location' ? pair.value !== null : bearing.value !== (props.deployment?.bearing ?? ''),
+  props.kind === 'location' ? pair.value !== null : heading.value !== (props.deployment?.heading_deg ?? null),
 )
 
 // The second confirmation's text, with the distance in whole km
@@ -104,10 +105,10 @@ async function correct() {
         params: { path: { survey_id: props.place.id } },
         body: { lat: pair.value.lat, lon: pair.value.lon, reason: why },
       })
-    } else if (props.kind === 'bearing' && props.deployment) {
-      await api.POST('/api/v1/surveys/{survey_id}/deployments/{deployment_id}/bearing', {
+    } else if (props.kind === 'heading' && props.deployment) {
+      await api.POST('/api/v1/surveys/{survey_id}/deployments/{deployment_id}/heading', {
         params: { path: { survey_id: props.place.id, deployment_id: props.deployment.id } },
-        body: { bearing: bearing.value, reason: why },
+        body: { heading_deg: heading.value, reason: why },
       })
     }
     emit('corrected', onMap.value)
@@ -163,18 +164,11 @@ async function correct() {
             <p class="text-body-1 font-weight-medium text-break">{{ deployment.sensor_name }}</p>
             <p class="text-body-2 text-secondary text-break mb-4">{{ deployment.id }}</p>
             <p class="text-body-1 mb-6">
-              Use this only if the bearing was entered wrong. Every record from this deployment will say the sensor
+              Use this only if the heading was entered wrong. Every record from this deployment will say the sensor
               faced the new way. If the unit was turned, use Modify deployment on the place in use instead.
             </p>
-            <v-select
-              v-model="bearing"
-              label="Bearing"
-              :items="BEARINGS"
-              variant="outlined"
-              :disabled="saving"
-              hide-details
-              class="mb-6"
-            />
+            <!-- Keyed by the deployment: a pick remembers a measured heading, and this dialog is reused for others -->
+            <HeadingPick :key="deployment.id" v-model="heading" label="Heading" :disabled="saving" class="mb-6" />
           </template>
 
           <v-text-field

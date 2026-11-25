@@ -1246,14 +1246,14 @@ def test_tm_internal_status_has_the_upload_section(host, expect):
 # check would change nothing.
 TM_INTERNAL_WRITES = [
     "http://127.0.0.1:1880/tm-internal/surveys/3f9a1c2e-si/location",
-    "http://127.0.0.1:1880/tm-internal/deployments/1-00000000-d/bearing",
+    "http://127.0.0.1:1880/tm-internal/deployments/1-00000000-d/heading",
     "http://127.0.0.1:1880/tm-internal/database/exact-copy",
 ]
 
 
 @pytest.mark.parametrize("url", TM_INTERNAL_WRITES, ids=[url.rsplit("/tm-internal/", 1)[1] for url in TM_INTERNAL_WRITES])
 def test_tm_internal_writes_need_the_token_on_the_pi(host, url):
-    """On the Pi, the internal endpoints that correct a place's location, a deployment's bearing, and hold the exact
+    """On the Pi, the internal endpoints that correct a place's location, a deployment's heading, and hold the exact
     locations for a database copy answer 401 to a POST without the token or with a wrong one, before they read the body.
     No token is read, so this runs on every unit."""
     refused = (tm_internal_answer(host, url=url, body={})[0], tm_internal_answer(host, "tmdev-wrong-token", url, {})[0])

@@ -475,6 +475,16 @@ def _iso(when: float) -> str:
     return moment.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
+def _heading_of(value) -> int | None:
+    """A heading as the flows read one off a row or a correction's body: a whole number from 0 to 359 (40.0 is 40, as
+    JavaScript can't tell them apart), anything else None."""
+    from tm_control.modules.location.coordinates import valid_heading
+
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return value if valid_heading(value) else None
+
+
 class FakeNodeRed(NodeRed):
     """Fake mode's Node-RED: the /tm-internal/ endpoints over deployment rows kept in memory, and the deployment
     engine's rules (the flows' "deployment engine" function) run on them whenever config.yml changes.
@@ -549,11 +559,11 @@ class FakeNodeRed(NodeRed):
 
         stored = location(place.lat, place.lon, places)
 
-        def insert(sensor, survey_id, bearing):
+        def insert(sensor, survey_id, heading_deg):
             row = {
                 "id": f"{now}-{secrets.token_hex(4)}-d", "entryStartDateTime": now, "entryEndDateTime": None,
-                **stored, "bearing": bearing, "sensorType": sensor.sensor_type, "sensorName": sensor.sensor_name,
-                "survey_id": survey_id,
+                **stored, "heading_deg": heading_deg, "sensorType": sensor.sensor_type,
+                "sensorName": sensor.sensor_name, "survey_id": survey_id,
             }
             self.rows.append(row)
 
@@ -563,19 +573,19 @@ class FakeNodeRed(NodeRed):
                  and (row["sensorType"], row["sensorName"]) == (sensor.sensor_type, sensor.sensor_name)),
                 key=lambda row: row["entryStartDateTime"], reverse=True,
             )
-            want_survey, want_bearing = place.survey_id, sensor.bearing
+            want_survey, want_heading = place.survey_id, sensor.heading_deg
             for older in open_rows[1:]:  # 1. one open row per sensor
                 older["entryEndDateTime"] = now
             row = open_rows[0] if open_rows else None
             if row is None:  # 2. no open row
-                insert(sensor, want_survey, want_bearing)
+                insert(sensor, want_survey, want_heading)
                 continue
-            same_bearing = (row["bearing"] or "").strip().lower() == want_bearing
-            if want_survey is not None and row["survey_id"] is None and same_bearing:  # 4. adopt
+            same_heading = _heading_of(row.get("heading_deg")) == want_heading
+            if want_survey is not None and row["survey_id"] is None and same_heading:  # 4. adopt
                 row.update(stored, survey_id=want_survey)
-            elif want_survey is not None and (row["survey_id"] != want_survey or not same_bearing):  # 5. new
+            elif want_survey is not None and (row["survey_id"] != want_survey or not same_heading):  # 5. new
                 row["entryEndDateTime"] = now
-                insert(sensor, want_survey, want_bearing)
+                insert(sensor, want_survey, want_heading)
             elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
                 row.update(location(row["lat"], row["lon"], places))
 
@@ -691,15 +701,15 @@ class FakeNodeRed(NodeRed):
     def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
         self.exact_copies[ticket] = [dict(place) for place in places]
 
-    def correct_bearing(self, deployment_id: str, bearing: str) -> None:
-        from tm_control.modules.location.coordinates import BEARINGS, DEPLOYMENT_ID
+    def correct_heading(self, deployment_id: str, heading_deg) -> None:
+        from tm_control.modules.location.coordinates import DEPLOYMENT_ID
 
-        bearing = bearing.lower() if isinstance(bearing, str) else None
+        heading = _heading_of(heading_deg)
         if not isinstance(deployment_id, str) or not DEPLOYMENT_ID.fullmatch(deployment_id) \
-                or (bearing != "" and bearing not in BEARINGS):
+                or (heading_deg is not None and heading is None):
             raise NodeRedError("bad_request", 400)
         self._watch()
         with self._lock:
             for row in self.rows:
                 if row["id"] == deployment_id:
-                    row["bearing"] = bearing
+                    row["heading_deg"] = heading

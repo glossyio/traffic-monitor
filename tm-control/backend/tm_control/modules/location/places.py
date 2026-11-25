@@ -1,10 +1,12 @@
-"""The places store: the unit's surveys, their sensor bearings, and the corrections made to them.
+"""The places store: the unit's surveys, the way each of their sensors faced, and the corrections made to them.
 
 This is the exact history (design section 5): coordinates, descriptions and reasons are kept here at full precision
 and nowhere else but config.yml. Nothing in this module logs, audits or puts any of them in an error message.
 """
 
-from pydantic import BaseModel
+from typing import Annotated
+
+from pydantic import BaseModel, Field
 
 from tm_control.core.auth import _reading, _timestamp, _writing
 from tm_control.core.state import State
@@ -22,10 +24,12 @@ _LIST_ORDER = """
 """
 
 
-class Bearing(BaseModel):
+class SensorHeading(BaseModel):
     sensor_type: str
     sensor_name: str
-    bearing: str
+    # Clockwise from true north, in whole degrees from 0 to 359; None for none. Strict: the API takes a whole number
+    # only, never a numeric string, a float, or a bool, which lax validation would turn into one.
+    heading_deg: Annotated[int, Field(strict=True)] | None
 
 
 class Survey(BaseModel):
@@ -37,32 +41,33 @@ class Survey(BaseModel):
     source: str
     created_at: str
     updated_at: str
-    bearings: list[Bearing]
+    headings: list[SensorHeading]
 
 
-def _insert_bearings(con, survey_id: str, bearings: list[Bearing]) -> None:
+def _insert_headings(con, survey_id: str, headings: list[SensorHeading]) -> None:
     con.executemany(
-        "INSERT INTO survey_bearings (survey_id, sensor_type, sensor_name, bearing) VALUES (?, ?, ?, ?)",
-        [(survey_id, b.sensor_type, b.sensor_name, b.bearing) for b in bearings],
+        "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg) VALUES (?, ?, ?, ?)",
+        [(survey_id, h.sensor_type, h.sensor_name, h.heading_deg) for h in headings],
     )
 
 
 def _surveys(con, where: str = "", args: tuple = ()) -> list[Survey]:
-    """The surveys matching `where`, in list order, each with its bearings (in the order they were inserted)."""
-    bearings: dict[str, list[Bearing]] = {}
+    """The surveys matching `where`, in list order, each with its sensors' headings (in the order they were
+    inserted)."""
+    headings: dict[str, list[SensorHeading]] = {}
     for row in con.execute(
-        "SELECT survey_id, sensor_type, sensor_name, bearing FROM survey_bearings ORDER BY rowid"
+        "SELECT survey_id, sensor_type, sensor_name, heading_deg FROM survey_sensors ORDER BY rowid"
     ):
-        bearings.setdefault(row["survey_id"], []).append(
-            Bearing(sensor_type=row["sensor_type"], sensor_name=row["sensor_name"], bearing=row["bearing"])
-        )
+        headings.setdefault(row["survey_id"], []).append(SensorHeading(
+            sensor_type=row["sensor_type"], sensor_name=row["sensor_name"], heading_deg=row["heading_deg"]
+        ))
     rows = con.execute(f"SELECT {_SURVEY_COLUMNS} FROM surveys {where} {_LIST_ORDER}", args).fetchall()
-    return [Survey(**dict(row), bearings=bearings.get(row["id"], [])) for row in rows]
+    return [Survey(**dict(row), headings=headings.get(row["id"], [])) for row in rows]
 
 
 # `list` is a method of Places, so inside the class body the name no longer means the builtin; before Python 3.14
-# evaluates annotations lazily, `list[Bearing]` in a signature below it would fail.
-_BearingList = list[Bearing]
+# evaluates annotations lazily, `list[SensorHeading]` in a signature below it would fail.
+_HeadingList = list[SensorHeading]
 
 
 class Places:
@@ -89,7 +94,7 @@ class Places:
         description: str | None,
         lat: float | None,
         lon: float | None,
-        bearings: _BearingList,
+        headings: _HeadingList,
         source: str,
         status: str,
         user_id: int | None,
@@ -107,11 +112,11 @@ class Places:
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (survey_id, description, lat, lon, status, source, at, updated_at, user_id),
             )
-            _insert_bearings(con, survey_id, bearings)
+            _insert_headings(con, survey_id, headings)
             return _surveys(con, "WHERE id = ?", (survey_id,))[0]
 
     def update_planned(
-        self, survey_id: str, description: str | None, lat: float | None, lon: float | None, bearings: _BearingList
+        self, survey_id: str, description: str | None, lat: float | None, lon: float | None, headings: _HeadingList
     ) -> Survey:
         with _writing(self.state) as con:
             row = con.execute("SELECT status FROM surveys WHERE id = ?", (survey_id,)).fetchone()
@@ -121,8 +126,8 @@ class Places:
                 "UPDATE surveys SET description = ?, lat = ?, lon = ?, updated_at = ? WHERE id = ?",
                 (description, lat, lon, _timestamp(), survey_id),
             )
-            con.execute("DELETE FROM survey_bearings WHERE survey_id = ?", (survey_id,))
-            _insert_bearings(con, survey_id, bearings)
+            con.execute("DELETE FROM survey_sensors WHERE survey_id = ?", (survey_id,))
+            _insert_headings(con, survey_id, headings)
             return _surveys(con, "WHERE id = ?", (survey_id,))[0]
 
     def set_in_use(self, survey_id: str, now: float | None = None) -> None:
@@ -145,28 +150,28 @@ class Places:
                 (lat, lon, _timestamp(now), survey_id),
             )
 
-    def set_bearing(self, survey_id: str, sensor_type: str, sensor_name: str, bearing: str) -> None:
-        """Replace one sensor's bearing in place (so its order among the bearings is kept)."""
+    def set_heading(self, survey_id: str, sensor_type: str, sensor_name: str, heading_deg: int | None) -> None:
+        """Replace one sensor's heading in place (so its order among the place's sensors is kept); None for none."""
         with _writing(self.state) as con:
             cursor = con.execute(
-                "UPDATE survey_bearings SET bearing = ? WHERE survey_id = ? AND sensor_type = ? AND sensor_name = ?",
-                (bearing, survey_id, sensor_type, sensor_name),
+                "UPDATE survey_sensors SET heading_deg = ? WHERE survey_id = ? AND sensor_type = ? AND sensor_name = ?",
+                (heading_deg, survey_id, sensor_type, sensor_name),
             )
             if cursor.rowcount == 0:
-                new = Bearing(sensor_type=sensor_type, sensor_name=sensor_name, bearing=bearing)
-                _insert_bearings(con, survey_id, [new])
+                new = SensorHeading(sensor_type=sensor_type, sensor_name=sensor_name, heading_deg=heading_deg)
+                _insert_headings(con, survey_id, [new])
 
     def rename_sensor(self, sensor_type: str, old: str, new: str) -> None:
-        """Move every place's bearing for a sensor to its new name, keeping each row's place in the order. A place
-        that already has a bearing under the new name keeps that one, and its row under the old name goes."""
+        """Move every place's heading for a sensor to its new name, keeping each row's place in the order. A place
+        that already has a heading under the new name keeps that one, and its row under the old name goes."""
         if old == new:
             return
         with _writing(self.state) as con:
             con.execute(
-                "UPDATE OR IGNORE survey_bearings SET sensor_name = ? WHERE sensor_type = ? AND sensor_name = ?",
+                "UPDATE OR IGNORE survey_sensors SET sensor_name = ? WHERE sensor_type = ? AND sensor_name = ?",
                 (new, sensor_type, old),
             )
-            con.execute("DELETE FROM survey_bearings WHERE sensor_type = ? AND sensor_name = ?", (sensor_type, old))
+            con.execute("DELETE FROM survey_sensors WHERE sensor_type = ? AND sensor_name = ?", (sensor_type, old))
 
     def record_correction(
         self,
@@ -189,7 +194,7 @@ class Places:
             )
 
     def delete(self, survey_id: str) -> None:
-        """Remove a place with its bearings and corrections. The place in use cannot be removed."""
+        """Remove a place with its sensors' headings and corrections. The place in use cannot be removed."""
         with _writing(self.state) as con:
             row = con.execute("SELECT status FROM surveys WHERE id = ?", (survey_id,)).fetchone()
             if row is not None and row["status"] == "in_use":

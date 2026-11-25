@@ -2,7 +2,7 @@
 
 import sqlite3
 
-from helpers import ALL_TABLES, BASELINE_TABLES, LATEST_VERSION, SCHEMA_DIR, columns, migrate, query, tables, user_version
+from helpers import ALL_TABLES, BASELINE_TABLES, SCHEMA_DIR, columns, migrate, query, tables, user_version
 
 SETUP_DEVICE = {
     "id": "TEXT", "started": "INTEGER", "ended": "INTEGER", "tm_version": "TEXT", "tm_commit": "TEXT",
@@ -53,8 +53,10 @@ def test_0007_adds_the_two_tables_and_nothing_else(tmp_path):
     db_path = at_version_6(tmp_path)
     before = {name: query(db_path, f"PRAGMA table_info({name})") for name in tables(db_path)}
     assert user_version(db_path) == 6
-    assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
-    assert user_version(db_path) == LATEST_VERSION == 7
+    migrations = tmp_path / "migrations"
+    (migrations / "0007_setup_history.sql").write_text((SCHEMA_DIR / "migrations" / "0007_setup_history.sql").read_text())
+    assert migrate("--db", db_path, "--migrations", migrations, "--backup-dir", tmp_path / "backup") == 0
+    assert user_version(db_path) == 7
     assert tables(db_path) == ALL_TABLES
     assert {"setup_device", "setup_camera"} <= ALL_TABLES - BASELINE_TABLES
     for table, expected in (("setup_device", SETUP_DEVICE), ("setup_camera", SETUP_CAMERA)):

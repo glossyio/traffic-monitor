@@ -7,6 +7,15 @@ how many have been applied. Never edit a migration that has shipped; append a ne
 import sqlite3
 from pathlib import Path
 
+
+def _centre(column: str) -> str:
+    """SQL for the heading at the centre of an old bearing in `column`: one of the eight compass points, after trimming
+    and lower-casing, gives its index times 45; anything else gives NULL."""
+    points = ("n", "ne", "e", "se", "s", "sw", "w", "nw")
+    whens = " ".join(f"WHEN '{point}' THEN {index * 45}" for index, point in enumerate(points))
+    return f"CASE lower(trim({column}, ' ' || char(9, 10, 11, 12, 13))) {whens} END"
+
+
 MIGRATIONS = [
     """
     CREATE TABLE users (
@@ -91,6 +100,47 @@ MIGRATIONS = [
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         note TEXT
     );
+    """,
+    # Each sensor's heading in whole degrees from true north in place of its eight-point bearing (issue #357). Both
+    # tables are rebuilt: survey_corrections.field's CHECK names the old field. A bearing becomes its point's centre,
+    # anything else NULL, and each place keeps its sensors' order.
+    f"""
+    CREATE TABLE survey_sensors (
+        survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        sensor_type TEXT NOT NULL,
+        sensor_name TEXT NOT NULL,
+        heading_deg INTEGER CHECK (heading_deg BETWEEN 0 AND 359),  -- NULL for none
+        map_block_ref TEXT,
+        map_side TEXT CHECK (map_side IN ('left', 'right', 'both')),
+        PRIMARY KEY (survey_id, sensor_type, sensor_name)
+    );
+    INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg, map_block_ref, map_side)
+        SELECT survey_id, sensor_type, sensor_name, {_centre("bearing")}, map_block_ref, map_side
+        FROM survey_bearings ORDER BY rowid;
+    DROP TABLE survey_bearings;
+    CREATE TABLE survey_corrections_new (
+        id INTEGER PRIMARY KEY,
+        survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        deployment_id TEXT,
+        field TEXT NOT NULL CHECK (field IN ('location', 'heading_deg')),
+        old_value TEXT,  -- 'lat,lon' (NULL for no location) or a heading in degrees (NULL for none)
+        new_value TEXT,
+        reason TEXT,
+        source TEXT NOT NULL,  -- 'ui' | 'config'
+        at TEXT NOT NULL,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    );
+    INSERT INTO survey_corrections_new
+        (id, survey_id, deployment_id, field, old_value, new_value, reason, source, at, user_id)
+        SELECT id, survey_id, deployment_id,
+               CASE field WHEN 'bearing' THEN 'heading_deg' ELSE field END,
+               CASE field WHEN 'bearing' THEN CAST({_centre("old_value")} AS TEXT) ELSE old_value END,
+               CASE field WHEN 'bearing' THEN CAST({_centre("new_value")} AS TEXT) ELSE new_value END,
+               reason, source, at, user_id
+        FROM survey_corrections;
+    DROP TABLE survey_corrections;
+    ALTER TABLE survey_corrections_new RENAME TO survey_corrections;
+    CREATE INDEX survey_corrections_survey ON survey_corrections (survey_id);
     """,
 ]
 
