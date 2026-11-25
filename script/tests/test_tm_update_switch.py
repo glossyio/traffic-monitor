@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from tm_update_support import BOOT, COMMIT, RUN, Device, handover, make_world
 
-from tm_update import installed as installed_module, switch
+from tm_update import cleanup, installed as installed_module, switch
 from tm_update.switch import STARTED_AFTER_A_FAILURE, STOPPED_FIRST, wants_reboot
 
 STOP = ["systemctl", "stop", *STOPPED_FIRST]
@@ -136,7 +136,7 @@ def test_a_reboot_flag_of_0_or_no_flag_goes_straight_to_health(device, flag):
     assert device.main() == 0
     assert device.systemctl_calls("reboot") == []
     state = device.state()
-    assert [row["id"] for row in state["stages"]][-2:] == ["switch", "health"]
+    assert [row["id"] for row in state["stages"]][-3:] == ["switch", "health", "cleanup"]
     assert state["reboot"] is False and state["boot_id"] is None
     assert device.systemctl_calls("is-active")
 
@@ -159,6 +159,7 @@ def test_the_installer_is_setup_yml_in_update_mode_with_the_work_folders_flag(de
         return real(hand, installed, tree, update_mode=update_mode)
 
     monkeypatch.setattr(playbook, "write_vars", spy)
+    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
     assert device.main() == 0
     assert seen[-1] is True
     data = json.loads((device.work / "vars.json").read_text())
@@ -189,7 +190,8 @@ def test_the_monotonic_clock_is_the_one_systemd_stamps_in_microseconds():
     assert isinstance(value, int) and before <= value <= before + 10_000_000
 
 
-def test_the_switch_and_the_run_take_the_new_commit_from_the_hand_over(device):
+def test_the_switch_and_the_run_take_the_new_commit_from_the_hand_over(device, monkeypatch):
+    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
     assert device.main() == 0
     assert json.loads(device.paths.manifest.read_text())["git"]["commit"] == COMMIT
     assert (device.paths.work_root / RUN).is_dir()

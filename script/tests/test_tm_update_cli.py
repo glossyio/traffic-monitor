@@ -18,7 +18,7 @@ from tm_update_support import (
     manifest,
 )
 
-from tm_update import installed as installed_module, playbook, restore
+from tm_update import cleanup, installed as installed_module, playbook, restore
 from tm_update.state import Failed
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tm-update"
@@ -50,20 +50,28 @@ def test_a_contract_the_tree_does_not_accept_is_exit_2(device, capsys):
 
 
 def test_a_good_run_prepares_builds_switches_and_checks_in_order(device):
+    modes = {}
+
+    def look():
+        modes["work"] = oct((device.paths.work_root / RUN).stat().st_mode & 0o777)
+        modes["work_root"] = oct(device.paths.work_root.stat().st_mode & 0o777)
+
+    device.when_a_stage_starts = look
     assert device.main() == 0
     assert device.stages == ["venv", ("update_prepare.yml", ("stage",)), ("update_prepare.yml", ("images",)),
                              ("setup.yml", ())]
     state = device.state()
     assert state["result"] == "ok" and state["reason"] is None
-    assert [row["id"] for row in state["stages"]] == ["prepare", "images", "restore_point", "switch", "health"]
+    assert [row["id"] for row in state["stages"]] == ["prepare", "images", "restore_point", "switch", "health",
+                                                      "cleanup"]
     assert state["switch_attempts"] == 1 and state["reboot"] is False
     assert not device.paths.resume.exists()
     assert all(row["finished_at"] for row in state["stages"])
     assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
     assert state["to"] == {"version": "0.8.0", "commit": COMMIT, "tag": "v0.8.0"}
-    assert (device.paths.work_root / RUN).is_dir()
-    assert oct((device.paths.work_root / RUN).stat().st_mode & 0o777) == "0o755"
-    assert oct(device.paths.work_root.stat().st_mode & 0o777) == "0o755"
+    assert modes == {"work": "0o755", "work_root": "0o755"}
+    # The clean-up removed the work folder once the switch was healthy
+    assert not (device.paths.work_root / RUN).exists() and device.paths.work_root.is_dir()
     assert oct((device.paths.log_dir / (RUN + ".log")).stat().st_mode & 0o777) == "0o640"
     assert "prepare" in device.log()
 
@@ -124,6 +132,7 @@ def test_the_vars_file_is_written_before_the_playbook(device, monkeypatch):
         return real(hand, installed, tree, update_mode=update_mode)
 
     monkeypatch.setattr(playbook, "write_vars", spy)
+    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
     assert device.main() == 0
     assert seen and (device.paths.work_root / RUN / "vars.json").is_file()
 
@@ -198,13 +207,14 @@ def test_a_dead_runs_work_folders_and_build_tags_are_cleared_first(device):
         before_the_first_stage["old_folder"] = other.exists()
         before_the_first_stage["old_file"] = (device.paths.work_root / "stray-file").exists()
         before_the_first_stage["untags"] = [a for a in device.run.argvs() if a[:2] == ["podman", "untag"]]
+        before_the_first_stage["mine_kept"] = (mine / "kept").exists()
 
     device.when_a_stage_starts = look
     assert device.main() == 0
     assert before_the_first_stage["old_folder"] is False and before_the_first_stage["old_file"] is False
     assert len(before_the_first_stage["untags"]) == 2
     assert not other.exists() and not (device.paths.work_root / "stray-file").exists()
-    assert (mine / "kept").exists()
+    assert before_the_first_stage["mine_kept"] is True
     untags = [argv for argv in device.run.argvs() if argv[:2] == ["podman", "untag"]]
     assert untags == [["podman", "untag", "id1", "localhost/frigate-tm:prepare-abc1234"],
                       ["podman", "untag", "id2", "localhost/revproxy:prepare-9999999"]]
@@ -368,12 +378,12 @@ def test_resume_carries_a_run_on_from_where_it_stopped(device, stage, attempts, 
     ids = [row["id"] for row in state["stages"]]
     if does == "switch":
         assert ran_setup and checked and state["switch_attempts"] == 2
-        assert ids[-3:] == ["switch", "switch", "health"]
+        assert ids[-4:] == ["switch", "switch", "health", "cleanup"]
         assert device.systemctl_calls("stop") == [["systemctl", "stop", "traffic-monitor.service",
                                                    "tm-control.service"]]
     elif does == "health":
         assert checked and not ran_setup
-        assert ids[-1] == "health" and ids.count("switch") == 1
+        assert ids[-2:] == ["health", "cleanup"] and ids.count("switch") == 1
         assert device.systemctl_calls("stop") == []
     else:  # cleanup
         assert not checked and not ran_setup

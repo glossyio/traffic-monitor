@@ -7,7 +7,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 import traceback
 from dataclasses import dataclass
@@ -15,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
-from . import health, playbook, proc, restore, switch
+from . import cleanup, health, playbook, restore, switch
 from . import installed as installed_module
 from .handover import CONTRACT, Handover, HandoverError, load
 from .installed import Installed, Refusal, check_before_prepare
@@ -26,7 +25,6 @@ from .state import Failed, State, clear_marker
 STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed", "restore_point": "prepare_failed",
                 "switch": "switch_failed", "reboot": "switch_failed", "health": "health_failed"}
 _BUILD_TAG = re.compile(r"localhost/[^\s:]+:prepare-[^\s:]+")
-_IMAGE_ID = re.compile(r"[A-Za-z0-9]{1,100}")
 
 
 @dataclass
@@ -125,27 +123,10 @@ def _clear_leftovers(ctx: Context) -> None:
                 _say(log, "removed the work folder of an earlier run")
             except OSError:
                 _say(log, "could not remove the work folder of an earlier run")
-    try:
-        listing = proc.run(["podman", "images", "--format", "json"], timeout=120)
-        images = json.loads(listing.stdout) if listing.returncode == 0 else []
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        _say(log, "could not list the images")
-        return
-    if not isinstance(images, list):
-        return
-    for image in images:
-        if not isinstance(image, dict) or not isinstance(image.get("Id"), str):
-            continue
-        names = image.get("Names")
-        if not isinstance(names, list) or not _IMAGE_ID.fullmatch(image["Id"]):
-            continue
-        for name in names:
-            if isinstance(name, str) and _BUILD_TAG.fullmatch(name):
-                # Always with the image id: untag with one argument takes every name off the image
-                try:
-                    proc.run(["podman", "untag", image["Id"], name], log=log, timeout=120)
-                except (OSError, subprocess.TimeoutExpired):
-                    _say(log, "could not remove an image tag of an earlier build")
+    for image in cleanup.list_images(log) or []:
+        for name in image.names:
+            if _BUILD_TAG.fullmatch(name) and not cleanup.untag(image.id, name, log):
+                _say(log, "could not remove an image tag of an earlier build")
 
 
 def _prepare_work_dir(ctx: Context) -> None:
@@ -204,8 +185,12 @@ def _health(ctx: Context) -> None:
 
 
 def _after_health(ctx: Context) -> None:
-    """What follows a healthy switch before the run ends ok: the one place for the clean-up stage, for a run and for
-    a resumed one."""
+    """What follows a healthy switch before the run ends ok: the clean-up stage, for a run and for a resumed one. It
+    never fails the run (see _guarded)."""
+    ctx.state.begin("cleanup")
+    _say(ctx.log, "stage cleanup")
+    cleanup.run(ctx)
+    ctx.state.finish("cleanup")
 
 
 def _from_the_switch(ctx: Context) -> bool:
@@ -270,8 +255,13 @@ def _guarded(ctx: Context, body) -> int:
     except Exception as error:
         traceback.print_exc(file=ctx.log)
         ctx.log.flush()
-        default = STAGE_REASON.get(ctx.state.data["stage"], "prepare_failed")
-        return _fail(ctx.state, ctx.log, Failed(default, f"unexpected {type(error).__name__}"), ctx.paths)
+        stage = ctx.state.data["stage"]
+        if stage != "cleanup":
+            default = STAGE_REASON.get(stage, "prepare_failed")
+            return _fail(ctx.state, ctx.log, Failed(default, f"unexpected {type(error).__name__}"), ctx.paths)
+        # The switch was healthy before the clean-up began, so nothing in the clean-up fails the run
+        _say(ctx.log, f"the clean-up stopped: unexpected {type(error).__name__}")
+        finished = True
     if not finished:
         _say(ctx.log, "handed over to a restart")
         return 0
