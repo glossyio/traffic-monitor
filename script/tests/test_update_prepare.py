@@ -196,6 +196,9 @@ def test_the_internet_is_asked_once_before_any_download():
     task, enclosing = goes_online
     head = task["ansible.builtin.uri"]
     assert head["method"] == "HEAD" and head["timeout"] == 20
+    # the redirect to the signed download address is the answer: following it could meet a host that refuses a HEAD
+    assert head["follow_redirects"] == "none"
+    assert head["status_code"] == [200, 301, 302, 303, 307, 308]
     go2rtc = by_name(load_role_yaml("tasks/go2rtc_setup.yml"), "TMSetup - Go2rtc Setup - Install go2rtc driver")
     assert render_value(head["url"], variables) == render_value(go2rtc["ansible.builtin.get_url"]["url"], variables)
     (block,) = enclosing

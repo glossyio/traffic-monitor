@@ -37,8 +37,12 @@
 - name: TMSetup - Update Stage - Check that the internet answers
   block:
     - name: TMSetup - Update Stage - Ask GitHub for the go2rtc release
+      # GitHub answers with a redirect to a signed download address, which may refuse a HEAD. The redirect is the
+      # answer that shows GitHub is reachable, so it isn't followed.
       ansible.builtin.uri:
+        follow_redirects: none
         method: HEAD
+        status_code: [200, 301, 302, 303, 307, 308]
         timeout: 20
         url: 'https://github.com/AlexxIT/go2rtc/releases/download/{{ tmsetup_go2rtc_version }}/go2rtc_linux_{{ tmsetup_dpkg_architecture }}'
   rescue:
