@@ -18,7 +18,7 @@ from tm_update_support import (
     manifest,
 )
 
-from tm_update import cli, installed as installed_module, playbook, proc
+from tm_update import cli, installed as installed_module, playbook, proc, restore
 from tm_update.state import Failed
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tm-update"
@@ -104,7 +104,7 @@ def test_a_good_run_prepares_and_builds_in_order(device):
     assert device.stages == ["venv", ("update_prepare.yml", ("stage",)), ("update_prepare.yml", ("images",))]
     state = device.state()
     assert state["result"] == "ok" and state["reason"] is None
-    assert [row["id"] for row in state["stages"]] == ["prepare", "images"]
+    assert [row["id"] for row in state["stages"]] == ["prepare", "images", "restore_point"]
     assert all(row["finished_at"] for row in state["stages"])
     assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
     assert state["to"] == {"version": "0.8.0", "commit": COMMIT, "tag": "v0.8.0"}
@@ -113,6 +113,42 @@ def test_a_good_run_prepares_and_builds_in_order(device):
     assert oct(device.paths.work_root.stat().st_mode & 0o777) == "0o755"
     assert oct((device.paths.log_dir / (RUN + ".log")).stat().st_mode & 0o777) == "0o640"
     assert "prepare" in device.log()
+
+
+def test_the_restore_point_is_saved_after_the_images_and_its_folder_is_in_the_state(device):
+    old_tree = device.paths.src_root / ("b" * 40)
+    old_tree.mkdir(parents=True)
+    (device.paths.secrets_dir).mkdir(parents=True)
+    (device.paths.secrets_dir / "node_red_token_key").write_text("marker-7e1d\n")
+    assert device.main() == 0
+    state = device.state()
+    folder = Path(state["restore_point"])
+    assert folder.parent == device.paths.restore_root and (folder / "restore.json").is_file()
+    assert json.loads((folder / "restore.json").read_text())["previous_tree"] == str(old_tree)
+    assert state["stages"][-1]["id"] == "restore_point" and state["stages"][-1]["finished_at"]
+    assert "marker-7e1d" not in device.log() and "marker-7e1d" not in device.paths.state.read_text()
+
+
+def test_only_two_restore_points_are_kept_by_a_run(device):
+    for name in ("20261101T000000Z-aaaaaaa", "20261102T000000Z-bbbbbbb", "20261103T000000Z-ccccccc"):
+        (device.paths.restore_root / name).mkdir(parents=True)
+    assert device.main() == 0
+    names = sorted(entry.name for entry in device.paths.restore_root.iterdir())
+    assert names == sorted(["20261103T000000Z-ccccccc", Path(device.state()["restore_point"]).name])
+
+
+def test_a_failed_restore_point_ends_the_run_as_prepare_failed_with_nothing_half_made(device, monkeypatch):
+    def boom(*args, **kwargs):
+        raise OSError("disk trouble")
+
+    monkeypatch.setattr(restore.shutil, "copy2", boom)
+    (device.paths.rooted(Path("/var/lib/go2rtc"))).mkdir(parents=True)
+    (device.paths.rooted(Path("/var/lib/go2rtc/go2rtc.yaml"))).write_text("x")
+    assert device.main() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["stage"]) == ("failed", "prepare_failed", "restore_point")
+    assert state["restore_point"] is None
+    assert list(device.paths.restore_root.iterdir()) == []
 
 
 def test_the_vars_file_is_written_before_the_playbook(device, monkeypatch):

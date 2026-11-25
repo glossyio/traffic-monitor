@@ -16,14 +16,14 @@ from pathlib import Path
 from typing import IO
 
 from . import installed as installed_module
-from . import playbook, proc
+from . import playbook, proc, restore
 from .handover import CONTRACT, Handover, HandoverError, load
 from .installed import Installed, Refusal, check_before_prepare
 from .paths import Paths
 from .state import Failed, State
 
 # The reason a stage's failure takes when nothing more exact is known
-STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed"}
+STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed", "restore_point": "prepare_failed"}
 _BUILD_TAG = re.compile(r"localhost/[^\s:]+:prepare-[^\s:]+")
 _IMAGE_ID = re.compile(r"[A-Za-z0-9]{1,100}")
 
@@ -164,9 +164,20 @@ def _run_prepare_half(ctx: Context, stage: str, tags: "list[str]") -> None:
     ctx.state.finish(stage)
 
 
+def _restore_point(ctx: Context) -> None:
+    ctx.state.begin("restore_point")
+    _say(ctx.log, "stage restore_point")
+    tree = ctx.paths.src_root / ctx.installed.commit
+    folder = restore.make(ctx.installed, ctx.handover, ctx.paths, tree if tree.is_dir() else None)
+    restore.keep_newest(ctx.paths)
+    ctx.state.set(restore_point=str(folder))
+    ctx.state.finish("restore_point")
+
+
 def _stages(ctx: Context) -> None:
     _run_prepare_half(ctx, "prepare", ["stage"])
     _run_prepare_half(ctx, "images", ["images"])
+    _restore_point(ctx)
 
 
 def _fail(state: State, log, failure: Failed) -> int:
