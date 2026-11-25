@@ -397,6 +397,10 @@ export function sharingState(changes: Partial<SharingState> = {}): SharingState 
   return { ...SHARING_STATE, ...changes }
 }
 
+// What an admin's Sharing state says about the download card: the database's size in bytes (700 MB) and the places with
+// an exact location
+export const DOWNLOAD_FACTS: NonNullable<SharingState['download']> = { database_bytes: 734003200, exact_places: 2 }
+
 // A device sharing data with the maintainer's server under the current notice, with the token set
 export const SHARING_ON: SharingState = sharingState({
   enabled: true,

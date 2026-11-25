@@ -145,8 +145,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
   `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
   internet that the Device page's card reuses.
 - The `sharing` module is the Sharing page (`SharingPage.vue`: the summary card, the review alert, and the polling after
-  a save), its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three
-  sample payloads the "See an example" buttons show.
+  a save), its Download your data card for admins (`DownloadCard.vue`, with `size.ts` for the database's size in words),
+  its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three sample
+  payloads the "See an example" buttons show.
 - The `about` module is the About page (`AboutPage.vue`), open to every signed-in user and last in the menu. It makes no
   request of its own. `credits.json` is its list of credits, one row per project; `script/tests/test_about_credits.py`
   checks it against the dependencies. `RoadParade.vue` and `parade.ts` are the parade, described in "The About page" below.
@@ -1611,6 +1612,15 @@ so the Status page's "Check the token" link doesn't land under the app bar).
   also sits in a bordered sheet so the two read as separate.
 - **Polling is quiet.** A failed check while the page waits for the first upload stops the checking and shows nothing,
   because the form above still works; only the page's first read shows an error.
+- **Download your data.** The card is the first on the page and only admins see it. It's a `StatusCard` so it looks
+  like Saved settings below it: the size is the card's one item (none when the device can't say), and the box, button,
+  message, and note sit in its slot. The question is a `ConfirmDialog` with a primary button rather than a warning
+  one, because a download changes nothing on the device. Unticked, Download asks `POST /sharing/download`; ticked, it
+  asks `POST /surveys/database-copy`. The tick, the message, and "started" are the card's own state, so the page reading
+  its state again (after a save, after "I've reviewed this") changes none of them. Once a download has started,
+  Download and the box stay off until the page is reloaded, because each download makes a full copy of the database on
+  the device. In fake mode the answered link points at `/storefiles`, which the dev server doesn't serve, so nothing
+  downloads.
 
 #### What the screenshot review changed
 
