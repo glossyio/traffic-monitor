@@ -7,6 +7,17 @@ Traffic monitoring solution node-red flow
 
 Traffic Monitor built with edge ML for object detection and radar for speed monitoring. Learn more at www.trafficmonitor.ai
 
+### package-lock.json
+
+The image installs Node-RED's modules with `npm ci` from this lock, so every build installs the same versions. Remake it after you change `package.json`, or `tmsetup_node_red_tm_version` and its digest in `script/ansible/roles/tmsetup/vars/main.yml`; `script/tests/test_node_red_lock.py` fails until you do. Run the commands below from the repo root. They make the lock inside the image the Containerfile builds from, with that image's npm, which is also the npm that runs `npm ci`. npm starts from the packages installed in the image, so Node-RED's own dependencies keep the versions the image was built with. npm keeps their addresses and hashes in `node_modules/.package-lock.json`, but uses that record only when it's newer than every folder in `node_modules`, and in the image it isn't; `touch` makes npm use it.
+
+```sh
+vars=script/ansible/roles/tmsetup/vars/main.yml
+image="docker.io/nodered/node-red:$(sed -n "s/^tmsetup_node_red_tm_version: '\(.*\)'$/\1/p" $vars)@$(sed -n "s/^tmsetup_node_red_tm_image_digest: '\(.*\)'$/\1/p" $vars)"
+lock=container/node-red-tm/data/package-lock.json
+podman run --rm -i --entrypoint sh "$image" -c 'touch node_modules/.package-lock.json && cat > package.json && npm install --package-lock-only --omit=dev --no-audit --no-fund >&2 && cat package-lock.json' < container/node-red-tm/data/package.json > "$lock.new" && mv "$lock.new" "$lock"
+```
+
 ### upload-lists.json
 
 What the ThingsBoard upload may send. `settings.js` reads it when Node-RED starts and puts it in the global context as `upload_lists`, and the "upload gate" function on the `thingsboard` tab sends only what it lists:

@@ -39,6 +39,10 @@
     "map": {
         "style_url": "https://tiles.openfreemap.org/styles/liberty"
     },
+    "update": {
+        "repo": "example/traffic-monitor-test",
+        "channel": "development"
+    },
     "revproxy_locations": [
         "dashboard.conf",
         "frigate.conf",

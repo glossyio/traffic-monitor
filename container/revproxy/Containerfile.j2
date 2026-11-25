@@ -1,5 +1,5 @@
 # Containerfile to build nginx image, with tm-control's UI (tm-control/ui) built into it
-FROM {{ tmsetup_node_image }} AS ui
+FROM {{ tmsetup_node_image }}@{{ tmsetup_node_image_digest }} AS ui
 WORKDIR /ui
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -8,6 +8,6 @@ COPY ui/ ./
 # (not root) could read the files Vite writes but not those copies
 RUN npm run build && chmod -R a+rX dist
 
-FROM docker.io/nginx:{{ tmsetup_nginx_version }}
+FROM docker.io/library/nginx:{{ tmsetup_nginx_version }}@{{ tmsetup_nginx_image_digest }}
 # Outside /usr/share/nginx/html, which revproxy.container bind-mounts over the image's copy
 COPY --from=ui /ui/dist /usr/share/nginx/ui

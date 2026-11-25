@@ -1,0 +1,60 @@
+# Checks that every source an install builds from is still there: each base image's digest (the Containerfiles' FROM
+# lines), the Raspberry Pi ffmpeg commit, and the Coral model and its labels against their checksums. A registry can
+# drop a digest when a tag is pushed again, and a repository can lose a commit; nothing else would show it before a
+# build failed on someone's device. The tests are script/tests/test_pins_resolve.py, and they reach the network only
+# with TM_TESTS_ONLINE=1, which this job sets: Docker Hub, ghcr.io, and GitHub.
+#
+# When it fails, the message names the pin. For an image, take the tag's digest from the registry again and change it
+# in script/ansible/roles/tmsetup/vars/main.yml (the comment above the digests says how) after checking that the
+# image is the one you meant; for the ffmpeg commit or a Coral file, don't change the pin until you know why the
+# source changed.
+#
+# Runs on pull requests and pushes to dev that touch a pin or this check, weekly, and by hand. GitHub runs the weekly
+# schedule only from the default branch's copy of this file, so the weekly run starts at the next release. The weekly
+# run checks dev; a hand run checks the branch you pick.
+name: Pinned sources
+
+on:
+  pull_request:
+    paths:
+      - "script/ansible/roles/tmsetup/vars/main.yml"
+      - "container/**/Containerfile.j2"
+      - "script/ansible/roles/tmsetup/tasks/frigate_setup.yml"
+      - "script/tests/test_pins_resolve.py"
+      - "script/tests/pins.py"
+      - ".github/workflows/pins.yml"
+  push:
+    branches: [dev]
+    paths:
+      - "script/ansible/roles/tmsetup/vars/main.yml"
+      - "container/**/Containerfile.j2"
+      - "script/ansible/roles/tmsetup/tasks/frigate_setup.yml"
+      - "script/tests/test_pins_resolve.py"
+      - "script/tests/pins.py"
+      - ".github/workflows/pins.yml"
+  schedule:
+    - cron: "43 5 * * 1" # Mondays 05:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Pins still resolve
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Scheduled runs start on main; check dev instead.
+          ref: ${{ github.event_name == 'schedule' && 'dev' || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: pip install -r script/requirements-dev
+      - name: Ask the registries and sources
+        run: python -m pytest -rs script/tests/test_pins_resolve.py
+        env:
+          TM_TESTS_ONLINE: "1"
+          TM_TESTS_REQUIRE_TOOLS: "1"

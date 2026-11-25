@@ -25,7 +25,7 @@ One row for each period in which these facts were the same. The primary key is `
 | `id` | TEXT | The row's id | |
 | `started` | INTEGER | When the row's facts began to hold | Unix time in milliseconds |
 | `ended` | INTEGER | When they stopped holding | Unix time in milliseconds; empty while the row is in force |
-| `tm_version` | TEXT | The Traffic Monitor version installed | Such as `0.7.1` |
+| `tm_version` | TEXT | The Traffic Monitor version installed | Such as `0.8.0`, or `0.8.0-dev` on an install made from the `dev` branch |
 | `tm_commit` | TEXT | The commit the install was made from | Empty when the installer didn't know it |
 | `schema_version` | INTEGER | The database's schema version | |
 | `frigate_version` | TEXT | Frigate's version | |

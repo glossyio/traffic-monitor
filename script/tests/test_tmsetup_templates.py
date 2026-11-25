@@ -3,7 +3,9 @@
 import ast
 import configparser
 import re
+from pathlib import Path
 
+import pins
 import pytest
 import yaml
 from tmsetup_render import REPO, load_role_yaml, render
@@ -1118,20 +1120,59 @@ def test_homepage_colors_are_css_hex_colors():
 
 
 def revproxy_containerfile():
-    lines = render("container/revproxy/Containerfile.j2", **load_role_yaml("vars/main.yml")).splitlines()
+    lines = pins.rendered_containerfile("container/revproxy/Containerfile.j2").splitlines()
     return [line for line in lines if line.strip() and not line.startswith("#")]
 
 
 def test_revproxy_image_builds_the_ui_from_a_pinned_node_image():
     lines = revproxy_containerfile()
-    assert "FROM docker.io/library/node:22.23.4-alpine AS ui" in lines
+    role = load_role_yaml("vars/main.yml")
+    assert f"FROM {role['tmsetup_node_image']}@{role['tmsetup_node_image_digest']} AS ui" in lines
     # The package files first, so the npm ci layer is reused while only the sources change
     copy_packages = lines.index("COPY ui/package.json ui/package-lock.json ./")
     npm_ci = lines.index("RUN npm ci --no-audit --no-fund")
     copy_sources = lines.index("COPY ui/ ./")
     assert copy_packages < npm_ci < copy_sources < lines.index("RUN npm run build && chmod -R a+rX dist")
-    assert [line for line in lines if line.startswith("FROM ")][-1] == "FROM docker.io/nginx:1.31.0"
+    assert [line for line in lines if line.startswith("FROM ")][-1] == (
+        f"FROM docker.io/library/nginx:{role['tmsetup_nginx_version']}@{role['tmsetup_nginx_image_digest']}")
     assert lines[-1] == "COPY --from=ui /ui/dist /usr/share/nginx/ui"
+
+
+@pytest.mark.parametrize("template", pins.CONTAINERFILES)
+def test_every_base_image_is_named_in_full_and_pinned_by_digest(template):
+    froms = [line for line in pins.rendered_containerfile(template).splitlines() if line.startswith("FROM ")]
+    assert froms, template
+    for line in froms:
+        assert re.fullmatch(
+            r"FROM [a-z0-9.]+\.[a-z]+/[a-z0-9._/-]+:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}( AS [a-z][a-z0-9-]*)?", line), line
+
+
+def test_no_two_base_images_share_a_digest():
+    digests = [image.digest for image in pins.base_images()]
+    assert len(digests) == len(set(digests)) == 5
+
+
+def test_only_the_plate_recognizer_add_on_is_left_unpinned():
+    """A new service's Containerfile is pinned like the rest unless someone adds its folder here on purpose."""
+    assert pins.UNPINNED == {"plate-recognizer"}
+    folders = {path.parent.name for path in (REPO / "container").glob("*/Containerfile.j2")}
+    assert {Path(template).parent.name for template in pins.CONTAINERFILES} == folders - pins.UNPINNED
+
+
+def test_ffmpeg_is_built_from_one_commit():
+    commit = load_role_yaml("vars/main.yml")["tmsetup_frigate_ffmpeg_commit"]
+    assert re.fullmatch(r"[0-9a-f]{40}", commit)
+    text = pins.rendered_containerfile("container/frigate/Containerfile.j2")
+    assert "--branch" not in text and "git clone" not in text
+    assert f"fetch --depth 1 https://github.com/jc-kynesim/rpi-ffmpeg.git {commit}" in text
+    assert f'test "$(git -C ffmpeg rev-parse HEAD)" = {commit}' in text
+
+
+def test_node_red_image_installs_its_modules_from_the_lock():
+    lines = pins.rendered_containerfile("container/node-red-tm/Containerfile.j2").splitlines()
+    copy = lines.index("COPY data/package.json data/package-lock.json ./")
+    assert copy < lines.index("RUN npm ci --omit=dev --no-audit --no-fund --no-update-notifier")
+    assert not [line for line in lines if "npm install" in line]
 
 
 def test_revproxy_image_makes_the_built_ui_readable_by_nginx():

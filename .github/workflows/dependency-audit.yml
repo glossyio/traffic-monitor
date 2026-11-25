@@ -1,16 +1,16 @@
 # Checks the dependencies that ship to the device, as they are on dev, for
 # known vulnerabilities:
-#   - tm-control's Python packages, with the versions pip picks for their
-#     dependencies (pip-audit; any known vulnerability, since its advisory
-#     source doesn't rate severity)
+#   - the Python packages a device and the installer get, as their locks
+#     list them: tm-control's (tm-control/backend/requirements.lock) and the
+#     installer's Ansible (script/requirements.lock) (pip-audit; any known
+#     vulnerability, since its advisory source doesn't rate severity)
 #   - tm-control's UI packages (npm audit --omit=dev, high or critical). This
 #     leaves out only what the lockfile marks dev, so it still covers packages
 #     it marks devOptional (vite, esbuild, rollup, sass and others), which the
 #     build uses but the built site doesn't contain.
-#   - Node-RED's packages, resolved fresh from package.json (there's no
-#     lockfile) with Node-RED at the device's version (npm audit, high or
-#     critical). The image keeps the copies of Node-RED's own dependencies that
-#     the upstream image was built with, so its tree can differ (#299).
+#   - Node-RED's packages, as container/node-red-tm/data/package-lock.json
+#     locks them (npm audit --omit=dev, high or critical). The image installs
+#     that lock with npm ci, so this reads the image's own tree.
 # Each check is its own job, so each shows its own pass or fail on the run and
 # the commit, and one failing doesn't stop the others. Any finding fails the
 # run.
@@ -27,9 +27,13 @@ on:
     branches: [dev]
     paths:
       - "tm-control/backend/requirements.txt"
+      - "tm-control/backend/requirements.lock"
+      - "script/requirements"
+      - "script/requirements.lock"
       - "tm-control/ui/package.json"
       - "tm-control/ui/package-lock.json"
       - "container/node-red-tm/data/package.json"
+      - "container/node-red-tm/data/package-lock.json"
       - ".github/workflows/dependency-audit.yml"
   schedule:
     - cron: "17 6 * * 1" # Mondays 06:17 UTC
@@ -40,7 +44,7 @@ permissions:
 
 jobs:
   python:
-    name: tm-control's Python packages
+    name: Python packages (tm-control and the installer)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,8 +56,10 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install pip-audit==2.10.1
-      - name: Audit
-        run: pip-audit --progress-spinner off -r tm-control/backend/requirements.txt
+      - name: Audit tm-control's lock
+        run: pip-audit --progress-spinner off --require-hashes -r tm-control/backend/requirements.lock
+      - name: Audit the installer's lock
+        run: pip-audit --progress-spinner off --require-hashes -r script/requirements.lock
 
   ui:
     name: tm-control's UI packages
@@ -93,13 +99,6 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ steps.node.outputs.version }}
-      - name: Resolve and audit
-        run: |
-          v=$(grep -oP "^tmsetup_node_red_tm_version: *'?\K[0-9]+\.[0-9]+\.[0-9]+" script/ansible/roles/tmsetup/vars/main.yml)
-          dir="$RUNNER_TEMP/node-red-tm"
-          mkdir -p "$dir"
-          cp container/node-red-tm/data/package.json "$dir/"
-          cd "$dir"
-          npm pkg set dependencies.node-red="$v"
-          npm install --package-lock-only --ignore-scripts --no-fund --no-audit
-          npm audit --omit=dev --audit-level=high
+      - name: Audit
+        working-directory: container/node-red-tm/data
+        run: npm audit --omit=dev --audit-level=high

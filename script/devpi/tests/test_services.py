@@ -3,6 +3,7 @@
 import json
 import re
 import shlex
+from pathlib import Path
 
 import pytest
 from devpi_checks import (API, RESTARTING_UNITS, podman_events, request_from_this_machine, require_pii_free,
@@ -118,6 +119,28 @@ def test_ui_build_unit_finished(host):
     assert state.get("ExecMainExitTimestamp"), "revproxy-build.service hasn't run since boot"
     found = (state.get("Result"), state.get("ExecMainStatus"))
     assert found == ("success", "0"), f"revproxy-build.service's last run (result, exit status) is {found}"
+
+
+TM_CONTROL_LOCK = Path(__file__).resolve().parents[3] / "tm-control" / "backend" / "requirements.lock"
+
+
+def package_pins(text):
+    """{normalized name: version} for each `name==version` line of a pip freeze or a lock (hash lines are skipped)."""
+    pins = {}
+    for line in text.replace("\\\n", " ").splitlines():
+        found = re.match(r"([A-Za-z0-9._-]+)==([^\s;]+)", line.strip())
+        if found:
+            pins[re.sub(r"[-_.]+", "-", found.group(1)).lower()] = found.group(2)
+    return pins
+
+
+def test_tm_control_venv_holds_exactly_the_locked_packages(host):
+    """tm-control's venv has the packages of tm-control/backend/requirements.lock in this checkout, at those versions,
+    and nothing else (pip itself aside). The lock comes from the checkout the test runs from, so deploy it first."""
+    pip = f"{role_vars()['tmsetup_tm_control_dir']}/venv/bin/pip"
+    installed = package_pins(host.check_output(f"{shlex.quote(pip)} freeze --disable-pip-version-check"))
+    installed.pop("pip", None)
+    assert installed == package_pins(TM_CONTROL_LOCK.read_text()), "tm-control's venv differs from the lock"
 
 
 # tm-control runs as the code owner, and polkit lets that user start, stop, and restart only the units in

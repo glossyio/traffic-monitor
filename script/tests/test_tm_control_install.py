@@ -6,6 +6,7 @@ stops collecting, or a name tm-control needs that the role doesn't generate, fai
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -144,6 +145,21 @@ def test_manifest_has_the_same_fields_as_tm_controls_fixture():
     assert keys(json.loads(rendered_manifest())) == keys(json.loads(FIXTURE_MANIFEST.read_text()))
 
 
+def test_the_manifest_carries_the_update_source():
+    defaults = load_role_yaml("defaults/main.yml")
+    assert re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", defaults["tmsetup_update_repo"])
+    assert collected_manifest()["update"]["repo"] == defaults["tmsetup_update_repo"] == "glossyio/traffic-monitor"
+    parsed = Manifest.model_validate(json.loads(rendered_manifest())).update
+    assert parsed.repo == "glossyio/traffic-monitor"
+
+
+@pytest.mark.parametrize(("version", "channel"), [
+    ("0.8.0-dev", "development"), ("0.8.0", "stable"), ("1.12.3", "stable"), ("1.12.3-dev", "development"),
+])
+def test_the_manifest_channel_follows_the_version(version, channel):
+    assert collected_manifest(tmsetup_tm_version=version)["update"]["channel"] == channel
+
+
 @pytest.mark.parametrize(("enabled", "unit_exists", "expected"), [
     ("true", False, True),  # -C plate_recognizer on a first install: the stat runs before the add-on's setup
     (False, True, True),  # a later run without -C leaves the installed add-on in place
@@ -164,6 +180,67 @@ def test_manifest_says_unknown_when_git_fails(register):
     git = collected_manifest(tmsetup_tm_control_git_commit_register=register,
                              tmsetup_tm_control_git_branch_register=register)["git"]
     assert git == {"commit": "unknown", "branch": "unknown"}
+
+
+SHA = "0123456789abcdef0123456789abcdef01234567"
+NO_GIT = {"skipped": True}
+
+
+def passed_git(commit, branch=None):
+    given = {"tmsetup_source_commit": commit} | ({} if branch is None else {"tmsetup_source_branch": branch})
+    return collected_manifest(tmsetup_tm_control_git_commit_register=NO_GIT,
+                              tmsetup_tm_control_git_branch_register=NO_GIT, **given)["git"]
+
+
+def test_a_passed_commit_is_recorded_without_git():
+    assert passed_git(SHA, "feature/a-b_c/12") == {"commit": SHA, "branch": "feature/a-b_c/12"}
+
+
+def test_a_passed_commit_without_a_branch_says_the_branch_is_unknown():
+    assert passed_git(SHA) == {"commit": SHA, "branch": "unknown"}
+
+
+@pytest.mark.parametrize("commit", ["", "0123456", "HEAD", SHA.upper(), SHA + "0", " " + SHA, SHA + "\n"])
+def test_a_passed_value_that_is_not_a_commit_id_is_never_recorded(commit):
+    assert passed_git(commit, "dev") == {"commit": "unknown", "branch": "unknown"}
+
+
+@pytest.mark.parametrize("branch", ["", "a b", "x;y", "$(id)", "x*", "b" * 201, "dev\n"])
+def test_a_passed_branch_in_another_form_says_unknown(branch):
+    assert passed_git(SHA, branch) == {"commit": SHA, "branch": "unknown"}
+
+
+DIGITS = int("1" * 40)  # a JSON or YAML -e passes a number, not text; as text it would fit the commit pattern
+
+
+@pytest.mark.parametrize("branch", [123, 0.8, None, True])
+def test_a_passed_branch_that_is_not_text_says_unknown(branch):
+    git = collected_manifest(tmsetup_tm_control_git_commit_register=NO_GIT,
+                             tmsetup_tm_control_git_branch_register=NO_GIT,
+                             tmsetup_source_commit=SHA, tmsetup_source_branch=branch)["git"]
+    assert git == {"commit": SHA, "branch": "unknown"}
+
+
+def test_a_passed_commit_that_is_not_text_is_never_recorded():
+    assert passed_git(DIGITS, "dev") == {"commit": "unknown", "branch": "unknown"}
+    git = collected_manifest(tmsetup_source_commit=DIGITS, tmsetup_source_branch="x")["git"]
+    assert git == {"commit": SHA, "branch": "dev"}  # git is asked: GIT_OK's answers
+
+
+def test_git_is_asked_when_the_passed_commit_is_not_a_commit_id():
+    git = collected_manifest(tmsetup_source_commit="HEAD", tmsetup_source_branch="x")["git"]
+    assert git == {"commit": SHA, "branch": "dev"}  # GIT_OK's answers
+
+
+@pytest.mark.parametrize(("given", "runs"), [({}, True), ({"tmsetup_source_commit": "HEAD"}, True),
+                                             ({"tmsetup_source_commit": SHA}, False),
+                                             ({"tmsetup_source_commit": DIGITS}, True)])
+def test_the_git_tasks_run_only_without_a_passed_commit(given, runs):
+    tasks = [task for task in load_role_yaml("tasks/tm-control_service.yml")
+             if task["name"].startswith("TMSetup - tm-control Service - Read the git ")]
+    assert len(tasks) == 2
+    for task in tasks:
+        assert evaluate("{{ " + task["when"] + " }}", **given) is runs
 
 
 def install(tmp_path, secret_names):
