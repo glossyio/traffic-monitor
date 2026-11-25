@@ -1,0 +1,24 @@
+---
+# Prepares an update while the installed version keeps running: refuses what an update can't do, downloads
+# everything the switch needs, and tries the settings changes on the staged code. It writes only into the update's
+# work folder (and apt's own package cache). Run it with tmsetup_update_work_dir, tmsetup_update_stage_dir,
+# tmsetup_update_reason_file, and tmsetup_update_build_tag; the switch itself is setup.yml with
+# tmsetup_update_mode=true.
+- name: Traffic Monitor Update Prepare
+  connection: local
+  hosts: localhost
+  tasks:
+    - name: Prepare - Stage the downloads and try the settings changes
+      tags:
+        - stage
+      ansible.builtin.import_role:
+        name: tmsetup
+        tasks_from: update_stage.yml
+
+    - name: Prepare - Build the images
+      tags:
+        - images
+      ansible.builtin.import_role:
+        name: tmsetup
+        tasks_from: update_images.yml
+...

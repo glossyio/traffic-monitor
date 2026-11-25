@@ -1,0 +1,12 @@
+{% set images = [] %}
+{% for image in tmsetup_update_images %}
+{% set _ = images.append({
+  'name': image.name,
+  'repository': 'localhost/' ~ image.name,
+  'tag': image.tag,
+  'build_tag': tmsetup_update_build_tag,
+  'stages': image.stages,
+  'context': tmsetup_update_work_dir ~ '/build/' ~ image.name,
+}) %}
+{% endfor %}
+{{ {'tm_control_port': tmsetup_tm_control_port | int, 'images': images} | to_nice_json }}
