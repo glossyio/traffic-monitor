@@ -10,10 +10,10 @@ RUN apt-get update && \
 
 WORKDIR /build
 
-RUN git clone \
-    --branch test/8.1.2/main \
-    --depth 1 \
-    https://github.com/jc-kynesim/rpi-ffmpeg.git ffmpeg
+RUN git init ffmpeg && \
+    git -C ffmpeg fetch --depth 1 https://github.com/jc-kynesim/rpi-ffmpeg.git {{ tmsetup_frigate_ffmpeg_commit }} && \
+    git -C ffmpeg checkout --detach FETCH_HEAD && \
+    test "$(git -C ffmpeg rev-parse HEAD)" = {{ tmsetup_frigate_ffmpeg_commit }}
 
 WORKDIR /build/ffmpeg
 

@@ -7,6 +7,10 @@ tmsetup_go2rtc_sha256:
   amd64: '32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6'
   arm64: '359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50'
 tmsetup_frigate_version: '0.18.2'
+# The commit of the Raspberry Pi ffmpeg fork (jc-kynesim/rpi-ffmpeg) that the Frigate image builds, the head of its
+# branch test/8.1.2/main on 2026-11-24. A branch moves; a commit doesn't. To update it, take the branch's new head
+# with `git ls-remote https://github.com/jc-kynesim/rpi-ffmpeg.git refs/heads/test/8.1.2/main`.
+tmsetup_frigate_ffmpeg_commit: 'f60aae17021abae85b1ba9759e8b2da33f723902'
 # The open source yolov9 model the installer downloads for a Coral, in Frigate's model_cache. The installer's own
 # model section names it, so tmsetup -f doesn't carry that section over (frigate_setup.yml).
 tmsetup_frigate_coral_model_file: yolov9-s-relu6-tpumax_512_int8_edgetpu.tflite

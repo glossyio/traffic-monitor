@@ -1120,6 +1120,15 @@ def test_only_the_plate_recognizer_add_on_is_left_unpinned():
     assert {Path(template).parent.name for template in pins.CONTAINERFILES} == folders - pins.UNPINNED
 
 
+def test_ffmpeg_is_built_from_one_commit():
+    commit = load_role_yaml("vars/main.yml")["tmsetup_frigate_ffmpeg_commit"]
+    assert re.fullmatch(r"[0-9a-f]{40}", commit)
+    text = pins.rendered_containerfile("container/frigate/Containerfile.j2")
+    assert "--branch" not in text and "git clone" not in text
+    assert f"fetch --depth 1 https://github.com/jc-kynesim/rpi-ffmpeg.git {commit}" in text
+    assert f'test "$(git -C ffmpeg rev-parse HEAD)" = {commit}' in text
+
+
 def test_revproxy_image_makes_the_built_ui_readable_by_nginx():
     """The sources arrive with no world read (the unarchive task's o=), Vite copies public/ files with their own mode,
     and nginx's worker isn't root: without this, /favicon.svg answers 403."""
