@@ -1,8 +1,9 @@
 # Checks the dependencies that ship to the device, as they are on dev, for
 # known vulnerabilities:
-#   - tm-control's Python packages, with the versions pip picks for their
-#     dependencies (pip-audit; any known vulnerability, since its advisory
-#     source doesn't rate severity)
+#   - the Python packages a device and the installer get, as their locks
+#     list them: tm-control's (tm-control/backend/requirements.lock) and the
+#     installer's Ansible (script/requirements.lock) (pip-audit; any known
+#     vulnerability, since its advisory source doesn't rate severity)
 #   - tm-control's UI packages (npm audit --omit=dev, high or critical). This
 #     leaves out only what the lockfile marks dev, so it still covers packages
 #     it marks devOptional (vite, esbuild, rollup, sass and others), which the
@@ -26,6 +27,9 @@ on:
     branches: [dev]
     paths:
       - "tm-control/backend/requirements.txt"
+      - "tm-control/backend/requirements.lock"
+      - "script/requirements"
+      - "script/requirements.lock"
       - "tm-control/ui/package.json"
       - "tm-control/ui/package-lock.json"
       - "container/node-red-tm/data/package.json"
@@ -40,7 +44,7 @@ permissions:
 
 jobs:
   python:
-    name: tm-control's Python packages
+    name: Python packages (tm-control and the installer)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,8 +56,10 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install pip-audit==2.10.1
-      - name: Audit
-        run: pip-audit --progress-spinner off -r tm-control/backend/requirements.txt
+      - name: Audit tm-control's lock
+        run: pip-audit --progress-spinner off --require-hashes -r tm-control/backend/requirements.lock
+      - name: Audit the installer's lock
+        run: pip-audit --progress-spinner off --require-hashes -r script/requirements.lock
 
   ui:
     name: tm-control's UI packages

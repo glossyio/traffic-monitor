@@ -12,7 +12,8 @@
 # Dependabot reads this file only from the default branch (main), so a change
 # here takes effect at the next release.
 #
-# Not covered: the images and tools pinned in
+# Not covered: the installer's Ansible (script/requirements and its lock),
+# which Dependabot doesn't read, and the images and tools pinned in
 # script/ansible/roles/tmsetup/vars/main.yml (Frigate, Node-RED, nginx, Node,
 # go2rtc, Hailo). Dependabot can't read Ansible variables or the Jinja
 # Containerfile templates that use them.
@@ -45,6 +46,9 @@ updates:
         update-types: ["version-update:semver-major"]
 
   # Installed on the device. Test an update on a bench Pi before merging it.
+  # Dependabot moves requirements.txt only, so its pull request fails
+  # script/tests/test_requirement_locks.py until someone remakes
+  # requirements.lock on that branch (the command is in the lock's first lines).
   - package-ecosystem: pip
     directory: /tm-control/backend
     target-branch: dev
