@@ -5,12 +5,12 @@
   deploy they came from: Node-RED starts every row of one config load together, at the same instant in this version
   and a millisecond or so apart in released ones, so rows that start within a second of a deploy's first row are that
   deploy. Newest first, so the running one is on top on a phone. Each deployment of a used place or the place in use
-  has "Correct bearing", which asks the page to open its correction dialog (`correctBearing`).
+  has "Correct heading", which asks the page to open its correction dialog (`correctHeading`).
 -->
 <script setup lang="ts">
 import type { components } from '../../api/schema'
 import { ago } from '../../components/relative-time'
-import { bearingTitle } from './coordinates'
+import { facing } from './heading'
 
 type SurveyOut = components['schemas']['SurveyOut']
 type EventsOut = components['schemas']['EventsOut']
@@ -27,7 +27,7 @@ defineProps<{
   details: Details | undefined
   nodered: boolean // whether Node-RED answered the usage counts
 }>()
-const emit = defineEmits<{ retry: []; correctBearing: [deployment: DeploymentOut] }>()
+const emit = defineEmits<{ retry: []; correctHeading: [deployment: DeploymentOut] }>()
 
 // A time in ms as a date and time in the browser's words, such as "Oct 28, 2026, 2:32 PM"
 function dateTime(ms: number) {
@@ -167,16 +167,16 @@ function attached(deployment: DeploymentOut, deploy: Deploy) {
                   <div class="text-body-1 text-break">{{ deployment.sensor_name }}</div>
                   <div class="d-flex flex-wrap align-center gc-2">
                     <span class="text-body-2 text-secondary">
-                      {{ deployment.bearing ? `Facing ${bearingTitle(deployment.bearing)}` : 'No bearing set' }}
+                      {{ deployment.heading_deg === null ? 'No heading set' : `Facing ${facing(deployment.heading_deg)}` }}
                     </span>
                     <v-btn
                       v-if="place.status !== 'planned'"
                       variant="text"
                       color="primary"
                       min-height="44"
-                      @click="emit('correctBearing', deployment)"
+                      @click="emit('correctHeading', deployment)"
                     >
-                      Correct bearing
+                      Correct heading
                     </v-btn>
                   </div>
                   <div v-if="ownEnd(deployment, deploy)" class="text-body-2 text-secondary">

@@ -21,7 +21,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     source: 'ui',
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
-    bearings: [],
+    headings: [],
     stored_lat: 45.0,
     stored_lon: -122.0,
     first_used: 1760000000000,
@@ -42,20 +42,20 @@ const IN_USE = place({
   stored_lon: -122.7,
   status: 'in_use',
   open_count: 2,
-  bearings: [
-    { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },
-    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+  headings: [
+    { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
   ],
 })
-// Used before, facing NE then; it has no bearing for the radar
-const USED = place({ bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' }] })
+// Used before, facing NE then; it has no heading for the radar
+const USED = place({ headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 }] })
 
 const STATE: PlacesState = {
   precision: '1',
   in_use: IN_USE.id,
   sensors: [
-    { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },
-    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+    { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+    { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
   ],
   sharing: 'none',
   surveys: [IN_USE, USED],
@@ -67,14 +67,14 @@ const STATE: PlacesState = {
 
 const DEPLOY = 'POST /api/v1/surveys/c0ffee01-si/deploy'
 
-function row(id: string, sensorType: string, sensorName: string, bearing: string): DeploymentOut {
+function row(id: string, sensorType: string, sensorName: string, heading: number | null): DeploymentOut {
   return {
     id,
     started: 1762000000000,
     ended: null,
     lat: 45.0,
     lon: -122.0,
-    bearing,
+    heading_deg: heading,
     sensor_type: sensorType,
     sensor_name: sensorName,
     location_precision: 1,
@@ -82,8 +82,8 @@ function row(id: string, sensorType: string, sensorName: string, bearing: string
 }
 
 const ROWS = [
-  row('1762000000000-0123abcd-d', 'cameras', 'picam_h265', 'ne'),
-  row('1762000000000-4567cdef-d', 'radars', 'TM_RADAR_SERIAL_PORT_00', ''),
+  row('1762000000000-0123abcd-d', 'cameras', 'picam_h265', 45),
+  row('1762000000000-4567cdef-d', 'radars', 'TM_RADAR_SERIAL_PORT_00', null),
 ]
 
 // One sensor's part of the review, found by the sensor's name
@@ -93,10 +93,10 @@ function sensorRow(wrapper: VueWrapper, name: string) {
   return found[0]
 }
 
-// Choose a bearing in a sensor's select, as picking from its menu would
-async function choose(wrapper: VueWrapper, name: string, bearing: string) {
+// Choose a heading in a sensor's select, as picking from its menu would
+async function choose(wrapper: VueWrapper, name: string, heading: number | null) {
   const index = STATE.sensors.findIndex((sensor) => sensor.sensor_name === name)
-  await wrapper.findAllComponents({ name: 'VSelect' })[index].setValue(bearing)
+  await wrapper.findAllComponents({ name: 'VSelect' })[index].setValue(heading)
   await flushPromises()
 }
 
@@ -117,9 +117,9 @@ describe('the deploy review', () => {
     expect(button(wrapper, confirm).exists()).toBe(true)
   })
 
-  it('says what a bearing change does at the place in use', () => {
+  it('says what a heading change does at the place in use', () => {
     const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
-    expect(wrapper.text()).toContain('Every sensor keeps its deployment. Change a bearing to start a new one.')
+    expect(wrapper.text()).toContain('Every sensor keeps its deployment. Change a heading to start a new one.')
   })
 
   it('starts a new deployment for every sensor at a place not in use', async () => {
@@ -128,8 +128,8 @@ describe('the deploy review', () => {
     expect(wrapper.text()).toContain('c0ffee01-si')
     const camera = sensorRow(wrapper, 'picam_h265')
     expect(camera.text()).toContain('New deployment starts')
-    expect(camera.text()).toContain('Was N, now')
-    expect(camera.text()).toContain('NE') // the place's own bearing, from when it was used
+    expect(camera.text()).toContain('Was N (0°), now')
+    expect(camera.text()).toContain('NE') // the place's own heading, from when it was used
     expect(sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()).toContain('New deployment starts')
     expect(wrapper.text()).toContain('Stored in the database: 45.0, -122.0')
     expect(wrapper.text()).toContain('Not sharing')
@@ -146,33 +146,47 @@ describe('the deploy review', () => {
     expect(exact).not.toContain('rounded location')
   })
 
-  it('lists New deployment starts for the sensor whose bearing changes and Unchanged for the other', async () => {
+  it('lists New deployment starts for the sensor whose heading changes and Unchanged for the other', async () => {
     const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
-    await choose(wrapper, 'picam_h265', 'e')
+    await choose(wrapper, 'picam_h265', 90)
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('New deployment starts')
     const radar = sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()
     expect(radar).toContain('Unchanged')
     expect(radar).toContain('Was not set, now')
-    expect(radar).toContain('Not set') // the select shows a blank bearing by its title
+    expect(radar).toContain('Not set') // the select shows an empty heading by its title
   })
 
-  it('disables Modify at the place in use while every bearing is unchanged', async () => {
+  it('disables Modify at the place in use while every heading is unchanged', async () => {
     const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
     expect(sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()).toContain('Unchanged')
     expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).not.toContain('Counts from now on attach to the new deployment.')
-    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 'w')
+    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 270)
     expect(button(wrapper, 'Modify').attributes('disabled')).toBeUndefined()
     expect(wrapper.text()).toContain('Counts from now on attach to the new deployment.')
   })
 
-  it("starts the place in use at the bearings config.yml has now, not the place's stored ones", async () => {
-    const turned = { ...IN_USE, bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' }] }
+  it("starts the place in use at the headings config.yml has now, not the place's stored ones", async () => {
+    const turned = { ...IN_USE, headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 }] }
     const wrapper = mountAlone(DeployReview, { place: turned, state: STATE })
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
     expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
+  })
+
+  it('shows a measured heading as it is and leaves it unchanged until another is chosen', async () => {
+    const measured = {
+      ...STATE,
+      sensors: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 40 }, STATE.sensors[1]],
+    }
+    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: measured })
+    const camera = sensorRow(wrapper, 'picam_h265')
+    expect(camera.text()).toContain('Was NE (40°), now')
+    expect(camera.text()).toContain('Unchanged')
+    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
+    await choose(wrapper, 'picam_h265', 45)
+    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('New deployment starts')
   })
 
   it('says nothing is stored when the precision stores no location', async () => {
@@ -184,19 +198,19 @@ describe('the deploy review', () => {
     expect(wrapper.text()).not.toContain('Stored in the database:')
   })
 
-  it("deploys with every sensor's bearing", async () => {
+  it("deploys with every sensor's heading", async () => {
     const api = fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
-    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 'e')
+    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 90)
     await click(wrapper, 'Re-deploy')
     expect(api.sent).toEqual([
       {
         method: 'POST',
         path: '/api/v1/surveys/c0ffee01-si/deploy',
         body: {
-          bearings: [
-            { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'ne' },
-            { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: 'e' },
+          headings: [
+            { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 },
+            { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: 90 },
           ],
         },
       },

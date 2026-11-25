@@ -9,11 +9,13 @@ from zero on the binary double, so 2.675 at two places is 2.67, not 2.68. Nothin
 import math
 import re
 import secrets
+from collections.abc import Mapping
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 SURVEY_ID = re.compile(r"^[0-9a-f]{8}-si$")
 DEPLOYMENT_ID = re.compile(r"^\d+-[0-9a-f]{8}-d$")
-BEARINGS = ("n", "s", "e", "w", "ne", "nw", "se", "sw")
+POINTS = ("n", "ne", "e", "se", "s", "sw", "w", "nw")
+HEADING_MAX = 359
 PRECISIONS = ("none", "1", "2")
 EXACT_PLACES = 5
 
@@ -54,14 +56,49 @@ def normalize_precision(value) -> str | None:
     return text if text in PRECISIONS else None
 
 
-def normalize_bearing(value) -> str | None:
-    """The trimmed, lower-cased bearing; "" for empty or None; None when it isn't one of BEARINGS."""
-    if value is None:
-        return ""
-    if not isinstance(value, str):
+def valid_heading(value) -> bool:
+    """Whether value is a heading: an int (not a bool) from 0 to HEADING_MAX."""
+    return type(value) is int and 0 <= value <= HEADING_MAX
+
+
+def point_centre(point) -> int | None:
+    """The heading at the centre of a compass point, after trimming and lower-casing; None for anything that isn't
+    one of POINTS."""
+    if not isinstance(point, str):
         return None
-    text = value.strip().lower()
-    return text if text == "" or text in BEARINGS else None
+    text = point.strip().lower()
+    return POINTS.index(text) * 45 if text in POINTS else None
+
+
+def compass_point(heading_deg: int) -> str:
+    """The point a heading belongs to: 0 to 22 is n, 23 to 67 ne, 68 to 112 e, and so on round to 338 to 359, n."""
+    return POINTS[int(((heading_deg + 22.5) % 360) // 45)]
+
+
+def facing(heading_deg: int | None) -> str:
+    """A heading with its point, "NE (40°)"; "" for no heading."""
+    if heading_deg is None:
+        return ""
+    return f"{compass_point(heading_deg).upper()} ({heading_deg}°)"
+
+
+def read_heading(block) -> int | None:
+    """The heading a deployment block in config.yml gives, as Node-RED's init config defaults reads it.
+
+    A usable heading_deg (a whole number from 0 to 359; 40.0 counts as 40, since JavaScript can't tell them apart) is
+    the heading. When heading_deg is missing, None or '', the centre of the block's old `bearing` is, if it is one of
+    the eight points. Anything else, and a block that isn't a mapping, gives None. Never raises.
+    """
+    if not isinstance(block, Mapping):
+        return None
+    heading = block.get("heading_deg")
+    if heading is None or heading == "":
+        return point_centre(block.get("bearing"))
+    if isinstance(heading, float) and heading.is_integer():
+        heading = int(heading)
+    elif isinstance(heading, int) and not isinstance(heading, bool):
+        heading = int(heading)  # the round-trip loader's ScalarInt, which valid_heading's strict check refuses
+    return heading if valid_heading(heading) else None
 
 
 def round_half_away(value, places: int) -> float:

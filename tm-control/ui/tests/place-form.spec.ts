@@ -1,5 +1,5 @@
 // The place form: adding a place (POST /surveys) or editing a planned one (PATCH /surveys/{id}), with the coordinates
-// typed, pasted, or read from the phone, and a bearing per sensor.
+// typed, pasted, or read from the phone, and a heading per sensor.
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
@@ -7,7 +7,7 @@ import PlaceForm from '../src/modules/location/PlaceForm.vue'
 import { apiError, fakeApi, json } from './fake-api'
 import { clickInDialog, dialogButtons, dialogField, dialogText, mountAlone, typeInto } from './mount'
 
-type Bearing = components['schemas']['Bearing']
+type SensorHeading = components['schemas']['SensorHeading']
 type SurveyOut = components['schemas']['SurveyOut']
 
 // PinMap is stubbed: a button drops the pin at the docs' example point
@@ -32,9 +32,9 @@ vi.mock('../src/modules/location/PinMap.vue', async () => {
 
 const MAP = { style_url: 'https://tiles.example.invalid/style' }
 
-const SENSORS: Bearing[] = [
-  { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'n' },
-  { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+const SENSORS: SensorHeading[] = [
+  { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0 },
+  { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
 ]
 
 const PLANNED: SurveyOut = {
@@ -46,7 +46,7 @@ const PLANNED: SurveyOut = {
   source: 'ui',
   created_at: '2026-10-01T12:00:00+00:00',
   updated_at: '2026-10-01T12:00:00+00:00',
-  bearings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'se' }],
+  headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 135 }],
   stored_lat: 45.0,
   stored_lon: -122.0,
   first_used: null,
@@ -163,7 +163,7 @@ describe('the place form', () => {
     expect(dialogField('Coordinates').value).toBe('')
   })
 
-  it("posts the description, the coordinates, and every sensor's bearing", async () => {
+  it("posts the description, the coordinates, and every sensor's heading", async () => {
     const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
     const form = mountForm()
     await flushPromises()
@@ -179,7 +179,7 @@ describe('the place form', () => {
           description: 'Corner by the park',
           lat: 45.52252,
           lon: -122.6912,
-          bearings: SENSORS, // a new place starts at each sensor's current bearing
+          headings: SENSORS, // a new place starts at each sensor's current heading
         },
       },
     ])
@@ -187,12 +187,28 @@ describe('the place form', () => {
     expect(form.emitted('update:open')).toEqual([[false]])
   })
 
+  it('asks which way each sensor faces, and sends the one chosen as degrees', async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    const form = mountForm()
+    await flushPromises()
+    expect(dialogText()).toContain('Which way each sensor faces here')
+    expect(dialogText()).toContain('Facing, picam_h265')
+    expect(dialogText()).toContain('Facing, TM_RADAR_SERIAL_PORT_00')
+    expect(dialogText()).not.toMatch(/bearing/i)
+    await form.findAllComponents({ name: 'VSelect' })[1].setValue(270)
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { headings: SensorHeading[] }).headings).toEqual([
+      SENSORS[0],
+      { ...SENSORS[1], heading_deg: 270 },
+    ])
+  })
+
   it('sends no coordinates when the field is left blank', async () => {
     const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
     mountForm()
     await flushPromises()
     await clickInDialog('Save')
-    expect(api.sent[0].body).toEqual({ description: null, lat: null, lon: null, bearings: SENSORS })
+    expect(api.sent[0].body).toEqual({ description: null, lat: null, lon: null, headings: SENSORS })
   })
 
   it("edits a planned place with PATCH, starting from its values", async () => {
@@ -210,14 +226,28 @@ describe('the place form', () => {
           description: 'Corner by the park',
           lat: 45,
           lon: -122,
-          // the place's own bearing where it has one, else the sensor's current one
-          bearings: [
-            { sensor_type: 'cameras', sensor_name: 'picam_h265', bearing: 'se' },
-            { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', bearing: '' },
+          // the place's own heading where it has one, else the sensor's current one
+          headings: [
+            { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 135 },
+            { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
           ],
         },
       },
     ])
+  })
+
+  it("doesn't offer one place's measured heading when it opens on another", async () => {
+    const measured = { ...PLANNED, headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 40 }] }
+    const other = { ...PLANNED, id: '0a0b0c0d-si', headings: [] }
+    const form = mountForm(measured)
+    await flushPromises()
+    const titles = () =>
+      (form.findAllComponents({ name: 'VSelect' })[0].props('items') as { title: string }[]).map((item) => item.title)
+    expect(titles()).toContain('NE (40°)')
+    await form.setProps({ open: false })
+    await form.setProps({ survey: other, open: true })
+    await flushPromises()
+    expect(titles()).not.toContain('NE (40°)')
   })
 
   it('asks the page to reload the places when the save is refused as out of date', async () => {

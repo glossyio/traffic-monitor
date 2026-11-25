@@ -5,7 +5,7 @@ create the first place and write its id; on a unit upgraded from a release, impo
 backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
 place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
 use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, the precision
-last seen with a survey named unless the file's is coarser, the place's bearings where the file's are blank, and the
+last seen with a survey named unless the file's is coarser, the place's headings where the file's are blank, and the
 place's point, if it has one, over whatever the installer rendered; blank lat and lon get the place's point back too,
 since a place with a point is never corrected to none (decision 9).
 
@@ -29,7 +29,7 @@ from pydantic import BaseModel
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.modules.location.config import DEFAULT_PRECISION, ConfigError, Deployment, NodeRedConfig
 from tm_control.modules.location.coordinates import exact, is_coarser, new_survey_id, normalize_survey_id
-from tm_control.modules.location.places import Bearing, Places, Survey
+from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.sharing import follow
 
 log = logging.getLogger(__name__)
@@ -304,9 +304,11 @@ def _create_from_file(places: Places, config: NodeRedConfig, deployment: Deploym
     _create_in_use(places, survey_id, None, point, config.sensors(), "imported_config", user_id)
 
 
-def _create_in_use(places: Places, survey_id: str, description, point, bearings: list[Bearing], source, user_id):
+def _create_in_use(
+    places: Places, survey_id: str, description, point, headings: list[SensorHeading], source, user_id
+):
     # Created planned, then put in use, so the place in use before (if any) becomes used.
-    places.create(survey_id, description, point[0], point[1], bearings, source, "planned", user_id)
+    places.create(survey_id, description, point[0], point[1], headings, source, "planned", user_id)
     places.set_in_use(survey_id)
 
 
@@ -341,8 +343,8 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     if current is None:
         return followed
     # The file lost the place in use (tmsetup.sh -f renders it from the template): the id goes back, and each enabled
-    # sensor whose bearing is blank gets the place's back, so the engine, which holds a bearing change while no survey
-    # is named, starts no deployment with no bearing once the id returns. A bearing in the file is the operator's and
+    # sensor whose heading is blank gets the place's back, so the engine, which holds a heading change while no survey
+    # is named, starts no deployment with no heading once the id returns. A heading in the file is the operator's and
     # stays. The precision is the template's, finer than an operator may have chosen, so the one last seen with a
     # survey named goes back, unless the file's is coarser still: the template never renders that, so it's a hand edit,
     # and restoring would store more than the operator chose. The file's coordinates came from the installer's values,
@@ -355,10 +357,10 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
         kept = places.kept_precision()
         if kept is not None and is_coarser(kept, deployment.precision):
             config.set_precision(kept)
-        stored = {(b.sensor_type, b.sensor_name): b.bearing for b in current.bearings}
-        for sensor_type, name in config.blank_bearings():
-            if stored.get((sensor_type, name)):
-                config.set_sensor_bearing(sensor_type, name, stored[(sensor_type, name)])
+        stored = {(h.sensor_type, h.sensor_name): h.heading_deg for h in current.headings}
+        for sensor_type, name in config.blank_headings():
+            if stored.get((sensor_type, name)) is not None:  # 0 is a heading, north
+                config.set_sensor_heading(sensor_type, name, stored[(sensor_type, name)])
     if deployment.coordinates_invalid:
         # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
         return _saved(config, restoring) or followed
@@ -389,7 +391,7 @@ def _keep_precision(places: Places, deployment: Deployment) -> None:
 
 
 def _saved(config: NodeRedConfig, restoring: bool) -> str | None:
-    """Save the restored id and bearings: "restored", or None when there was nothing to restore."""
+    """Save the restored id and headings: "restored", or None when there was nothing to restore."""
     if not restoring:
         return None
     config.save()

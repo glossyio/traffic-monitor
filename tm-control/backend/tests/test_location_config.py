@@ -12,7 +12,7 @@ from tm_control.modules.location.config import (
     read_deployment,
     sends_public_map,
 )
-from tm_control.modules.location.places import Bearing
+from tm_control.modules.location.places import SensorHeading
 
 FIXTURE = Path(__file__).parent / "fixtures" / "node_red_config_ok.yml"
 SURVEY = "3f9a1c2e-si"
@@ -79,66 +79,139 @@ def test_read_deployment_works_on_an_already_read_file(path):
     assert read_deployment(read_config(path.parent / "nope.yml")) is None
 
 
-def test_sensors_lists_enabled_ones_with_the_copied_down_bearing(path):
+def test_sensors_lists_enabled_ones_with_the_copied_down_heading(path):
     config = NodeRedConfig(path)
     assert config.sensors() == [
-        Bearing(sensor_type="cameras", sensor_name="picam_h265", bearing="n"),
-        Bearing(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", bearing="n"),
+        SensorHeading(sensor_type="cameras", sensor_name="picam_h265", heading_deg=0),
+        SensorHeading(sensor_type="radars", sensor_name="TM_RADAR_SERIAL_PORT_00", heading_deg=0),
     ]
-    config.set_sensor_bearing("cameras", "picam_h265", "e")
-    assert config.sensors()[0].bearing == "e"
+    config.set_sensor_heading("cameras", "picam_h265", 90)
+    assert config.sensors()[0].heading_deg == 90
 
 
-def test_a_blank_bearing_adds_no_block_where_the_sensor_already_reads_blank(path):
-    path.write_text("deployment:\n    bearing: ''\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+def test_sensors_reads_an_old_bearing_key(path):
+    """A file not yet converted reads as Node-RED reads it: an old bearing is its point's centre, at the top level and
+    in a sensor's own block, and a block with either key settles its own heading."""
+    path.write_text(
+        "deployment:\n    bearing: ' NE '\n"
+        "sensors:\n    cameras:\n"
+        "        a:\n            enabled: true\n"
+        "        b:\n            enabled: true\n            deployment:\n                bearing: 'sw'\n"
+        "        c:\n            enabled: true\n            deployment:\n                bearing: up\n"
+        "        d:\n            enabled: true\n            deployment:\n                heading_deg: 100\n"
+        "                bearing: 'n'\n"
+        "        e:\n            enabled: true\n            deployment:\n                note: kept\n"
+    )
+    assert [(h.sensor_name, h.heading_deg) for h in NodeRedConfig(path).sensors()] == [
+        ("a", 45), ("b", 225), ("c", None), ("d", 100), ("e", 45),
+    ]
+
+
+def test_a_blank_heading_adds_no_block_where_the_sensor_already_reads_blank(path):
+    path.write_text("deployment:\n    heading_deg:\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
     config = NodeRedConfig(path)
-    config.set_sensor_bearing("cameras", "cam", "")
+    config.set_sensor_heading("cameras", "cam", None)
     assert config.save() is False
     assert "deployment" not in read_config(path).data["sensors"]["cameras"]["cam"]
 
 
-def test_a_blank_bearing_overrides_the_top_level_one_with_a_block_of_its_own(path):
-    path.write_text("deployment:\n    bearing: 'n'\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
-    config = NodeRedConfig(path)
-    config.set_sensor_bearing("cameras", "cam", "")
-    assert config.save() is True
-    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"bearing": ""}
-    assert NodeRedConfig(path).sensors()[0].bearing == ""
-
-
-def test_a_blank_bearing_is_written_into_a_block_the_sensor_has(path):
+def test_a_blank_heading_overrides_the_top_level_one_with_a_block_of_its_own(path):
     path.write_text(
-        "deployment:\n    bearing: ''\nsensors:\n    cameras:\n        cam:\n            enabled: true\n"
-        "            deployment:\n                bearing: 'e'\n"
+        "deployment:\n    heading_deg: 0\nsensors:\n    cameras:\n        cam:\n            enabled: true\n"
     )
     config = NodeRedConfig(path)
-    config.set_sensor_bearing("cameras", "cam", "")
+    config.set_sensor_heading("cameras", "cam", None)
     assert config.save() is True
-    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"bearing": ""}
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"heading_deg": None}
+    assert NodeRedConfig(path).sensors()[0].heading_deg is None
 
 
-def test_sensor_bearing_follows_the_engine_for_blank_and_invalid(path):
+def test_a_blank_heading_is_written_into_a_block_the_sensor_has(path):
     path.write_text(
-        "deployment:\n    bearing: 'N'\n"
-        "sensors:\n    cameras:\n"
-        "        a:\n            enabled: true\n"
-        "        b:\n            enabled: true\n            deployment:\n                bearing:\n"
-        "        c:\n            enabled: true\n            deployment:\n                bearing: up\n"
+        "deployment:\n    heading_deg:\nsensors:\n    cameras:\n        cam:\n            enabled: true\n"
+        "            deployment:\n                heading_deg: 90\n"
     )
-    assert [b.bearing for b in NodeRedConfig(path).sensors()] == ["n", "", ""]
+    config = NodeRedConfig(path)
+    config.set_sensor_heading("cameras", "cam", None)
+    assert config.save() is True
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"heading_deg": None}
+    assert "                heading_deg:\n" in path.read_text()
 
 
-def test_blank_bearings_are_the_missing_and_empty_ones_not_the_invalid(path):
+def test_a_heading_is_written_as_a_plain_number(path):
+    config = NodeRedConfig(path)
+    config.set_sensor_heading("cameras", "picam_h265", 0)
+    config.set_sensor_heading("radars", "TM_RADAR_SERIAL_PORT_00", 359)
+    config.save()
+    text = path.read_text()
+    assert "                heading_deg: 0\n" in text and "                heading_deg: 359\n" in text
+
+
+@pytest.mark.parametrize("value", [-1, 360, 45.0, "45", "ne", True])
+def test_set_sensor_heading_refuses_what_is_not_a_heading(path, value):
+    config = NodeRedConfig(path)
+    with pytest.raises(ValueError):
+        config.set_sensor_heading("cameras", "picam_h265", value)
+
+
+def test_setting_a_heading_removes_the_old_key(path):
     path.write_text(
-        "deployment:\n    bearing: ''\n"
+        "sensors:\n    cameras:\n"
+        "        a:\n            enabled: true\n            deployment:\n"
+        "                bearing: 'n'  # the corner\n\n"
+        "        b:\n            enabled: true\n            deployment:\n"
+        "                heading_deg:\n                bearing: 'e'\n\n"
+        "    radars:\n        r:\n            enabled: true\n"
+    )
+    config = NodeRedConfig(path)
+    config.set_sensor_heading("cameras", "a", 200)
+    config.set_sensor_heading("cameras", "b", None)
+    config.save()
+    text = path.read_text()
+    assert "bearing" not in text
+    assert "                heading_deg: 200  # the corner\n\n        b:\n" in text  # in its place, comment kept
+    assert "                heading_deg:\n\n    radars:\n" in text  # the blank line before the next block stays
+    assert [(h.sensor_name, h.heading_deg) for h in NodeRedConfig(path).sensors()] == [
+        ("a", 200), ("b", None), ("r", None),
+    ]
+
+
+def test_sensor_heading_follows_the_engine_for_blank_and_invalid(path):
+    path.write_text(
+        "deployment:\n    heading_deg: 40.0\n"
         "sensors:\n    cameras:\n"
         "        a:\n            enabled: true\n"
-        "        b:\n            enabled: true\n            deployment:\n                bearing:\n"
-        "        c:\n            enabled: true\n            deployment:\n                bearing: up\n"
-        "        d:\n            enabled: true\n            deployment:\n                bearing: e\n"
+        "        b:\n            enabled: true\n            deployment:\n                heading_deg:\n"
+        "        c:\n            enabled: true\n            deployment:\n                heading_deg: 400\n"
+        "        d:\n            enabled: true\n            deployment:\n                heading_deg: 'ne'\n"
+    )
+    assert [h.heading_deg for h in NodeRedConfig(path).sensors()] == [40, None, None, None]
+
+
+def test_blank_headings_are_the_missing_and_empty_ones_not_the_invalid(path):
+    path.write_text(
+        "deployment:\n    heading_deg: ''\n"
+        "sensors:\n    cameras:\n"
+        "        a:\n            enabled: true\n"
+        "        b:\n            enabled: true\n            deployment:\n                heading_deg:\n"
+        "        c:\n            enabled: true\n            deployment:\n                heading_deg: 400\n"
+        "        d:\n            enabled: true\n            deployment:\n                heading_deg: 90\n"
         "        e:\n            enabled: false\n"
+        "        f:\n            enabled: true\n            deployment:\n                bearing: up\n"
+        "        g:\n            enabled: true\n            deployment:\n                bearing: ''\n"
+        "        h:\n            enabled: true\n            deployment:\n                bearing: 'w'\n"
+        "        i:\n            enabled: true\n            deployment:\n                heading_deg:\n"
+        "                bearing: up\n"
     )
-    assert NodeRedConfig(path).blank_bearings() == [("cameras", "a"), ("cameras", "b")]
+    assert NodeRedConfig(path).blank_headings() == [("cameras", "a"), ("cameras", "b"), ("cameras", "g")]
+
+
+def test_a_top_level_heading_that_is_not_one_makes_no_sensor_blank(path):
+    path.write_text(
+        "deployment:\n    heading_deg: 400\nsensors:\n    cameras:\n        a:\n            enabled: true\n"
+    )
+    assert NodeRedConfig(path).blank_headings() == []
+    assert NodeRedConfig(path).sensors()[0].heading_deg is None
 
 
 def test_sharing_reads_thingsboard_enabled(path):
@@ -162,7 +235,7 @@ def test_set_place_writes_the_id_and_coordinates_and_keeps_comments(path):
 
 def test_set_place_keeps_the_templates_deployment_block_comments(path):
     path.write_text(
-        "deployment:\n    lat: 45.0\n    lon: -122.0\n    bearing: 'n'\n"
+        "deployment:\n    lat: 45.0\n    lon: -122.0\n    heading_deg: 0\n"
         "    # a hand-written note\n"
         "    survey_id:  # names the place\n"
         "    database_precision: '1'  # none, 1, or 2 decimal places\n"
@@ -181,11 +254,11 @@ def test_set_place_keeps_the_templates_deployment_block_comments(path):
 
 
 def test_set_place_keeps_a_comment_inside_the_deployment_block(path):
-    path.write_text(path.read_text().replace("    bearing: 'n'\n", "    # keep me\n    bearing: 'n'\n", 1))
+    path.write_text(path.read_text().replace("    heading_deg: 0\n", "    # keep me\n    heading_deg: 0\n", 1))
     config = NodeRedConfig(path)
     config.set_place(SURVEY, 45.52252, -122.6912)
     config.save()
-    assert "    # keep me\n    bearing: 'n'" in path.read_text()
+    assert "    # keep me\n    heading_deg: 0" in path.read_text()
 
 
 def test_set_place_with_no_location_writes_empty_coordinates(path):
@@ -216,15 +289,17 @@ def test_deploy_creates_missing_deployment_blocks(path):
     config = NodeRedConfig(path)
     config.set_place(SURVEY, 45.52252, -122.6912)
     config.set_precision("2")
-    config.set_sensor_bearing("cameras", "picam_h265", "sw")
+    config.set_sensor_heading("cameras", "picam_h265", 225)
     assert config.save() is True
     data = read_config(path).data
     assert data["deployment"]["survey_id"] == SURVEY
     assert data["deployment"]["lat"] == 45.52252
     assert data["deployment"]["database_precision"] == "2"
-    assert data["sensors"]["cameras"]["picam_h265"]["deployment"] == {"bearing": "sw"}
+    assert data["sensors"]["cameras"]["picam_h265"]["deployment"] == {"heading_deg": 225}
     assert "    # port: 8080" in path.read_text()
-    assert NodeRedConfig(path).sensors() == [Bearing(sensor_type="cameras", sensor_name="picam_h265", bearing="sw")]
+    assert NodeRedConfig(path).sensors() == [
+        SensorHeading(sensor_type="cameras", sensor_name="picam_h265", heading_deg=225)
+    ]
 
 
 def test_deploy_creates_a_deployment_block_in_a_file_without_thingsboard(path):
@@ -235,14 +310,14 @@ def test_deploy_creates_a_deployment_block_in_a_file_without_thingsboard(path):
     assert read_config(path).data["deployment"]["survey_id"] == SURVEY
 
 
-def test_set_sensor_bearing_refuses_an_unknown_sensor(path):
+def test_set_sensor_heading_refuses_an_unknown_sensor(path):
     config = NodeRedConfig(path)
     with pytest.raises(KeyError):
-        config.set_sensor_bearing("cameras", "nope", "n")
+        config.set_sensor_heading("cameras", "nope", 0)
     with pytest.raises(KeyError):
-        config.set_sensor_bearing("radars", "picam_h265", "n")
+        config.set_sensor_heading("radars", "picam_h265", 0)
     with pytest.raises(KeyError):
-        config.set_sensor_bearing("wheels", "picam_h265", "n")
+        config.set_sensor_heading("wheels", "picam_h265", 0)
 
 
 def test_concurrent_edit_is_refused(path):
@@ -271,10 +346,10 @@ def test_unchanged_edits_write_nothing(path):
 def test_setting_what_is_already_there_writes_nothing(path):
     config = NodeRedConfig(path)
     config.set_place(None, 45.0, -122.0)
-    config.set_sensor_bearing("cameras", "picam_h265", "e")
+    config.set_sensor_heading("cameras", "picam_h265", 90)
     assert config.save() is True
     again = NodeRedConfig(path)
-    again.set_sensor_bearing("cameras", "picam_h265", "e")
+    again.set_sensor_heading("cameras", "picam_h265", 90)
     assert again.save() is False
 
 
@@ -304,13 +379,13 @@ def test_new_blocks_keep_the_blank_lines_between_sections(path):
     )
     config = NodeRedConfig(path)
     config.set_place(SURVEY, None, None)
-    config.set_sensor_bearing("cameras", "cam", "n")
+    config.set_sensor_heading("cameras", "cam", 0)
     config.save()
     text = path.read_text()
     assert "    # port: 8080\n\ndeployment:\n" in text
     assert "database_precision" not in text
     assert "survey_id: 3f9a1c2e-si\n\nsensors:\n" in text
-    assert "                bearing: 'n'\n\n    radars:\n" in text
+    assert "                heading_deg: 0\n\n    radars:\n" in text
 
 
 def test_two_saves_back_to_back_both_succeed(path):
@@ -333,9 +408,23 @@ def test_set_survey_id_writes_only_the_id(path):
     config.set_survey_id("3F9A1C2E-SI")
     assert config.save() is True
     after = path.read_text()
-    assert after == before.replace("    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {SURVEY}\n", 1)
+    assert after == before.replace("    heading_deg: 0\n", f"    heading_deg: 0\n    survey_id: {SURVEY}\n", 1)
     with pytest.raises(ValueError):
         config.set_survey_id("nope")
+
+
+def test_survey_id_goes_after_an_old_bearing_in_a_file_not_yet_converted(path):
+    path.write_text(path.read_text().replace("    heading_deg: 0\n", "    bearing: 'n'\n", 1))
+    before = path.read_text()
+    config = NodeRedConfig(path)
+    config.set_survey_id(SURVEY)
+    config.save()
+    assert path.read_text() == before.replace("    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {SURVEY}\n", 1)
+    path.write_text(before)
+    config = NodeRedConfig(path)
+    config.set_place(SURVEY, 45.0, -122.0)
+    config.save()
+    assert path.read_text() == before.replace("    bearing: 'n'\n", f"    bearing: 'n'\n    survey_id: {SURVEY}\n", 1)
 
 
 def test_set_survey_id_creates_a_missing_deployment_block(path):

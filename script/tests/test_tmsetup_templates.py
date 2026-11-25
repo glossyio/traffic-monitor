@@ -48,6 +48,29 @@ def test_pod_opens_mqtt_to_the_network_only_with_a_broker_login():
     assert "127.0.0.1:1883:1883" not in published_ports(pod)
 
 
+def node_red_unit():
+    return render(
+        "container/node-red-tm/node-red-tm.container.j2",
+        tmsetup_codedir="/opt/traffic-monitor",
+        tmsetup_codeowner="tmowner",
+        tmsetup_codeowner_uid=1000,
+    ).splitlines()
+
+
+def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
+    """The installer's pass may not change a key that a running engine compares: the old Node-RED is still up then,
+    and its config watch would start a deployment. So the start converts config.yml's bearing, before any flow runs,
+    as the code owner (who owns config.yml), and a failure never keeps Node-RED down: the flows read a bearing too."""
+    starts = [line for line in node_red_unit() if line.startswith("ExecStartPre=")]
+    assert len(starts) == 2
+    assert all(line.startswith("ExecStartPre=-") for line in starts)
+    assert "tmdb_migrate.py" in starts[0]
+    assert starts[1] == (
+        "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
+        "--node-red-headings /opt/traffic-monitor/node-red-tm/config/config.yml"
+    )
+
+
 def revproxy_unit():
     return render(
         "container/revproxy/revproxy.container.j2",
@@ -826,11 +849,27 @@ def test_plate_recognizer_env_template_renders_from_the_secrets():
 def test_node_red_config_template_has_no_secret_key():
     """config.yml holds no secret: the ThingsBoard token is an entered secret, set on the Sharing page."""
     values = {**load_role_yaml("defaults/main.yml"), "tmsetup_latitude": 0.0, "tmsetup_longitude": 0.0,
-              "tmsetup_bearing": "n"}
+              "tmsetup_heading_deg": 0}
     text = render("container/node-red-tm/config/config.yml.j2", **values)
     assert "access_token" not in text
     assert "addons" not in text
     assert set(yaml.safe_load(text)["thingsboard"]) == {"enabled", "host", "protocol"}
+
+
+@pytest.mark.parametrize("heading, expected", [(90, 90), (0, 0), ("", None)], ids=["90", "0", "blank"])
+def test_node_red_config_template_writes_the_heading(heading, expected):
+    """A heading in whole degrees, and a blank one as null (no heading yet); a compass point is never written."""
+    values = {**load_role_yaml("defaults/main.yml"), "tmsetup_heading_deg": heading}
+    text = render("container/node-red-tm/config/config.yml.j2", **values)
+    deployment = yaml.safe_load(text)["deployment"]
+    assert "heading_deg" in deployment and deployment["heading_deg"] == expected
+    assert "bearing" not in deployment and "bearing" not in text
+
+
+def test_node_red_config_template_has_no_heading_by_default():
+    deployment = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2",
+                                       **load_role_yaml("defaults/main.yml")))["deployment"]
+    assert "heading_deg" in deployment and deployment["heading_deg"] is None
 
 
 def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_page():

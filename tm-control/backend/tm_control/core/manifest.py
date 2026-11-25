@@ -55,6 +55,15 @@ class MapInfo:
     style_url: str = ""
 
 
+@dataclass(frozen=True)
+class UpdateInfo:
+    """The GitHub repository the install came from (tmsetup_update_repo) and its channel: stable for a release,
+    development for a version ending in -dev. The channel stays text, so a word a later version adds still loads."""
+
+    repo: str = "glossyio/traffic-monitor"
+    channel: str = "stable"
+
+
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -68,6 +77,7 @@ class Manifest(BaseModel):
     network: NetworkInfo = NetworkInfo()
     sharing: SharingInfo = SharingInfo()
     map: MapInfo = MapInfo()
+    update: UpdateInfo = UpdateInfo()
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage

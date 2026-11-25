@@ -40,7 +40,7 @@ def answer(value):
 
 
 def test_deployments_sends_the_token_and_parses_the_rows(wire):
-    rows = [{"id": DEPLOYMENT, "bearing": "ne"}]
+    rows = [{"id": DEPLOYMENT, "heading_deg": 45}]
     wire.answer = answer({"deployments": rows})
     assert NodeRed(TOKEN).deployments(SURVEY) == rows
     assert wire.calls == [("GET", f"{BASE}/deployments?survey_id={SURVEY}", {"X-TM-Internal-Token": TOKEN}, None, None)]
@@ -107,12 +107,14 @@ def test_correct_location_posts_json(wire):
     assert json.loads(body) == {"lat": 45.52252, "lon": -122.6912}
 
 
-def test_correct_bearing_posts_json(wire):
+def test_correct_heading_posts_json(wire):
     wire.answer = (204, b"")
-    assert NodeRed(TOKEN).correct_bearing(DEPLOYMENT, "ne") is None
+    assert NodeRed(TOKEN).correct_heading(DEPLOYMENT, 45) is None
     method, url, _, body, content_type = wire.calls[0]
-    assert (method, url, content_type) == ("POST", f"{BASE}/deployments/{DEPLOYMENT}/bearing", "application/json")
-    assert json.loads(body) == {"bearing": "ne"}
+    assert (method, url, content_type) == ("POST", f"{BASE}/deployments/{DEPLOYMENT}/heading", "application/json")
+    assert json.loads(body) == {"heading_deg": 45}
+    assert NodeRed(TOKEN).correct_heading(DEPLOYMENT, None) is None  # a blank heading is sent as null
+    assert json.loads(wire.calls[1][3]) == {"heading_deg": None}
 
 
 def test_a_failed_post_raises(wire):

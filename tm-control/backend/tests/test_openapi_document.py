@@ -48,13 +48,32 @@ def test_surveys_paths_are_declared_with_their_answers(settings):
         ("/api/v1/surveys/{survey_id}/deployments", "get"): "200",
         ("/api/v1/surveys/{survey_id}/events", "get"): "200",
         ("/api/v1/surveys/{survey_id}/location", "post"): "200",
-        ("/api/v1/surveys/{survey_id}/deployments/{deployment_id}/bearing", "post"): "200",
+        ("/api/v1/surveys/{survey_id}/deployments/{deployment_id}/heading", "post"): "200",
     }
     for (path, method), status in expected.items():
         responses = paths[path][method]["responses"]
         assert status in responses, (path, method)
         if status != "204":
             assert "$ref" in str(responses[status]["content"]["application/json"]["schema"]), (path, method)
+
+
+def test_no_bearing_in_the_api(settings):
+    """A sensor's heading in degrees took the place of its eight-point bearing: no path, model, or field name in the
+    API says bearing any more."""
+    document = create_app(settings).openapi()
+
+    def names(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                yield key
+                if key in ("$ref", "title", "operationId", "summary"):
+                    yield str(item)
+                yield from names(item)
+        elif isinstance(value, list):
+            for item in value:
+                yield from names(item)
+
+    assert [name for name in names(document) if "bearing" in name.lower()] == []
 
 
 def test_reference_paths_are_declared_with_their_answers(settings):

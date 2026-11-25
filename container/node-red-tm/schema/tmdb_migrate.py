@@ -23,6 +23,11 @@ MIGRATION_NAME = re.compile(r"^(\d{4})_[A-Za-z0-9_-]+\.sql$")
 SQL_COMMENT = re.compile(r"--[^\n]*|/\*.*?\*/", re.DOTALL)
 FORBIDDEN_STATEMENT = re.compile(
     r"(?:^|;)\s*(BEGIN|COMMIT|END|ROLLBACK|SAVEPOINT|RELEASE|VACUUM|PRAGMA\s+user_version)\b", re.IGNORECASE)
+# A file's first line may ask the runner for one condition: apply the file only to a database whose
+# table has the column. A first line that looks like a runner line and isn't this exact form is refused,
+# and so is a runner line anywhere else, where it would otherwise be an ordinary comment.
+RUNNER_LINE = re.compile(r"\s*--\s*tmdb-migrate\s*:", re.IGNORECASE)
+NEEDS_COLUMN = re.compile(r"-- tmdb-migrate: needs-column (\w+)\.(\w+)")
 # Free space needed for a pre-migration backup, as a multiple of the database size.
 BACKUP_SPACE_FACTOR = 1.2
 
@@ -45,7 +50,9 @@ def load_migrations(directory):
         number = int(match.group(1))
         if number in numbered:
             raise MigrationError(f"{path.name}: duplicate migration number {number:04d}")
-        forbidden = FORBIDDEN_STATEMENT.search(SQL_COMMENT.sub("", path.read_text()))
+        text = read_migration(path)
+        needed_column(text, path.name)
+        forbidden = FORBIDDEN_STATEMENT.search(SQL_COMMENT.sub("", text))
         if forbidden:
             # This also rejects a trigger's END; extend the check if a migration ever needs a trigger.
             raise MigrationError(f"{path.name}: remove {forbidden.group(1)}; the runner handles transactions and user_version")
@@ -55,6 +62,29 @@ def load_migrations(directory):
     if sorted(numbered) != list(range(1, len(numbered) + 1)):
         raise MigrationError(f"migration numbers must run 0001..{len(numbered):04d} without gaps")
     return [numbered[number] for number in sorted(numbered)]
+
+
+def read_migration(path):
+    """A migration file's text. utf-8-sig drops a byte order mark, which would hide a runner line."""
+    return path.read_text(encoding="utf-8-sig")
+
+
+def needed_column(text, name):
+    """The (table, column) a file's first line says it needs, or None. Refuses a malformed runner line, and one
+    that isn't the first line."""
+    lines = text.splitlines()
+    for number, line in enumerate(lines[1:], start=2):
+        if RUNNER_LINE.match(line):
+            raise MigrationError(f"{name}: a runner line must be the file's first line, but line {number} is "
+                                 f"{line!r}")
+    first = lines[0] if lines else ""
+    if not RUNNER_LINE.match(first):
+        return None
+    match = NEEDS_COLUMN.fullmatch(first)
+    if not match:
+        raise MigrationError(f"{name}: unknown runner line {first!r}; the only one is "
+                             "'-- tmdb-migrate: needs-column <table>.<column>'")
+    return match.group(1), match.group(2)
 
 
 def user_version(con):
@@ -114,14 +144,26 @@ def remove_backups_except(backup_dir, keep):
 def apply_migrations(con, migrations, current):
     """Apply migrations[current:], each in its own transaction that also sets user_version."""
     for number, path in enumerate(migrations[current:], start=current + 1):
+        text = read_migration(path)
+        needs = needed_column(text, path.name)
         try:
-            con.executescript(f"BEGIN IMMEDIATE;\n{path.read_text()}\n;\nPRAGMA user_version = {number};\nCOMMIT;")
+            if needs and needs[1] not in [row[1] for row in con.execute(f'PRAGMA table_info("{needs[0]}")')]:
+                # Nothing to change: an older table shape that never had the column. Only the version moves on.
+                script = f"BEGIN IMMEDIATE;\nPRAGMA user_version = {number};\nCOMMIT;"
+                skipped = True
+            else:
+                script = f"BEGIN IMMEDIATE;\n{text}\n;\nPRAGMA user_version = {number};\nCOMMIT;"
+                skipped = False
+            con.executescript(script)
         except sqlite3.Error as exc:
             if con.in_transaction:
                 con.execute("ROLLBACK")
             raise MigrationError(f"{path.name} failed and was rolled back: {exc}") from exc
         if user_version(con) != number:
             raise MigrationError(f"{path.name} left user_version at {user_version(con)}, expected {number}")
+        if skipped:
+            log(f"{path.name}: skipped, {needs[0]} has no column {needs[1]}")
+            continue
         log(f"applied {path.name}")
 
 
@@ -129,7 +171,7 @@ def expected_schema(migrations):
     """An in-memory database built from the given migrations."""
     con = sqlite3.connect(":memory:")
     for path in migrations:
-        con.executescript(path.read_text())
+        con.executescript(read_migration(path))
     return con
 
 

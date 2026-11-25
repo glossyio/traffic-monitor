@@ -90,10 +90,10 @@ def in_use(client) -> dict:
 
 def deploy_new_place(client, lat, lon) -> str:
     r = client.post("/api/v1/surveys", json={"description": "Main St by the bakery", "lat": lat, "lon": lon,
-                                             "bearings": []}, headers=ORIGIN)
+                                             "headings": []}, headers=ORIGIN)
     assert r.status_code == 201, r.text
     survey_id = r.json()["id"]
-    r = client.post(f"/api/v1/surveys/{survey_id}/deploy", json={"bearings": []}, headers=ORIGIN)
+    r = client.post(f"/api/v1/surveys/{survey_id}/deploy", json={"headings": []}, headers=ORIGIN)
     assert r.status_code == 200, r.text
     return survey_id
 

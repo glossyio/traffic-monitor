@@ -442,20 +442,26 @@ def test_a_camera_without_a_radar_is_fine(apps):
 @pytest.mark.parametrize(
     "deployment, status, key",
     [
-        ({"lat": 91, "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
-        ({"lat": -90, "lon": 180.5, "bearing": "n"}, "error", "deployment.lon"),
-        ({"lat": "abc", "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
-        ({"lat": 45, "lon": "1e2", "bearing": "n"}, "error", "deployment.lon"),
-        ({"lat": 45, "lon": None, "bearing": "n"}, "error", "deployment.lat"),  # one of the pair alone
-        ({"lat": True, "lon": 10, "bearing": "n"}, "error", "deployment.lat"),
-        ({"lat": 45, "lon": 10, "bearing": "north"}, "error", "deployment.bearing"),
-        ({"lat": 45, "lon": 10, "bearing": 90}, "error", "deployment.bearing"),
-        ({"lat": 45, "lon": 10, "bearing": " n"}, "error", "deployment.bearing"),  # Node-RED doesn't trim
-        ({"lat": 45, "lon": 10, "bearing": "  "}, "error", "deployment.bearing"),
-        ({"lat": 45, "lon": 10, "bearing": ""}, "ok", None),
-        ({"lat": 45, "lon": 10, "bearing": "SW"}, "ok", None),  # Node-RED lowercases it
-        ({"lat": None, "lon": None, "bearing": ""}, "ok", None),  # as installed, before a location is set
-        ({"lat": -90, "lon": -180, "bearing": "se"}, "ok", None),
+        ({"lat": 91, "lon": 10, "heading_deg": 0}, "error", "deployment.lat"),
+        ({"lat": -90, "lon": 180.5, "heading_deg": 0}, "error", "deployment.lon"),
+        ({"lat": "abc", "lon": 10, "heading_deg": 0}, "error", "deployment.lat"),
+        ({"lat": 45, "lon": "1e2", "heading_deg": 0}, "error", "deployment.lon"),
+        ({"lat": 45, "lon": None, "heading_deg": 0}, "error", "deployment.lat"),  # one of the pair alone
+        ({"lat": True, "lon": 10, "heading_deg": 0}, "error", "deployment.lat"),
+        ({"lat": 45, "lon": 10, "heading_deg": 360}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": -1}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": 40.5}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": "40"}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": "north"}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": True}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": "  "}, "error", "deployment.heading_deg"),
+        ({"lat": 45, "lon": 10, "heading_deg": ""}, "ok", None),
+        ({"lat": 45, "lon": 10, "heading_deg": None}, "ok", None),
+        ({"lat": 45, "lon": 10, "heading_deg": 0}, "ok", None),
+        ({"lat": 45, "lon": 10, "heading_deg": 359}, "ok", None),
+        ({"lat": 45, "lon": 10, "heading_deg": 40.0}, "ok", None),  # Node-RED can't tell 40.0 from 40
+        ({"lat": None, "lon": None, "heading_deg": None}, "ok", None),  # as installed, before a location is set
+        ({"lat": -90, "lon": -180, "heading_deg": 135}, "ok", None),
     ],
 )
 def test_deployment_values(apps, deployment, status, key):
@@ -467,7 +473,7 @@ def test_deployment_values(apps, deployment, status, key):
         value = deployment[key.removeprefix("deployment.")]
         if isinstance(value, str) and len(value.strip()) > 2:  # shorter ones are inside the message
             assert value not in check.detail  # names the key, not its value
-        assert "91" not in check.detail and "180.5" not in check.detail
+        assert "91" not in check.detail and "180.5" not in check.detail and "40.5" not in check.detail
 
 
 LOCATION_LINK = ("link", "/location", "Open the Location page")
@@ -519,8 +525,8 @@ def test_location_says_an_invalid_precision_stores_the_default(apps):
 
 
 def test_location_says_what_the_default_is_for_after_every_problem(apps):
-    check = location_check(apps, database_precision="NONE", bearing="up")
-    assert "2; deployment.bearing" in check.detail or "; deployment.database_precision" in check.detail
+    check = location_check(apps, database_precision="NONE", heading_deg=400)
+    assert "deployment.heading_deg isn't a whole number from 0 to 359, or empty; deployment.database_precision" in check.detail
     assert check.detail.endswith("Correct them, or leave them empty. Until then, Node-RED stores the default, about 1 km.")
 
 
@@ -531,31 +537,102 @@ def test_location_accepts_the_values_the_engine_accepts(apps, deployment):
     assert location_check(apps, **deployment).status == "ok"
 
 
-def test_location_checks_each_enabled_sensors_own_bearing(apps):
+HEADING_PROBLEM = "isn't a whole number from 0 to 359, or empty"
+
+
+def test_location_checks_each_enabled_sensors_own_heading(apps):
     apps.edit_config_yml(
-        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": "north"})
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"heading_deg": 360})
     )
     check = location_check(apps)
     assert check.status == "error"
-    assert (
-        "sensors.cameras.picam_h265.deployment.bearing isn't one of n, s, e, w, ne, nw, se, sw, or empty"
-        in check.detail
-    )
-    assert "north" not in check.detail
+    assert f"sensors.cameras.picam_h265.deployment.heading_deg {HEADING_PROBLEM}" in check.detail
+    assert "360" not in check.detail
 
 
-@pytest.mark.parametrize("bearing", [" n", "  "])
-def test_location_does_not_trim_a_sensors_own_bearing(apps, bearing):
-    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": bearing}))
-    check = location_check(apps)
-    assert check.status == "error" and "sensors.cameras.picam_h265.deployment.bearing" in check.detail
-
-
-def test_location_ignores_a_disabled_sensors_bearing(apps):
+@pytest.mark.parametrize("heading", ["", None, 0, 359, 40.0])
+def test_location_accepts_a_sensors_own_heading(apps, heading):
     apps.edit_config_yml(
-        lambda data: data["sensors"]["airquality_monitors"]["sensorname01"].update(deployment={"bearing": "north"})
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"heading_deg": heading})
     )
     assert location_check(apps).status == "ok"
+
+
+def test_location_ignores_a_disabled_sensors_heading(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["airquality_monitors"]["sensorname01"].update(deployment={"heading_deg": 360})
+    )
+    assert location_check(apps).status == "ok"
+
+
+OLD_BEARING = (
+    "{path}.bearing is the old name for which way a sensor faces. Node-RED converts it to heading_deg when it next "
+    "starts: restart Node-RED, or write heading_deg (whole degrees from north) in its place. If it's still here after "
+    "a restart, the conversion failed. See why with sudo journalctl -u node-red-tm | grep \"tm-control migrate\", "
+    "or in the diagnostics."
+)
+
+
+def test_location_warns_about_an_old_bearing_key(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"heading_deg": 90, "bearing": "up"})
+    )
+    check = location_check(apps, bearing="sideways")
+    assert check.status == "warn"
+    assert OLD_BEARING.format(path="deployment") in check.detail
+    assert OLD_BEARING.format(path="sensors.cameras.picam_h265.deployment") in check.detail
+    assert "sideways" not in check.detail and "'up'" not in check.detail
+    assert fix_of(check) == LOCATION_LINK
+
+
+UNREADABLE_BEARING = (
+    "{path}.bearing, the old name for which way a sensor faces, isn't one of the eight compass points, so it's read "
+    "as no heading and Node-RED's start leaves it. Write heading_deg (whole degrees from north) and delete the "
+    "bearing."
+)
+
+
+@pytest.mark.parametrize("heading", [{}, {"heading_deg": None}, {"heading_deg": ""}], ids=["no key", "null", "blank"])
+def test_location_says_when_node_reds_start_cannot_convert_an_old_bearing(apps, heading):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={**heading, "bearing": "upward"})
+    )
+    apps.edit_config_yml(lambda data: data["deployment"].pop("heading_deg"))
+    check = location_check(apps, bearing="45", **heading)
+    assert check.status == "warn"
+    assert UNREADABLE_BEARING.format(path="deployment") in check.detail
+    assert UNREADABLE_BEARING.format(path="sensors.cameras.picam_h265.deployment") in check.detail
+    assert "restart Node-RED" not in check.detail
+    assert "upward" not in check.detail and "45" not in check.detail
+    assert fix_of(check) == LOCATION_LINK
+
+
+def test_location_still_says_to_restart_node_red_for_a_point(apps):
+    apps.edit_config_yml(lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": " NE "}))
+    check = location_check(apps)
+    assert check.status == "warn"
+    assert OLD_BEARING.format(path="sensors.cameras.picam_h265.deployment") in check.detail
+    assert "compass points" not in check.detail
+
+
+@pytest.mark.parametrize("bearing", ["", None])
+def test_location_says_nothing_about_a_blank_bearing_key(apps, bearing):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["cameras"]["picam_h265"].update(deployment={"bearing": bearing})
+    )
+    assert location_check(apps, bearing=bearing).status == "ok"
+
+
+def test_location_ignores_a_disabled_sensors_old_bearing(apps):
+    apps.edit_config_yml(
+        lambda data: data["sensors"]["airquality_monitors"]["sensorname01"].update(deployment={"bearing": "n"})
+    )
+    assert location_check(apps).status == "ok"
+
+
+def test_location_error_wins_over_an_old_bearing_warning(apps):
+    check = location_check(apps, bearing="n", heading_deg=400)
+    assert check.status == "error" and "bearing" not in check.detail
 
 
 def test_location_warns_about_per_sensor_coordinates(apps):

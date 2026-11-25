@@ -30,7 +30,8 @@ def test_migrate_requires_a_config_option(capsys):
         main(["migrate"])
     assert exit_info.value.code == 2
     err = capsys.readouterr().err
-    for option in ("--frigate-config", "--node-red-config", "--plate-recognizer-env", "--frigate-env"):
+    for option in ("--frigate-config", "--node-red-config", "--node-red-headings", "--plate-recognizer-env",
+                   "--frigate-env"):
         assert option in err
 
 
@@ -54,6 +55,29 @@ def test_migrate_node_red_config_moves_the_tokens(tmp_path, capsys):
     assert (secrets / "thingsboard_access_token").read_text() == "tb-placeholder-401\n"
     assert "access_token" not in config.read_text()
     assert "tb-placeholder-401" not in capsys.readouterr().out
+
+
+def test_migrate_node_red_headings_alone_converts_a_bearing_and_reads_no_secrets(tmp_path, monkeypatch, capsys):
+    """Node-RED's start runs it as the code owner, who can't read the secrets directory."""
+    monkeypatch.setenv("TM_CONTROL_SECRETS_DIR", str(tmp_path / "no-such-secrets"))
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("--node-red-headings has no secrets to move")
+
+    monkeypatch.setattr(migrate, "_read_secret", refuse)
+    config = tmp_path / "config.yml"
+    config.write_text("deployment:\n    bearing: 'e'\n")
+    assert main(["migrate", "--node-red-headings", str(config)]) == 0
+    assert config.read_text() == "deployment:\n    heading_deg: 90\n"
+    assert "converted deployment.bearing to heading_deg" in capsys.readouterr().out
+
+
+def test_migrate_node_red_headings_dry_run_writes_nothing(tmp_path, capsys):
+    config = tmp_path / "config.yml"
+    config.write_text("deployment:\n    bearing: 'e'\n")
+    assert main(["migrate", "--node-red-headings", str(config), "--dry-run"]) == 0
+    assert config.read_text() == "deployment:\n    bearing: 'e'\n"
+    assert capsys.readouterr().out == f"tm-control migrate: {config}: would convert deployment.bearing to heading_deg\n"
 
 
 def test_migrate_plate_recognizer_env_moves_the_values(tmp_path, monkeypatch):

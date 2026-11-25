@@ -324,6 +324,126 @@ def test_failed_backup_stops_the_migration(db_path, make_migrations, tmp_path):
     assert tables(db_path) == {"existing"}
 
 
+# --- the runner's own lines -------------------------------------------------
+
+NEEDS_BEARING = "-- tmdb-migrate: needs-column t.old\nALTER TABLE t DROP COLUMN old;\n"
+
+
+def test_a_needs_column_migration_is_applied_when_the_column_exists(db_path, make_migrations, capsys):
+    migrations = make_migrations({"0001_create_t.sql": "CREATE TABLE t (keep TEXT, old TEXT);",
+                                  "0002_drop_old.sql": NEEDS_BEARING})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert user_version(db_path) == 2
+    assert columns(db_path, "t") == ["keep"]
+    assert "skipped" not in output(capsys)
+
+
+def test_a_needs_column_migration_is_skipped_when_it_does_not(db_path, make_migrations, capsys):
+    # An older table shape: t never had the column, though 0001 creates it for a new database.
+    create_db(db_path, "CREATE TABLE t (keep TEXT);", user_version=1)
+    migrations = make_migrations({"0001_create_t.sql": "CREATE TABLE IF NOT EXISTS t (keep TEXT, old TEXT);",
+                                  "0002_drop_old.sql": NEEDS_BEARING})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert user_version(db_path) == 2
+    assert columns(db_path, "t") == ["keep"]
+    assert "tmdb-migrate: 0002_drop_old.sql: skipped, t has no column old" in output(capsys)
+
+
+class FailingConnection:
+    """A connection that raises sqlite3.Error from one call, as a locked database does, and passes the rest on."""
+
+    def __init__(self, con, fail_on, begin_first=False):
+        self.con = con
+        self.fail_on = fail_on
+        self.begin_first = begin_first
+
+    @property
+    def in_transaction(self):
+        return self.con.in_transaction
+
+    def execute(self, sql, *args):
+        if self.fail_on in sql:
+            raise sqlite3.OperationalError("database is locked")
+        return self.con.execute(sql, *args)
+
+    def executescript(self, script):
+        if self.fail_on in script:
+            if self.begin_first:
+                self.con.execute("BEGIN IMMEDIATE")  # the script began its transaction, then failed
+            raise sqlite3.OperationalError("database is locked")
+        return self.con.executescript(script)
+
+
+@pytest.mark.parametrize("fail_on, begin_first", [("PRAGMA table_info", False), ("PRAGMA user_version = 2", True)],
+                         ids=["the column lookup", "the version write"])
+def test_a_skip_that_hits_a_sqlite_error_is_rolled_back(db_path, make_migrations, fail_on, begin_first):
+    create_db(db_path, "CREATE TABLE t (keep TEXT);", user_version=1)
+    migrations = tmdb_migrate.load_migrations(make_migrations({"0001_create_t.sql": "CREATE TABLE IF NOT EXISTS t (keep TEXT, old TEXT);",
+                                                               "0002_drop_old.sql": NEEDS_BEARING}))
+    con = sqlite3.connect(db_path, isolation_level=None)
+    try:
+        with pytest.raises(tmdb_migrate.MigrationError) as raised:
+            tmdb_migrate.apply_migrations(FailingConnection(con, fail_on, begin_first), migrations, 1)
+
+        assert str(raised.value) == "0002_drop_old.sql failed and was rolled back: database is locked"
+        assert not con.in_transaction
+        assert tmdb_migrate.user_version(con) == 1
+    finally:
+        con.close()
+
+
+@pytest.mark.parametrize("head", [
+    "-- tmdb-migrate: needs-column deployment",
+    "-- tmdb-migrate: needs-column a.b.c",
+    "-- tmdb-migrate: needs-table t",
+    "-- tmdb-migrate:",
+    "-- tmdb-migrate: needs-column t.old ",
+    "-- tmdb-migrate:needs-column t.old",
+    "--tmdb-migrate: needs-column t.old",
+    "-- Drop the old column.\n-- tmdb-migrate: needs-column t.old",
+    "\n-- tmdb-migrate: needs-column t.old",
+    "-- tmdb-migrate: needs-column t.old\n-- tmdb-migrate: needs-column t.keep",
+], ids=["no column", "too many dots", "unknown word", "empty", "trailing space", "no space after the colon",
+        "no space after the dashes", "under a header comment", "after a blank line", "a second runner line"])
+def test_an_unknown_runner_line_is_refused(db_path, make_migrations, head, capsys):
+    migrations = make_migrations({"0001_create_t.sql": "CREATE TABLE t (old TEXT);",
+                                  "0002_drop_old.sql": f"{head}\nALTER TABLE t DROP COLUMN old;\n"})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 2
+
+    assert not db_path.exists()
+    assert "0002_drop_old.sql" in output(capsys)
+
+
+@pytest.mark.parametrize("text", [
+    "\ufeff" + NEEDS_BEARING,
+    NEEDS_BEARING.replace("\n", "\r\n"),
+], ids=["after a BOM", "with CRLF line ends"])
+def test_a_runner_line_is_read_after_a_bom_and_with_crlf(db_path, make_migrations, text, capsys):
+    create_db(db_path, "CREATE TABLE t (keep TEXT);", user_version=1)
+    migrations = make_migrations({"0001_create_t.sql": "CREATE TABLE IF NOT EXISTS t (keep TEXT, old TEXT);",
+                                  "0002_drop_old.sql": text})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert user_version(db_path) == 2
+    assert "tmdb-migrate: 0002_drop_old.sql: skipped, t has no column old" in output(capsys)
+
+
+def test_a_file_with_a_bom_is_applied(db_path, make_migrations):
+    migrations = make_migrations({"0001_create_t.sql": "\ufeffCREATE TABLE t (keep TEXT, old TEXT);",
+                                  "0002_drop_old.sql": "\ufeff" + NEEDS_BEARING})
+
+    assert migrate("--db", db_path, "--migrations", migrations) == 0
+
+    assert user_version(db_path) == 2
+    assert columns(db_path, "t") == ["keep"]
+
+
 # --- drift ------------------------------------------------------------------
 
 
@@ -339,16 +459,21 @@ def test_drift_is_reported_for_an_old_deployment_table_and_left_alone(db_path, c
 
     assert migrate("--db", db_path) == 0
 
-    drift = [line for line in output(capsys).splitlines() if "DRIFT" in line and "deployment" in line]
+    log = output(capsys)
+    drift = [line for line in log.splitlines() if "DRIFT" in line and "deployment" in line]
     missing = " ".join(line for line in drift if "missing" in line)
     unexpected = " ".join(line for line in drift if "unexpected" in line)
-    for column in ["entryStartDateTime", "entryEndDateTime", "bearing", "sensorType", "sensorName", "deviceName"]:
+    for column in ["entryStartDateTime", "entryEndDateTime", "sensorType", "sensorName", "deviceName"]:
         assert column in missing
+    assert "bearing" not in missing and "heading_deg" not in missing
     for column in ["entryDateTime", "orientation", "address", "description"]:
         assert column in unexpected
-    # 0002 adds its two columns; the runner changes nothing else about the old shape
+    # 0002 and 0008 add their columns; 0009 and 0010 are skipped (no bearing); the old columns are kept
+    assert user_version(db_path) == LATEST_VERSION
+    assert "0009_deployment_heading_from_bearing.sql: skipped, deployment has no column bearing" in log
+    assert "0010_deployment_drop_bearing.sql: skipped, deployment has no column bearing" in log
     assert columns(db_path, "deployment") == ["id", "entryDateTime", "lat", "lon", "orientation", "address", "description",
-                                              "survey_id", "location_precision"]
+                                              "survey_id", "location_precision", "heading_deg"]
 
 
 def test_drift_is_reported_for_a_missing_index(db_path, make_migrations, capsys):

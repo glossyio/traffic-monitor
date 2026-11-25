@@ -1,6 +1,7 @@
 ---
 # TMSetup Variables (non-configurable)
-tmsetup_tm_version: '0.7.1'
+# X.Y.Z for a release; on dev, the next release's X.Y.Z-dev (a release's last commit drops -dev). test_tm_version.py
+tmsetup_tm_version: '0.8.0-dev'
 tmsetup_go2rtc_version: 'v1.9.14'
 # sha256 of each go2rtc_linux_<arch> release asset; change these with tmsetup_go2rtc_version
 tmsetup_go2rtc_sha256:

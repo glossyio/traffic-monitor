@@ -3,7 +3,7 @@
 // coordinate: the API sends the stored values already rounded, and the exact ones already kept to five places.
 import type { components } from '../../api/schema'
 
-type Bearing = components['schemas']['Bearing']
+type SensorHeading = components['schemas']['SensorHeading']
 
 // A number with an optional sign and fraction: no exponent, no decimal comma, as the backend accepts
 const NUMBER = String.raw`[+-]?(?:\d+(?:\.\d+)?|\.\d+)`
@@ -70,36 +70,19 @@ export function formatExact(lat: number | null, lon: number | null): string {
   return `${lat.toFixed(5)}, ${lon.toFixed(5)}`
 }
 
-// Which way a sensor faces, as config.yml writes it ('' when it isn't set)
-export const BEARINGS = [
-  { value: 'n', title: 'N' },
-  { value: 'ne', title: 'NE' },
-  { value: 'e', title: 'E' },
-  { value: 'se', title: 'SE' },
-  { value: 's', title: 'S' },
-  { value: 'sw', title: 'SW' },
-  { value: 'w', title: 'W' },
-  { value: 'nw', title: 'NW' },
-  { value: '', title: 'Not set' },
-]
-
-export function bearingTitle(value: string): string {
-  return BEARINGS.find((bearing) => bearing.value === value.trim().toLowerCase())?.title ?? value
-}
-
-// The bearing each sensor starts at in the place form and the deploy review: the place's own for that sensor, else
-// the sensor's bearing in config.yml now. One entry per sensor, in the sensors' order.
-export function startingBearings(sensors: Bearing[], place?: { bearings: Bearing[] }): Bearing[] {
+// The heading each sensor starts at in the place form and the deploy review: the place's own for that sensor, else
+// the sensor's heading in config.yml now. One entry per sensor, in the sensors' order.
+export function startingHeadings(sensors: SensorHeading[], place?: { headings: SensorHeading[] }): SensorHeading[] {
   return sensors.map((sensor) => {
-    const own = place?.bearings.find(
+    const own = place?.headings.find(
       (kept) => kept.sensor_type === sensor.sensor_type && kept.sensor_name === sensor.sensor_name,
     )
-    return { ...sensor, bearing: own ? own.bearing : sensor.bearing }
+    return { ...sensor, heading_deg: own ? own.heading_deg : sensor.heading_deg }
   })
 }
 
 // What deploying to a place is called, by the place's status: the button on the place and the review's title
-// (`action`), and the review's button that does it (`confirm`). At the place in use only bearings can change.
+// (`action`), and the review's button that does it (`confirm`). At the place in use only headings can change.
 export function deployWords(status: string): { action: string; confirm: string } {
   if (status === 'in_use') return { action: 'Modify deployment', confirm: 'Modify' }
   if (status === 'used') return { action: 'Re-deploy here', confirm: 'Re-deploy' }

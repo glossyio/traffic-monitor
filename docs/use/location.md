@@ -1,5 +1,5 @@
 ---
-description: Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or bearing, import places from a CSV file, and export or download the exact locations.
+description: Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.
 ---
 
 # Places and location
@@ -27,7 +27,7 @@ Each place in the list shows its description, or **No description**, its mark (*
 * **Imported from your previous settings** for a place that came from an older version's data; see [Update the software](../build-your-own-device-diy/update.md#places-after-an-update).
 * When the place was first and last used, or **Not used yet**.
 * How many events were recorded there, and between which dates.
-* Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with the way it faced and **Correct bearing**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when.
+* Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with the way it faced and **Correct heading**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when.
 * The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Modify deployment** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; and **Delete** for any place but the one in use.
 
 **Before any place was recorded** counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.
@@ -40,7 +40,7 @@ Choose **Add a place**, fill in what you know, and **Save**. The place is added 
 
 * **Description**: a name for the place, such as "Front of the school". It never leaves the device.
 * **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`, or [picked on a map](#pick-the-point-on-a-map). Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.
-* **Which way each sensor faces here**: `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`, or **Not set**, for each sensor turned on in the settings.
+* **Facing**, for each sensor turned on in the settings: a compass point, `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, or `NW`, or **Not set**. See [Which way a sensor faces](#which-way-a-sensor-faces).
 
 **Use this phone's location** fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.
 
@@ -56,7 +56,17 @@ The map isn't offered while your phone is on the device's own [hotspot](wifi-hot
 
 To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.
 
-To change a planned place, open it and choose **Edit**. A place that has been used can't be edited; [correct it](#correct-a-wrong-location-or-bearing) instead.
+To change a planned place, open it and choose **Edit**. A place that has been used can't be edited; [correct it](#correct-a-wrong-location-or-heading) instead.
+
+## Which way a sensor faces
+
+A sensor's *heading* is the way it faces, in whole degrees clockwise from true north, from 0 to 359: 0 is north, 90 is east, 180 is south, and 270 is west. The page shows it with the nearest compass point, such as **NE (40°)**. A point covers the 45 degrees around its centre, so 23 to 67 degrees is `NE`, and 338 to 359 and 0 to 22 is `N`.
+
+The page lets you pick one of the eight points, which sets the heading to the point's centre, as the [table of centres](../configuration/node-red-config.md#if-your-file-still-says-bearing) lists. Nothing stores the point itself, only the number. A heading you measured more closely, such as 40 from a compass app, or typed into [`config.yml`](../configuration/node-red-config.md#deployment) or an [imported file](#import-places-from-a-file), is kept as it is and listed first in the choices as **NE (40°)**, so opening the choice and closing it changes nothing. Pick a point only to replace it. Until you save or close the form, the measured heading stays in the list, so you can choose it again if you picked a point by mistake.
+
+Use true north, not magnetic north, because the two differ by several degrees in many places, and a phone's compass app can show either. A heading is optional. **Not set** records that you haven't said.
+
+A device updated from an older release has its earlier headings converted; see [Headings after an update](../build-your-own-device-diy/update.md#headings-after-an-update).
 
 ## Move or turn the device
 
@@ -66,11 +76,11 @@ When the device moves to another place, record it from that place: **Deploy here
 2. Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are what the database will store for the place and whether the device shares its data.
 3. Choose **Deploy**, **Re-deploy**, or **Modify**.
 
-![The Deploy here review on a phone: each sensor with "New deployment starts" and its bearing before and after, the location the database will store, and Cancel and Deploy](../assets/images/location-deploy-review.png){ width="300" }
+![The Deploy here review on a phone: each sensor with "New deployment starts" and its heading before and after, the location the database will store, and Cancel and Deploy](../assets/images/location-deploy-review.png){ width="300" }
 
 The page waits while Node-RED starts the new deployments, then lists their ids, each with **Copy**. Counts from then on belong to the new deployments.
 
-In **Modify deployment**, the review starts with each sensor's bearing as it is, and each sensor reads **Unchanged** until you change its bearing. **Modify** stays off until at least one bearing changes, and only the sensors you turned start a new deployment.
+In **Modify deployment**, the review starts with each sensor's heading as it is, and each sensor reads **Unchanged** until you change its heading. **Modify** stays off until at least one heading changes, and only the sensors you turned start a new deployment.
 
 !!! warning "Don't deploy twice"
 
@@ -78,12 +88,12 @@ In **Modify deployment**, the review starts with each sensor's bearing as it is,
 
 A move usually also needs the camera's zones adjusted; see [First-time setup](../setup-guide.md#3-adjust-the-zones).
 
-## Correct a wrong location or bearing
+## Correct a wrong location or heading
 
 A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, [record that](#move-or-turn-the-device) instead.
 
 * **Correct location**, on a used place or the place in use, takes a new latitude and longitude, typed or [picked on a map](#pick-the-point-on-a-map). Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, `config.yml` takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.
-* **Correct bearing**, on each deployment in an open place, takes the way the sensor really faced. Every record from that deployment then says so. For a deployment that is still running, `config.yml` takes the new bearing too.
+* **Correct heading**, on each deployment in an open place, takes the way the sensor really faced, as a compass point or **Not set**. Every record from that deployment then says so. For a deployment that is still running, `config.yml` takes the new heading too.
 
 Each correction can have a **Reason**, which is kept with the correction on the device. Copies of the database already downloaded, and data already uploaded, keep the old values.
 
@@ -92,7 +102,7 @@ Each correction can have a **Reason**, which is kept with the correction on the 
 To plan several places at once, choose **Import places**. Pick a CSV file, or paste its lines into the box.
 
 * The first line is the header. It starts with `description,lat,lon`, then has one column for each sensor turned on in the settings, named as in the settings. The dialog shows this device's header.
-* Each further line is one place. Leave `lat` and `lon` both empty for a place with no location. A sensor's column holds the way it faces, `n`, `ne`, `e`, `se`, `s`, `sw`, `w`, or `nw`, or nothing.
+* Each further line is one place. Leave `lat` and `lon` both empty for a place with no location. A sensor's column holds the way it faces: a compass point (`n`, `ne`, `e`, `se`, `s`, `sw`, `w`, or `nw`), a heading in whole degrees from north (0 to 359, such as `40`), or nothing. A point is saved as its centre, so `e` is 90.
 * A file can be up to 64 KiB.
 
 For a device with the Pi camera and one radar:
@@ -153,7 +163,7 @@ The table holds the places the device has been at that have a location. A planne
 * A place the control app no longer has, because you deleted it.
 * A deployment from [before any place was recorded](#the-location-page), which names no place.
 
-A [correction](#correct-a-wrong-location-or-bearing) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
+A [correction](#correct-a-wrong-location-or-heading) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
 
 The database on the device is unchanged: it never holds the table or the view, and the **Download the database** button on the [Data export](../ui/database.md#download-the-database) page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the [`exact_location`](../data-and-payloads/data-overview.md#the-exact-location-in-a-database-copy) attribute holds when you share the exact location.
 

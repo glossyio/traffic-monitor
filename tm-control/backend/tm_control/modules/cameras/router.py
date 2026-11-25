@@ -233,7 +233,7 @@ def point_camera(
 
 @router.post("/{name}/neutral-name", response_model=CamerasState)
 def neutral_name(name: str, request: Request, admin: User = Depends(require_admin)) -> CamerasState:
-    """Re-key an entry to a new neutral name, and move its bearings in every place to the new name."""
+    """Re-key an entry to a new neutral name, and move its headings in every place to the new name."""
     app_state = request.app.state
     with app_state.reconcile_lock:
         config = load_config(app_state)

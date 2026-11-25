@@ -4,8 +4,8 @@
   always in view and its choices in a closed panel. Opening a place's panel asks for its events and deployments
   (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one edited, in PlaceForm's dialog.
   "Deploy here" on a planned place, or "Re-deploy here" on a used one, opens DeployReview to move the unit there;
-  "Modify deployment" on the place in use opens it to record a turn of the unit (a bearing changed). A used place or
-  the place in use can have its location, or a deployment's bearing, corrected in CorrectDialog. "Import places" adds
+  "Modify deployment" on the place in use opens it to record a turn of the unit (a heading changed). A used place or
+  the place in use can have its location, or a deployment's heading, corrected in CorrectDialog. "Import places" adds
   planned places from a CSV in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a
   confirmation; the place in use can't. "Exact locations" saves the places' exact locations as a CSV (GET /surveys/export)
   or starts the download of a database copy that holds them (POST /surveys/database-copy), each after a confirmation.
@@ -20,7 +20,6 @@ import { ago } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import {
   PRECISIONS,
-  bearingTitle,
   deployWords,
   formatExact,
   formatStored,
@@ -29,6 +28,7 @@ import {
 } from './coordinates'
 import CorrectDialog from './CorrectDialog.vue'
 import DeployReview from './DeployReview.vue'
+import { facing } from './heading'
 import ImportPlaces from './ImportPlaces.vue'
 import PlaceDetails, { type Details } from './PlaceDetails.vue'
 import PlaceForm from './PlaceForm.vue'
@@ -89,8 +89,8 @@ const cardItems = computed(() => {
     { label: 'Exact location', value: formatExact(place.lat, place.lon) },
     { label: 'Sharing', value: SHARING_WORDS[state.value.sharing] },
     ...state.value.sensors.map((sensor) => ({
-      label: `Bearing, ${sensor.sensor_name}`,
-      value: bearingTitle(sensor.bearing),
+      label: `Facing, ${sensor.sensor_name}`,
+      value: facing(sensor.heading_deg),
     })),
   ]
 })
@@ -284,12 +284,12 @@ function openReview(place: SurveyOut) {
   deployOpen.value = true
 }
 
-// Correcting a place's location, or one deployment's bearing, in CorrectDialog. `correcting` keeps what was last
+// Correcting a place's location, or one deployment's heading, in CorrectDialog. `correcting` keeps what was last
 // corrected after the dialog closes, as `deployTo` does. Once corrected, the list and the open panels load again.
 const correctOpen = ref(false)
-const correcting = ref<{ kind: 'location' | 'bearing'; place: SurveyOut; deployment?: DeploymentOut } | null>(null)
+const correcting = ref<{ kind: 'location' | 'heading'; place: SurveyOut; deployment?: DeploymentOut } | null>(null)
 
-function openCorrection(kind: 'location' | 'bearing', place: SurveyOut, deployment?: DeploymentOut) {
+function openCorrection(kind: 'location' | 'heading', place: SurveyOut, deployment?: DeploymentOut) {
   correcting.value = { kind, place, deployment }
   correctOpen.value = true
 }
@@ -393,7 +393,7 @@ onMounted(load)
                 :details="details[place.id]"
                 :nodered="state.nodered"
                 @retry="loadDetails(place.id)"
-                @correct-bearing="(deployment) => openCorrection('bearing', place, deployment)"
+                @correct-heading="(deployment) => openCorrection('heading', place, deployment)"
               />
               <div class="d-flex flex-wrap ga-3">
                 <v-btn color="primary" size="large" :disabled="working !== null" @click="openReview(place)">

@@ -119,6 +119,28 @@ def test_an_older_manifest_without_sharing_loads_the_defaults(tmp_path):
     assert (sharing.maintainer_host, sharing.public_map_live) == ("tb.roadwaybiome.com", False)
 
 
+def test_the_fixture_manifest_names_the_update_source():
+    update = load_manifest(FIXTURES / "manifest.json").update
+    assert (update.repo, update.channel) == ("example/traffic-monitor-test", "development")
+
+
+def test_an_older_manifest_without_update_loads_the_defaults(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["update"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    update = load_manifest(path).update
+    assert (update.repo, update.channel) == ("glossyio/traffic-monitor", "stable")
+
+
+def test_a_channel_this_version_does_not_know_still_loads(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    doc["update"]["channel"] = "beta"
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).update.channel == "beta"
+
+
 def test_the_fixture_manifest_names_the_map_sources():
     info = load_manifest(FIXTURES / "manifest.json").map
     assert info.style_url == "https://tiles.openfreemap.org/styles/liberty"

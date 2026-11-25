@@ -356,6 +356,26 @@ def deploy_remote(name, hostvars, src, tmsetup_args, log_file):
     return stream(argv + tmsetup_args, log_file)
 
 
+def source_args(src):
+    """tmsetup.sh arguments that hand the installer the commit and branch of src, since the copy on the Pi has no .git.
+
+    The branch is left out when it has a character the role wouldn't record (tmsetup.sh splits its arguments on
+    spaces and lets the shell expand them), and both are left out when src isn't a checkout.
+    """
+    def git(*args):
+        result = subprocess.run(["git", "-C", str(src), "rev-parse", *args], capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    commit = git("HEAD")
+    if not commit or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        return []
+    args = ["-a", f"e tmsetup_source_commit={commit}"]
+    branch = git("--abbrev-ref", "HEAD")
+    if branch and re.fullmatch(r"[A-Za-z0-9._/-]{1,200}", branch):
+        args += ["-a", f"e tmsetup_source_branch={branch}"]
+    return args
+
+
 def deploy_on_pi(name, hostvars, src, tmsetup_args, log_file):
     """Copy the src working tree to ~/tm-src on the Pi and run tmsetup.sh there, as a local install."""
     ssh, destination = ssh_command(name, hostvars)
@@ -365,6 +385,7 @@ def deploy_on_pi(name, hostvars, src, tmsetup_args, log_file):
     if code:
         log(f"rsync to {name} failed with exit {code}")
         return code
+    tmsetup_args = [*source_args(src), *tmsetup_args]  # before the caller's, so a caller's own value wins
     if codedir := hostvars.get("tmsetup_codedir"):
         tmsetup_args = ["-d", codedir, *tmsetup_args]
     remote = f"cd {ON_PI_DIR} && bash script/tmsetup.sh -y {shlex.join(tmsetup_args)}"
