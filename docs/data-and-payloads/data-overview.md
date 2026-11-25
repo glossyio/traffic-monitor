@@ -62,7 +62,7 @@ The [radar](radar-payload.md) tables are described on their own page. The two ta
 
 ### deployment
 
-A row for each combination of sensor, survey, and mounting the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id, the sensor's heading, or how the sensor is mounted changes; moving the coordinates alone does not start one. A correction made on the Location page changes the row in place instead, and starts no new row. Removing a sensor's entry from `config.yml` ends its row; disabling the sensor doesn't. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
+A row for each combination of sensor, survey, and mounting the device has had, taken from the `deployment` settings in [config.yml](../configuration/node-red-config.md#deployment). A new row starts when the survey id, the sensor's heading, or how the sensor is mounted changes; moving the coordinates alone does not start one. A correction made on the Location page, and a change of the place's time zone, change the row in place instead, and start no new row. Removing a sensor's entry from `config.yml` ends its row; disabling the sensor doesn't. Every other table's `deployment_id` column holds the `id` of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.
 
 | Column | Type | Meaning |
 |---|---|---|
@@ -73,6 +73,7 @@ A row for each combination of sensor, survey, and mounting the device has had, t
 | `location_precision` | INTEGER | The number of decimal places kept in `lat` and `lon`: `1` (about 10 km) or `2` (about 1 km). Empty when the row has no coordinates. |
 | `lat` | REAL | Latitude in decimal degrees, rounded to `location_precision` decimal places; empty when no location was given or the precision is `none` |
 | `lon` | REAL | Longitude in decimal degrees, rounded the same way |
+| `timezone` | TEXT | The place's time zone as a tz database name, such as `America/New_York`. Empty when none was set. It is recorded whatever the precision, also when no location is stored. |
 | `heading_deg` | INTEGER | The way the sensor faces, in whole degrees clockwise from true north: 0 is north, 90 is east, 180 is south, 270 is west. From 0 to 359. Empty when no heading was set. |
 | `pitch_deg` | REAL | How far below level the centre of the sensor's view points, in degrees, with one decimal. From 0 (level) to 90 (straight down). Empty when not recorded. |
 | `height_m` | REAL | How high the sensor is above the road, in metres, with two decimals. Above 0 and at most 100. Empty when not recorded. |
@@ -83,6 +84,8 @@ A row for each combination of sensor, survey, and mounting the device has had, t
 | `deviceName` | TEXT | The Raspberry Pi's serial number (`TM_RPI_SN` in [node-red-tm.env](../configuration/environment.md)). Rows written by earlier releases can hold `undefined` instead. |
 
 The four mounting columns (`pitch_deg`, `height_m`, `view_distance_m`, and `mount`) are empty on a row that was recorded before the columns existed, and on any row for which nothing was recorded. Only a correction made through the control app changes them on a row that exists.
+
+`timezone` is empty on a row that was recorded before the column existed, and on a row at a place with no time zone. Changing a place's time zone on the control app rewrites it on every row of that place, the ended ones too. It starts no deployment and changes no `deployment_id`.
 
 !!! note "Older exports have `bearing`"
 
