@@ -162,4 +162,5 @@ nav:
   - Development:
       - Dev environment: development/dev-environment.md
       - tm-control: development/tm-control.md
+      - Software update: development/software-update.md
       - Contributing and writing docs: development/contributing.md

@@ -1,8 +1,9 @@
 # Runs the off-device checks from CONTRIBUTING.md on every pull request and on
 # each push to dev:
 #   - python: the pytest suites (schema, installer, tm-control, run against
-#     tm-control's locked packages), the Ansible, Jinja, flows.json, and
-#     tmsetup.sh syntax checks, and the checks of the two Python locks
+#     tm-control's locked packages), the Ansible (setup and update prepare),
+#     Jinja, flows.json, tmsetup.sh, and tm-update syntax checks, and the
+#     checks of the two Python locks
 #     (installable, consistent, and a wheel for the device's 64-bit Arm Python)
 #   - ui: tm-control's UI build (with its type check) and Vitest tests, on the
 #     Node version the device builds it with
@@ -69,13 +70,19 @@ jobs:
         run: python -m pytest -rs container/node-red-tm/schema/tests script/tests tm-control/backend/tests
       - name: Ansible syntax
         working-directory: script/ansible
-        run: ansible-playbook -i localhost setup.yml --syntax-check </dev/null
+        run: |
+          ansible-playbook -i localhost setup.yml --syntax-check </dev/null
+          ansible-playbook -i localhost update_prepare.yml --syntax-check </dev/null
       - name: Jinja templates parse
         run: python -c 'import sys,jinja2; e=jinja2.Environment(); [e.parse(open(f).read(), filename=f) for f in sys.argv[1:]]' $(git ls-files '*.j2')
       - name: flows.json is valid JSON
         run: python -m json.tool container/node-red-tm/data/flows.json >/dev/null
       - name: tmsetup.sh syntax
         run: bash -n script/tmsetup.sh
+      # tm-update imports only the standard library, and the device runs it
+      # with -EP, so this runs it the same way.
+      - name: tm-update starts
+        run: python3 -EP script/tm-update --help
       # The installer's Ansible, from its lock into a throwaway venv, as
       # tmsetup.sh installs it.
       - name: Ansible lock installs and is consistent

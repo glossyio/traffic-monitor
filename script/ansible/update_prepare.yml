@@ -1,9 +1,12 @@
 ---
 # Prepares an update while the installed version keeps running: refuses what an update can't do, downloads
-# everything the switch needs, and tries the settings changes on the staged code. It writes only into the update's
-# work folder (and apt's own package cache). Run it with tmsetup_update_work_dir, tmsetup_update_stage_dir,
-# tmsetup_update_reason_file, and tmsetup_update_build_tag; the switch itself is setup.yml with
-# tmsetup_update_mode=true.
+# everything the switch needs, builds the images, and tries the settings changes on the staged code. It keeps its
+# files in the update's work folder and changes nothing the running version uses. Outside the work folder it also
+# refreshes apt's package index and fills its package cache, adds image tags (the throwaway tags and the stage tags)
+# and the build cache to Podman's storage, sets the update slice's runtime properties, and, for the nginx check,
+# makes a temporary folder in <codedir>/revproxy and removes it again. Run it with tmsetup_update_work_dir,
+# tmsetup_update_stage_dir, tmsetup_update_reason_file, and tmsetup_update_build_tag; the switch itself is setup.yml
+# with tmsetup_update_mode=true.
 - name: Traffic Monitor Update Prepare
   connection: local
   hosts: localhost
