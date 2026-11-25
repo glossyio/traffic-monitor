@@ -137,6 +137,16 @@ def test_only_two_restore_points_are_kept_by_a_run(device):
     assert names == sorted(["20261103T000000Z-ccccccc", Path(device.state()["restore_point"]).name])
 
 
+def test_the_new_restore_point_survives_a_clock_behind_the_old_ones(device):
+    for name in ("29990101T000000Z-aaaaaaa", "29990102T000000Z-bbbbbbb"):
+        (device.paths.restore_root / name).mkdir(parents=True)
+    assert device.main() == 0
+    folder = Path(device.state()["restore_point"])
+    assert folder.is_dir()
+    assert sorted(entry.name for entry in device.paths.restore_root.iterdir()) == sorted(
+        [folder.name, "29990102T000000Z-bbbbbbb"])
+
+
 def test_a_failed_restore_point_ends_the_run_as_prepare_failed_with_nothing_half_made(device, monkeypatch):
     def boom(*args, **kwargs):
         raise OSError("disk trouble")

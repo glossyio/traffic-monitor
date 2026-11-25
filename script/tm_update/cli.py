@@ -169,7 +169,7 @@ def _restore_point(ctx: Context) -> None:
     _say(ctx.log, "stage restore_point")
     tree = ctx.paths.src_root / ctx.installed.commit
     folder = restore.make(ctx.installed, ctx.handover, ctx.paths, tree if tree.is_dir() else None)
-    restore.keep_newest(ctx.paths)
+    restore.keep_newest(ctx.paths, just_made=folder)
     ctx.state.set(restore_point=str(folder))
     ctx.state.finish("restore_point")
 

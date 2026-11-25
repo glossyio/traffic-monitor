@@ -57,6 +57,14 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _sync_folder(folder: Path) -> None:
+    descriptor = os.open(folder, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _regular(path: Path) -> bool:
     return path.is_file() and not path.is_symlink()
 
@@ -187,19 +195,25 @@ def make(installed: Installed, handover: Handover, paths: Paths, previous_tree: 
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
+        os.sync()  # every copy and folder reaches the disk before the folder gets its final name
         os.rename(partial, final)
     except BaseException:
         shutil.rmtree(partial, ignore_errors=True)
         raise
+    _sync_folder(paths.restore_root)
     return final
 
 
-def keep_newest(paths: Paths, count: int = KEEP) -> None:
-    """Remove all but the newest restore points, by name (the time comes first). Anything else in the folder, a
+def keep_newest(paths: Paths, count: int = KEEP, just_made: "Path | None" = None) -> None:
+    """Remove all but the newest restore points, by name (the time comes first). The one just made is never removed
+    and counts as one of those kept, whatever the clock said when it was named. Anything else in the folder, a
     partial one included, is left alone."""
     if not paths.restore_root.is_dir():
         return
     folders = sorted(entry for entry in paths.restore_root.iterdir()
                      if _NAME.fullmatch(entry.name) and entry.is_dir() and not entry.is_symlink())
-    for entry in folders[:max(len(folders) - count, 0)]:
+    if just_made is not None:
+        folders = [entry for entry in folders if entry != just_made]
+        count -= 1
+    for entry in folders[:max(len(folders) - max(count, 0), 0)]:
         shutil.rmtree(entry)

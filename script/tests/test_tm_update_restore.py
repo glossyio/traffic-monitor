@@ -289,3 +289,47 @@ def test_it_says_nothing_to_the_log_streams(world, capsys):
     _make(paths)
     out = capsys.readouterr()
     assert out.out == "" and out.err == ""
+
+
+def test_the_new_one_is_kept_even_when_the_clock_names_it_older_than_the_rest(world):
+    paths, _ = world
+    for name in ("29990101T000000Z-aaaaaaa", "29990102T000000Z-bbbbbbb", "29990103T000000Z-ccccccc"):
+        _folder(paths, name)
+    new = _make(paths)
+    restore.keep_newest(paths, just_made=new)
+    assert sorted(entry.name for entry in paths.restore_root.iterdir()) == sorted(
+        [new.name, "29990103T000000Z-ccccccc"])
+
+
+def test_just_made_alone_is_kept_with_a_count_of_one(world):
+    paths, _ = world
+    _folder(paths, "29990101T000000Z-aaaaaaa")
+    new = _make(paths)
+    restore.keep_newest(paths, count=1, just_made=new)
+    assert [entry.name for entry in paths.restore_root.iterdir()] == [new.name]
+
+
+def test_everything_is_synced_before_the_rename_and_the_folder_after_it(world, monkeypatch):
+    paths, _ = world
+    _every_listed_file(paths)
+    events = []
+    monkeypatch.setattr(restore.os, "sync", lambda: events.append("sync"))
+    real_fsync, real_rename = os.fsync, os.rename
+
+    def fsync(fd):
+        events.append(("fsync", os.readlink(f"/proc/self/fd/{fd}")))
+        real_fsync(fd)
+
+    def rename(source, target):
+        events.append(("rename", Path(source).name))
+        real_rename(source, target)
+
+    monkeypatch.setattr(restore.os, "fsync", fsync)
+    monkeypatch.setattr(restore.os, "rename", rename)
+    folder = _make(paths)
+    kinds = [event if isinstance(event, str) else event[0] for event in events]
+    assert kinds.count("sync") == 1 and kinds.count("rename") == 1
+    assert kinds.index("sync") < kinds.index("rename")
+    after = events[kinds.index("rename") + 1:]
+    assert ("fsync", str(paths.restore_root)) in after
+    assert folder.is_dir()
