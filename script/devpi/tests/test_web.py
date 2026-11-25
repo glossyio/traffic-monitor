@@ -1521,6 +1521,32 @@ def test_surveys_needs_an_admin(address, admin_session, viewer_session):
     assert state.get("precision") in ("none", "1", "2"), f"GET {API}/surveys: precision is {state.get('precision')!r}"
 
 
+def test_a_places_time_zone_needs_an_admin(address, admin_session, viewer_session):
+    """A place's time zone is changed by admins: a viewer's PUT gets require_admin's 403. The viewer sends the zone the
+    place in use already has, so the request would change nothing even if it were let through."""
+    state = places_state(address, admin_session)
+    place = next((one for one in state["surveys"] if one.get("id") == state.get("in_use")), None)
+    assert place is not None, f"GET {API}/surveys lists no place in use"
+    answer = request_from_this_machine(address, f"{API}/surveys/{place['id']}/timezone", "PUT", viewer_session,
+                                       {"timezone": place.get("timezone")})
+    assert admin_refusal(answer) == (403, ADMIN_ONLY), (
+        f"PUT {API}/surveys/<place in use>/timezone with a viewer session (status, message)")
+
+
+def test_surveys_answer_each_places_zone_and_the_clocks(host, address, admin_session):
+    """Every place in GET /surveys has a `timezone` (a name or null), and `clock_timezone` is the zone the device's
+    clock is set to, as timedatectl reports it. Only the keys and the clock's zone are checked: a place's zone
+    needn't match the clock's."""
+    state = places_state(address, admin_session)
+    lacking = [index for index, place in enumerate(state["surveys"]) if "timezone" not in place]
+    assert not lacking, f"GET {API}/surveys: places without a timezone key, by position: {lacking}"
+    wrong = [index for index, place in enumerate(state["surveys"])
+             if place["timezone"] is not None and not isinstance(place["timezone"], str)]
+    assert not wrong, f"GET {API}/surveys: places whose timezone is neither a name nor null, by position: {wrong}"
+    clock = host.check_output("timedatectl show -p Timezone --value")
+    assert state.get("clock_timezone") == clock, "clock_timezone from GET /surveys and from timedatectl differ"
+
+
 # The keys of one sensor in GET and PUT /surveys/<place>/mounting (SensorMounting in the Location module's router)
 MOUNTING_SENSOR_KEYS = {
     "sensor_type", "sensor_name", "heading_deg", "pitch_deg", "height_m", "view_distance_m", "measured", "mount",
