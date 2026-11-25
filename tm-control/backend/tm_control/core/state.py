@@ -158,6 +158,11 @@ MIGRATIONS = [
     """
     ALTER TABLE survey_sensors ADD COLUMN unconfirmed INTEGER NOT NULL DEFAULT 0 CHECK (unconfirmed IN (0, 1));
     """,
+    # The place's time zone (issue #370): an IANA name the device lists, as picked, or NULL for none. Every place from
+    # before has none until an admin sets one.
+    """
+    ALTER TABLE surveys ADD COLUMN timezone TEXT;
+    """,
 ]
 
 

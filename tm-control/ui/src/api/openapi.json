@@ -6587,6 +6587,17 @@
             "type": "array",
             "title": "Headings"
           },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
           "stored_lat": {
             "anyOf": [
               {
@@ -6655,6 +6666,7 @@
           "created_at",
           "updated_at",
           "headings",
+          "timezone",
           "stored_lat",
           "stored_lon",
           "first_used",

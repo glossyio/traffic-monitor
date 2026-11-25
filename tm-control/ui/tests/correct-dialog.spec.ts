@@ -21,6 +21,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
     headings: [],
+    timezone: null,
     stored_lat: 45.52,
     stored_lon: -122.69,
     first_used: null,

@@ -91,7 +91,7 @@ def test_location_round_trips_and_may_be_absent(places):
 
 def test_update_planned(places):
     _create(places, "00000001-si", headings=HEADINGS)
-    updated = places.update_planned("00000001-si", "new note", 45.0, -122.0, HEADINGS[:1])
+    updated = places.update_planned("00000001-si", "new note", 45.0, -122.0, HEADINGS[:1], None)
     assert (updated.description, updated.lat, updated.lon) == ("new note", 45.0, -122.0)
     assert updated.headings == HEADINGS[:1]
     assert places.get("00000001-si") == updated
@@ -102,9 +102,9 @@ def test_update_planned_refuses_a_used_place(places):
     _create(places, "00000002-si", "in_use")
     for survey_id in ("00000001-si", "00000002-si"):
         with pytest.raises(ValueError):
-            places.update_planned(survey_id, "x", None, None, [])
+            places.update_planned(survey_id, "x", None, None, [], None)
     with pytest.raises(ValueError):
-        places.update_planned("ffffffff-si", "x", None, None, [])
+        places.update_planned("ffffffff-si", "x", None, None, [], None)
 
 
 def test_set_point_changes_the_location_only(places):
@@ -240,7 +240,7 @@ def test_editing_a_planned_place_still_replaces_its_headings(places):
     places.set_mounting("00000001-si", _mounting(**POLE))
     kept = [SensorHeading(sensor_type="cameras", sensor_name="picam_h265", heading_deg=250),
             SensorHeading(sensor_type="radars", sensor_name="main_st", heading_deg=10)]
-    updated = places.update_planned("00000001-si", "new note", None, None, kept)
+    updated = places.update_planned("00000001-si", "new note", None, None, kept, None)
     assert updated.headings == kept
     assert places.mountings("00000001-si") == [
         _mounting(**{**POLE, "heading_deg": 250}), _mounting("main_st", "radars", heading_deg=10),
@@ -293,7 +293,7 @@ def test_editing_a_planned_place_keeps_the_mark_with_the_four(places, state):
     places.set_mounting("00000001-si", _mounting(**POLE))
     with state.connect() as con:  # a planned place never has a marked row today; the edit mustn't lose one
         con.execute("UPDATE survey_sensors SET unconfirmed = 1 WHERE sensor_name = 'picam_h265'")
-    places.update_planned("00000001-si", "new note", None, None, HEADINGS)
+    places.update_planned("00000001-si", "new note", None, None, HEADINGS, None)
     assert _unconfirmed(places, "00000001-si") == [("cameras", "picam_h265")]
 
 
@@ -333,3 +333,35 @@ def test_no_method_annotation_reads_an_earlier_method_of_its_class():
     for path in sorted(package.rglob("*.py")):
         found += _shadowed(ast.parse(path.read_text()), f"{path.relative_to(package)}: ")
     assert found == []
+
+
+def test_a_place_is_created_with_its_zone(places):
+    made = places.create("00000001-si", "a note", None, None, [], "ui", "planned", None, timezone="Asia/Tokyo")
+    assert made.timezone == "Asia/Tokyo"
+    assert places.get("00000001-si").timezone == "Asia/Tokyo"
+    assert _create(places, "00000002-si").timezone is None
+
+
+def test_update_planned_replaces_the_zone(places):
+    places.create("00000001-si", "a note", None, None, [], "ui", "planned", None, timezone="Asia/Tokyo")
+    updated = places.update_planned("00000001-si", "a note", None, None, [], "Europe/Berlin")
+    assert updated.timezone == "Europe/Berlin"
+    assert places.get("00000001-si").timezone == "Europe/Berlin"
+    assert places.update_planned("00000001-si", "a note", None, None, [], None).timezone is None
+    assert places.get("00000001-si").timezone is None
+
+
+def test_set_timezone_changes_the_zone_and_the_updated_time(places):
+    _create(places, "00000001-si", "used", now=1000)
+    before = places.get("00000001-si")
+    places.set_timezone("00000001-si", "America/New_York", now=2000)
+    after = places.get("00000001-si")
+    assert after.timezone == "America/New_York"
+    assert after.updated_at != before.updated_at and after.created_at == before.created_at
+    places.set_timezone("00000001-si", None, now=3000)
+    assert places.get("00000001-si").timezone is None
+
+
+def test_a_place_from_before_has_no_zone(places):
+    assert _create(places, "00000001-si").timezone is None
+    assert places.get("00000001-si").timezone is None

@@ -47,6 +47,7 @@ const PLANNED: SurveyOut = {
   created_at: '2026-10-01T12:00:00+00:00',
   updated_at: '2026-10-01T12:00:00+00:00',
   headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 135 }],
+  timezone: null,
   stored_lat: 45.0,
   stored_lon: -122.0,
   first_used: null,

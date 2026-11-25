@@ -2616,6 +2616,8 @@ export interface components {
             updated_at: string;
             /** Headings */
             headings: components["schemas"]["SensorHeading"][];
+            /** Timezone */
+            timezone: string | null;
             /** Stored Lat */
             stored_lat: number | null;
             /** Stored Lon */

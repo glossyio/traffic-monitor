@@ -611,7 +611,7 @@ def edit_place(survey_id: str, body: SurveyIn, request: Request, admin: User = D
         if place.status != "planned":
             raise ApiError(409, "not_planned", "Only a planned place can be edited. Correct a used place instead.")
         survey = Places(app_state.state).update_planned(
-            place.id, _description(body.description), lat, lon, headings
+            place.id, _description(body.description), lat, lon, headings, place.timezone
         )
     Audit(app_state.state).record(admin.id, "survey.update", place.id)
     return _one(app_state, survey, ask_nodered=False)

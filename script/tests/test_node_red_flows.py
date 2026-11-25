@@ -21,6 +21,7 @@ sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
 from tm_control.modules.location import mounting  # noqa: E402
 from tm_control.modules.location.coordinates import read_heading  # noqa: E402
+from tm_control.modules.location.zones import read_zone  # noqa: E402
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -746,6 +747,63 @@ def test_the_flows_read_a_heading_as_the_control_app_does():
         if block:  # an empty block takes the top level's heading
             own, _ = init_defaults(heading_config({"heading_deg": 90}, copy.deepcopy(block)))
             assert headings(own)[1] == expected, block
+
+
+# One table of values for deployment.timezone, read by the flows and by tm-control's read_zone. Moving one rule means
+# moving both, whitespace included: JavaScript's trim and Python's strip don't agree about \x1c or \ufeff. ABSENT
+# stands for no `timezone` key at all (in the file's block, or in a request's body).
+ABSENT = object()
+ZONE_VALUES = [
+    "America/New_York", " Europe/Berlin ", "Asia/Tokyo\n", "UTC", "Etc/GMT+5", "America/Argentina/Buenos_Aires",
+    "Mars/Olympus", None, ABSENT, "", "   ", 5, True, ["Asia/Tokyo"], "not a zone!", "../../etc/passwd", "a/b/c/d",
+    "/Asia/Tokyo", "Asia/Tokyo/", "Asia//Tokyo", "a" * 64, "a" * 65, "\x1cAsia/Tokyo", "\ufeffAsia/Tokyo",
+    "\u00a0Asia/Tokyo\u3000",
+    # Whitespace JavaScript's trim and Python's strip both remove (or both keep), each around a valid name
+    "\x1fAsia/Tokyo\x1f", "\x85Asia/Tokyo\x85", "\vAsia/Tokyo\f", " Asia/Tokyo ", "\u1680Asia/Tokyo\u200a",
+    "\u2028Asia/Tokyo\u2029", "\u202fAsia/Tokyo\u205f", "\u2028\u2029Asia/Tokyo\u202f\u205f", "\u200bAsia/Tokyo",
+    "\u180eAsia/Tokyo",
+]
+
+
+def given_zone(value):
+    """The config.yml's deployment block with this value for timezone (no key at all for ABSENT)."""
+    config = new_device_config()
+    config["deployment"].pop("timezone", None)
+    if value is not ABSENT:
+        config["deployment"]["timezone"] = value
+    return config
+
+
+@needs_node
+def test_the_flows_read_a_zone_as_the_control_app_does():
+    """Each value goes through init config defaults and through read_zone; the answers are the same."""
+    for value in ZONE_VALUES:
+        payload, _ = init_defaults(given_zone(value))
+        assert payload["deployment"]["timezone"] == read_zone(value), repr(value)
+
+
+@needs_node
+def test_the_correction_endpoint_validates_a_zone_as_the_control_app_reads_it():
+    """The third copy of the rule: for every value, "tm-internal: validate timezone correction" (the request body is
+    {"timezone": value}) passes the zone read_zone reads and refuses what it doesn't read. The two values where a
+    request's meaning differs from a file's are stated here, not folded into the comparison: null in a body is a
+    request to clear the zone, so it passes with a null zone though read_zone(None) is None too; and a body with no
+    `timezone` key is refused, since a correction must say which zone it makes."""
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate timezone correction")
+    for value in ZONE_VALUES:
+        body = {} if value is ABSENT else {"timezone": value}
+        [step] = run_functions([(validator, {"req": {"params": {"id": SURVEY_ID}}, "payload": body})])["results"]
+        passed, refused = step["result"]
+        zone = read_zone(value)
+        if value is None:
+            assert refused is None and passed["params"] == {"$survey_id": SURVEY_ID, "$timezone": None}
+        elif value is ABSENT:
+            assert passed is None and refused["statusCode"] == 400 and refused["payload"] == bad_request("timezone")
+        elif zone is None:
+            assert passed is None and refused["statusCode"] == 400 and refused["payload"] == bad_request("timezone"), \
+                repr(value)
+        else:
+            assert refused is None and passed["params"] == {"$survey_id": SURVEY_ID, "$timezone": zone}, repr(value)
 
 
 # The other four facts of how a sensor is mounted, beside its heading: each a value within its limits, rounded, or
