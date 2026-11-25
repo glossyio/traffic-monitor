@@ -215,6 +215,8 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 - Three small scoped style blocks: the setup code field; spacing for the license agreement's headings and
   paragraphs, which come from markdown and can't take Vuetify's classes; and tabular digits for the clocks on the
   Date and time page.
+- `touch-action: none`, as a style attribute on the heading dial's ring only (`HeadingDial.vue`), so a finger dragged
+  on the ring turns the needle instead of scrolling the page. It is behaviour, not look; Vuetify has no class for it.
 
 ### Layout
 
@@ -1098,6 +1100,102 @@ importing places open dialogs from this page, so they move nothing on it.
   place or none. A file is read into the same box as pasted text, so what's previewed is always on screen, and
   64 KiB, the API's limit, is checked before anything is sent. The dialog is `scrollable`, so a long preview scrolls
   under the title and the buttons stay in view, and `persistent`, so a click beside it can't hide the result.
+
+#### The heading dial
+
+`HeadingDial.vue` is how the Mounting page sets which way a sensor faces: a ring to tap or drag, the eight compass
+points as buttons around it, and a number field for an exact heading. It is a plain input (`heading`, `label`,
+`disabled`; it emits `update:heading`) and sends nothing to the API. `HeadingPick` stays the pick for the place form,
+the review, and the correction.
+
+```text
++----------------------------------+
+| Heading                          |  the label
+|(NW)          (N)          (NE)   |  44 px round buttons
+|       .-------+-------.          |
+|      /            /    \         |  needle in the primary color
+|(W)  +         o         +  (E)   |  ring 200 px, a tick at each point
+|      \                 /         |
+|       '-------+-------'          |
+|(SW)          (S)          (SE)   |
+| 52°, north-east.                 |  facingWords
+| [Degrees from north 52] [Not set]|
+|  Enter a whole number from 0 to  |  only for a number outside 0 to 359
+|  359.                            |
+| North is up on a map. A phone's  |  secondary text
+| compass shows magnetic north ... |
++----------------------------------+
+```
+
+At 1280 px the dial stays on the left at the same size, and the words, the field, Not set, and the help line sit in a
+column beside it (`v-row` with `v-col cols="12" sm="auto"` and `v-col cols="12" sm`); below 600 px they stack under it.
+
+- The dial is 288 px square at every width, which leaves room for a card's padding inside a phone's 343 px: three
+  rows of Vuetify utilities (`d-inline-flex flex-column`, each row `d-flex justify-space-between align-center`). The
+  middle row is W, a 200 px SVG, E; the top and bottom rows stretch to the same width, so N and S sit over the
+  centre and each corner point sits exactly on its 45° line. No CSS positions anything. Drawing the points inside the
+  SVG was rejected: SVG has no buttons, and a `<g role="button">` would have to rebuild focus, Enter, and Space by hand.
+- The points are real `v-btn`s, round and 44 px (`icon :size="44"`, the text "NE" as their content), outlined in the
+  body text color. The one whose centre is the heading is filled `primary` with `aria-pressed="true"`; at 52° none
+  is filled, because pressing NE would change 52 to 45. Each is named "NE, north-east, 45°", which keeps the visible
+  letters in the name for voice control. Tab goes through them in reading order (NW, N, NE, W, E, SW, S, SE), then the
+  field, then Not set.
+- The SVG (`width`, `height`, and `viewBox` attributes) holds the ring (`secondary`, on a `surface` face), a tick at
+  each of the eight points, the hub, and the needle in `primary`. Its colors come from Vuetify's `text-*` classes and
+  `currentColor`, so a device's own colors follow. It is `aria-hidden`, since the words and the buttons say all of it.
+- A press on the ring sets the heading there, and a drag follows the finger: `pointerdown` takes pointer capture, so
+  the drag keeps going when it leaves the ring, and `pointermove` sets it until `pointerup`, `pointercancel`, or
+  `lostpointercapture` (a hidden tab, say), so a drag that lost its pointer never follows a later hover.
+  `angleAt` turns the point into whole degrees clockwise with up as 0 (right 90, down 180, left 270), and 359.5
+  rounds to 0, so a drag across the top goes 358, 359, 0, 1 without a jump. A press on the hub (within 12 px of the
+  centre) changes nothing, because the angle there is noise. `touch-action: none` on the SVG only, so a drag on
+  the ring turns the needle instead of scrolling the page; a swipe anywhere else still scrolls.
+- The words under the dial are `facingWords`: "52°, north-east.", or "Not set." A `d-sr-only` live region says the
+  same after a point, Not set, a tap, or the end of a drag, never at each step of a drag, and not while typing,
+  because the field reads out its own value; leaving the field says the heading it set, so the region never holds an
+  older one.
+- The field is a `v-text-field` with `inputmode="numeric"`, the label "Degrees from north", and at most 12 rem wide
+  (its `max-width` prop). The text is sent whenever it is a whole number from 0 to 359, key by key, so the needle
+  follows the typing. Anything else ("52.5", "-1") is not sent and the field says "Enter a whole number from 0 to
+  359." Typing "400" sends 4, then 40, and refuses the third key: the heading is 40 while the field shows "400" and
+  the message. An empty field changes nothing and says nothing: it is the moment between deleting a number and typing
+  the next, and only Not set clears the heading (the maintainer chose this on review). Leaving the field puts it back
+  in step with the heading ("400" becomes 40, "05" becomes 5, an empty box shows the heading again) and clears the
+  message. When the heading changes by a point, a tap, or Not set, the field shows it (empty for Not set) and any
+  message goes.
+- Not set is an outlined button beside the field, 56 px tall to line up with it, filled `primary` with
+  `aria-pressed="true"` while there is no heading. The needle is then gone, the hub stays, and the field is empty.
+- The help line, under the field in the secondary color and tied to it with `aria-describedby`: "North is up on a
+  map. A phone's compass shows magnetic north unless it is set to true north. If you only know the compass point, tap
+  it."
+- The label is a `text-body-1` line above the dial, and the whole dial is a `role="group"` named by it, so a screen
+  reader says which sensor's heading a button belongs to.
+- Disabled: the buttons and the field are Vuetify's disabled ones, the SVG is drawn at Vuetify's disabled opacity
+  (its `opacity` attribute, 0.38) and ignores the pointer, and `touch-action` is left off, so the page scrolls over
+  it. The words stay at full strength, since the heading is still a fact.
+
+The dial was checked in a scratch mount at 375 px and 1280 px wide: a measured heading (52), a point's centre (45),
+Not set, disabled, a number outside 0 to 359, a drag that went off the ring, and a point pressed from the keyboard.
+
+- The field had a "°" suffix, which Vuetify puts at the far end of the box, so it read as a stray mark, away from the
+  number. It's gone: the label says degrees, and the words above say "52°".
+- Not set (44 px) sat higher than the field (56 px) beside it. It's 56 px tall now, so the two line up.
+- Looked at and kept: at 375 px the dial leaves about 55 px free on its right, and the field's message wraps onto two
+  lines under the 12 rem field.
+- Looked at and kept: a pressed point that also has keyboard focus is a shade darker, from Vuetify's focus overlay, as
+  every filled button is; the focus ring around it is what shows the focus.
+
+Defaults rejected for the dial:
+
+- A slider (`v-slider`) from 0 to 359: it puts north at both ends, so a turn from 350 to 10 crosses the whole bar.
+- The eight-point `v-select` alone, as `HeadingPick`: a heading measured with a phone (52) can't be entered.
+- `v-number-input`: it quietly clamps 400 to 359 when the field loses focus, and its plus and minus buttons repeat
+  what the points and the ring do.
+- Dragging the needle's tip only: a small target on a phone. Any press on the ring moves the needle there.
+- The ring as a keyboard slider (`role="slider"`, arrow keys): a ninth stop that repeats the field. Keyboard users
+  type the number or press a point.
+- Points in compass order for Tab (N, NE, E, ...): it needs `tabindex` juggling, and reading order matches what's seen.
+- A larger dial on a wide screen: one size is one set of numbers to test, and a mouse doesn't need more room.
 
 #### What the screenshot review changed
 
