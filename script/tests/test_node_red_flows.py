@@ -879,6 +879,7 @@ def test_status_answers_before_the_first_config_load():
     assert 0 <= body["uptime_seconds"] <= 5
     assert body["config"] == {"loaded_at": None, "errors": []}
     assert body["schema_version"] is None
+    assert body["database_bytes"] is None
     assert body["deployment"] is None
     assert body["radars"] == {name: {"enabled": False, "port_open": False, "last_reading_at": None}
                               for name in RADAR_NAMES}
@@ -2672,6 +2673,36 @@ def test_status_reports_the_setup_history():
     seen = {"received_at": "2026-10-28T22:54:55.000Z", "complete": True, "changed_at": None}
     [step] = run_functions([status_step()], context={"tm_status": {"setup": seen}})["results"]
     assert step["result"]["payload"]["setup"] == seen
+
+
+@needs_node
+def test_status_reports_the_database_size(tmp_path):
+    database = tmp_path / "tmdb.sqlite"
+    database.write_bytes(b"\0" * 5000)
+    [step] = run_functions([status_step()], env={"TM_DATABASE_PATH_TMDB": str(database)},
+                           modules=("fs",))["results"]
+    body = step["result"]["payload"]
+    assert body["database_bytes"] == 5000
+    assert list(body)[list(body).index("schema_version") + 1] == "database_bytes"
+    assert step["logged"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("variable, exists, modules", [
+    (False, True, ("fs",)),
+    (True, False, ("fs",)),
+    (True, True, ()),
+], ids=["no-path", "no-file", "no-fs"])
+def test_status_answers_without_the_database_size(tmp_path, variable, exists, modules):
+    database = tmp_path / "tmdb.sqlite"
+    if exists:
+        database.write_bytes(b"\0" * 5000)
+    env = {"TM_DATABASE_PATH_TMDB": str(database)} if variable else {}
+    [step] = run_functions([status_step()], env=env, modules=modules)["results"]
+    body = step["result"]["payload"]
+    assert body["status"] == "ok"
+    assert body["database_bytes"] is None
+    assert step["logged"] == []
 
 
 def keep_node():
@@ -6111,7 +6142,7 @@ def test_a_claimed_list_outlives_its_ticket(exact_copy_files):
     assert query(files["copy"], "SELECT * FROM survey_exact_location") == [("3f9a1c2e-si", 45.52252, -122.6912)]
 
 
-EXPIRY_TEXT = "This download link has expired. Start the download again from the Location page."
+EXPIRY_TEXT = "This download link has expired. Start the download again from the Sharing page."
 
 
 @needs_node
