@@ -114,7 +114,7 @@ sudo systemctl restart frigate-tm-build.service  # re-run an image build (each <
   - Radars present at `/dev/ttyACM0-3` become `AddDevice` lines for node-red-tm.
 
   After a hardware change, re-run the relevant tags (`-t detectors -t frigate`, or `-t node-red-tm`). Frigate's `config.yml` only re-renders with `-f`, which keeps a chosen model that may not suit the new detector. The Status page reports that: the Apps group's Frigate check is an error in safe mode (Frigate's answer to a config that doesn't validate: no cameras, looks healthy), and `config.frigate_plus` compares the `frigate_plus_api_key` secret, `model.path` in Frigate's `config.yml`, and the files in `model_cache`. Checks quote Frigate's log only through `redact()` in `modules/apps/checks.py`.
-- Versions are pinned in `roles/tmsetup/vars/main.yml`. That covers `tmsetup_tm_version` (exposed to Node-RED as `TM_VERSION`), Frigate, Node-RED, nginx, go2rtc, and Hailo. User-tunable defaults live in `defaults/main.yml`. The role's `README.md` is outdated (wrong default paths and owner), so trust `defaults/main.yml`.
+- Versions are pinned in `roles/tmsetup/vars/main.yml`. That covers `tmsetup_tm_version` (exposed to Node-RED as `TM_VERSION`; `X.Y.Z` for a release, the next release's `X.Y.Z-dev` on `dev`, held by `script/tests/test_tm_version.py`), Frigate, Node-RED, nginx, go2rtc, and Hailo. User-tunable defaults live in `defaults/main.yml`. The role's `README.md` is outdated (wrong default paths and owner), so trust `defaults/main.yml`.
 - Reboots: handlers notify `TMSetup - Flag for reboot`.
   - Locally, this writes `~/.tmsetup/reboot-required`, and `tmsetup.sh` reads it to prompt for a reboot.
   - Remote hosts reboot directly.
