@@ -18,7 +18,7 @@ from tm_update_support import (
     manifest,
 )
 
-from tm_update import cleanup, installed as installed_module, playbook, restore
+from tm_update import installed as installed_module, playbook, restore
 from tm_update.state import Failed
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tm-update"
@@ -132,9 +132,10 @@ def test_the_vars_file_is_written_before_the_playbook(device, monkeypatch):
         return real(hand, installed, tree, update_mode=update_mode)
 
     monkeypatch.setattr(playbook, "write_vars", spy)
-    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
+    found = []
+    device.during_setup = lambda: found.append((device.paths.work_root / RUN / "vars.json").is_file())
     assert device.main() == 0
-    assert seen and (device.paths.work_root / RUN / "vars.json").is_file()
+    assert seen and found == [True]
 
 
 def test_a_held_lock_ends_the_run_as_busy_and_leaves_the_state_of_the_other_run(device, capsys):

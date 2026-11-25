@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from tm_update_support import BOOT, COMMIT, RUN, Device, handover, make_world
 
-from tm_update import cleanup, installed as installed_module, switch
+from tm_update import installed as installed_module, switch
 from tm_update.switch import STARTED_AFTER_A_FAILURE, STOPPED_FIRST, wants_reboot
 
 STOP = ["systemctl", "stop", *STOPPED_FIRST]
@@ -159,10 +159,11 @@ def test_the_installer_is_setup_yml_in_update_mode_with_the_work_folders_flag(de
         return real(hand, installed, tree, update_mode=update_mode)
 
     monkeypatch.setattr(playbook, "write_vars", spy)
-    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
+    found = []
+    device.during_setup = lambda: found.append(json.loads((device.work / "vars.json").read_text()))
     assert device.main() == 0
     assert seen[-1] is True
-    data = json.loads((device.work / "vars.json").read_text())
+    (data,) = found
     assert data["tmsetup_reboot_touch_file"] == str(device.work / "reboot-required")
 
 
@@ -190,8 +191,9 @@ def test_the_monotonic_clock_is_the_one_systemd_stamps_in_microseconds():
     assert isinstance(value, int) and before <= value <= before + 10_000_000
 
 
-def test_the_switch_and_the_run_take_the_new_commit_from_the_hand_over(device, monkeypatch):
-    monkeypatch.setattr(cleanup, "run", lambda ctx: [])  # it would remove the work folder this test looks in
+def test_the_switch_and_the_run_take_the_new_commit_from_the_hand_over(device):
+    found = []
+    device.during_setup = lambda: found.append((device.paths.work_root / RUN).is_dir())
     assert device.main() == 0
     assert json.loads(device.paths.manifest.read_text())["git"]["commit"] == COMMIT
-    assert (device.paths.work_root / RUN).is_dir()
+    assert found == [True]

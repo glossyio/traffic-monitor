@@ -4,7 +4,8 @@ In this order: the throwaway image tags go; then the tags in our image repositor
 rule names; then dangling images (the stage tags Prepare made keep the first stage of each two-stage build, so the
 build cache stays); then base images of earlier versions that nothing uses. Then each image is built once more from
 the staged folders, to check every step still comes from the cache (a miss rebuilds it now, while the internet is
-likely there, not at the next boot). Last, the older source trees, Ansible venvs, and run logs, and the work folder.
+likely there, not at the next boot), in the update's slice with its low weights. Last, the older source trees,
+Ansible venvs, and run logs. The work folder goes after the run has ended (remove_work_folder).
 
 The update is already healthy: a step that fails is logged and noted, and the next step runs. Nothing here raises.
 """
@@ -21,6 +22,7 @@ from . import playbook, proc
 from .switch import say
 
 SLICE = "tm-update.slice"  # tmsetup_update_slice: Prepare's builds run there
+SLICE_PROPERTIES = ("CPUWeight=20", "IOWeight=20")  # tmsetup_update_slice_properties
 CHECK_TAG = "prepare-check"
 LOGS_KEPT = 10
 _LIST_TIMEOUT = 120
@@ -365,13 +367,27 @@ def _old_logs(ctx) -> "list[Path]":
     return logs[:max(len(logs) - keep, 0)]
 
 
-def _work_folder(ctx) -> "list[Path]":
-    """This run's work folder, only where runs keep theirs."""
-    work = ctx.handover.work_dir
-    if work.parent != ctx.paths.work_root:
-        say(ctx.log, "the work folder is not in the work root; it is left as it is")
+def remove_work_folder(paths, handover, log) -> None:
+    """Remove this run's work folder, <work_root>/<run_id>, once the run has ended. Never raises: a folder that stays
+    is removed by the next run's clearing of leftovers."""
+    work = paths.work_root / handover.run_id
+    try:
+        if handover.work_dir != work:
+            say(log, "the work folder is not <work_root>/<run_id>; it is left as it is")
+            return
+        if work.exists() or work.is_symlink():
+            _remove_paths(log, [work])
+    except Exception as error:
+        say(log, f"could not remove the work folder: {type(error).__name__}")
+
+
+def _give_the_slice_its_weights(log) -> None:
+    """The weights Prepare gave the slice are runtime properties, which a restart drops."""
+    status = proc.run(["systemctl", "set-property", "--runtime", SLICE, *SLICE_PROPERTIES], log=log,
+                      timeout=_LIST_TIMEOUT).returncode
+    if status != 0:
+        say(log, f"systemctl set-property ended with status {status}")
         raise _StepFailed
-    return [work] if work.exists() or work.is_symlink() else []
 
 
 def _folders(log, notes: "list[str]", name: str, entries) -> None:
@@ -389,9 +405,10 @@ def run(ctx) -> "list[str]":
         _step(log, notes, "tags", lambda: _settle_tags(log, notes, built))
         _step(log, notes, "prune", lambda: _prune(log))
         _step(log, notes, "bases", lambda: _remove_old_bases(log, notes, built))
+        _step(log, notes, "slice", lambda: _give_the_slice_its_weights(log))
         _step(log, notes, "cache", lambda: _check_cache(log, notes, built))
     elif built is not None:
         say(log, "facts.json lists no images; the images are left as they are")
-    for name, entries in (("trees", _old_trees), ("venvs", _old_venvs), ("logs", _old_logs), ("work", _work_folder)):
+    for name, entries in (("trees", _old_trees), ("venvs", _old_venvs), ("logs", _old_logs)):
         _step(log, notes, name, lambda name=name, entries=entries: _folders(log, notes, name, entries(ctx)))
     return notes

@@ -271,9 +271,34 @@ def test_a_check_build_that_fails_is_noted_and_the_others_still_run(world):
     assert len(podman_calls(run, "podman", "build")) == 3
 
 
-def test_the_slice_is_the_one_prepare_builds_in():
-    (line,) = re.findall(r"^tmsetup_update_slice: (\S+)$", ROLE_VARS.read_text(), re.MULTILINE)
+def test_the_slice_and_its_weights_are_the_ones_prepare_builds_in():
+    text = ROLE_VARS.read_text()
+    (line,) = re.findall(r"^tmsetup_update_slice: (\S+)$", text, re.MULTILINE)
     assert cleanup.SLICE == line
+    (block,) = re.findall(r"^tmsetup_update_slice_properties:\n((?:  - \S+\n)+)", text, re.MULTILINE)
+    assert cleanup.SLICE_PROPERTIES == tuple(re.findall(r"- (\S+)", block))
+
+
+SET_WEIGHTS = ["systemctl", "set-property", "--runtime", "tm-update.slice", "CPUWeight=20", "IOWeight=20"]
+
+
+def test_the_slice_gets_its_weights_again_before_the_check_builds(world):
+    # A restart between the switch and the clean-up drops the runtime weights Prepare gave the slice
+    ctx, podman, run = world
+    cleanup.run(ctx)
+    argvs = run.argvs()
+    assert argvs.count(SET_WEIGHTS) == 1
+    first_check = next(i for i, argv in enumerate(argvs) if argv[:2] == ["podman", "build"])
+    assert argvs.index(SET_WEIGHTS) == first_check - 1
+
+
+@pytest.mark.parametrize("problem", [1, OSError("no systemctl")])
+def test_a_failing_set_property_is_noted_and_the_check_still_runs(world, problem):
+    ctx, podman, run = world
+    podman.status[tuple(SET_WEIGHTS)] = problem
+    notes = cleanup.run(ctx)
+    assert "step_failed:slice" in notes
+    assert len(podman_calls(run, "podman", "build")) == 3
 
 
 def _folders(ctx):
@@ -303,8 +328,10 @@ def test_the_work_folder_older_trees_older_venvs_and_older_logs_go(world):
     logs = sorted(entry.name for entry in ctx.paths.log_dir.iterdir())
     # The ten newest by name stay, this run's among them
     assert logs == sorted(older[-9:] + [RUN + ".log", "README"])
-    assert not ctx.handover.work_dir.exists()
-    assert ctx.paths.work_root.is_dir()
+    # The work folder goes once the run has ended (remove_work_folder, from cli), not in the clean-up
+    assert ctx.handover.work_dir.is_dir()
+    cleanup.remove_work_folder(ctx.paths, ctx.handover, ctx.log)
+    assert not ctx.handover.work_dir.exists() and ctx.paths.work_root.is_dir()
 
 
 def test_this_runs_log_stays_whatever_its_name(world, tmp_path):
@@ -339,9 +366,9 @@ def test_a_work_folder_outside_the_work_root_is_left_alone(world, tmp_path):
     ctx, podman, run = world
     elsewhere = ctx.paths.update_dir / "elsewhere"
     shutil.copytree(ctx.handover.work_dir, elsewhere)
-    ctx.handover = handover(ctx.paths, work_dir=elsewhere)
-    cleanup.run(ctx)
-    assert elsewhere.is_dir()
+    hand = handover(ctx.paths, work_dir=elsewhere)
+    cleanup.remove_work_folder(ctx.paths, hand, ctx.log)
+    assert elsewhere.is_dir() and (ctx.paths.work_root / RUN).is_dir()
 
 
 @pytest.mark.parametrize("facts", ["", "[]", '{"images": "x"}', '{"images": [{"name": 5}]}',
@@ -351,10 +378,12 @@ def test_a_work_folder_outside_the_work_root_is_left_alone(world, tmp_path):
 def test_facts_that_cannot_be_used_skip_the_images_but_not_the_folders(world, facts):
     ctx, podman, run = world
     (ctx.handover.work_dir / "facts.json").write_text(facts)
+    _folders(ctx)
     notes = cleanup.run(ctx)
-    assert [argv for argv in run.argvs() if argv[0] == "podman"] == []
+    assert run.argvs() == []
     assert "step_failed:facts" in notes
-    assert not ctx.handover.work_dir.exists()
+    assert not (ctx.paths.src_root / ("c" * 40)).exists()
+    assert not (ctx.paths.venv_root / "ansible-000000000000").exists()
 
 
 def test_a_failing_step_does_not_fail_the_cleanup(world, monkeypatch):
@@ -375,7 +404,6 @@ def test_a_failing_step_does_not_fail_the_cleanup(world, monkeypatch):
     # Later steps still ran
     assert podman_calls(run, "podman", "build")
     assert not (ctx.paths.venv_root / "ansible-000000000000").exists()
-    assert not ctx.handover.work_dir.exists()
     assert "PermissionError" in log_text(ctx)
 
 
@@ -434,6 +462,7 @@ def test_a_failing_step_does_not_fail_the_update(tmp_path, monkeypatch, breaks):
     assert [row["id"] for row in state["stages"]][-2:] == ["health", "cleanup"]
     assert all(row["finished_at"] for row in state["stages"])
     assert not device.paths.resume.exists()
+    assert not device.work.exists()
     log = device.log()
     assert ("OSError" if breaks == "a step" else "RuntimeError") in log
     if breaks == "a step":
@@ -446,3 +475,45 @@ def test_a_run_cleans_up_once_after_the_health_check(tmp_path, monkeypatch):
     monkeypatch.setattr(cleanup, "run", lambda ctx: seen.append(ctx.handover.run_id) or [])
     assert device.main() == 0
     assert seen == [RUN]
+
+
+@pytest.mark.parametrize("command", ["run", "resume"])
+def test_the_work_folder_goes_after_the_run_has_ended(tmp_path, monkeypatch, command):
+    device = Device(tmp_path, monkeypatch)
+    if command == "resume":
+        from test_tm_update_cli import _cut_off
+        _cut_off(device, "cleanup", boot_id="99999999-8888-7777-6666-555555555555")
+    seen = []
+    real_rmtree = shutil.rmtree
+
+    def rmtree(path, *args, **kwargs):
+        if Path(path) == device.work:
+            seen.append((json.loads(device.paths.state.read_text())["result"], device.paths.resume.exists()))
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(cleanup.shutil, "rmtree", rmtree)
+    assert (device.main() if command == "run" else device.resume()) == 0
+    assert seen == [("ok", False)]
+    assert not device.work.exists() and device.paths.work_root.is_dir()
+
+
+def test_a_work_folder_that_will_not_go_does_not_change_the_end(tmp_path, monkeypatch):
+    device = Device(tmp_path, monkeypatch)
+    real_rmtree = shutil.rmtree
+
+    def rmtree(path, *args, **kwargs):
+        if Path(path) == device.work:
+            raise PermissionError("busy")
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(cleanup.shutil, "rmtree", rmtree)
+    assert device.main() == 0
+    assert device.state()["result"] == "ok" and device.work.is_dir()
+    assert "PermissionError" in device.log()
+
+
+def test_a_failed_run_keeps_its_work_folder(tmp_path, monkeypatch):
+    device = Device(tmp_path, monkeypatch)
+    device.unit_state["frigate.service"] = "failed"
+    assert device.main() == 1
+    assert device.work.is_dir()

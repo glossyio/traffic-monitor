@@ -268,6 +268,8 @@ def _guarded(ctx: Context, body) -> int:
     _say(ctx.log, "done")
     ctx.state.end("ok")
     clear_marker(ctx.paths)
+    # Last, still under the lock: a restart before this leaves the folder to the next run's clearing of leftovers
+    cleanup.remove_work_folder(ctx.paths, ctx.handover, ctx.log)
     return 0
 
 
