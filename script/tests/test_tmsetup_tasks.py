@@ -1351,3 +1351,17 @@ def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
     task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
     assert {"node-red-tm/data/package.json", "node-red-tm/data/package-lock.json"} <= set(task["loop"])
+
+
+def test_the_installer_sets_no_time_zone_unless_asked():
+    """The device always has a zone (the imager's or the image's) and the Date and time page changes it, so a run of
+    the installer sets the clock's zone only when `-z` gives one. A place's zone is a separate fact."""
+    assert load_role_yaml("defaults/main.yml")["tmsetup_timezone"] == ""
+    task = next(
+        task for task in load_role_yaml("tasks/base_setup.yml")
+        if task["name"] == "TMSetup - Base Setup - Set timezone"
+    )
+    assert task["when"] == "tmsetup_timezone | length > 0"
+    assert task["community.general.timezone"]["name"] == "{{ tmsetup_timezone }}"
+    assert evaluate("{{ " + task["when"] + " }}", tmsetup_timezone="") is False
+    assert evaluate("{{ " + task["when"] + " }}", tmsetup_timezone="Europe/Berlin") is True

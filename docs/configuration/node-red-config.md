@@ -8,7 +8,7 @@ The Traffic Monitor's own settings live in `/opt/traffic-monitor/node-red-tm/con
 
 The Traffic Monitor reads the file again whenever you save it, so changes take effect without a restart. If the file has a YAML error, it keeps the previous settings until the service restarts, and after a restart it has no settings at all until you fix the file.
 
-Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in the file. The file has no time settings: the installer's `-z` option sets the device's time zone, and you change it later on the [Date and time](../use/device-health.md#the-date-and-time-page) page. A `time` section left from an older install is ignored. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:
+Keep the three top-level sections (`thingsboard`, `deployment`, `sensors`) in the file. The file has no time settings: you set the device's time zone on the [Date and time](../use/device-health.md#the-date-and-time-page) page, or with the installer's `-z` option, and an installer run without `-z` leaves it as it is. A `time` section left from an older install is ignored. The Default column below shows the values the template writes. A setting that's missing from the file behaves differently in a few cases:
 
 * A camera or radar without `enabled` is off.
 * A camera without `frigate_camera` is the Frigate camera with the same name as its entry.
