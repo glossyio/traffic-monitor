@@ -45,7 +45,7 @@ What's open to take:
 
 ## Testing
 
-Most of the project is tested by installing it on a Raspberry Pi. The database schema, the installer's templates and tasks, and the control app (`tm-control`) have automated tests that run on any machine with Python 3.11 or newer. Every pull request runs them on GitHub, along with the control app's web page tests and a check that the pull request doesn't add a dependency with a known high or critical vulnerability. You can run the same tests yourself before you push. Set up the dev environment once, from the repo root:
+Most of the project is tested by installing it on a Raspberry Pi. The database schema, the installer's templates and tasks, and the control app (`tm-control`) have automated tests that run on any machine with Python 3.12 or newer. Every pull request runs them on GitHub, along with the control app's web page tests and a check that the pull request doesn't add a dependency with a known high or critical vulnerability. You can run the same tests yourself before you push. Set up the dev environment once, from the repo root:
 
     python3 -m venv .venv
     .venv/bin/pip install -r script/requirements-dev
@@ -58,7 +58,7 @@ Some tests need a tool your machine may not have, such as Podman, Node.js, or gi
 
 The control app's web pages have their own tests, run with npm; see [tm-control/ui/README.md](tm-control/ui/README.md).
 
-Add new development tools to `script/requirements-dev` so everyone uses the same environment. Help us extend testing to the rest of the project!
+Add new development tools to `script/requirements-dev` so everyone uses the same environment. When you add or change a package in `tm-control/backend/requirements.txt` or `script/requirements`, or in Node-RED's `package.json`, remake its lock in the same pull request; [Pinned versions](docs/development/dev-environment.md#pinned-versions) says how. Help us extend testing to the rest of the project!
 
 To deploy to a bench Pi from your dev machine and keep a log of what you tested on it, see [script/devpi/README.md](script/devpi/README.md).
 

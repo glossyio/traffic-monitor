@@ -34,7 +34,7 @@ Remote runs:
 
 | Flag | Meaning |
 |---|---|
-| `-H HOST[,HOST]` | Install to these devices over SSH instead of the local machine. Separate several with commas. |
+| `-H HOST[,HOST]` | Install to these devices over SSH instead of the local machine. Separate several with commas. The computer you run it from needs Python 3.12 or later, for the installer's Ansible. |
 | `-l USER` | The SSH username on the devices. |
 | `-k` | Ask for the SSH password. |
 | `-K` | Ask for the password for administrator rights (sudo). Needed on Raspberry Pi OS unless you've set up passwordless sudo. |
@@ -56,6 +56,10 @@ Each tag reruns one part of the install. Without `-t`, everything runs. The pod,
 | `plate-recognizer` | The optional Plate Recognizer container |
 | `revproxy` | The reverse proxy, with the home page built into its image |
 | `tm-control` | The [control app](../use/control-app.md) and its service, the `tm-control` command, the record of what was installed that the control app reads, and the setup code while the device isn't claimed. It also updates Frigate's `config.yml` from earlier versions: the stream login and the settings for the device's login. |
+
+## One run at a time
+
+Only one installer run can work on a device at a time. If you start a second run on the device while another is running, it prints "Another install or update is running on this device. Wait for it to finish, then run tmsetup.sh again." and exits before it asks whether to continue or installs anything (with `-f`, that is after the overwrite question). Runs started with `-H` don't take part in this: run them one at a time yourself.
 
 ## The device's card
 
