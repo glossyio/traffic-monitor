@@ -204,6 +204,33 @@ def make(installed: Installed, handover: Handover, paths: Paths, previous_tree: 
     return final
 
 
+def record_tmdb_backup(folder: Path, backup: str) -> None:
+    """Name the migration runner's copy of the traffic database in a restore point's restore.json. The file is
+    replaced whole (written beside it, synced, renamed) and stays 0600."""
+    listing = folder / "restore.json"
+    document = json.loads(listing.read_text(encoding="utf-8"))
+    if not isinstance(document, dict):
+        raise ValueError("restore.json is not an object")
+    document["tmdb_backup"] = backup
+    temporary = folder / ".restore.json.tmp"
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            os.fchmod(handle.fileno(), 0o600)
+            json.dump(document, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, listing)
+    except BaseException:
+        try:
+            temporary.unlink()
+        except OSError:
+            pass
+        raise
+    _sync_folder(folder)
+
+
 def keep_newest(paths: Paths, count: int = KEEP, just_made: "Path | None" = None) -> None:
     """Remove all but the newest restore points, by name (the time comes first). The one just made is never removed
     and counts as one of those kept, whatever the clock said when it was named. Anything else in the folder, a

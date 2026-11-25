@@ -61,6 +61,10 @@ class Paths:
         return self.rooted(Path("/var/run/reboot-required"))
 
     @property
+    def boot_id(self) -> Path:
+        return self.rooted(Path("/proc/sys/kernel/random/boot_id"))
+
+    @property
     def tm_control_state(self) -> Path:
         return self.rooted(Path("/var/lib/tm-control/state.sqlite"))
 

@@ -9,69 +9,19 @@ from pathlib import Path
 
 import pytest
 from tm_update_support import (
+    BOOT,
     COMMIT,
+    OTHER_BOOT,
     RUN,
-    FakeRun,
-    completed,
-    handover_dict,
-    make_world,
+    SWITCH_USEC,
+    Device,
     manifest,
 )
 
-from tm_update import cli, installed as installed_module, playbook, proc, restore
+from tm_update import installed as installed_module, playbook, restore
 from tm_update.state import Failed
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tm-update"
-
-
-class Device:
-    """A device under a temporary root, the calls that would reach it recorded, and main() run against it."""
-
-    def __init__(self, tmp_path, monkeypatch, **world):
-        self.paths, self.tree = make_world(tmp_path, **world)
-        self.handover_path = tmp_path / "handover.json"
-        self.handover_path.write_text(json.dumps(handover_dict(self.paths)))
-        self.stages = []
-        self.playbook_rc = {}
-        self.images = []
-        self.when_a_stage_starts = None
-        self.run = FakeRun(self._answer)
-        monkeypatch.setattr(proc, "run", self.run)
-        monkeypatch.setattr(installed_module, "_free_bytes", lambda path: 10**12)
-        monkeypatch.setattr(playbook, "ensure_venv", self._ensure_venv)
-        monkeypatch.setattr(playbook, "run_playbook", self._run_playbook)
-
-    def _answer(self, call):
-        if call["argv"][:2] == ["podman", "images"]:
-            return completed(call["argv"], stdout=json.dumps(self.images))
-        return None
-
-    def _ensure_venv(self, tree, paths, log):
-        if self.when_a_stage_starts:
-            self.when_a_stage_starts()
-        self.stages.append("venv")
-        return paths.venv_root / "ansible-test"
-
-    def _run_playbook(self, venv, tree, name, vars_file, handover, log, tags=None):
-        self.stages.append((name, tuple(tags or ())))
-        assert (handover.work_dir / "reason").parent.is_dir()
-        key = tuple(tags or ())
-        if self.playbook_rc.get(key):
-            reason = self.playbook_rc[key]
-            if isinstance(reason, str):
-                (handover.work_dir / "reason").write_text(reason + "\n")
-            return 1
-        return 0
-
-    def main(self, *args, is_root=True):
-        argv = list(args) or ["run", "--contract", "1", "--handover", str(self.handover_path)]
-        return cli.main(argv, paths=self.paths, tree=self.tree, is_root=lambda: is_root)
-
-    def state(self):
-        return json.loads(self.paths.state.read_text())
-
-    def log(self):
-        return (self.paths.log_dir / (RUN + ".log")).read_text()
 
 
 @pytest.fixture
@@ -99,12 +49,15 @@ def test_a_contract_the_tree_does_not_accept_is_exit_2(device, capsys):
     assert not device.paths.state.exists()
 
 
-def test_a_good_run_prepares_and_builds_in_order(device):
+def test_a_good_run_prepares_builds_switches_and_checks_in_order(device):
     assert device.main() == 0
-    assert device.stages == ["venv", ("update_prepare.yml", ("stage",)), ("update_prepare.yml", ("images",))]
+    assert device.stages == ["venv", ("update_prepare.yml", ("stage",)), ("update_prepare.yml", ("images",)),
+                             ("setup.yml", ())]
     state = device.state()
     assert state["result"] == "ok" and state["reason"] is None
-    assert [row["id"] for row in state["stages"]] == ["prepare", "images", "restore_point"]
+    assert [row["id"] for row in state["stages"]] == ["prepare", "images", "restore_point", "switch", "health"]
+    assert state["switch_attempts"] == 1 and state["reboot"] is False
+    assert not device.paths.resume.exists()
     assert all(row["finished_at"] for row in state["stages"])
     assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
     assert state["to"] == {"version": "0.8.0", "commit": COMMIT, "tag": "v0.8.0"}
@@ -125,7 +78,8 @@ def test_the_restore_point_is_saved_after_the_images_and_its_folder_is_in_the_st
     folder = Path(state["restore_point"])
     assert folder.parent == device.paths.restore_root and (folder / "restore.json").is_file()
     assert json.loads((folder / "restore.json").read_text())["previous_tree"] == str(old_tree)
-    assert state["stages"][-1]["id"] == "restore_point" and state["stages"][-1]["finished_at"]
+    row = next(row for row in state["stages"] if row["id"] == "restore_point")
+    assert row["finished_at"] and [r["id"] for r in state["stages"]].index("restore_point") == 2
     assert "marker-7e1d" not in device.log() and "marker-7e1d" not in device.paths.state.read_text()
 
 
@@ -332,8 +286,6 @@ def test_a_venv_failure_carries_its_own_code(device, monkeypatch):
     assert device.state()["detail"] == "ansible environment"
 
 
-def test_resume_reads_its_arguments(device):
-    assert device.main("resume", "--handover", str(device.handover_path)) in (1, 2)
 
 
 def test_the_command_line_names_both_commands():
@@ -345,3 +297,218 @@ def test_the_command_line_names_both_commands():
 def test_no_command_is_a_usage_error():
     result = subprocess.run([sys.executable, "-EP", str(SCRIPT)], capture_output=True, text=True)
     assert result.returncode == 2
+
+
+# The switch's end, resume, and health, as the command runs them
+
+def _cut_off(device, stage, *, attempts=1, boot_id=None, result=None, run_id=RUN, switched=True,
+             switch_started="2026-11-25T10:20:00Z"):
+    """A run a restart cut off at this stage: its state file, its marker, its work folder."""
+    finished = [{"id": name, "started_at": "2026-11-25T10:00:00Z", "finished_at": "2026-11-25T10:10:00Z"}
+                for name in ("prepare", "images", "restore_point")]
+    rows = finished + [{"id": "switch", "started_at": switch_started,
+                        "finished_at": None if stage == "switch" else "2026-11-25T10:30:00Z"}]
+    if stage in ("reboot", "health", "cleanup"):
+        rows.append({"id": stage, "started_at": "2026-11-25T10:31:00Z", "finished_at": None})
+    if stage == "cleanup":
+        rows.insert(-1, {"id": "health", "started_at": "2026-11-25T10:31:00Z",
+                         "finished_at": "2026-11-25T10:32:00Z"})
+    state = {"schema": 1, "run_id": run_id, "channel": "stable", "from": {"version": "0.7.1", "commit": "b" * 40},
+             "to": {"version": "0.8.0", "commit": COMMIT, "tag": "v0.8.0"}, "stage": stage, "stages": rows,
+             "result": result, "reason": None, "detail": None, "boot_id": boot_id,
+             "reboot": True if stage == "reboot" else None, "restore_point": None, "tmdb_backup": None,
+             "switch_attempts": attempts}
+    device.paths.update_dir.mkdir(parents=True, exist_ok=True)
+    device.paths.state.write_text(json.dumps(state))
+    device.paths.resume.write_text(json.dumps(
+        {"contract": 1, "tree": str(device.tree), "handover": str(device.handover_path)}))
+    device.work.mkdir(parents=True, exist_ok=True)
+    (device.work / "facts.json").write_text(json.dumps({"tm_control_port": 8090, "images": []}))
+    if switched:
+        data = json.loads(device.paths.manifest.read_text())
+        data["git"]["commit"] = COMMIT
+        device.paths.manifest.write_text(json.dumps(data))
+    return state
+
+
+@pytest.mark.parametrize(("stage", "attempts", "same_boot", "does"), [
+    ("reboot", 1, False, "health"), ("reboot", 1, True, "nothing"),
+    ("switch", 1, False, "switch"), ("switch", 2, False, "fail"), ("health", 1, False, "health"),
+    ("cleanup", 1, False, "cleanup")])
+def test_resume_carries_a_run_on_from_where_it_stopped(device, stage, attempts, same_boot, does):
+    _cut_off(device, stage, attempts=attempts, boot_id=BOOT if same_boot else OTHER_BOOT,
+             switched=stage != "switch")
+    if stage != "switch":
+        # After a restart the control app started early in this boot: any start time counts
+        device.tm_control_entered = 1
+    before = device.paths.state.read_bytes()
+    status = device.resume()
+    state = device.state()
+    ran_setup = ("setup.yml", ()) in device.stages
+    checked = bool(device.systemctl_calls("is-active"))
+    if does == "nothing":
+        assert status == 0
+        assert device.paths.state.read_bytes() == before
+        assert device.paths.resume.exists() and device.run.calls == []
+        return
+    assert not device.paths.resume.exists()
+    if does == "fail":
+        assert status == 1
+        assert (state["result"], state["reason"]) == ("failed", "switch_failed")
+        assert device.systemctl_calls("start") == [["systemctl", "start", unit] for unit in
+                                                   ("tm-control.service", "traffic-monitor.service",
+                                                    "revproxy.service")]
+        assert not ran_setup and not checked
+        assert all(row["finished_at"] for row in state["stages"])
+        return
+    assert status == 0 and state["result"] == "ok"
+    assert all(row["finished_at"] for row in state["stages"])
+    # The manifest names the new commit by now; the state keeps where the run came from
+    assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
+    ids = [row["id"] for row in state["stages"]]
+    if does == "switch":
+        assert ran_setup and checked and state["switch_attempts"] == 2
+        assert ids[-3:] == ["switch", "switch", "health"]
+        assert device.systemctl_calls("stop") == [["systemctl", "stop", "traffic-monitor.service",
+                                                   "tm-control.service"]]
+    elif does == "health":
+        assert checked and not ran_setup
+        assert ids[-1] == "health" and ids.count("switch") == 1
+        assert device.systemctl_calls("stop") == []
+    else:  # cleanup
+        assert not checked and not ran_setup
+        assert ids[-1] == "cleanup"
+
+
+def test_a_resumed_switch_records_its_own_start_for_the_health_check(device):
+    _cut_off(device, "switch", attempts=1, switched=False)
+    device.tm_control_entered = SWITCH_USEC  # not later than the redone switch's stop: the old control app
+    assert device.resume() == 1
+    assert (device.state()["reason"], device.state()["detail"]) == ("health_failed", "tm-control")
+
+
+def test_a_resumed_switch_that_wants_a_restart_hands_over_again(device):
+    _cut_off(device, "switch", attempts=1, switched=False)
+    device.reboot_flag = "1"
+    assert device.resume() == 0
+    state = device.state()
+    assert (state["stage"], state["reboot"], state["boot_id"], state["result"]) == ("reboot", True, BOOT, None)
+    assert device.paths.resume.exists()
+
+
+@pytest.mark.parametrize("case", ["no marker", "finished", "failed", "another run"])
+def test_resume_without_a_marker_or_with_a_finished_run_does_nothing(device, case):
+    _cut_off(device, "health", result={"finished": "ok", "failed": "failed"}.get(case),
+             run_id="another-run" if case == "another run" else RUN)
+    if case == "no marker":
+        device.paths.resume.unlink()
+    before = device.paths.state.read_bytes()
+    assert device.resume() == 0
+    assert device.paths.state.read_bytes() == before
+    assert not device.paths.resume.exists()
+    assert device.run.calls == [] and device.stages == []
+
+
+def test_resume_takes_the_lock_like_run(device, capsys):
+    _cut_off(device, "health")
+    before = device.paths.state.read_bytes()
+    device.paths.lock.touch()
+    fd = os.open(device.paths.lock, os.O_RDONLY)
+    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        assert device.resume() == 1
+    finally:
+        os.close(fd)
+    assert device.paths.state.read_bytes() == before
+    assert device.paths.resume.exists()
+    assert "busy" in capsys.readouterr().err
+    assert device.run.calls == []
+
+
+@pytest.mark.parametrize("marker", ['{"contract": "1", "tree": "/x", "handover": "/y"}', "[]", "{",
+                                    '{"contract": 1, "tree": 5, "handover": "/y"}',
+                                    '{"contract": true, "tree": "/x", "handover": "/y"}'])
+def test_a_marker_that_cannot_be_read_is_removed(device, marker, capsys):
+    _cut_off(device, "health")
+    before = device.paths.state.read_bytes()
+    device.paths.resume.write_text(marker)
+    assert device.resume() == 2
+    assert not device.paths.resume.exists()
+    assert device.paths.state.read_bytes() == before
+    assert capsys.readouterr().err.count("\n") == 1
+
+
+@pytest.mark.parametrize("key", ["tree", "handover"])
+def test_a_marker_for_another_tree_or_hand_over_is_left_for_it(device, key):
+    _cut_off(device, "health")
+    data = json.loads(device.paths.resume.read_text())
+    data[key] = "/somewhere/else"
+    device.paths.resume.write_text(json.dumps(data))
+    assert device.resume() == 2
+    assert json.loads(device.paths.resume.read_text())[key] == "/somewhere/else"
+    assert device.run.calls == []
+
+
+def test_an_unhealthy_update_leaves_the_new_version_and_keeps_its_work_folder(device):
+    device.unit_state["frigate.service"] = "failed"
+    assert device.main() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["detail"], state["stage"]) == (
+        "failed", "health_failed", "frigate.service", "health")
+    assert json.loads(device.paths.manifest.read_text())["git"]["commit"] == COMMIT
+    assert (device.work / "vars.json").is_file()
+    assert not device.paths.resume.exists()
+    assert device.systemctl_calls("start") == [] and len(device.systemctl_calls("stop")) == 1
+    assert [row["id"] for row in state["stages"]][-1] == "health"
+    assert state["tmdb_backup"] is None
+
+
+def _backup_dir(device):
+    folder = device.paths.root / "opt" / "traffic-monitor" / "node-red-tm" / "db" / "backup"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def test_the_migration_runners_database_copy_is_recorded(device):
+    folder = _backup_dir(device)
+    old = folder / "tmdb-v9-20200101T000000Z.sqlite"
+    old.write_bytes(b"old")
+    os.utime(old, (946684800, 946684800))
+
+    def migrate():
+        (folder / "tmdb-v10-20261125T103000Z.sqlite").write_bytes(b"new")
+        (folder / "tmdb-v10-20261125T103001Z.sqlite.partial").write_bytes(b"half")
+
+    device.during_setup = migrate
+    assert device.main() == 0
+    state = device.state()
+    expected = str(folder / "tmdb-v10-20261125T103000Z.sqlite")
+    assert state["tmdb_backup"] == expected
+    listing = Path(state["restore_point"]) / "restore.json"
+    assert json.loads(listing.read_text())["tmdb_backup"] == expected
+    assert oct(listing.stat().st_mode & 0o777) == "0o600"
+    assert [p.name for p in listing.parent.iterdir() if p.name.startswith(".")] == []
+
+
+def test_no_new_database_copy_leaves_the_record_empty(device):
+    folder = _backup_dir(device)
+    old = folder / "tmdb-v9-20200101T000000Z.sqlite"
+    old.write_bytes(b"old")
+    os.utime(old, (946684800, 946684800))
+    assert device.main() == 0
+    state = device.state()
+    assert state["tmdb_backup"] is None
+    assert json.loads((Path(state["restore_point"]) / "restore.json").read_text())["tmdb_backup"] is None
+
+
+def test_after_a_restart_the_copy_is_the_newest_made_since_the_first_switch_began(device):
+    _cut_off(device, "reboot", boot_id=OTHER_BOOT, switch_started="2026-11-25T10:20:00Z")
+    device.tm_control_entered = 1
+    folder = _backup_dir(device)
+    began = 1_795_602_000  # 2026-11-25T10:20:00Z
+    for name, when in (("tmdb-v9-a.sqlite", began - 60), ("tmdb-v10-b.sqlite", began + 60),
+                       ("tmdb-v10-c.sqlite", began + 120)):
+        (folder / name).write_bytes(b"x")
+        os.utime(folder / name, (when, when))
+    assert device.resume() == 0
+    assert device.state()["tmdb_backup"] == str(folder / "tmdb-v10-c.sqlite")

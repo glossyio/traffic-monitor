@@ -98,6 +98,27 @@ class State:
         state._save()
         return state
 
+    @classmethod
+    def carry_on(cls, handover: Handover) -> "State | None":
+        """The state of this run when a restart cut it off: its file, still running, every key kept (its from as
+        well, which the manifest no longer knows after a switch). None when the file is another run's, has ended, or
+        can't be read as one."""
+        try:
+            old = json.loads(handover.state_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        if not _usable(old, handover.run_id) or old.get("result") is not None:
+            return None
+        attempts = old.get("switch_attempts", 0)
+        if (old.get("stage") not in STAGES or type(attempts) is not int or attempts < 0
+                or not isinstance(old.get("boot_id"), (str, type(None)))):
+            return None
+        data = _fresh(handover, None, None)
+        for key in data:
+            if key in old:
+                data[key] = old[key]
+        return cls(handover.state_path, data)
+
     @property
     def data(self) -> dict:
         return copy.deepcopy(self._data)

@@ -15,15 +15,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
+from . import health, playbook, proc, restore, switch
 from . import installed as installed_module
-from . import playbook, proc, restore
 from .handover import CONTRACT, Handover, HandoverError, load
 from .installed import Installed, Refusal, check_before_prepare
 from .paths import Paths
-from .state import Failed, State
+from .state import Failed, State, clear_marker
 
 # The reason a stage's failure takes when nothing more exact is known
-STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed", "restore_point": "prepare_failed"}
+STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed", "restore_point": "prepare_failed",
+                "switch": "switch_failed", "reboot": "switch_failed", "health": "health_failed"}
 _BUILD_TAG = re.compile(r"localhost/[^\s:]+:prepare-[^\s:]+")
 _IMAGE_ID = re.compile(r"[A-Za-z0-9]{1,100}")
 
@@ -40,6 +41,9 @@ class Context:
     state: State
     log: IO[str]
     venv: "Path | None" = None
+    vars_file: "Path | None" = None
+    # CLOCK_MONOTONIC (µs) just before this process stopped the units; 0 when no switch ran in this boot's process
+    switch_monotonic_usec: int = 0
 
 
 def _say(log, text: str) -> None:
@@ -174,17 +178,107 @@ def _restore_point(ctx: Context) -> None:
     ctx.state.finish("restore_point")
 
 
-def _stages(ctx: Context) -> None:
+def _switch(ctx: Context) -> bool:
+    """The switch, and the restart it may want. True: the health check is next. False: the device is restarting, and
+    tm-update resume carries the run on."""
+    ctx.state.begin("switch")
+    _say(ctx.log, "stage switch")
+    switch.run(ctx)
+    ctx.state.finish("switch")
+    if not switch.wants_reboot(ctx.handover):
+        ctx.state.set(reboot=False)
+        return True
+    ctx.state.begin("reboot")
+    _say(ctx.log, "stage reboot")
+    ctx.state.set(reboot=True, boot_id=switch.boot_id(ctx.paths))
+    switch.restart(ctx)
+    return False
+
+
+def _health(ctx: Context) -> None:
+    ctx.state.begin("health")
+    _say(ctx.log, "stage health")
+    health.wait(ctx, since_monotonic_usec=ctx.switch_monotonic_usec)
+    health.record_tmdb_backup(ctx)
+    ctx.state.finish("health")
+
+
+def _after_health(ctx: Context) -> None:
+    """What follows a healthy switch before the run ends ok: the one place for the clean-up stage, for a run and for
+    a resumed one."""
+
+
+def _from_the_switch(ctx: Context) -> bool:
+    if not _switch(ctx):
+        return False
+    _health(ctx)
+    _after_health(ctx)
+    return True
+
+
+def _stages(ctx: Context) -> bool:
+    """Every stage of a run, in order. False when the run was handed over to a restart."""
     _run_prepare_half(ctx, "prepare", ["stage"])
     _run_prepare_half(ctx, "images", ["images"])
     _restore_point(ctx)
+    return _from_the_switch(ctx)
 
 
-def _fail(state: State, log, failure: Failed) -> int:
+def _carry_on(ctx: Context, stage: str) -> bool:
+    """The rest of a run a restart cut off at this stage. The cut-off stage's row is closed and the stage begins
+    again. False when the run was handed over to a restart again."""
+    if stage == "reboot":
+        ctx.state.finish("reboot")
+        _health(ctx)
+        _after_health(ctx)
+        return True
+    if stage == "switch":
+        ctx.state.finish("switch")
+        attempts = ctx.state.data["switch_attempts"]
+        if attempts >= switch.ATTEMPTS:
+            switch.start_again(ctx)
+            raise Failed("switch_failed", f"{attempts} attempts")
+        return _from_the_switch(ctx)
+    if stage == "health":
+        ctx.state.finish("health")
+        _health(ctx)
+        _after_health(ctx)
+        return True
+    if stage == "cleanup":
+        ctx.state.finish("cleanup")
+        _after_health(ctx)
+        return True
+    # Nothing in use changed before the switch, and the run can't know what it was doing
+    raise Failed(STAGE_REASON.get(stage, "prepare_failed"), "cut off before the switch")
+
+
+def _fail(state: State, log, failure: Failed, paths: Paths) -> int:
+    """End the run as failed. No marker outlives a run that ended."""
     _say(log, f"failed: {failure.reason}" + (f" ({failure.detail})" if failure.detail else ""))
     state.end("failed", failure.reason, failure.detail)
+    clear_marker(paths)
     _complain(failure.reason)
     return 1
+
+
+def _guarded(ctx: Context, body) -> int:
+    """Run body(ctx) and end the run as it leaves it. 0: ended ok, or handed over to a restart; 1: ended failed."""
+    try:
+        finished = body(ctx)
+    except Failed as failure:
+        return _fail(ctx.state, ctx.log, failure, ctx.paths)
+    except Exception as error:
+        traceback.print_exc(file=ctx.log)
+        ctx.log.flush()
+        default = STAGE_REASON.get(ctx.state.data["stage"], "prepare_failed")
+        return _fail(ctx.state, ctx.log, Failed(default, f"unexpected {type(error).__name__}"), ctx.paths)
+    if not finished:
+        _say(ctx.log, "handed over to a restart")
+        return 0
+    _say(ctx.log, "done")
+    ctx.state.end("ok")
+    clear_marker(ctx.paths)
+    return 0
 
 
 def _run(paths: Paths, tree: Path, handover: Handover, handover_path: Path, to_version: str, log) -> int:
@@ -203,24 +297,82 @@ def _run(paths: Paths, tree: Path, handover: Handover, handover_path: Path, to_v
             refusal = error
         state = State.open(handover, installed, to_version)
         if refusal is not None:
-            return _fail(state, log, refusal)
+            return _fail(state, log, refusal, paths)
         _give_log_to_group(log, installed.codegroup)
         ctx = Context(paths, tree, handover, handover_path, installed, state, log)
-        try:
+
+        def body(ctx: Context) -> bool:
             _clear_leftovers(ctx)
             _prepare_work_dir(ctx)
             check_before_prepare(installed, paths)
-            _stages(ctx)
-        except Failed as failure:
-            return _fail(state, log, failure)
-        except Exception as error:
-            traceback.print_exc(file=log)
-            log.flush()
-            default = STAGE_REASON.get(state.data["stage"], "prepare_failed")
-            return _fail(state, log, Failed(default, f"unexpected {type(error).__name__}"))
-        _say(log, "done")
-        state.end("ok")
-        return 0
+            return _stages(ctx)
+
+        return _guarded(ctx, body)
+    finally:
+        os.close(lock)
+
+
+class _MarkerError(ValueError):
+    pass
+
+
+def _read_marker(paths: Paths) -> "dict | None":
+    """resume.json, type-checked: {"contract": 1, "tree", "handover"}. None when there is none."""
+    try:
+        data = json.loads(paths.resume.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError):
+        raise _MarkerError from None
+    if not isinstance(data, dict) or type(data.get("contract")) is not int or data["contract"] != CONTRACT:
+        raise _MarkerError
+    for key in ("tree", "handover"):
+        if not isinstance(data.get(key), str) or not data[key].startswith("/") or "\x00" in data[key]:
+            raise _MarkerError
+    return data
+
+
+def _resume(paths: Paths, tree: Path, handover: Handover, handover_path: Path, log) -> int:
+    lock = _take_lock(paths)
+    if lock is None:
+        _say(log, "busy")
+        _complain("busy")
+        return 1
+    try:
+        try:
+            marker = _read_marker(paths)
+        except _MarkerError:
+            _say(log, "the resume marker can't be used; removed")
+            clear_marker(paths)
+            _complain("the resume marker can't be used")
+            return 2
+        if marker is None:
+            _say(log, "nothing to carry on")
+            return 0
+        if (Path(marker["tree"]).resolve() != tree.resolve()
+                or Path(marker["handover"]).resolve() != handover_path.resolve()):
+            # It is another run's to carry on: leave it for that one
+            _say(log, "the resume marker names another tree or hand-over")
+            _complain("the resume marker names another tree or hand-over")
+            return 2
+        state = State.carry_on(handover)
+        if state is None:
+            _say(log, "nothing to carry on; the run has ended")
+            clear_marker(paths)
+            return 0
+        stage = state.data["stage"]
+        now = switch.boot_id(paths)
+        if stage == "reboot" and now is not None and now == state.data["boot_id"]:
+            _say(log, "the restart has not happened yet")
+            return 0
+        try:
+            installed = installed_module.read(paths)
+        except Refusal as refusal:
+            return _fail(state, log, refusal, paths)
+        _give_log_to_group(log, installed.codegroup)
+        _say(log, f"resume at stage {stage}")
+        ctx = Context(paths, tree, handover, handover_path, installed, state, log)
+        return _guarded(ctx, lambda ctx: _carry_on(ctx, stage))
     finally:
         os.close(lock)
 
@@ -239,7 +391,8 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: "list[str] | None" = None, *, paths: "Paths | None" = None, tree: "Path | None" = None,
          is_root=None) -> int:
-    """0: ended ok; 1: ended failed (or busy); 2: no usable hand-over, or not root."""
+    """0: ended ok, handed over to a restart, or nothing to carry on; 1: ended failed (or busy); 2: no usable
+    hand-over or resume marker, or not root."""
     args = _parser().parse_args(argv)
     paths = paths or Paths()
     tree = tree or Path(__file__).resolve().parents[2]
@@ -255,16 +408,17 @@ def main(argv: "list[str] | None" = None, *, paths: "Paths | None" = None, tree:
     if args.contract != CONTRACT or args.contract not in contracts:
         _complain("this tree does not accept that contract")
         return 2
-    if args.command == "resume":
-        _complain("resume is not available yet")
-        return 1
+    # The marker names the hand-over by this path, for a restart to carry the run on from any folder
+    handover_path = Path(os.path.abspath(args.handover))
     try:
         log = _open_log(handover.log_path)
     except OSError:
         _complain("the log can't be opened")
         return 1
     try:
-        return _run(paths, tree, handover, args.handover, to_version, log)
+        if args.command == "resume":
+            return _resume(paths, tree, handover, handover_path, log)
+        return _run(paths, tree, handover, handover_path, to_version, log)
     except Exception as error:
         traceback.print_exc(file=log)
         _complain(f"unexpected {type(error).__name__}")

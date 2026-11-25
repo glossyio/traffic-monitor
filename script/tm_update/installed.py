@@ -134,9 +134,11 @@ def check_before_prepare(installed: Installed, paths: Paths) -> None:
         raise Refusal("low_space", f"{_megabytes(free)} MB free, {_megabytes(needed)} MB needed")
 
 
-def check_database_space(installed: Installed) -> None:
-    """The copy of the database a restore point holds needs 1.2 times its size free on the code folder's filesystem."""
-    needed = (_database_bytes(installed.codedir) * 6 + 4) // 5
-    free = _free_bytes(installed.codedir)
+def check_database_space(installed: Installed, paths: Paths) -> None:
+    """The copy of the database the migration runner makes needs 1.2 times its size free on the code folder's
+    filesystem."""
+    code = paths.rooted(installed.codedir)
+    needed = (_database_bytes(code) * 6 + 4) // 5
+    free = _free_bytes(code)
     if free < needed:
         raise Refusal("low_space", f"{_megabytes(free)} MB free, {_megabytes(needed)} MB needed")

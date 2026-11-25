@@ -146,16 +146,17 @@ def test_enough_space_passes(tmp_path, monkeypatch):
 
 
 def test_the_database_space_check_wants_1_2_times_the_database(tmp_path, monkeypatch):
-    db = tmp_path / "db"
-    (db / "node-red-tm" / "db").mkdir(parents=True)
-    (db / "node-red-tm" / "db" / "tmdb.sqlite").write_bytes(b"x" * 1000)
+    paths = world(tmp_path, manifest())
+    code = paths.root / "opt" / "traffic-monitor"
+    (code / "node-red-tm" / "db" / "tmdb.sqlite").write_bytes(b"x" * 1000)
     seen = []
     monkeypatch.setattr(installed_module, "_free_bytes", lambda path: seen.append(path) or 1199)
-    error = reason_of(check_database_space, installed(codedir=db))
+    error = reason_of(check_database_space, installed(), paths)
     assert error.reason == "low_space" and error.detail == "0 MB free, 0 MB needed"
     monkeypatch.setattr(installed_module, "_free_bytes", lambda path: 1200)
-    check_database_space(installed(codedir=db))
-    assert seen
+    check_database_space(installed(), paths)
+    # The code folder as it is under the root, never the device's own path
+    assert seen and all(path == code for path in seen)
 
 
 def test_a_database_that_is_missing_counts_as_empty(tmp_path, monkeypatch):

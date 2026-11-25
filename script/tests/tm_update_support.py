@@ -103,3 +103,148 @@ class FakeRun:
 
 def completed(argv, rc=0, stdout=""):
     return subprocess.CompletedProcess(argv, rc, stdout, "")
+
+
+BOOT = "11111111-2222-3333-4444-555555555555"
+OTHER_BOOT = "99999999-8888-7777-6666-555555555555"
+SWITCH_USEC = 5_000_000
+
+
+class FakeClock:
+    """health's clock and sleep: time moves only when the check sleeps."""
+
+    def __init__(self):
+        self.now = 1000.0
+        self.slept = []
+
+    def clock(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.slept.append(seconds)
+        self.now += seconds
+
+
+class Device:
+    """A device under a temporary root, the calls that would reach it recorded, and main() run against it.
+
+    events holds every outside command (its argv) and every playbook run (("playbook", name, tags)) in order."""
+
+    def __init__(self, tmp_path, monkeypatch, **world):
+        from tm_update import cli, health, installed as installed_module, playbook, proc, switch
+
+        self._cli = cli
+        self.paths, self.tree = make_world(tmp_path, **world)
+        self.handover_path = tmp_path / "handover.json"
+        self.handover_path.write_text(json.dumps(handover_dict(self.paths)))
+        self.work = self.paths.work_root / RUN
+        self.stages = []
+        self.events = []
+        self.playbook_rc = {}
+        self.images = []
+        self.when_a_stage_starts = None
+        # The switch: setup.yml's exit status (or an exception it raises), the restart flag it leaves, and a function
+        # it calls (to make a database copy, say)
+        self.setup_rc = 0
+        self.reboot_flag = None
+        self.during_setup = None
+        self.flag_before_setup = []
+        # systemctl: (verb, unit) -> exit status or an exception; is-active answers; tm-control's start time
+        self.systemctl = {}
+        self.unit_state = {}
+        self.tm_control_entered = 10**15
+        self.state_at_reboot = None
+        self.log_at_reboot = None
+        self.endpoint_status = 200
+        self.endpoint_urls = []
+        self.time = FakeClock()
+        self.paths.boot_id.parent.mkdir(parents=True)
+        self.paths.boot_id.write_text(BOOT + "\n")
+        self.run = FakeRun(self._answer)
+        monkeypatch.setattr(proc, "run", self.run)
+        monkeypatch.setattr(installed_module, "_free_bytes", lambda path: 10**12)
+        monkeypatch.setattr(playbook, "ensure_venv", self._ensure_venv)
+        monkeypatch.setattr(playbook, "run_playbook", self._run_playbook)
+        monkeypatch.setattr(switch, "_monotonic_usec", lambda: SWITCH_USEC)
+        monkeypatch.setattr(health, "_clock", self.time.clock)
+        monkeypatch.setattr(health, "_sleep", self.time.sleep)
+        monkeypatch.setattr(health, "_get_status", self._get_status)
+
+    def _answer(self, call):
+        argv = call["argv"]
+        self.events.append(argv)
+        if argv[:2] == ["podman", "images"]:
+            return completed(argv, stdout=json.dumps(self.images))
+        if argv[:2] == ["systemctl", "is-active"]:
+            state = self.unit_state.get(argv[2], "active")
+            return completed(argv, 0 if state == "active" else 3, state + "\n")
+        if argv[:2] == ["systemctl", "show"]:
+            return completed(argv, stdout=f"{self.tm_control_entered}\n")
+        if argv == ["systemctl", "reboot"]:
+            self.state_at_reboot = json.loads(self.paths.state.read_text())
+            self.log_at_reboot = self.log()
+        if argv[0] == "systemctl":
+            key = (argv[1], argv[-1]) if len(argv) == 3 else (argv[1],)
+            answer = self.systemctl.get(key, 0)
+            if isinstance(answer, BaseException):
+                raise answer
+            return completed(argv, answer)
+        return None
+
+    def _get_status(self, port):
+        self.endpoint_urls.append(port)
+        return self.endpoint_status
+
+    def _ensure_venv(self, tree, paths, log):
+        if self.when_a_stage_starts:
+            self.when_a_stage_starts()
+        self.stages.append("venv")
+        return paths.venv_root / "ansible-test"
+
+    def _run_playbook(self, venv, tree, name, vars_file, handover, log, tags=None):
+        self.stages.append((name, tuple(tags or ())))
+        self.events.append(("playbook", name, tuple(tags or ())))
+        assert (handover.work_dir / "reason").parent.is_dir()
+        if name == "setup.yml":
+            return self._setup(handover)
+        key = tuple(tags or ())
+        if key == ("stage",):
+            (handover.work_dir / "facts.json").write_text(json.dumps({"tm_control_port": 8090, "images": []}))
+        if self.playbook_rc.get(key):
+            reason = self.playbook_rc[key]
+            if isinstance(reason, str):
+                (handover.work_dir / "reason").write_text(reason + "\n")
+            return 1
+        return 0
+
+    def _setup(self, handover):
+        flag = handover.work_dir / "reboot-required"
+        self.flag_before_setup.append(flag.read_text() if flag.exists() else None)
+        if self.during_setup:
+            self.during_setup()
+        if isinstance(self.setup_rc, BaseException):
+            raise self.setup_rc
+        if self.setup_rc == 0:
+            data = json.loads(self.paths.manifest.read_text())
+            data["git"]["commit"] = handover.commit
+            self.paths.manifest.write_text(json.dumps(data))
+        if self.reboot_flag is not None:
+            flag.write_text(self.reboot_flag)
+        return self.setup_rc
+
+    def main(self, *args, is_root=True):
+        argv = list(args) or ["run", "--contract", "1", "--handover", str(self.handover_path)]
+        return self._cli.main(argv, paths=self.paths, tree=self.tree, is_root=lambda: is_root)
+
+    def resume(self):
+        return self.main("resume", "--handover", str(self.handover_path))
+
+    def state(self):
+        return json.loads(self.paths.state.read_text())
+
+    def log(self):
+        path = self.paths.log_dir / (RUN + ".log")
+        return path.read_text() if path.exists() else ""
+
+    def systemctl_calls(self, verb):
+        return [argv for argv in self.run.argvs() if argv[:2] == ["systemctl", verb]]
