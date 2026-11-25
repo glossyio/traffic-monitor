@@ -2811,8 +2811,15 @@ def test_setup_fields_agree():
                        ("cameras", {**body, "cameras": {"cam_a": {**body["cameras"]["cam_a"], "extra": None}}})):
         passed, refused = validate_setup(bad)["result"]
         assert passed is None and refused["payload"] == bad_request(f"{where}.extra")
-    run = setup_engine(body)
+    run = setup_engine(body, context=with_upload())
     [device], [camera] = run.insert_device, run.insert_camera
+    # the upload: each list is its table's columns less the names kept on the unit, and a row the engine hands to the
+    # upload has exactly those keys
+    lists = upload_lists()
+    assert lists["setup_device"] == [column for column in device_columns if column not in SETUP_KEPT_ON_THE_UNIT]
+    assert lists["setup_camera"] == [column for column in camera_columns if column not in SETUP_KEPT_ON_THE_UNIT]
+    [sent_device], [sent_camera] = run.upload["payload"]["device"], run.upload["payload"]["cameras"]
+    assert list(sent_device) == lists["setup_device"] and list(sent_camera) == lists["setup_camera"]
     assert set(device["params"]) == {"$" + column for column in device_columns if column != "ended"}
     assert set(camera["params"]) == {"$" + column for column in camera_columns if column != "ended"}
     db = sqlite3.connect(":memory:")
@@ -3697,6 +3704,13 @@ RADAR_ROWS = [
     {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "config_enabled": 0, "deployment_id": None, "port_open": 0,
      "last_reading_at": None, "radar_answers": 0, "radar_on": None},
 ]
+SETUP_SENT_DEVICE = {**dict.fromkeys(sent_columns(SETUP_DEVICE_COLUMNS)),
+                     "id": "100-aaaaaaaa-sd", "started": 100, "ended": None, "tm_version": "0.8.0", "schema_version": 11,
+                     "frigate_version": "0.16.2", "model_sha256": "aa" * 32, "labels_available": ["car", "person"]}
+SETUP_SENT_CAMERA = {**dict.fromkeys(sent_columns(SETUP_CAMERA_COLUMNS)),
+                     "id": "100-bbbbbbbb-sc", "started": 100, "ended": 200, "camera": "cam_a", "detect_width": 1536,
+                     "labels_tracked": ["car"], "zones": [{"key": "zone_capture", "enabled": True}], "masks": {}}
+SETUP_VALUE = {"device": [SETUP_SENT_DEVICE], "cameras": [SETUP_SENT_CAMERA]}
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
     "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
@@ -3704,6 +3718,7 @@ GATE_TELEMETRY = {
     "system_metrics": {"time_ms_utc": TS, "cpu_percent": 12.5},
     "deployments": {"updatedDeployment": [{**GATE_ROW, "entryEndDateTime": TS}], "currentDeployment": [GATE_ROW]},
     "watch": {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]},
+    "setup": SETUP_VALUE,
 }
 GATE_ATTRIBUTES = {
     "deployments": {
@@ -4117,14 +4132,17 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar"]
-    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
+    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar",
+                           "setup_device", "setup_camera"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch", "setup"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
     assert lists["deployment"] == DEPLOYMENT_COLUMNS
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
+    assert lists["setup_device"] == sent_columns(SETUP_DEVICE_COLUMNS)
+    assert lists["setup_camera"] == sent_columns(SETUP_CAMERA_COLUMNS)
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -4145,8 +4163,11 @@ def test_the_gate_holds_no_list_of_its_own():
     {**upload_lists(), "watch_radar": ["time", 7]},
     {key: names for key, names in upload_lists().items() if key != "deployment"},
     {**upload_lists(), "deployment": ["id", 7]},
+    {key: names for key, names in upload_lists().items() if key != "setup_device"},
+    {**upload_lists(), "setup_camera": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
-        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text"])
+        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text",
+        "no-setup-device-list", "setup-camera-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -4276,6 +4297,68 @@ def test_gate_leaves_out_watch_rows_it_cannot_read(value):
     out, _ = gate({"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value, "radar": radar}}})
     assert out["payload"] == {"ts": TICK_MS, "values": {"radar": radar}}
     out, _ = gate(watch_item(value))
+    assert out is None
+
+
+def setup_item(value):
+    return {"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value}}}
+
+
+@needs_node
+def test_gate_passes_the_setup_rows_field_by_field():
+    value = {"device": [{**SETUP_SENT_DEVICE, "surprise": "kept-on-the-unit"}],
+             "cameras": [{**SETUP_SENT_CAMERA, "note": "kept-on-the-unit"}], "extra": [1]}
+    run = gate_run([setup_item(value), setup_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"setup": SETUP_VALUE}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert sorted(warnings) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("setup.extra", "setup_device.surprise", "setup_camera.note"))
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+
+
+@needs_node
+def test_gate_cuts_a_kept_name_that_reaches_it():
+    """The engine leaves model_title, model_file, and profile out already; the gate is the second check."""
+    kept = {"model_title": "12 Oak St bikes", "model_file": "oak_st.tflite", "profile": "1420_oak_st"}
+    value = {"device": [{**SETUP_SENT_DEVICE, "model_title": kept["model_title"], "model_file": kept["model_file"]}],
+             "cameras": [{**SETUP_SENT_CAMERA, "profile": kept["profile"]}]}
+    run = gate_run([setup_item(value)])
+    [step] = run["results"]
+    assert step["result"]["payload"] == {"ts": TS, "values": {"setup": SETUP_VALUE}}
+    assert sorted(text for _, text, _ in step["logged"]) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("setup_device.model_title", "setup_device.model_file", "setup_camera.profile"))
+    # no kept value is in what is sent, in a warning, or in what the gate remembers (the labels name fields only)
+    text = json.dumps(run["results"]) + json.dumps(run["global"])
+    assert not [value for value in kept.values() if value in text]
+
+
+@needs_node
+@pytest.mark.parametrize("value", [
+    "text", ["device"], None, 7, {}, {"extra": []}, {"device": "all", "cameras": 7}, {"device": [], "cameras": []},
+    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
+        "no-listed-field"])
+def test_gate_leaves_out_setup_rows_it_cannot_read(value):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value, "radar": radar}}})
+    assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
+    out, _ = gate(setup_item(value))
+    assert out is None
+
+
+@needs_node
+def test_gate_keeps_the_setup_list_that_has_rows():
+    out, logged = gate(setup_item({"device": [SETUP_SENT_DEVICE, "text"], "cameras": []}))
+    assert out["payload"]["values"]["setup"] == {"device": [SETUP_SENT_DEVICE]}
+    assert logged == [["warn", "ThingsBoard upload: left out setup rows that aren't mappings.", False]]
+
+
+@needs_node
+def test_gate_sends_no_setup_rows_while_the_upload_is_off():
+    out, _ = gate(setup_item(SETUP_VALUE), thingsboard={"enabled": False})
     assert out is None
 
 

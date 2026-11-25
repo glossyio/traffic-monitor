@@ -5,7 +5,8 @@
         "airquality",
         "system_metrics",
         "deployments",
-        "watch"
+        "watch",
+        "setup"
     ],
     "attributes": [
         "deployments",
@@ -93,5 +94,41 @@
         "last_reading_at",
         "radar_answers",
         "radar_on"
+    ],
+    "setup_device": [
+        "id",
+        "started",
+        "ended",
+        "tm_version",
+        "tm_commit",
+        "schema_version",
+        "frigate_version",
+        "unit_system",
+        "detector",
+        "model_id",
+        "model_sha256",
+        "model_kind",
+        "model_trained_at",
+        "model_base",
+        "model_type",
+        "model_width",
+        "model_height",
+        "labels_available"
+    ],
+    "setup_camera": [
+        "id",
+        "started",
+        "ended",
+        "camera",
+        "detect_width",
+        "detect_height",
+        "detect_fps",
+        "stationary_threshold",
+        "stationary_interval",
+        "lens_hfov",
+        "labels_tracked",
+        "thresholds",
+        "zones",
+        "masks"
     ]
 }
