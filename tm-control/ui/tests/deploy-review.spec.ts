@@ -64,6 +64,7 @@ const STATE: PlacesState = {
   reconcile: 'done',
   nodered: true,
   map: { style_url: 'https://tiles.example.invalid/style' },
+  clock_timezone: null,
 }
 
 const DEPLOY = 'POST /api/v1/surveys/c0ffee01-si/deploy'

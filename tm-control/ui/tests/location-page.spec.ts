@@ -85,6 +85,7 @@ const PLACES: PlacesState = {
   reconcile: 'done',
   nodered: true,
   map: { style_url: 'https://tiles.example.invalid/style' },
+  clock_timezone: null,
 }
 
 // A deployment of the used place, as GET /surveys/{id}/deployments lists it
