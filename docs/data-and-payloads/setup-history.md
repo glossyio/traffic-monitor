@@ -6,7 +6,7 @@ description: The two setup history tables and the events_with_setup view, which 
 
 The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.
 
-The device keeps two tables, `setup_device` for the whole unit and `setup_camera` for each camera, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export.
+The device keeps two tables, `setup_device` for the whole unit and `setup_camera` for each camera, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export. With [Share data](../use/sharing.md) on, the rows are also [uploaded](#what-the-device-uploads).
 
 ## How the rows work
 
@@ -170,8 +170,19 @@ To compare two models, compare their counts over periods of similar traffic, and
 * **Events from before this was installed have no row.** Their setup columns in the view are empty. The first rows start within a few minutes of an upgrade.
 * **The Status page says when it stops.** The **Setup history** check on the [Status](../use/device-health.md#the-setup-history-checks) page warns when no snapshot has arrived for 15 minutes.
 
+## What the device uploads
+
+With **Share data** on, the device sends the setup history to the server as one `setup` telemetry value, `{"device": [...], "cameras": [...]}`: the rows of `setup_device` and `setup_camera`, with the fields below. There is no separate choice for it. See [MQTT and ThingsBoard](integrations.md#thingsboard) for the list of what is sent.
+
+* **When a row opens or closes,** the device sends it. A change to the model sends the row that ended and the new one.
+* **Every open row is sent again** after Node-RED starts, after the upload is turned on or its server changes, and once a day. A unit that starts sharing months after its rows opened still tells the server its setup, and a row the server missed arrives again.
+* **A row can arrive more than once.** A server keeps one row for each `id`. A row that closed while sharing was off, or while the server couldn't be reached, is never sent after the fact. The server learns the setup from the open rows, and a close it missed shows as the start of the next row.
+* **A sent row** has the table's columns in order, with the JSON columns as lists and objects, and `ended` empty while the row is in force. It leaves out `model_title`, `model_file`, and `profile`.
+
 ## What an operator typed
 
 The rows hold a few names a person chose, and they are saved with your data. They are a zone's `key`, a model's title (`model_title`) and file name (`model_file`), and a profile's key (`profile`). A zone's key is saved with every event already; see [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data). Don't name any of these after a street, a house number, or a person. The Status page's **Model and profile names** check warns when a model's title, the file name of a model you uploaded (the part before its last dot), or a profile's key looks like an address or a person's name, and never shows the name.
+
+A zone's key is sent with shared data, inside `zones`, as it is with every event. A model's title, its file name, and a profile's key stay on the device, in the database and its download, and are never uploaded. A server tells models apart by `model_sha256` and `model_id`, and sees a profile only as settings that changed.
 
 The names Frigate shows for zones, masks, and cameras are not kept. Frigate's own name for a camera, a camera's stream address, and a mask's id aren't either. The rows say which camera by its key in `config.yml`.
