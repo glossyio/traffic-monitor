@@ -63,7 +63,7 @@ The location is optional. If the device stays in one place and you never share i
 2. Choose **Add a place**. Enter a description that only you see, paste the latitude and longitude from any maps app, and choose which way each sensor faces, as a compass point. Choose **Save**.
 3. Open the new place in the list, choose **Deploy here**, check the review, and choose **Deploy**.
 
-To record only the way the sensors face, choose **Modify deployment** on the place in use, **First location**, and change the headings there. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
+To record the way the sensors face, and how the unit is mounted, choose **Mounting** on the place in use, **First location**, and fill in the page. Set each sensor's heading on its dial, then its height above the road and its tilt or the distance to the centre of its view, or start from a usual mount. The page records no roll, so level the camera from side to side when you mount it. [Places and location](use/location.md) explains each step, and how precisely the database stores the location.
 
 Then check that the sensors in the Traffic Monitor's settings match the hardware. A device with the Pi camera and one radar needs no change. On a device without a radar, open **Cameras** in the control app, open the camera's **Settings**, and set **Radar** to **No radar**. The camera's other settings are there too, and [Cameras](use/cameras.md) explains them. Turning off the radar itself takes a line in the settings file, so connect over SSH and open it:
 

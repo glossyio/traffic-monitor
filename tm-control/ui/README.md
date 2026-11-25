@@ -1424,8 +1424,8 @@ is admin-only, like the Location page, and has no menu entry of its own: the Loc
   read, shows a warning in place of the form.
 - Cancel goes back to the Location page and sends nothing.
 - The page, the dial, the side view, and the lengths are in the entry chunk, because the routes import their pages
-  directly, as every other page's do. It grew from 696.74 kB (229.36 kB gzipped) to 720.11 kB (236.75 kB), and the
-  Location page's changes for it to 721.52 kB (236.97 kB).
+  directly, as every other page's do. The entry chunk is 723.74 kB (237.74 kB gzipped), up from 696.74 kB (229.36 kB)
+  before the dial, the lengths, the side view, and the page, and the Location page's changes for it.
 
 The page was checked in fake mode at 375 px and 1280 px wide: the form as a fresh device has it, a usual mount picked,
 a heading set on the dial by a press and a drag, the result after a save, a radar following its camera and unticked,
