@@ -4,6 +4,7 @@ The root case runs directly when the suite runs as root, or as root in a user na
 allows that; otherwise it's skipped. -T would print the tags and exit 2, so a guard that let root through shows.
 """
 
+import fcntl
 import os
 import re
 import shutil
@@ -176,3 +177,125 @@ def test_a_remote_run_from_an_old_python_says_so_and_makes_nothing(tmp_path):
     assert result.returncode == 1, output
     assert "Python 3.12 or later" in output and "3.11" in output
     assert not (home / ".tmsetup" / "tm_venv").exists()
+
+
+LOCK_MESSAGE = "Another install or update is running on this device. Wait for it to finish, then run tmsetup.sh again."
+
+
+def take_run_lock_function():
+    """_take_run_lock cut out of the script by its text: from its first line to the closing brace at column 0."""
+    text = SCRIPT.read_text()
+    start = text.index("_take_run_lock() {")
+    end = text.index("\n}\n", start) + 3
+    return text[start:end]
+
+
+def fake_sudo(tmp_path):
+    """A sudo that runs its arguments, first on PATH, so the create step needs no password."""
+    fake = tmp_path / "bin"
+    fake.mkdir(exist_ok=True)
+    sudo = fake / "sudo"
+    sudo.write_text('#!/bin/sh\nexec "$@"\n')
+    sudo.chmod(0o755)
+    return {"PATH": f"{fake}:{os.environ.get('PATH', '/usr/bin:/bin')}", "HOME": str(tmp_path)}
+
+
+def run_take_run_lock(tmp_path, lock, after="", **kwargs):
+    snippet = f"{take_run_lock_function()}\n_take_run_lock '{lock}'\nstatus=$?\n{after}\nexit $status"
+    return subprocess.run(["bash", "-c", snippet], env=fake_sudo(tmp_path), text=True, timeout=10, check=False, **kwargs)
+
+
+def test_a_free_lock_is_taken_and_held_while_the_shell_lives(tmp_path):
+    lock = tmp_path / "update" / "lock"
+    proc = subprocess.Popen(
+        ["bash", "-c", f"{take_run_lock_function()}\n_take_run_lock '{lock}' || exit 1\necho held\nsleep 30"],
+        env=fake_sudo(tmp_path), stdout=subprocess.PIPE, text=True)
+    try:
+        assert proc.stdout.readline() == "held\n"
+        with lock.open() as other:
+            with pytest.raises(BlockingIOError):
+                fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    finally:
+        proc.kill()
+        proc.wait()
+        proc.stdout.close()
+    with lock.open() as other:
+        fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)  # the kernel let go when the shell ended
+
+
+def test_a_missing_lock_file_and_its_folders_are_created_readable_by_everyone(tmp_path):
+    lock = tmp_path / "var" / "update" / "lock"
+    result = run_take_run_lock(tmp_path, lock, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert [oct(path.stat().st_mode & 0o777) for path in (lock.parent.parent, lock.parent, lock)] == [
+        "0o755", "0o755", "0o644"]
+
+
+def test_a_held_lock_stops_the_run_with_the_reason(tmp_path):
+    lock = tmp_path / "lock"
+    lock.touch()
+    with lock.open() as holder:
+        fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = run_take_run_lock(tmp_path, lock, capture_output=True)
+    assert result.returncode == 1
+    assert result.stdout.strip() == LOCK_MESSAGE
+    assert result.stderr == ""
+
+
+def test_creating_the_lock_file_never_replaces_it(tmp_path):
+    """The create step opens for appending; a replaced file would be a different lock, and a second run would pass."""
+    lock = tmp_path / "lock"
+    lock.touch()
+    inode = lock.stat().st_ino
+    function = take_run_lock_function()
+    create = re.findall(r"sudo sh -c '([^']*)' sh ", function)
+    assert len(create) == 1 and ": >> " in create[0] and not re.search(r"\b(install|cp|mv)\b", create[0])
+    with lock.open() as holder:
+        fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # the function's own create step, run on the existing file the way the function runs it (through sudo)
+        done = subprocess.run(["sudo", "sh", "-c", create[0], "sh", str(lock.parent), str(lock)],
+                              env=fake_sudo(tmp_path), capture_output=True, text=True, timeout=10, check=False)
+        assert done.returncode == 0, done.stderr
+        assert lock.stat().st_ino == inode
+        result = run_take_run_lock(tmp_path, lock, capture_output=True)
+    assert result.returncode == 1
+    assert result.stdout.strip() == LOCK_MESSAGE
+    assert lock.stat().st_ino == inode
+
+
+def test_a_lock_that_cannot_be_made_or_opened_says_so_not_that_another_run_holds_it(tmp_path):
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    sudo = fake / "sudo"
+    sudo.write_text("#!/bin/sh\nexit 1\n")
+    sudo.chmod(0o755)
+    env = {"PATH": f"{fake}:{os.environ.get('PATH', '/usr/bin:/bin')}", "HOME": str(tmp_path)}
+    lock = tmp_path / "update" / "lock"
+    snippet = f"{take_run_lock_function()}\n_take_run_lock '{lock}'\nexit $?"
+    result = subprocess.run(["bash", "-c", snippet], env=env, capture_output=True, text=True, timeout=10, check=False)
+    assert result.returncode == 1
+    assert result.stdout.strip() == f"Could not create the installer's lock file {lock}."
+    # a lock file that exists but can't be opened
+    lock = tmp_path / "unreadable"
+    lock.touch()
+    lock.chmod(0)
+    if os.geteuid() != 0:
+        snippet = f"{take_run_lock_function()}\n_take_run_lock '{lock}'\nexit $?"
+        result = subprocess.run(["bash", "-c", snippet], env=env, capture_output=True, text=True, timeout=10,
+                                check=False)
+        assert result.returncode == 1
+        assert result.stdout.strip() == f"Could not open the installer's lock file {lock}."
+
+
+def test_a_local_run_takes_the_lock_after_the_sudo_check_and_before_anything_is_asked_or_installed():
+    lines = [line.strip() for line in script_code_lines()]
+    assert "_RUN_LOCK=/var/lib/traffic-monitor/update/lock" in lines
+    start = lines.index("_tmsetup_local(){ # Installation on localhost only")
+    body = lines[start:]
+    sudo_check = next(i for i, line in enumerate(body) if "sudo -n true" in line)
+    take = body.index('_take_run_lock "${_RUN_LOCK}" || return 1')
+    confirm = next(i for i, line in enumerate(body) if line.startswith('_confirm_cont "Are you sure'))
+    wifi = body.index("_ask_wifi_country")
+    ansible = next(i for i, line in enumerate(body) if line.startswith('_install_ansible_local "'))
+    assert sudo_check < take < confirm < wifi < ansible
+    assert sum("_take_run_lock" in line and "()" not in line for line in lines) == 1  # a remote run takes none
