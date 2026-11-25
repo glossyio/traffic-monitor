@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS build-ffmpeg
+FROM docker.io/library/debian:bookworm-slim@{{ tmsetup_debian_image_digest }} AS build-ffmpeg
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -30,7 +30,7 @@ RUN ./configure \
     make -j$(nproc) && \
     make install
 
-FROM ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}
+FROM ghcr.io/blakeblackshear/frigate:{{ tmsetup_frigate_version }}@{{ tmsetup_frigate_image_digest }}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
