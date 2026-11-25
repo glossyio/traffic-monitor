@@ -56,7 +56,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
-  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
+  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, `/location/mounting`,
+  and `/cameras` to admins only.
 - `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
   `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
   stage makes `dist/` readable for nginx (`chmod -R a+rX`).
@@ -80,7 +81,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
   module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
   editing a place (`PlaceForm.vue`), the deploy review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
-  importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the precision choices,
+  importing (`ImportPlaces.vue`). The Mounting page (`MountingPage.vue`) is the place in use's mounting, with the
+  heading dial (`HeadingDial.vue`), the side view (`MountSideView.vue`), and the lengths in feet or metres
+  (`lengths.ts`). Its `coordinates.ts` shows coordinates, names the precision choices,
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
   form's check. `heading.ts` is the compass rule (`compassPoint`, `pointCentre`, `facing`, `headingChoices`) and
@@ -1261,6 +1264,179 @@ Defaults rejected for the side view:
 - A separate scale for height and distance, so a tall support and a far ground point both look large: it draws the wrong
   tilt, and the tilt is what the drawing is for.
 - Working the missing value out in the drawing: the API already does, and a second copy would drift from it.
+
+#### The Mounting page
+
+`MountingPage.vue`, at `/location/mounting`, is where an admin records how the unit is mounted at the place in use. It
+is admin-only, like the Location page, and has no menu entry of its own: the Location page leads to it. It reads
+`GET /surveys` for the place in use, then `GET /surveys/{id}/mounting`, and writes with `PUT` on the same path.
+
+```text
++----------------------------------+
+| < Location                       |  a text link back
+| Mounting                    (h5) |
+| Front of the school              |
+| a1b2c3d4-si                      |
+| How the unit is mounted at this  |
+| place. The numbers are stored... |
+| (!) Node-RED didn't answer, ...  |  only then
+| Units  (o) Feet  ( ) Metres      |
+| Start from a usual mount         |
+| ( ) Tripod beside the road       |
+| ( ) Pole or sign post            |
+| ( ) Upstairs window over an ...  |
+| ( ) My own measurements          |
+| -------------------------------- |
+| picam_h265                  (h6) |
+| Camera                           |
+| (i) From last time: 12.0 ft up,  |  only with `previous`
+|     tilted 15°, pole or sign post|
+|     [Use these values]           |
+| Which way it faces               |
+|   (the heading dial)             |
+| [Height above the road  12.0 ft] |
+|  12.0 ft (3.66 m)                |
+|  From the road surface ...       |
+| (o) I measured the tilt          |
+| ( ) I measured the distance      |
+| [Tilt below level          15 °] |
+|  How far the camera points ...   |
+| [Distance to the centre  44.8 ft]|  greyed: the dry run's value
+|  44.8 ft (13.66 m)               |
+|  Along the ground, from ...      |
+|   (the side view)                |
+| -------------------------------- |
+| TM_RADAR_SERIAL_PORT_00     (h6) |
+| Radar                            |
+| [x] Same as picam_h265           |
+| Takes picam_h265's heading,      |
+| height, and tilt.                |
+| -------------------------------- |
+| Did the unit move or turn?       |  only when the dry run asks
+| picam_h265: heading 40° to 62°   |
+| (o) No, it is where it was. I    |
+|     measured it better.          |
+| ( ) Yes, it was moved or turned. |
+| The record of the running        |
+| deployment is corrected.         |
+| [Save] [Cancel]  Saved.          |  the result beside the buttons
++----------------------------------+
+```
+
+- The order is the order of the work at the roadside. Where it is and what it is for come first, so a person who
+  followed a link knows what the numbers will do. The units come before any number, because every length on the page
+  is shown in them. The usual mounts come before the sections, because picking one fills every section at once, and a
+  person who starts from one only adjusts after. Then one section per sensor, in the API's order (each camera, its
+  radar under it, the other radars, the rest), titled with the sensor's name, since that is what the deployments list
+  shows. Last the question, then Save: the question is about the save, so it sits where the save is.
+- Inside a section, what the person does in order: which way it faces, then how high, then the tilt or the distance,
+  then the picture that checks it. The notice of last time's values goes at the top of its section, not after the
+  drawing: it offers to fill the fields below it, and on a phone an offer under the drawing would be found only after
+  the fields were typed in.
+- At 375 px a section is one column: the dial (288 px), then each field at 20 rem with its lines under it, then the
+  side view (300 px), all left-aligned. Each field shows its value in the other unit under it ("12.0 ft (3.66 m)",
+  `both`) and its help in the secondary color under that. A section has no card around it: the page is one form, and
+  a top border with the sensor's name as an `h2` separates the sections, as the Location page's sections are separated.
+- The usual mounts are a radio group, not a select, so the three and "My own measurements" are read without a tap.
+  Picking a mount sets, in every camera's and radar's section that isn't following a camera, the height, the tilt, "I
+  measured the tilt", and the mount's key; nothing is saved until Save. "My own measurements" clears the key in those
+  sections and leaves the numbers. The group starts at the key every such section shares, at "My own measurements"
+  when none has a key and one has a number, and at nothing otherwise, and is chosen the same way again after **Use
+  these values** and after "Same as" is ticked or unticked, so it never shows a mount the form won't save.
+- Lengths: each length field keeps the metres it was loaded with until someone types in it, so switching between feet
+  and metres, or leaving a field untouched, never sends a value that went through feet and back. Text typed back to
+  what the page last put in the field gives that value back too: a height saved as 3.00 m reads "9.8" in feet, which
+  typed would be 2.99 m, so a digit typed and deleted changes nothing. A field emptied clears that value. A comma
+  is the decimal mark when there is one and no dot ("7,5"). A field with text `typed` can't read ("1,000", "abc")
+  says "Enter a number, such as 12 or 12.5." under it, isn't sent, and keeps Save off; the page sends no dry run
+  while one does, since the API couldn't check what the person meant. A negative or a number past a limit is sent,
+  and the API's sentence shows under the field. The tilt is read the same way, in degrees.
+- One of tilt and distance is measured and the other worked out. The person picks which with two radio buttons; the
+  other field is disabled and shows the value the last dry run worked out. Choosing the other as measured starts it
+  from that shown value, so switching alone changes no number. A switch made while a dry run is waiting or on its way,
+  or while **Try again** is offered, sends that dry run first and starts from its answer, so a height typed just before
+  the switch is the one the value is worked out for. When the API works none out (no height), the field starts from what
+  was last typed in it, so a tilt typed before the height survives a switch to the distance and back; a field that was
+  never measured holds nothing, so a tilt of 0 switched to the distance starts empty and not at a distance from before.
+  The one that stops being measured forgets any text it couldn't read, since it is no longer sent: only the height and
+  the measured one can hold the form back. The page does no trigonometry: a tilt of 0 shows an empty distance because
+  the API gives none.
+- After each change the page waits 400 ms and sends the whole form as a dry run; a counter drops any answer that
+  isn't the newest request's. Every section is sent every time, a following radar as `same_as_camera: true`, because
+  a save writes only the sensors it names. Save is off until the form differs from what was loaded, while a dry run is
+  waiting or was refused, while a field can't be read, and while Node-RED doesn't answer.
+- "Same as <camera>" is never ticked for the person. It starts ticked only when the API says `same_as_camera`, which
+  it does only while the radar's five values equal its camera's; ticking it is always the person's act. Ticked, the
+  section hides the dial, the fields, and the side view, and says "Takes <camera>'s heading, height, and tilt."
+  Unticking shows them again, filled with the camera's values as the form has them, so the radar starts where it was.
+  A ticked radar shows its own values from last time only when they differ from its camera's, or the camera has none:
+  otherwise the camera's notice offers them and one save confirms both. Its **Use these values** unticks it, with the
+  camera's heading, and fills the rest from last time, so its own values are never overwritten unseen.
+- The question sits in the page above Save, shown when the newest dry run says `ask`, with the dry run's `suggested`
+  answer already chosen and the changes that count listed ("picam_h265: heading 40° to 62°", and a length in both
+  units, "height 12.0 ft (3.66 m) to 13.0 ft (3.96 m)", so a change smaller than a tenth of a foot still reads as
+  one), old value from the page's load and new from the dry run. A filled-in value or a new mount key doesn't count,
+  so it isn't part of what is asked and isn't listed. The person's answer holds while the changes that count stay as
+  they were; once they differ (another turn, say), the dry run's new `suggested` is chosen again. Under the choice,
+  what it does: the running record is corrected, or "A new deployment starts now for" the sensors with a change that
+  counts (`changes` with `counts`). It isn't a dialog: the answer is part of the form and belongs beside what changed,
+  a dialog would hide the numbers it asks about, and a change to a field while the question shows asks the API again.
+  A 409 `answer_needed` from a save sends a dry run at once, so the question appears.
+- The result stays beside Save until the form changes again: "Saved.", "Saved. A new deployment started for ...",
+  "Saved. Node-RED hasn't loaded the settings yet; the new deployment appears once it does. Don't save again.", or the
+  API's sentence. After a save the page loads the mounting again, so a sensor whose last values were confirmed loses its
+  notice and Save is off until the next change. While a save is on its way every control that changes the form is off
+  (the units, the usual mounts, "Same as", Use these values, the dial, and the fields), because the reload after it
+  would replace an edit made meanwhile.
+- The notice of last time's values is a tonal info alert in its section: "From last time: 12.0 ft up, tilted 15°, pole
+  or sign post" (a distance, "44.8 ft to the centre of the view", where there is no tilt, so a distance measured
+  without a height still has something to offer) and **Use these values**, which fills the section's fields, the
+  measured choice, and the mount. Nothing is recorded until Save, and the dry run then lists them as filled-in values,
+  which don't count, so nothing is asked.
+  The Location page's card and the deploy review's result say the same in one sentence with a **Mounting** button
+  (the words await the maintainer's read).
+- A refused value (422 with `detail.index` and `detail.field`) shows the API's sentence under that section's field; a
+  refusal of anything without a field of its own shows in its section, and one with no index under Save. A save's
+  refusal shows its sentence once: under its field when the page shows that field, else beside Save. A 409 other
+  than `answer_needed` loads the page again. A dry run that fails any other way (no answer from the device, a 500)
+  shows its sentence under Save with **Try again**, which sends the same dry run, since nothing else would send one
+  until the form changed; Save stays off until one is answered. No place in use, or a mounting the API refuses to
+  read, shows a warning in place of the form.
+- Cancel goes back to the Location page and sends nothing.
+- The page, the dial, the side view, and the lengths are in the entry chunk, because the routes import their pages
+  directly, as every other page's do. It grew from 696.74 kB (229.36 kB gzipped) to 720.11 kB (236.75 kB).
+
+The page was checked in fake mode at 375 px and 1280 px wide: the form as a fresh device has it, a usual mount picked,
+a heading set on the dial by a press and a drag, the result after a save, a radar following its camera and unticked,
+the question after a turn, the result that names the new deployments, and the notice of last time's values after a
+deploy away and back.
+
+- "Distance to the centre of the view" was cut off as the field's floated label at 14 rem. The three fields are 20 rem
+  now, which holds it and still fits a phone's column.
+- The height and distance fields kept an empty row for their message while they had no value, so their help sat
+  further below them than the tilt's. All three leave out the row when there is nothing in it.
+- Looked at and kept: at 1280 px the dial's words, field, and help sit beside it, because the side-by-side layout
+  switches at 600 px of window width (Vuetify's `sm`), and in the page's 760 px column there is room for both. At
+  375 px they stack under it.
+- Looked at and kept: a mouse drag that starts on the dial's ring and runs over the page's text selects nothing in
+  Chromium (the ring's pointer capture keeps the events), so the dial needs no `preventDefault`.
+- Looked at and kept: a long result ("Saved. A new deployment started for picam_h265 and TM_RADAR_SERIAL_PORT_00.")
+  wraps under Save and Cancel instead of beside them, on a phone and on a wide screen.
+- Looked at and kept, in a second check: **Try again** sits at the top right of its alert, as on the page's load
+  error, and on a phone the sentence wraps beside it; a following radar's own notice sits between "Same as" and
+  "Takes …", so it is seen before the line it replaces; and on a phone a question line in both units can wrap
+  inside a length ("13.0" at the end of one line, "ft (3.96 m)" on the next), which still reads.
+
+Defaults rejected for the page:
+
+- A dialog for the whole form on the Location page: a dial, three fields, and a drawing per sensor don't fit a phone's
+  dialog, and the Location page behind it would show none of it.
+- A question for each field, or for each sensor: the API asks once for a save, and one answer covers it.
+- Working the numbers out in the browser (the distance from the tilt, whether to ask, the suggested answer): the API
+  does, and two copies of the rules would drift. The page compares the form with what it loaded only to turn Save on.
+- A select for the usual mounts: the titles are long and a person would have to open it to see the choices.
+- A tick that sets itself when the numbers happen to match: following the camera would then be the page's choice, and
+  later changes to the camera would move the radar without the person deciding it.
 
 #### What the screenshot review changed
 
