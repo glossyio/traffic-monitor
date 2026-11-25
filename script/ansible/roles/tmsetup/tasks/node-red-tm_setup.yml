@@ -39,6 +39,7 @@
     - node-red-tm/data/README.md
     - node-red-tm/data/settings.js
     - node-red-tm/data/package.json
+    - node-red-tm/data/package-lock.json
     - node-red-tm/data/upload-lists.json
   ansible.builtin.copy:
     dest: '{{ tmsetup_codedir }}/{{ item }}'

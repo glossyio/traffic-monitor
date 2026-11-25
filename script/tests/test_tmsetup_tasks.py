@@ -1302,3 +1302,10 @@ def test_the_upload_lists_file_is_copied_and_restarts_node_red():
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
     assert "node-red-tm/data/upload-lists.json" in task["loop"]
     assert task["notify"] == "Restart node-red-tm.service"
+
+
+def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
+    """The Containerfile copies both from data/ in the build folder, and npm ci installs what the lock lists."""
+    task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
+                if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
+    assert {"node-red-tm/data/package.json", "node-red-tm/data/package-lock.json"} <= set(task["loop"])

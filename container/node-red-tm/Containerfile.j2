@@ -1,7 +1,7 @@
 FROM docker.io/nodered/node-red:{{ tmsetup_node_red_tm_version }}@{{ tmsetup_node_red_tm_image_digest }}
 WORKDIR /usr/src/node-red
-COPY data/package.json package.json
-RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
+COPY data/package.json data/package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund --no-update-notifier
 USER root
 RUN apk update && \
     apk add --no-cache tar

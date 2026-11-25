@@ -1129,6 +1129,13 @@ def test_ffmpeg_is_built_from_one_commit():
     assert f'test "$(git -C ffmpeg rev-parse HEAD)" = {commit}' in text
 
 
+def test_node_red_image_installs_its_modules_from_the_lock():
+    lines = pins.rendered_containerfile("container/node-red-tm/Containerfile.j2").splitlines()
+    copy = lines.index("COPY data/package.json data/package-lock.json ./")
+    assert copy < lines.index("RUN npm ci --omit=dev --no-audit --no-fund --no-update-notifier")
+    assert not [line for line in lines if "npm install" in line]
+
+
 def test_revproxy_image_makes_the_built_ui_readable_by_nginx():
     """The sources arrive with no world read (the unarchive task's o=), Vite copies public/ files with their own mode,
     and nginx's worker isn't root: without this, /favicon.svg answers 403."""
