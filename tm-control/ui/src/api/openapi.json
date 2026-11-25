@@ -1272,7 +1272,7 @@
           "location"
         ],
         "summary": "Deploy Place",
-        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to\nanother place also removes each sensor's other four from the file, at a place used before as at a new one: the\nstore keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a\nmounting save.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false.",
+        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to\nanother place also removes each sensor's other four from the file, at a place used before as at a new one: the\nstore keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a\nmounting save.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see\n_reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.",
         "operationId": "deploy_place_api_v1_surveys__survey_id__deploy_post",
         "parameters": [
           {
@@ -1411,7 +1411,7 @@
           "location"
         ],
         "summary": "Correct Location",
-        "description": "Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,\nand Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed\nand the rows didn't; correcting again with the same pair re-rounds them.",
+        "description": "Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,\nand Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed\nand the rows didn't; correcting again with the same pair re-rounds them. The reconcile runs first (see\n_reconciled), and for the place in use a file that no longer names it by the time the lock is held is refused (409\nconfig_changed).",
         "operationId": "correct_location_api_v1_surveys__survey_id__location_post",
         "parameters": [
           {

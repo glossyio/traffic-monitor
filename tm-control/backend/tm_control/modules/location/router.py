@@ -638,8 +638,10 @@ def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User =
     store keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a
     mounting save.
 
-    Node-RED not answering isn't an error: the file is written, and `reloaded` is false."""
+    Node-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see
+    _reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it."""
     app_state = request.app.state
+    _reconciled(app_state, admin)
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         config = load_config(app_state)
@@ -747,9 +749,12 @@ def place_events(survey_id: str, request: Request, admin: User = Depends(require
 def correct_location(survey_id: str, body: LocationCorrection, request: Request, admin: User = Depends(require_admin)):
     """Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,
     and Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed
-    and the rows didn't; correcting again with the same pair re-rounds them."""
+    and the rows didn't; correcting again with the same pair re-rounds them. The reconcile runs first (see
+    _reconciled), and for the place in use a file that no longer names it by the time the lock is held is refused (409
+    config_changed)."""
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
+    _reconciled(app_state, admin)
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         if place.status == "planned":
@@ -760,6 +765,9 @@ def correct_location(survey_id: str, body: LocationCorrection, request: Request,
             )
         if place.status == "in_use":
             config = load_config(app_state)
+            if config.deployment().survey_id != place.id:
+                # writing the id into that file would start deployments without the place's values
+                raise _not_the_place(config)
             config.set_place(place.id, lat, lon)
             save_config(app_state, config)  # first, so the follow step never sees the store ahead of the file
         places = Places(app_state.state)

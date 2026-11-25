@@ -930,6 +930,76 @@ def test_a_precision_saved_while_the_file_is_reset_is_the_one_kept(admin):
     assert file_data(admin)["deployment"]["database_precision"] == "1"
 
 
+def reset_as_tmsetup_leaves_it(client, deployed: str, survey_id: str) -> None:
+    """The file as tmsetup.sh -f leaves it: no survey id, a blank top-level heading, the template's precision, and no
+    sensor's mounting. `deployed` is the file as it was after the first Deploy here, before any mounting."""
+    assert f"survey_id: {survey_id}\n" in deployed and "heading_deg: 0\n" in deployed
+    text = deployed.replace(f"survey_id: {survey_id}\n", "survey_id:\n").replace("heading_deg: 0\n", "heading_deg:\n")
+    client.app.state.config_path.write_text(re.sub(r"database_precision: .*\n", "database_precision: '2'\n", text))
+
+
+def deployment_ids(client, survey_id) -> dict:
+    """Each deployment's id, with when it ended and its five: what Correct location must leave alone."""
+    return {row["id"]: (row["ended"], [row[key] for key in FIVE]) for row in rows(client, survey_id)}
+
+
+def test_correct_location_in_a_reset_file_brings_the_place_back_first(admin):
+    """Correct location sent before anything ran the reconcile after tmsetup.sh -f: the place's id, headings, and
+    mounting come back first, so writing the id doesn't start deployments with nothing in them."""
+    in_use = first_place(admin)
+    deployed = admin.app.state.config_path.read_text()
+    save_mounting(admin, in_use, mounted(CAMERA, **POLE))
+    before = deployment_ids(admin, in_use)
+    kept = Places(admin.app.state.state).mountings(in_use)
+    reset_as_tmsetup_leaves_it(admin, deployed, in_use)
+    r = admin.post(f"/api/v1/surveys/{in_use}/location", json={"lat": 45.52252, "lon": -122.6912}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert deployment_ids(admin, in_use) == before
+    assert file_data(admin)["deployment"]["survey_id"] == in_use
+    assert [own_block(admin, CAMERA).get(key) for key in FIVE] == POLE_FIVE
+    assert Places(admin.app.state.state).mountings(in_use) == kept
+
+
+def test_correct_location_refuses_a_file_that_no_longer_names_the_place(admin, monkeypatch):
+    """A reset between the reconcile and the lock: the file names no place, so nothing is corrected."""
+    from tm_control.modules.location import reconcile
+
+    in_use = first_place(admin)
+    deployed = admin.app.state.config_path.read_text()
+    save_mounting(admin, in_use, mounted(CAMERA, **POLE))
+    before_rows = rows(admin, in_use)
+    reset_as_tmsetup_leaves_it(admin, deployed, in_use)
+    reset_text = admin.app.state.config_path.read_text()
+    store = Places(admin.app.state.state)
+    point, kept = (store.get(in_use).lat, store.get(in_use).lon), store.mountings(in_use)
+    monkeypatch.setattr(reconcile, "ensure", lambda *args, **kwargs: None)
+    r = admin.post(f"/api/v1/surveys/{in_use}/location", json={"lat": 45.52252, "lon": -122.6912}, headers=ORIGIN)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "config_changed"
+    assert admin.app.state.config_path.read_text() == reset_text
+    assert (store.get(in_use).lat, store.get(in_use).lon) == point and store.mountings(in_use) == kept
+    assert rows(admin, in_use) == before_rows
+    assert ("survey.correct_location", in_use) not in audit_rows(admin)
+
+
+def test_correct_location_says_where_to_look_when_the_files_survey_id_is_not_an_id(admin):
+    in_use = first_place(admin)
+    path = admin.app.state.config_path
+    path.write_text(path.read_text().replace(f"survey_id: {in_use}\n", "survey_id: main street\n"))
+    r = admin.post(f"/api/v1/surveys/{in_use}/location", json={"lat": 45.52252, "lon": -122.6912}, headers=ORIGIN)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "config_changed"
+    assert "Status page" in r.json()["error"]["message"] and "main street" not in r.json()["error"]["message"]
+    assert "survey_id: main street\n" in path.read_text()
+
+
+def test_deploy_in_a_reset_file_keeps_the_chosen_precision(admin):
+    in_use = first_place(admin)
+    assert admin.put("/api/v1/surveys/precision", json={"precision": "1"}, headers=ORIGIN).status_code == 200
+    reset_file(admin, in_use)
+    deploy(admin, in_use)
+    assert file_data(admin)["deployment"]["database_precision"] == "1"
+    assert places(admin)["precision"] == "1"
+
+
 IMPORT_CSV = "description,lat,lon,picam_h265\nMain St,45.52252,-122.69120,n\nNo location,,,\n"
 
 
