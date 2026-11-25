@@ -244,7 +244,7 @@ describe('correcting a heading', () => {
     const dialog = mountCorrect('heading', NEAR, DEPLOYMENT)
     await flushPromises()
     expect(dialogText()).toContain('picam_h265')
-    expect(dialogText()).toContain('If the unit was turned, use Modify deployment on the place in use instead.')
+    expect(dialogText()).toContain('If the unit was turned, record it on the Mounting page of the place in use instead.')
     expect(dialogText()).toContain('Copies and uploads that already left the device keep the old values.')
     expect(correctButton().disabled).toBe(true) // nothing to correct until the heading changes
     await choose(dialog, 135)

@@ -835,15 +835,16 @@ importing places open dialogs from this page, so they move nothing on it.
 | | Sharing      Not sharing     | |
 | | Facing, picam_h265           | |
 | | NE (40°)                     | |
+| | (!) This place has mounting  | |  only while values from last
+| |     values from the last ... | |  time wait to be confirmed
+| |     [Mounting]               | |
 | +------------------------------+ |
 | Places                      (h6) |
 | [Add a place] [Import places]    |
 | +------------------------------+ |
-| | Front of the school (In use) | |
+| | Front of the school (In use) | |  opened
 | | 34b17422-si                  | |
-| | 45.52, -122.69             v | |
-| +------------------------------+ |
-| | No description (Used)        | |  opened
+| | 45.52, -122.69               | |
 | | First used    Last used      | |
 | | No events recorded at this   | |
 | | place.                       | |
@@ -851,15 +852,17 @@ importing places open dialogs from this page, so they move nothing on it.
 | | | Deployed Nov 7, 10:15 PM,  | |  newest first; the running one
 | | | running now                | |  has a blue left border
 | | | picam_h265                 | |
-| | | Facing N (0°)              | |
-| | |   Correct heading          | |
+| | | Facing NE (40°) · 7.0 ft up| |  what is recorded, in the
+| | | · tilted 15°  Mounting     | |  Mounting page's unit
 | | |   TM_RADAR_SERIAL_PORT_00  | |  indented under its camera
-| | |   No heading set           | |
-| | |   Correct heading          | |
+| | |   No heading set  Mounting | |
 | | | Deployed Nov 2, ... to ... | |  grey left border
-| | | picam_h265 ...             | |
-| | [Re-deploy here]             | |  by status, see below
-| | [Correct location] [Delete]  | |
+| | | picam_h265                 | |
+| | | Facing N (0°)              | |
+| | |   Correct heading          | |  an ended one
+| | [Mounting] [Correct location]| |  by status, see below
+| +------------------------------+ |
+| | No description (Used)      v | |
 | +------------------------------+ |
 | Precision                   (h6) |
 | To better protect your privacy,  |  always in view
@@ -921,7 +924,8 @@ importing places open dialogs from this page, so they move nothing on it.
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events
   and deployments once.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
-  four columns at 375 px, and each deployment has a "Correct heading" button.
+  four columns at 375 px, and each deployment has a button. Its line says what is recorded: "Facing NE (40°) · 7.0 ft
+  up · tilted 15°", in the unit the Mounting page last used (`savedUnit`), and only the parts that are set.
 - The list is grouped by the deploy each row came from, newest first, so a place with four deployments reads as two
   deploys of a camera and its radar, and the current one is on top on a phone. Rows that start within a second of a
   group's first row are one deploy: this version's engine starts every row of a config load at the same instant, and
@@ -930,9 +934,17 @@ importing places open dialogs from this page, so they move nothing on it.
   started and ended on the same one. A row shows its own end only when the heading doesn't say it. Cameras come first, and a
   radar deployed with a camera is indented under it. That's order, not pairing: on a device with two cameras the
   radars sit under the last one, since the API doesn't send `camera_radar`.
-- The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place, "Re-deploy here"
-  for a used one, and "Modify deployment" for the place in use, where only headings can change. The review's title and
-  its dialog's name use the same words, and its button reads "Deploy", "Re-deploy", or "Modify".
+- The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place and "Re-deploy
+  here" for a used one. The review's title and its dialog's name use the same words, and its button reads "Deploy" or
+  "Re-deploy". The place in use isn't deployed to: its main button is "Mounting", a link to the Mounting page, where
+  its headings and mounting change.
+- While any sensor of the place in use has values from last time (`previous` in `GET /surveys/{id}/mounting`), the
+  card ends with a tonal warning, "This place has mounting values from the last time the unit was here. They aren't
+  recorded until you confirm them.", and a Mounting button. It goes once each such sensor is saved there. It sits in
+  the card, because it is about the place in use. A mounting the page can't read shows nothing here; the Mounting page
+  says why. Each load of the page asks again, keeps the last answer until the new one arrives (so the warning and the
+  running rows' buttons don't flicker), and drops an answer that isn't the newest request's (after a deploy, the old
+  place's refusal can arrive last).
 - Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
   rounded one stored with each record. The place in use has no Delete.
 - When Node-RED hasn't answered the first reconcile, or `config.yml` can't be read, a warning at the top says so, and
@@ -996,19 +1008,21 @@ importing places open dialogs from this page, so they move nothing on it.
   or "Not set" (the deployment line says "No heading set"). `heading.ts` repeats the backend's compass rule
   (`coordinates.py`), because the UI needs it to title a pick; a test holds it to the same table.
 - The review (`DeployReview.vue`) is the one step on the page that changes what's recorded, so it says the
-  consequences in words, one sensor at a time: "New deployment starts" (in the heading blue) or "Unchanged", the
+  consequences in words, one sensor at a time: "New deployment starts" (in the heading blue), the
   heading it had (in words, "Was NE (40°)"), and a pick for the one to deploy with. Moving to another place starts a new deployment for every
   sensor, as the deployment engine does. Then what the database will store for the place, rounded by the API, what's
   shared, and that counts from now on attach to the new deployment (only when one starts).
-- The place in use has "Modify deployment", to record a turn of the unit. There the review starts from the headings
-  `config.yml` has now, each sensor reads "Unchanged" until its heading changes, and Modify stays disabled until one
-  does, with a line that says so.
+- The place in use has no review: a turn, like any other change of how the unit is mounted, is recorded on the
+  Mounting page, which asks the API whether it was a move.
 - Deploy sends every enabled sensor's heading, so what's recorded is what the review showed. While the API waits for
   Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
   dialog doesn't close it (`persistent`), so the answer isn't lost. The review then gives way to the result: the new
   deployment ids, each with Copy, or, when Node-RED hasn't reloaded the settings, a warning that the settings are
   saved and not to deploy again; Deploy is gone by then, so it can't be pressed twice. The list and any open panels
-  load again behind the dialog.
+  load again behind the dialog. Under the result is the next step, with a Mounting button: "Next, record how the unit
+  is mounted.", or, when the deploy's answer lists `previous` sensors, "This place has mounting values from the last
+  time the unit was here. They aren't recorded until you confirm them." (the words await the maintainer's read). A
+  move records none of the four mounting values, so the Mounting page is what comes after every deploy.
 - A connection that drops while the API waits doesn't get the app's usual "try again": `config.yml` may be written
   by then. The review says the settings may already be saved and to check the place before deploying again, Deploy
   is gone, and the page loads the places, which show whether the deploy happened.
@@ -1089,14 +1103,20 @@ importing places open dialogs from this page, so they move nothing on it.
 - A correction is for a value entered wrong, never for a move, and both dialogs (`CorrectDialog.vue`) open by saying
   so: "Use this only if the location was entered wrong. Every record from this place will say it was at the new
   point. If the unit moved, deploy it to the place it moved to instead." The heading's says the same of its deployment
-  and points to Modify deployment, and both end with
+  and points to the Mounting page of the place in use for a turn, and both end with
   "Copies and uploads that already left the device keep the old values." The button reads "Correct", not "Save".
 - "Correct location" shows only for a used place or the place in use that has a point: a correction needs one, and
   a place with none is planned anew. The field starts at the exact point and can't be left blank. A new point more
   than about 1 km from the old one (`distanceKm`) gets a second confirmation, with a red button, that gives the
   distance and says to deploy instead. The same point again is allowed, because correcting again is how a correction
   whose stored rows weren't re-rounded (502) is finished; the same heading isn't, because there's nothing to finish.
-- "Correct heading" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
+- "Correct heading" is a text button on the "Facing" line of a deployment that has ended, so a long list stays compact
+  on a phone. A running deployment at the place in use has "Mounting" there instead, a link to the Mounting page: what
+  runs is changed there, where the API decides whether it is a correction or a move. A running deployment whose sensor
+  has no section on that page (a sensor disabled in `config.yml` since its deployment started keeps its open row, and
+  the page lists enabled sensors only) keeps "Correct heading", so its heading can still be fixed; the Location page
+  passes `PlaceDetails` the sensors it read from `GET /surveys/{id}/mounting`, and while that is unknown it offers
+  Mounting.
 - The import is preview, then import. Preview sends the text as a dry run and lists the places the API read, by
   line, with the lines it couldn't read in an error above them. Import sends the same text again and is enabled only
   when the preview found places and no errors; any change to the text forgets the preview. The API creates every
@@ -1404,7 +1424,8 @@ is admin-only, like the Location page, and has no menu entry of its own: the Loc
   read, shows a warning in place of the form.
 - Cancel goes back to the Location page and sends nothing.
 - The page, the dial, the side view, and the lengths are in the entry chunk, because the routes import their pages
-  directly, as every other page's do. It grew from 696.74 kB (229.36 kB gzipped) to 720.11 kB (236.75 kB).
+  directly, as every other page's do. It grew from 696.74 kB (229.36 kB gzipped) to 720.11 kB (236.75 kB), and the
+  Location page's changes for it to 721.52 kB (236.97 kB).
 
 The page was checked in fake mode at 375 px and 1280 px wide: the form as a fresh device has it, a usual mount picked,
 a heading set on the dial by a press and a drag, the result after a save, a radar following its camera and unticked,
@@ -1509,6 +1530,16 @@ and the picker closed mid-fade, in a real browser):
   what to do.
 - Looked at and kept: the map is light on the dark theme. It is the map's own style, and the library's attribution
   stays as it draws it.
+
+The Mounting page's way in (checked in fake mode at 375 and 1280 px wide: the place in use's card with the notice of
+last time's values, its panel with a running and two ended deploys, and the deploy review's result after a deploy back
+to a place used before):
+
+- Looked at and kept: at 375 px "Correct heading" on an ended deployment drops under its line, which now carries the
+  height and the tilt too; on a running one, "Mounting" still fits beside "Facing SE (120°)", since a move records none
+  of the four.
+- Looked at and kept: the card's notice is a tonal warning inside the card, so it reads as part of the place in use,
+  and its Mounting button is outlined, as the deploy result's is; the place's own panel has the filled one.
 
 #### Defaults rejected
 

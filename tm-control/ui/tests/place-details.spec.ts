@@ -67,7 +67,10 @@ const FOUR = [
 ]
 
 describe('the deployments in a place panel', () => {
-  beforeEach(() => document.body.replaceChildren())
+  beforeEach(() => {
+    document.body.replaceChildren()
+    localStorage.clear()
+  })
 
   it('groups the rows that started together, newest deploy first', () => {
     const wrapper = panel(FOUR)
@@ -179,10 +182,58 @@ describe('the deployments in a place panel', () => {
 
   it('asks for a heading correction for the row chosen', async () => {
     const wrapper = panel(FOUR)
-    const row = wrapper.find('[data-deployment="b-radar"]')
+    const row = wrapper.find('[data-deployment="a-radar"]')
     await row.findAll('button').find((b) => b.text() === 'Correct heading')!.trigger('click')
-    expect((wrapper.emitted('correctHeading') as DeploymentOut[][])[0][0].id).toBe('b-radar')
+    expect((wrapper.emitted('correctHeading') as DeploymentOut[][])[0][0].id).toBe('a-radar')
     expect(row.text()).toContain('Facing NE (45°)')
+  })
+
+  it('offers Correct heading on an ended deployment, and Mounting on a running one at the place in use', () => {
+    const wrapper = panel(FOUR)
+    const actions = (id: string) =>
+      wrapper
+        .find(`[data-deployment="${id}"]`)
+        .findAll('a, button')
+        .map((b) => b.text().trim())
+    expect(actions('a-camera')).toEqual(['Correct heading'])
+    expect(actions('b-camera')).toEqual(['Mounting'])
+    const link = wrapper.find('[data-deployment="b-camera"] a')
+    expect(link.attributes('href')).toBe('/location/mounting')
+  })
+
+  it('keeps Correct heading on a running deployment whose sensor has no section on the Mounting page', () => {
+    const wrapper = mountAlone(PlaceDetails, {
+      place: PLACE,
+      nodered: true,
+      details: { events: { event_count: 0, first_event: null, last_event: null }, deployments: FOUR, error: '' },
+      mountingSensors: [{ sensor_type: 'cameras', sensor_name: 'picam_h265' }], // the radar was disabled since
+    })
+    const actions = (id: string) =>
+      wrapper
+        .find(`[data-deployment="${id}"]`)
+        .findAll('a, button')
+        .map((b) => b.text().trim())
+    expect(actions('b-camera')).toEqual(['Mounting'])
+    expect(actions('b-radar')).toEqual(['Correct heading'])
+  })
+
+  it('says what is recorded for each deployment, in the unit the browser remembers', () => {
+    const mounted = {
+      ...row('mounted', FIRST, null, 'cameras', 'picam_h265'),
+      heading_deg: 40,
+      height_m: 2.13,
+      pitch_deg: 15,
+    }
+    expect(panel([mounted]).find('[data-deployment="mounted"]').text()).toContain(
+      'Facing NE (40°) · 7.0 ft up · tilted 15°',
+    )
+    localStorage.setItem('tm.mounting.unit', 'm')
+    expect(panel([mounted]).find('[data-deployment="mounted"]').text()).toContain(
+      'Facing NE (40°) · 2.13 m up · tilted 15°',
+    )
+    const bare = panel([{ ...mounted, heading_deg: null, height_m: null, pitch_deg: null }])
+    expect(bare.find('[data-deployment="mounted"]').text()).toContain('No heading set')
+    expect(bare.find('[data-deployment="mounted"]').text()).not.toContain('·')
   })
 
   it('says No heading set for a deployment with none, and shows a measured heading as it is', () => {

@@ -1063,6 +1063,56 @@ describe('the Mounting page', () => {
     expect(buttonOf(wrapper, 'Save').attributes('disabled')).toBeDefined()
   })
 
+  describe('on the Location page', () => {
+    const WAITING_WORDS =
+      "This place has mounting values from the last time the unit was here. They aren't recorded until you confirm " +
+      'them.'
+    const PREVIOUS = { pitch_deg: 15, height_m: 3.66, view_distance_m: 13.66, measured: 'pitch' as const, mount: 'pole' }
+    const USED: SurveyOut = { ...IN_USE, id: 'c0ffee01-si', description: 'Corner by the park', status: 'used' }
+
+    it('the deploy result says the last values wait to be confirmed', async () => {
+      const { wrapper, router } = await open(mounting([BARE]), {
+        [SURVEYS]: { ...PLACES, surveys: [IN_USE, USED] },
+        'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+        'POST /api/v1/surveys/c0ffee01-si/deploy': {
+          deployed_at: 1762000000000,
+          reloaded: true,
+          deployments: [],
+          previous: [{ sensor_type: 'cameras', sensor_name: 'picam_h265' }],
+        },
+      })
+      await router.push('/location')
+      await flushPromises()
+      const title = wrapper.findAll('.v-expansion-panel-title').find((t) => t.text().startsWith('Corner by the park'))
+      await title!.trigger('click')
+      await flushPromises()
+      await press(wrapper, 'Re-deploy here')
+      const dialog = () => document.querySelector('.v-overlay-container .v-dialog')
+      ;[...(dialog()?.querySelectorAll('button') ?? [])].find((b) => b.textContent?.trim() === 'Re-deploy')!.click()
+      await flushPromises()
+      expect(dialog()?.textContent).toContain(WAITING_WORDS)
+      const link = [...(dialog()?.querySelectorAll('a') ?? [])].find((a) => a.textContent?.trim() === 'Mounting')
+      expect(link?.getAttribute('href')).toBe('/location/mounting')
+    })
+
+    it('the Location page warns while values wait', async () => {
+      const { wrapper, router } = await open(mounting([{ ...BARE, previous: PREVIOUS }]))
+      await router.push('/location')
+      await flushPromises()
+      const card = wrapper.find('.v-card')
+      expect(card.text()).toContain(WAITING_WORDS)
+      const link = card.findAll('a').filter((a) => a.text().trim() === 'Mounting')
+      expect(link.map((a) => a.attributes('href'))).toEqual(['/location/mounting'])
+
+      wrapper.unmount()
+      const saved = await open(mounting([CAMERA]))
+      await saved.router.push('/location')
+      await flushPromises()
+      expect(saved.wrapper.text()).not.toContain(WAITING_WORDS)
+    })
+  })
+
   it('Cancel goes back to Location without saving', async () => {
     const { wrapper, api, router } = await open(mounting([CAMERA, OWN_RADAR]), {
       [SAVE]: puts(() => out([CAMERA, OWN_RADAR])),
