@@ -2186,6 +2186,34 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pinned-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinned versions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pinned versions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-build-cache-depends-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the build cache depends on
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#testing-on-a-dev-pi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2354,6 +2382,34 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pinned-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinned versions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pinned versions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-build-cache-depends-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the build cache depends on
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#testing-on-a-dev-pi" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2433,6 +2489,73 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w
 <p>The database records each migration it applies. If you change a migration after applying it, restore the copy saved in <code>/opt/traffic-monitor/node-red-tm/db/backup/</code> and apply it again.</p>
 <h2 id="control-app">Control app<a class="headerlink" href="#control-app" title="Permanent link">&para;</a></h2>
 <p>The control app in <code>tm-control/</code> serves the home page and the login in front of every app. <a href="../tm-control/">tm-control</a> describes its code, how the login reaches each app, and how to run it on a laptop without a Pi.</p>
+<h2 id="pinned-versions">Pinned versions<a class="headerlink" href="#pinned-versions" title="Permanent link">&para;</a></h2>
+<p>An install builds from pinned sources, so the same commit gives the same software on any day. A pin that moves changes what every device builds, so test it on a bench Pi before you merge it. Most pins are in <code>script/ansible/roles/tmsetup/vars/main.yml</code>, with a comment that says how to take a new value.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Where it is pinned</th>
+<th>How to change it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base images: Debian, Frigate, Node-RED, Node, nginx</td>
+<td>A version (Debian's tag has none) and a digest, <code>tmsetup_&lt;name&gt;_image_digest</code>, in <code>vars/main.yml</code>. Every <code>FROM</code> line names its registry and ends in the digest.</td>
+<td>Change the version, then take the new tag's digest from the registry. The digest and the version change together. For Node-RED, also remake the lock below.</td>
+</tr>
+<tr>
+<td>The Raspberry Pi ffmpeg that Frigate's image builds</td>
+<td><code>tmsetup_frigate_ffmpeg_commit</code>, a commit of the branch named in the comment above it</td>
+<td>Take the branch's new head with the <code>git ls-remote</code> command in that comment.</td>
+</tr>
+<tr>
+<td>The Coral model and its labels</td>
+<td><code>tmsetup_frigate_coral_model_release</code>, with a SHA-256 for each file</td>
+<td>Change the release, download both files, and take their checksums with <code>sha256sum</code>. A file already on the device that matches is kept, and one that doesn't is replaced.</td>
+</tr>
+<tr>
+<td>Node-RED's modules</td>
+<td><code>container/node-red-tm/data/package-lock.json</code>, installed with <code>npm ci</code></td>
+<td>Remake it after you change <code>package.json</code> or Node-RED's version, with the command in the <a href="https://github.com/glossyio/traffic-monitor/blob/main/container/node-red-tm/data/README.md">README beside it</a>. It runs inside the pinned Node-RED image.</td>
+</tr>
+<tr>
+<td>The control app's Python packages</td>
+<td><code>tm-control/backend/requirements.lock</code>, with hashes, which <code>pip install --require-hashes</code> reads</td>
+<td>Remake it with the <code>uv pip compile</code> command in the lock's first lines, which also names the Python version and platform of a device. Add <code>--upgrade</code> to move packages that aren't in <code>requirements.txt</code>.</td>
+</tr>
+<tr>
+<td>The installer's Ansible</td>
+<td><code>script/requirements.lock</code>, made from <code>script/requirements</code> (<code>ansible==</code>) the same way</td>
+<td>The same, from <code>script/requirements</code>.</td>
+</tr>
+<tr>
+<td>The control app's web page packages</td>
+<td><code>tm-control/ui/package-lock.json</code></td>
+<td>See the <a href="https://github.com/glossyio/traffic-monitor/blob/main/tm-control/ui/README.md">UI README</a>.</td>
+</tr>
+<tr>
+<td>go2rtc</td>
+<td>A version and a SHA-256 for each architecture in <code>vars/main.yml</code></td>
+<td>Change them together.</td>
+</tr>
+<tr>
+<td>Hailo</td>
+<td><code>tmsetup_hailo_version</code> in <code>vars/main.yml</code></td>
+<td>Change the version.</td>
+</tr>
+</tbody>
+</table>
+<p>Dependabot moves <code>requirements.txt</code> and <code>package.json</code> but not a Python lock, so a Dependabot pull request for the control app's packages needs the lock remade on its branch. A test fails until it is. The optional Plate Recognizer add-on's image isn't pinned. The operating system's packages (<code>apt</code>) and the packages the Containerfiles add with <code>apt-get</code> and <code>apk</code> aren't either.</p>
+<p>Tests check each pin, and a weekly check on GitHub (the "Pinned sources" workflow, which also runs on a change to a pin and by hand) asks the registries and sources whether every digest, commit, and checksum still resolves. A registry can drop a digest when a tag is pushed again. To run those checks yourself, set <code>TM_TESTS_ONLINE=1</code> when you run <code>pytest</code>; without it, the tests that need the network are skipped.</p>
+<h3 id="what-the-build-cache-depends-on">What the build cache depends on<a class="headerlink" href="#what-the-build-cache-depends-on" title="Permanent link">&para;</a></h3>
+<p>You can skip this section unless you build images on a device. The device builds its images with Podman, and Podman reuses a step from an earlier build when the step and its inputs are the same. On a Raspberry Pi 5 with Podman 5.4.2, we measured two things that decide whether a build reuses or starts over:</p>
+<ul>
+<li>A <code>COPY</code> step's cache key reads the owner and group of the files it copies, not their modification times. Files with the same content but a different owner or group mean the copy and the steps after it aren't reused from the cache.</li>
+<li><code>podman image prune</code> removes the first stage of a two-stage build, which has no tag. Frigate's <code>build-ffmpeg</code> stage and the revproxy's <code>ui</code> stage are such stages, so the next build of either starts over.</li>
+</ul>
+<p>The build units run at every boot, so a build that starts over runs then, and it needs the internet to pull layers and packages. On the same Pi, Frigate's rebuild took about 8 to 13 minutes. Don't prune a device's images unless it is online and can take that wait.</p>
 <h2 id="testing-on-a-dev-pi">Testing on a dev Pi<a class="headerlink" href="#testing-on-a-dev-pi" title="Permanent link">&para;</a></h2>
 <p><code>script/devpi/tmdev.py</code> deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.</p>
 <p>The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repository. <code>script/devpi/README.md</code> covers setup and use.</p>

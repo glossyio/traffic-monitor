@@ -1465,6 +1465,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#one-run-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One run at a time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-devices-card" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2320,6 +2331,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#one-run-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One run at a time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-devices-card" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2480,7 +2502,7 @@
 <tbody>
 <tr>
 <td><code>-H HOST[,HOST]</code></td>
-<td>Install to these devices over SSH instead of the local machine. Separate several with commas.</td>
+<td>Install to these devices over SSH instead of the local machine. Separate several with commas. The computer you run it from needs Python 3.12 or later, for the installer's Ansible.</td>
 </tr>
 <tr>
 <td><code>-l USER</code></td>
@@ -2552,6 +2574,8 @@
 </tr>
 </tbody>
 </table>
+<h2 id="one-run-at-a-time">One run at a time<a class="headerlink" href="#one-run-at-a-time" title="Permanent link">&para;</a></h2>
+<p>Only one installer run can work on a device at a time. If you start a second run on the device while another is running, it prints "Another install or update is running on this device. Wait for it to finish, then run tmsetup.sh again." and exits before it asks whether to continue or installs anything (with <code>-f</code>, that is after the overwrite question). Runs started with <code>-H</code> don't take part in this: run them one at a time yourself.</p>
 <h2 id="the-devices-card">The device's card<a class="headerlink" href="#the-devices-card" title="Permanent link">&para;</a></h2>
 <p>When a run on the device ends while the device is unclaimed, the installer shows its <strong>card</strong> on the terminal: the setup code, and the hotspot's name and password. The card goes only to the terminal, so the hotspot's password stays out of the installer's log; the setup code is still in it. A run from another computer with <code>-H</code> prints a reminder only. <code>sudo tm-control card</code> prints the card on the device at any time.</p>
 <h2 id="what-f-replaces">What <code>-f</code> replaces<a class="headerlink" href="#what-f-replaces" title="Permanent link">&para;</a></h2>
