@@ -98,7 +98,9 @@ def _read_update_json(tree: Path) -> "tuple[list, str]":
         contracts, version = data["contracts"], data["tm_version"]
     except (OSError, ValueError, KeyError, TypeError):
         raise ValueError("the tree has no readable script/update.json") from None
-    if not isinstance(contracts, list) or not isinstance(version, str) or not version:
+    # bool is a kind of int and 1.0 equals 1, so neither may pass for the number 1
+    if (not isinstance(contracts, list) or not all(type(number) is int for number in contracts)
+            or not isinstance(version, str) or not version):
         raise ValueError("script/update.json is not valid")
     return contracts, version
 

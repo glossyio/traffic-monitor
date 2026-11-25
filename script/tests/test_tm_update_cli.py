@@ -34,6 +34,7 @@ class Device:
         self.stages = []
         self.playbook_rc = {}
         self.images = []
+        self.when_a_stage_starts = None
         self.run = FakeRun(self._answer)
         monkeypatch.setattr(proc, "run", self.run)
         monkeypatch.setattr(installed_module, "_free_bytes", lambda path: 10**12)
@@ -46,6 +47,8 @@ class Device:
         return None
 
     def _ensure_venv(self, tree, paths, log):
+        if self.when_a_stage_starts:
+            self.when_a_stage_starts()
         self.stages.append("venv")
         return paths.venv_root / "ansible-test"
 
@@ -149,6 +152,17 @@ def test_the_lock_is_created_and_never_replaced(device):
     assert device.paths.lock.read_text() == "kept"
 
 
+@pytest.mark.parametrize("contracts", [[True], [1.0], "1", [], [None], ["1"], {"1": 1}])
+def test_contract_numbers_in_update_json_must_be_whole_numbers(device, capsys, contracts):
+    path = device.tree / "script" / "update.json"
+    data = json.loads(path.read_text())
+    data["contracts"] = contracts
+    path.write_text(json.dumps(data))
+    assert device.main() == 2
+    assert capsys.readouterr().err.count("\n") == 1
+    assert not device.paths.state.exists() and not device.paths.log_dir.exists()
+
+
 def test_a_new_lock_is_0644(device):
     assert device.main() == 0
     assert oct(device.paths.lock.stat().st_mode & 0o777) == "0o644"
@@ -178,15 +192,23 @@ def test_a_dead_runs_work_folders_and_build_tags_are_cleared_first(device):
         {"Id": "id4", "Names": None},
         {"Id": 5, "Names": ["localhost/x:prepare-1"]},
     ]
+    before_the_first_stage = {}
+
+    def look():
+        before_the_first_stage["old_folder"] = other.exists()
+        before_the_first_stage["old_file"] = (device.paths.work_root / "stray-file").exists()
+        before_the_first_stage["untags"] = [a for a in device.run.argvs() if a[:2] == ["podman", "untag"]]
+
+    device.when_a_stage_starts = look
     assert device.main() == 0
+    assert before_the_first_stage["old_folder"] is False and before_the_first_stage["old_file"] is False
+    assert len(before_the_first_stage["untags"]) == 2
     assert not other.exists() and not (device.paths.work_root / "stray-file").exists()
     assert (mine / "kept").exists()
     untags = [argv for argv in device.run.argvs() if argv[:2] == ["podman", "untag"]]
     assert untags == [["podman", "untag", "id1", "localhost/frigate-tm:prepare-abc1234"],
                       ["podman", "untag", "id2", "localhost/revproxy:prepare-9999999"]]
     assert all(len(argv) == 4 for argv in untags)
-    clean_at = device.run.argvs().index(untags[0])
-    assert clean_at < len(device.run.calls)
 
 
 def test_a_refusal_ends_the_run_before_any_playbook(device, monkeypatch, capsys):
