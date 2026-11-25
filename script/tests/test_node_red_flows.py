@@ -584,6 +584,38 @@ def init_defaults(config):
     return step["result"]["payload"], [(text, with_msg) for level, text, with_msg in step["logged"] if level == "error"]
 
 
+TIMEZONE_ERROR = "Node-RED config.yml key deployment.timezone is not a time zone name; ignoring it"
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ("America/New_York", "America/New_York", []),
+    (" Europe/Berlin ", "Europe/Berlin", []),
+    (MISSING, None, []),
+    (None, None, []),
+    ("", None, []),
+    (5, None, [TIMEZONE_ERROR]),
+    ("not a zone!", None, [TIMEZONE_ERROR]),
+    ("../../etc/passwd", None, [TIMEZONE_ERROR]),
+    ("a/b/c/d", None, [TIMEZONE_ERROR]),
+    ("America/" + "x" * 57, None, [TIMEZONE_ERROR]),
+], ids=["zone", "trimmed", "missing", "null", "empty", "number", "words", "path", "four-parts", "65-characters"])
+def test_init_config_defaults_timezone(given, expected, errors):
+    """deployment.timezone is a zone name by its shape, trimmed, or null; a blank one is null with no error, and
+    anything else is null and an error that names the key, never the value."""
+    config = new_device_config()
+    config["deployment"].pop("timezone", None)
+    if given is not MISSING:
+        config["deployment"]["timezone"] = given
+    payload, logged = init_defaults(config)
+    assert payload["deployment"]["timezone"] == expected
+    assert [text for text, _ in logged] == errors
+    assert all(str(given) not in text for text, _ in logged)
+    assert all(sensor["deployment"]["timezone"] == expected
+               for kind in payload["sensors"].values() for sensor in kind.values()
+               if isinstance(sensor, dict) and sensor.get("enabled") is True)
+
+
 def heading_config(top, camera=None):
     """A new device's config.yml with this top-level deployment block, and this one for the camera unless None (the
     radar has none)."""
@@ -1100,6 +1132,12 @@ def test_the_deployments_attribute_carries_the_heading():
     assert all("bearing" not in value for value in sent.values())
 
 
+def test_the_deployments_attribute_has_no_time_zone():
+    """The place's time zone rides in the engine's rows and tmdb, never in the client attribute (plan Decision 12)."""
+    template = named(json.loads(FLOWS.read_text()), "set deployment client side attribute payload")["template"]
+    assert "timezone" not in template
+
+
 def test_only_the_config_reader_still_says_bearing():
     """After PR 1 nothing writes a bearing: of every node (its name and info included), only the node that reads an
     old config.yml's key still holds the word."""
@@ -1117,17 +1155,19 @@ ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
                          "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
-                         "mount) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
+                         "mount, timezone) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
                          "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
-                         "$mount)",
+                         "$mount, $timezone)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
-                          "location_precision = $location_precision, heading_deg = $heading_deg WHERE id = $id",
+                          "location_precision = $location_precision, heading_deg = $heading_deg, "
+                          "timezone = $timezone WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount FROM deployment "
-                 "WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone "
+                 "FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
-            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount"}
+            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount",
+            "timezone"}
 
 
 def engine_sensors(camera_deployment=None):
@@ -1138,13 +1178,14 @@ def engine_sensors(camera_deployment=None):
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
-             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None):
+             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None,
+             timezone=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
             "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
-            "view_distance_m": view_distance_m, "mount": mount}
+            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone}
 
 
 def camera_row(**kwargs):
@@ -1223,9 +1264,10 @@ def test_engine_stores_two_decimals_without_a_valid_precision(precision):
 
 
 @needs_node
-def test_engine_leaves_matching_open_rows_alone():
-    rows = [camera_row(), radar_row()]
-    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+@pytest.mark.parametrize("zone", [None, "America/New_York"], ids=["no-zone", "zone"])
+def test_engine_leaves_matching_open_rows_alone(zone):
+    rows = [camera_row(timezone=zone), radar_row(timezone=zone)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": zone})
     assert run.written() == []
     assert run.payload["currentDeployment"] == [{**row, "entryEndDateTime": None} for row in rows]
     assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
@@ -1239,7 +1281,7 @@ def test_engine_adopts_an_open_row_without_a_survey():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0}]
+         "$heading_deg": 0, "$timezone": None}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
@@ -1312,8 +1354,9 @@ def mounted_row(**values):
 
 @needs_node
 def test_engine_keeps_rows_from_before_the_columns():
-    """An open row read before the four columns existed has none of their keys; a sensor with none set matches it."""
-    rows = [{key: value for key, value in row.items() if key not in MOUNTING_KEYS}
+    """An open row read before the columns existed has none of their keys; a sensor with none set, in a file with no
+    zone, matches it."""
+    rows = [{key: value for key, value in row.items() if key not in (*MOUNTING_KEYS, "timezone")}
             for row in (camera_row(), radar_row())]
     run = engine(engine_sensors(), rows, ENGINE_PLACE)
     assert run.written() == []
@@ -1378,6 +1421,89 @@ def test_engine_rows_for_thingsboard_carry_the_mounting():
     assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
+# The place's time zone: each row that starts takes config.yml's, and an open row of the same place whose zone differs
+# is rewritten with it. The zone never starts or ends a deployment.
+
+def rewritten_params(row, **values):
+    """The parameters of the rewrite of this open row that changes only values (as $-less keys)."""
+    params = {"$id": row["id"], "$survey_id": row["survey_id"], "$lat": row["lat"], "$lon": row["lon"],
+              "$location_precision": row["location_precision"], "$heading_deg": row["heading_deg"],
+              "$timezone": row["timezone"]}
+    return {**params, **{f"${key}": value for key, value in values.items()}}
+
+
+def in_id_order(params):
+    return sorted(params, key=lambda each: each["$id"])
+
+
+@needs_node
+def test_engine_inserts_rows_with_the_places_zone():
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "timezone": "America/New_York"})
+    assert len(run.insert) == 2
+    assert all(message["params"]["$timezone"] == "America/New_York" for message in run.insert)
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(row["timezone"] == "America/New_York" for row in current)
+    assert all(set(row) == ROW_KEYS for row in current)
+
+
+@needs_node
+@pytest.mark.parametrize("row_zone, file_zone", [
+    (None, "America/New_York"), ("America/New_York", None), ("America/New_York", "Asia/Tokyo"),
+], ids=["set", "cleared", "changed"])
+def test_engine_never_starts_a_deployment_for_a_zone(row_zone, file_zone):
+    rows = [camera_row(timezone=row_zone), radar_row(timezone=row_zone)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": file_zone})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, timezone=file_zone) for row in rows)
+    assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+    assert all(row["timezone"] == file_zone for row in run.payload["currentDeployment"])
+    assert run.payload["updatedDeployment"] == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_leaves_the_zone():
+    """With no survey in the file a row's zone stays as it is, also when a coarser precision re-rounds the row."""
+    rows = [camera_row(timezone="America/New_York"), radar_row(timezone="America/New_York")]
+    place = {**ENGINE_PLACE, "survey_id": None}
+    assert engine(engine_sensors(), rows, place).written() == []
+    run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, lat=None, lon=None, location_precision=None) for row in rows)
+    assert all(m["params"]["$timezone"] == "America/New_York" for m in run.rewrite)
+
+
+@needs_node
+def test_engine_adopts_a_row_with_the_zone():
+    camera = camera_row(survey_id=None, lat=None, lon=None, precision=None)
+    run = engine(engine_sensors(), [camera, radar_row(timezone="Asia/Tokyo")],
+                 {**ENGINE_PLACE, "timezone": "Asia/Tokyo"})
+    assert run.close == [] and run.insert == []
+    assert [message["params"] for message in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$heading_deg": 0, "$timezone": "Asia/Tokyo"}]
+
+
+@needs_node
+def test_engine_lowers_precision_and_sets_the_zone_in_one_rewrite():
+    rows = [camera_row(lat=45.52, lon=-122.69, precision=2), radar_row(lat=45.52, lon=-122.69, precision=2)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": "Europe/Berlin"})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, lat=45.5, lon=-122.7, location_precision=1, timezone="Europe/Berlin") for row in rows)
+
+
+@needs_node
+def test_engine_records_the_zone_with_no_location():
+    """Review Focus 5: "No location stored" still records the place's zone."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "database_precision": "none", "timezone": "America/New_York"})
+    assert len(run.insert) == 2
+    assert all((m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"],
+                m["params"]["$timezone"]) == (None, None, None, "America/New_York") for m in run.insert)
+
+
 @needs_node
 def test_engine_never_compares_coordinates():
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "lat": 45.6})
@@ -1399,7 +1525,7 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -1414,13 +1540,13 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0}]
+         "$heading_deg": 0, "$timezone": None}]
     rows = [camera_row(), radar_row()]
     run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
-          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
 
 
 @needs_node
@@ -3477,7 +3603,7 @@ EVENT_COLUMNS = [
 ]
 DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
                       "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
-                      "view_distance_m", "mount"]
+                      "view_distance_m", "mount", "timezone"]
 MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -3707,6 +3833,19 @@ def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
     out, logged = gate({"type": "telemetry", "payload": step["result"]["payload"]}, deployment=place)
     assert out["payload"] == step["result"]["payload"] and logged == []
     assert run.payload["updatedDeployment"] and run.payload["currentDeployment"]
+
+
+@needs_node
+@pytest.mark.parametrize("precision", ["none", "1", "2"])
+def test_gate_keeps_a_places_time_zone_at_every_precision(precision):
+    """The zone is not a location: the rows the engine sends with one pass the gate with it, rounding or not."""
+    place = {**ENGINE_PLACE, "database_precision": precision, "timezone": "America/New_York"}
+    run = engine(engine_sensors(), [], place)
+    out, logged = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": run.payload}}},
+                       deployment=place)
+    rows = out["payload"]["values"]["deployments"]["currentDeployment"]
+    assert rows and all(row["timezone"] == "America/New_York" for row in rows)
+    assert logged == []
 
 
 @needs_node
