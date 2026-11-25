@@ -6,7 +6,7 @@ import subprocess
 
 import jinja2
 import pytest
-from tmsetup_render import REPO, ROLE, evaluate, load_role_yaml
+from tmsetup_render import REPO, ROLE, _environment, evaluate, load_role_yaml
 
 # Every tag whose run renders the pod, revproxy, the broker login, tm-control, or Frigate's credentials. nginx's
 # auth snippets need tm-control, so a single-tag run of any of them must install and start all of these.
@@ -781,8 +781,10 @@ def test_tm_control_installs_only_from_its_hashed_lock():
     lock = copy["dest"]
     assert lock == "{{ tmsetup_tm_control_dir }}/requirements.lock"
     install = tasks["TMSetup - tm-control Setup - Install pinned requirements"]
-    argv = install["ansible.builtin.command"]["argv"]
-    assert "--require-hashes" in argv and argv[-1] == lock
+    variables = {"tmsetup_tm_control_dir": "/usr/local/lib/traffic-monitor/tm-control", "tmsetup_update_mode": False,
+                 "tmsetup_update_stage_dir": ""}
+    argv = evaluate(install["ansible.builtin.command"]["argv"], **variables)
+    assert "--require-hashes" in argv and argv[-1] == fill(lock)
     assert install["notify"] == "Restart tm-control.service"
     assert "'Successfully installed' in tmsetup_tm_control_pip_register.stdout" in install["changed_when"]
     removed = [task["ansible.builtin.file"] for task in tasks.values() if "ansible.builtin.file" in task]
@@ -916,7 +918,7 @@ def test_setup_code_notice_is_the_last_task_and_runs_only_while_unclaimed():
     notice = main[-1]
     assert notice["name"] == "TMSetup - Main - Show the setup code"
     assert [task["name"] for task in main][-2] == "TMSetup - Main - Start Services"
-    assert notice["when"] == "tmsetup_tm_control_claim_register.stdout | default('') == 'unclaimed'"
+    assert "tmsetup_tm_control_claim_register.stdout | default('') == 'unclaimed'" in notice["when"]
     assert "no_log" not in notice  # the one place the installer shows the code, on purpose
     msg = notice["ansible.builtin.debug"]["msg"]
     assert "{{ tmsetup_tm_control_setup_code_register.content | b64decode | trim }}" in msg
@@ -1351,3 +1353,167 @@ def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
     task = next(t for t in load_role_yaml("tasks/node-red-tm_setup.yml")
                 if t["name"] == "TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment")
     assert {"node-red-tm/data/package.json", "node-red-tm/data/package-lock.json"} <= set(task["loop"])
+
+
+# --- update mode ----------------------------------------------------------------------------------------------------
+# `tmsetup_update_mode` installs from the files an earlier run staged under `tmsetup_update_stage_dir`: no internet,
+# no package index, and nothing that asks a question.
+
+STAGE = "/var/lib/traffic-monitor/update/stage"
+UPDATE_VARS = {"tmsetup_update_stage_dir": STAGE, "tmsetup_dpkg_architecture": "arm64",
+               "tmsetup_frigate_coral_model_file": "model.tflite", "tmsetup_tm_control_dir": "/usr/local/lib/traffic-monitor/tm-control",
+               "tmsetup_tm_control_claim_register": {"stdout": "unclaimed"}}
+CORAL_PRESENT = {"edgetpu_pci": {"dev_path_available": True, "exists": True},
+                 "edgetpu_usb": {"dev_path_available": False, "exists": False}}
+CORAL_ABSENT = {"edgetpu_pci": {"dev_path_available": False, "exists": False},
+                "edgetpu_usb": {"dev_path_available": False, "exists": False}}
+
+
+def role_tasks(name):
+    return {task["name"]: task for task in load_role_yaml(f"tasks/{name}.yml")}
+
+
+def holds(task, update_mode, **extra):
+    """True when every `when` of the task holds, with the update switch as given."""
+    variables = {**UPDATE_VARS, "tmsetup_update_mode": update_mode, "tmsetup_detectors": CORAL_PRESENT, **extra}
+    return all(evaluate("{{ (%s) }}" % condition if isinstance(condition, str) else condition, **variables)
+               for condition in conditions(task))
+
+
+UPDATE_SKIPS = [("main", "TMSetup - Main - Setup WiFI"), ("main", "TMSetup - Main - Detector - Install Detectors"),
+                ("main", "TMSetup - Main - Show the setup code"), ("base_setup", "TMSetup - Base Setup - Set timezone")]
+
+
+@pytest.mark.parametrize("file, name", UPDATE_SKIPS)
+def test_update_mode_skips_what_an_update_must_not_touch(file, name):
+    task = role_tasks(file)[name]
+    assert not holds(task, True)
+    assert holds(task, False)
+
+
+def test_update_mode_never_refreshes_a_package_index():
+    seen = []
+    for file in ("base_setup", "podman_setup"):
+        for task in load_role_yaml(f"tasks/{file}.yml"):
+            for module in ("ansible.builtin.apt", "ansible.builtin.apt_repository"):
+                if module in task:
+                    seen.append(task["name"])
+                    update = task[module].get("update_cache", module.endswith("apt_repository"))
+                    assert not evaluate(update, tmsetup_update_mode=True), task["name"]
+    assert "TMSetup - Base Setup - Add backports repository" in seen and len(seen) >= 6
+
+
+@pytest.mark.parametrize("name", ["TMSetup - Base Setup - Install aptitude for better package management",
+                                  "TMSetup - Base Setup - Add backports repository"])
+def test_a_normal_run_still_refreshes_the_index_where_it_did(name):
+    task = role_tasks("base_setup")[name]
+    module = "ansible.builtin.apt" if "ansible.builtin.apt" in task else "ansible.builtin.apt_repository"
+    assert evaluate(task[module]["update_cache"], tmsetup_update_mode=False) is True
+
+
+def fill(text, **variables):
+    """A path or value with {{ variables }} inside it, filled in."""
+    return _environment().from_string(text).render(**{**UPDATE_VARS, **variables})
+
+
+def staged_twin(tasks, original_name):
+    twin = tasks[original_name + " from the update's stage"]
+    assert list(tasks).index(twin["name"]) == list(tasks).index(original_name) + 1
+    return tasks[original_name], twin
+
+
+def test_go2rtc_comes_from_the_stage_in_update_mode():
+    tasks = role_tasks("go2rtc_setup")
+    (download, twin) = staged_twin(tasks, "TMSetup - Go2rtc Setup - Install go2rtc driver")
+    assert not holds(download, True) and holds(download, False)
+    assert holds(twin, True) and not holds(twin, False)
+    get_url, copy = download["ansible.builtin.get_url"], twin["ansible.builtin.copy"]
+    assert copy["remote_src"] is True
+    assert fill(copy["src"]) == f"{STAGE}/go2rtc_linux_arm64"
+    for key in ("dest", "owner", "group", "mode"):
+        assert copy[key] == get_url[key], key
+    assert twin["become"] is True and twin["notify"] == download["notify"]
+
+
+CORAL_TASKS = [("TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model", "model.tflite"),
+               ("TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model",
+                "labels-coco17.txt")]
+
+
+@pytest.mark.parametrize("name, staged", CORAL_TASKS)
+def test_the_coral_files_come_from_the_stage_in_update_mode(name, staged):
+    tasks = role_tasks("frigate_setup")
+    (download, twin) = staged_twin(tasks, name)
+    assert not holds(download, True) and holds(download, False)
+    assert holds(twin, True) and not holds(twin, False)
+    # the same detector condition as the download's: no Coral, no files
+    assert not holds(twin, True, tmsetup_detectors=CORAL_ABSENT)
+    assert holds(download, False) and not holds(download, False, tmsetup_detectors=CORAL_ABSENT)
+    get_url, copy = download["ansible.builtin.get_url"], twin["ansible.builtin.copy"]
+    assert copy["remote_src"] is True
+    assert fill(copy["src"]) == f"{STAGE}/coral/{staged}"
+    for key in ("dest", "owner", "group", "mode"):
+        assert copy.get(key) == get_url.get(key), key
+    assert twin["become"] is True
+
+
+def test_the_package_comes_from_the_staged_archive_in_update_mode():
+    tasks = tm_control_setup_tasks()
+    (copy_task, twin) = staged_twin(tasks, "TMSetup - tm-control Setup - Copy the tm_control package")
+    assert not holds(copy_task, True) and holds(copy_task, False)
+    assert holds(twin, True) and not holds(twin, False)
+    copy, unarchive = copy_task["ansible.builtin.copy"], twin["ansible.builtin.unarchive"]
+    assert unarchive["remote_src"] is True
+    assert fill(unarchive["src"]) == f"{STAGE}/tm_control.tar"
+    # the archive's one top-level entry is tm_control/, so it unpacks into the directory the copy fills
+    assert unarchive["dest"] == copy["dest"].rstrip("/")
+    for key in ("owner", "group", "mode"):
+        assert unarchive[key] == copy[key], key
+    assert twin["become"] is True and twin["notify"] == copy_task["notify"]
+
+
+def test_pip_installs_offline_from_the_stage_in_update_mode():
+    install = tm_control_setup_tasks()["TMSetup - tm-control Setup - Install pinned requirements"]
+    argv = evaluate(install["ansible.builtin.command"]["argv"], **UPDATE_VARS, tmsetup_update_mode=True)
+    normal = evaluate(install["ansible.builtin.command"]["argv"], **UPDATE_VARS, tmsetup_update_mode=False)
+    assert "--no-index" not in normal and "--find-links" not in normal and not any("wheels" in arg for arg in normal)
+    offline = ["--no-index", "--find-links", f"{STAGE}/wheels"]
+    assert [arg for arg in argv if arg not in offline] == normal
+    assert argv[argv.index("--no-index"):][:3] == offline
+    assert "--require-hashes" in argv and argv[-1].endswith("requirements.lock")
+
+
+def test_a_changed_lock_rebuilds_the_venv_in_every_mode():
+    tasks = tm_control_setup_tasks()
+    names = list(tasks)
+    copy = tasks["TMSetup - tm-control Setup - Copy pinned requirements"]
+    assert copy["register"] == "tmsetup_tm_control_lock_register"
+    remove_name = "TMSetup - tm-control Setup - Remove the venv when its lock changed"
+    remove = tasks[remove_name]
+    assert remove["ansible.builtin.file"] == {"path": "{{ tmsetup_tm_control_dir }}/venv", "state": "absent"}
+    assert remove["become"] is True and remove["when"] == "tmsetup_tm_control_lock_register is changed"
+    assert names.index(copy["name"]) < names.index(remove_name) < names.index(
+        "TMSetup - tm-control Setup - Create virtual environment")
+    for changed in (True, False):
+        assert holds(remove, False, tmsetup_tm_control_lock_register={"changed": changed}) is changed
+        assert holds(remove, True, tmsetup_tm_control_lock_register={"changed": changed}) is changed
+
+
+def test_update_mode_starts_the_revproxy_build_and_never_restarts_it():
+    build = revproxy_tasks()["TMSetup - revproxy Setup - Build container"]["ansible.builtin.systemd_service"]
+    for changed in (True, False):
+        registers = {name: {"changed": changed} for name in BUILD_INPUTS}
+        assert evaluate(build["state"], tmsetup_update_mode=True, **registers) == "started"
+        assert evaluate(build["state"], tmsetup_update_mode=False, **registers) == ("restarted" if changed else "started")
+
+
+def test_a_normal_run_is_unchanged():
+    """With the switch off, the downloads and the copy run as they do on dev, and the twins don't."""
+    assert holds(role_tasks("go2rtc_setup")["TMSetup - Go2rtc Setup - Install go2rtc driver"], False)
+    assert holds(tm_control_setup_tasks()["TMSetup - tm-control Setup - Copy the tm_control package"], False)
+    for name, _ in CORAL_TASKS:
+        assert holds(role_tasks("frigate_setup")[name], False)
+    for file, name in UPDATE_SKIPS:
+        assert holds(role_tasks(file)[name], False), name
+    defaults = load_role_yaml("defaults/main.yml")
+    assert defaults["tmsetup_update_mode"] is False and defaults["tmsetup_update_stage_dir"] == ""

@@ -58,6 +58,12 @@ tmsetup_longitude: ''
 tmsetup_heading_deg: ''
 
 tmsetup_perform_apt_upgrade: false
+
+# Update mode installs from files an earlier run staged in tmsetup_update_stage_dir, with no internet and no
+# questions: no package index, no downloads, no Wi-Fi or detector setup, no time zone, no setup code.
+tmsetup_update_mode: false
+# The staged files: go2rtc_linux_<arch>, tm_control.tar, wheels/, coral/<model file>, coral/labels-coco17.txt
+tmsetup_update_stage_dir: ''
 tmsetup_force_configs: false
 tmsetup_reboot_now: false
 tmsetup_tmp_dir: ~/.tmsetup

@@ -127,8 +127,9 @@
     src: 'container/revproxy/{{ item }}.j2'
   notify: Restart revproxy.service
 
-# A .build unit that already ran stays active, so `started` wouldn't build again: restart it when the image's
-# inputs changed, or an upgraded device keeps the old UI until it reboots.
+# A .build unit that has finished is not active, so `started` runs it again. `restarted` is for a run that changed
+# the build's inputs while the revproxy runs, and it stops the revproxy for as long as the build takes. An update
+# builds its images first and switches afterwards, so it only starts the unit, whatever changed.
 - name: TMSetup - revproxy Setup - Build container
   become: true
   ansible.builtin.systemd_service:
@@ -137,10 +138,11 @@
     name: revproxy-build.service
     state: >-
       {{ 'restarted'
-         if (tmsetup_revproxy_ui_unpack_register is changed
-             or tmsetup_revproxy_ui_stale_register is changed
-             or tmsetup_revproxy_containerfile_register is changed
-             or tmsetup_revproxy_containerignore_register is changed)
+         if (not (tmsetup_update_mode | default(false) | bool)
+             and (tmsetup_revproxy_ui_unpack_register is changed
+                  or tmsetup_revproxy_ui_stale_register is changed
+                  or tmsetup_revproxy_containerfile_register is changed
+                  or tmsetup_revproxy_containerignore_register is changed))
          else 'started' }}
   notify: Restart revproxy.service
 
