@@ -1184,6 +1184,9 @@ picture, which this page doesn't touch.)
   Save sets the clock's. A planned place has neither, because Edit shows its time zone. The dialog's sentence says what
   a change does to the records, as the corrections' do, but its button reads Save, not Correct: setting a time zone for
   the first time isn't correcting a mistake.
+  Save is never disabled for an unchanged time zone, so a save that failed halfway can be finished, as Correct location
+  allows the same point again; it waits only when there is no time zone to send (no clock time zone, none chosen),
+  because the page never sends null.
 - Two lines, in normal text and only on the place in use, because neither is an error:
   - With no time zone (a place from before this version): "This place has no time zone. Set one so its data can be
     read in local time."

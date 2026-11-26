@@ -801,6 +801,137 @@ describe('the Location page', () => {
     expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Correct location')).toBe(false)
   })
 
+  describe("a place's time zone", () => {
+    const CLOCK = 'America/New_York'
+    const LIST = [CLOCK, 'Asia/Tokyo', 'Europe/Berlin']
+    const SET_TIME_ZONE = 'PUT /api/v1/surveys/c0ffee01-si/timezone'
+    const NO_DETAILS = {
+      'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+      'GET /api/v1/surveys/0f0e0d0c-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/0f0e0d0c-si/deployments': { deployments: [] },
+      'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/a1b2c3d4-si/deployments': { deployments: [] },
+    }
+    const names = (wrapper: VueWrapper) => wrapper.findAll('button').map((b) => b.text().trim())
+
+    it('a used place has a Time zone button, after Correct location', async () => {
+      signedIn(ADMIN, { [SURVEYS]: { ...PLACES, clock_timezone: CLOCK }, ...NO_DETAILS })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      const buttons = names(wrapper)
+      expect(buttons).toContain('Time zone')
+      expect(buttons.indexOf('Time zone')).toBeGreaterThan(buttons.indexOf('Correct location'))
+      expect(buttons.indexOf('Time zone')).toBeLessThan(buttons.indexOf('Delete'))
+    })
+
+    it('the place in use has one too', async () => {
+      signedIn(ADMIN, { [SURVEYS]: { ...PLACES, clock_timezone: CLOCK }, ...NO_DETAILS })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'Front of the school')
+      expect(names(wrapper)).toContain('Time zone')
+    })
+
+    it('a planned place has none', async () => {
+      signedIn(ADMIN, { [SURVEYS]: { ...PLACES, clock_timezone: CLOCK }, ...NO_DETAILS })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'Corner by the park')
+      expect(names(wrapper)).toContain('Edit')
+      expect(names(wrapper)).not.toContain('Time zone')
+    })
+
+    it("opens the dialog at the place's time zone, with the clock's passed to the panel", async () => {
+      const tokyo = { ...USED, timezone: 'Asia/Tokyo' }
+      signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, surveys: [IN_USE, PLANNED, tokyo], clock_timezone: CLOCK },
+        'GET /api/v1/time/timezones': LIST,
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      await click(wrapper, 'Time zone')
+      expect(dialogText()).toContain("Changing it corrects this place's stored deployments.")
+      expect(dialogText()).toContain('This place is in a different time zone')
+    })
+
+    it('saving the time zone loads the places again', async () => {
+      const api = signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, clock_timezone: CLOCK },
+        'GET /api/v1/time/timezones': LIST,
+        [SET_TIME_ZONE]: { ...USED, timezone: CLOCK },
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      await click(wrapper, 'Time zone')
+      await clickInDialog('Save')
+      expect(api.sent.filter((r) => r.method === 'PUT').map((r) => [r.path, r.body])).toEqual([
+        ['/api/v1/surveys/c0ffee01-si/timezone', { timezone: CLOCK }],
+      ])
+      const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
+      expect(gets('/api/v1/surveys')).toHaveLength(2)
+    })
+
+    it('an empty clock time zone reaches every control as unknown', async () => {
+      const tokyo = { ...IN_USE, timezone: 'Asia/Tokyo' }
+      const tokyoUsed = { ...USED, timezone: 'Asia/Tokyo' }
+      signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, surveys: [tokyo, PLANNED, tokyoUsed], clock_timezone: '' },
+        'GET /api/v1/time/timezones': LIST,
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      // The panel: no sentence about a clock that says nothing
+      await expand(wrapper, 'Front of the school')
+      expect(wrapper.text()).not.toContain("The unit's clock is set to")
+      // The form: no line, no box, the list at once
+      await click(wrapper, 'Add a place')
+      expect(dialogText()).not.toContain("the same as the unit's clock")
+      expect(document.querySelector('.v-overlay-container .v-dialog input[type="checkbox"]')).toBeNull()
+      expect(dialogText()).toContain('Time zone')
+    })
+
+    it('an empty clock time zone is unknown in the time zone dialog', async () => {
+      signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, clock_timezone: '' },
+        'GET /api/v1/time/timezones': LIST,
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      await click(wrapper, 'Time zone')
+      expect(dialogText()).not.toContain("the same as the unit's clock")
+      expect(document.querySelector('.v-overlay-container .v-dialog input[type="checkbox"]')).toBeNull()
+    })
+
+    it('a refused save as out of date loads the places again, and the dialog stays open', async () => {
+      const api = signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, clock_timezone: CLOCK },
+        'GET /api/v1/time/timezones': LIST,
+        [SET_TIME_ZONE]: apiError(409, 'not_found', 'This place changed. Reload the page and try again.'),
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      await click(wrapper, 'Time zone')
+      await clickInDialog('Save')
+      expect(dialogText()).toContain('This place changed.')
+      expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
+    })
+
+    it("tells the place in use when the clock's time zone differs, and links to Date and time", async () => {
+      const tokyo = { ...IN_USE, timezone: 'Asia/Tokyo' }
+      signedIn(ADMIN, {
+        [SURVEYS]: { ...PLACES, surveys: [tokyo, PLANNED, USED], clock_timezone: CLOCK },
+        ...NO_DETAILS,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'Front of the school')
+      expect(wrapper.text()).toContain("The unit's clock is set to America/New_York. Change it on Date and time.")
+      expect(wrapper.find('a[href="/time"]').exists()).toBe(true)
+    })
+  })
+
   it('opens the heading correction from Correct heading on a deployment', async () => {
     signedIn(ADMIN, {
       [SURVEYS]: PLACES,
