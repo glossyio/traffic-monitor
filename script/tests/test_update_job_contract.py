@@ -72,7 +72,7 @@ def test_tm_update_carries_on_the_state_the_job_started(world):
 
 
 @pytest.mark.parametrize("script", [
-    JOB, pytest.param(LAUNCHER, marks=pytest.mark.xfail(strict=True, reason="tm-update-resume arrives in Task 4"))])
+    JOB, LAUNCHER])
 def test_the_job_and_the_launcher_import_only_the_standard_library(script):
     tree = ast.parse(script.read_text())
     names = set()
