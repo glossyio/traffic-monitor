@@ -2839,7 +2839,10 @@ def test_setup_fields_agree():
     view = columns("events_with_setup")
     own = len(columns("events"))
     assert view[own:] == (["setup_device_id", *["setup_" + name for name in device_columns[3:]],
-                          "setup_camera_id", *["camera_" + name for name in camera_facts]])
+                          "setup_camera_id", *["camera_" + name for name in camera_facts],
+                          "setup_radar_id", *["radar_" + name for name in (
+                              "part_number", "firmware_version", "cosine_inbound_deg", "cosine_outbound_deg",
+                              "speed_unit", "sampling_rate", "speed_min", "magnitude_min")]])
     db.close()
 
 
