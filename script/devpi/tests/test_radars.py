@@ -6,7 +6,7 @@ import re
 import shlex
 
 import pytest
-from devpi_checks import radar_env_names, read_root_file
+from devpi_checks import radar_env_names, read_root_file, require_pii_free
 
 ENV_LINE = re.compile(r"^(TM_RADAR_SERIAL_PORT_0[0-3])=(.*)$", re.MULTILINE)
 
@@ -63,7 +63,8 @@ print(json.dumps([{key: node.get(key) for key in ("id", "type", "serialport", "s
 
 
 def env_ports(host, codedir):
-    """Each radar name's port in node-red-tm.env, reading only the TM_RADAR_SERIAL_PORT_ lines."""
+    """Each radar name's port in node-red-tm.env. The file holds secrets, so the Pi sends back only its
+    TM_RADAR_SERIAL_PORT_ lines; the caller has checked that the unit is pii_free."""
     with host.sudo():
         lines = host.run(f"grep -E '^TM_RADAR_SERIAL_PORT_0[0-3]=' {codedir}/node-red-tm/node-red-tm.env").stdout
     return {name: port.strip() for name, port in ENV_LINE.findall(lines)}
@@ -71,7 +72,9 @@ def env_ports(host, codedir):
 
 def test_missing_radars_serial_nodes_are_off(host, expect, codedir):
     """The installer switches off the three serial nodes of each radar name the host has no radar for, and no
-    other; the repo's flows.json has none off (tasks/node-red-tm_setup.yml, flows.json.j2)."""
+    other; the repo's flows.json has none off (tasks/node-red-tm_setup.yml, flows.json.j2). Only on pii_free units,
+    since it reads under the code folder."""
+    require_pii_free(expect, "the unit's flows.json")
     expected = {radar["env_name"] for radar in expect["radars"]}
     with host.sudo():
         nodes = json.loads(host.check_output(
@@ -95,7 +98,9 @@ NODE_RED_SERIAL_ERRORS = (
 
 def test_no_serial_error_for_a_port_that_is_not_there(host, expect, codedir):
     """Since Node-RED last started, it hasn't logged "serial port <path> error" for the port of a radar name the
-    host has no radar for: that radar's nodes are off, so nothing tries to open the port."""
+    host has no radar for: that radar's nodes are off, so nothing tries to open the port. Only on pii_free units,
+    since it reads node-red-tm.env's radar lines."""
+    require_pii_free(expect, "node-red-tm.env's radar lines")
     expected = {radar["env_name"] for radar in expect["radars"]}
     paths = sorted({port for name, port in env_ports(host, codedir).items() if name not in expected and port})
     if not paths:

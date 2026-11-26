@@ -127,9 +127,9 @@ def detector_name(expect):
     return "edgetpu" if kind.startswith("edgetpu") else "hailo8l" if kind.startswith("hailo8") else "cpu"
 
 
-def require_pii_free(expect):
+def require_pii_free(expect, reads="config.yml or tmdb.sqlite"):
     if not expect["pii_free"]:
-        pytest.skip("reads config.yml or tmdb.sqlite; set tm_expect.pii_free: true (bench units only)")
+        pytest.skip(f"reads {reads}; set tm_expect.pii_free: true (bench units only)")
 
 
 def find_hevc_decoder(host):
