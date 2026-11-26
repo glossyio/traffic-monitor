@@ -1,7 +1,15 @@
 // The compass rule for the Location pages, which the backend's coordinates.py holds (test_compass_point): a point is
 // a way to pick and to read a heading, and nothing stores one.
 import { describe, expect, it } from 'vitest'
-import { POINTS, compassPoint, facing, headingChoices, pointCentre } from '../src/modules/location/heading'
+import {
+  POINTS,
+  angleAt,
+  compassPoint,
+  facing,
+  facingWords,
+  headingChoices,
+  pointCentre,
+} from '../src/modules/location/heading'
 
 describe('compassPoint', () => {
   it.each([
@@ -61,5 +69,44 @@ describe('headingChoices', () => {
     expect(choices).toHaveLength(10)
     expect(choices[0]).toEqual({ value: 40, title: 'NE (40°)' })
     expect(choices.slice(1)).toEqual(headingChoices(null))
+  })
+})
+
+describe('angleAt', () => {
+  // Screen coordinates: y grows downward, so "up" is a smaller y. The centre is (100, 100).
+  it('wraps at north', () => {
+    expect(angleAt(99, 0, 100, 100)).toBe(359) // just left of straight up
+    expect([0, 1]).toContain(angleAt(101, 0, 100, 100)) // just right of it
+    expect(angleAt(100, 0, 100, 100)).toBe(0)
+    expect(angleAt(200, 100, 100, 100)).toBe(90)
+    expect(angleAt(100, 200, 100, 100)).toBe(180)
+    expect(angleAt(0, 100, 100, 100)).toBe(270)
+    expect(angleAt(100, 100, 100, 100)).toBe(0) // the centre itself
+  })
+
+  it('gives whole degrees from 0 to 359, rounding 359.5 and above to 0', () => {
+    const tiny = Math.tan((0.4 * Math.PI) / 180) * 100
+    expect(angleAt(100 - tiny, 0, 100, 100)).toBe(0)
+    expect(angleAt(200, 0, 100, 100)).toBe(45)
+    expect(angleAt(0, 0, 100, 100)).toBe(315)
+    for (let step = 0; step < 720; step += 1) {
+      const radians = (step / 2) * (Math.PI / 180)
+      const angle = angleAt(100 + 80 * Math.sin(radians), 100 - 80 * Math.cos(radians), 100, 100)
+      expect(Number.isInteger(angle) && angle >= 0 && angle <= 359).toBe(true)
+    }
+  })
+})
+
+describe('facingWords', () => {
+  it('reads a heading in degrees with its point in words', () => {
+    expect(facingWords(52)).toBe('52°, north-east.')
+    expect(facingWords(0)).toBe('0°, north.')
+    expect(facingWords(359)).toBe('359°, north.')
+    expect(facingWords(135)).toBe('135°, south-east.')
+    expect(facingWords(300)).toBe('300°, north-west.')
+  })
+
+  it('reads no heading as Not set', () => {
+    expect(facingWords(null)).toBe('Not set.')
   })
 })

@@ -165,7 +165,7 @@ async function correct() {
             <p class="text-body-2 text-secondary text-break mb-4">{{ deployment.id }}</p>
             <p class="text-body-1 mb-6">
               Use this only if the heading was entered wrong. Every record from this deployment will say the sensor
-              faced the new way. If the unit was turned, use Modify deployment on the place in use instead.
+              faced the new way. If the unit was turned, record it on the Mounting page of the place in use instead.
             </p>
             <!-- Keyed by the deployment: a pick remembers a measured heading, and this dialog is reused for others -->
             <HeadingPick :key="deployment.id" v-model="heading" label="Heading" :disabled="saving" class="mb-6" />
