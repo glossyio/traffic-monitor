@@ -50,6 +50,8 @@ Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, c
 
 ## 4. Record the location and sensors
 
+The installer leaves the device's time zone as Raspberry Pi OS or Raspberry Pi Imager set it, and the dashboards show times in that zone. Whether or not you record a location, open **Date and time** in the control app as the administrator and check that the zone is the one where the device stands; [the Date and time page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page) explains how to change it.
+
 The location is optional. If the device stays in one place and you never share its data, it can count without one. To record where the device is and which way it faces:
 
 1. Open **Location** from the control app's menu, as the administrator.

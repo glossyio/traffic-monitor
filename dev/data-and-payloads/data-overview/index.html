@@ -2616,7 +2616,7 @@
 </table>
 <p>The <a href="../radar-payload/">radar</a> tables are described on their own page. The two tables below have no other page.</p>
 <h3 id="deployment">deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h3>
-<p>A row for each combination of sensor, survey, and mounting the device has had, taken from the <code>deployment</code> settings in <a href="../../configuration/node-red-config/#deployment">config.yml</a>. A new row starts when the survey id, the sensor's heading, or how the sensor is mounted changes; moving the coordinates alone does not start one. A correction made on the Location page changes the row in place instead, and starts no new row. Removing a sensor's entry from <code>config.yml</code> ends its row; disabling the sensor doesn't. Every other table's <code>deployment_id</code> column holds the <code>id</code> of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.</p>
+<p>A row for each combination of sensor, survey, and mounting the device has had, taken from the <code>deployment</code> settings in <a href="../../configuration/node-red-config/#deployment">config.yml</a>. A new row starts when the survey id, the sensor's heading, or how the sensor is mounted changes; moving the coordinates alone does not start one. A correction made on the Location page, and a change of the place's time zone, change the row in place instead, and start no new row. Removing a sensor's entry from <code>config.yml</code> ends its row; disabling the sensor doesn't. Every other table's <code>deployment_id</code> column holds the <code>id</code> of one of these rows, so you can tell where a reading was taken after the device has moved. The database declares no foreign key; it's a plain text column.</p>
 <table>
 <thead>
 <tr>
@@ -2662,6 +2662,11 @@
 <td>Longitude in decimal degrees, rounded the same way</td>
 </tr>
 <tr>
+<td><code>timezone</code></td>
+<td>TEXT</td>
+<td>The place's time zone as a tz database name, such as <code>America/New_York</code>. Empty when none was set. It is recorded whatever the precision, also when no location is stored.</td>
+</tr>
+<tr>
 <td><code>heading_deg</code></td>
 <td>INTEGER</td>
 <td>The way the sensor faces, in whole degrees clockwise from true north: 0 is north, 90 is east, 180 is south, 270 is west. From 0 to 359. Empty when no heading was set.</td>
@@ -2704,6 +2709,7 @@
 </tbody>
 </table>
 <p>The four mounting columns (<code>pitch_deg</code>, <code>height_m</code>, <code>view_distance_m</code>, and <code>mount</code>) are empty on a row that was recorded before the columns existed, and on any row for which nothing was recorded. Only a correction made through the control app changes them on a row that exists.</p>
+<p><code>timezone</code> is empty on a row that was recorded before the column existed, and on a row at a place with no time zone. Changing a place's time zone on the control app rewrites it on every row of that place, the ended ones too. It starts no deployment and changes no <code>deployment_id</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Older exports have <code>bearing</code></p>
 <p>Before this release the table had a <code>bearing</code> column instead of <code>heading_deg</code>. It held one of eight compass points, and older closed rows can hold <code>null</code> or <code>undefined</code> there. The upgrade writes each row's <code>heading_deg</code> as the centre of its point, from the <a href="../../configuration/node-red-config/#if-your-file-still-says-bearing">table of centres</a>, and leaves it empty when the row had no point. It then removes <code>bearing</code> from the database. A copy made before the upgrade, or an export from an older device, keeps <code>bearing</code>, so a query that reads an older copy has to convert the point. A converted heading is only as exact as the point it came from: a sensor that was recorded as facing <code>n</code> reads 0, even if it really faced a little to one side.</p>
