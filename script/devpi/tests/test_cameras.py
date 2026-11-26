@@ -107,12 +107,13 @@ def test_frigate_answers_on_connect(host, expect, codedir, cameras, frigate_conf
     assert answer is not None, ("Frigate didn't answer frigate/onConnect on the Pi's broker within 5 s: the people "
                                 "check has nothing to ask")
     configured = frigate_config.get("cameras", {})
-    missing = [name for name in configured if name not in answer]
-    no_boolean = [name for name in configured if name in answer and not isinstance(answer[name]["detect"], bool)]
-    off_with_objects = [name for name in configured if name in answer and answer[name]["detect"] is False
-                        and answer[name]["objects"] not in (0, None)]
+    # Counts, not lists: pytest prints the values an assert compares, and Frigate's camera names stay on the device.
+    missing = sum(1 for name in configured if name not in answer)
+    no_boolean = sum(1 for name in configured if name in answer and not isinstance(answer[name]["detect"], bool))
+    off_with_objects = sum(1 for name in configured if name in answer and answer[name]["detect"] is False
+                           and answer[name]["objects"] not in (0, None))
     print(f"cameras in Frigate's config: {len(configured)}, in the answer: {len(answer)}, detection on: "
           f"{sum(1 for name in configured if name in answer and answer[name]['detect'] is True)}")
-    assert not missing, f"{len(missing)} of {len(configured)} cameras in Frigate's config are not in its answer"
-    assert not no_boolean, f"{len(no_boolean)} cameras in the answer have no boolean detect"
-    assert not off_with_objects, f"{len(off_with_objects)} cameras with detection off list objects"
+    assert missing == 0, f"{missing} of {len(configured)} cameras in Frigate's config are not in its answer"
+    assert no_boolean == 0, f"{no_boolean} cameras in the answer have no boolean detect"
+    assert off_with_objects == 0, f"{off_with_objects} cameras with detection off list objects"
