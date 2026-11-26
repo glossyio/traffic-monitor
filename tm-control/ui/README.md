@@ -56,7 +56,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
 
 - `src/main.ts` loads the device's setup status, builds the theme from its colors, and mounts the app.
 - `src/router.ts` decides where each navigation goes: an unclaimed device to `/setup`, no session to `/login`, an
-  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, and `/cameras` to admins only.
+  outstanding license to `/welcome` (admins) or `/waiting` (viewers), and `/users`, `/location`, `/location/mounting`,
+  and `/cameras` to admins only.
 - `public/favicon.svg` is the project's logo, from its website with the editor's leftovers removed. Vite copies it to
   `dist/` as it is, file mode included; the device's sources have no world read, so the revproxy image's build
   stage makes `dist/` readable for nginx (`chmod -R a+rX`).
@@ -80,7 +81,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
   module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
   editing a place (`PlaceForm.vue`), the deploy review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
-  importing (`ImportPlaces.vue`). Its `coordinates.ts` shows coordinates, names the precision choices,
+  importing (`ImportPlaces.vue`). The Mounting page (`MountingPage.vue`) is the place in use's mounting, with the
+  heading dial (`HeadingDial.vue`), the side view (`MountSideView.vue`), and the lengths in feet or metres
+  (`lengths.ts`). Its `coordinates.ts` shows coordinates, names the precision choices,
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
   (`distanceKm`). It never rounds: the API sends the stored coordinates already rounded, and its answer wins over the
   form's check. `heading.ts` is the compass rule (`compassPoint`, `pointCentre`, `facing`, `headingChoices`) and
@@ -216,6 +219,8 @@ because Vuetify writes Roboto and capitals into its CSS. The only other CSS:
 - Three small scoped style blocks: the setup code field; spacing for the license agreement's headings and
   paragraphs, which come from markdown and can't take Vuetify's classes; and tabular digits for the clocks on the
   Date and time page.
+- `touch-action: none`, as a style attribute on the heading dial's ring only (`HeadingDial.vue`), so a finger dragged
+  on the ring turns the needle instead of scrolling the page. It is behaviour, not look; Vuetify has no class for it.
 
 ### Layout
 
@@ -831,15 +836,16 @@ importing places open dialogs from this page, so they move nothing on it.
 | | Sharing      Not sharing     | |
 | | Facing, picam_h265           | |
 | | NE (40°)                     | |
+| | (!) This place has mounting  | |  only while values from last
+| |     values from the last ... | |  time wait to be confirmed
+| |     [Mounting]               | |
 | +------------------------------+ |
 | Places                      (h6) |
 | [Add a place] [Import places]    |
 | +------------------------------+ |
-| | Front of the school (In use) | |
+| | Front of the school (In use) | |  opened
 | | 34b17422-si                  | |
-| | 45.52, -122.69             v | |
-| +------------------------------+ |
-| | No description (Used)        | |  opened
+| | 45.52, -122.69               | |
 | | First used    Last used      | |
 | | No events recorded at this   | |
 | | place.                       | |
@@ -847,15 +853,17 @@ importing places open dialogs from this page, so they move nothing on it.
 | | | Deployed Nov 7, 10:15 PM,  | |  newest first; the running one
 | | | running now                | |  has a blue left border
 | | | picam_h265                 | |
-| | | Facing N (0°)              | |
-| | |   Correct heading          | |
+| | | Facing NE (40°) · 7.0 ft up| |  what is recorded, in the
+| | | · tilted 15°  Mounting     | |  Mounting page's unit
 | | |   TM_RADAR_SERIAL_PORT_00  | |  indented under its camera
-| | |   No heading set           | |
-| | |   Correct heading          | |
+| | |   No heading set  Mounting | |
 | | | Deployed Nov 2, ... to ... | |  grey left border
-| | | picam_h265 ...             | |
-| | [Re-deploy here]             | |  by status, see below
-| | [Correct location] [Delete]  | |
+| | | picam_h265                 | |
+| | | Facing N (0°)              | |
+| | |   Correct heading          | |  an ended one
+| | [Mounting] [Correct location]| |  by status, see below
+| +------------------------------+ |
+| | No description (Used)      v | |
 | +------------------------------+ |
 | Precision                   (h6) |
 | To better protect your privacy,  |  always in view
@@ -907,7 +915,8 @@ importing places open dialogs from this page, so they move nothing on it.
   the heading blue only for the place in use. The panels open independently, and opening one asks for its events
   and deployments once.
 - The deployments are a list, not a table: a sensor name such as `TM_RADAR_SERIAL_PORT_00` and two dates don't fit
-  four columns at 375 px, and each deployment has a "Correct heading" button.
+  four columns at 375 px, and each deployment has a button. Its line says what is recorded: "Facing NE (40°) · 7.0 ft
+  up · tilted 15°", in the unit the Mounting page last used (`savedUnit`), and only the parts that are set.
 - The list is grouped by the deploy each row came from, newest first, so a place with four deployments reads as two
   deploys of a camera and its radar, and the current one is on top on a phone. Rows that start within a second of a
   group's first row are one deploy: this version's engine starts every row of a config load at the same instant, and
@@ -916,9 +925,17 @@ importing places open dialogs from this page, so they move nothing on it.
   started and ended on the same one. A row shows its own end only when the heading doesn't say it. Cameras come first, and a
   radar deployed with a camera is indented under it. That's order, not pairing: on a device with two cameras the
   radars sit under the last one, since the API doesn't send `camera_radar`.
-- The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place, "Re-deploy here"
-  for a used one, and "Modify deployment" for the place in use, where only headings can change. The review's title and
-  its dialog's name use the same words, and its button reads "Deploy", "Re-deploy", or "Modify".
+- The main button is named by the place's status (`deployWords`): "Deploy here" for a planned place and "Re-deploy
+  here" for a used one. The review's title and its dialog's name use the same words, and its button reads "Deploy" or
+  "Re-deploy". The place in use isn't deployed to: its main button is "Mounting", a link to the Mounting page, where
+  its headings and mounting change.
+- While any sensor of the place in use has values from last time (`previous` in `GET /surveys/{id}/mounting`), the
+  card ends with a tonal warning, "This place has mounting values from the last time the unit was here. They aren't
+  recorded until you confirm them.", and a Mounting button. It goes once each such sensor is saved there. It sits in
+  the card, because it is about the place in use. A mounting the page can't read shows nothing here; the Mounting page
+  says why. Each load of the page asks again, keeps the last answer until the new one arrives (so the warning and the
+  running rows' buttons don't flicker), and drops an answer that isn't the newest request's (after a deploy, the old
+  place's refusal can arrive last).
 - Delete asks first and says what goes. For a used place: its exact location is deleted, and the database keeps the
   rounded one stored with each record. The place in use has no Delete.
 - When Node-RED hasn't answered the first reconcile, or `config.yml` can't be read, a warning at the top says so, and
@@ -982,19 +999,21 @@ importing places open dialogs from this page, so they move nothing on it.
   or "Not set" (the deployment line says "No heading set"). `heading.ts` repeats the backend's compass rule
   (`coordinates.py`), because the UI needs it to title a pick; a test holds it to the same table.
 - The review (`DeployReview.vue`) is the one step on the page that changes what's recorded, so it says the
-  consequences in words, one sensor at a time: "New deployment starts" (in the heading blue) or "Unchanged", the
+  consequences in words, one sensor at a time: "New deployment starts" (in the heading blue), the
   heading it had (in words, "Was NE (40°)"), and a pick for the one to deploy with. Moving to another place starts a new deployment for every
   sensor, as the deployment engine does. Then what the database will store for the place, rounded by the API, what's
   shared, and that counts from now on attach to the new deployment (only when one starts).
-- The place in use has "Modify deployment", to record a turn of the unit. There the review starts from the headings
-  `config.yml` has now, each sensor reads "Unchanged" until its heading changes, and Modify stays disabled until one
-  does, with a line that says so.
+- The place in use has no review: a turn, like any other change of how the unit is mounted, is recorded on the
+  Mounting page, which asks the API whether it was a move.
 - Deploy sends every enabled sensor's heading, so what's recorded is what the review showed. While the API waits for
   Node-RED, the dialog says "Waiting for Node-RED to reload the settings", Cancel is disabled, and a click beside the
   dialog doesn't close it (`persistent`), so the answer isn't lost. The review then gives way to the result: the new
   deployment ids, each with Copy, or, when Node-RED hasn't reloaded the settings, a warning that the settings are
   saved and not to deploy again; Deploy is gone by then, so it can't be pressed twice. The list and any open panels
-  load again behind the dialog.
+  load again behind the dialog. Under the result is the next step, with a Mounting button: "Next, record how the unit
+  is mounted.", or, when the deploy's answer lists `previous` sensors, "This place has mounting values from the last
+  time the unit was here. They aren't recorded until you confirm them." (the words await the maintainer's read). A
+  move records none of the four mounting values, so the Mounting page is what comes after every deploy.
 - A connection that drops while the API waits doesn't get the app's usual "try again": `config.yml` may be written
   by then. The review says the settings may already be saved and to check the place before deploying again, Deploy
   is gone, and the page loads the places, which show whether the deploy happened.
@@ -1075,20 +1094,361 @@ importing places open dialogs from this page, so they move nothing on it.
 - A correction is for a value entered wrong, never for a move, and both dialogs (`CorrectDialog.vue`) open by saying
   so: "Use this only if the location was entered wrong. Every record from this place will say it was at the new
   point. If the unit moved, deploy it to the place it moved to instead." The heading's says the same of its deployment
-  and points to Modify deployment, and both end with
+  and points to the Mounting page of the place in use for a turn, and both end with
   "Copies and uploads that already left the device keep the old values." The button reads "Correct", not "Save".
 - "Correct location" shows only for a used place or the place in use that has a point: a correction needs one, and
   a place with none is planned anew. The field starts at the exact point and can't be left blank. A new point more
   than about 1 km from the old one (`distanceKm`) gets a second confirmation, with a red button, that gives the
   distance and says to deploy instead. The same point again is allowed, because correcting again is how a correction
   whose stored rows weren't re-rounded (502) is finished; the same heading isn't, because there's nothing to finish.
-- "Correct heading" is a text button on each deployment's "Facing" line, so a long list stays compact on a phone.
+- "Correct heading" is a text button on the "Facing" line of a deployment that has ended, so a long list stays compact
+  on a phone. A running deployment at the place in use has "Mounting" there instead, a link to the Mounting page: what
+  runs is changed there, where the API decides whether it is a correction or a move. A running deployment whose sensor
+  has no section on that page (a sensor disabled in `config.yml` since its deployment started keeps its open row, and
+  the page lists enabled sensors only) keeps "Correct heading", so its heading can still be fixed; the Location page
+  passes `PlaceDetails` the sensors it read from `GET /surveys/{id}/mounting`, and while that is unknown it offers
+  Mounting.
 - The import is preview, then import. Preview sends the text as a dry run and lists the places the API read, by
   line, with the lines it couldn't read in an error above them. Import sends the same text again and is enabled only
   when the preview found places and no errors; any change to the text forgets the preview. The API creates every
   place or none. A file is read into the same box as pasted text, so what's previewed is always on screen, and
   64 KiB, the API's limit, is checked before anything is sent. The dialog is `scrollable`, so a long preview scrolls
   under the title and the buttons stay in view, and `persistent`, so a click beside it can't hide the result.
+
+#### The heading dial
+
+`HeadingDial.vue` is how the Mounting page sets which way a sensor faces: a ring to tap or drag, the eight compass
+points as buttons around it, and a number field for an exact heading. It is a plain input (`heading`, `label`,
+`disabled`; it emits `update:heading`) and sends nothing to the API. `HeadingPick` stays the pick for the place form,
+the review, and the correction.
+
+```text
++----------------------------------+
+| Heading                          |  the label
+|(NW)          (N)          (NE)   |  44 px round buttons
+|       .-------+-------.          |
+|      /            /    \         |  needle in the primary color
+|(W)  +         o         +  (E)   |  ring 200 px, a tick at each point
+|      \                 /         |
+|       '-------+-------'          |
+|(SW)          (S)          (SE)   |
+| 52°, north-east.                 |  facingWords
+| [Degrees from north 52] [Not set]|
+|  Enter a whole number from 0 to  |  only for a number outside 0 to 359
+|  359.                            |
+| North is up on a map. A phone's  |  secondary text
+| compass shows magnetic north ... |
++----------------------------------+
+```
+
+At 1280 px the dial stays on the left at the same size, and the words, the field, Not set, and the help line sit in a
+column beside it (`v-row` with `v-col cols="12" sm="auto"` and `v-col cols="12" sm`); below 600 px they stack under it.
+
+- The dial is 288 px square at every width, which leaves room for a card's padding inside a phone's 343 px: three
+  rows of Vuetify utilities (`d-inline-flex flex-column`, each row `d-flex justify-space-between align-center`). The
+  middle row is W, a 200 px SVG, E; the top and bottom rows stretch to the same width, so N and S sit over the
+  centre and each corner point sits exactly on its 45° line. No CSS positions anything. Drawing the points inside the
+  SVG was rejected: SVG has no buttons, and a `<g role="button">` would have to rebuild focus, Enter, and Space by hand.
+- The points are real `v-btn`s, round and 44 px (`icon :size="44"`, the text "NE" as their content), outlined in the
+  body text color. The one whose centre is the heading is filled `primary` with `aria-pressed="true"`; at 52° none
+  is filled, because pressing NE would change 52 to 45. Each is named "NE, north-east, 45°", which keeps the visible
+  letters in the name for voice control. Tab goes through them in reading order (NW, N, NE, W, E, SW, S, SE), then the
+  field, then Not set.
+- The SVG (`width`, `height`, and `viewBox` attributes) holds the ring (`secondary`, on a `surface` face), a tick at
+  each of the eight points, the hub, and the needle in `primary`. Its colors come from Vuetify's `text-*` classes and
+  `currentColor`, so a device's own colors follow. It is `aria-hidden`, since the words and the buttons say all of it.
+- A press on the ring sets the heading there, and a drag follows the finger: `pointerdown` takes pointer capture, so
+  the drag keeps going when it leaves the ring, and `pointermove` sets it until `pointerup`, `pointercancel`, or
+  `lostpointercapture` (a hidden tab, say), so a drag that lost its pointer never follows a later hover.
+  `angleAt` turns the point into whole degrees clockwise with up as 0 (right 90, down 180, left 270), and 359.5
+  rounds to 0, so a drag across the top goes 358, 359, 0, 1 without a jump. A press on the hub (within 12 px of the
+  centre) changes nothing, because the angle there is noise. `touch-action: none` on the SVG only, so a drag on
+  the ring turns the needle instead of scrolling the page; a swipe anywhere else still scrolls.
+- The words under the dial are `facingWords`: "52°, north-east.", or "Not set." A `d-sr-only` live region says the
+  same after a point, Not set, a tap, or the end of a drag, never at each step of a drag, and not while typing,
+  because the field reads out its own value; leaving the field says the heading it set, so the region never holds an
+  older one.
+- The field is a `v-text-field` with `inputmode="numeric"`, the label "Degrees from north", and at most 12 rem wide
+  (its `max-width` prop). The text is sent whenever it is a whole number from 0 to 359, key by key, so the needle
+  follows the typing. Anything else ("52.5", "-1") is not sent and the field says "Enter a whole number from 0 to
+  359." Typing "400" sends 4, then 40, and refuses the third key: the heading is 40 while the field shows "400" and
+  the message. An empty field changes nothing and says nothing: it is the moment between deleting a number and typing
+  the next, and only Not set clears the heading (the maintainer chose this on review). Leaving the field puts it back
+  in step with the heading ("400" becomes 40, "05" becomes 5, an empty box shows the heading again) and clears the
+  message. When the heading changes by a point, a tap, or Not set, the field shows it (empty for Not set) and any
+  message goes.
+- Not set is an outlined button beside the field, 56 px tall to line up with it, filled `primary` with
+  `aria-pressed="true"` while there is no heading. The needle is then gone, the hub stays, and the field is empty.
+- The help line, under the field in the secondary color and tied to it with `aria-describedby`: "North is up on a
+  map. A phone's compass shows magnetic north unless it is set to true north. If you only know the compass point, tap
+  it."
+- The label is a `text-body-1` line above the dial, and the whole dial is a `role="group"` named by it, so a screen
+  reader says which sensor's heading a button belongs to.
+- Disabled: the buttons and the field are Vuetify's disabled ones, the SVG is drawn at Vuetify's disabled opacity
+  (its `opacity` attribute, 0.38) and ignores the pointer, and `touch-action` is left off, so the page scrolls over
+  it. The words stay at full strength, since the heading is still a fact.
+
+The dial was checked in a scratch mount at 375 px and 1280 px wide: a measured heading (52), a point's centre (45),
+Not set, disabled, a number outside 0 to 359, a drag that went off the ring, and a point pressed from the keyboard.
+
+- The field had a "°" suffix, which Vuetify puts at the far end of the box, so it read as a stray mark, away from the
+  number. It's gone: the label says degrees, and the words above say "52°".
+- Not set (44 px) sat higher than the field (56 px) beside it. It's 56 px tall now, so the two line up.
+- Looked at and kept: at 375 px the dial leaves about 55 px free on its right, and the field's message wraps onto two
+  lines under the 12 rem field.
+- Looked at and kept: a pressed point that also has keyboard focus is a shade darker, from Vuetify's focus overlay, as
+  every filled button is; the focus ring around it is what shows the focus.
+
+Defaults rejected for the dial:
+
+- A slider (`v-slider`) from 0 to 359: it puts north at both ends, so a turn from 350 to 10 crosses the whole bar.
+- The eight-point `v-select` alone, as `HeadingPick`: a heading measured with a phone (52) can't be entered.
+- `v-number-input`: it quietly clamps 400 to 359 when the field loses focus, and its plus and minus buttons repeat
+  what the points and the ring do.
+- Dragging the needle's tip only: a small target on a phone. Any press on the ring moves the needle there.
+- The ring as a keyboard slider (`role="slider"`, arrow keys): a ninth stop that repeats the field. Keyboard users
+  type the number or press a point.
+- Points in compass order for Tab (N, NE, E, ...): it needs `tabindex` juggling, and reading order matches what's seen.
+- A larger dial on a wide screen: one size is one set of numbers to test, and a mouse doesn't need more room.
+
+#### Lengths and the side view
+
+The control app stores metres. Feet exist only on the page, in `lengths.ts`: `shown` (the text of a field: one decimal
+in feet, two in metres, empty for no length), `decimal` (a plain number as typed, with one comma and no dot read as
+the decimal mark, since many phones' keypads have no dot, but not a comma before exactly three digits, "1,000", which
+may be a thousands separator), `typed` (what was typed, as metres to two decimals, null for nothing or for text that
+isn't a number), `both` ("7.0 ft (2.13 m)", the chosen unit first), and `savedUnit` and `saveUnit`. A foot
+is 0.3048 m, and rounding is half away from zero, as the backend rounds (`toFixed` works on the number's exact value, as
+the backend does). The unit is feet until someone chooses metres, because the usual mounts are whole feet (7, 12, and
+16), so feet are the unit they are round in; each length is shown in both, so metres are always there. The browser
+remembers the choice in `localStorage` under `tm.mounting.unit`. A browser may refuse its storage, so every read and
+write is inside `try`, and a refusal means feet and a choice that lasts until the page is closed.
+
+`MountSideView.vue` is the page's drawing of one sensor: `heightM`, `pitchDeg`, `distanceM`, and `unit` in, nothing out.
+It is a picture, not a calculator. The page passes the API's dry-run values, where the API has already worked out
+whichever of tilt and distance isn't measured, and the drawing lays out the three it is given.
+
+```text
++------------------------------------+
+|              15°                   |  the tilt, above the unit
+|        7.0 ft [#]__                |  the height beside the support, the unit on it
+|               |    ----____        |  the line of sight, in the primary color
+|               |            ----o   |  o: the centre of the view, on the road
+|  -------------+-----------------   |  the road
+|               |<--- 26.1 ft --->|  |  the distance along the ground
++------------------------------------+
+```
+
+- One scale for both directions, so the support and the ground point both fit in the 300 by 180 drawing: the smaller
+  of what the height and what the distance allow. A distance that is missing asks for no room. The unit keeps its size
+  when the support is short (0.5 m at 286 m is a unit sitting on the road), and the height's label moves up to stay
+  clear of the road.
+- Colors are Vuetify's, as in the dial: the road, the support, and the distance's ruler are `text-secondary`; the unit,
+  the line of sight, and the ground point are `text-primary`; labels are the text color. All of it is `currentColor`,
+  with `width`, `height`, and `viewBox` attributes and no CSS. The drawing is a fixed 300 px wide, like the dial's 200,
+  which leaves room inside a card's padding on a phone's 343 px.
+- A missing value leaves its part dashed and unlabelled. With no tilt, the line of sight is dashed (it still runs to the
+  ground point, if the distance is there); with no distance, the ruler under the road is dashed and has no label,
+  which is also what a tilt of 0 looks like, since the centre of the view is then at the horizon and the line runs level
+  to the edge. With a tilt above 0 and no distance (the API gives none when it would be over 1,000 m), the line of
+  sight is solid and runs at that tilt to the right edge or the road, whichever it meets first, and a tilt of 90
+  draws it straight down. With neither value, the line of sight is a dashed stand-in. A tilt of 90 with a distance of
+  0 also draws the line straight down over the support. With no height there is nothing to draw: one line, "Enter the
+  height to see the side view."
+- The text alternative says what the labels say: "Side view. The unit is 7.0 ft above the road. Its tilt is 15° below
+  level. The centre of its view is 26.1 ft along the ground.", and "not set" for a missing tilt or distance. The SVG is
+  `role="img"` with that as its `aria-label`; the text inside it is for people who can see it.
+
+The side view was checked in a scratch mount at 375 px and 1280 px wide: a full set of values in feet and in metres, a
+tilt of 0, a tilt of 90, no height, a height of 100 m and one of 0.5 m, 0.5 m with a 286 m distance, a missing tilt, a
+missing distance, and only a height.
+
+- At 0.5 m and 286 m the height's label sat on the road line, over a support too short to hold it. It now stays above
+  the road.
+- Looked at and kept: at a tilt of 90 the line of sight lies over the support, so the support shows a blue stripe; and
+  at 1280 px the drawing stays at 300 px on the left, like the dial.
+
+Defaults rejected for the side view:
+
+- A drawing that stretches to the card's width: its text would scale with it, and a label that is 12 px on a phone is
+  17 px on a desktop.
+- A separate scale for height and distance, so a tall support and a far ground point both look large: it draws the wrong
+  tilt, and the tilt is what the drawing is for.
+- Working the missing value out in the drawing: the API already does, and a second copy would drift from it.
+
+#### The Mounting page
+
+`MountingPage.vue`, at `/location/mounting`, is where an admin records how the unit is mounted at the place in use. It
+is admin-only, like the Location page, and has no menu entry of its own: the Location page leads to it. It reads
+`GET /surveys` for the place in use, then `GET /surveys/{id}/mounting`, and writes with `PUT` on the same path.
+
+```text
++----------------------------------+
+| < Location                       |  a text link back
+| Mounting                    (h5) |
+| Front of the school              |
+| a1b2c3d4-si                      |
+| How the unit is mounted at this  |
+| place. The numbers are stored... |
+| (!) Node-RED didn't answer, ...  |  only then
+| Units  (o) Feet  ( ) Metres      |
+| Start from a usual mount         |
+| ( ) Tripod beside the road       |
+| ( ) Pole or sign post            |
+| ( ) Upstairs window over an ...  |
+| ( ) My own measurements          |
+| -------------------------------- |
+| picam_h265                  (h6) |
+| Camera                           |
+| (i) From last time: 12.0 ft up,  |  only with `previous`
+|     tilted 15°, pole or sign post|
+|     [Use these values]           |
+| Which way it faces               |
+|   (the heading dial)             |
+| [Height above the road  12.0 ft] |
+|  12.0 ft (3.66 m)                |
+|  From the road surface ...       |
+| (o) I measured the tilt          |
+| ( ) I measured the distance      |
+| [Tilt below level          15 °] |
+|  How far the camera points ...   |
+| [Distance to the centre  44.8 ft]|  greyed: the dry run's value
+|  44.8 ft (13.66 m)               |
+|  Along the ground, from ...      |
+|   (the side view)                |
+| -------------------------------- |
+| TM_RADAR_SERIAL_PORT_00     (h6) |
+| Radar                            |
+| [x] Same as picam_h265           |
+| Takes picam_h265's heading,      |
+| height, and tilt.                |
+| -------------------------------- |
+| Did the unit move or turn?       |  only when the dry run asks
+| picam_h265: heading 40° to 62°   |
+| (o) No, it is where it was. I    |
+|     measured it better.          |
+| ( ) Yes, it was moved or turned. |
+| The record of the running        |
+| deployment is corrected.         |
+| [Save] [Cancel]  Saved.          |  the result beside the buttons
++----------------------------------+
+```
+
+- The order is the order of the work at the roadside. Where it is and what it is for come first, so a person who
+  followed a link knows what the numbers will do. The units come before any number, because every length on the page
+  is shown in them. The usual mounts come before the sections, because picking one fills every section at once, and a
+  person who starts from one only adjusts after. Then one section per sensor, in the API's order (each camera, its
+  radar under it, the other radars, the rest), titled with the sensor's name, since that is what the deployments list
+  shows. Last the question, then Save: the question is about the save, so it sits where the save is.
+- Inside a section, what the person does in order: which way it faces, then how high, then the tilt or the distance,
+  then the picture that checks it. The notice of last time's values goes at the top of its section, not after the
+  drawing: it offers to fill the fields below it, and on a phone an offer under the drawing would be found only after
+  the fields were typed in.
+- At 375 px a section is one column: the dial (288 px), then each field at 20 rem with its lines under it, then the
+  side view (300 px), all left-aligned. Each field shows its value in the other unit under it ("12.0 ft (3.66 m)",
+  `both`) and its help in the secondary color under that. A section has no card around it: the page is one form, and
+  a top border with the sensor's name as an `h2` separates the sections, as the Location page's sections are separated.
+- The usual mounts are a radio group, not a select, so the three and "My own measurements" are read without a tap.
+  Picking a mount sets, in every camera's and radar's section that isn't following a camera, the height, the tilt, "I
+  measured the tilt", and the mount's key; nothing is saved until Save. "My own measurements" clears the key in those
+  sections and leaves the numbers. The group starts at the key every such section shares, at "My own measurements"
+  when none has a key and one has a number, and at nothing otherwise, and is chosen the same way again after **Use
+  these values** and after "Same as" is ticked or unticked, so it never shows a mount the form won't save.
+- Lengths: each length field keeps the metres it was loaded with until someone types in it, so switching between feet
+  and metres, or leaving a field untouched, never sends a value that went through feet and back. Text typed back to
+  what the page last put in the field gives that value back too: a height saved as 3.00 m reads "9.8" in feet, which
+  typed would be 2.99 m, so a digit typed and deleted changes nothing. A field emptied clears that value. A comma
+  is the decimal mark when there is one and no dot ("7,5"). A field with text `typed` can't read ("1,000", "abc")
+  says "Enter a number, such as 12 or 12.5." under it, isn't sent, and keeps Save off; the page sends no dry run
+  while one does, since the API couldn't check what the person meant. A negative or a number past a limit is sent,
+  and the API's sentence shows under the field. The tilt is read the same way, in degrees.
+- One of tilt and distance is measured and the other worked out. The person picks which with two radio buttons; the
+  other field is disabled and shows the value the last dry run worked out. Choosing the other as measured starts it
+  from that shown value, so switching alone changes no number. A switch made while a dry run is waiting or on its way,
+  or while **Try again** is offered, sends that dry run first and starts from its answer, so a height typed just before
+  the switch is the one the value is worked out for. When the API works none out (no height), the field starts from what
+  was last typed in it, so a tilt typed before the height survives a switch to the distance and back; a field that was
+  never measured holds nothing, so a tilt of 0 switched to the distance starts empty and not at a distance from before.
+  The one that stops being measured forgets any text it couldn't read, since it is no longer sent: only the height and
+  the measured one can hold the form back. The page does no trigonometry: a tilt of 0 shows an empty distance because
+  the API gives none.
+- After each change the page waits 400 ms and sends the whole form as a dry run; a counter drops any answer that
+  isn't the newest request's. Every section is sent every time, a following radar as `same_as_camera: true`, because
+  a save writes only the sensors it names. Save is off until the form differs from what was loaded, while a dry run is
+  waiting or was refused, while a field can't be read, and while Node-RED doesn't answer.
+- "Same as <camera>" is never ticked for the person. It starts ticked only when the API says `same_as_camera`, which
+  it does only while the radar's five values equal its camera's; ticking it is always the person's act. Ticked, the
+  section hides the dial, the fields, and the side view, and says "Takes <camera>'s heading, height, and tilt."
+  Unticking shows them again, filled with the camera's values as the form has them, so the radar starts where it was.
+  A ticked radar shows its own values from last time only when they differ from its camera's, or the camera has none:
+  otherwise the camera's notice offers them and one save confirms both. Its **Use these values** unticks it, with the
+  camera's heading, and fills the rest from last time, so its own values are never overwritten unseen.
+- The question sits in the page above Save, shown when the newest dry run says `ask`, with the dry run's `suggested`
+  answer already chosen and the changes that count listed ("picam_h265: heading 40° to 62°", and a length in both
+  units, "height 12.0 ft (3.66 m) to 13.0 ft (3.96 m)", so a change smaller than a tenth of a foot still reads as
+  one), old value from the page's load and new from the dry run. A filled-in value or a new mount key doesn't count,
+  so it isn't part of what is asked and isn't listed. The person's answer holds while the changes that count stay as
+  they were; once they differ (another turn, say), the dry run's new `suggested` is chosen again. Under the choice,
+  what it does: the running record is corrected, or "A new deployment starts now for" the sensors with a change that
+  counts (`changes` with `counts`). It isn't a dialog: the answer is part of the form and belongs beside what changed,
+  a dialog would hide the numbers it asks about, and a change to a field while the question shows asks the API again.
+  A 409 `answer_needed` from a save sends a dry run at once, so the question appears.
+- The result stays beside Save until the form changes again: "Saved.", "Saved. A new deployment started for ...",
+  "Saved. Node-RED hasn't loaded the settings yet; the new deployment appears once it does. Don't save again.", or the
+  API's sentence. After a save the page loads the mounting again, so a sensor whose last values were confirmed loses its
+  notice and Save is off until the next change. While a save is on its way every control that changes the form is off
+  (the units, the usual mounts, "Same as", Use these values, the dial, and the fields), because the reload after it
+  would replace an edit made meanwhile.
+- The notice of last time's values is a tonal info alert in its section: "From last time: 12.0 ft up, tilted 15°, pole
+  or sign post" (a distance, "44.8 ft to the centre of the view", where there is no tilt, so a distance measured
+  without a height still has something to offer) and **Use these values**, which fills the section's fields, the
+  measured choice, and the mount. Nothing is recorded until Save, and the dry run then lists them as filled-in values,
+  which don't count, so nothing is asked.
+  The Location page's card and the deploy review's result say the same in one sentence with a **Mounting** button
+  (the words await the maintainer's read).
+- A refused value (422 with `detail.index` and `detail.field`) shows the API's sentence under that section's field; a
+  refusal of anything without a field of its own shows in its section, and one with no index under Save. A save's
+  refusal shows its sentence once: under its field when the page shows that field, else beside Save. A 409 other
+  than `answer_needed` loads the page again. A dry run that fails any other way (no answer from the device, a 500)
+  shows its sentence under Save with **Try again**, which sends the same dry run, since nothing else would send one
+  until the form changed; Save stays off until one is answered. No place in use, or a mounting the API refuses to
+  read, shows a warning in place of the form.
+- Cancel goes back to the Location page and sends nothing.
+- The page, the dial, the side view, and the lengths are in the entry chunk, because the routes import their pages
+  directly, as every other page's do. The entry chunk is 723.74 kB (237.74 kB gzipped), up from 696.74 kB (229.36 kB)
+  before the dial, the lengths, the side view, and the page, and the Location page's changes for it.
+
+The page was checked in fake mode at 375 px and 1280 px wide: the form as a fresh device has it, a usual mount picked,
+a heading set on the dial by a press and a drag, the result after a save, a radar following its camera and unticked,
+the question after a turn, the result that names the new deployments, and the notice of last time's values after a
+deploy away and back.
+
+- "Distance to the centre of the view" was cut off as the field's floated label at 14 rem. The three fields are 20 rem
+  now, which holds it and still fits a phone's column.
+- The height and distance fields kept an empty row for their message while they had no value, so their help sat
+  further below them than the tilt's. All three leave out the row when there is nothing in it.
+- Looked at and kept: at 1280 px the dial's words, field, and help sit beside it, because the side-by-side layout
+  switches at 600 px of window width (Vuetify's `sm`), and in the page's 760 px column there is room for both. At
+  375 px they stack under it.
+- Looked at and kept: a mouse drag that starts on the dial's ring and runs over the page's text selects nothing in
+  Chromium (the ring's pointer capture keeps the events), so the dial needs no `preventDefault`.
+- Looked at and kept: a long result ("Saved. A new deployment started for picam_h265 and TM_RADAR_SERIAL_PORT_00.")
+  wraps under Save and Cancel instead of beside them, on a phone and on a wide screen.
+- Looked at and kept, in a second check: **Try again** sits at the top right of its alert, as on the page's load
+  error, and on a phone the sentence wraps beside it; a following radar's own notice sits between "Same as" and
+  "Takes …", so it is seen before the line it replaces; and on a phone a question line in both units can wrap
+  inside a length ("13.0" at the end of one line, "ft (3.96 m)" on the next), which still reads.
+
+Defaults rejected for the page:
+
+- A dialog for the whole form on the Location page: a dial, three fields, and a drawing per sensor don't fit a phone's
+  dialog, and the Location page behind it would show none of it.
+- A question for each field, or for each sensor: the API asks once for a save, and one answer covers it.
+- Working the numbers out in the browser (the distance from the tilt, whether to ask, the suggested answer): the API
+  does, and two copies of the rules would drift. The page compares the form with what it loaded only to turn Save on.
+- A select for the usual mounts: the titles are long and a person would have to open it to see the choices.
+- A tick that sets itself when the numbers happen to match: following the camera would then be the page's choice, and
+  later changes to the camera would move the radar without the person deciding it.
 
 #### What the screenshot review changed
 
@@ -1150,6 +1510,16 @@ and the picker closed mid-fade, in a real browser):
   what to do.
 - Looked at and kept: the map is light on the dark theme. It is the map's own style, and the library's attribution
   stays as it draws it.
+
+The Mounting page's way in (checked in fake mode at 375 and 1280 px wide: the place in use's card with the notice of
+last time's values, its panel with a running and two ended deploys, and the deploy review's result after a deploy back
+to a place used before):
+
+- Looked at and kept: at 375 px "Correct heading" on an ended deployment drops under its line, which now carries the
+  height and the tilt too; on a running one, "Mounting" still fits beside "Facing SE (120°)", since a move records none
+  of the four.
+- Looked at and kept: the card's notice is a tonal warning inside the card, so it reads as part of the place in use,
+  and its Mounting button is outlined, as the deploy result's is; the place's own panel has the filled one.
 
 #### Defaults rejected
 

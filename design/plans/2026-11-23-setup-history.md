@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** The database records which model, which software versions, and which camera settings were in force over time, so every event can be tied to them with one view, `events_with_setup`; a second PR sends the same rows with shared data.
+**Goal:** The database records which model, which software versions, and which camera settings were in force over time, so every event can be tied to them with one view, `events_with_setup`; a second PR sends the rows with shared data, without the three names a person typed.
 
-**Architecture:** The control app gathers a snapshot of the setup (the running model from the Detection module's code, each camera's settings from Frigate's `/api/config`) on a background thread and posts it to a new Node-RED endpoint, `POST /tm-internal/setup`, at start, after its own changes, and every five minutes. Node-RED keeps two history tables, `setup_device` and `setup_camera`: an engine like the deployment engine reads the open rows, compares, and closes and inserts only when something differs. A view joins each event to the rows in force at its start. PR 2 sends each opened or closed row to the upload as a new kind of telemetry, `setup`, behind field lists.
+**Architecture:** The control app gathers a snapshot of the setup (the running model from the Detection module's code, each camera's settings from Frigate's `/api/config`) on a background thread and posts it to a new Node-RED endpoint, `POST /tm-internal/setup`, at start, after its own changes, and every five minutes. Node-RED keeps two history tables, `setup_device` and `setup_camera`: an engine like the deployment engine reads the open rows, compares, and closes and inserts only when something differs. A view joins each event to the rows in force at its start. PR 2 sends each opened or closed row to the upload as a new kind of telemetry, `setup`, behind field lists, and sends the open rows again after a start, after the upload is turned on, and once a day.
 
 **Tech Stack:** Python 3.13 (FastAPI control app, `threading`), Node-RED 5.0.10 function nodes (JavaScript in `flows.json`), SQLite migrations run by `tmdb_migrate.py`, pytest with the function-node harness in `script/tests/test_node_red_flows.py`, Ansible (one task), MkDocs.
 
@@ -13,7 +13,7 @@
 **Repo:** `glossyio/traffic-monitor`, two stacked PRs, each in its own worktree:
 
 - **PR 1, the record** (Tasks 1 to 11): branch `feature/setup-history/358` off `dev`.
-- **PR 2, the upload** (Tasks 12 to 15): branch `feature/setup-history-upload/358` off PR 1's branch.
+- **PR 2, the upload** (Tasks 12 to 15): branch `feature/setup-history-upload/358` off `dev`, once PR 1 and one other PR have merged (see "PR 2: the upload").
 
 The public issue for this work is 358. All paths below are relative to the repo root.
 
@@ -34,7 +34,10 @@ The public issue for this work is 358. All paths below are relative to the repo 
 13. **Names.** A running model's title, and an active profile's key, that look like an address or a person's name draw a warning on the Status page, which never quotes them. Model titles get their own rule: numbers don't count (`512` in a title is a size).
 14. **Model facts that were missing.** The control app keeps a Frigate+ record's `baseModel`. A default model's type and size come from Frigate's own answer, so they are no longer empty.
 15. **Installer.** `TM_VERSION` in `node-red-tm.env` is refreshed on every run, so an upgraded unit reports its new version.
-16. **Upload (PR 2).** Each row that opens or closes goes out once, as `values.setup = {device: [...], cameras: [...]}`. `setup` joins the gate's list of telemetry, and two new lists, `setup_device` and `setup_camera`, name the row fields that are sent. All of them are sent.
+16. **Upload (PR 2).** Setup rows go out with **Share data**, as `values.setup = {device: [...], cameras: [...]}`; no new choice on the Sharing page.
+    - **When.** Each row that opens or closes is sent. Every open row is sent again on the first complete snapshot after Node-RED starts, after the upload is turned on or its server changes, after the cameras that are captured change, and once a day. An upload that fails is never repeated, and a unit may start sharing long after its rows opened, so without this a server could hold events and never learn the setup they were counted under. A row goes out more than once; a server keys rows on `id`.
+    - **What.** `setup` joins the gate's list of telemetry, and two new lists, `setup_device` and `setup_camera`, name the row fields that are sent: every column but `model_title`, `model_file`, and `profile`. Those three are names a person typed, and they stay on the unit; a server tells models apart by `model_sha256` and `model_id`. Zone keys are sent, inside `zones`, only for zones that are on, on a camera `config.yml` captures: those are the zones whose keys go out with events, and the ones the Zone names check reads. A zone that is off, and every zone of a camera that isn't captured, stays on the unit; a zone that is turned on starts a new row, which is sent with it.
+    - **The notice** says so, under the version it has (`2026-11`, which no release has carried).
 17. **The field rule has a test.** For each table: the snapshot the control app builds, the fields Node-RED accepts, the INSERT's columns and parameters, the table, the view's columns, and (PR 2) the upload list can't drift apart without a test failing.
 18. **Docs and the sharing notice** say what is recorded (PR 1) and what is sent (PR 2).
 
@@ -52,6 +55,8 @@ Not in this change: filling `lens_hfov`; a radar's setup rows; any page or form 
 - The migration only creates two tables, two indexes, and one view. It is written here as `0007`, and another stack of branches claims `0007` to `0009`. Never edit a migration that is already on `dev`. Before Task 1, look at `dev`'s newest migration and take the next number; if another migration merges while this branch is open, renumber this one. A renumbering changes the file's name, its test file's name, the versions in its tests, `LATEST_VERSION`, `schema.sql`, the pinned version in `test_migrate.py`, and the version the bench expects in the journal.
 - A text fact longer than 128 characters is recorded as empty, never cut.
 - The upload gate fails closed: when its lists can't be read, the two new ones included, it sends nothing (PR 2).
+- No setup row leaves the unit with `model_title`, `model_file`, or `profile` (PR 2): the engine leaves them out, the lists don't name them, and the gate cuts what isn't listed.
+- No setup row leaves the unit with a zone that is off, or with any zone of a camera that isn't captured (PR 2): the engine leaves them out, and the gate cuts them again.
 - No UI source file changes in PR 1. PR 2 changes only the Sharing page's example.
 - Docs ride with the code and follow "Writing docs" in `docs/development/contributing.md`. `mkdocs build --strict` must pass.
 - On a bench unit nothing here turns on Frigate's detection, snapshots, or recording. The snapshot only reads Frigate's `/api/config`, `/api/version`, and `/api/profile/active`.
@@ -63,7 +68,7 @@ Not in this change: filling `lens_hfov`; a radar's setup rows; any page or form 
     - changes the upload gate node `ae3349867027d005` and adds a list to `upload-lists.json` (PR 2 here does both too);
     - changes text in the sharing notice, the sharing and data docs pages, and `CLAUDE.md`.
 
-  Whichever merges second merges `dev` in, keeps both sides, and renumbers its migration. A conflict inside a node's `func` in `flows.json` is settled by taking `dev`'s node and making this plan's change to it again, never by editing the conflicted string by hand. This plan changes no node of the deployment engine, reads and names no deployment column (the view included), and adds no migration to the control app's store.
+  Whichever merges second merges `dev` in, keeps both sides, and renumbers its migration. For PR 2 the order is settled: it is built after that stack's change to the gate and the list file is on `dev`. A conflict inside a node's `func` in `flows.json` is settled by taking `dev`'s node and making this plan's change to it again, never by editing the conflicted string by hand. This plan changes no node of the deployment engine, reads and names no deployment column (the view included), and adds no migration to the control app's store.
 
 ## Review Focus
 
@@ -74,6 +79,8 @@ Inputs the requirements imply and a person will meet; each has a test in the tas
 3. A close that failed and left two open rows for one key, or Node-RED restarted with nothing in memory: the engine closes the older row, the view still lists each event once, and a snapshot that arrives before the schema version is known is refused and tried again. Tasks 1 and 3.
 4. Events from before the first setup row, and events of a camera that has no row: listed once by the view with the setup columns empty. Task 1.
 5. A zone or mask with a `friendly_name` that is an address, a Frigate camera named for a street, and an input path with a login in `/api/config`: none of them is in the snapshot, a row, a log line, or a check's detail. Tasks 6 and 9.
+6. A unit that turns sharing on months after its rows opened, a server that couldn't be reached when the model changed, Node-RED restarted: the server still gets every open row, within a day at most, and no row twice in one message. Task 12.
+7. A model titled for a street, a model file named for one, a profile keyed with an address: none of the three is in what leaves the unit, whether the engine left it out or only the gate was asked. Tasks 12 and 13.
 
 ## Files
 
@@ -82,7 +89,7 @@ Inputs the requirements imply and a person will meet; each has a test in the tas
 | `container/node-red-tm/schema/migrations/0007_setup_history.sql` | New: two tables, two indexes, the view |
 | `container/node-red-tm/schema/schema.sql` | Regenerated |
 | `container/node-red-tm/data/flows.json` | PR 1: a new group "tm-control setup history: POST /tm-internal/setup" on `init-config`, inside the status group `d9d94c0d493873b9`; changed node `a88895e60521585e` ("tm-internal: build status"). PR 2: the engine gains an output and a `link out`; a new group "setup" inside "thingsboard telemetry" on `thingsboard`; changed node `ae3349867027d005` (upload gate) |
-| `container/node-red-tm/data/upload-lists.json` | PR 2: `setup` in `telemetry`; new lists `setup_device` and `setup_camera` |
+| `container/node-red-tm/data/upload-lists.json`, `container/node-red-tm/data/README.md` | PR 2: `setup` in `telemetry`; new lists `setup_device` and `setup_camera`, each its table's columns but the three kept on the unit |
 | `tm-control/backend/tm_control/modules/setup_history/` | New package: `__init__.py`, `snapshot.py` (what is gathered), `poster.py` (the thread) |
 | `tm-control/backend/tm_control/adapters/frigate.py` | `active_profile()` |
 | `tm-control/backend/tm_control/adapters/nodered.py` | `NodeRed.post_setup()` |
@@ -96,7 +103,7 @@ Inputs the requirements imply and a person will meet; each has a test in the tas
 | `tm-control/backend/tm_control/modules/sharing/NOTICE.md`, `tm-control/ui/src/modules/sharing/examples.ts` | PR 2 |
 | `script/devpi/tests/test_dataflow.py`, `script/devpi/README.md` | One device test |
 | Tests | `container/node-red-tm/schema/tests/helpers.py`, `test_migrate.py`, `test_0007_setup_history.py` (new); `script/tests/test_node_red_flows.py`, `script/tests/test_tmsetup_tasks.py`; `tm-control/backend/tests/test_setup_snapshot.py`, `test_setup_poster.py` (new), `test_detection_inventory.py`, `test_name_check.py`, `test_app_checks.py`, `test_contract_checks.py`, `test_nodered_adapter.py`, `test_api_models.py`, `test_api_cameras.py`, `fixtures/nodered_status.json`, `fixtures/frigate_api_config.json` |
-| Docs | `docs/data-and-payloads/setup-history.md` (new), `data-overview.md`, `docs/use/device-health.md`, `docs/ui/database.md`, `mkdocs.yml`, `container/node-red-tm/schema/README.md`, `CLAUDE.md`; PR 2: `docs/data-and-payloads/integrations.md`, `docs/use/sharing.md` |
+| Docs | `docs/data-and-payloads/setup-history.md` (new), `data-overview.md`, `docs/use/device-health.md`, `docs/ui/database.md`, `mkdocs.yml`, `container/node-red-tm/schema/README.md`, `CLAUDE.md`; PR 2: `docs/data-and-payloads/integrations.md`, `docs/use/sharing.md`, `docs/data-and-payloads/setup-history.md`, `data-overview.md`, `CLAUDE.md`, `design/plans/2026-11-23-setup-history.md` |
 
 ## Commands
 
@@ -126,7 +133,10 @@ The flows tests need `node` on the path; without it they skip, and CI fails a sk
 | Snapshot body | `{"complete": false}`, or `{"complete": true, "device": {<DEVICE_FACTS>}, "cameras": {<key>: {<CAMERA_FACTS>}}}`. Every fact key is present; an unknown value is `null` |
 | Row ids | `<started ms>-<8 hex>-sd` for a device row, `-sc` for a camera row, made as the deployment engine makes its `-d` ids |
 | `global.tm_status.setup` | `{received_at: <ISO text>, complete: <bool>, changed_at: <ISO text or null>}`: the last snapshot Node-RED accepted, and when a row last changed |
-| "setup engine" outputs | 1: close device, `{params: {$ended, $id}}`. 2: insert device, `{params: {$<column>: <value>}}`. 3: close camera. 4: insert camera. 5: the request's message with the answer. PR 2 adds 6: `{payload: {ts, device: [<row>...], cameras: [<row>...]}}`, only when a row opened or closed |
+| "setup engine" outputs | 1: close device, `{params: {$ended, $id}}`. 2: insert device, `{params: {$<column>: <value>}}`. 3: close camera. 4: insert camera. 5: the request's message with the answer. PR 2 adds 6: `{payload: {ts, device: [<row>...], cameras: [<row>...]}}`, when a row opened or closed or the open rows are due |
+| `SETUP_KEPT_ON_THE_UNIT` (tests, PR 2) | `{"model_title", "model_file", "profile"}`: setup facts that are saved and never uploaded; changing it is a decision. The engine holds the same three as `KEPT_ON_THE_UNIT` |
+| A sent row (PR 2) | The table's columns but `SETUP_KEPT_ON_THE_UNIT`, in column order; the JSON columns parsed back into lists and mappings; `ended` null while the row is open; `zones` holds only the zones that are on, and is null for a camera that isn't captured |
+| `flow.setup_sent` (PR 2) | `{to: <the upload's URL>, at: <ms>, captured: <sorted keys of the captured cameras>}` on `init-config`, in memory: where and when the engine last handed every open row to the upload, and which cameras were captured then |
 | `Snapshot` (`snapshot.py`) | `@dataclass(frozen=True)`: `body: dict`, `flagged: tuple[str, ...]` (of `"model_title"`, `"profile"`) |
 | `app.state.setup_poster` | The `Poster`. `wake()`, `start()`, `stop()`, `run_once() -> bool`, `summary() -> dict` |
 | `Context.setup` | `Poster.summary()`: `{"gathered": <bool>, "flagged": [<str>...]}` |
@@ -688,29 +698,42 @@ git commit   # subject: Document the setup history and add its device test
 
 ## PR 2: the upload
 
-Branch `feature/setup-history-upload/358` off PR 1's branch (off `dev` if PR 1 has merged).
+Branch `feature/setup-history-upload/358` off `dev`, once two PRs are in it: PR 1 here, and the other stack's PR that gives deployment rows a field list in the upload gate (it adds the list `deployment` to `upload-lists.json`). Don't start before both have merged. Every step below that touches the gate, the list file, their tests, or the notice starts from what `dev` holds then and keeps all of it.
 
-### Task 12: The engine hands the changed rows on
+### Task 12: The engine hands rows to the upload
 
 **Files:**
 - Modify: `container/node-red-tm/data/flows.json`, `script/tests/test_node_red_flows.py`
 
 **Interfaces:**
-- Produces: "setup engine" output 6, wired to a `link out` "setup rows" in its group; on `thingsboard`, in a new group "setup" inside "thingsboard telemetry", a `link in` and the function "format setup telemetry", wired where "format watch telemetry" is wired (`8c521232f464d27a`). Its message: `{payload: {ts: <ms>, values: {setup: {device: [<row>...], cameras: [<row>...]}}}}`.
+- Produces: "setup engine" output 6, wired to a `link out` "setup rows" in its group; on `thingsboard`, in a new group "setup" inside "thingsboard telemetry", a `link in` and the function "format setup telemetry", wired where "format watch telemetry" is wired (`8c521232f464d27a`). Output 6's message is `{payload: {ts: <ms>, device: [<row>...], cameras: [<row>...]}}`; the format node makes it `{payload: {ts, values: {setup: {device, cameras}}}}`.
+- Produces: `SETUP_KEPT_ON_THE_UNIT`, a sent row, and `flow.setup_sent`, as under "Names used across tasks".
 
-- [ ] **Step 1: Write the failing tests:**
-  - `test_setup_engine_sends_each_opened_and_closed_row_once`: when a device fact differs, output 6 carries `ts` now, `device` with two rows (the closed one with `ended` now, the new one with `ended` null, each with every column of `SETUP_DEVICE_COLUMNS`, the JSON columns parsed back into lists and mappings), and `cameras` empty.
-  - `test_setup_engine_sends_nothing_when_nothing_changed`: no message on output 6 for an unchanged snapshot or an incomplete one.
-  - `test_format_setup_telemetry`: the message above becomes `{ts, values: {setup: {device, cameras}}}`.
+- [ ] **Step 1: Write the failing tests.** Each runs the engine with `config.thingsboard = {"enabled": True, "url": "https://tb.example.org"}` unless it says otherwise, and "current" means `flow.setup_sent = {"to": "https://tb.example.org", "at": <one second before the run>, "captured": <the sorted keys of the captured cameras>}`:
+  - `test_setup_engine_sends_each_opened_and_closed_row`: current, and a device fact differs. Output 6 carries `ts` now, `device` with two rows (the closed one with `ended` now, the new one with `ended` null), and `cameras` empty. Each row's keys are `SETUP_DEVICE_COLUMNS` without `SETUP_KEPT_ON_THE_UNIT`, in order, with `labels_available` a list.
+  - `test_setup_engine_sends_nothing_when_nothing_changed_and_nothing_is_due`: current, with an unchanged snapshot and with an incomplete one: no message on output 6, and `flow.setup_sent` as it was.
+  - `test_setup_engine_sends_the_open_rows_when_they_are_due`, parametrized over `flow.setup_sent`: absent (Node-RED just started), `to` another URL, `at` 86 400 000 ms before now, `at` after now. An unchanged complete snapshot, with one open device row and open rows for `cam_a` and `cam_b`: output 6 carries those three rows with `ended` null, and `flow.setup_sent` is `{to: <the URL>, at: <now>}`.
+  - `test_setup_engine_sends_each_row_once_when_due_and_changed`: `flow.setup_sent` absent and `cam_a`'s zones differ: `cameras` holds `cam_a`'s closed row, its new row, and `cam_b`'s open row; `device` holds the open row; no `id` appears twice.
+  - `test_setup_engine_waits_for_a_complete_snapshot_to_send_the_open_rows`: `flow.setup_sent` absent and an incomplete snapshot, with an open row for `cam_gone`, which the config doesn't have: output 6 carries that one closed row and nothing else, and `flow.setup_sent` stays absent.
+  - `test_setup_engine_sends_nothing_while_the_upload_is_off`, parametrized over `thingsboard`: `enabled` false, no block, `enabled` true with no `url`. A snapshot that changes a row gives no message on output 6 and leaves no `flow.setup_sent`, whatever it held. Then, with the upload on, the next unchanged complete snapshot sends every open row: turning sharing on is what sends them.
+  - `test_setup_engine_never_sends_a_kept_name`: open and new rows with `model_title` `"12 Oak St bikes"`, `model_file` `"oak_st.tflite"`, and `profile` `"1420_oak_st"`: the JSON text of output 6's message has none of the three values and none of the three keys.
+  - `test_format_setup_telemetry`: output 6's message becomes `{ts, values: {setup: {device, cameras}}}`.
   - The five outputs of PR 1's tests are unchanged.
 - [ ] **Step 2: Run to see them fail.** Expected: FAIL (the engine has five outputs).
-- [ ] **Step 3: Change the engine and add the nodes.**
+- [ ] **Step 3: Change the engine and add the nodes.** The engine's seventh rule, after the status record:
+  1. `to` is `config.thingsboard.url` when `config.thingsboard.enabled === true` and the URL is text that isn't empty; otherwise there is none.
+  2. With no `to`, `flow.setup_sent` is removed and output 6 carries nothing.
+  3. The open rows are due when rule 3 let the snapshot through (complete, schema version known) and `flow.setup_sent` isn't a mapping with this `to`, or its `at` isn't a number, is 86 400 000 ms or more before now, or is after now (the clock stepped back), or its `captured` isn't the list of captured cameras now.
+  4. When they are due, output 6 carries the rows closed in this run and every row open after it, kept or new, and `flow.setup_sent` becomes `{to, at: now, captured}`.
+  5. Otherwise it carries the rows closed and opened in this run, and nothing when there are none.
+
+  A list with no row is an empty list. A kept or closed row is sent from what the read gave, a new one from its insert's parameters; either way a JSON column's text is parsed, and text that can't be parsed is sent as null. The engine's opening comment names the sixth output and says the three names never leave on it. Nothing is logged.
 - [ ] **Step 4: Run the flows tests.** Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
 git add container/node-red-tm/data/flows.json script/tests/test_node_red_flows.py
-git commit   # subject: Hand each opened and closed setup row to the upload
+git commit   # subject: Hand setup rows to the upload: each change, and the open rows after a start and daily
 ```
 
 ---
@@ -718,22 +741,27 @@ git commit   # subject: Hand each opened and closed setup row to the upload
 ### Task 13: The gate and its lists
 
 **Files:**
-- Modify: `container/node-red-tm/data/flows.json` (node `ae3349867027d005`), `container/node-red-tm/data/upload-lists.json`, `script/tests/test_node_red_flows.py`
+- Modify: `container/node-red-tm/data/flows.json` (node `ae3349867027d005`), `container/node-red-tm/data/upload-lists.json`, `container/node-red-tm/data/README.md`, `script/tests/test_node_red_flows.py`
 
 **Interfaces:**
-- Produces: `upload_lists.telemetry` gains `"setup"`; new lists `setup_device` (`SETUP_DEVICE_COLUMNS`) and `setup_camera` (`SETUP_CAMERA_COLUMNS`); the gate's `telemetrySetup(value)`.
+- Produces: `upload_lists.telemetry` gains `"setup"`; new lists, after the ones `dev` has, `setup_device` (`SETUP_DEVICE_COLUMNS` without `SETUP_KEPT_ON_THE_UNIT`) and `setup_camera` (`SETUP_CAMERA_COLUMNS` without it); the gate's `telemetrySetup(value)`.
 
 - [ ] **Step 1: Write the failing tests,** beside the watch log's gate tests and in their shape:
   - A `setup` value passes with both lists of rows, each row cut to its list's fields; a field that isn't listed is left out and named once as `setup_device.<field>` or `setup_camera.<field>`, never with its value.
+  - `test_gate_applies_the_zone_rule`: a camera row's `zones` keeps only the zones that are on; it is removed for a camera that isn't captured (no `enabled: true` under `sensors.cameras`) and when it isn't a list; each case is warned once as `upload:setup_zones`, never with a camera, a zone, or a value.
+  - `test_gate_cuts_a_kept_name_that_reaches_it`: a device row that carries `model_title` and `model_file`, and a camera row that carries `profile`, leave without them, each named once and never quoted. The engine leaves them out already; the gate is the second check.
   - A key of `setup` other than `device` and `cameras` is left out and named once; a list with no row left is left out; a `setup` with nothing left is left out, and the item with it when it was the only value.
-  - Lists without `setup_device` or `setup_camera` (an older `upload-lists.json`): the gate sends nothing at all, for any kind of message.
+  - `test_gate_sends_nothing_without_readable_lists` gains two cases, lists with no `setup_device` and lists whose `setup_camera` holds a name that isn't text: the gate sends nothing at all, for any kind of message.
   - With the upload off, nothing passes.
-  - `test_setup_fields_agree` (Task 10) gains the two upload lists: each equals its table's columns.
+  - `test_upload_lists_file`: the keys are `dev`'s, then `setup_device` and `setup_camera`; `telemetry` ends with `"setup"`; each new list equals its table's columns without `SETUP_KEPT_ON_THE_UNIT`.
+  - `test_setup_fields_agree` (Task 10) gains the upload: each list equals its table's columns without `SETUP_KEPT_ON_THE_UNIT`, and the keys of a row on the engine's output 6 equal its list, so a column added later fails here until it is listed or kept.
+  - `test_everything_uploaded_passes_the_gate` passes with the new format node.
 - [ ] **Step 2: Run to see them fail.** Expected: FAIL (`setup` is left out as unlisted).
-- [ ] **Step 3: Change the gate and the lists.** `telemetrySetup` follows `telemetryWatch`: the two keys are `device` and `cameras`, with the lists `setup_device` and `setup_camera`. The gate's list of required list names gains the two. If `dev` by then holds another new list or another change to this node, start from `dev`'s node and keep it all.
-- [ ] **Step 4: Run the flows tests.** Expected: PASS.
-- [ ] **Step 5: Stop for the maintainer's look at the flows** (the review tool, as in Task 3), for Tasks 12 and 13 together.
-- [ ] **Step 6: Commit**
+- [ ] **Step 3: Change the gate and the lists.** `telemetrySetup` follows `telemetryWatch`: the two keys are `device` and `cameras`, with the lists `setup_device` and `setup_camera`. The gate's list of required list names gains the two, and its opening comment names the setup rows. It also checks `zones` a second time, as it checks the three names: in a camera row it keeps only the zones whose `enabled` is `true`, and it removes `zones` when the row's camera isn't `enabled: true` under `sensors.cameras` in the config; either is warned once, never with a camera, a zone, or a value. Start from `dev`'s node, which by now also cuts deployment rows to a list, and keep it all.
+- [ ] **Step 4: `container/node-red-tm/data/README.md`:** the count of lists the gate needs, the two new lists, and one sentence in the style of the event one: a new setup column goes on its list, or in `SETUP_KEPT_ON_THE_UNIT` in `script/tests/test_node_red_flows.py` when it stays on the device, and `test_setup_fields_agree` checks it.
+- [ ] **Step 5: Run the flows tests.** Expected: PASS.
+- [ ] **Step 6: Stop for the maintainer's look at the flows** (the review tool, as in Task 3), for Tasks 12 and 13 together.
+- [ ] **Step 7: Commit**
 
 ```bash
 git add container/node-red-tm/data script/tests/test_node_red_flows.py
@@ -742,15 +770,25 @@ git commit   # subject: Let the setup history through the upload gate, field by 
 
 ---
 
-### Task 14: The notice, the example, and the words that say "shared"
+### Task 14: The notice and the example
 
 **Files:**
-- Modify: `tm-control/backend/tm_control/modules/sharing/NOTICE.md`, `tm-control/ui/src/modules/sharing/examples.ts` and the UI test that pins it, `tm-control/backend/tm_control/modules/apps/contracts.py` and its test
+- Modify: `tm-control/backend/tm_control/modules/sharing/NOTICE.md`, `tm-control/ui/src/modules/sharing/examples.ts` and any UI test that pins the example
 
-- [ ] **Step 1: The example.** `SHARE_DATA_EXAMPLE` gains, after `watch`, a `setup` value with one device row and one camera row: made-up but plausible values, a model title such as `'bikes-2026-10'`, one zone with four corners. Run the UI build and tests and bring the pinning test in line.
-- [ ] **Step 2: The check's words.** In `setup_names`, both warning sentences end "It is saved in the database and sent with shared data." Update the test.
-- [ ] **Step 3: Draft the notice's sentences, and stop.** The notice is the maintainer's text. Propose, under "Share data": "It also sends the device's setup whenever it changes: the detection model's name, file name, and fingerprint, the software versions, and each camera's settings, including the shape of every zone and mask and the zone names you typed." Show him the paragraph before and after, and take his wording and his decision on the notice's version.
-- [ ] **Step 4: Commit** after his answer.
+The **Model and profile names** check keeps its words, "It is saved in the database.": a title, a file name, and a profile's key aren't sent.
+
+- [ ] **Step 1: The example.** `SHARE_DATA_EXAMPLE` gains, after `watch`, a `setup` value with one device row and one camera row: made-up but plausible values, the fields of the two lists only (no `model_title`, `model_file`, or `profile`), one zone with four corners. The comment above it names the setup. Run the UI build and tests.
+- [ ] **Step 2: The notice.** The maintainer agreed this wording on 2026-11-25. The first line stays `<!-- notice-version: 2026-11 -->`. Under "Share data", after the sentence that ends "from a sensor that was off.", add:
+
+  > It also sends the device's setup whenever it changes: which detection model is running (its fingerprint, type, and size, never its name), the software versions, and each camera's detection settings, including the shape of every mask and of every zone that is on, and the names you typed for those zones.
+
+  And the paragraph that begins "It doesn't send" becomes:
+
+  > It doesn't send images, video, plate reads, the rest of your device's settings, your Wi-Fi details, or the descriptions you give places.
+
+  If the "Share data" section on `dev` holds anything but the text PR 1 was built on plus one sentence about how each sensor is mounted, stop and show the maintainer the paragraph before and after.
+- [ ] **Step 3: Run** the control app's tests and the UI build and tests. Expected: PASS.
+- [ ] **Step 4: Commit**
 
 ```bash
 git add tm-control
@@ -761,7 +799,13 @@ git commit   # subject: Say in the sharing notice and its example that the setup
 
 ### Task 15: Docs, the bench, and the text for review (PR 2)
 
-- [ ] **Step 1: Docs.** `docs/data-and-payloads/integrations.md`: the ThingsBoard list gains the setup history, sent as one `setup` value when a row opens or closes, with the row fields on the same list file. `docs/use/sharing.md`: the **Share data** row names it, with a link. `docs/data-and-payloads/setup-history.md`: "not uploaded" becomes what is sent and when. `CLAUDE.md`: the upload lists (two more, in `test_setup_fields_agree`). Build with `mkdocs build --strict`.
+- [ ] **Step 1: Docs.**
+  - `docs/data-and-payloads/integrations.md`: the ThingsBoard list gains the setup history: one `setup` value when a row opens or closes, and the open rows again after Node-RED starts, after the upload is turned on or its server changes, and once a day, so a server keys rows on `id`; the row fields are on the same list file; a model's title and file name and a profile's key are never sent.
+  - `docs/use/sharing.md`: the **Share data** row's "What it sends" names the setup history, with a link; its "What it doesn't send" says "the rest of the device's settings" and names a model's title and file name and a profile's name.
+  - `docs/data-and-payloads/setup-history.md`: what is sent and when, in place of whatever says the rows stay on the device. "What an operator typed" says which names leave: the key of a zone that is on, on a camera that is captured, is sent inside `zones`; a zone that is off, every zone of a camera that isn't captured, a model's title, its file name, and a profile's key stay on the device, in the database and its download.
+  - `docs/data-and-payloads/data-overview.md`: the two tables' rows, if they say anything about sharing.
+  - `CLAUDE.md`: the `thingsboard` paragraph (the `setup` telemetry, the two lists, `SETUP_KEPT_ON_THE_UNIT`, `test_setup_fields_agree`) and the engine's sixth output with `flow.setup_sent`.
+  - Build with `mkdocs build --strict`.
 - [ ] **Step 2: Commit**
 
 ```bash
@@ -770,12 +814,21 @@ git commit   # subject: Document the setup history's upload
 ```
 
 - [ ] **Step 3: Run everything off-device once more,** the UI included.
-- [ ] **Step 4: Bench run, logged with `tmdev check`,** on a bench unit marked `pii_free`, whole installer, one unit at a time. Nothing here turns on Frigate's detection, snapshots, or recording. Items:
+- [ ] **Step 4: Bench run, logged with `tmdev check`,** on a bench unit marked `pii_free`, whole installer, one unit at a time. Nothing here turns on Frigate's detection, snapshots, or recording. Items 4 to 7 are the maintainer's, with his token and a ThingsBoard server:
   1. Deploy onto a unit that runs PR 1: no migration runs, and no setup row changes because of the deploy except the device row when `tm_commit` changed.
-  2. The Sharing page's **See an example** shows the `setup` value, and the notice reads as agreed.
+  2. The Sharing page's **See an example** shows the `setup` value, with no title, file name, or profile, and the notice reads as agreed.
   3. With sharing off, a model change writes rows and Node-RED's log shows no upload try.
-  4. With sharing on to a ThingsBoard server (the maintainer's step, with his token): a model change sends one `setup` telemetry message whose `device` list has the closed and the new row; the server's latest `setup` telemetry holds them; Node-RED's log has no "left out" or "didn't load" warning. Afterwards the unit is left not sharing.
-  5. `tmdev.py test <host>` passes.
-  6. Cleanup, recorded in the check: the model is as before, and Frigate's `/api/config` (sent with `X-Cache-Bypass: 1`) still shows detection off for the bench camera.
-- [ ] **Step 5: The public plan copy** already holds both PRs; nothing to add.
-- [ ] **Step 6: Write the text, and stop.** The PR title and body against PR 1's branch (or `dev`), with the bench check's id and the template's sections filled in. Under limits, say: only rows that open or close after this PR are sent, so a server learns a unit's setup at its next change (or its next install, when the commit changes); the gate doesn't yet hold a new kind of data back until the notice is read again.
+  4. Sharing turned on: within six minutes one `setup` telemetry message arrives that holds every open row, the device's and each camera's. No row on the server has `model_title`, `model_file`, or `profile`.
+  5. A model change sends one `setup` message whose `device` list has the closed and the new row, and no camera row unless the model also changes the camera's tracked labels.
+  6. `node-red-tm.service` restarted: after the next complete snapshot the open rows arrive again, with the ids the server already has.
+  7. Node-RED's log has no "left out" or "didn't load" warning. Afterwards the unit is left not sharing.
+  8. `tmdev.py test <host>` passes.
+  9. Cleanup, recorded in the check: the model is as before, and Frigate's `/api/config` (sent with `X-Cache-Bypass: 1`) still shows detection off for the bench camera.
+
+  The daily send isn't benched; Task 12's tests cover it.
+- [ ] **Step 5: The public plan copy.** Bring `design/plans/2026-11-23-setup-history.md` in line with this plan, and commit it last.
+- [ ] **Step 6: Write the text, and stop.** The PR title and body against `dev`, with the bench check's id and the template's sections filled in. Under limits, say:
+  - A row that closed while sharing was off, or while the server couldn't be reached, never reaches the server; it learns the setup from the open rows, and a close it missed shows as the next row's start.
+  - The server receives a row more than once and has to key on `id`.
+  - A model's title, its file name, and a profile's key aren't sent, so a server tells models apart by fingerprint and id, and sees a profile only as settings that changed.
+  - The gate doesn't yet hold a new kind of data back until the notice is read again.

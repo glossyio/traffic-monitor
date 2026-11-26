@@ -52,6 +52,24 @@ tmsetup_hevc_device: /dev/rpi-hevc-dec
 # first Podman command clears the lost boot's containers, and Podman 5.4.2 can crash while it does (#268; fixed in
 # Podman 5.6.0). This command takes that crash instead of the build.
 tmsetup_podman_refresh_command: /usr/bin/podman network exists podman
+# The update's files (script/tm-update writes them; docs/development/software-update.md)
+tmsetup_update_dir: /var/lib/traffic-monitor/update
+# Image builds of an update run in this slice, at these weights (a hyphen nests it under tm.slice)
+tmsetup_update_slice: tm-update.slice
+tmsetup_update_slice_properties:
+  - CPUWeight=20
+  - IOWeight=20
+# Every image an update builds before it switches: its folder under container/ and tmsetup_codedir, the tag its
+# build unit gives it, and each named first stage of its Containerfile (tagged stage-<name>, so that
+# `podman image prune` keeps the stage and the next build finds it). The Plate Recognizer add-on is not listed:
+# a device that has it is not updated this way.
+tmsetup_update_images:
+  - { name: frigate-tm, dir: frigate, tag: '{{ tmsetup_frigate_version }}', stages: [build-ffmpeg] }
+  - { name: node-red-tm, dir: node-red-tm, tag: latest, stages: [] }
+  - { name: revproxy, dir: revproxy, tag: latest, stages: [ui] }
+tmsetup_podman_packages:
+  - podman-docker
+  - podman-compose
 tmsetup_restart_required: false
 
 tmsetup_remove_packages:
@@ -90,7 +108,7 @@ tmsetup_base_required_facts:
 
 tmsetup_revproxy_image: localhost/revproxy:latest
 # Config mounted into the revproxy container, relative to {{ tmsetup_codedir }}/revproxy.
-# revproxy.container and the nginx -t check in revproxy_setup.yml both use this list.
+# revproxy.container and the nginx -t check in revproxy_nginx_check.yml both use this list.
 tmsetup_revproxy_config_mounts:
   - { path: nginx.conf, target: /etc/nginx/nginx.conf }
   - { path: tm, target: /etc/nginx/tm }

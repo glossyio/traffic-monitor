@@ -35,12 +35,13 @@ def test_0011_adds_the_four_columns_and_rewrites_no_row(tmp_path):
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == LATEST_VERSION
     names = columns(db_path, "deployment")
-    assert names[-5:] == ["heading_deg", *NEW_COLUMNS]
+    start = names.index("heading_deg")
+    assert names[start:start + 5] == ["heading_deg", *NEW_COLUMNS]
     types = {row[1]: row[2] for row in query(db_path, "PRAGMA table_info(deployment)")}
     assert {name: types[name] for name in NEW_COLUMNS} == NEW_COLUMNS
     after = query(db_path, "SELECT * FROM deployment ORDER BY id")
     assert len(before) == 2
-    assert after == [row + (None, None, None, None) for row in before]
+    assert [row[:len(before[0]) + 4] for row in after] == [row + (None, None, None, None) for row in before]
 
 
 def test_0011_applies_to_a_legacy_shaped_deployment_table(tmp_path):
@@ -49,5 +50,6 @@ def test_0011_applies_to_a_legacy_shaped_deployment_table(tmp_path):
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == LATEST_VERSION
     names = columns(db_path, "deployment")
-    assert names[-4:] == list(NEW_COLUMNS)
     assert "heading_deg" in names
+    start = names.index("heading_deg")
+    assert names[start + 1:start + 5] == list(NEW_COLUMNS)

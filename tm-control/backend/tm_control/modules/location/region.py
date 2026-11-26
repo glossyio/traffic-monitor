@@ -1,10 +1,11 @@
 """Where the Location page's map opens when there is no place to start from: the device's region.
 
 The region is the city of the device's time zone, read from the Pi's own time-zone data (the tables `zone1970.tab` and,
-for the names it merged away, `zone.tab`), so nothing leaves the device and no boundary data is needed. The installer
-sets the zone (`-z`, `America/Los_Angeles` unless given), so the city counts only when the Wi-Fi country is known and is
-one of the countries the zone's row lists; otherwise the map opens on the whole world. A unit left on the installer's
-zone and Wi-Fi country passes that check and opens over Los Angeles until its zone is set on the Date and time page.
+for the names it merged away, `zone.tab`), so nothing leaves the device and no boundary data is needed. The zone may be
+nobody's choice for this device (the image's or the imager's, until the Date and time page or the installer's `-z` sets
+one), which is why the city counts only when the Wi-Fi country is known and is one of the countries the zone's row
+lists; otherwise the map opens on the whole world. A unit left on a zone and Wi-Fi country that agree opens over that
+zone's city until its zone is set on the Date and time page.
 Anything unreadable, missing, or malformed gives no region and raises nothing.
 """
 

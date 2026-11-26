@@ -142,13 +142,19 @@ def test_on_a_device_the_zone_is_timedatectls_and_the_country_is_iws(table, full
     state = TimeState(device_time="2026-11-20T12:00:00-08:00", timezone="America/Los_Angeles", ntp=ntp, rtc_time=None)
     monkeypatch.setattr(surveys_router.timedate, "show", lambda: state)
     monkeypatch.setattr(surveys_router.network, "wifi_country", lambda: "US")
-    assert surveys_router._region(app_state) == LatLon(lat=34.05, lon=-118.24)
+
+    def found():  # as GET /surveys reads it: the clock's zone, then the region from it
+        return surveys_router._region(app_state, surveys_router._clock_zone(app_state))
+
+    assert surveys_router._clock_zone(app_state) == "America/Los_Angeles"
+    assert found() == LatLon(lat=34.05, lon=-118.24)
     state.timezone = "Europe/Amsterdam"  # only the second table lists it
     monkeypatch.setattr(surveys_router.network, "wifi_country", lambda: "NL")
-    assert surveys_router._region(app_state) == LatLon(lat=52.37, lon=4.9)
+    assert found() == LatLon(lat=52.37, lon=4.9)
     state.timezone = "America/Los_Angeles"
     monkeypatch.setattr(surveys_router.network, "wifi_country", lambda: None)  # iw can't be read
-    assert surveys_router._region(app_state) is None
+    assert found() is None
     monkeypatch.setattr(surveys_router.network, "wifi_country", lambda: "US")
     monkeypatch.setattr(surveys_router.timedate, "show", lambda: None)  # timedatectl can't be read
-    assert surveys_router._region(app_state) is None
+    assert surveys_router._clock_zone(app_state) is None
+    assert found() is None

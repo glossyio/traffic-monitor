@@ -4,8 +4,10 @@
   always in view and its choices in a closed panel. Opening a place's panel asks for its events and deployments
   (GET /surveys/{id}/events and /deployments). A place can be added, and a planned one edited, in PlaceForm's dialog.
   "Deploy here" on a planned place, or "Re-deploy here" on a used one, opens DeployReview to move the unit there;
-  "Modify deployment" on the place in use opens it to record a turn of the unit (a heading changed). A used place or
-  the place in use can have its location, or a deployment's heading, corrected in CorrectDialog. "Import places" adds
+  "Mounting" on the place in use opens the Mounting page, where its headings and mounting change. While a sensor of the
+  place in use has mounting values from the last time the unit was there (GET /surveys/{id}/mounting), the card says
+  so. A used place or the place in use can have its location, or an ended deployment's heading, corrected in
+  CorrectDialog. "Import places" adds
   planned places from a CSV in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a
   confirmation; the place in use can't. "Exact locations" saves the places' exact locations as a CSV (GET /surveys/export)
   after a confirmation. The download of a database copy that holds them is on the Sharing page (Download your data),
@@ -38,6 +40,7 @@ type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
 type EventsOut = components['schemas']['EventsOut']
 type DeploymentOut = components['schemas']['DeploymentOut']
+type MountingState = components['schemas']['MountingState']
 
 const STATUS: Record<string, string> = { in_use: 'In use', planned: 'Planned', used: 'Used' }
 
@@ -95,6 +98,27 @@ const cardItems = computed(() => {
     })),
   ]
 })
+
+// Whether a sensor of the place in use has values from last time that wait to be confirmed on the Mounting page. A
+// mounting that can't be read says nothing here; the Mounting page says why. The last answer stays until the next
+// arrives, and an answer that isn't the newest request's is dropped (a deploy's old place may answer last).
+const mounting = ref<MountingState | null>(null)
+const valuesWait = computed(() => mounting.value?.sensors.some((sensor) => sensor.previous !== null) ?? false)
+let mountingRequests = 0
+
+async function loadMounting(id: string | null) {
+  const request = (mountingRequests += 1)
+  let found: MountingState | null = null
+  try {
+    if (id !== null) {
+      const { data } = await api.GET('/api/v1/surveys/{survey_id}/mounting', { params: { path: { survey_id: id } } })
+      found = data as MountingState
+    }
+  } catch {
+    found = null
+  }
+  if (request === mountingRequests) mounting.value = found
+}
 
 // Only the place the device made at first run, with no coordinates: most units never need more
 const onlyDefault = computed(() => state.value?.surveys.length === 1 && state.value.surveys[0].lat === null)
@@ -293,6 +317,7 @@ async function load() {
     precisionChoice.value = state.value.precision
     // Keep open only the panels whose place is still listed
     open.value = open.value.filter((id) => id === UNASSIGNED || state.value?.surveys.some((place) => place.id === id))
+    void loadMounting(state.value.in_use)
   } catch (error) {
     loadError.value = messageOf(error)
   }
@@ -319,12 +344,17 @@ onMounted(load)
         Node-RED didn't answer, so the page can't say when each place was used.
       </v-alert>
 
-      <StatusCard
-        v-if="inUse"
-        :title="titleOf(inUse)"
-        :subtitle="['In use', inUse.id]"
-        :items="cardItems"
-      />
+      <StatusCard v-if="inUse" :title="titleOf(inUse)" :subtitle="['In use', inUse.id]" :items="cardItems">
+        <div v-if="valuesWait" class="mt-4">
+          <v-alert type="warning" variant="tonal">
+            <p class="text-body-1 mb-3">
+              This place has mounting values from the last time the unit was here. They aren't recorded until you
+              confirm them.
+            </p>
+            <v-btn variant="outlined" color="primary" min-height="44" to="/location/mounting">Mounting</v-btn>
+          </v-alert>
+        </div>
+      </StatusCard>
       <p v-else class="text-body-1">No place is in use.</p>
 
       <section class="mt-10">
@@ -365,11 +395,15 @@ onMounted(load)
                 :place="place"
                 :details="details[place.id]"
                 :nodered="state.nodered"
+                :mounting-sensors="mounting?.sensors ?? null"
                 @retry="loadDetails(place.id)"
                 @correct-heading="(deployment) => openCorrection('heading', place, deployment)"
               />
               <div class="d-flex flex-wrap ga-3">
-                <v-btn color="primary" size="large" :disabled="working !== null" @click="openReview(place)">
+                <v-btn v-if="place.status === 'in_use'" color="primary" size="large" to="/location/mounting">
+                  Mounting
+                </v-btn>
+                <v-btn v-else color="primary" size="large" :disabled="working !== null" @click="openReview(place)">
                   {{ deployWords(place.status).action }}
                 </v-btn>
                 <v-btn

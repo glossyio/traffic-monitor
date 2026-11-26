@@ -972,3 +972,148 @@ def test_set_sensor_mounting_for_a_sensor_not_in_the_file_is_a_key_error(path):
     with pytest.raises(KeyError):
         config.set_sensor_mounting("lidars", "picam_h265", None)
     assert config.save() is False
+
+
+@pytest.mark.parametrize("block, expected", [
+    ("    timezone: America/New_York\n", "America/New_York"),
+    ("    timezone: '  Europe/Berlin '\n", "Europe/Berlin"),
+    ("    timezone:\n", None),
+    ("    timezone: ''\n", None),
+    ("", None),
+    ("    timezone: 5\n", None),
+    ("    timezone: not a zone!\n", None),
+    ("    timezone: '../../etc/passwd'\n", None),
+    ("    timezone: a/b/c/d\n", None),
+], ids=["name", "trimmed", "blank", "empty", "missing", "number", "words", "path", "four-parts"])
+def test_deployment_reads_the_zone(path, block, expected):
+    path.write_text(f"deployment:\n    lat: 45.0\n    lon: -122.0\n{block}")
+    assert NodeRedConfig(path).deployment().timezone == expected
+
+
+def test_deployment_without_a_block_has_no_zone(path):
+    path.write_text("thingsboard:\n    enabled: false\n")
+    assert NodeRedConfig(path).deployment().timezone is None
+
+
+def test_set_timezone_writes_plain_text_after_the_precision(path):
+    path.write_text(
+        "deployment:\n    lat: 45.0\n    lon: -122.0\n    survey_id: 3f9a1c2e-si\n    database_precision: '2'\n"
+        "    heading_deg: 0\n"
+    )
+    config = NodeRedConfig(path)
+    config.set_timezone("Asia/Tokyo")
+    assert config.save() is True
+    text = path.read_text()
+    assert "    database_precision: '2'\n    timezone: Asia/Tokyo\n    heading_deg: 0\n" in text
+    assert "'Asia/Tokyo'" not in text and '"Asia/Tokyo"' not in text
+    assert NodeRedConfig(path).deployment().timezone == "Asia/Tokyo"
+    assert read_config(path).data["deployment"]["timezone"] == "Asia/Tokyo"
+
+
+def test_set_timezone_replaces_a_zone_in_place(path):
+    path.write_text("deployment:\n    timezone: Asia/Tokyo  # kept\n    database_precision: '2'\n")
+    config = NodeRedConfig(path)
+    config.set_timezone("Europe/Berlin")
+    config.save()
+    text = path.read_text()
+    assert text.startswith("deployment:\n    timezone: Europe/Berlin ") and "# kept\n    database_precision: '2'\n" in text
+    assert NodeRedConfig(path).deployment().timezone == "Europe/Berlin"
+
+
+def test_set_timezone_adds_a_missing_block(path):
+    path.write_text("thingsboard:\n    enabled: false\n")
+    config = NodeRedConfig(path)
+    config.set_timezone("Asia/Tokyo")
+    config.save()
+    assert NodeRedConfig(path).deployment().timezone == "Asia/Tokyo"
+
+
+def test_set_timezone_none_blanks_the_key(path):
+    path.write_text("deployment:\n    lat: 45.0\n    lon: -122.0\n    timezone: Asia/Tokyo\n    heading_deg: 0\n")
+    config = NodeRedConfig(path)
+    config.set_timezone(None)
+    assert config.save() is True
+    assert "Asia/Tokyo" not in path.read_text()
+    assert "    timezone:" in path.read_text()
+    assert NodeRedConfig(path).deployment().timezone is None
+    assert read_config(path).data["deployment"]["timezone"] is None
+
+
+def test_set_timezone_none_adds_no_key(path):
+    before = path.read_text()
+    config = NodeRedConfig(path)
+    config.set_timezone(None)
+    assert config.save() is False
+    assert path.read_text() == before
+    assert "timezone" not in before
+
+
+def test_set_timezone_none_adds_no_key_to_a_file_without_the_block(path):
+    path.write_text("thingsboard:\n    enabled: false\n")
+    config = NodeRedConfig(path)
+    config.set_timezone(None)
+    assert config.save() is False
+    assert path.read_text() == "thingsboard:\n    enabled: false\n"
+
+
+def test_set_timezone_keeps_the_files_comments(path):
+    config = NodeRedConfig(path)
+    config.set_timezone("Asia/Tokyo")
+    config.save()
+    text = path.read_text()
+    assert "    # port: 8080" in text
+    assert "    timezone: Asia/Tokyo\n\nsensors:" in text  # above the blank line that ended the block
+    assert "sensors:\n    cameras:\n        picam_h265:" in text
+    again = NodeRedConfig(path)
+    again.set_timezone(None)
+    again.save()
+    assert "    # port: 8080" in path.read_text()
+
+
+def test_set_timezone_to_what_is_there_writes_nothing(path):
+    config = NodeRedConfig(path)
+    config.set_timezone("Asia/Tokyo")
+    config.save()
+    again = NodeRedConfig(path)
+    again.set_timezone("Asia/Tokyo")
+    assert again.save() is False
+
+
+@pytest.mark.parametrize("block, given, changed", [
+    ("", "Asia/Tokyo", True),  # no key: it is added
+    ("    timezone: Asia/Tokyo\n", "Asia/Tokyo", False),
+    ("    timezone: Europe/Berlin\n", "Asia/Tokyo", True),
+    ("    timezone:\n", "Asia/Tokyo", True),
+    ("    timezone: 5\n", "Asia/Tokyo", True),  # the raw value is compared, not what read_zone makes of it
+    ("    timezone: ''\n", "Asia/Tokyo", True),
+    ('    timezone: " Asia/Tokyo "\n', "Asia/Tokyo", True),
+    ('    timezone: "Asia/Tokyo"\n', "Asia/Tokyo", False),  # the same text, quoted
+    ("", None, False),  # missing, nothing to blank
+    ("    timezone:\n", None, False),  # blank already
+    ("    timezone: ''\n", None, False),
+    ("    timezone: Asia/Tokyo\n", None, True),
+    ("    timezone: 5\n", None, True),
+], ids=["add", "same", "other", "blank", "number", "empty", "spaces-quoted", "same-quoted", "none-missing",
+        "none-blank", "none-empty", "none-blanks", "none-number"])
+def test_set_timezone_answers_whether_the_value_changed(path, block, given, changed):
+    path.write_text(f"deployment:\n    lat: 45.0\n    lon: -122.0\n    database_precision: '2'\n{block}")
+    before = path.read_text()
+    config = NodeRedConfig(path)
+    assert config.set_timezone(given) is changed
+    assert config.save() is changed  # a False answer is a file the save leaves as it is
+    assert (path.read_text() == before) is (not changed)
+    assert not changed or NodeRedConfig(path).deployment().timezone == given
+
+
+def test_set_timezone_answers_for_a_file_without_the_block(path):
+    path.write_text("thingsboard:\n    enabled: false\n")
+    config = NodeRedConfig(path)
+    assert config.set_timezone(None) is False
+    assert config.set_timezone("Asia/Tokyo") is True
+
+
+def test_set_timezone_refuses_what_is_not_a_zone(path):
+    config = NodeRedConfig(path)
+    for value in ("not a zone!", "", "   "):
+        with pytest.raises(ValueError):
+            config.set_timezone(value)

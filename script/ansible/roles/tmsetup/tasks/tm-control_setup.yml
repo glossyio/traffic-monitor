@@ -18,9 +18,23 @@
 
 - name: TMSetup - tm-control Setup - Copy the tm_control package
   become: true
+  when: not (tmsetup_update_mode | bool)
   ansible.builtin.copy:
     src: tm-control/backend/tm_control
     dest: '{{ tmsetup_tm_control_dir }}/backend/'
+    owner: root
+    group: root
+    mode: u=rwX,go=rX
+  notify: Restart tm-control.service
+
+# The same package as an archive an earlier run made, whose one top-level entry is tm_control/
+- name: TMSetup - tm-control Setup - Copy the tm_control package from the update's stage
+  become: true
+  when: tmsetup_update_mode | bool
+  ansible.builtin.unarchive:
+    src: '{{ tmsetup_update_stage_dir }}/tm_control.tar'
+    dest: '{{ tmsetup_tm_control_dir }}/backend'
+    remote_src: true
     owner: root
     group: root
     mode: u=rwX,go=rX
@@ -45,6 +59,15 @@
     owner: root
     group: root
     mode: '0644'
+  register: tmsetup_tm_control_lock_register
+
+# pip install only adds what the lock names, so a package the lock dropped would stay: start the venv again
+- name: TMSetup - tm-control Setup - Remove the venv when its lock changed
+  become: true
+  when: tmsetup_tm_control_lock_register is changed
+  ansible.builtin.file:
+    path: '{{ tmsetup_tm_control_dir }}/venv'
+    state: absent
 
 - name: TMSetup - tm-control Setup - Remove the old unhashed requirements
   become: true
@@ -61,14 +84,13 @@
 - name: TMSetup - tm-control Setup - Install pinned requirements
   become: true
   ansible.builtin.command:
-    argv:
-      - '{{ tmsetup_tm_control_dir }}/venv/bin/pip'
-      - install
-      - --no-input
-      - --disable-pip-version-check
-      - --require-hashes
-      - --requirement
-      - '{{ tmsetup_tm_control_dir }}/requirements.lock'
+    # An update has no internet: it installs from the wheels an earlier run downloaded, each still checked against
+    # the lock's hash
+    argv: >-
+      {{ [tmsetup_tm_control_dir ~ '/venv/bin/pip', 'install', '--no-input', '--disable-pip-version-check',
+          '--require-hashes']
+         + (['--no-index', '--find-links', tmsetup_update_stage_dir ~ '/wheels'] if (tmsetup_update_mode | bool) else [])
+         + ['--requirement', tmsetup_tm_control_dir ~ '/requirements.lock'] }}
   register: tmsetup_tm_control_pip_register
   changed_when: "'Successfully installed' in tmsetup_tm_control_pip_register.stdout"
   notify: Restart tm-control.service

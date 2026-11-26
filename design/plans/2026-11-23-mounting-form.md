@@ -929,6 +929,26 @@ Where the build of this part differs from what the tasks below say, or settles w
 - [ ] **Step 4: `mkdocs build --strict` and every off-device check.** PASS.
 - [ ] **Step 5: Commit** ("Document the Mounting page").
 
+### As built
+
+Where the build of this part differs from what the tasks above say, or settles what they leave open. A later reader should take these in place of the task text.
+
+- **The dial's notes.** The dial is a ring to tap or drag, the eight points as buttons around it in three rows, a number field labelled "Degrees from north", and **Not set**. The field's message is "Enter a whole number from 0 to 359." The help line is the one the task names. A press within 12 pixels of the centre changes nothing, because the angle there is noise (the hub's dead zone). A drag keeps going when the pointer leaves the ring, and a drag across north doesn't jump.
+- **An empty heading field changes nothing.** Only **Not set** clears the heading. The task text said an empty field was **Not set**; a blank field next to a heading that is still set would have been a lie.
+- **The notice of last time's values sits at the top of its section,** above the dial, not after the side view, because it offers to fill the fields below it. Its words are "From last time:" and the values (the distance where there is no tilt), with **Use these values**. A radar ticked **Same as** its camera shows its own notice only when its last values differ from the camera's, or the camera has none; its **Use these values** unticks it and fills the section, so its own values can't be overwritten unseen by confirming the camera's. The usual mounts' choice is set again after **Use these values** and after the tick changes. The Location page's card and the deploy's result say "This place has mounting values from the last time the unit was here. They aren't recorded until you confirm them.", or "Next, record how the unit is mounted." when none wait. These sentences await the maintainer's read.
+- **Correct heading stays for a running deployment whose sensor has no section on the Mounting page.** A sensor that is listed but turned off in `config.yml` keeps its open row, and the page lists enabled sensors only, so that row would have offered neither button. Every other running deployment at the place in use shows **Mounting**.
+- **The question lists only the changes that count.** A value filled in for the first time, or a new mount key, is not listed and not asked about.
+- **The person's answer is kept only while the counting changes are the same.** When another change makes them differ, as a second turn does, the dry run's `suggested` is chosen again, because the person answered a different question.
+- **Unreadable text is held back.** Text the page can't read as a number in the height or in the measured one of tilt and distance isn't sent: the field says "Enter a number, such as 12 or 12.5.", no dry run is sent, and Save stays off. The one that stops being measured forgets such text. One comma and no dot is read as the decimal mark ("7,5"), since many phones' keypads have no dot; a comma before exactly three digits ("1,000") is still refused.
+- **A field nobody touched is sent as it was loaded.** A length is converted from feet only when someone types in it, so switching units or leaving a field alone never sends a value that went through feet and back. Text typed back to what the page last put in the field gives that value back too, so a height saved as 3.00 m, shown as 9.8 ft, isn't changed to 2.99 m by a digit typed and deleted. The question lists a length in both units.
+- **Switching which one is measured changes no number.** A switch made while a dry run is waiting or on its way, or while **Try again** is offered, sends that dry run first and starts from its answer. When the API works none out (no height), the field starts from what was last typed in it; a field that was never measured holds nothing of its own.
+- **A dry run that gets no answer offers Try again.** Any failure but a 422 or a 409 shows its sentence under Save with **Try again**, which sends the same dry run; Save stays off until one is answered.
+- **Controls are off while a save is on its way,** because the reload after it would replace an edit made meanwhile. A "Saved." result stays until the form changes again.
+- **The usual mounts have no picture yet.** The photographs are the maintainer's to take; the docs' "Usual mounts" part has a table and a sentence for each.
+- **The units** are kept in the browser under `tm.mounting.unit` and never reach the API.
+- **The side view and the dial are drawn in SVG, with `touch-action: none` on the dial's ring** (one style attribute, listed in the README's "The only other CSS", so a drag doesn't scroll the page). No package was added.
+- **The page is in the entry chunk** (723.74 kB, 237.74 kB gzipped, up from 696.74 kB and 229.36 kB), like every other page.
+
 ### Task 23: Pi plan and PR 3
 
 - [ ] **Step 1: Pi plan,** as a logged `tmdev check` on the bench unit after `tmdev deploy <host> -- -t revproxy -t tm-control`. Frigate's detection stays off. Items 2 to 8 need a person at a phone or a desktop browser: record each as `manual` for the maintainer.

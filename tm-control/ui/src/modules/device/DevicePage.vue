@@ -107,11 +107,14 @@ function power(throttled: Throttled | null) {
   return 'OK'
 }
 
-// The commit tmsetup installed from. A release tag's checkout has no branch (git says HEAD).
+// The commit tmsetup installed from. A release tag's checkout has no branch (git says HEAD). A tree with changes
+// that aren't in the commit says so.
 function commit(tm: SystemInfo['tm']) {
   if (!tm.commit || tm.commit === 'unknown') return 'Unknown'
-  const branch = tm.branch && !['HEAD', 'unknown'].includes(tm.branch) ? ` on ${tm.branch}` : ''
-  return `${tm.commit.slice(0, 7)}${branch}`
+  const branch = tm.branch && !['HEAD', 'unknown'].includes(tm.branch) ? tm.branch : null
+  const short = tm.commit.slice(0, 7)
+  if (tm.modified) return `${short} (${[branch, 'modified'].filter(Boolean).join(', ')})`
+  return branch ? `${short} on ${branch}` : short
 }
 
 const subtitle = computed(() => {

@@ -1,0 +1,16 @@
+---
+# TMSetup - Update Refuse: an update that can't go on says why and stops. Included with tmsetup_update_reason set
+# to a short code, which is written where the caller reads it and is also the failure's message.
+- name: TMSetup - Update Refuse - Write the reason
+  become: true
+  ansible.builtin.copy:
+    content: "{{ tmsetup_update_reason }}\n"
+    dest: '{{ tmsetup_update_reason_file }}'
+    group: root
+    mode: '0644'
+    owner: root
+
+- name: TMSetup - Update Refuse - Stop the update
+  ansible.builtin.fail:
+    msg: '{{ tmsetup_update_reason }}'
+...

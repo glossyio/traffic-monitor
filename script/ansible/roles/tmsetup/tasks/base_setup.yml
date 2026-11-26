@@ -24,6 +24,9 @@
 
 - name: TMSetup - Base Setup - Set timezone
   become: true
+  when:
+    - not (tmsetup_update_mode | bool)
+    - tmsetup_timezone | length > 0
   community.general.timezone:
     name: '{{ tmsetup_timezone }}'
 
@@ -46,7 +49,7 @@
   ansible.builtin.apt:
     name: aptitude
     state: present
-    update_cache: true
+    update_cache: '{{ not (tmsetup_update_mode | bool) }}'
     autoremove: true
 
 - name: TMSetup - Base Setup - Remove conflicting packages
@@ -70,6 +73,7 @@
     repo: "deb http://deb.debian.org/debian {{ ansible_facts['distribution_release'] }}-backports main"
     filename: backports
     state: present
+    update_cache: '{{ not (tmsetup_update_mode | bool) }}'
 
 - name: TMSetup - Base Setup - Install required packages from backports
   become: true

@@ -140,11 +140,16 @@
     state: started
   notify: Restart frigate.service
 
+# In update mode the two files come from the stage instead (the twins below), already checked when they were staged.
+# A copy replaces a file whose content differs, as the checksum does for the download.
 # Both files are checked against the SHA-256 in vars/main.yml. With `checksum`, get_url keeps a file that is already
 # there when it matches and replaces one that doesn't, so a labels file edited by hand goes back to the release's.
 - name: TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model
-  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
-        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  when:
+    - not (tmsetup_update_mode | bool)
+    - >-
+      ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or
+      ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
   become: true
   ansible.builtin.get_url:
     url: "https://github.com/dbro/frigate-detector-edgetpu-yolo9/releases/download/{{ tmsetup_frigate_coral_model_release }}/{{ tmsetup_frigate_coral_model_file }}"
@@ -153,9 +158,25 @@
     mode: '0644'
     force: false
 
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the open source yolov9 model from the update's stage
+  when:
+    - tmsetup_update_mode | bool
+    - >-
+      ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or
+      ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.copy:
+    src: "{{ tmsetup_update_stage_dir }}/coral/{{ tmsetup_frigate_coral_model_file }}"
+    dest: "{{ tmsetup_codedir }}/frigate/config/model_cache/{{ tmsetup_frigate_coral_model_file }}"
+    remote_src: true
+    mode: '0644'
+
 - name: TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model
-  when: ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or 
-        ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  when:
+    - not (tmsetup_update_mode | bool)
+    - >-
+      ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or
+      ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
   become: true
   ansible.builtin.get_url:
     url: "https://raw.githubusercontent.com/dbro/frigate-detector-edgetpu-yolo9/{{ tmsetup_frigate_coral_model_release }}/labels-coco17.txt"
@@ -163,4 +184,17 @@
     checksum: "sha256:{{ tmsetup_frigate_coral_labels_sha256 }}"
     mode: '0644'
     force: false
+
+- name: TMSetup - Frigate Setup - Coral TPU model - Download the labels for the open source yolov9 model from the update's stage
+  when:
+    - tmsetup_update_mode | bool
+    - >-
+      ((tmsetup_detectors.edgetpu_pci.dev_path_available | default(false) and tmsetup_detectors.edgetpu_pci.exists | default(false)) or tmsetup_detectors.edgetpu_pci.fresh_install | default(false)) or
+      ((tmsetup_detectors.edgetpu_usb.dev_path_available | default(false) and tmsetup_detectors.edgetpu_usb.exists | default(false)) or tmsetup_detectors.edgetpu_usb.fresh_install | default(false))
+  become: true
+  ansible.builtin.copy:
+    src: "{{ tmsetup_update_stage_dir }}/coral/labels-coco17.txt"
+    dest: "{{ tmsetup_codedir }}/frigate/config/labels-coco17.txt"
+    remote_src: true
+    mode: '0644'
 ...

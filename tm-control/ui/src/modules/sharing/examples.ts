@@ -3,8 +3,11 @@
 
 // Share data: an event with its speed, its path across the picture, its box, and how long it stood still and spent in
 // each zone (stationary_time, stops, zone_times), a deployment row whose location is rounded to the stored precision
-// and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount), and the watch
-// log, which every five minutes says whether each camera and radar was working
+// and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount) and the place's
+// time zone (timezone), the watch log, which every five minutes says whether each camera and radar was working, and the setup history: a row for the
+// device and a row for each camera, sent when one opens or closes, with the model's fingerprint, the versions, and each
+// camera's detection settings, the zones that are on, and masks (never a model's title or file name, or a profile's
+// key)
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -37,6 +40,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
       height_m: 3.6,
       view_distance_m: 16.94,
       mount: 'pole',
+      timezone: 'America/New_York',
     },
     watch: {
       cameras: [
@@ -53,6 +57,79 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
         },
       ],
       radars: [{ time: 1_793_000_100, radar: 'TM_RADAR_SERIAL_PORT_00', config_enabled: 1, port_open: 1, radar_answers: 5, radar_on: 1 }],
+    },
+    setup: {
+      device: [
+        {
+          id: '1792000000000-3fa9c2e1-sd',
+          started: 1_792_000_000_000,
+          ended: null,
+          tm_version: '0.8.0',
+          tm_commit: '7e4a91b03c5d28f6a1b9d47e0c32f58a6b1d9e74',
+          schema_version: 11,
+          frigate_version: '0.18.2',
+          unit_system: 'imperial',
+          detector: 'hailo8l',
+          model_id: 'a1b2c3d4e5f60718293a4b5c6d7e8f90',
+          model_sha256: '9f2c4a7e5b1d83a60c47e2f19d5b8a3c71e04f6a2b9d8c5e3f1a7b4d6c80e925',
+          model_kind: 'frigate_plus',
+          model_trained_at: '2026-09-14T10:22:31Z',
+          model_base: 'yolov9-s',
+          model_type: 'yolo-generic',
+          model_width: 320,
+          model_height: 320,
+          labels_available: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'truck'],
+        },
+      ],
+      cameras: [
+        {
+          id: '1792000000000-5d7e0b42-sc',
+          started: 1_792_000_000_000,
+          ended: null,
+          camera: 'camera_1_3fa9c2',
+          detect_width: 1280,
+          detect_height: 720,
+          detect_fps: 5,
+          stationary_threshold: 50,
+          stationary_interval: 50,
+          lens_hfov: null,
+          labels_tracked: ['bicycle', 'bus', 'car', 'motorcycle', 'truck'],
+          thresholds: { car: { min_area: 3000, min_score: 0.5, threshold: 0.7 } },
+          zones: [
+            {
+              key: 'zone_near',
+              enabled: true,
+              corners: [
+                [0.1, 0.9],
+                [0.9, 0.9],
+                [0.8, 0.7],
+                [0.2, 0.7],
+              ],
+              distances: [12, 40, 12, 40],
+              inertia: 3,
+              loitering_time: 0,
+              speed_threshold: null,
+              objects: ['car', 'truck'],
+              filters: {},
+            },
+          ],
+          masks: {
+            motion: [
+              {
+                enabled: true,
+                corners: [
+                  [0, 0],
+                  [0.3, 0],
+                  [0.3, 0.1],
+                  [0, 0.1],
+                ],
+              },
+            ],
+            objects: [],
+            object_filters: {},
+          },
+        },
+      ],
     },
   },
   null,

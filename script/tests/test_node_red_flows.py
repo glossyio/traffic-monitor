@@ -21,6 +21,7 @@ sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
 from tm_control.modules.location import mounting  # noqa: E402
 from tm_control.modules.location.coordinates import read_heading  # noqa: E402
+from tm_control.modules.location.zones import read_zone  # noqa: E402
 from tm_control.modules.sharing.download import DATABASE_FILES  # noqa: E402
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
@@ -595,6 +596,38 @@ def init_defaults(config):
     return step["result"]["payload"], [(text, with_msg) for level, text, with_msg in step["logged"] if level == "error"]
 
 
+TIMEZONE_ERROR = "Node-RED config.yml key deployment.timezone is not a time zone name; ignoring it"
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ("America/New_York", "America/New_York", []),
+    (" Europe/Berlin ", "Europe/Berlin", []),
+    (MISSING, None, []),
+    (None, None, []),
+    ("", None, []),
+    (5, None, [TIMEZONE_ERROR]),
+    ("not a zone!", None, [TIMEZONE_ERROR]),
+    ("../../etc/passwd", None, [TIMEZONE_ERROR]),
+    ("a/b/c/d", None, [TIMEZONE_ERROR]),
+    ("America/" + "x" * 57, None, [TIMEZONE_ERROR]),
+], ids=["zone", "trimmed", "missing", "null", "empty", "number", "words", "path", "four-parts", "65-characters"])
+def test_init_config_defaults_timezone(given, expected, errors):
+    """deployment.timezone is a zone name by its shape, trimmed, or null; a blank one is null with no error, and
+    anything else is null and an error that names the key, never the value."""
+    config = new_device_config()
+    config["deployment"].pop("timezone", None)
+    if given is not MISSING:
+        config["deployment"]["timezone"] = given
+    payload, logged = init_defaults(config)
+    assert payload["deployment"]["timezone"] == expected
+    assert [text for text, _ in logged] == errors
+    assert all(str(given) not in text for text, _ in logged)
+    assert all(sensor["deployment"]["timezone"] == expected
+               for kind in payload["sensors"].values() for sensor in kind.values()
+               if isinstance(sensor, dict) and sensor.get("enabled") is True)
+
+
 def heading_config(top, camera=None):
     """A new device's config.yml with this top-level deployment block, and this one for the camera unless None (the
     radar has none)."""
@@ -725,6 +758,63 @@ def test_the_flows_read_a_heading_as_the_control_app_does():
         if block:  # an empty block takes the top level's heading
             own, _ = init_defaults(heading_config({"heading_deg": 90}, copy.deepcopy(block)))
             assert headings(own)[1] == expected, block
+
+
+# One table of values for deployment.timezone, read by the flows and by tm-control's read_zone. Moving one rule means
+# moving both, whitespace included: JavaScript's trim and Python's strip don't agree about \x1c or \ufeff. ABSENT
+# stands for no `timezone` key at all (in the file's block, or in a request's body).
+ABSENT = object()
+ZONE_VALUES = [
+    "America/New_York", " Europe/Berlin ", "Asia/Tokyo\n", "UTC", "Etc/GMT+5", "America/Argentina/Buenos_Aires",
+    "Mars/Olympus", None, ABSENT, "", "   ", 5, True, ["Asia/Tokyo"], "not a zone!", "../../etc/passwd", "a/b/c/d",
+    "/Asia/Tokyo", "Asia/Tokyo/", "Asia//Tokyo", "a" * 64, "a" * 65, "\x1cAsia/Tokyo", "\ufeffAsia/Tokyo",
+    "\u00a0Asia/Tokyo\u3000",
+    # Whitespace JavaScript's trim and Python's strip both remove (or both keep), each around a valid name
+    "\x1fAsia/Tokyo\x1f", "\x85Asia/Tokyo\x85", "\vAsia/Tokyo\f", " Asia/Tokyo ", "\u1680Asia/Tokyo\u200a",
+    "\u2028Asia/Tokyo\u2029", "\u202fAsia/Tokyo\u205f", "\u2028\u2029Asia/Tokyo\u202f\u205f", "\u200bAsia/Tokyo",
+    "\u180eAsia/Tokyo",
+]
+
+
+def given_zone(value):
+    """The config.yml's deployment block with this value for timezone (no key at all for ABSENT)."""
+    config = new_device_config()
+    config["deployment"].pop("timezone", None)
+    if value is not ABSENT:
+        config["deployment"]["timezone"] = value
+    return config
+
+
+@needs_node
+def test_the_flows_read_a_zone_as_the_control_app_does():
+    """Each value goes through init config defaults and through read_zone; the answers are the same."""
+    for value in ZONE_VALUES:
+        payload, _ = init_defaults(given_zone(value))
+        assert payload["deployment"]["timezone"] == read_zone(value), repr(value)
+
+
+@needs_node
+def test_the_correction_endpoint_validates_a_zone_as_the_control_app_reads_it():
+    """The third copy of the rule: for every value, "tm-internal: validate timezone correction" (the request body is
+    {"timezone": value}) passes the zone read_zone reads and refuses what it doesn't read. The two values where a
+    request's meaning differs from a file's are stated here, not folded into the comparison: null in a body is a
+    request to clear the zone, so it passes with a null zone though read_zone(None) is None too; and a body with no
+    `timezone` key is refused, since a correction must say which zone it makes."""
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate timezone correction")
+    for value in ZONE_VALUES:
+        body = {} if value is ABSENT else {"timezone": value}
+        [step] = run_functions([(validator, {"req": {"params": {"id": SURVEY_ID}}, "payload": body})])["results"]
+        passed, refused = step["result"]
+        zone = read_zone(value)
+        if value is None:
+            assert refused is None and passed["params"] == {"$survey_id": SURVEY_ID, "$timezone": None}
+        elif value is ABSENT:
+            assert passed is None and refused["statusCode"] == 400 and refused["payload"] == bad_request("timezone")
+        elif zone is None:
+            assert passed is None and refused["statusCode"] == 400 and refused["payload"] == bad_request("timezone"), \
+                repr(value)
+        else:
+            assert refused is None and passed["params"] == {"$survey_id": SURVEY_ID, "$timezone": zone}, repr(value)
 
 
 # The other four facts of how a sensor is mounted, beside its heading: each a value within its limits, rounded, or
@@ -1112,6 +1202,12 @@ def test_the_deployments_attribute_carries_the_heading():
     assert all("bearing" not in value for value in sent.values())
 
 
+def test_the_deployments_attribute_has_no_time_zone():
+    """The place's time zone rides in the engine's rows and tmdb, never in the client attribute (plan Decision 12)."""
+    template = named(json.loads(FLOWS.read_text()), "set deployment client side attribute payload")["template"]
+    assert "timezone" not in template
+
+
 def test_only_the_config_reader_still_says_bearing():
     """After PR 1 nothing writes a bearing: of every node (its name and info included), only the node that reads an
     old config.yml's key still holds the word."""
@@ -1129,17 +1225,19 @@ ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
                          "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
-                         "mount) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
+                         "mount, timezone) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
                          "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
-                         "$mount)",
+                         "$mount, $timezone)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
-                          "location_precision = $location_precision, heading_deg = $heading_deg WHERE id = $id",
+                          "location_precision = $location_precision, heading_deg = $heading_deg, "
+                          "timezone = $timezone WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount FROM deployment "
-                 "WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone "
+                 "FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
-            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount"}
+            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount",
+            "timezone"}
 
 
 def engine_sensors(camera_deployment=None):
@@ -1150,13 +1248,14 @@ def engine_sensors(camera_deployment=None):
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
-             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None):
+             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None,
+             timezone=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
             "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
-            "view_distance_m": view_distance_m, "mount": mount}
+            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone}
 
 
 def camera_row(**kwargs):
@@ -1235,9 +1334,10 @@ def test_engine_stores_two_decimals_without_a_valid_precision(precision):
 
 
 @needs_node
-def test_engine_leaves_matching_open_rows_alone():
-    rows = [camera_row(), radar_row()]
-    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+@pytest.mark.parametrize("zone", [None, "America/New_York"], ids=["no-zone", "zone"])
+def test_engine_leaves_matching_open_rows_alone(zone):
+    rows = [camera_row(timezone=zone), radar_row(timezone=zone)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": zone})
     assert run.written() == []
     assert run.payload["currentDeployment"] == [{**row, "entryEndDateTime": None} for row in rows]
     assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
@@ -1251,7 +1351,7 @@ def test_engine_adopts_an_open_row_without_a_survey():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0}]
+         "$heading_deg": 0, "$timezone": None}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
@@ -1324,8 +1424,9 @@ def mounted_row(**values):
 
 @needs_node
 def test_engine_keeps_rows_from_before_the_columns():
-    """An open row read before the four columns existed has none of their keys; a sensor with none set matches it."""
-    rows = [{key: value for key, value in row.items() if key not in MOUNTING_KEYS}
+    """An open row read before the columns existed has none of their keys; a sensor with none set, in a file with no
+    zone, matches it."""
+    rows = [{key: value for key, value in row.items() if key not in (*MOUNTING_KEYS, "timezone")}
             for row in (camera_row(), radar_row())]
     run = engine(engine_sensors(), rows, ENGINE_PLACE)
     assert run.written() == []
@@ -1390,6 +1491,89 @@ def test_engine_rows_for_thingsboard_carry_the_mounting():
     assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
+# The place's time zone: each row that starts takes config.yml's, and an open row of the same place whose zone differs
+# is rewritten with it. The zone never starts or ends a deployment.
+
+def rewritten_params(row, **values):
+    """The parameters of the rewrite of this open row that changes only values (as $-less keys)."""
+    params = {"$id": row["id"], "$survey_id": row["survey_id"], "$lat": row["lat"], "$lon": row["lon"],
+              "$location_precision": row["location_precision"], "$heading_deg": row["heading_deg"],
+              "$timezone": row["timezone"]}
+    return {**params, **{f"${key}": value for key, value in values.items()}}
+
+
+def in_id_order(params):
+    return sorted(params, key=lambda each: each["$id"])
+
+
+@needs_node
+def test_engine_inserts_rows_with_the_places_zone():
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "timezone": "America/New_York"})
+    assert len(run.insert) == 2
+    assert all(message["params"]["$timezone"] == "America/New_York" for message in run.insert)
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(row["timezone"] == "America/New_York" for row in current)
+    assert all(set(row) == ROW_KEYS for row in current)
+
+
+@needs_node
+@pytest.mark.parametrize("row_zone, file_zone", [
+    (None, "America/New_York"), ("America/New_York", None), ("America/New_York", "Asia/Tokyo"),
+], ids=["set", "cleared", "changed"])
+def test_engine_never_starts_a_deployment_for_a_zone(row_zone, file_zone):
+    rows = [camera_row(timezone=row_zone), radar_row(timezone=row_zone)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": file_zone})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, timezone=file_zone) for row in rows)
+    assert deployment_ids(run) == {"picam_h265": rows[0]["id"], "TM_RADAR_SERIAL_PORT_00": rows[1]["id"],
+                                   "TM_RADAR_SERIAL_PORT_01": None}
+    assert all(row["timezone"] == file_zone for row in run.payload["currentDeployment"])
+    assert run.payload["updatedDeployment"] == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_leaves_the_zone():
+    """With no survey in the file a row's zone stays as it is, also when a coarser precision re-rounds the row."""
+    rows = [camera_row(timezone="America/New_York"), radar_row(timezone="America/New_York")]
+    place = {**ENGINE_PLACE, "survey_id": None}
+    assert engine(engine_sensors(), rows, place).written() == []
+    run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, lat=None, lon=None, location_precision=None) for row in rows)
+    assert all(m["params"]["$timezone"] == "America/New_York" for m in run.rewrite)
+
+
+@needs_node
+def test_engine_adopts_a_row_with_the_zone():
+    camera = camera_row(survey_id=None, lat=None, lon=None, precision=None)
+    run = engine(engine_sensors(), [camera, radar_row(timezone="Asia/Tokyo")],
+                 {**ENGINE_PLACE, "timezone": "Asia/Tokyo"})
+    assert run.close == [] and run.insert == []
+    assert [message["params"] for message in run.rewrite] == [
+        {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
+         "$heading_deg": 0, "$timezone": "Asia/Tokyo"}]
+
+
+@needs_node
+def test_engine_lowers_precision_and_sets_the_zone_in_one_rewrite():
+    rows = [camera_row(lat=45.52, lon=-122.69, precision=2), radar_row(lat=45.52, lon=-122.69, precision=2)]
+    run = engine(engine_sensors(), rows, {**ENGINE_PLACE, "timezone": "Europe/Berlin"})
+    assert run.close == [] and run.insert == []
+    assert in_id_order(m["params"] for m in run.rewrite) == in_id_order(
+        rewritten_params(row, lat=45.5, lon=-122.7, location_precision=1, timezone="Europe/Berlin") for row in rows)
+
+
+@needs_node
+def test_engine_records_the_zone_with_no_location():
+    """Review Focus 5: "No location stored" still records the place's zone."""
+    run = engine(engine_sensors(), [], {**ENGINE_PLACE, "database_precision": "none", "timezone": "America/New_York"})
+    assert len(run.insert) == 2
+    assert all((m["params"]["$lat"], m["params"]["$lon"], m["params"]["$location_precision"],
+                m["params"]["$timezone"]) == (None, None, None, "America/New_York") for m in run.insert)
+
+
 @needs_node
 def test_engine_never_compares_coordinates():
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "lat": 45.6})
@@ -1411,7 +1595,7 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -1426,13 +1610,13 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0}]
+         "$heading_deg": 0, "$timezone": None}]
     rows = [camera_row(), radar_row()]
     run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
-          "$heading_deg": row["heading_deg"]} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
 
 
 @needs_node
@@ -1665,13 +1849,15 @@ TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-int
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
                      "/tm-internal/deployments/:id/mounting", "/tm-internal/surveys/:id/recorded",
-                     "/tm-internal/database/exact-copy", "/tm-internal/setup"}
+                     "/tm-internal/surveys/:id/timezone", "/tm-internal/database/exact-copy",
+                     "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
                        "/tm-internal/deployments/:id/mounting": "post", "/tm-internal/surveys/:id/recorded": "get",
-                       "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
+                       "/tm-internal/surveys/:id/timezone": "post", "/tm-internal/database/exact-copy": "post",
+                       "/tm-internal/setup": "post"}
 RECORDED_SQL = (
     "SELECT d.id AS id, CASE d.sensorType WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id) "
     "WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov WHERE time >= d.entryStartDateTime / 1000.0 - 86400 "
@@ -1704,6 +1890,7 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
               "/tm-internal/deployments/:id/mounting": "tm-internal: validate mounting correction",
               "/tm-internal/surveys/:id/recorded": "tm-internal: validate recorded path",
+              "/tm-internal/surveys/:id/timezone": "tm-internal: validate timezone correction",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -1939,7 +2126,7 @@ def test_database_errors_answer_500():
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 15
+    assert len(queries) == 16
     writes = {node["id"] for node in flows if node["type"] == "sqlite"
               and node.get("name") in ("close setup_device", "insert setup_device", "close setup_camera",
                                        "insert setup_camera")}
@@ -2380,13 +2567,15 @@ def open_camera(key="cam_a", started=100, row_id="100-bbbbbbbb-sc", **changes):
 
 
 class SetupRun:
-    """One run of the setup engine: its five outputs as lists of messages, the global context, and the log."""
+    """One run of the setup engine: its five outputs as lists of messages, the sixth (the upload's, or None), the
+    global and flow context, and the log."""
 
     def __init__(self, out, before, after):
         [step] = out["results"]
-        (self.close_device, self.insert_device, self.close_camera, self.insert_camera, self.answers) = (
+        (self.close_device, self.insert_device, self.close_camera, self.insert_camera, self.answers, upload) = (
             [] if output is None else output if isinstance(output, list) else [output] for output in step["result"])
-        self.global_context, self.logged = out["global"], step["logged"]
+        self.upload = upload[0] if upload else None
+        self.global_context, self.flow_context, self.logged = out["global"], out["flow"], step["logged"]
         self.before, self.after = before, after
 
     @property
@@ -2401,13 +2590,281 @@ class SetupRun:
         return isinstance(value, int) and self.before <= value <= self.after
 
 
-def setup_engine(setup, devices=(), cameras=(), context=None):
+def setup_engine(setup, devices=(), cameras=(), context=None, flow=None):
     before = int(time.time() * 1000)
     msg = {"req": {"headers": {}}, "res": {}, "setup": setup, "openDevice": list(devices),
            "openCameras": list(cameras)}
     node = named(json.loads(FLOWS.read_text()), "setup engine")
-    out = run_functions([(node, msg)], context=SETUP_CONTEXT if context is None else context)
+    out = run_functions([(node, msg)], context=SETUP_CONTEXT if context is None else context, flow=flow)
     return SetupRun(out, before, int(time.time() * 1000) + 1)
+
+
+# The sixth output hands setup rows to the ThingsBoard upload: each row that opened or closed, and every open row
+# after a start, when the upload is turned on or its server changes, and once a day.
+
+UPLOAD_URL = "https://tb.example.org"
+SETUP_KEPT_ON_THE_UNIT = {"model_title", "model_file", "profile"}
+UPLOAD_ON = {"enabled": True, "url": UPLOAD_URL}
+DAY_MS = 86_400_000
+
+
+def with_upload(thingsboard=UPLOAD_ON):
+    config = dict(SETUP_CONTEXT["config"])
+    if thingsboard is not None:
+        config["thingsboard"] = thingsboard
+    return {**SETUP_CONTEXT, "config": config}
+
+
+def sent_columns(columns):
+    return [column for column in columns if column not in SETUP_KEPT_ON_THE_UNIT]
+
+
+def current_flow():
+    return {"setup_sent": {"to": UPLOAD_URL, "at": int(time.time() * 1000) - 1000, "captured": ["cam_a"]}}
+
+
+def open_cam_b():
+    return open_camera("cam_b", row_id="1-cccccccc-sc")
+
+
+def ids(rows):
+    return [row["id"] for row in rows]
+
+
+@needs_node
+def test_setup_engine_sends_each_opened_and_closed_row():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device(frigate_version="0.15.0")], [open_camera()],
+                       context=with_upload(), flow=current_flow())
+    assert run.in_time(run.upload["payload"]["ts"]) and set(run.upload) == {"payload"}
+    assert set(run.upload["payload"]) == {"ts", "device", "cameras"}
+    closed, opened = run.upload["payload"]["device"]
+    assert run.upload["payload"]["cameras"] == []
+    assert closed["id"] == "100-aaaaaaaa-sd" and run.in_time(closed["ended"]) and closed["frigate_version"] == "0.15.0"
+    assert opened["id"] == run.insert_device[0]["params"]["$id"] and opened["ended"] is None
+    assert opened["frigate_version"] == "0.16.2"
+    for row in (closed, opened):
+        assert list(row) == sent_columns(SETUP_DEVICE_COLUMNS)
+        assert row["labels_available"] == ["car", "person"] and row["schema_version"] == 7
+    # the changes alone went out: the open rows weren't due, so the time of the last full send stays
+    assert run.flow_context["setup_sent"]["to"] == UPLOAD_URL and run.flow_context["setup_sent"]["at"] < run.before
+
+
+@needs_node
+@pytest.mark.parametrize("snapshot", [SETUP_SNAPSHOT, {"complete": False}], ids=["unchanged", "incomplete"])
+def test_setup_engine_sends_nothing_when_nothing_changed_and_nothing_is_due(snapshot):
+    flow = current_flow()
+    run = setup_engine(snapshot, [open_device()], [open_camera()], context=with_upload(), flow=flow)
+    assert run.upload is None and run.flow_context == flow
+
+
+@needs_node
+@pytest.mark.parametrize("sent", [
+    None, lambda now: {"to": "https://other.example.org", "at": now - 1000, "captured": ["cam_a"]},
+    lambda now: {"to": UPLOAD_URL, "at": now - DAY_MS, "captured": ["cam_a"]},
+    lambda now: {"to": UPLOAD_URL, "at": now + 60_000, "captured": ["cam_a"]},
+    lambda now: {"to": UPLOAD_URL, "at": "yesterday", "captured": ["cam_a"]}, "text",
+], ids=["absent", "another-server", "a-day-ago", "in-the-future", "not-a-number", "not-a-mapping"])
+def test_setup_engine_sends_the_open_rows_when_they_are_due(sent):
+    now = int(time.time() * 1000)
+    flow = {} if sent is None else {"setup_sent": sent(now) if callable(sent) else sent}
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(), open_cam_b()], context=with_upload(), flow=flow)
+    payload = run.upload["payload"]
+    assert run.in_time(payload["ts"]) and run.written() == []
+    assert ids(payload["device"]) == ["100-aaaaaaaa-sd"]
+    assert sorted(row["camera"] for row in payload["cameras"]) == ["cam_a", "cam_b"]
+    assert all(row["ended"] is None for row in payload["device"] + payload["cameras"])
+    assert list(payload["cameras"][0]) == sent_columns(SETUP_CAMERA_COLUMNS)
+    assert set(run.flow_context["setup_sent"]) == {"to", "at", "captured"}
+    assert run.flow_context["setup_sent"]["to"] == UPLOAD_URL and run.flow_context["setup_sent"]["captured"] == ["cam_a"]
+    assert run.in_time(run.flow_context["setup_sent"]["at"])
+
+
+@needs_node
+def test_setup_engine_sends_each_row_once_when_due_and_changed():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(zones=[]), open_cam_b()], context=with_upload())
+    payload = run.upload["payload"]
+    cameras = payload["cameras"]
+    assert sorted((row["camera"], row["ended"] is None) for row in cameras) == [
+        ("cam_a", False), ("cam_a", True), ("cam_b", True)]
+    [closed] = [row for row in cameras if row["ended"] is not None]
+    [opened] = [row for row in cameras if row["camera"] == "cam_a" and row["ended"] is None]
+    assert run.in_time(closed["ended"]) and closed["zones"] == [] and opened["zones"] == [SETUP_ZONE]
+    assert ids(payload["device"]) == ["100-aaaaaaaa-sd"]
+    every = ids(payload["device"]) + ids(cameras)
+    assert len(every) == len(set(every)) == 4
+    assert run.in_time(run.flow_context["setup_sent"]["at"])
+
+
+OFF_ZONE = {**SETUP_ZONE, "key": "1420_oak_st", "enabled": False}
+
+
+@needs_node
+def test_setup_engine_sends_each_device_row_once_when_due_and_changed():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device(frigate_version="0.15.0")], [open_camera(), open_cam_b()],
+                       context=with_upload())
+    devices = run.upload["payload"]["device"]
+    assert sorted(row["ended"] is None for row in devices) == [False, True]
+    assert len(ids(devices)) == len(set(ids(devices))) == 2 and "100-aaaaaaaa-sd" in ids(devices)
+    assert [row["ended"] is None for row in devices if row["id"] == "100-aaaaaaaa-sd"] == [False]
+
+
+@needs_node
+def test_setup_engine_sends_each_id_once_with_older_rows_and_a_camera_gone_when_due():
+    older_device = open_device(started=50, row_id="50-aaaaaaaa-sd")
+    older_camera = open_camera(started=50, row_id="50-bbbbbbbb-sc")
+    run = setup_engine(SETUP_SNAPSHOT, [open_device(), older_device],
+                       [open_camera(), older_camera, open_camera("cam_gone", row_id="1-dddddddd-sc")],
+                       context=with_upload())
+    payload = run.upload["payload"]
+    assert sorted(ids(payload["device"])) == ["100-aaaaaaaa-sd", "50-aaaaaaaa-sd"]
+    assert sorted(ids(payload["cameras"])) == sorted(["100-bbbbbbbb-sc", "50-bbbbbbbb-sc", "1-dddddddd-sc"])
+    ended = {row["id"]: row["ended"] is not None for row in payload["device"] + payload["cameras"]}
+    assert ended == {"100-aaaaaaaa-sd": False, "50-aaaaaaaa-sd": True, "100-bbbbbbbb-sc": False,
+                     "50-bbbbbbbb-sc": True, "1-dddddddd-sc": True}
+
+
+@needs_node
+def test_setup_engine_sends_only_the_zones_that_are_on():
+    snapshot = {**SETUP_SNAPSHOT, "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"],
+                                                        "zones": [SETUP_ZONE, OFF_ZONE]}}}
+    run = setup_engine(snapshot, [open_device()], [], context=with_upload(), flow=current_flow())
+    # the unit saves every zone; the upload carries the ones that are on
+    assert "1420_oak_st" in run.insert_camera[0]["params"]["$zones"]
+    [row] = run.upload["payload"]["cameras"]
+    assert row["zones"] == [SETUP_ZONE]
+    assert "1420_oak_st" not in json.dumps(run.upload)
+
+
+@needs_node
+def test_setup_engine_sends_a_zone_once_it_is_turned_on():
+    on = {**OFF_ZONE, "enabled": True}
+    snapshot = {**SETUP_SNAPSHOT, "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"],
+                                                        "zones": [SETUP_ZONE, on]}}}
+    run = setup_engine(snapshot, [open_device()], [open_camera(zones=[SETUP_ZONE, OFF_ZONE])],
+                       context=with_upload(), flow=current_flow())
+    closed, opened = run.upload["payload"]["cameras"]
+    assert closed["ended"] is not None and closed["zones"] == [SETUP_ZONE]
+    assert opened["ended"] is None and opened["zones"] == [SETUP_ZONE, on]
+
+
+@needs_node
+def test_setup_engine_leaves_out_the_zones_of_a_camera_that_is_not_captured():
+    snapshot = {**SETUP_SNAPSHOT, "cameras": {}}
+    run = setup_engine(snapshot, [open_device()], [open_cam_b(), open_camera("cam_gone", row_id="1-dddddddd-sc")],
+                       context=with_upload())
+    by_camera = {row["camera"]: row for row in run.upload["payload"]["cameras"]}
+    assert set(by_camera) == {"cam_b", "cam_gone"}
+    assert by_camera["cam_b"]["zones"] is None and by_camera["cam_b"]["ended"] is None
+    assert by_camera["cam_b"]["detect_width"] == 1536 and by_camera["cam_b"]["labels_tracked"] == ["car", "person"]
+    assert by_camera["cam_gone"]["zones"] is None and by_camera["cam_gone"]["ended"] is not None
+    assert "zone_capture" not in json.dumps(run.upload)
+    # the row on the unit keeps its zones: nothing was written
+    assert run.written() == [{"params": {"$ended": run.written()[0]["params"]["$ended"], "$id": "1-dddddddd-sc"}}]
+
+
+@needs_node
+@pytest.mark.parametrize("sensors", [{"cameras": "text"}, {"cameras": ["cam_a"]}, {}, None],
+                         ids=["text", "list", "no-cameras", "no-sensors"])
+def test_setup_engine_leaves_out_every_zone_without_a_cameras_mapping(sensors):
+    config = {key: value for key, value in with_upload()["config"].items() if key != "sensors"}
+    if sensors is not None:
+        config["sensors"] = sensors
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(), open_cam_b()],
+                       context={**SETUP_CONTEXT, "config": config})
+    cameras = run.upload["payload"]["cameras"]
+    assert sorted(row["camera"] for row in cameras) == ["cam_a", "cam_b"]
+    assert all(row["zones"] is None for row in cameras)
+    assert "zone_capture" not in json.dumps(run.upload) and run.flow_context["setup_sent"]["captured"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("captured", [[], ["cam_a", "cam_b"], MISSING, "cam_a"],
+                         ids=["none", "another-camera-too", "absent", "text"])
+def test_setup_engine_sends_the_open_rows_again_when_the_captured_cameras_change(captured):
+    mark = {"to": UPLOAD_URL, "at": int(time.time() * 1000) - 1000}
+    if captured is not MISSING:
+        mark["captured"] = captured
+    run = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(), open_cam_b()], context=with_upload(),
+                       flow={"setup_sent": mark})
+    payload = run.upload["payload"]
+    assert run.written() == [] and ids(payload["device"]) == ["100-aaaaaaaa-sd"]
+    assert sorted(row["camera"] for row in payload["cameras"]) == ["cam_a", "cam_b"]
+    assert run.flow_context["setup_sent"]["captured"] == ["cam_a"]
+    assert run.flow_context["setup_sent"]["to"] == UPLOAD_URL and run.in_time(run.flow_context["setup_sent"]["at"])
+
+
+@needs_node
+def test_setup_engine_waits_for_a_complete_snapshot_to_send_the_open_rows():
+    run = setup_engine({"complete": False}, [open_device()], [open_camera("cam_gone", row_id="1-dddddddd-sc")],
+                       context=with_upload())
+    payload = run.upload["payload"]
+    assert payload["device"] == [] and ids(payload["cameras"]) == ["1-dddddddd-sc"]
+    assert run.in_time(payload["cameras"][0]["ended"])
+    assert "setup_sent" not in run.flow_context
+
+
+@needs_node
+@pytest.mark.parametrize("thingsboard", [{"enabled": False, "url": UPLOAD_URL}, None, {"enabled": True},
+                                         {"enabled": True, "url": ""}, {"enabled": "true", "url": UPLOAD_URL}],
+                         ids=["off", "no-block", "no-url", "empty-url", "enabled-not-true"])
+def test_setup_engine_sends_nothing_while_the_upload_is_off(thingsboard):
+    run = setup_engine(SETUP_SNAPSHOT, [open_device(frigate_version="0.15.0")], [open_camera()],
+                       context=with_upload(thingsboard), flow=current_flow())
+    assert run.upload is None and len(run.written()) == 2 and "setup_sent" not in run.flow_context
+    turned_on = setup_engine(SETUP_SNAPSHOT, [open_device()], [open_camera(), open_cam_b()], context=with_upload(),
+                             flow=run.flow_context)
+    payload = turned_on.upload["payload"]
+    assert len(payload["device"]) == 1 and len(payload["cameras"]) == 2
+
+
+@needs_node
+def test_setup_engine_never_sends_a_kept_name():
+    kept = {"model_title": "12 Oak St bikes", "model_file": "oak_st.tflite"}
+    snapshot = {**SETUP_SNAPSHOT, "device": {**SETUP_SNAPSHOT["device"], **kept},
+                "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"], "profile": "1420_oak_st"}}}
+    run = setup_engine(snapshot, [open_device(frigate_version="0.15.0", **kept)],
+                       [open_camera(profile="1420_oak_st", detect_fps=6)], context=with_upload())
+    payload = run.upload["payload"]
+    assert len(payload["device"]) == 2 and len(payload["cameras"]) == 2
+    # the rows the unit saves do carry the names: the engine leaves them out of what it hands on
+    assert run.insert_device[0]["params"]["$model_title"] == "12 Oak St bikes"
+    text = json.dumps(run.upload)
+    for name in ("12 Oak St bikes", "oak_st.tflite", "1420_oak_st", *SETUP_KEPT_ON_THE_UNIT):
+        assert name not in text
+
+
+@needs_node
+def test_setup_engine_sends_a_json_fact_it_cannot_read_as_null():
+    run = setup_engine(SETUP_SNAPSHOT, [open_device(labels_available="{not json")], [open_camera()],
+                       context=with_upload(), flow=current_flow())
+    closed, opened = run.upload["payload"]["device"]
+    assert closed["labels_available"] is None and opened["labels_available"] == ["car", "person"]
+
+
+def test_setup_rows_reach_the_upload_through_the_telemetry_group():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    engine, out = named(flows, "setup engine"), named(flows, "setup rows")
+    link_in, fmt = named(flows, "setup rows link in"), named(flows, "format setup telemetry")
+    assert engine["wires"][5] == [out["id"]] and out["links"] == [link_in["id"]] and link_in["links"] == [out["id"]]
+    assert (out["type"], out["z"]) == ("link out", engine["z"])
+    assert (link_in["type"], link_in["z"], fmt["z"]) == ("link in", tab_id(flows, "thingsboard"), link_in["z"])
+    assert link_in["wires"] == [[fmt["id"]]] and fmt["wires"] == [["8c521232f464d27a"]]
+    group = by_id[fmt["g"]]
+    assert (group["name"], group["g"], link_in["g"]) == ("setup", "2f27e270200485b9", group["id"])
+    assert by_id[group["g"]]["name"] == "thingsboard telemetry" and group["id"] in by_id[group["g"]]["nodes"]
+    assert sorted(group["nodes"]) == sorted([link_in["id"], fmt["id"]])
+    assert out["id"] in by_id[engine["g"]]["nodes"]
+
+
+@needs_node
+def test_format_setup_telemetry():
+    payload = {"ts": 1795000000000, "device": [{"id": "1-aaaaaaaa-sd", "ended": None}],
+               "cameras": [{"id": "1-bbbbbbbb-sc", "camera": "cam_a", "ended": 5}]}
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "format setup telemetry"), {"payload": payload})])[
+        "results"]
+    assert step["result"] == {"payload": {"ts": 1795000000000, "values": {"setup": {
+        "device": payload["device"], "cameras": payload["cameras"]}}}}
 
 
 # Prepared sqlite nodes with nothing to bind: an upstream function sets msg.params = {} for them ("tm-internal: usage
@@ -2451,7 +2908,7 @@ def test_setup_chain_is_wired():
             ("set", target, "msg", "payload", "msg")]
         [[node_id]] = change["wires"]
     engine = by_id[node_id]
-    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "setup engine", 5)
+    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "setup engine", 6)
     names = ["close setup_device", "insert setup_device", "close setup_camera", "insert setup_camera"]
     for output, name in zip(engine["wires"][:4], names):
         [target] = output
@@ -2459,6 +2916,8 @@ def test_setup_chain_is_wired():
         assert by_id[target]["mydb"] == TMDB and by_id[target]["wires"] == [[]]
     [answer] = engine["wires"][4]
     assert (by_id[answer]["type"], by_id[answer]["statusCode"]) == ("http response", "")
+    [rows] = engine["wires"][5]
+    assert (by_id[rows]["type"], by_id[rows]["name"], by_id[rows]["g"]) == ("link out", "setup rows", engine["g"])
 
 
 @needs_node
@@ -2652,8 +3111,15 @@ def test_setup_fields_agree():
                        ("cameras", {**body, "cameras": {"cam_a": {**body["cameras"]["cam_a"], "extra": None}}})):
         passed, refused = validate_setup(bad)["result"]
         assert passed is None and refused["payload"] == bad_request(f"{where}.extra")
-    run = setup_engine(body)
+    run = setup_engine(body, context=with_upload())
     [device], [camera] = run.insert_device, run.insert_camera
+    # the upload: each list is its table's columns less the names kept on the unit, and a row the engine hands to the
+    # upload has exactly those keys
+    lists = upload_lists()
+    assert lists["setup_device"] == [column for column in device_columns if column not in SETUP_KEPT_ON_THE_UNIT]
+    assert lists["setup_camera"] == [column for column in camera_columns if column not in SETUP_KEPT_ON_THE_UNIT]
+    [sent_device], [sent_camera] = run.upload["payload"]["device"], run.upload["payload"]["cameras"]
+    assert list(sent_device) == lists["setup_device"] and list(sent_camera) == lists["setup_camera"]
     assert set(device["params"]) == {"$" + column for column in device_columns if column != "ended"}
     assert set(camera["params"]) == {"$" + column for column in camera_columns if column != "ended"}
     db = sqlite3.connect(":memory:")
@@ -2984,6 +3450,92 @@ def test_the_mounting_correction_leaves_the_heading_correction_alone():
     validator, query, *_ = correction_chain("/tm-internal/deployments/:id/heading")
     assert validator["name"] == "tm-internal: validate heading correction"
     assert query["name"] == "rewrite deployment heading"
+
+
+TIMEZONE_SQL = "UPDATE deployment SET timezone = $timezone WHERE survey_id = $survey_id"
+
+
+def test_timezone_correction_runs_one_prepared_statement_and_answers_204():
+    validator, query, answer, response_id, by_id = correction_chain("/tm-internal/surveys/:id/timezone")
+    assert validator["outputs"] == 2
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
+        "sqlite", "rewrite survey timezone", "prepared", TMDB)
+    assert sql_text(query) == TIMEZONE_SQL
+    assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+    assert answer["name"] == "tm-internal: answer timezone correction"
+
+
+@needs_node
+def test_timezone_correction_answers_204():
+    _, _, answer, *_ = correction_chain("/tm-internal/surveys/:id/timezone")
+    [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_timezone_statement_is_in_the_database_error_catch():
+    flows = json.loads(FLOWS.read_text())
+    query = named(flows, "rewrite survey timezone")
+    catch = named(flows, "catch: tm-internal query errors")
+    assert query["id"] in catch["scope"] and query["g"] == catch["g"]
+
+
+@needs_node
+@pytest.mark.parametrize("survey_id, body, zone, detail", [
+    (SURVEY_ID, {"timezone": "America/New_York"}, "America/New_York", None),
+    (SURVEY_ID, {"timezone": None}, None, None),
+    (SURVEY_ID, {"timezone": " Asia/Tokyo "}, "Asia/Tokyo", None),
+    (SURVEY_ID, {"timezone": "UTC"}, "UTC", None),
+    (SURVEY_ID, {"timezone": "Etc/GMT+5"}, "Etc/GMT+5", None),
+    (SURVEY_ID, {"timezone": "America/Argentina/Buenos_Aires"}, "America/Argentina/Buenos_Aires", None),
+    (SURVEY_ID, {"timezone": "x" * 64}, "x" * 64, None),
+    (SURVEY_ID, {}, None, "timezone"),
+    (SURVEY_ID, {"zone": "Europe/Berlin"}, None, "timezone"),
+    (SURVEY_ID, "timezone=Europe/Berlin", None, "timezone"),
+    (SURVEY_ID, {"timezone": 5}, None, "timezone"),
+    (SURVEY_ID, {"timezone": True}, None, "timezone"),
+    (SURVEY_ID, {"timezone": ["Europe/Berlin"]}, None, "timezone"),
+    (SURVEY_ID, {"timezone": ""}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "   "}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "not a zone!"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "../../etc/passwd"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "A/B/C/D"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "Europe/"}, None, "timezone"),
+    (SURVEY_ID, {"timezone": "x" * 65}, None, "timezone"),
+    (SURVEY_ID.upper(), {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    ("3f9a1c2e", {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    ("3f9a1c2e-si ", {"timezone": "Europe/Berlin"}, None, "survey_id"),
+    (SURVEY_ID.upper(), {"timezone": 5}, None, "survey_id"),
+])
+def test_timezone_correction_is_validated(survey_id, body, zone, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate timezone correction")
+    msg = {"req": {"params": {"id": survey_id}}, "payload": body}
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert passed["params"] == {"$survey_id": survey_id, "$timezone": zone}
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert json.dumps(body) not in json.dumps(refused["payload"])
+
+
+def test_timezone_correction_rewrites_every_row_of_the_place():
+    query = named(json.loads(FLOWS.read_text()), "rewrite survey timezone")
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    for deployment_id, ended, survey_id, zone in (("open-d", None, SURVEY_ID, "Asia/Tokyo"),
+                                                  ("closed-d", 1761800005000, SURVEY_ID, None),
+                                                  ("other-d", None, "7b2e9d41-si", "Asia/Tokyo")):
+        con.execute("INSERT INTO deployment (id, entryStartDateTime, entryEndDateTime, sensorType, sensorName, "
+                    "survey_id, timezone) VALUES (?, 1761800000000, ?, 'cameras', 'x', ?, ?)",
+                    (deployment_id, ended, survey_id, zone))
+    con.execute(query["sql"], {"survey_id": SURVEY_ID, "timezone": "Europe/Berlin"})
+    zones = dict(con.execute("SELECT id, timezone FROM deployment"))
+    assert zones == {"open-d": "Europe/Berlin", "closed-d": "Europe/Berlin", "other-d": "Asia/Tokyo"}
+    con.execute(query["sql"], {"survey_id": SURVEY_ID, "timezone": None})
+    zones = dict(con.execute("SELECT id, timezone FROM deployment"))
+    assert zones == {"open-d": None, "closed-d": None, "other-d": "Asia/Tokyo"}
 
 
 def recorded_database():
@@ -3519,7 +4071,7 @@ EVENT_COLUMNS = [
 ]
 DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
                       "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
-                      "view_distance_m", "mount"]
+                      "view_distance_m", "mount", "timezone"]
 MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -3568,6 +4120,13 @@ RADAR_ROWS = [
     {"time": TICK, "radar": "TM_RADAR_SERIAL_PORT_01", "config_enabled": 0, "deployment_id": None, "port_open": 0,
      "last_reading_at": None, "radar_answers": 0, "radar_on": None},
 ]
+SETUP_SENT_DEVICE = {**dict.fromkeys(sent_columns(SETUP_DEVICE_COLUMNS)),
+                     "id": "100-aaaaaaaa-sd", "started": 100, "ended": None, "tm_version": "0.8.0", "schema_version": 11,
+                     "frigate_version": "0.16.2", "model_sha256": "aa" * 32, "labels_available": ["car", "person"]}
+SETUP_SENT_CAMERA = {**dict.fromkeys(sent_columns(SETUP_CAMERA_COLUMNS)),
+                     "id": "100-bbbbbbbb-sc", "started": 100, "ended": 200, "camera": "cam_a", "detect_width": 1536,
+                     "labels_tracked": ["car"], "zones": [{"key": "zone_capture", "enabled": True}], "masks": {}}
+SETUP_VALUE = {"device": [SETUP_SENT_DEVICE], "cameras": [SETUP_SENT_CAMERA]}
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
     "radar": {"radar_dov": {"time": 1761800000, "velocity": 12.3, "radarName": "TM_RADAR_SERIAL_PORT_00"}},
@@ -3575,6 +4134,7 @@ GATE_TELEMETRY = {
     "system_metrics": {"time_ms_utc": TS, "cpu_percent": 12.5},
     "deployments": {"updatedDeployment": [{**GATE_ROW, "entryEndDateTime": TS}], "currentDeployment": [GATE_ROW]},
     "watch": {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]},
+    "setup": SETUP_VALUE,
 }
 GATE_ATTRIBUTES = {
     "deployments": {
@@ -3622,12 +4182,20 @@ def gate_node():
     return named(json.loads(FLOWS.read_text()), "upload gate")
 
 
-def gate_run(msgs, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
+GATE_SENSORS = {"cameras": {"cam_a": {"enabled": True}}}
+
+
+def gate_run(msgs, sharing=None, thingsboard=None, deployment=None, lists=MISSING, sensors=MISSING):
     """Run the upload gate on each message in turn, with this config and the upload lists (upload-lists.json unless
-    given; none at all for None); returns the run (results, global)."""
+    given; none at all for None); returns the run (results, global). The config captures cam_a (sensors.cameras)
+    unless sensors says otherwise; None leaves the block out."""
     config = {"sharing": SHARING_OFF if sharing is None else sharing,
               "thingsboard": {"enabled": True, **(GATE_THINGSBOARD if thingsboard is None else thingsboard)},
               "deployment": GATE_PLACE if deployment is None else deployment}
+    if sensors is MISSING:
+        config["sensors"] = GATE_SENSORS
+    elif sensors is not None:
+        config["sensors"] = sensors
     context = {"config": config, "tm_warned": {}}
     if lists is MISSING:
         context["upload_lists"] = upload_lists()
@@ -3637,9 +4205,9 @@ def gate_run(msgs, sharing=None, thingsboard=None, deployment=None, lists=MISSIN
     return run_functions([(gate, msg) for msg in msgs], context=context)
 
 
-def gate(msg, sharing=None, thingsboard=None, deployment=None, lists=MISSING):
+def gate(msg, sharing=None, thingsboard=None, deployment=None, lists=MISSING, sensors=MISSING):
     """The upload gate's output for one message (None when it sends nothing), and its log."""
-    [step] = gate_run([msg], sharing, thingsboard, deployment, lists)["results"]
+    [step] = gate_run([msg], sharing, thingsboard, deployment, lists, sensors)["results"]
     return step["result"], step["logged"]
 
 
@@ -3749,6 +4317,19 @@ def test_gate_leaves_the_engines_rows_as_they_are(precision, places, lat, lon):
     out, logged = gate({"type": "telemetry", "payload": step["result"]["payload"]}, deployment=place)
     assert out["payload"] == step["result"]["payload"] and logged == []
     assert run.payload["updatedDeployment"] and run.payload["currentDeployment"]
+
+
+@needs_node
+@pytest.mark.parametrize("precision", ["none", "1", "2"])
+def test_gate_keeps_a_places_time_zone_at_every_precision(precision):
+    """The zone is not a location: the rows the engine sends with one pass the gate with it, rounding or not."""
+    place = {**ENGINE_PLACE, "database_precision": precision, "timezone": "America/New_York"}
+    run = engine(engine_sensors(), [], place)
+    out, logged = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"deployments": run.payload}}},
+                       deployment=place)
+    rows = out["payload"]["values"]["deployments"]["currentDeployment"]
+    assert rows and all(row["timezone"] == "America/New_York" for row in rows)
+    assert logged == []
 
 
 @needs_node
@@ -3988,14 +4569,17 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar"]
-    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
+    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar",
+                           "setup_device", "setup_camera"]
+    assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch", "setup"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
     assert lists["deployment"] == DEPLOYMENT_COLUMNS
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
+    assert lists["setup_device"] == sent_columns(SETUP_DEVICE_COLUMNS)
+    assert lists["setup_camera"] == sent_columns(SETUP_CAMERA_COLUMNS)
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -4016,8 +4600,11 @@ def test_the_gate_holds_no_list_of_its_own():
     {**upload_lists(), "watch_radar": ["time", 7]},
     {key: names for key, names in upload_lists().items() if key != "deployment"},
     {**upload_lists(), "deployment": ["id", 7]},
+    {key: names for key, names in upload_lists().items() if key != "setup_device"},
+    {**upload_lists(), "setup_camera": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
-        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text"])
+        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text",
+        "no-setup-device-list", "setup-camera-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -4147,6 +4734,134 @@ def test_gate_leaves_out_watch_rows_it_cannot_read(value):
     out, _ = gate({"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value, "radar": radar}}})
     assert out["payload"] == {"ts": TICK_MS, "values": {"radar": radar}}
     out, _ = gate(watch_item(value))
+    assert out is None
+
+
+def setup_item(value):
+    return {"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value}}}
+
+
+@needs_node
+def test_gate_passes_the_setup_rows_field_by_field():
+    value = {"device": [{**SETUP_SENT_DEVICE, "surprise": "kept-on-the-unit"}],
+             "cameras": [{**SETUP_SENT_CAMERA, "note": "kept-on-the-unit"}], "extra": [1]}
+    run = gate_run([setup_item(value), setup_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"setup": SETUP_VALUE}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert sorted(warnings) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("setup.extra", "setup_device.surprise", "setup_camera.note"))
+    assert "kept-on-the-unit" not in json.dumps(run["results"])
+
+
+@needs_node
+def test_gate_cuts_a_kept_name_that_reaches_it():
+    """The engine leaves model_title, model_file, and profile out already; the gate is the second check."""
+    kept = {"model_title": "12 Oak St bikes", "model_file": "oak_st.tflite", "profile": "1420_oak_st"}
+    value = {"device": [{**SETUP_SENT_DEVICE, "model_title": kept["model_title"], "model_file": kept["model_file"]}],
+             "cameras": [{**SETUP_SENT_CAMERA, "profile": kept["profile"]}]}
+    run = gate_run([setup_item(value)])
+    [step] = run["results"]
+    assert step["result"]["payload"] == {"ts": TS, "values": {"setup": SETUP_VALUE}}
+    assert sorted(text for _, text, _ in step["logged"]) == sorted(
+        f"ThingsBoard upload: left out {key}, which isn't on the list of what is shared."
+        for key in ("setup_device.model_title", "setup_device.model_file", "setup_camera.profile"))
+    # no kept value is in what is sent, in a warning, or in what the gate remembers (the labels name fields only)
+    text = json.dumps(run["results"]) + json.dumps(run["global"])
+    assert not [value for value in kept.values() if value in text]
+
+
+@needs_node
+@pytest.mark.parametrize("value", [
+    "text", ["device"], None, 7, {}, {"extra": []}, {"device": "all", "cameras": 7}, {"device": [], "cameras": []},
+    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
+        "no-listed-field"])
+def test_gate_leaves_out_setup_rows_it_cannot_read(value):
+    radar = GATE_TELEMETRY["radar"]
+    out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value, "radar": radar}}})
+    assert out["payload"] == {"ts": TS, "values": {"radar": radar}}
+    out, _ = gate(setup_item(value))
+    assert out is None
+
+
+@needs_node
+def test_gate_keeps_the_setup_list_that_has_rows():
+    out, logged = gate(setup_item({"device": [SETUP_SENT_DEVICE, "text"], "cameras": []}))
+    assert out["payload"]["values"]["setup"] == {"device": [SETUP_SENT_DEVICE]}
+    assert logged == [["warn", "ThingsBoard upload: left out setup rows that aren't mappings.", False]]
+
+
+ZONES_WARNING = "ThingsBoard upload: left out setup zones that are off or whose camera isn't captured."
+ZONE_ON = {"key": "zone_capture", "enabled": True}
+ZONE_OFF = {"key": "1420_oak_st", "enabled": False}
+
+
+@needs_node
+def test_gate_cuts_zones_that_are_off():
+    value = {"cameras": [{**SETUP_SENT_CAMERA, "zones": [ZONE_ON, ZONE_OFF]}]}
+    run = gate_run([setup_item(value), setup_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"setup": {"cameras": [SETUP_SENT_CAMERA]}}}
+    assert [text for step in run["results"] for _, text, _ in step["logged"]] == [ZONES_WARNING]
+    assert run["global"]["tm_warned"] == {"upload:setup_zones": True}
+    assert "1420_oak_st" not in json.dumps(run["results"]) + json.dumps(run["global"])
+
+
+@needs_node
+@pytest.mark.parametrize("camera, zones, sensors", [
+    ("cam_b", [ZONE_ON], {"cameras": {"cam_a": {"enabled": True}, "cam_b": {"enabled": False}}}),
+    ("cam_b", [ZONE_ON], {"cameras": {"cam_a": {"enabled": True}, "cam_b": {"enabled": "true"}}}),
+    ("cam_gone", [ZONE_ON], MISSING), ("constructor", [ZONE_ON], MISSING), ("cam_a", [ZONE_ON], None),
+    ("cam_a", [ZONE_ON], {"cameras": ["cam_a"]}), ("cam_a", "zone_capture", MISSING),
+    ("cam_a", {"zone_capture": ZONE_ON}, MISSING),
+], ids=["disabled", "enabled-not-true", "not-in-the-config", "not-an-own-key", "no-sensors", "cameras-not-a-mapping",
+        "zones-text", "zones-mapping"])
+def test_gate_cuts_the_zones_of_a_camera_that_is_not_captured(camera, zones, sensors):
+    row = {**SETUP_SENT_CAMERA, "camera": camera, "zones": zones}
+    run = gate_run([setup_item({"cameras": [row]})], sensors=sensors)
+    [step] = run["results"]
+    expected = {key: value for key, value in row.items() if key != "zones"}
+    assert step["result"]["payload"] == {"ts": TS, "values": {"setup": {"cameras": [expected]}}}
+    assert [text for _, text, _ in step["logged"]] == [ZONES_WARNING]
+    assert "zone_capture" not in json.dumps(step["logged"])
+
+
+@needs_node
+@pytest.mark.parametrize("camera", ["cam_a", "cam_b"])
+def test_gate_passes_a_row_without_zones(camera):
+    row = {**SETUP_SENT_CAMERA, "camera": camera, "zones": None}
+    out, logged = gate(setup_item({"cameras": [row]}))
+    assert out["payload"]["values"]["setup"] == {"cameras": [row]} and logged == []
+
+
+@needs_node
+def test_gate_passes_every_zone_that_is_on():
+    row = {**SETUP_SENT_CAMERA, "zones": [ZONE_ON, {**ZONE_OFF, "enabled": True}]}
+    out, logged = gate(setup_item({"cameras": [row]}))
+    assert out["payload"]["values"]["setup"] == {"cameras": [row]} and logged == []
+
+
+@needs_node
+def test_the_engines_rows_pass_the_gate_unchanged():
+    """The engine and the gate each apply the zone rule; what the engine sends, the gate lets through as it is."""
+    snapshot = {**SETUP_SNAPSHOT, "cameras": {"cam_a": {**SETUP_SNAPSHOT["cameras"]["cam_a"],
+                                                        "zones": [SETUP_ZONE, OFF_ZONE]}}}
+    run = setup_engine(snapshot, [open_device(frigate_version="0.15.0")],
+                       [open_cam_b(), open_camera("cam_gone", row_id="1-dddddddd-sc")], context=with_upload())
+    sent = run.upload["payload"]
+    assert {row["camera"]: row["zones"] for row in sent["cameras"]}["cam_b"] is None
+    [formatted] = run_functions([(named(json.loads(FLOWS.read_text()), "format setup telemetry"), run.upload)])[
+        "results"]
+    out, logged = gate({**formatted["result"], "type": "telemetry"}, sensors=SETUP_CONTEXT["config"]["sensors"])
+    assert logged == []
+    assert out["payload"]["values"]["setup"] == {key: sent[key] for key in ("device", "cameras") if sent[key]}
+
+
+@needs_node
+def test_gate_sends_no_setup_rows_while_the_upload_is_off():
+    out, _ = gate(setup_item(SETUP_VALUE), thingsboard={"enabled": False})
     assert out is None
 
 
