@@ -1,6 +1,54 @@
 # Share data
 
-A Traffic Monitor shares nothing until an administrator turns it on. The control app's **Sharing** page, in its menu, sets where the device uploads its data and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can change anything.
+A Traffic Monitor shares nothing until an administrator turns it on. The control app's **Sharing** page, in its menu, is where an administrator downloads a copy of the device's data to the computer or phone they are using, and where they set what the device uploads to a server and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can download the data or change anything.
+
+## Download your data
+
+The **Download your data** card is the first thing on the page, and only an administrator sees it. It saves a copy of the device's database on the computer or phone you're using. Nothing is uploaded, and the page works the same whether or not **Share data** is on. The card shows the **Database size** and has one box, **Include each place's exact location**, and one **Download** button.
+
+Choose **Download** and read the question. It says what the file holds: everything in the device's database, which is the events, radar readings, and air quality readings it recorded, its deployments, its watch log and setup history, and any comments. It says that each place's location is in it as the database stores it, rounded, and that the file holds no exact location, no pictures or video, and no passwords or tokens. Nothing is asked of the device until you choose **Download** in the question; **Cancel** closes it.
+
+The device then makes a consistent copy of the database, so the download starts after a wait, which can take a few minutes for a large database, and the card says so. The copy needs free space about the size of the database, as the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page's download does. If the device can't make the copy, the browser has already left the Sharing page and shows a plain text page with the reason instead of a file: go back to the Sharing page, and reload it before you try again. Once a download has started, **Download** and the box stay off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.
+
+The file is named `<hostname>_<time>_tmdb.tar.gz` and holds `tmdb.sqlite`. It is the same file as the **Download the database** button on the Data export page. On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save.
+
+### Include each place's exact location
+
+Tick **Include each place's exact location** to get a copy that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step. Its question carries a warning: this copy of the database includes the exact location of each place the device has been at, the database on the device keeps its rounded locations, and you should give the copy only to someone who should know where the device was.
+
+The box is unticked whenever the page opens. It is off, with the reason under it, until a place the device has been at, one marked **In use** or **Used** on the [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md), has a location. A planned place doesn't count, because the device was never there.
+
+That file is named `<hostname>_<time>_tmdb-exact-locations.tar.gz` and holds `tmdb-exact-locations.sqlite`. The name says what it is, so nobody takes it for the database you can share.
+
+### What the copy adds
+
+The copy with exact locations is the database as it is, with two more things in it:
+
+- The table `survey_exact_location` has one row for each place: its id, and its exact latitude and longitude.
+- The view `deployment_exact` is the `deployment` table with two more columns, `exact_lat` and `exact_lon`, from the place the row names.
+
+The `deployment` table itself is not changed. Its `lat` and `lon` still hold the location rounded to the [precision](https://docs.trafficmonitor.ai/dev/use/location/#choose-the-precision) stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:
+
+```
+SELECT sensorName,
+       datetime(entryStartDateTime / 1000, 'unixepoch') AS started,
+       datetime(entryEndDateTime / 1000, 'unixepoch') AS ended,
+       exact_lat, exact_lon
+FROM deployment_exact
+ORDER BY entryStartDateTime;
+```
+
+The times are in UTC, and `ended` is empty for a deployment that is still running. A place has one exact point, so this covers every place the device has been at, past ones included, and not only the one in use.
+
+The table holds the places the device has been at that have a location. A planned place is never in it, and neither is a place the database doesn't name. The view's `exact_lat` and `exact_lon` are empty for:
+
+- A place with no location.
+- A place the control app no longer has, because you deleted it.
+- A deployment from [before any place was recorded](https://docs.trafficmonitor.ai/dev/use/location/#the-location-page), which names no place.
+
+A [correction](https://docs.trafficmonitor.ai/dev/use/location/#correct-a-wrong-location-or-heading) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
+
+The database on the device is unchanged: it never holds the table or the view, and the **Download the database** button on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the [`exact_location`](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#the-exact-location-in-a-database-copy) attribute holds when you share the exact location.
 
 ## Choose the server
 
@@ -31,7 +79,7 @@ For Traffic Monitor's server, the page requires you to read the notice, and to t
 
 The exact location is for you to give or keep
 
-The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in what you save from the Location page: the file from [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations), or the copy of the database from [**Download the database with exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations). You give those yourself, and nothing is sent.
+The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in what you save yourself: the copy of the database from [**Download your data**](#download-your-data) with **Include each place's exact location** ticked, or the file from [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations) on the Location page. You give those yourself, and nothing is sent.
 
 ## What the server already has
 

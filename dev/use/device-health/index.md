@@ -149,4 +149,4 @@ Viewers see all five pages, and the [Sharing](https://docs.trafficmonitor.ai/dev
 - **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page).
 - **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
 - **Network**: the addresses and the hotspot's state, without the hotspot's password or any control.
-- **Sharing**: what the device shares and how the server last answered, without the server's address when it's an operator's own, the token, or the form.
+- **Sharing**: what the device shares and how the server last answered, without the server's address when it's an operator's own, the token, the form, or the **Download your data** card.

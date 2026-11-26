@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Choose whether a Traffic Monitor shares its data with a server, which server, and how much of its location goes with it; check that the server gets the data; and what an update or the installer's -f flag does to your choices.">
+        <meta name="description" content="Download a copy of a Traffic Monitor's data to your own computer or phone, choose whether the device shares its data with a server, which server, and how much of its location goes with it; check that the server gets the data; and what an update or the installer's -f flag does to your choices.">
       
       
       
@@ -1081,6 +1081,45 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#download-your-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download your data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Download your data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#include-each-places-exact-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Include each place's exact location
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-copy-adds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the copy adds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#choose-the-server" class="md-nav__link">
@@ -2350,6 +2389,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#download-your-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download your data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Download your data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#include-each-places-exact-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Include each place's exact location
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-copy-adds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the copy adds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choose-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2468,9 +2546,41 @@
   
   
   <h1 id="share-data">Share data<a class="headerlink" href="#share-data" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Choose whether a Traffic Monitor shares its data with a server, which server, and how much of its location goes with it; check that the server gets the data; and what an update or the installer&#39;s -f flag does to your choices.</p>
-<p>A Traffic Monitor shares nothing until an administrator turns it on. The control app's <strong>Sharing</strong> page, in its menu, sets where the device uploads its data and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can change anything.</p>
-<p><img alt="The Sharing page on a phone: the saved settings, the choice of server, the access token, the three choices about what the device shares, the notice, and Save" src="../../assets/images/sharing-page.png" width="300" /></p>
+<p class="tm-description">Download a copy of a Traffic Monitor&#39;s data to your own computer or phone, choose whether the device shares its data with a server, which server, and how much of its location goes with it; check that the server gets the data; and what an update or the installer&#39;s -f flag does to your choices.</p>
+<p>A Traffic Monitor shares nothing until an administrator turns it on. The control app's <strong>Sharing</strong> page, in its menu, is where an administrator downloads a copy of the device's data to the computer or phone they are using, and where they set what the device uploads to a server and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can download the data or change anything.</p>
+<p><img alt="The Sharing page on a phone: the Download your data card, the saved settings, the choice of server, the access token, the three choices about what the device shares, the notice, and Save" src="../../assets/images/sharing-page.png" width="300" /></p>
+<h2 id="download-your-data">Download your data<a class="headerlink" href="#download-your-data" title="Permanent link">&para;</a></h2>
+<p>The <strong>Download your data</strong> card is the first thing on the page, and only an administrator sees it. It saves a copy of the device's database on the computer or phone you're using. Nothing is uploaded, and the page works the same whether or not <strong>Share data</strong> is on. The card shows the <strong>Database size</strong> and has one box, <strong>Include each place's exact location</strong>, and one <strong>Download</strong> button.</p>
+<p>Choose <strong>Download</strong> and read the question. It says what the file holds: everything in the device's database, which is the events, radar readings, and air quality readings it recorded, its deployments, its watch log and setup history, and any comments. It says that each place's location is in it as the database stores it, rounded, and that the file holds no exact location, no pictures or video, and no passwords or tokens. Nothing is asked of the device until you choose <strong>Download</strong> in the question; <strong>Cancel</strong> closes it.</p>
+<p>The device then makes a consistent copy of the database, so the download starts after a wait, which can take a few minutes for a large database, and the card says so. The copy needs free space about the size of the database, as the <a href="../../ui/database/#download-the-database">Data export</a> page's download does. If the device can't make the copy, the browser has already left the Sharing page and shows a plain text page with the reason instead of a file: go back to the Sharing page, and reload it before you try again. Once a download has started, <strong>Download</strong> and the box stay off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.</p>
+<p>The file is named <code>&lt;hostname&gt;_&lt;time&gt;_tmdb.tar.gz</code> and holds <code>tmdb.sqlite</code>. It is the same file as the <strong>Download the database</strong> button on the Data export page. On a phone joined to the unit's hotspot, see <a href="../wifi-hotspot/#phones">Phones</a> for how downloads save.</p>
+<h3 id="include-each-places-exact-location">Include each place's exact location<a class="headerlink" href="#include-each-places-exact-location" title="Permanent link">&para;</a></h3>
+<p>Tick <strong>Include each place's exact location</strong> to get a copy that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step. Its question carries a warning: this copy of the database includes the exact location of each place the device has been at, the database on the device keeps its rounded locations, and you should give the copy only to someone who should know where the device was.</p>
+<p>The box is unticked whenever the page opens. It is off, with the reason under it, until a place the device has been at, one marked <strong>In use</strong> or <strong>Used</strong> on the <a href="../location/">Location page</a>, has a location. A planned place doesn't count, because the device was never there.</p>
+<p>That file is named <code>&lt;hostname&gt;_&lt;time&gt;_tmdb-exact-locations.tar.gz</code> and holds <code>tmdb-exact-locations.sqlite</code>. The name says what it is, so nobody takes it for the database you can share.</p>
+<h3 id="what-the-copy-adds">What the copy adds<a class="headerlink" href="#what-the-copy-adds" title="Permanent link">&para;</a></h3>
+<p>The copy with exact locations is the database as it is, with two more things in it:</p>
+<ul>
+<li>The table <code>survey_exact_location</code> has one row for each place: its id, and its exact latitude and longitude.</li>
+<li>The view <code>deployment_exact</code> is the <code>deployment</code> table with two more columns, <code>exact_lat</code> and <code>exact_lon</code>, from the place the row names.</li>
+</ul>
+<p>The <code>deployment</code> table itself is not changed. Its <code>lat</code> and <code>lon</code> still hold the location rounded to the <a href="../location/#choose-the-precision">precision</a> stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">sensorName</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">entryStartDateTime</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">started</span><span class="p">,</span>
+<span class="w">       </span><span class="n">datetime</span><span class="p">(</span><span class="n">entryEndDateTime</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="s1">'unixepoch'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">ended</span><span class="p">,</span>
+<span class="w">       </span><span class="n">exact_lat</span><span class="p">,</span><span class="w"> </span><span class="n">exact_lon</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">deployment_exact</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">entryStartDateTime</span><span class="p">;</span>
+</code></pre></div>
+<p>The times are in UTC, and <code>ended</code> is empty for a deployment that is still running. A place has one exact point, so this covers every place the device has been at, past ones included, and not only the one in use.</p>
+<p>The table holds the places the device has been at that have a location. A planned place is never in it, and neither is a place the database doesn't name. The view's <code>exact_lat</code> and <code>exact_lon</code> are empty for:</p>
+<ul>
+<li>A place with no location.</li>
+<li>A place the control app no longer has, because you deleted it.</li>
+<li>A deployment from <a href="../location/#the-location-page">before any place was recorded</a>, which names no place.</li>
+</ul>
+<p>A <a href="../location/#correct-a-wrong-location-or-heading">correction</a> shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.</p>
+<p>The database on the device is unchanged: it never holds the table or the view, and the <strong>Download the database</strong> button on the <a href="../../ui/database/#download-the-database">Data export</a> page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the <a href="../../data-and-payloads/data-overview/#the-exact-location-in-a-database-copy"><code>exact_location</code></a> attribute holds when you share the exact location.</p>
 <h2 id="choose-the-server">Choose the server<a class="headerlink" href="#choose-the-server" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2525,7 +2635,7 @@
 <p>For Traffic Monitor's server, the page requires you to read the notice, and to tick <strong>I've read the notice</strong>, when a save turns <strong>Share data</strong> on, switches to Traffic Monitor's server, or adds a choice under a notice that has changed. A save that only keeps or turns off choices never requires it. When the notice changes, the device keeps sharing as you set it, and, while <strong>Share data</strong> is on, the page offers <strong>I've read the notice</strong> until someone ticks it and saves. Ticking it and choosing <strong>Save</strong> records your choices under the new version, and the Status page stops asking. A choice you add after the change waits for you to read it.</p>
 <div class="admonition info">
 <p class="admonition-title">The exact location is for you to give or keep</p>
-<p>The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under <strong>Share the exact location</strong>, or in what you save from the Location page: the file from <a href="../location/#export-the-exact-locations"><strong>Export exact locations</strong></a>, or the copy of the database from <a href="../location/#download-the-database-with-exact-locations"><strong>Download the database with exact locations</strong></a>. You give those yourself, and nothing is sent.</p>
+<p>The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under <strong>Share the exact location</strong>, or in what you save yourself: the copy of the database from <a href="#download-your-data"><strong>Download your data</strong></a> with <strong>Include each place's exact location</strong> ticked, or the file from <a href="../location/#export-the-exact-locations"><strong>Export exact locations</strong></a> on the Location page. You give those yourself, and nothing is sent.</p>
 </div>
 <h2 id="what-the-server-already-has">What the server already has<a class="headerlink" href="#what-the-server-already-has" title="Permanent link">&para;</a></h2>
 <p>Turning a choice off stops the device sending. What the server already received stays there. To ask for it to be deleted, use the email address in the notice (for Traffic Monitor's server) or ask the operator of your own server.</p>

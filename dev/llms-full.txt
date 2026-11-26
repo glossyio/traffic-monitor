@@ -1287,7 +1287,7 @@ Viewers see all five pages, and the [Sharing](https://docs.trafficmonitor.ai/dev
 - **Detection**: the models and the label lists, without the action buttons and the Frigate+ key form; see [Choose the detection model](https://docs.trafficmonitor.ai/dev/use/detection/#the-detection-page).
 - **Date and time**: the clocks, the time zone, and where the time comes from, without the button, the zone picker, or the switch.
 - **Network**: the addresses and the hotspot's state, without the hotspot's password or any control.
-- **Sharing**: what the device shares and how the server last answered, without the server's address when it's an operator's own, the token, or the form.
+- **Sharing**: what the device shares and how the server last answered, without the server's address when it's an operator's own, the token, the form, or the **Download your data** card.
 
 ______________________________________________________________________
 
@@ -1352,7 +1352,7 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the exact locations ([a list](#export-the-exact-locations) and [a copy of the database](#download-the-database-with-exact-locations)), and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the [list of exact locations](#export-the-exact-locations), and, last, the [precision](#choose-the-precision). A copy of the database with the exact locations in it is on the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location).
 
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 
@@ -1534,26 +1534,68 @@ The place in use can't be deleted. Deploy another place first.
 
 **Export exact locations**, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.
 
-The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see [Download the database with exact locations](#download-the-database-with-exact-locations).
+The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see [Download your data](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) on the Sharing page.
 
 ## Download the database with exact locations
 
-**Download the database with exact locations**, next to **Export exact locations**, saves a copy of the database that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step.
+This download moved to the **Download your data** card on the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/#download-your-data). Tick [**Include each place's exact location**](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) there to save a copy of the database that also holds where the device was.
 
-Choose the button and read the question. It says that the copy holds the exact location of each place the device has been at, that the database on the device keeps its rounded locations, and that you should give the copy only to someone who should know where the device was. Choose **Download**. The device makes a consistent copy of the database first, so the download starts after a wait, which can take a few minutes for a large database, and the page says so. The copy needs free space about the size of the database, as the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) download does. If the device can't make the copy, the browser has already left the Location page and shows a plain text page with the reason instead of a file: go back to the Location page, and reload it before you try again. Once a copy has started, the button stays off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.
+## Choose the precision
 
-The button is off, with the reason under it, until a place the device has been at, one marked **In use** or **Used**, has a location. A planned place doesn't count, because the device was never there.
+**Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:
 
-The file is named `<hostname>_<time>_tmdb-exact-locations.tar.gz` and holds `tmdb-exact-locations.sqlite`. The name says what it is, so nobody takes it for the database you can share. On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save.
+| Choice                                       | The database stores                      |
+| -------------------------------------------- | ---------------------------------------- |
+| **No location stored**                       | No coordinates                           |
+| **About 10 km** (45.5, -122.7)               | One decimal place, about a city          |
+| **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
+
+The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), [export it](#export-the-exact-locations), [download a copy of the database that holds it](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location), or save it with a camera's [reference picture](https://docs.trafficmonitor.ai/dev/use/cameras/#take-a-reference-picture). Choose one and **Save**.
+
+- **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
+- **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.
+- **A finer choice** applies from the next deployment. Rows already stored stay as they are, because what was rounded away can't come back.
+
+## What leaves the device
+
+- A place's description, and the reasons you give for corrections, never leave the device.
+- A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Include each place's exact location**](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) ticked under **Download your data** on the Sharing page, which adds each place's exact location in a table of its own.
+- Data you [share](https://docs.trafficmonitor.ai/dev/use/sharing/index.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download your data**](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) with the exact locations, go where you send them.
+- A camera's [reference picture](https://docs.trafficmonitor.ai/dev/use/cameras/#take-a-reference-picture) holds the exact location of the place in use unless you clear **Include this place's exact location**, and the pictures show the street. The zip goes where you send it.
+- A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
+
+To change these values in `config.yml` by hand, see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).
+
+# Share data
+
+A Traffic Monitor shares nothing until an administrator turns it on. The control app's **Sharing** page, in its menu, is where an administrator downloads a copy of the device's data to the computer or phone they are using, and where they set what the device uploads to a server and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can download the data or change anything.
+
+## Download your data
+
+The **Download your data** card is the first thing on the page, and only an administrator sees it. It saves a copy of the device's database on the computer or phone you're using. Nothing is uploaded, and the page works the same whether or not **Share data** is on. The card shows the **Database size** and has one box, **Include each place's exact location**, and one **Download** button.
+
+Choose **Download** and read the question. It says what the file holds: everything in the device's database, which is the events, radar readings, and air quality readings it recorded, its deployments, its watch log and setup history, and any comments. It says that each place's location is in it as the database stores it, rounded, and that the file holds no exact location, no pictures or video, and no passwords or tokens. Nothing is asked of the device until you choose **Download** in the question; **Cancel** closes it.
+
+The device then makes a consistent copy of the database, so the download starts after a wait, which can take a few minutes for a large database, and the card says so. The copy needs free space about the size of the database, as the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page's download does. If the device can't make the copy, the browser has already left the Sharing page and shows a plain text page with the reason instead of a file: go back to the Sharing page, and reload it before you try again. Once a download has started, **Download** and the box stay off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.
+
+The file is named `<hostname>_<time>_tmdb.tar.gz` and holds `tmdb.sqlite`. It is the same file as the **Download the database** button on the Data export page. On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save.
+
+### Include each place's exact location
+
+Tick **Include each place's exact location** to get a copy that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step. Its question carries a warning: this copy of the database includes the exact location of each place the device has been at, the database on the device keeps its rounded locations, and you should give the copy only to someone who should know where the device was.
+
+The box is unticked whenever the page opens. It is off, with the reason under it, until a place the device has been at, one marked **In use** or **Used** on the [Location page](https://docs.trafficmonitor.ai/dev/use/location/index.md), has a location. A planned place doesn't count, because the device was never there.
+
+That file is named `<hostname>_<time>_tmdb-exact-locations.tar.gz` and holds `tmdb-exact-locations.sqlite`. The name says what it is, so nobody takes it for the database you can share.
 
 ### What the copy adds
 
-The copy is the database as it is, with two more things in it:
+The copy with exact locations is the database as it is, with two more things in it:
 
 - The table `survey_exact_location` has one row for each place: its id, and its exact latitude and longitude.
 - The view `deployment_exact` is the `deployment` table with two more columns, `exact_lat` and `exact_lon`, from the place the row names.
 
-The `deployment` table itself is not changed. Its `lat` and `lon` still hold the location rounded to the [precision](#choose-the-precision) stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:
+The `deployment` table itself is not changed. Its `lat` and `lon` still hold the location rounded to the [precision](https://docs.trafficmonitor.ai/dev/use/location/#choose-the-precision) stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:
 
 ```
 SELECT sensorName,
@@ -1570,41 +1612,11 @@ The table holds the places the device has been at that have a location. A planne
 
 - A place with no location.
 - A place the control app no longer has, because you deleted it.
-- A deployment from [before any place was recorded](#the-location-page), which names no place.
+- A deployment from [before any place was recorded](https://docs.trafficmonitor.ai/dev/use/location/#the-location-page), which names no place.
 
-A [correction](#correct-a-wrong-location-or-heading) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
+A [correction](https://docs.trafficmonitor.ai/dev/use/location/#correct-a-wrong-location-or-heading) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
 
 The database on the device is unchanged: it never holds the table or the view, and the **Download the database** button on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/#download-the-database) page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the [`exact_location`](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#the-exact-location-in-a-database-copy) attribute holds when you share the exact location.
-
-## Choose the precision
-
-**Precision**, at the end of the page, sets how much of the location the database stores. To better protect your privacy, it's rounded to about 1 km by default. The choices stay closed until you open **Change the precision**, which also shows the current choice, because most devices never need to change it. The setting is for the whole device, not for one place. Each choice shows how the same point would be stored:
-
-| Choice                                       | The database stores                      |
-| -------------------------------------------- | ---------------------------------------- |
-| **No location stored**                       | No coordinates                           |
-| **About 10 km** (45.5, -122.7)               | One decimal place, about a city          |
-| **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
-
-The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](https://docs.trafficmonitor.ai/dev/use/sharing/index.md), [export it](#export-the-exact-locations), [download a copy of the database that holds it](#download-the-database-with-exact-locations), or save it with a camera's [reference picture](https://docs.trafficmonitor.ai/dev/use/cameras/#take-a-reference-picture). Choose one and **Save**.
-
-- **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
-- **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.
-- **A finer choice** applies from the next deployment. Rows already stored stay as they are, because what was rounded away can't come back.
-
-## What leaves the device
-
-- A place's description, and the reasons you give for corrections, never leave the device.
-- A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Download the database with exact locations**](#download-the-database-with-exact-locations), which adds each place's exact location in a table of its own.
-- Data you [share](https://docs.trafficmonitor.ai/dev/use/sharing/index.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download the database with exact locations**](#download-the-database-with-exact-locations), go where you send them.
-- A camera's [reference picture](https://docs.trafficmonitor.ai/dev/use/cameras/#take-a-reference-picture) holds the exact location of the place in use unless you clear **Include this place's exact location**, and the pictures show the street. The zip goes where you send it.
-- A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
-
-To change these values in `config.yml` by hand, see [Edit the location by hand](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#edit-the-location-by-hand).
-
-# Share data
-
-A Traffic Monitor shares nothing until an administrator turns it on. The control app's **Sharing** page, in its menu, sets where the device uploads its data and what goes with it. Everyone who is logged in can see what the device shares and how the server last answered. Only the administrator can change anything.
 
 ## Choose the server
 
@@ -1635,7 +1647,7 @@ For Traffic Monitor's server, the page requires you to read the notice, and to t
 
 The exact location is for you to give or keep
 
-The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in what you save from the Location page: the file from [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations), or the copy of the database from [**Download the database with exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations). You give those yourself, and nothing is sent.
+The database stores the location rounded, so a shared copy of the database carries the rounded location only. The exact location leaves the device only under **Share the exact location**, or in what you save yourself: the copy of the database from [**Download your data**](#download-your-data) with **Include each place's exact location** ticked, or the file from [**Export exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#export-the-exact-locations) on the Location page. You give those yourself, and nothing is sent.
 
 ## What the server already has
 
@@ -1784,7 +1796,7 @@ The sign-in window opens the control app with nothing to set up, but it can't sa
   - To keep the network, open the sign-in window's menu and choose **Use this network as is**. Until you do, a phone with mobile data on doesn't use the hotspot for its browsers, so neither the unit's name nor `http://10.42.0.1/` opens. Logging in to the control app in the sign-in window doesn't change that.
   - Allow **Nearby devices** for the browser; [the Android entry](https://docs.trafficmonitor.ai/dev/help-and-faq/frequently-asked-questions/#troubleshooting) has the steps. Without it the browser times out on the unit, on the hotspot and on your home network.
   - In the sign-in window, the database and JSON downloads on the [Data export page](https://docs.trafficmonitor.ai/dev/ui/database/index.md) save. The unit prepares the database twice there, once for the window and once for the phone's downloader, so the wait before a database download starts is about double.
-  - **Download the database with exact locations** on the [Location page](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations) saves from the sign-in window too. The phone asks for it twice, so the unit makes the copy twice and needs free space for two copies of the database for a while.
+  - **Download** on the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/#download-your-data) saves from the sign-in window too, with or without **Include each place's exact location**. The phone asks for it twice, so the unit makes the copy twice and needs free space for two copies of the database for a while.
   - **Download diagnostics** on the Device page and **Save the zip** of a camera's [reference picture](https://docs.trafficmonitor.ai/dev/use/cameras/#take-a-reference-picture) don't save from the sign-in window: the phone says "Could not download". The reference pictures themselves do show there. Both save from a browser.
   - Frigate's downloads, such as a snapshot, don't save from the sign-in window either.
 - **iPhone:** to stay on the hotspot and save downloads, tap **Cancel** on the sign-in sheet and choose **Use Without Internet**. Then open `http://10.42.0.1/` or the unit's `.local` name in a browser. Without that choice the iPhone goes back to another network it knows, and a download in progress is cut off. The sign-in sheet itself shows a downloaded file's contents instead of saving it.
@@ -2017,7 +2029,7 @@ Downloads the whole database as a compressed archive named `<hostname>_<time>_tm
 
 On a phone joined to the unit's hotspot, see [Phones](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones) for how downloads save on Android and on an iPhone.
 
-This download holds the location rounded, as the database stores it. To get a copy with each place's exact location in it, use [Download the database with exact locations](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations) on the Location page.
+This download holds the location rounded, as the database stores it. The **Download your data** card on the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/#download-your-data) saves the same file, and, with **Include each place's exact location** ticked, a copy with each place's exact location in it: see [Include each place's exact location](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location).
 
 Unpack the archive with `tar -xvzf` on Linux or Mac, or with [7-Zip](https://www.7-zip.org/) on Windows. Inside is `tmdb.sqlite`, which opens in [DB Browser for SQLite](https://sqlitebrowser.org/) or any SQLite library.
 
@@ -2711,7 +2723,7 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](https://docs.trafficmonitor.ai/dev/use/control-app/index.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#recordings-and-snapshots) shows the setting. A snapshot you choose to [submit to Frigate+](https://docs.trafficmonitor.ai/dev/configuration/frigate-config/#submit-snapshots) does leave the device, and it can show people.
 
-With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose **About 10 km** or **No location stored** on the [Location](https://docs.trafficmonitor.ai/dev/use/location/index.md) page before it starts recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database. The database, and the download on the Data export page, hold rounded locations; the Location page's separate [download with exact locations](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations) adds the exact ones, for admins.
+With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose **About 10 km** or **No location stored** on the [Location](https://docs.trafficmonitor.ai/dev/use/location/index.md) page before it starts recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database. The database, and the download on the Data export page, hold rounded locations; the Sharing page's [download with each place's exact location](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) adds the exact ones, for admins.
 
 The database stops being de-identified if you:
 
@@ -2797,7 +2809,7 @@ Free-text notes an operator adds on the [Data export](https://docs.trafficmonito
 
 ### The exact location in a database copy
 
-The database on the device never holds an exact location. A copy made with [**Download the database with exact locations**](https://docs.trafficmonitor.ai/dev/use/location/#download-the-database-with-exact-locations) on the Location page does: the device adds a table and a view to the copy, and only to the copy. The database itself, and the download on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page, never have them. The `deployment` table in the copy is unchanged, so its `lat` and `lon` stay rounded.
+The database on the device never holds an exact location. A copy made with [**Download your data**](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) on the Sharing page, with **Include each place's exact location** ticked, does: the device adds a table and a view to the copy, and only to the copy. The database itself, and the download on the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page, never have them. The `deployment` table in the copy is unchanged, so its `lat` and `lon` stay rounded.
 
 `survey_exact_location` has one row for each place the device has been at that has a location:
 
@@ -2807,7 +2819,7 @@ The database on the device never holds an exact location. A copy made with [**Do
 | `lat`       | REAL              | Latitude in decimal degrees, to five decimal places  |
 | `lon`       | REAL              | Longitude in decimal degrees, to five decimal places |
 
-`deployment_exact` is the `deployment` table with two more columns after its own, `exact_lat` and `exact_lon`, taken from `survey_exact_location` by `survey_id`. They are empty for a row whose place has no row in the table: a place with no location, a place deleted from the Location page, and a deployment from before any place was recorded. A planned place is never in the table. The table holds what the `exact_location` attribute holds when the exact location is [shared](https://docs.trafficmonitor.ai/dev/use/sharing/index.md): a place's id and its coordinates. [Places and location](https://docs.trafficmonitor.ai/dev/use/location/#what-the-copy-adds) has an example query.
+`deployment_exact` is the `deployment` table with two more columns after its own, `exact_lat` and `exact_lon`, taken from `survey_exact_location` by `survey_id`. They are empty for a row whose place has no row in the table: a place with no location, a place deleted from the Location page, and a deployment from before any place was recorded. A planned place is never in the table. The table holds what the `exact_location` attribute holds when the exact location is [shared](https://docs.trafficmonitor.ai/dev/use/sharing/index.md): a place's id and its coordinates. [Share data](https://docs.trafficmonitor.ai/dev/use/sharing/#what-the-copy-adds) has an example query.
 
 ### Schema versions
 
@@ -2817,7 +2829,7 @@ If a migration fails, it's rolled back, and Node-RED starts on the previous vers
 
 ## Getting the data
 
-- **Download** the whole database, or a JSON export of events, radar readings, or air quality readings over a date range, from the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page.
+- **Download** the whole database from the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/#download-your-data), or from the [Data export](https://docs.trafficmonitor.ai/dev/ui/database/index.md) page, which also exports events, radar readings, or air quality readings over a date range as JSON.
 - **Open** the database with [DB Browser for SQLite](https://sqlitebrowser.org/), or from code with any SQLite library, such as Python's built-in `sqlite3`.
 - **Subscribe** to today's counts over MQTT, or **upload** everything to ThingsBoard. See [MQTT and ThingsBoard](https://docs.trafficmonitor.ai/dev/data-and-payloads/integrations/index.md).
 - **Review** snapshots and clips in Frigate's **Explore** view at `http://<device>/frigate/`.
@@ -4425,7 +4437,7 @@ Android's sign-in window fetches a download twice: its own request carries the s
 1. The browser's own request has a session, so verify checks it as usual and leaves the link unused.
 1. The helper's request has no session. verify lets it through as the administrator only when the address is exactly `/storefiles` with `files` and `tm_token` and nothing else, on an admin location, within 600 seconds, from the address the link was made for (`X-Forwarded-For`, which the `/_auth` locations set to nginx's own `$remote_addr`), and for the same `files`. The user must still be an administrator with the same sessions, and the current license agreement must be accepted. The answer carries `X-TM-User` and `X-TM-Role` only: no Frigate secret, no Node-RED token, no cookie.
 
-The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its `next=`. nginx's access log records the token; the parameter is named `tm_token` so that the diagnostics download hides its value with every other key ending in `token`. The Location page's database copy is the one link the page doesn't ask `download-link` for: `POST /api/v1/surveys/database-copy` makes it itself, in the same way, for the `files` name it also sends Node-RED the list for. The two download templates live in `flows.json` (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and `script/tests/test_node_red_flows.py` checks that they ask for the same link.
+The first request without a session that presents a token spends it, whether or not the rest matched. A login redirect leaves the token out of its `next=`. nginx's access log records the token; the parameter is named `tm_token` so that the diagnostics download hides its value with every other key ending in `token`. Two routes make a link themselves, with the same `DownloadGrants.issue`, and the Sharing page's **Download your data** card uses both: `POST /api/v1/sharing/download` for the whole database (`files=/db/tmdb.sqlite`, the name the Dashboard's download sends), and `POST /api/v1/surveys/database-copy` for the `files` name it also sends Node-RED the list for. Three routes make a download link, and only the Dashboard's asks `download-link`. The two download templates live in `flows.json` (the ui-templates "Button to trigger download request" and "redirect to storefiles URL"), and `script/tests/test_node_red_flows.py` checks that they ask for the same link.
 
 ## The home button
 
@@ -4513,7 +4525,7 @@ The Hardware group's accelerator check claims only the host side ("Ready on the 
 
 ### Node-RED's internal status
 
-Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, the errors from its last `config.yml` load, the database's schema version, each radar's port and last reading, and an `upload` section (see [The Sharing module](#the-sharing-module)). A flow on the `init-config` tab serves it. It checks the `X-TM-Internal-Token` header against `TM_INTERNAL_TOKEN` in `node-red-tm.env`, which the installer fills from the `node_red_internal_token` secret on every run, and refuses every request when that variable is unset or empty. `adapters/nodered.py` reads it, and calls the Location module's endpoints on the same port with the same token (see [The Location module](#the-location-module)). nginx answers 404 for `/nr/tm-internal/` in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: `script/tests/test_node_red_flows.py` and `tests/fixtures/nodered_status.json` pin them.
+Node-RED answers `GET /tm-internal/status` on `127.0.0.1:1880` with its uptime, the errors from its last `config.yml` load, the database's schema version, the size of `tmdb.sqlite` in bytes (`database_bytes`: a whole number from 0 up, or `null` when the file can't be read), each radar's port and last reading, and an `upload` section (see [The Sharing module](#the-sharing-module)). A flow on the `init-config` tab serves it. It checks the `X-TM-Internal-Token` header against `TM_INTERNAL_TOKEN` in `node-red-tm.env`, which the installer fills from the `node_red_internal_token` secret on every run, and refuses every request when that variable is unset or empty. `adapters/nodered.py` reads it, and calls the Location module's endpoints on the same port with the same token (see [The Location module](#the-location-module)). nginx answers 404 for `/nr/tm-internal/` in any letter case, because Node-RED matches paths whatever their case. The JSON fields are a contract between the flow and the checks: `script/tests/test_node_red_flows.py` and `tests/fixtures/nodered_status.json` pin them.
 
 ### The Detection module
 
@@ -4634,12 +4646,12 @@ The specs don't run the library, which needs WebGL: `pin-map.spec.ts` replaces `
 
 #### A database copy with the exact locations
 
-`POST /surveys/database-copy` is the one place the exact locations leave tm-control for a database file, and neither side opens the other's database to do it.
+`POST /surveys/database-copy`, which the Sharing page's card calls when its box is ticked, is the one place the exact locations leave tm-control for a database file, and neither side opens the other's database to do it.
 
 1. The route sends only the places marked in use or used that have both coordinates, so a planned place is never sent. With none, it answers 409 `no_exact_locations` and sends nothing.
 1. It makes a ticket, 32 random hex characters, and posts it with the places (`survey_id`, `lat`, `lon`) to `POST /tm-internal/database/exact-copy`. Node-RED checks the body (1 to 10,000 places, each id and finite coordinate valid, no id twice) and keeps the list in memory under the ticket for 600 seconds, the life of a download link. It never writes the list to disk or logs it. The list is on a message for one hop only: the validator hands it to "keep exact copy list" as `msg.exactCopy`, which removes it before answering, and no message that reaches a response, a Dashboard node, or a debug node carries it. Node-RED holds at most four lists, dropping expired ones first and then the one that expires soonest. Starting the flows drops every list, including one claimed for a copy that was in flight.
 1. The route asks `DownloadGrants` for a link for `files=tmdb-exact-<ticket>` and answers with it. The audit row `survey.database_copy` holds the number of places, and neither it, the log, nor an error holds a coordinate, a ticket, or a link.
-1. The page navigates to the link, so the download goes through nginx's admin check like any `/storefiles` download and works in Android's sign-in window. The ticket isn't single-use, because that window fetches the address twice and the second fetch is the one that saves, so a ticket serves every request in its ten minutes, each with a copy of its own. nginx's access log records the link, so it holds the ticket as well as the token; the diagnostics download replaces both.
+1. The Sharing page's card navigates to the link, so the download goes through nginx's admin check like any `/storefiles` download and works in Android's sign-in window. The ticket isn't single-use, because that window fetches the address twice and the second fetch is the one that saves, so a ticket serves every request in its ten minutes, each with a copy of its own. nginx's access log records the link, so it holds the ticket as well as the token; the diagnostics download replaces both.
 1. In the `ui-database` download group, "Validate filenames, setup tar" recognizes the single name `tmdb-exact-<ticket>` and takes the list at the start of the request. A large database takes minutes to copy, so a ticket that runs out meanwhile doesn't spoil a download that began. An unknown or expired ticket is a 404. The existing steps then make the `VACUUM INTO` copy, and "write exact locations into the copy" opens only that copy and writes a table `survey_exact_location` and a view `deployment_exact`, as [the data page](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#the-exact-location-in-a-database-copy) describes. It adds a place only if the copy's `deployment` table names it, refuses the file `TM_DATABASE_PATH_TMDB` names, and renames the file to `tmdb-exact-locations.sqlite` for the `tar` step. The archive is named `<hostname>_<time>_tmdb-exact-locations.tar.gz`.
 1. The function opens the copy with Node's built-in `node:sqlite`, which `settings.js` puts in `functionGlobalContext` as `sqlite` (`null` when the Node has none, so Node-RED still starts and the step refuses). A function node can't load it through its own module list: Node-RED strips the `node:` prefix and looks for a built-in named `sqlite`, and refuses the install. No statement that carries the list runs on the flows' shared database connection, and no other node uses `global.get("sqlite")`.
 1. When the rewrite fails, for example because the copy is missing, the Node has no `node:sqlite`, or the disk is full, the step throws an error whose text names the step, or is SQLite's or Node's own message (which can name the copy's path), never a coordinate. The existing "catch database copy" removes the copy and its claimed list, and answers 500, so nothing is served, and a copy without the exact locations never goes out under the exact name.
@@ -4649,20 +4661,22 @@ The specs don't run the library, which needs WebGL: `pin-map.spec.ts` replaces `
 
 ### The Sharing module
 
-The `sharing` module serves the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). Its routes sit under `/api/v1/sharing`; any signed-in user can read, and only an admin can write. A viewer's answer has no host for an operator's own server and no token state.
+The `sharing` module serves the [Sharing page](https://docs.trafficmonitor.ai/dev/use/sharing/index.md). Its routes sit under `/api/v1/sharing`; any signed-in user can read, and only an admin can write. A viewer's answer has no host for an operator's own server, no token state, and no `download`.
 
-| Route                    | What it does                                                                                                                                                                                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /sharing`           | Where the upload goes, what is recorded as chosen for that server, whether the notice in force is the one the choice was made under, whether the public map is live, whether the place in use has a location, and how the server last answered. Runs the follow step first. |
-| `PUT /sharing`           | Admins. Saves the server and the three choices: `config.yml` first (the `thingsboard:` and `sharing:` blocks), the consent rows second. A refused save records nothing.                                                                                                     |
-| `GET /sharing/notice`    | The sharing notice and its version.                                                                                                                                                                                                                                         |
-| `POST /sharing/reviewed` | Admins. Clears the review that an upload found on asks for.                                                                                                                                                                                                                 |
+| Route                    | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /sharing`           | Where the upload goes, what is recorded as chosen for that server, whether the notice in force is the one the choice was made under, whether the public map is live, whether the place in use has a location, how the server last answered, and, for an admin, `download` (`null` for a viewer): the database's size from Node-RED's status (`database_bytes`, `null` without a whole number) and `exact_places`, the places in use or used with both coordinates. Runs the follow step first. |
+| `PUT /sharing`           | Admins. Saves the server and the three choices: `config.yml` first (the `thingsboard:` and `sharing:` blocks), the consent rows second. A refused save records nothing.                                                                                                                                                                                                                                                                                                                        |
+| `POST /sharing/download` | Admins. Answers `{url}`, a one-time `/storefiles?files=/db/tmdb.sqlite&tm_token=…` link, after Node-RED's status answers (otherwise 502 `nodered_error`, "The download wasn't started.", and no link). Writes the audit row `sharing.download`, with no detail.                                                                                                                                                                                                                                |
+| `GET /sharing/notice`    | The sharing notice and its version.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `POST /sharing/reviewed` | Admins. Clears the review that an upload found on asks for.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 The rules:
 
 - `consents.py` keeps one row per change in `sharing_consents` (`state.sqlite`, migration 4). A *target* is `maintainer` or `own:<host>`; the latest row for a target and a choice is the answer. A grant records the notice version it was given under (`own-server` for an operator's own server, `pre-consent` for an upload found on). Rows are never deleted, and the order is the row id, because a unit's clock can step back. The host is part of a target key and stays in the database.
 - `follow.py` keeps `config.yml`'s `sharing:` block equal to the rows. Node-RED reads the block and never `state.sqlite`, so a hand edit of it grants nothing: with the upload off, every choice for the target is withdrawn and the review flag is cleared; with it on and no Share data recorded (a unit upgraded with the upload on), it is recorded as granted before consent existed and the review flag is set; every choice for any other server is withdrawn. A file with no block means the rounded location only: a save writes the block before its rows, so a granted exact location or public map next to no block is withdrawn (the file was replaced or the block deleted), never restored. Then the block is rewritten to what the rows say when it says something else, or written when it is missing and the upload is on, and Node-RED is told. It runs inside `reconcile.ensure` and `reconcile.for_status_report`, and at the start of `GET` and `PUT /sharing`, under `app.state.reconcile_lock`.
 - A save is judged against the store after the follow step, so a hand edit since the page was read counts. The notice's version is needed only for the maintainer's server, with the upload on, when the save turns Share data on or grants a choice that isn't granted yet; while Share data is already granted under the current notice, a save can add a choice without it. Withdrawing never needs it, and the exact location needs `https`. The public map is refused for an own server and until the manifest says it is live.
+- `download.py` holds the Download your data card's facts and its link. The size comes from Node-RED's status and nowhere else, because the control app never opens `tmdb.sqlite`; an older Node-RED that leaves `database_bytes` out, or a value that isn't a whole number from 0 up, reads as no size, not an error. The count reads the places store as it is, without the reconcile `GET /surveys` runs. The card starts the database copy in the UI: unticked, it posts `POST /sharing/download`; ticked, `POST /surveys/database-copy` (see [A database copy with the exact locations](#a-database-copy-with-the-exact-locations)); and the page opens the answered link with `openDownload`. Neither route's link, token, or ticket goes to a log, an audit row, or an error message.
 - `server.py` turns the `upload` section of Node-RED's `/tm-internal/status` (`enabled`, `last_ok_at`, `last_failure_at`, `last_failure`) into the page's state: off, waiting, ok, stale (no accepted upload for 900 seconds), or the last failure's kind (`unreachable`, `refused`, `rejected`, `server_error`) while it is newer than the last accepted upload; unknown without the section. tm-control never contacts the server: Node-RED's "record upload result" node on the `thingsboard` tab keeps the last answer from the status code, and never the URL, which holds the token.
 - The Status page's `config.sharing` check (Configuration group) and `apps.sharing_server` check (Apps group) read the same things. The first warns for a review that is needed, for a notice nobody has read or that has changed, and for a `sharing:` value the device ignores; the second words the server's state. Neither shows the host, a notice version, or a note.
 - The host, the token, coordinates, and notes are never logged, audited, or put in an error message. A `sharing.update` audit row lists the names of the fields that changed, such as `enabled,exact_location`. `tm-control migrate --node-red-config` changes the old placeholder host `tb.server.com` to the maintainer's while the upload is off.
