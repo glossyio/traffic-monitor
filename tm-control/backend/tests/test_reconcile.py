@@ -65,6 +65,9 @@ class StubNodeRed:
             raise self.correction_error
         self.corrections.append((survey_id, lat, lon))
 
+    def set_timezone(self, survey_id, zone):
+        self._call("set_timezone", survey_id, zone)
+
     def after_config_write(self):
         self.config_writes += 1
 
@@ -969,3 +972,336 @@ def test_a_status_report_runs_the_sharing_follow_and_logs_its_error_by_class_nam
     assert Places(unit.state).in_use() is not None  # the places part ran first
     assert "RuntimeError" in caplog.text and "synthetic-follow-detail" not in caplog.text
     assert unit.reconcile_lock.acquire(blocking=False)  # released
+
+
+# The place's time zone: the store is the source, and the file follows it on every run
+
+NEW_YORK, BERLIN = "America/New_York", "Europe/Berlin"
+
+
+def with_zone(unit, zone=NEW_YORK):
+    """The first run done, and the place in use given a zone in the store. Returns the place."""
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    Places(unit.state).set_timezone(place.id, zone)
+    return place
+
+
+def backups(unit):
+    return sorted(path.name for path in unit.config_path.parent.iterdir() if path.name != unit.config_path.name)
+
+
+def test_a_reset_file_gets_the_zone_back_in_the_same_save(unit):
+    unit.nodered = FakeNodeRed(unit.config_path)
+    place = with_zone(unit)
+    assert reconcile.ensure(unit).followed == "restored"  # the zone alone is put in the file
+    unit.nodered.report()
+    before = {(row["sensorName"], row["id"]) for row in unit.nodered.rows if row["entryEndDateTime"] is None}
+    assert before and file_deployment(unit)["timezone"] == NEW_YORK
+    made = len(backups(unit))
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    edit(unit, f"    timezone: {NEW_YORK}\n", "")
+    unit.nodered.report()  # the engine sees the reset file: no survey, no zone, nothing starts
+    assert reconcile.ensure(unit).followed == "restored"
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["timezone"]) == (place.id, NEW_YORK)
+    assert len(backups(unit)) == made + 1  # one save for the id and the zone
+    unit.nodered.report()
+    assert all(row["timezone"] == NEW_YORK for row in unit.nodered.rows if row["entryEndDateTime"] is None)
+    assert {(row["sensorName"], row["id"]) for row in unit.nodered.rows} == before  # no deployment started or ended
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_hand_edited_zone_is_put_back(unit):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    unit.nodered.calls.clear()
+    made = len(backups(unit))
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] == NEW_YORK
+    assert len(backups(unit)) == made + 1  # one save
+    after = Places(unit.state).get(place.id)
+    assert after.timezone == NEW_YORK and Places(unit.state).in_use().id == place.id
+    assert corrections(unit) == []
+    assert unit.nodered.calls == [("set_timezone", place.id, NEW_YORK)]  # the rows are corrected too
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_file_without_the_key_is_left_alone_when_the_place_has_no_zone(unit):
+    reconcile.ensure(unit)
+    before = unit.config_path.read_text()
+    files = backups(unit)
+    assert "timezone" not in before
+    assert reconcile.ensure(unit).followed == "none"
+    assert unit.config_path.read_text() == before and backups(unit) == files
+
+
+def test_a_zone_in_the_file_of_a_place_with_none_is_blanked(unit):
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, "    heading_deg: 0\n", f"    heading_deg: 0\n    timezone: {BERLIN}\n")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] is None
+    assert Places(unit.state).get(place.id).timezone is None
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_hand_deploy_writes_the_places_zone(unit):
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", "Planned", 45.52252, -122.6912, [], "created", "planned", unit.admin, timezone=BERLIN)
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    outcome = reconcile.ensure(unit)
+    assert (outcome.state, outcome.followed) == ("done", "none")
+    assert places.in_use().id == "3f9a1c2e-si"
+    deployment = file_deployment(unit)
+    assert (deployment["survey_id"], deployment["lat"], deployment["timezone"]) == ("3f9a1c2e-si", 45.52252, BERLIN)
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_hand_deploy_of_a_place_with_no_zone_blanks_the_files(unit):
+    with_zone(unit)
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", "Planned", 45.52252, -122.6912, [], "created", "planned", unit.admin)
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    reconcile.ensure(unit)
+    assert places.in_use().id == "3f9a1c2e-si"
+    assert file_deployment(unit)["timezone"] is None and places.get(first).timezone == NEW_YORK
+
+
+def test_the_file_never_gives_a_place_its_zone(unit):
+    reconcile.ensure(unit)
+    previous = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {previous.id}", f"survey_id: 3f9a1c2e-si\n    timezone: {BERLIN}")
+    outcome = reconcile.ensure(unit)
+    assert outcome.followed == "unknown_id"
+    current = Places(unit.state).in_use()
+    assert (current.id, current.timezone) == ("3f9a1c2e-si", None)
+    assert file_deployment(unit)["timezone"] is None  # the file follows the store
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_a_first_run_place_from_the_file_has_no_zone(unit):
+    edit(unit, "    heading_deg: 0\n", f"    heading_deg: 0\n    timezone: {BERLIN}\n")
+    reconcile.ensure(unit)
+    assert Places(unit.state).in_use().timezone is None
+    assert file_deployment(unit)["timezone"] is None
+
+
+def test_the_zone_rides_with_a_point_correction(unit):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    made = len(backups(unit))
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    assert reconcile.ensure(unit).followed == "coordinates"  # the zone is put back in the same save
+    assert file_deployment(unit)["timezone"] == NEW_YORK
+    assert len(backups(unit)) == made + 1
+    assert Places(unit.state).get(place.id).timezone == NEW_YORK
+
+
+# A file edited by hand only in its formatting is not rewritten: nothing here is a zone
+
+FORMAT_EDITS = {
+    "trailing-space": lambda text: text.replace("enabled: true\n", "enabled: true \n", 1),
+    "two-spaces-after-colon": lambda text: text.replace("enabled: true\n", "enabled:  true\n", 1),
+    "appended-block": lambda text: text + "notes:\n  a: 1\n  b: 2\n",
+}
+
+
+@pytest.mark.parametrize("name", FORMAT_EDITS)
+def test_a_format_only_edit_with_no_zone_is_left_as_typed(unit, name):
+    reconcile.ensure(unit)
+    assert "timezone" not in unit.config_path.read_text() and Places(unit.state).in_use().timezone is None
+    unit.config_path.write_text(FORMAT_EDITS[name](unit.config_path.read_text()))
+    typed, files = unit.config_path.read_bytes(), backups(unit)
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "none"
+    assert unit.config_path.read_bytes() == typed and backups(unit) == files
+    assert unit.nodered.named("set_timezone") == []
+    assert reconcile.ensure(unit).followed == "none" and unit.config_path.read_bytes() == typed
+
+
+@pytest.mark.parametrize("name", FORMAT_EDITS)
+def test_a_format_only_edit_with_a_matching_zone_is_left_as_typed(unit, name):
+    with_zone(unit)
+    assert reconcile.ensure(unit).followed == "restored"  # the zone is put in the file
+    assert file_deployment(unit)["timezone"] == NEW_YORK
+    unit.config_path.write_text(FORMAT_EDITS[name](unit.config_path.read_text()))
+    typed, files = unit.config_path.read_bytes(), backups(unit)
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "none"
+    assert unit.config_path.read_bytes() == typed and backups(unit) == files
+    assert unit.nodered.named("set_timezone") == []
+
+
+@pytest.mark.parametrize("name", FORMAT_EDITS)
+def test_a_format_edit_beside_a_wrong_zone_is_saved_once_with_the_zone_put_back(unit, name):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    unit.config_path.write_text(FORMAT_EDITS[name](unit.config_path.read_text()))
+    made = len(backups(unit))
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] == NEW_YORK and len(backups(unit)) == made + 1
+    assert unit.nodered.named("set_timezone") == [("set_timezone", place.id, NEW_YORK)]
+    assert reconcile.ensure(unit).followed == "none" and len(backups(unit)) == made + 1
+
+
+def test_a_reset_file_of_a_place_with_no_zone_is_saved_with_no_zone_call(unit):
+    reconcile.ensure(unit)
+    place = Places(unit.state).in_use()
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    made = len(backups(unit))
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["survey_id"] == place.id and len(backups(unit)) == made + 1
+    assert unit.nodered.named("set_timezone") == []
+
+
+# When the file's zone is put back, Node-RED corrects the place's rows too (best effort)
+
+
+def fake_unit(unit):
+    """A unit over the fake Node-RED, the place in use given a zone, the zone in the file and its rows. Returns the
+    place and the fake's open row ids."""
+    unit.nodered = FakeNodeRed(unit.config_path)
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    unit.nodered.report()
+    return place
+
+
+def end_a_row(fake, zone, **changes):
+    """An ended row of the fake's first open one (the engine corrects open rows itself; the endpoint is what reaches
+    the ended ones), with a stale zone."""
+    row = dict(next(row for row in fake.rows if row["entryEndDateTime"] is None), **changes)
+    row.update(entryEndDateTime=1_700_000_000, timezone=zone)
+    fake.rows.append(row)
+    return row
+
+
+def test_a_hand_edited_zone_also_corrects_the_places_ended_rows(unit):
+    place = fake_unit(unit)
+    fake = unit.nodered
+    ended = end_a_row(fake, BERLIN, id="ended-1")
+    other = end_a_row(fake, "Asia/Tokyo", id="other-1", survey_id="0000000b-si")
+    before = sorted(row["id"] for row in fake.rows)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] == NEW_YORK
+    assert ended["survey_id"] == place.id and ended["timezone"] == NEW_YORK
+    assert other["timezone"] == "Asia/Tokyo"  # another place's row is left alone
+    assert sorted(row["id"] for row in fake.rows) == before  # no deployment started or ended
+    assert all(row["timezone"] == NEW_YORK for row in fake.rows if row["survey_id"] == place.id)
+
+
+def test_a_reset_file_also_corrects_the_places_ended_rows(unit):
+    place = fake_unit(unit)
+    ended = end_a_row(unit.nodered, BERLIN, id="ended-1")
+    edit(unit, f"survey_id: {place.id}", "survey_id:")
+    edit(unit, f"    timezone: {NEW_YORK}\n", "")
+    assert reconcile.ensure(unit).followed == "restored"
+    assert ended["timezone"] == NEW_YORK
+
+
+def test_a_hand_deploy_also_corrects_the_new_places_rows(unit):
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", "Planned", 45.52252, -122.6912, [], "created", "planned", unit.admin, timezone=BERLIN)
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "none"
+    assert unit.nodered.named("set_timezone") == [("set_timezone", "3f9a1c2e-si", BERLIN)]
+
+
+def test_a_hand_deploy_of_a_place_with_no_zone_sends_none(unit):
+    with_zone(unit)
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", "Planned", 45.52252, -122.6912, [], "created", "planned", unit.admin)
+    edit(unit, f"survey_id: {first}", "survey_id: 3f9a1c2e-si")
+    unit.nodered.calls.clear()
+    reconcile.ensure(unit)
+    assert unit.nodered.named("set_timezone") == [("set_timezone", "3f9a1c2e-si", None)]
+
+
+def test_a_hand_deploy_of_a_place_whose_zone_the_file_holds_makes_no_zone_call(unit):
+    reconcile.ensure(unit)
+    places = Places(unit.state)
+    first = places.in_use().id
+    places.create("3f9a1c2e-si", "Planned", 45.52252, -122.6912, [], "created", "planned", unit.admin, timezone=BERLIN)
+    edit(unit, f"survey_id: {first}", f"survey_id: 3f9a1c2e-si\n    timezone: {BERLIN}")
+    unit.nodered.calls.clear()
+    reconcile.ensure(unit)
+    assert unit.nodered.named("set_timezone") == []
+
+
+def test_a_zone_put_back_with_a_point_correction_also_corrects_the_rows(unit):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "coordinates"
+    assert unit.nodered.named("set_timezone") == [("set_timezone", place.id, NEW_YORK)]
+    assert [call[0] for call in unit.nodered.calls].index("set_timezone") \
+        < [call[0] for call in unit.nodered.calls].index("correct_location")
+
+
+def test_a_zone_put_back_with_the_places_point_also_corrects_the_rows(unit):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    edit(unit, FIXTURE_POINT, "lat:\n    lon:\n")
+    Places(unit.state).set_point(place.id, 45.0, -122.0)
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] == NEW_YORK and file_deployment(unit)["lat"] == 45.0
+    assert unit.nodered.named("set_timezone") == [("set_timezone", place.id, NEW_YORK)]
+
+
+def test_a_point_correction_with_the_zone_in_the_file_makes_no_zone_call(unit):
+    with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, FIXTURE_POINT, "lat: 45.52252\n    lon: -122.6912\n")
+    unit.nodered.calls.clear()
+    assert reconcile.ensure(unit).followed == "coordinates"
+    assert unit.nodered.named("set_timezone") == []
+
+
+def test_the_zone_is_put_back_when_node_red_is_down(unit, caplog):
+    place = with_zone(unit)
+    reconcile.ensure(unit)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+    unit.nodered.calls.clear()
+    unit.nodered.down = True
+    with caplog.at_level(logging.WARNING, logger=reconcile.__name__):
+        assert reconcile.ensure(unit).followed == "restored"  # the answer is the same as with Node-RED up
+    assert file_deployment(unit)["timezone"] == NEW_YORK
+    assert unit.nodered.named("set_timezone") == [("set_timezone", place.id, NEW_YORK)]
+    assert "NodeRedError" in caplog.text
+    assert NEW_YORK not in caplog.text and BERLIN not in caplog.text and place.id not in caplog.text
+    unit.nodered.down = False
+    assert reconcile.ensure(unit).followed == "none"
+
+
+def test_the_zone_is_put_back_when_the_fake_is_down(unit, caplog, monkeypatch):
+    place = fake_unit(unit)
+    edit(unit, f"timezone: {NEW_YORK}", f"timezone: {BERLIN}")
+
+    def refuse(survey_id, zone):
+        raise NodeRedError("unreachable")
+
+    monkeypatch.setattr(unit.nodered, "set_timezone", refuse)
+    with caplog.at_level(logging.WARNING, logger=reconcile.__name__):
+        assert reconcile.ensure(unit).followed == "restored"
+    assert file_deployment(unit)["timezone"] == NEW_YORK and Places(unit.state).in_use().id == place.id
+    assert "NodeRedError" in caplog.text and NEW_YORK not in caplog.text and BERLIN not in caplog.text

@@ -25,6 +25,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
     headings: [],
+    timezone: null,
     stored_lat: null,
     stored_lon: null,
     first_used: null,
@@ -84,6 +85,7 @@ const PLACES: PlacesState = {
   reconcile: 'done',
   nodered: true,
   map: { style_url: 'https://tiles.example.invalid/style' },
+  clock_timezone: null,
 }
 
 // A deployment of the used place, as GET /surveys/{id}/deployments lists it
@@ -680,7 +682,7 @@ describe('the Location page', () => {
     expect(dialogText()).toContain('Counts from now on attach to the new deployment.')
   })
 
-  it('offers Modify deployment on the place in use, to record a turn of the unit', async () => {
+  it('offers Mounting on the place in use, which opens the Mounting page', async () => {
     signedIn(ADMIN, {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
@@ -688,12 +690,79 @@ describe('the Location page', () => {
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'Front of the school')
-    expect(wrapper.findAll('button').some((b) => b.text().trim() === 'Deploy here')).toBe(false)
-    await click(wrapper, 'Modify deployment')
-    expect(dialogText()).toContain('Unchanged')
-    expect(document.querySelector('.v-overlay-container .v-dialog')?.getAttribute('aria-label')).toBe(
-      'Modify deployment',
-    )
+    const buttons = wrapper
+      .findAll('.v-expansion-panel-text a, .v-expansion-panel-text button')
+      .map((b) => b.text().trim())
+    expect(buttons).not.toContain('Deploy here')
+    expect(buttons).not.toContain('Modify deployment')
+    const mounting = wrapper.findAll('.v-expansion-panel-text a').filter((a) => a.text().trim() === 'Mounting')
+    expect(mounting.map((a) => a.attributes('href'))).toEqual(['/location/mounting'])
+  })
+
+  it('offers Correct heading on a running deployment whose sensor the Mounting page does not list', async () => {
+    const running = (id: string, type: string, name: string) => ({
+      ...DEPLOYMENT,
+      id,
+      ended: null,
+      sensor_type: type,
+      sensor_name: name,
+    })
+    const camera = { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0, previous: null }
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/a1b2c3d4-si/mounting': { sensors: [camera], mounts: [], nodered: true },
+      'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
+      'GET /api/v1/surveys/a1b2c3d4-si/deployments': {
+        deployments: [running('cam', 'cameras', 'picam_h265'), running('radar', 'radars', 'TM_RADAR_SERIAL_PORT_00')],
+      },
+    })
+    const { wrapper } = await mountApp('/location')
+    await expand(wrapper, 'Front of the school')
+    const actions = (id: string) =>
+      wrapper
+        .find(`[data-deployment="${id}"]`)
+        .findAll('a, button')
+        .map((b) => b.text().trim())
+    expect(actions('cam')).toEqual(['Mounting'])
+    expect(actions('radar')).toEqual(['Correct heading'])
+  })
+
+  it('keeps the warning about last time until the newest answer about the mounting says otherwise', async () => {
+    const WAITING = 'This place has mounting values from the last time the unit was here.'
+    const previous = { pitch_deg: 15, height_m: 3.66, view_distance_m: 13.66, measured: 'pitch', mount: 'pole' }
+    const mountingWith = (last: object | null) => ({
+      sensors: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 0, previous: last }],
+      mounts: [],
+      nodered: true,
+    })
+    const held: ((response: Response) => void)[] = []
+    let gets = 0
+    signedIn(ADMIN, {
+      [SURVEYS]: PLACES,
+      'GET /api/v1/surveys/a1b2c3d4-si/mounting': () => {
+        gets += 1
+        if (gets === 1) return json(200, mountingWith(previous))
+        return new Promise<Response>((resolve) => held.push(resolve))
+      },
+      'PUT /api/v1/surveys/precision': apiError(409, 'config_changed', 'config.yml changed since it was read.'),
+    })
+    const { wrapper } = await mountApp('/location')
+    expect(wrapper.text()).toContain(WAITING)
+
+    // Two loads of the page, each refused save of the precision loading it again; the first answers last
+    await expand(wrapper, 'Change the precision')
+    for (const load of [2, 3]) {
+      await field(wrapper, 'No location stored').setValue(true)
+      await click(wrapper, 'Save')
+      expect(gets).toBe(load)
+      expect(wrapper.text()).toContain(WAITING) // kept until the new answer arrives
+    }
+    held[1](json(200, mountingWith(null)))
+    await flushPromises()
+    expect(wrapper.text()).not.toContain(WAITING)
+    held[0](json(200, mountingWith(previous)))
+    await flushPromises()
+    expect(wrapper.text()).not.toContain(WAITING) // an older answer, arriving late, is dropped
   })
 
   it('offers Deploy here on a planned place', async () => {
@@ -757,7 +826,12 @@ describe('the Location page', () => {
       [SURVEYS]: PLACES,
       'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
       'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
-      'POST /api/v1/surveys/c0ffee01-si/deploy': { deployed_at: 1762000000000, reloaded: false, deployments: [] },
+      'POST /api/v1/surveys/c0ffee01-si/deploy': {
+        deployed_at: 1762000000000,
+        reloaded: false,
+        deployments: [],
+        previous: [],
+      },
     })
     const { wrapper } = await mountApp('/location')
     await expand(wrapper, 'No description')

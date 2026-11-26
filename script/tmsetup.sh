@@ -58,7 +58,7 @@ printf "  %-20s%s\n" \
   "-v" "Verbose ansible-playbook output. Call multiple times for increased verbosity" \
   "-w CODE" "Set the Wi-Fi COUNTRY, a two-letter code (asked for when the device has none; default US)" \
   "-y" "Assume YES to all prompts including reboot" \
-  "-z TIMEZONE" "Set TIMEZONE (default America/Los_Angeles)" \
+  "-z TIMEZONE" "Set the device's time zone (left as it is unless given)" \
   "-C BOOL1[,BOOL2]" "Set custom boolean variables (comma‑separated) prefixed with tmsetup_bool_"
 # "-R" "REMOVE Traffic Monitor software" # Future addition
 }

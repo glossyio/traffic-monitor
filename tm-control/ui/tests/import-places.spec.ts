@@ -32,8 +32,9 @@ const ROWS: ImportRow[] = [
     lat: 45.0,
     lon: -122.0,
     headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 }],
+    timezone: null,
   },
-  { line: 3, description: 'Bus stop on the hill', lat: null, lon: null, headings: [] },
+  { line: 3, description: 'Bus stop on the hill', lat: null, lon: null, headings: [], timezone: null },
 ]
 
 const HEADING_ERROR =

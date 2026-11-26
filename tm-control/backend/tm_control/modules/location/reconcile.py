@@ -343,7 +343,10 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             # A deploy by hand, as the page's would be: the file takes that place's point (blank when it has none);
             # neither place's point changes. The file first, as in _put_in_use.
             config.set_place(named.id, named.lat, named.lon)
+            zone_changed = config.set_timezone(named.timezone)  # and its zone, in the same save
             config.save()
+            if zone_changed:
+                _re_zone(app_state, named.id, named.timezone)
             places.set_in_use(named.id)
             _store_missing_headings(places, config, named.id)
             # Node-RED's watch fired on the hand edit and started the new deployments at the coordinates the file
@@ -380,20 +383,27 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             if stored.get((sensor_type, name)) is not None:  # 0 is a heading, north
                 config.set_sensor_heading(sensor_type, name, stored[(sensor_type, name)])
         _restore_mountings(config, places.mountings(current.id), places.unconfirmed(current.id))
+    # The file follows the store for the zone too (nothing ever reads a place's zone from the file): the place in use's
+    # zone goes in with whatever else this run restores, and set_timezone says whether it changed the file's value. A
+    # run that restores nothing and changed no zone writes nothing, so a format-only hand edit stays as typed. When the
+    # zone did change, the place's rows are corrected too, after the save (_re_zone).
+    zone_changed = config.set_timezone(current.timezone)
     if deployment.coordinates_invalid:
         # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
-        return _saved(config, restoring) or followed
+        return _saved(app_state, config, current, restoring, zone_changed, followed)
     old, new = _point(current.lat, current.lon), _file_point(deployment)
     if old == new:
-        return _saved(config, restoring) or followed
+        return _saved(app_state, config, current, restoring, zone_changed, followed)
     if new == (None, None) or (restoring and old != (None, None)):
         # Here the place has a point (old != new). It can't be corrected to no location (decision 9), and a reset
         # file's point is the installer's: the file gets the place's point back, so it and the engine agree with the
         # store. Changing only lat and lon starts no new deployment, and the open rows hold the place's point.
         config.set_place(current.id, old[0], old[1])
         config.save()
+        if zone_changed:
+            _re_zone(app_state, current.id, current.timezone)
         return "restored"
-    _saved(config, restoring)  # the file first, as in _put_in_use
+    _saved(app_state, config, current, restoring, zone_changed)  # the file first, as in _put_in_use
     places.set_point(current.id, new[0], new[1])
     places.record_correction(current.id, None, "location", point_text(*old), point_text(*new), None, "config", None)
     _re_round(app_state, current.id, new[0], new[1])
@@ -429,12 +439,20 @@ def _keep_precision(places: Places, deployment: Deployment) -> None:
         places.keep_precision(deployment.precision)
 
 
-def _saved(config: NodeRedConfig, restoring: bool) -> str | None:
-    """Save the restored id and headings: "restored", or None when there was nothing to restore."""
-    if not restoring:
-        return None
+def _saved(app_state, config: NodeRedConfig, place: Survey, restoring: bool, zone_changed: bool,
+           followed: str = "none") -> str:
+    """Save what this run put back: the id and headings of a reset file (`restoring`) or the place's zone
+    (`zone_changed`, set_timezone's answer). With neither, the file is left as it is and `followed` comes back, so an
+    edit that is only formatting is never rewritten. After a save that changed the zone, the place's rows are corrected
+    (_re_zone). Answers "restored" for a reset file, or when the zone was the only thing followed; else `followed`."""
+    if not (restoring or zone_changed):
+        return followed
     config.save()
-    return "restored"
+    if zone_changed:
+        _re_zone(app_state, place.id, place.timezone)
+    if restoring or followed == "none":
+        return "restored"
+    return followed
 
 
 def _re_round(app_state, survey_id: str, lat: float, lon: float) -> None:
@@ -443,3 +461,13 @@ def _re_round(app_state, survey_id: str, lat: float, lon: float) -> None:
         app_state.nodered.correct_location(survey_id, lat, lon)
     except NodeRedError as error:
         log.warning("re-rounding the place's rows in Node-RED failed: %s", type(error).__name__)
+
+
+def _re_zone(app_state, survey_id: str, zone: str | None) -> None:
+    """After the file got the place's zone back (or its blank), Node-RED sets it on the place's rows, ended ones too
+    (its engine corrects only the open ones); best effort, as _re_round is. A zone of None clears it. The log line
+    holds the error's class and nothing about the zone."""
+    try:
+        app_state.nodered.set_timezone(survey_id, zone)
+    except NodeRedError as error:
+        log.warning("correcting the place's rows' time zone in Node-RED failed: %s", type(error).__name__)

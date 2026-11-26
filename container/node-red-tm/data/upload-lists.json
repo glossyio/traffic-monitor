@@ -69,7 +69,8 @@
         "pitch_deg",
         "height_m",
         "view_distance_m",
-        "mount"
+        "mount",
+        "timezone"
     ],
     "watch_camera": [
         "time",

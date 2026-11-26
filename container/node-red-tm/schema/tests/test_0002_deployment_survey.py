@@ -24,7 +24,9 @@ def test_0002_adds_columns_index_and_version(db_path):
     v1_db(db_path)
     assert migrate("--db", db_path) == 0
     assert user_version(db_path) == LATEST_VERSION
-    assert columns(db_path, "deployment")[-7:-4] == ["survey_id", "location_precision", "heading_deg"]
+    names = columns(db_path, "deployment")
+    start = names.index("survey_id")
+    assert names[start:start + 3] == ["survey_id", "location_precision", "heading_deg"]
     assert query(db_path, "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'index_events_deployment_id'")
 
 def test_0002_assigns_one_survey_id_per_exact_place_before_rounding(db_path):

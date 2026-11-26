@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version() == 7
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 8
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -258,7 +258,7 @@ def test_migration_seven_leaves_every_row_confirmed(tmp_path, monkeypatch):
     con.close()
 
     monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
-    assert state.migrate() == 7
+    assert state.migrate() == 8
     con = state.connect()
     columns = [row["name"] for row in con.execute("PRAGMA table_info(survey_sensors)")]
     assert columns[-1] == "unconfirmed"
@@ -266,3 +266,26 @@ def test_migration_seven_leaves_every_row_confirmed(tmp_path, monkeypatch):
     assert (row["heading_deg"], row["height_m"], row["mount"], row["unconfirmed"]) == (40, 3.66, "pole", 0)
     with pytest.raises(sqlite3.IntegrityError), con:
         con.execute("UPDATE survey_sensors SET unconfirmed = 2")
+
+
+def test_migration_8_adds_the_zone_and_keeps_every_place(tmp_path, monkeypatch):
+    """A place from before keeps every column and has no time zone."""
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:7])
+    state = _migrated(tmp_path)
+    con = state.connect()
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, description, lat, lon, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'a note', 45.0, -122.0, 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+    con.close()
+
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
+    assert state.migrate() == 8
+    con = state.connect()
+    assert [row["name"] for row in con.execute("PRAGMA table_info(surveys)")][-1] == "timezone"
+    row = con.execute("SELECT * FROM surveys").fetchone()
+    assert (row["id"], row["description"], row["lat"], row["lon"], row["status"]) == (
+        "0123abcd-si", "a note", 45.0, -122.0, "used")
+    assert row["timezone"] is None

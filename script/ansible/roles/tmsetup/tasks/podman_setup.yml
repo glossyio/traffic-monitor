@@ -3,9 +3,7 @@
 - name: TMSetup - Podman Setup - Install Podman packages
   become: true
   ansible.builtin.apt:
-    name:
-      - podman-docker
-      - podman-compose
+    name: "{{ tmsetup_podman_packages }}"
     state: present
   notify: Restart traffic-monitor.service
 

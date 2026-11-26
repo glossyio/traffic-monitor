@@ -1143,7 +1143,7 @@
           "location"
         ],
         "summary": "Import Places",
-        "description": "Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless\ndry_run, create them all, or none when any line is refused (422 with the problems in detail).",
+        "description": "Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading, and a\n`timezone` column anywhere after lon) and, unless dry_run, create them all, or none when any line is refused (422\nwith the problems in detail).",
         "operationId": "import_places_api_v1_surveys_import_post",
         "requestBody": {
           "content": {
@@ -1185,7 +1185,7 @@
           "location"
         ],
         "summary": "Edit Place",
-        "description": "Edit a planned place (409 not_planned for one in use or used: correct those instead).",
+        "description": "Edit a planned place (409 not_planned for one in use or used: correct those instead). The body replaces the\nplace's description, point, and headings; a body without `timezone` keeps its zone (null or blank clears it).",
         "operationId": "edit_place_api_v1_surveys__survey_id__patch",
         "parameters": [
           {
@@ -1272,7 +1272,7 @@
           "location"
         ],
         "summary": "Deploy Place",
-        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to\nanother place also removes each sensor's other four from the file, at a place used before as at a new one: the\nstore keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a\nmounting save.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see\n_reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.",
+        "description": "Put the place in use: its id, point, zone (blank for none), and each enabled sensor's heading into config.yml (a\nsensor the body leaves out takes the place's stored heading, else the file's), then wait for Node-RED to start the\ndeployments. Moving to another place also removes each sensor's other four from the file, at a place used before\nas at a new one: the store keeps the values last saved there, and `previous` names the sensors whose values wait to\nbe confirmed by a mounting save.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see\n_reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.",
         "operationId": "deploy_place_api_v1_surveys__survey_id__deploy_post",
         "parameters": [
           {
@@ -1430,6 +1430,59 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LocationCorrection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/surveys/{survey_id}/timezone": {
+      "put": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Set Place Timezone",
+        "description": "Set or clear (null) a place's time zone, whatever its status: config.yml for the place in use, the store (with\nan audit row naming the old and new zone, when it changed), and every one of Node-RED's rows of a place that has\nbeen used, ended ones too. A change starts no deployment. A 502 means the store and the file changed and the rows\ndidn't; saving the same zone again rewrites them. The reconcile runs first (see _reconciled), and for the place in\nuse a file that no longer names it by the time the lock is held is refused (409 config_changed).",
+        "operationId": "set_place_timezone_api_v1_surveys__survey_id__timezone_put",
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Survey Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimezoneIn"
               }
             }
           }
@@ -4195,6 +4248,17 @@
             },
             "type": "array",
             "title": "Headings"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "type": "object",
@@ -4203,7 +4267,8 @@
           "description",
           "lat",
           "lon",
-          "headings"
+          "headings",
+          "timezone"
         ],
         "title": "ImportRow"
       },
@@ -5326,6 +5391,17 @@
           },
           "map": {
             "$ref": "#/components/schemas/MapSources"
+          },
+          "clock_timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Timezone"
           }
         },
         "type": "object",
@@ -5338,7 +5414,8 @@
           "unassigned",
           "reconcile",
           "nodered",
-          "map"
+          "map",
+          "clock_timezone"
         ],
         "title": "PlacesState"
       },
@@ -6520,6 +6597,18 @@
             "type": "array",
             "maxItems": 32,
             "title": "Headings"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           }
         },
         "type": "object",
@@ -6586,6 +6675,17 @@
             },
             "type": "array",
             "title": "Headings"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
           },
           "stored_lat": {
             "anyOf": [
@@ -6655,6 +6755,7 @@
           "created_at",
           "updated_at",
           "headings",
+          "timezone",
           "stored_lat",
           "stored_lon",
           "first_used",
@@ -6977,6 +7078,27 @@
         ],
         "title": "TimeState"
       },
+      "TimezoneIn": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timezone"
+        ],
+        "title": "TimezoneIn"
+      },
       "TmInstall": {
         "properties": {
           "version": {
@@ -6990,6 +7112,10 @@
           "branch": {
             "type": "string",
             "title": "Branch"
+          },
+          "modified": {
+            "type": "boolean",
+            "title": "Modified"
           },
           "installing_user": {
             "anyOf": [
@@ -7008,6 +7134,7 @@
           "version",
           "commit",
           "branch",
+          "modified",
           "installing_user"
         ],
         "title": "TmInstall"

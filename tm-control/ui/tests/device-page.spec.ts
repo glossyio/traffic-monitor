@@ -76,6 +76,25 @@ describe('the Device page', () => {
     }
   })
 
+  it.each([
+    ['dev', '2da617a (dev, modified)'],
+    ['HEAD', '2da617a (modified)'],
+    ['unknown', '2da617a (modified)'],
+  ])('says a modified install is modified, on branch %s', async (branch, shown) => {
+    const tm = { ...SYSTEM_INFO.tm, branch, modified: true }
+    signedIn(VIEWER, { [INFO]: { ...SYSTEM_INFO, tm } })
+    const text = (await mountApp('/device')).wrapper.text()
+    expect(text).toContain(shown)
+    expect(text).not.toContain(' on dev')
+  })
+
+  it('keeps the commit as it was when the install was not modified', async () => {
+    signedIn(VIEWER, { [INFO]: SYSTEM_INFO })
+    const text = (await mountApp('/device')).wrapper.text()
+    expect(text).toContain('2da617a on dev')
+    expect(text).not.toContain('modified')
+  })
+
   it('shows a viewer no Diagnostics or Power section', async () => {
     signedIn(VIEWER, { [INFO]: SYSTEM_INFO })
     const { wrapper } = await mountApp('/device')
