@@ -189,6 +189,8 @@ The names you typed for zones in Frigate's editor and the place's description ar
 
 A zone's ID is saved with every event that enters it: in the database, in the exports, and in what the device uploads. Frigate makes the ID from the name you type in its zone editor, in lower case with `_` for spaces, so `1420 Oak St` is saved as `1420_oak_st`. Name zones for what they are, such as a compass direction (`zone_north`) or a lane (`zone_lane_bus`), not for a street, a house number, or a person.
 
+With **Share data** on, the IDs of the zones that are on, on a camera whose events are recorded, are also sent with the [setup history](../data-and-payloads/setup-history.md#what-the-device-uploads), whether or not anything has entered them.
+
 A name with other punctuation, or with letters outside a to z, gets an ID that Frigate makes up, such as `zone_a9bacc03`. The page shows your name beside that ID and doesn't check it, because the ID says nothing about the place.
 
 The page checks the IDs of each camera's other zones that are on:
