@@ -770,11 +770,16 @@
             "50c56047654010ea",
             "8c434de19f88fefc",
             "7eb7b4b61d38b789",
-            "3e9d121913d7feae"
+            "3e9d121913d7feae",
+            "3b7d2f9c1e5a4086",
+            "c84e1a6d07b2f395",
+            "9f1c6e3a2d8b7045",
+            "e2a7d5b04c9f3816",
+            "5d09b8e3f17a26c4"
         ],
         "x": 94,
         "y": 459,
-        "w": 1242,
+        "w": 1906,
         "h": 202
     },
     {
@@ -3166,7 +3171,7 @@
         "z": "3dae026ab340962a",
         "g": "d9d94c0d493873b9",
         "name": "tm-internal: build status",
-        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst upload = status.upload || {};\nconst thingsboard = (global.get(\"config\") || {}).thingsboard || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n    // enabled after init config defaults (off without a host or a token); the rest since the last config load\n    upload: {\n        enabled: thingsboard.enabled === true,\n        last_ok_at: upload.last_ok_at || null,\n        last_failure_at: upload.last_failure_at || null,\n        last_failure: upload.last_failure || null,\n    },\n    setup: status.setup || null,\n};\nreturn msg;",
+        "func": "// What tm-control's status page shows about Node-RED. global.tm_status is kept by the config load nodes in this\n// group and the radar nodes on capture-radar; what they haven't set yet is null.\nconst status = global.get(\"tm_status\") || {};\nconst config = status.config || {};\nconst known = status.radars || {};\nconst upload = status.upload || {};\nconst thingsboard = (global.get(\"config\") || {}).thingsboard || {};\nconst names = [\"TM_RADAR_SERIAL_PORT_00\", \"TM_RADAR_SERIAL_PORT_01\", \"TM_RADAR_SERIAL_PORT_02\", \"TM_RADAR_SERIAL_PORT_03\"];\nconst radars = {};\nfor (const name of new Set([...names, ...Object.keys(known)])) {\n    const radar = known[name] || {};\n    radars[name] = {\n        enabled: radar.enabled === true,\n        // A port that hasn't reported \"connected\" since Node-RED started isn't open\n        port_open: radar.port_open === true,\n        last_reading_at: radar.last_reading_at || null,\n        // what the radar answered after its last setup (\"radar setup engine\" on capture-radar), or null\n        info: radar.info !== null && typeof radar.info === \"object\" && !Array.isArray(radar.info) ? radar.info : null,\n    };\n}\nmsg.payload = {\n    status: \"ok\",\n    tm_version: env.get(\"TM_VERSION\") || null,\n    uptime_seconds: Math.max(0, Math.floor((Date.now() - (status.started_at || Date.now())) / 1000)),\n    config: {\n        loaded_at: config.loaded_at || null,\n        errors: Array.isArray(config.errors) ? config.errors : [],\n    },\n    schema_version: Number.isInteger(status.schema_version) ? status.schema_version : null,\n    radars: radars,\n    deployment: status.deployment || null,\n    // enabled after init config defaults (off without a host or a token); the rest since the last config load\n    upload: {\n        enabled: thingsboard.enabled === true,\n        last_ok_at: upload.last_ok_at || null,\n        last_failure_at: upload.last_failure_at || null,\n        last_failure: upload.last_failure || null,\n    },\n    setup: status.setup || null,\n};\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -6195,7 +6200,8 @@
         "wires": [
             [
                 "9e95f569494a21dc",
-                "50c56047654010ea"
+                "50c56047654010ea",
+                "3b7d2f9c1e5a4086"
             ]
         ]
     },
@@ -6283,6 +6289,105 @@
             [
                 "ae11d5c9948bf4e1"
             ]
+        ]
+    },
+    {
+        "id": "3b7d2f9c1e5a4086",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "name": "keep the radar's answers",
+        "rules": [
+            {
+                "t": "set",
+                "p": "radarInfo",
+                "pt": "msg",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1200,
+        "y": 620,
+        "wires": [
+            [
+                "c84e1a6d07b2f395"
+            ]
+        ]
+    },
+    {
+        "id": "c84e1a6d07b2f395",
+        "type": "sqlite",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "fixed",
+        "sql": "SELECT * FROM setup_radar WHERE ended IS NULL ORDER BY started DESC, id DESC;\n",
+        "name": "read open setup_radar",
+        "x": 1440,
+        "y": 620,
+        "wires": [
+            [
+                "9f1c6e3a2d8b7045"
+            ]
+        ]
+    },
+    {
+        "id": "9f1c6e3a2d8b7045",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "name": "radar setup engine",
+        "func": "// What each radar answered after its setup (msg.radarInfo: each radar's answers to the setup's queries, by its name\n// under sensors.radars, from \"create radarInfo payload\") against the open setup_radar rows (msg.payload: every row\n// whose ended is empty, newest first). A row is closed and a new one started only when an answer differs, so the\n// table says when a radar's model, firmware, or settings changed and nothing else.\n// A radar whose answers hold no part number (it slept through the round, or was unplugged during it) changes\n// nothing. An answer the radar didn't give is stored empty, never as 0.\n// Outputs: 1 close a row, 2 insert a row. The writes carry only params. Only the eight answers in FACTS (and Unit,\n// for a radar that names its unit so) are read: nothing else the radar said goes anywhere. Nothing is logged.\n\n// each column, the answer it comes from, and how the answer is read\nconst FACTS = [\n    [\"part_number\", \"Product\", \"text\"],\n    [\"firmware_version\", \"Version\", \"text\"],\n    [\"cosine_inbound_deg\", \"InboundSensorAngleDegrees\", \"number\"],\n    [\"cosine_outbound_deg\", \"OutboundSensorAngleDegrees\", \"number\"],\n    [\"speed_unit\", \"Units\", \"text\"],\n    [\"sampling_rate\", \"SamplingRate\", \"whole\"],\n    [\"speed_min\", \"RequiredMinSpeed\", \"number\"],\n    [\"magnitude_min\", \"MagnitudeMin\", \"number\"],\n];\nconst COLUMNS = FACTS.map(([column]) => column);\n// the unit's answer, for a radar that doesn't answer Units\nconst UNIT = \"Unit\";\n\nconst now = Date.now();\nconst has = (mapping, key) => Object.prototype.hasOwnProperty.call(mapping, key);\nconst isMapping = (value) => value !== null && typeof value === \"object\" && !Array.isArray(value);\n\n// text: 1 to 32 printable ASCII characters once trimmed, else unknown\nfunction text(value) {\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const trimmed = value.trim();\n    return /^[\\x20-\\x7e]{1,32}$/.test(trimmed) ? trimmed : null;\n}\n\n// a number: a finite number, or text that reads as one in decimal, else unknown\nfunction number(value) {\n    if (typeof value === \"number\") {\n        return Number.isFinite(value) ? value : null;\n    }\n    if (typeof value !== \"string\") {\n        return null;\n    }\n    const trimmed = value.trim();\n    if (!/^[+-]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(trimmed)) {\n        return null;\n    }\n    const read = Number(trimmed);\n    return Number.isFinite(read) ? read : null;\n}\n\n// a whole number, else unknown\nfunction whole(value) {\n    const read = number(value);\n    return Number.isInteger(read) ? read : null;\n}\n\nconst READERS = { text, number, whole };\n\n// the eight facts of one radar's answers, in the table's order\nfunction factsOf(answers) {\n    const facts = {};\n    for (const [column, key, kind] of FACTS) {\n        facts[column] = has(answers, key) ? READERS[kind](answers[key]) : null;\n    }\n    if (facts.speed_unit === null && has(answers, UNIT)) {\n        facts.speed_unit = text(answers[UNIT]);\n    }\n    return facts;\n}\n\n// what an open row holds for a fact: an empty one is null\nconst held = (value) => (value === undefined || value === null ? null : value);\n\nfunction differs(row, facts) {\n    return COLUMNS.some((column) => held(row[column]) !== facts[column]);\n}\n\nconst newest = (a, b) => (b.started - a.started) || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);\nconst rowsOf = (rows) => (Array.isArray(rows) ? rows : []).filter((row) => isMapping(row)).sort(newest);\n\nfunction closeRow(row, out) {\n    out.push({ params: { $ended: now, $id: row.id } });\n}\n\nfunction insertRow(radar, facts) {\n    const params = {\n        $id: now + \"-\" + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, \"0\") + \"-sr\",\n        $started: now,\n        $radar: radar,\n    };\n    for (const column of COLUMNS) {\n        params[\"$\" + column] = facts[column];\n    }\n    return { params };\n}\n\nconst answers = msg.radarInfo;\n// no round of answers: nothing changes\nif (!isMapping(answers)) {\n    return [null, null];\n}\nconst config = global.get(\"config\");\nconst known = isMapping(config) && isMapping(config.sensors) && isMapping(config.sensors.radars)\n    ? config.sensors.radars : null;\n\nconst close = [];\nconst insert = [];\n\n// 1. one open row for a radar: every open row after the newest is closed\nconst open = new Map();\nfor (const row of rowsOf(msg.payload)) {\n    const radar = String(row.radar);\n    if (open.has(radar)) {\n        closeRow(row, close);\n    } else {\n        open.set(radar, row);\n    }\n}\n\n// 2. a radar that config.yml no longer lists ends. Without a sensors.radars mapping nothing ends for this reason.\nfor (const [radar, row] of open) {\n    if (known !== null && !has(known, radar)) {\n        closeRow(row, close);\n        open.delete(radar);\n    }\n}\n\nconst status = global.get(\"tm_status.radars\");\nconst radars = isMapping(status) ? status : {};\nconst answeredAt = new Date(now).toISOString();\nlet answered = false;\nfor (const radar of Object.keys(answers)) {\n    if (radar === \"__proto__\" || !isMapping(answers[radar]) || (known !== null && !has(known, radar))) {\n        continue;\n    }\n    const facts = factsOf(answers[radar]);\n    // 3. no part number: this radar's row and its status stay as they are\n    if (facts.part_number === null) {\n        continue;\n    }\n    // 4. no open row, or an answer that differs: the row ends and a new one starts\n    const row = open.has(radar) ? open.get(radar) : null;\n    if (!row || differs(row, facts)) {\n        if (row) {\n            closeRow(row, close);\n        }\n        insert.push(insertRow(radar, facts));\n    }\n    // 5. what it answered, for the status page\n    radars[radar] = Object.assign({}, isMapping(radars[radar]) ? radars[radar] : {},\n        { info: { ...facts, answered_at: answeredAt } });\n    answered = true;\n}\nif (answered) {\n    global.set(\"tm_status.radars\", radars);\n}\n\nreturn [close, insert];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1660,
+        "y": 620,
+        "wires": [
+            [
+                "e2a7d5b04c9f3816"
+            ],
+            [
+                "5d09b8e3f17a26c4"
+            ]
+        ]
+    },
+    {
+        "id": "e2a7d5b04c9f3816",
+        "type": "sqlite",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "UPDATE setup_radar SET ended = $ended WHERE id = $id;\n",
+        "name": "close setup_radar",
+        "x": 1880,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5d09b8e3f17a26c4",
+        "type": "sqlite",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "mydb": "2f60c1ab30a6fc8f",
+        "sqlquery": "prepared",
+        "sql": "INSERT INTO setup_radar (id, started, radar, part_number, firmware_version, cosine_inbound_deg, cosine_outbound_deg, speed_unit, sampling_rate, speed_min, magnitude_min)\nVALUES ($id, $started, $radar, $part_number, $firmware_version, $cosine_inbound_deg, $cosine_outbound_deg, $speed_unit, $sampling_rate, $speed_min, $magnitude_min);\n",
+        "name": "insert setup_radar",
+        "x": 1880,
+        "y": 640,
+        "wires": [
+            []
         ]
     },
     {
