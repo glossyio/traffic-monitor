@@ -9,11 +9,14 @@ from ...core.manifest import Manifest
 _REPO = re.compile(r"[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}")
 
 
+def is_repo(value: object) -> bool:
+    """Whether value is owner/name under the rule above."""
+    if not isinstance(value, str) or not _REPO.fullmatch(value):
+        return False
+    return not any(set(part) == {"."} for part in value.split("/"))
+
+
 def repo_of(manifest: Manifest) -> str | None:
     """The recorded repository, or None when it is empty or not owner/name."""
     repo = manifest.update.repo
-    if not isinstance(repo, str) or not _REPO.fullmatch(repo):
-        return None
-    if any(set(part) == {"."} for part in repo.split("/")):
-        return None
-    return repo
+    return repo if is_repo(repo) else None
