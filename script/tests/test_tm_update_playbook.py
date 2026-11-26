@@ -3,6 +3,8 @@
 import hashlib
 import json
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -132,12 +134,12 @@ def test_the_playbook_gets_no_terminal_and_its_own_home(world, monkeypatch):
     vars_file = hand.work_dir / "vars.json"
     log = object()
     assert playbook.run_playbook(Path("/v/ansible"), tree, "update_prepare.yml", vars_file, hand, log,
-                                 tags=["stage"]) == 0
+                                 tags=["stage"], timeout=1800) == 0
     call = fake.calls[0]
     assert call["argv"] == ["/v/ansible/bin/ansible-playbook", "-i", "localhost", "update_prepare.yml", "-e",
                             "@" + str(vars_file), "--tags", "stage"]
     assert call["cwd"] == tree / "script" / "ansible"
-    assert call["log"] is log and call["check"] is False
+    assert call["log"] is log and call["check"] is False and call["timeout"] == 1800
     env = call["env"]
     assert env["HOME"] == str(hand.work_dir / "home")
     assert env["ANSIBLE_LOCAL_TEMP"] == env["ANSIBLE_REMOTE_TEMP"] == str(hand.work_dir / "ansible-tmp")
@@ -151,7 +153,8 @@ def test_the_playbook_runs_without_tags_when_none_are_given(world, monkeypatch):
     paths, tree, hand = world
     fake = FakeRun(lambda call: completed(call["argv"], rc=2))
     monkeypatch.setattr(proc, "run", fake)
-    assert playbook.run_playbook(Path("/v"), tree, "setup.yml", hand.work_dir / "vars.json", hand, None) == 2
+    assert playbook.run_playbook(Path("/v"), tree, "setup.yml", hand.work_dir / "vars.json", hand, None,
+                                 timeout=2700) == 2
     assert "--tags" not in fake.argvs()[0]
 
 
@@ -187,3 +190,125 @@ def test_proc_runs_an_argv_list_with_no_stdin_and_never_a_shell(tmp_path):
     with pytest.raises(subprocess.CalledProcessError):
         proc.run(["false"], check=True)
     assert proc.run(["sh", "-c", "pwd"], cwd=tmp_path).stdout.strip() == str(tmp_path)
+
+
+def test_a_playbook_run_needs_its_limit(world):
+    paths, tree, hand = world
+    with pytest.raises(TypeError):
+        playbook.run_playbook(Path("/v"), tree, "setup.yml", hand.work_dir / "vars.json", hand, None)
+
+
+def _venv_answer(venv_made_by):
+    def answer(call):
+        if call["argv"][1:3] == ["-m", "venv"]:
+            venv = Path(call["argv"][3])
+            venv_made_by.append(venv)
+            (venv / "bin").mkdir(parents=True)
+        elif call["argv"][0].endswith("/pip"):
+            (venv_made_by[-1] / "bin" / "ansible-playbook").write_text("")
+    return answer
+
+
+def test_each_step_of_the_ansible_environment_has_its_limit(world, monkeypatch):
+    paths, tree, _ = world
+    fake = FakeRun(_venv_answer([]))
+    monkeypatch.setattr(proc, "run", fake)
+    playbook.ensure_venv(tree, paths, None)
+    assert [call["timeout"] for call in fake.calls] == [900, 900]
+
+
+def test_a_pip_that_outlives_its_limit_fails_the_prepare_with_the_minutes_and_is_removed(world, monkeypatch):
+    paths, tree, _ = world
+    made = []
+    answer = _venv_answer(made)
+
+    def slow_pip(call):
+        answer(call)
+        if call["argv"][0].endswith("/pip"):
+            raise proc.TimedOut(call["argv"][0], call["timeout"])
+
+    monkeypatch.setattr(proc, "run", FakeRun(slow_pip))
+    with pytest.raises(Failed) as error:
+        playbook.ensure_venv(tree, paths, None)
+    assert (error.value.reason, error.value.detail) == ("prepare_failed", "timed out after 15 min")
+    assert made and not made[0].exists()
+
+
+def test_a_time_out_is_a_timeout_expired_and_says_its_whole_minutes():
+    error = proc.TimedOut("/v/bin/ansible-playbook", 7200)
+    assert isinstance(error, subprocess.TimeoutExpired)
+    assert (error.cmd, error.seconds, error.timeout) == ("/v/bin/ansible-playbook", 7200, 7200)
+    assert error.detail == "timed out after 120 min"
+    assert proc.TimedOut("x", 2700).detail == "timed out after 45 min"
+    assert proc.TimedOut("x", 119).detail == "timed out after 1 min"
+
+
+def _gone(pid, within=3.0):
+    """The process has ended: it is gone, or a zombie waiting for its new parent to reap it."""
+    deadline = time.monotonic() + within
+    while time.monotonic() < deadline:
+        try:
+            with open(f"/proc/{pid}/stat", encoding="ascii") as handle:
+                if handle.read().rsplit(")", 1)[1].split()[0] == "Z":
+                    return True
+        except (FileNotFoundError, ProcessLookupError):
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def _script(tmp_path, body):
+    script = tmp_path / "script.sh"
+    script.write_text(body)
+    return script
+
+
+def test_a_command_that_outlives_its_limit_is_killed_with_what_it_started(tmp_path):
+    pidfile = tmp_path / "grandchild"
+    script = _script(tmp_path, f"echo started\nsleep 60 &\necho $! > {pidfile}\nwait\n")
+    log = (tmp_path / "log").open("w")
+    began = time.monotonic()
+    with pytest.raises(proc.TimedOut) as error:
+        proc.run(["sh", str(script)], log=log, timeout=1)
+    took = time.monotonic() - began
+    log.close()
+    assert isinstance(error.value, subprocess.TimeoutExpired)
+    assert (error.value.cmd, error.value.seconds) == ("sh", 1)
+    # The TERM ends it: no wait for the grace before the KILL
+    assert took < 5
+    assert _gone(int(pidfile.read_text()))
+    # What the command wrote before the limit stays in the log
+    assert (tmp_path / "log").read_text() == "started\n"
+
+
+def test_a_command_that_ignores_the_term_is_killed_after_the_grace(tmp_path, monkeypatch):
+    monkeypatch.setattr(proc, "_GRACE", 0.5)
+    pidfile = tmp_path / "grandchild"
+    # An ignored signal stays ignored across exec, so the sleep ignores the TERM too
+    script = _script(tmp_path, f"trap '' TERM\nsleep 60 &\necho $! > {pidfile}\nwait\n")
+    began = time.monotonic()
+    with pytest.raises(proc.TimedOut):
+        proc.run(["sh", str(script)], timeout=0.5)
+    took = time.monotonic() - began
+    assert 1.0 <= took < 5
+    assert _gone(int(pidfile.read_text()))
+
+
+def test_a_command_without_output_captured_is_killed_the_same_way(tmp_path):
+    pidfile = tmp_path / "grandchild"
+    script = _script(tmp_path, f"sleep 60 &\necho $! > {pidfile}\nwait\n")
+    with pytest.raises(proc.TimedOut):
+        proc.run(["sh", str(script)], timeout=1)
+    assert _gone(int(pidfile.read_text()))
+
+
+def test_every_command_runs_in_a_session_of_its_own(tmp_path):
+    code = "import os; print(os.getsid(0) == os.getpid(), os.getpgid(0) == os.getpid())"
+    assert proc.run([sys.executable, "-c", code]).stdout.split() == ["True", "True"]
+
+
+def test_a_command_that_ends_in_time_is_not_signalled(tmp_path, monkeypatch):
+    signalled = []
+    monkeypatch.setattr(proc.os, "killpg", lambda *args: signalled.append(args))
+    assert proc.run(["sh", "-c", "exit 3"], timeout=30).returncode == 3
+    assert signalled == []

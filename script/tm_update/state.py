@@ -62,9 +62,10 @@ def _write_whole(path: Path, data: dict) -> None:
 
 
 def _fresh(handover: Handover, installed, to_version: "str | None") -> dict:
+    # With no usable manifest, the version the caller says is running still names what the run started from
     return {
         "schema": SCHEMA, "run_id": handover.run_id, "channel": handover.channel,
-        "from": {"version": installed.tm_version if installed else None,
+        "from": {"version": installed.tm_version if installed else handover.from_version,
                  "commit": installed.commit if installed else None},
         "to": {"version": to_version, "commit": handover.commit, "tag": handover.tag},
         "stage": None, "stages": [], "result": None, "reason": None, "detail": None, "boot_id": None,

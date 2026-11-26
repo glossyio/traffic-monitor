@@ -188,10 +188,10 @@ def test_only_the_listed_keys_can_be_set(world):
         state.set(result="ok")
 
 
-def test_a_state_without_an_installed_manifest_has_no_from(world):
+def test_a_state_without_an_installed_manifest_takes_the_version_the_caller_gave(world):
     paths, _ = world
-    state = State.open(handover(paths), None, "0.8.0")
-    assert state.data["from"] == {"version": None, "commit": None}
+    state = State.open(handover(paths, from_version="0.8.0"), None, "0.8.0")
+    assert state.data["from"] == {"version": "0.8.0", "commit": None}
     state.end("failed", "needs_manual_update")
     assert json.loads(paths.state.read_text())["reason"] == "needs_manual_update"
 

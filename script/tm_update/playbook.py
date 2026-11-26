@@ -14,6 +14,8 @@ from .state import REASONS, Failed
 
 SYSTEM_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 _BRANCHES = {"stable": "main", "development": "dev"}
+# Each step of the Ansible environment (the venv, then pip from the lock) gets this long
+VENV_TIMEOUT = 900
 
 
 def venv_path(lock: Path, paths: Paths) -> Path:
@@ -30,10 +32,15 @@ def ensure_venv(tree: Path, paths: Paths, log) -> Path:
     env = {"PATH": SYSTEM_PATH}
     paths.venv_root.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(venv, ignore_errors=True)
-    made = proc.run(["python3", "-m", "venv", str(venv)], env=env, log=log)
-    if made.returncode == 0:
-        made = proc.run([str(venv / "bin" / "pip"), "install", "--no-input", "--no-cache-dir",
-                         "--disable-pip-version-check", "--require-hashes", "-r", str(lock)], env=env, log=log)
+    try:
+        made = proc.run(["python3", "-m", "venv", str(venv)], env=env, log=log, timeout=VENV_TIMEOUT)
+        if made.returncode == 0:
+            made = proc.run([str(venv / "bin" / "pip"), "install", "--no-input", "--no-cache-dir",
+                             "--disable-pip-version-check", "--require-hashes", "-r", str(lock)], env=env, log=log,
+                            timeout=VENV_TIMEOUT)
+    except proc.TimedOut as error:
+        shutil.rmtree(venv, ignore_errors=True)
+        raise Failed("prepare_failed", error.detail) from None
     if made.returncode != 0 or not (venv / "bin" / "ansible-playbook").exists():
         shutil.rmtree(venv, ignore_errors=True)
         raise Failed("prepare_failed", "ansible environment")
@@ -75,8 +82,9 @@ def write_vars(handover: Handover, installed: Installed, tree: Path, *, update_m
 
 
 def run_playbook(venv: Path, tree: Path, playbook: str, vars_file: Path, handover: Handover, log,
-                 tags: "list[str] | None" = None) -> int:
-    """Run a playbook of the tree's script/ansible folder with no terminal, its own home, and a plain environment."""
+                 tags: "list[str] | None" = None, *, timeout: float) -> int:
+    """Run a playbook of the tree's script/ansible folder with no terminal, its own home, and a plain environment.
+    Past its timeout (seconds) it is ended with everything it started, and proc.TimedOut is raised."""
     scratch = handover.work_dir / "ansible-tmp"
     home = handover.work_dir / "home"
     for folder in (home, scratch):
@@ -88,7 +96,7 @@ def run_playbook(venv: Path, tree: Path, playbook: str, vars_file: Path, handove
     argv = [str(Path(venv) / "bin" / "ansible-playbook"), "-i", "localhost", playbook, "-e", f"@{vars_file}"]
     if tags:
         argv += ["--tags", ",".join(tags)]
-    return proc.run(argv, env=env, log=log, cwd=Path(tree) / "script" / "ansible").returncode
+    return proc.run(argv, env=env, log=log, timeout=timeout, cwd=Path(tree) / "script" / "ansible").returncode
 
 
 def reason_from(handover: Handover, default: str) -> str:

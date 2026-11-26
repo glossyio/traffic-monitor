@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tm_update_support import BOOT, COMMIT, RUN, Device, handover, make_world
+from tm_update_support import BOOT, COMMIT, RUN, SLICE_STOP, Device, handover, make_world
 
-from tm_update import installed as installed_module, switch
+from tm_update import installed as installed_module, proc, switch
 from tm_update.switch import STARTED_AFTER_A_FAILURE, STOPPED_FIRST, wants_reboot
 
 STOP = ["systemctl", "stop", *STOPPED_FIRST]
@@ -45,10 +45,11 @@ def test_the_pod_and_the_control_app_are_stopped_before_the_installer_runs(devic
     events = [event for event in device.events
               if event[0] == "systemctl" or (event[0] == "playbook" and event[1] == "setup.yml")]
     assert events.index(STOP) < events.index(("playbook", "setup.yml", ()))
-    assert device.systemctl_calls("stop") == [STOP]
+    assert device.unit_stops() == [STOP]
     assert device.systemctl_calls("start") == [] and device.systemctl_calls("reboot") == []
-    # Everything before the stop is Prepare's: the switch is the first stage that touches a running unit
-    assert [e for e in device.events[:device.events.index(STOP)] if e[0] == "systemctl"] == []
+    # Everything before the stop is Prepare's, and the stop of a dead run's builds before it: the switch is the
+    # first stage that touches a running unit
+    assert [e for e in device.events[:device.events.index(STOP)] if e[0] == "systemctl"] == [SLICE_STOP]
 
 
 def test_too_little_room_for_the_database_copy_ends_before_anything_is_stopped(device, monkeypatch):
@@ -63,7 +64,7 @@ def test_too_little_room_for_the_database_copy_ends_before_anything_is_stopped(d
     assert state["detail"] == "1 MB free, 6 MB needed"
     assert state["switch_attempts"] == 0
     assert not device.paths.resume.exists()
-    assert device.systemctl_calls("stop") == [] and device.systemctl_calls("start") == []
+    assert device.unit_stops() == [] and device.systemctl_calls("start") == []
     assert ("setup.yml", ()) not in device.stages
 
 
@@ -83,6 +84,18 @@ def test_a_failed_installer_starts_the_three_services_and_ends_as_switch_failed(
     assert not device.paths.resume.exists()
     assert device.systemctl_calls("reboot") == []
     assert "gone" not in device.paths.state.read_text()
+
+
+def test_a_timed_out_switch_starts_the_three_services_and_ends_as_switch_failed(device):
+    device.setup_rc = proc.TimedOut("/v/bin/ansible-playbook", 2700)
+    assert device.main() == 1
+    assert device.systemctl_calls("start") == STARTS
+    assert device.events.index(("playbook", "setup.yml", ())) < device.events.index(STARTS[0])
+    state = device.state()
+    assert (state["result"], state["reason"], state["stage"], state["detail"]) == (
+        "failed", "switch_failed", "switch", "timed out after 45 min")
+    assert not device.paths.resume.exists()
+    assert "Traceback" not in device.log()
 
 
 def test_a_stop_that_fails_starts_the_three_services_and_never_runs_the_installer(device):

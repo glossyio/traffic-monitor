@@ -1,6 +1,7 @@
 """The restore point: what is saved before an update switches, and how it is kept."""
 
 import hashlib
+import io
 import json
 import os
 import re
@@ -64,8 +65,8 @@ def world(tmp_path):
     return paths, tree
 
 
-def _make(paths, previous_tree=None, **changes):
-    return restore.make(installed(**changes), handover(paths), paths, previous_tree)
+def _make(paths, previous_tree=None, log=None, **changes):
+    return restore.make(installed(**changes), handover(paths), paths, previous_tree, log or io.StringIO())
 
 
 def _doc(folder):
@@ -333,3 +334,32 @@ def test_everything_is_synced_before_the_rename_and_the_folder_after_it(world, m
     after = events[kinds.index("rename") + 1:]
     assert ("fsync", str(paths.restore_root)) in after
     assert folder.is_dir()
+
+
+def test_the_log_names_the_restore_point_and_what_was_missing_and_no_secret(world):
+    paths, _ = world
+    listed = _every_listed_file(paths)
+    paths.rooted(Path("/var/lib/go2rtc/go2rtc.yaml")).unlink()
+    _put(paths, "/etc/traffic-monitor/secrets/frigate_proxy_secret", text=MARKER + "\n", mode=0o640)
+    log = io.StringIO()
+    folder = _make(paths, log=log)
+    doc = _doc(folder)
+    text = log.getvalue()
+    lines = text.splitlines()
+    assert len(lines) == 1
+    assert lines[0].endswith(f"restore point {folder.name}: {len(doc['files'])} files; missing: "
+                             "/var/lib/go2rtc/go2rtc.yaml, /var/lib/tm-control/state.sqlite")
+    assert len(doc["files"]) == len(listed)  # go2rtc.yaml gone, the new secret in its place
+    assert MARKER not in text and "content of" not in text and "/etc/traffic-monitor/secrets" not in text
+    assert not any(row.get("sha256", "")[:16] in text for row in doc["files"] if row.get("sha256"))
+    assert oct((folder / "restore.json").stat().st_mode & 0o777) == "0o600"
+
+
+def test_a_restore_point_with_nothing_missing_says_so(world):
+    paths, _ = world
+    _every_listed_file(paths)
+    _state_db(paths.tm_control_state)
+    log = io.StringIO()
+    folder = _make(paths, log=log)
+    assert log.getvalue().splitlines()[0].endswith(
+        f"restore point {folder.name}: {len(_doc(folder)['files'])} files; missing: none")
