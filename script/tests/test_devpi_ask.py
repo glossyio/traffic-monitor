@@ -31,7 +31,8 @@ class LocalHost:
         self.commands.append(command)
         command = command.replace(" 1883 ", f" {self.port} ", 1)
         result = subprocess.run(["sh", "-c", command], capture_output=True, text=True, timeout=60)
-        return SimpleNamespace(stdout=result.stdout, stderr=result.stderr, rc=result.returncode)
+        # Like testinfra's CommandResult, it keeps the command it ran, which here holds the login.
+        return SimpleNamespace(command=command, stdout=result.stdout, stderr=result.stderr, rc=result.returncode)
 
 
 def remaining(length):
@@ -180,7 +181,8 @@ def test_a_user_without_a_password_sets_only_the_user_flag():
 
 @pytest.mark.parametrize("padding", [20, 200, 20_000, 2_200_000])
 def test_a_long_answer_in_small_pieces_is_read_whole(padding):
-    """A remaining length of one, two, three, and four bytes, the PUBLISH arriving in pieces."""
+    """The PUBLISH arriving in pieces, with a remaining length of two, two, three, and four bytes (the answer alone is
+    over 127 bytes, so none is one byte; only the short CONNACK and SUBACK packets have one)."""
     answer = {**ANSWER, "pad": {"objects": [], "config": {"detect": True}, "note": "x" * padding}}
     data = json.dumps(answer).encode()
     port, _, thread = fake_broker(data, chunk=1000 if padding < 1_000_000 else 100_000)
@@ -265,3 +267,25 @@ def test_a_login_with_a_line_break_is_refused_before_anything_runs():
 def test_a_broker_that_is_not_there_fails_with_the_last_line_of_the_error():
     with pytest.raises(AssertionError, match="asking the Pi's broker failed"):
         ask(1)
+
+
+@pytest.mark.parametrize("broker", ["none", "refuses"])
+def test_a_failure_leaves_no_login_in_the_helpers_locals(broker):
+    """pytest -l prints the locals of the frame that raised; the command and its result hold the login."""
+    password, user = "s3cret-word", "broker-user-name"
+    login = (devpi_checks.Redacted(user, "user"), devpi_checks.Redacted(password, "password"))
+    if broker == "none":
+        host = LocalHost(1)
+    else:
+        port, _, thread = fake_broker(None, connack_code=5)
+        host = LocalHost(port)
+    with pytest.raises(AssertionError) as raised:
+        devpi_checks.ask_frigate_on_pi(host, login)
+    if broker == "refuses":
+        thread.join(10)
+    assert host.commands and password in host.commands[0]  # the command did run, with the login in it
+    entry = raised.traceback[-1]
+    assert entry.name == "ask_frigate_on_pi"
+    printed = repr(dict(entry.locals))
+    assert password not in printed and user not in printed
+    assert password not in str(raised.value) and user not in str(raised.value)

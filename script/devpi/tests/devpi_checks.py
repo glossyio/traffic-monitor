@@ -329,7 +329,8 @@ def ask_frigate_on_pi(host, login, wait=5):
 
     Returns {camera: {"objects": count or None, "detect": bool or None}}, or None when no answer came. Raises with the
     CONNACK code when the broker refuses. The login goes to the script on standard input, never as an argument, and
-    no message here holds the answer's content.
+    no message here holds the answer's content. The command and its result, which hold the login, are dropped before
+    anything can raise, so pytest -l prints neither.
     """
     user, password = login
     delimiter = "TMDEV_LOGIN_END"
@@ -338,14 +339,17 @@ def ask_frigate_on_pi(host, login, wait=5):
     command = (f"python3 -c {shlex.quote(PI_MQTT_ASK)} frigate/onConnect frigate/camera_activity 1883 {float(wait)} "
                f"<<'{delimiter}'\n{user}\n{password}\n{delimiter}\n")
     result = host.run(command)
+    del command
+    stdout, stderr, rc = result.stdout, result.stderr, result.rc
+    del result
     try:
-        answer = json.loads(result.stdout.strip())
+        answer = json.loads(stdout.strip())
         code, cameras = answer["connack"], answer["cameras"]
     except (ValueError, KeyError, TypeError):
-        last = (result.stderr.strip().splitlines() or ["no output"])[-1][:200]
-        raise AssertionError(f"asking the Pi's broker failed with exit {result.rc}: {last}") from None
+        last = (stderr.strip().splitlines() or ["no output"])[-1][:200]
+        raise AssertionError(f"asking the Pi's broker failed with exit {rc}: {last}") from None
     if code != 0:
-        raise AssertionError(f"the Pi's broker didn't take the message: CONNACK {code}, exit {result.rc}")
+        raise AssertionError(f"the Pi's broker didn't take the message: CONNACK {code}, exit {rc}")
     return cameras
 
 
