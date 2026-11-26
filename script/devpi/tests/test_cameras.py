@@ -3,7 +3,8 @@
 import re
 
 import pytest
-from devpi_checks import find_hevc_decoder, frigate_host_devices, pi_json, role_vars
+from devpi_checks import (ask_frigate_on_pi, broker_login, find_hevc_decoder, frigate_host_devices, pi_json,
+                          require_pii_free, role_vars)
 
 HEVC_SYMLINK = role_vars()["tmsetup_hevc_device"]
 # Kernel names of the V4L2 sub-devices, sensors among them (e.g. imx708_wide). Readable without
@@ -94,3 +95,24 @@ def test_node_red_camera_config(cameras, expect, node_red_config):
         if radar_names and paired not in radar_names:
             problems.append(f"{camera['name']} is paired with radar {paired!r}, not one of {sorted(radar_names)}")
     assert not problems, "; ".join(problems)
+
+
+def test_frigate_answers_on_connect(host, expect, codedir, cameras, frigate_config):
+    """Frigate answers an empty frigate/onConnect on the Pi's broker with frigate/camera_activity, one entry for each
+    camera in its config, each with a boolean detect. That is what the reference picture's people check asks. A camera
+    whose detection is off has no objects to count. Reads the broker's login and Frigate's camera names, so it keeps
+    and prints counts and booleans only."""
+    require_pii_free(expect)
+    answer = ask_frigate_on_pi(host, broker_login(host, expect, codedir), wait=5)
+    assert answer is not None, ("Frigate didn't answer frigate/onConnect on the Pi's broker within 5 s: the people "
+                                "check has nothing to ask")
+    configured = frigate_config.get("cameras", {})
+    missing = [name for name in configured if name not in answer]
+    no_boolean = [name for name in configured if name in answer and not isinstance(answer[name]["detect"], bool)]
+    off_with_objects = [name for name in configured if name in answer and answer[name]["detect"] is False
+                        and answer[name]["objects"] not in (0, None)]
+    print(f"cameras in Frigate's config: {len(configured)}, in the answer: {len(answer)}, detection on: "
+          f"{sum(1 for name in configured if name in answer and answer[name]['detect'] is True)}")
+    assert not missing, f"{len(missing)} of {len(configured)} cameras in Frigate's config are not in its answer"
+    assert not no_boolean, f"{len(no_boolean)} cameras in the answer have no boolean detect"
+    assert not off_with_objects, f"{len(off_with_objects)} cameras with detection off list objects"

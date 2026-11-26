@@ -210,6 +210,145 @@ def publish_on_pi(host, topic, payload, port=1883):
         raise AssertionError(f"the Pi's broker didn't take the message: CONNACK {code or 'none'}, exit {result.rc}")
 
 
+# Run on the Pi with the topic to publish an empty message on, the topic to wait on, the port, and the seconds to wait;
+# the broker's login, if any, on standard input as two lines (empty when none). An MQTT 3.1.1 client (clean session,
+# client id tmdev-ask) subscribes to the second topic at QoS 0, waits for the SUBACK, publishes on the first, and reads
+# packets until a PUBLISH on the second topic arrives after the SUBACK or the time is up. Prints one JSON line:
+# {"connack": <code>, "cameras": null} when the broker refuses or nothing came, else {"connack": 0, "cameras": {name:
+# {"objects": <the list's length, null when it isn't a list>, "detect": <config.detect when a boolean, else null>}}}.
+PI_MQTT_ASK = r"""import json, socket, sys, time
+ask, wait, port, seconds = sys.argv[1].encode(), sys.argv[2].encode(), int(sys.argv[3]), float(sys.argv[4])
+user, password = (sys.stdin.read().split('\n') + ['', ''])[:2]
+user, password = user.encode(), password.encode()
+
+def remaining(length):
+    encoded = b''
+    while True:
+        length, digit = divmod(length, 128)
+        encoded += bytes([digit | (0x80 if length else 0)])
+        if not length:
+            return encoded
+
+def text(value):
+    return len(value).to_bytes(2, 'big') + value
+
+sock = socket.create_connection(('127.0.0.1', port), timeout=5)
+buffer = bytearray()
+
+def take(count, deadline):
+    while len(buffer) < count:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            raise TimeoutError('timed out')
+        sock.settimeout(left)
+        try:
+            chunk = sock.recv(65536)
+        except socket.timeout:
+            raise TimeoutError('timed out')
+        if not chunk:
+            raise ConnectionError('the broker closed the connection')
+        buffer.extend(chunk)
+    data = bytes(buffer[:count])
+    del buffer[:count]
+    return data
+
+def packet(deadline):
+    first = take(1, deadline)[0]
+    length, shift = 0, 0
+    while True:
+        digit = take(1, deadline)[0]
+        length |= (digit & 0x7F) << shift
+        shift += 7
+        if not digit & 0x80:
+            break
+        if shift >= 28:
+            raise ValueError('a remaining length of more than four bytes')
+    return first, take(length, deadline)
+
+def show(code, cameras):
+    print(json.dumps({'connack': code, 'cameras': cameras}))
+
+flags = 0x02 | (0x80 if user else 0) | (0x40 if user and password else 0)
+body = b'\x00\x04MQTT\x04' + bytes([flags]) + b'\x00\x1e' + text(b'tmdev-ask')
+if user:
+    body += text(user) + (text(password) if password else b'')
+sock.sendall(b'\x10' + remaining(len(body)) + body)
+first, body = packet(time.monotonic() + 5)
+if first >> 4 != 2 or len(body) != 2:
+    raise ValueError('no CONNACK')
+if body[1]:
+    show(body[1], None)
+    sys.exit(0)
+body = b'\x00\x01' + text(wait) + b'\x00'
+sock.sendall(b'\x82' + remaining(len(body)) + body)
+deadline = time.monotonic() + 5
+while True:
+    first, body = packet(deadline)
+    if first >> 4 == 9:
+        if len(body) != 3 or body[2] == 0x80:
+            raise ValueError('the subscription was refused')
+        break
+body = text(ask)
+sock.sendall(b'\x30' + remaining(len(body)) + body)
+payload = None
+try:
+    deadline = time.monotonic() + seconds
+    while payload is None:
+        first, body = packet(deadline)
+        if first >> 4 != 3:
+            continue
+        size = int.from_bytes(body[:2], 'big')
+        if body[2:2 + size] == wait:
+            payload = body[2 + size + (2 if first & 0x06 else 0):]
+except TimeoutError:
+    pass
+sock.sendall(b'\xe0\x00')
+sock.close()
+if payload is None:
+    show(0, None)
+    sys.exit(0)
+try:
+    answer = json.loads(payload)
+except ValueError:
+    answer = None
+cameras = {}
+for name, entry in (answer.items() if isinstance(answer, dict) else []):
+    entry = entry if isinstance(entry, dict) else {}
+    config = entry.get('config')
+    detect = config.get('detect') if isinstance(config, dict) else None
+    objects = entry.get('objects')
+    cameras[name] = {'objects': len(objects) if isinstance(objects, list) else None,
+                     'detect': detect if isinstance(detect, bool) else None}
+show(0, cameras)
+"""
+
+
+def ask_frigate_on_pi(host, login, wait=5):
+    """Ask Frigate for its cameras' activity on the Pi's own broker: publish an empty frigate/onConnect and wait up to
+    `wait` seconds for frigate/camera_activity. login is (username, password), each empty when the broker has none.
+
+    Returns {camera: {"objects": count or None, "detect": bool or None}}, or None when no answer came. Raises with the
+    CONNACK code when the broker refuses. The login goes to the script on standard input, never as an argument, and
+    no message here holds the answer's content.
+    """
+    user, password = login
+    delimiter = "TMDEV_LOGIN_END"
+    if any(char in value for value in (user, password) for char in "\r\n") or delimiter in (user, password):
+        raise AssertionError("the broker login has a line break the script can't take on standard input")
+    command = (f"python3 -c {shlex.quote(PI_MQTT_ASK)} frigate/onConnect frigate/camera_activity 1883 {float(wait)} "
+               f"<<'{delimiter}'\n{user}\n{password}\n{delimiter}\n")
+    result = host.run(command)
+    try:
+        answer = json.loads(result.stdout.strip())
+        code, cameras = answer["connack"], answer["cameras"]
+    except (ValueError, KeyError, TypeError):
+        last = (result.stderr.strip().splitlines() or ["no output"])[-1][:200]
+        raise AssertionError(f"asking the Pi's broker failed with exit {result.rc}: {last}") from None
+    if code != 0:
+        raise AssertionError(f"the Pi's broker didn't take the message: CONNACK {code}, exit {result.rc}")
+    return cameras
+
+
 PODMAN_EVENT_FIELDS = ("_CMDLINE", "_SYSTEMD_UNIT", "_PID")
 
 
