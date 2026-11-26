@@ -7,7 +7,8 @@
   the place the API answered and whether the map set the coordinates last (typing after a pick makes it false), then
   closes; and
   `stale` when the API refused because the place changed since the page loaded (409, such as a planned place that
-  was deployed meanwhile), so the page loads the places again.
+  was deployed meanwhile), so the page loads the places again. The place's time zone is TimeZonePick's; the body
+  has no `timezone` while there is none (the clock's is unknown and none was picked), never null.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
@@ -16,6 +17,8 @@ import type { components } from '../../api/schema'
 import { fewDecimalsWarning, formatExact, parsePair, startingHeadings, type LatLon } from './coordinates'
 import HeadingPick from './HeadingPick.vue'
 import MapPickButton from './MapPickButton.vue'
+import TimeZonePick from './TimeZonePick.vue'
+import { startingTimeZone } from './timezones'
 
 type SensorHeading = components['schemas']['SensorHeading']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -27,6 +30,9 @@ const props = defineProps<{
   survey?: SurveyOut // the planned place to edit; none to add one
   map: MapSources // where the map comes from; null style_url is no map
   centre: LatLon | null // where the map looks first with no point: the place in use
+  timeZones: string[] // the device's list of time zones, loaded once by the page; empty when it couldn't be
+  timeZonesError: string // why the list couldn't be loaded; empty when it was
+  clockTimeZone: string | null // the unit's clock's time zone, which a place starts with; null when unknown
 }>()
 const emit = defineEmits<{ saved: [survey: SurveyOut, onMap: boolean]; stale: [] }>()
 
@@ -34,6 +40,8 @@ const description = ref('')
 const coordinates = ref('')
 const onMap = ref(false) // whether the map set the coordinates last
 const headings = ref<SensorHeading[]>([])
+const timeZone = ref<string | null>(null)
+const openings = ref(0) // counts the openings, so each one starts the time zone control over
 const saving = ref(false)
 const error = ref('')
 const locating = ref(false)
@@ -48,6 +56,8 @@ watch(
     description.value = survey?.description ?? ''
     coordinates.value = survey && survey.lat !== null ? formatExact(survey.lat, survey.lon) : ''
     headings.value = startingHeadings(props.sensors, survey)
+    timeZone.value = startingTimeZone(survey?.timezone, props.clockTimeZone)
+    openings.value += 1
     onMap.value = false
     error.value = ''
     locateError.value = ''
@@ -96,6 +106,9 @@ async function save() {
     lat: pair.value?.lat ?? null,
     lon: pair.value?.lon ?? null,
     headings: headings.value,
+    // Never null: the key is left out when there is no time zone, so an edit keeps the one stored and a new place
+    // has none
+    ...(timeZone.value === null ? {} : { timezone: timeZone.value }),
   }
   try {
     const { data } = props.survey
@@ -167,6 +180,15 @@ const title = computed(() => {
             Browsers only share your location with secure pages. Paste coordinates instead.
           </p>
           <v-alert v-if="locateError" type="warning" class="mt-4">{{ locateError }}</v-alert>
+
+          <TimeZonePick
+            :key="openings"
+            v-model="timeZone"
+            :time-zones="timeZones"
+            :clock-time-zone="clockTimeZone"
+            :error="timeZonesError"
+            class="mt-6"
+          />
 
           <template v-if="headings.length">
             <h3 class="text-subtitle-1 font-weight-medium mt-6">Which way each sensor faces here</h3>

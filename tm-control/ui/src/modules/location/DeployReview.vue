@@ -9,8 +9,18 @@
   The place in use is never reviewed here: its mounting and headings change on the Mounting page.
 
   Emits `deployed` once the API has answered, or once the connection dropped while it waited (the settings may be
-  saved by then); `stale` when the API refused because something changed since the page loaded (409), so the page
-  loads the places again; and `close`.
+  saved by then); `stale`, so the page loads the places again, when the API refused because something changed since
+  the page loaded (409), when saving the time zone failed in any way (the store may have changed, whatever the
+  answer), and when a deploy fails after this review saved a time zone (in this try or an earlier one), because the
+  page would otherwise show the old one; and `close`. A failed deploy that saved nothing, other than a 409, asks for
+  nothing.
+
+  The place's time zone is TimeZonePick's, after the sensors. When it differs from the place's as last saved, Deploy
+  saves it first (PUT /surveys/{id}/timezone) and deploys only after that answers: a refusal shows in the review's
+  alert and deploys nothing, and a retried deploy doesn't save it again. A place with none gets the clock's here, and
+  with neither there is nothing to save: a null time zone is never sent. For a used place, a line under the control
+  says that changing the time zone corrects the place's stored deployments, while the choice differs from the saved
+  one; the dialog on the page says the same.
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
@@ -20,12 +30,19 @@ import { copyText } from '../../components/clipboard'
 import { PRECISIONS, deployWords, formatStored, startingHeadings } from './coordinates'
 import { facing } from './heading'
 import HeadingPick from './HeadingPick.vue'
+import TimeZonePick from './TimeZonePick.vue'
+import { startingTimeZone } from './timezones'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
 type DeployOut = components['schemas']['DeployOut']
 
-const props = defineProps<{ place: SurveyOut; state: PlacesState }>()
+const props = defineProps<{
+  place: SurveyOut
+  state: PlacesState
+  timeZones: string[] // the device's list of time zones, loaded once by the page; empty when it couldn't be
+  timeZonesError: string // why the list couldn't be loaded; empty when it was
+}>()
 const emit = defineEmits<{ deployed: []; stale: []; close: [] }>()
 
 // The state as it was when the review opened, as plain constants: not reactive, on purpose. The page loads the state
@@ -33,11 +50,21 @@ const emit = defineEmits<{ deployed: []; stale: []; close: [] }>()
 const sensors = props.state.sensors
 const precision = props.state.precision
 const sharing = props.state.sharing
+const clock = props.state.clock_timezone || null // an empty name is no name
 const words = deployWords(props.place.status)
 
 // The heading to deploy each sensor with: the place's own, else the sensor's current one. Moving to another place
 // starts a new deployment for every sensor.
 const chosen = ref(startingHeadings(sensors, props.place))
+
+// The time zone to deploy with, and the one the place has as last saved: a retried deploy compares against what the
+// first try saved
+const timeZone = ref<string | null>(startingTimeZone(props.place.timezone, clock))
+const savedTimeZone = ref<string | null>(props.place.timezone)
+// Whether this review has sent a PUT, whatever it answered: the store may hold a time zone the page doesn't show
+let putSent = false
+// What changing it does to a used place: its stored deployments are corrected too
+const correcting = computed(() => props.place.status === 'used' && timeZone.value !== savedTimeZone.value)
 
 function was(heading: number | null) {
   return heading === null ? 'not set' : facing(heading)
@@ -75,6 +102,21 @@ async function deploy() {
   deploying.value = true
   error.value = ''
   try {
+    if (timeZone.value !== null && timeZone.value !== savedTimeZone.value) {
+      // Nothing is deployed yet, so a failure here, a dropped connection too, is an ordinary error
+      putSent = true
+      try {
+        await api.PUT('/api/v1/surveys/{survey_id}/timezone', {
+          params: { path: { survey_id: props.place.id } },
+          body: { timezone: timeZone.value },
+        })
+      } catch (failure) {
+        error.value = messageOf(failure)
+        emit('stale') // the store may hold the time zone, whatever the answer was
+        return
+      }
+      savedTimeZone.value = timeZone.value
+    }
     const { data } = await api.POST('/api/v1/surveys/{survey_id}/deploy', {
       params: { path: { survey_id: props.place.id } },
       body: { headings: chosen.value },
@@ -89,7 +131,8 @@ async function deploy() {
       return
     }
     error.value = messageOf(failure)
-    if (failure instanceof ApiError && failure.status === 409) emit('stale')
+    // A 409 means the page is out of date; so is a page that doesn't show the time zone this review saved
+    if (putSent || (failure instanceof ApiError && failure.status === 409)) emit('stale')
   } finally {
     deploying.value = false
   }
@@ -140,6 +183,16 @@ async function copy(id: string) {
             </div>
           </li>
         </ul>
+        <div class="mb-6">
+          <TimeZonePick
+            v-model="timeZone"
+            :time-zones="timeZones"
+            :clock-time-zone="clock"
+            :error="timeZonesError"
+            :disabled="deploying"
+          />
+          <p v-if="correcting" class="text-body-1 mt-2">Changing it corrects this place's stored deployments.</p>
+        </div>
         <!-- The pair stays on one line: "45.0," at the end of one line and "-122.0" on the next reads as two values -->
         <p v-if="stored" class="text-body-1">
           Stored in the database: <span class="text-no-wrap">{{ stored }}</span>

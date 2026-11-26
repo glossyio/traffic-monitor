@@ -35,6 +35,7 @@ import { facing } from './heading'
 import ImportPlaces from './ImportPlaces.vue'
 import PlaceDetails, { type Details } from './PlaceDetails.vue'
 import PlaceForm from './PlaceForm.vue'
+import { loadTimeZones } from './timezones'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -59,6 +60,8 @@ const SHARING_WORDS = {
 }
 
 const state = ref<PlacesState | null>(null)
+// The unit's clock's time zone, which a place starts with; null when unknown, which includes an empty name
+const clockTimeZone = computed(() => state.value?.clock_timezone || null)
 const loadError = ref('')
 
 function titleOf(place: SurveyOut) {
@@ -323,7 +326,23 @@ async function load() {
   }
 }
 
-onMounted(load)
+// The device's list of time zones, asked for once when the page opens and passed to every control. It doesn't hold up
+// the page: with no list, a place still gets the unit's clock's time zone, and the controls say why the list is empty.
+const timeZones = ref<string[]>([])
+const timeZonesError = ref('')
+
+async function loadTimeZoneList() {
+  try {
+    timeZones.value = await loadTimeZones()
+  } catch (error) {
+    timeZonesError.value = messageOf(error)
+  }
+}
+
+onMounted(() => {
+  void loadTimeZoneList()
+  void load()
+})
 </script>
 
 <template>
@@ -566,6 +585,9 @@ onMounted(load)
       :survey="editing"
       :map="state.map"
       :centre="centre"
+      :time-zones="timeZones"
+      :time-zones-error="timeZonesError"
+      :clock-time-zone="clockTimeZone"
       @saved="load"
       @stale="load"
     />
@@ -581,6 +603,8 @@ onMounted(load)
         :key="reviews"
         :place="deployTo"
         :state="state"
+        :time-zones="timeZones"
+        :time-zones-error="timeZonesError"
         @deployed="refresh"
         @stale="load"
         @close="deployOpen = false"

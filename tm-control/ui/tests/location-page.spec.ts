@@ -521,6 +521,36 @@ describe('the Location page', () => {
     expect(wrapper.text()).toContain('60 days ago')
   })
 
+  it('the time zones are asked for once', async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: { ...PLACES, clock_timezone: 'America/New_York' },
+      'GET /api/v1/time/timezones': ['America/New_York', 'Asia/Tokyo', 'Europe/Berlin'],
+      'POST /api/v1/surveys': json(201, PLANNED),
+    })
+    const { wrapper } = await mountApp('/location')
+    await click(wrapper, 'Add a place')
+    await clickInDialog('Save') // the places load again after a save
+    await click(wrapper, 'Add a place')
+    const asked = () => api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/time/timezones')
+    expect(asked()).toHaveLength(1)
+    expect(dialogText()).toContain("America/New_York, the same as the unit's clock")
+    expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
+  })
+
+  it("a list of time zones that can't be loaded leaves the form working", async () => {
+    const api = signedIn(ADMIN, {
+      [SURVEYS]: { ...PLACES, clock_timezone: null },
+      'GET /api/v1/time/timezones': apiError(500, 'internal', 'The list is unavailable.'),
+      'POST /api/v1/surveys': json(201, PLANNED),
+    })
+    const { wrapper } = await mountApp('/location')
+    expect(wrapper.text()).toContain('Front of the school') // the page itself loaded
+    await click(wrapper, 'Add a place')
+    expect(dialogText()).toContain('The list is unavailable.') // no clock time zone: the list shows at once, disabled
+    await clickInDialog('Save')
+    expect(api.sent.filter((r) => r.method === 'POST')).toHaveLength(1)
+  })
+
   it('opens the form from Add a place and reloads the list after saving', async () => {
     const api = signedIn(ADMIN, { [SURVEYS]: PLACES, 'POST /api/v1/surveys': json(201, PLANNED) })
     const { wrapper } = await mountApp('/location')

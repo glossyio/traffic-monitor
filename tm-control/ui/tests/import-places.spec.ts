@@ -19,9 +19,9 @@ const SENSORS: SensorHeading[] = [
 ]
 
 const CSV = [
-  'description,lat,lon,picam_h265,TM_RADAR_SERIAL_PORT_00',
-  'Corner by the park,45.0,-122.0,ne,',
-  'Bus stop on the hill,,,,',
+  'description,lat,lon,timezone,picam_h265,TM_RADAR_SERIAL_PORT_00',
+  'Corner by the park,45.0,-122.0,,ne,',
+  'Bus stop on the hill,,,,,',
   '',
 ].join('\n')
 
@@ -65,11 +65,29 @@ describe('importing places', () => {
 
   it("says the format, with this unit's sensor names as the columns", () => {
     const wrapper = mountImport()
-    expect(wrapper.text()).toContain('description,lat,lon,picam_h265,TM_RADAR_SERIAL_PORT_00')
     expect(wrapper.text()).toContain(
       'with the way it faces: a compass point (n, ne, e, se, s, sw, w, nw), whole degrees from north (0 to 359), or blank.',
     )
     expect(wrapper.text()).toContain('Leave lat and lon blank for a place with no location.')
+  })
+
+  it('the header names the timezone column, and the text says what it takes', () => {
+    const wrapper = mountImport()
+    expect(wrapper.text()).toContain('description,lat,lon,timezone,picam_h265,TM_RADAR_SERIAL_PORT_00')
+    expect(wrapper.text()).toContain(
+      "The timezone column is a time zone such as America/New_York, or blank to use the unit's clock's time zone when the place is deployed.",
+    )
+  })
+
+  it("the preview shows a line's time zone", async () => {
+    const rows = [{ ...ROWS[0], timezone: 'Asia/Tokyo' }, ROWS[1]]
+    fakeApi(importAnswers({ rows, errors: [], created: [] }))
+    const wrapper = mountImport()
+    await paste(wrapper, CSV)
+    await click(wrapper, 'Preview')
+    const items = wrapper.findAll('ul.lines li')
+    expect(items[0].text()).toContain('Time zone: Asia/Tokyo')
+    expect(items[1].text()).not.toContain('Time zone')
   })
 
   it('previews the pasted rows and the errors by line', async () => {
@@ -112,7 +130,7 @@ describe('importing places', () => {
     const wrapper = mountImport()
     await paste(wrapper, CSV)
     await click(wrapper, 'Preview')
-    await paste(wrapper, `${CSV}Another corner,,,,\n`)
+    await paste(wrapper, `${CSV}Another corner,,,,,\n`)
     expect(wrapper.text()).not.toContain('Corner by the park')
     expect(button(wrapper, 'Import').element.disabled).toBe(true)
   })
