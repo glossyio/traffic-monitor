@@ -2022,6 +2022,8 @@
       
         
       
+        
+      
     
     
     
@@ -2253,6 +2255,34 @@
     
   
     tm-control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../software-update/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software update
   
 
     
@@ -2556,6 +2586,7 @@ sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w
 <li><code>podman image prune</code> removes the first stage of a two-stage build, which has no tag. Frigate's <code>build-ffmpeg</code> stage and the revproxy's <code>ui</code> stage are such stages, so the next build of either starts over.</li>
 </ul>
 <p>The build units run at every boot, so a build that starts over runs then, and it needs the internet to pull layers and packages. On the same Pi, Frigate's rebuild took about 8 to 13 minutes. Don't prune a device's images unless it is online and can take that wait.</p>
+<p>An update keeps those first stages with tags of their own: after each build it tags them <code>localhost/&lt;name&gt;:stage-&lt;stage&gt;</code> (<code>stage-build-ffmpeg</code> on Frigate's image, <code>stage-ui</code> on the revproxy's), and <code>podman image prune</code> keeps a tagged stage and everything under it. To remove one tag, never run <code>podman untag &lt;name&gt;</code> with one argument, because that removes every name of the image. Use <code>podman untag &lt;image id&gt; &lt;full name&gt;</code>, or <code>podman rmi &lt;full name&gt;</code>. See <a href="../software-update/#the-images">Software update</a> for when the tags move.</p>
 <h2 id="testing-on-a-dev-pi">Testing on a dev Pi<a class="headerlink" href="#testing-on-a-dev-pi" title="Permanent link">&para;</a></h2>
 <p><code>script/devpi/tmdev.py</code> deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.</p>
 <p>The Pis are defined in an inventory file that lists each Pi's address, login, and SSH key, plus the hardware it should have. That file and the run log stay on your machine, outside the repository. <code>script/devpi/README.md</code> covers setup and use.</p>

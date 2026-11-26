@@ -1,0 +1,3392 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Open-source roadway counting and speed monitoring on a Raspberry Pi">
+      
+      
+      
+        <link rel="canonical" href="https://docs.trafficmonitor.ai/latest/development/software-update/">
+      
+      
+        <link rel="prev" href="../tm-control/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Software update - Traffic Monitor</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <style>
+    .md-typeset .tm-description {
+      color: var(--md-default-fg-color--light);
+      font-size: 1.15em;
+      margin-top: -0.6em;
+    }
+  </style>
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You're viewing docs for an unreleased or older version.
+  <a href="../../..">
+    <strong>Go to the latest release.</strong>
+  </a>
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Traffic Monitor" class="md-header__button md-logo" aria-label="Traffic Monitor" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Traffic Monitor
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Software update
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/glossyio/traffic-monitor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    glossyio/traffic-monitor
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Traffic Monitor" class="md-nav__button md-logo" aria-label="Traffic Monitor" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Traffic Monitor
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/glossyio/traffic-monitor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    glossyio/traffic-monitor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../get-started/how-it-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How it works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose your path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../build-your-own-device-diy/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build your own
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Build your own
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/recommended-hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/assembly-instructions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assembly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../software-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install the software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-your-own-device-diy/update/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Update the software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment-and-mounting-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose a site and mount
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First-time setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use the device
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Use the device
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/home-page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home page and apps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/control-app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control app and login
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/wifi-hotspot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wi-Fi and the hotspot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/device-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Check and fix the device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Choose the detection model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/cameras/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cameras
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/location/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Places and location
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/sharing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Share data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/movements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Movements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data export
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/frigate-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tune object detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../use/system-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/node-red-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    config.yml settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Env file settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/tmsetup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installer options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network ports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/data-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and privacy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/events-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Events
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/object-paths/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Object paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/watch-log/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Watch log
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/setup-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/radar-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/air-quality-aq-payload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data-and-payloads/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MQTT and ThingsBoard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add-ons
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Add-ons
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/air-quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air quality sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../add-ons/plate-recognizer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plate Recognizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/use-cases-and-scenarios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ideas and use cases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Help
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/frequently-asked-questions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting and FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help-and-faq/where-can-i-get-support/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tm-control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tm-control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software update
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software update
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#software-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software update
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Software update">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two phases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two phases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-prepare-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Prepare does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-switch-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the switch does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The health check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The stages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-reason-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The reason codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-hand-over-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hand-over file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-state-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The state file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-resume-marker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The resume marker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The images
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The clean-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-restore-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The restore point
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The restore point">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restoring-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restoring by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-an-update-by-hand-on-a-bench-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run an update by hand on a bench device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing and writing docs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#software-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software update
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Software update">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two phases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two phases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-prepare-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Prepare does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-switch-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the switch does
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The health check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The stages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-reason-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The reason codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-hand-over-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The hand-over file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-state-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The state file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-resume-marker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The resume marker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updatejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update.json
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The images
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The clean-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-restore-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The restore point
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The restore point">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restoring-by-hand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Restoring by hand
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-an-update-by-hand-on-a-bench-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run an update by hand on a bench device
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+  
+  
+    <a href="https://github.com/glossyio/traffic-monitor/edit/dev/docs/development/software-update.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+  
+  
+  
+  <hr />
+<h2 id="description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device">description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.<a class="headerlink" href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" title="Permanent link">&para;</a></h2>
+<h1 id="software-update">Software update<a class="headerlink" href="#software-update" title="Permanent link">&para;</a></h1>
+<p><code>tm-update</code> installs the version it ships with onto the device it runs on. It runs as root with no terminal, and it keeps the old version running while it downloads and builds everything the new one needs. A page in the control app that starts it, and the job that fetches and checks a new version, are planned. This page covers the installer side: what <code>tm-update</code> does, what it leaves on a device, and the files a later version must keep reading.</p>
+<p>The command is <a href="https://github.com/glossyio/traffic-monitor/blob/main/script/tm-update"><code>script/tm-update</code></a>, and its code is the <a href="https://github.com/glossyio/traffic-monitor/tree/main/script/tm_update"><code>tm_update</code> package</a> beside it. The package imports only Python's standard library, because the device runs it with <code>/usr/bin/python3 -EP</code> before anything of the new version is installed. It never opens <code>tmdb.sqlite</code>, and it opens the control app's database only read-only, to copy it into the restore point.</p>
+<p><code>tm-update</code> doesn't go through <code>tmsetup.sh</code>. It runs the same Ansible role itself, from the new version's own tree, with a variables file it writes. The <code>tmsetup_update_mode</code> variable switches the role into update mode. The two share one lock, so an install and an update never run at once.</p>
+<h2 id="the-commands">The commands<a class="headerlink" href="#the-commands" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tm-update run --contract 1 --handover &lt;file&gt;</code></td>
+<td>Installs the tree the command lives in.</td>
+</tr>
+<tr>
+<td><code>tm-update resume --handover &lt;file&gt;</code></td>
+<td>Carries a run on after the device restarted in the middle of it.</td>
+</tr>
+</tbody>
+</table>
+<p>Both must run as root. Both read one <a href="#the-hand-over-file">hand-over file</a> and write one state file and one log. <code>--contract</code> names the hand-over contract the caller speaks, and the tree must accept it (see <a href="#updatejson"><code>update.json</code></a>).</p>
+<p>The exit status tells the caller what happened. The state file says why.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>The run ended <code>ok</code>, or it was handed over to a restart, or <code>resume</code> found nothing to carry on.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>The run ended <code>failed</code>, or another install or update holds the lock (<code>busy</code>), or the log can't be opened.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>No usable hand-over, <code>update.json</code>, or resume marker; the tree doesn't accept the contract; or the command isn't running as root.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-two-phases">The two phases<a class="headerlink" href="#the-two-phases" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Prepare</th>
+<th>Switch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Needs the internet</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Runs while</td>
+<td>The old version runs</td>
+<td>The pod and the control app are stopped</td>
+</tr>
+<tr>
+<td>Stages</td>
+<td><code>prepare</code>, <code>images</code>, then <code>restore_point</code></td>
+<td><code>switch</code>, <code>reboot</code> (only when the installer asks for one), <code>health</code></td>
+</tr>
+<tr>
+<td>Changes the running version</td>
+<td>Nothing</td>
+<td>Everything it installs</td>
+</tr>
+</tbody>
+</table>
+<p>After a healthy switch a last stage, <code>cleanup</code>, tidies up. It never fails the run.</p>
+<h3 id="what-prepare-does">What Prepare does<a class="headerlink" href="#what-prepare-does" title="Permanent link">&para;</a></h3>
+<p>Prepare downloads and builds everything the switch would otherwise fetch, so the switch can run with no internet:</p>
+<ul>
+<li>The apt packages the role installs (<code>apt-get install --download-only</code>), from Debian and from backports, into apt's own package cache.</li>
+<li>The go2rtc binary, checked against its SHA-256.</li>
+<li>The Coral model and its labels, checked against their SHA-256, when a Coral is attached.</li>
+<li>The control app's package, as one archive.</li>
+<li>The control app's Python wheels, each checked against the lock's hash. Prepare then installs them into a throwaway virtual environment with no package index, which proves the switch's offline install works.</li>
+<li>A dry run of the new version's <code>tm-control migrate</code> against the device's settings files, so a settings change that would fail is found before anything stops.</li>
+<li>Every image from the new tree, built under a throwaway tag (<code>localhost/&lt;name&gt;:prepare-&lt;first 7 of the commit&gt;</code>), and a check of the new nginx config with <code>nginx -t</code> on the new revproxy image. See <a href="#the-images">the images</a>.</li>
+<li>The restore point, once nothing has refused (<a href="#the-restore-point">see below</a>).</li>
+</ul>
+<p>Prepare keeps its files in the update's work folder, and it leaves the running version alone: no service restarts, no settings change, and no installed file is replaced. It does write outside the work folder in these ways:</p>
+<ul>
+<li>apt's package index is refreshed and its package cache fills.</li>
+<li>The image store gets the throwaway tags, the stage tags, and the build cache.</li>
+<li>The update's systemd slice, <code>tm-update.slice</code>, gets low CPU and I/O weights (<code>CPUWeight=20</code> and <code>IOWeight=20</code>, runtime properties that a restart drops), so the running version keeps up while the images build.</li>
+<li>The nginx check makes a temporary folder in the revproxy's folder under the code folder and removes it afterwards.</li>
+<li>The restore point, the Ansible environment, and the other files in <a href="#the-files">the table below</a> are made.</li>
+</ul>
+<h3 id="what-the-switch-does">What the switch does<a class="headerlink" href="#what-the-switch-does" title="Permanent link">&para;</a></h3>
+<p>The switch is <code>setup.yml</code> with <code>tmsetup_update_mode=true</code>, run from the new tree. In update mode the installer:</p>
+<ul>
+<li>keeps the owner, group, folder, installing user, and repository the manifest records, and records the new commit (a tree from <code>git archive</code> has no changes, so <code>git.modified</code> is false);</li>
+<li>never asks a question, and prints no setup code;</li>
+<li>skips the time zone, the Wi-Fi tasks, the detector driver installs, and every package index refresh or download;</li>
+<li>installs each downloaded file from the stage instead: packages from apt's cache, the go2rtc binary, the Coral files, the control app's package archive, and its wheels (<code>pip install --no-index</code>, still checked against the lock's hashes);</li>
+<li>starts the image build units rather than restarting them, so the running version isn't stopped for a build, and each build finds every step in the cache.</li>
+</ul>
+<p>The order is: check that the migration runner's copy of the database has room, stop <code>traffic-monitor.service</code> and <code>tm-control.service</code>, run the installer, and check the installer's restart flag. If the installer wants a restart, the run records the stage <code>reboot</code>, restarts the device, and <code>resume</code> carries it on. Then the health check runs.</p>
+<p>A switch cut off by a restart is run again by <code>resume</code>, at most twice in all. A repeated switch skips the database space check (the first one passed, and the runner replaces its copy), and any failure early in it is treated like a failure after the stop.</p>
+<p>A failed switch starts the control app, the pod, and the revproxy again before the command exits, and ends as <code>switch_failed</code>. The device may then be partly updated. The <a href="#restoring-by-hand">restore point</a> is how a person gets it back.</p>
+<h3 id="the-health-check">The health check<a class="headerlink" href="#the-health-check" title="Permanent link">&para;</a></h3>
+<p>For up to five minutes, in rounds five seconds apart, <code>tm-update</code> waits until all of these hold in the same round:</p>
+<ul>
+<li>the manifest's <code>git.commit</code> is the new commit;</li>
+<li><code>tm-control.service</code> is active and started after the switch began, and <code>GET /api/v1/health</code> on the control app's loopback port answers 200;</li>
+<li>the pod, Frigate, Node-RED, the revproxy, and go2rtc are active.</li>
+</ul>
+<p>A health check that runs after a restart can't know when the switch began, because that was in an earlier boot, so the control app only has to be active. If the check runs out of time, the run ends as <code>health_failed</code> and the device stays on the new version. After a healthy check, the newest copy of the traffic database that the migration runner made during the switch is recorded in the state file and the restore point (see <a href="#the-restore-point">the restore point</a>).</p>
+<h2 id="the-stages">The stages<a class="headerlink" href="#the-stages" title="Permanent link">&para;</a></h2>
+<p><code>stage</code> in the state file is the stage the run is in, or was in when it ended. Each stage also gets a row in <code>stages</code>, with its start and finish times. A stage that a restart cut off gets a second row when it begins again.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What it does</th>
+<th>If it fails, the run ends as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prepare</code></td>
+<td>Downloads and stages the files, and tries the settings changes.</td>
+<td><code>prepare_failed</code>, or the code the role's refusal names</td>
+</tr>
+<tr>
+<td><code>images</code></td>
+<td>Builds the images and checks the nginx config.</td>
+<td><code>build_failed</code></td>
+</tr>
+<tr>
+<td><code>restore_point</code></td>
+<td>Saves the restore point.</td>
+<td><code>prepare_failed</code></td>
+</tr>
+<tr>
+<td><code>switch</code></td>
+<td>Stops the pod and the control app and installs.</td>
+<td><code>switch_failed</code></td>
+</tr>
+<tr>
+<td><code>reboot</code></td>
+<td>Restarts the device when the installer asks for it.</td>
+<td><code>switch_failed</code></td>
+</tr>
+<tr>
+<td><code>health</code></td>
+<td>Waits for the new version to answer.</td>
+<td><code>health_failed</code></td>
+</tr>
+<tr>
+<td><code>cleanup</code></td>
+<td>Removes what the update no longer needs.</td>
+<td>Never fails the run</td>
+</tr>
+</tbody>
+</table>
+<p>An error <code>tm-update</code> didn't expect ends the run with the code of the stage it was in. A run that a restart cut off before the switch can't know what it was doing, so <code>resume</code> ends it the same way.</p>
+<h2 id="the-reason-codes">The reason codes<a class="headerlink" href="#the-reason-codes" title="Permanent link">&para;</a></h2>
+<p>A failed run has a <code>reason</code>, always one of these codes and never a sentence. <code>detail</code> is a short text <code>tm-update</code> made itself, such as a step's name or a pair of numbers, never a line from Ansible, Podman, apt, or pip. The log holds their output.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>When</th>
+<th>What the person does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>busy</code></td>
+<td>Another install or update holds the lock.</td>
+<td>Wait for it. This is the one code that isn't in the state file, because that file belongs to the run that holds the lock. <code>tm-update</code> writes <code>busy</code> to its log and to stderr, and exits 1.</td>
+</tr>
+<tr>
+<td><code>needs_manual_update</code></td>
+<td>The manifest is missing, unreadable, or names root as the installing user, or a value in it is unusable.</td>
+<td>Run the full installer by hand.</td>
+</tr>
+<tr>
+<td><code>addon_needs_installer</code></td>
+<td>The Plate Recognizer add-on is installed.</td>
+<td>Run the full installer by hand.</td>
+</tr>
+<tr>
+<td><code>reboot_pending</code></td>
+<td>The device has a restart waiting (<code>/var/run/reboot-required</code>).</td>
+<td>Restart it, then try again.</td>
+</tr>
+<tr>
+<td><code>low_space</code></td>
+<td>Less than 8 GB plus 1.2 times the size of <code>tmdb.sqlite</code> is free where the update works, or at the switch, less than 1.2 times that size is free on the code folder's filesystem.</td>
+<td>Free space. The detail gives both numbers in MB.</td>
+</tr>
+<tr>
+<td><code>hardware_needs_installer</code></td>
+<td>An attached Hailo-8L or PCIe Coral has no driver yet, and an update installs none.</td>
+<td>Run the full installer by hand.</td>
+</tr>
+<tr>
+<td><code>no_internet</code></td>
+<td>One <code>HEAD</code> request to the go2rtc release address got no answer. GitHub's redirect counts as an answer.</td>
+<td>Connect the device and try again.</td>
+</tr>
+<tr>
+<td><code>settings_need_attention</code></td>
+<td>The dry run of the settings changes failed.</td>
+<td>Look at the log.</td>
+</tr>
+<tr>
+<td><code>prepare_failed</code></td>
+<td>Anything else that fails in <code>prepare</code> or <code>restore_point</code>, including an unexpected error. Nothing in use has changed.</td>
+<td>Look at the log.</td>
+</tr>
+<tr>
+<td><code>build_failed</code></td>
+<td>An image doesn't build, or the new nginx config fails its check.</td>
+<td>Look at the log.</td>
+</tr>
+<tr>
+<td><code>switch_failed</code></td>
+<td>The stop, the installer, the restart request, or both attempts failed. The services were started again.</td>
+<td>Look at the log. Restore by hand if the device isn't working.</td>
+</tr>
+<tr>
+<td><code>health_failed</code></td>
+<td>The new version didn't come up in five minutes. The detail names the first check that didn't pass (<code>manifest</code>, <code>tm-control</code>, <code>health endpoint</code>, or a unit).</td>
+<td>Look at the log. The device stays on the new version.</td>
+</tr>
+</tbody>
+</table>
+<p>The codes down to <code>build_failed</code> end the run before anything in use has changed, <code>low_space</code> at the switch included, because it is checked before the stop. <code>switch_failed</code> and <code>health_failed</code> come with the switch, which stops the services.</p>
+<h2 id="the-files">The files<a class="headerlink" href="#the-files" title="Permanent link">&para;</a></h2>
+<p>The update's files are under <code>/var/lib/traffic-monitor/</code>. Paths come from one <code>Paths</code> object in the code, whose root a test can move.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>What it is</th>
+<th>Kept</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>update/lock</code></td>
+<td>The lock <code>tm-update</code> and <code>tmsetup.sh</code> both take with <code>flock</code>.</td>
+<td>Always</td>
+</tr>
+<tr>
+<td><code>update/state.json</code></td>
+<td>The <a href="#the-state-file">state file</a> (mode 0644).</td>
+<td>Until the next run replaces it</td>
+</tr>
+<tr>
+<td><code>update/log/&lt;run&gt;.log</code></td>
+<td>One run's log (mode 0640, root and the code group).</td>
+<td>The ten newest</td>
+</tr>
+<tr>
+<td><code>update/work/&lt;run&gt;/</code></td>
+<td>The run's work folder: <code>vars.json</code>, <code>facts.json</code>, <code>stage/</code> (the downloads), <code>build/</code> (a folder for each image), <code>check-venv/</code>, <code>reason</code>, and the installer's restart flag.</td>
+<td>Removed after the run has ended</td>
+</tr>
+<tr>
+<td><code>update/resume.json</code></td>
+<td>The <a href="#the-resume-marker">resume marker</a>.</td>
+<td>From just before the switch stops anything, until the run ends</td>
+</tr>
+<tr>
+<td><code>restore/&lt;time&gt;-&lt;commit&gt;/</code></td>
+<td>A <a href="#the-restore-point">restore point</a>, named for the UTC time (<code>YYYYMMDDTHHMMSSZ</code>) and the first 7 characters of the old commit. Mode 0700, root.</td>
+<td>The two newest</td>
+</tr>
+<tr>
+<td><code>src/&lt;commit&gt;/</code></td>
+<td>A version's source tree. The caller makes it.</td>
+<td>The running version and the one before it</td>
+</tr>
+<tr>
+<td><code>venv/ansible-&lt;12 characters&gt;/</code></td>
+<td>The Ansible environment of a tree, named for the first 12 characters of the SHA-256 of its <code>script/requirements.lock</code>.</td>
+<td>The one the running tree's lock names</td>
+</tr>
+</tbody>
+</table>
+<p>At the start of every <code>run</code>, <code>tm-update</code> removes what a run that died left behind: other runs' work folders and any throwaway image tag.</p>
+<h2 id="the-contract">The contract<a class="headerlink" href="#the-contract" title="Permanent link">&para;</a></h2>
+<p>A later version of <code>tm-update</code> reads the files an earlier version wrote, and an earlier one reads what a later caller writes. These must stay readable. Add keys; don't remove one, rename it, or change what it means. When that can't be done, raise the contract number.</p>
+<p>Every value read from one of these files is checked for its type before use: a number, <code>null</code>, or a list where text is expected is refused, never turned into text. An error names the key and never quotes the value.</p>
+<h3 id="the-hand-over-file">The hand-over file<a class="headerlink" href="#the-hand-over-file" title="Permanent link">&para;</a></h3>
+<p>The caller writes it, and <code>--handover</code> names it. It is JSON, with exactly these keys, all required:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>contract</code></td>
+<td>The number <code>1</code> (not <code>true</code>, not <code>1.0</code>).</td>
+</tr>
+<tr>
+<td><code>run_id</code></td>
+<td>1 to 64 letters, digits, <code>T</code>, <code>_</code>, and <code>-</code>. It names the work folder.</td>
+</tr>
+<tr>
+<td><code>channel</code></td>
+<td><code>stable</code> or <code>development</code>. It decides the branch the installer records: <code>main</code> or <code>dev</code>.</td>
+</tr>
+<tr>
+<td><code>commit</code></td>
+<td>The full 40-character commit id of the tree.</td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td>The release tag, or <code>null</code>.</td>
+</tr>
+<tr>
+<td><code>from_version</code></td>
+<td>The version that was running, as printable text up to 200 characters.</td>
+</tr>
+<tr>
+<td><code>work_dir</code></td>
+<td>Exactly <code>/var/lib/traffic-monitor/update/work/&lt;run_id&gt;</code>. Any other path is refused.</td>
+</tr>
+<tr>
+<td><code>state_path</code></td>
+<td>Exactly <code>/var/lib/traffic-monitor/update/state.json</code>.</td>
+</tr>
+<tr>
+<td><code>log_path</code></td>
+<td>Exactly <code>/var/lib/traffic-monitor/update/log/&lt;run_id&gt;.log</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The caller owns the hand-over file. When it is kept in the work folder, it is removed with that folder when the run ends ok, and <code>resume</code> needs it until then.</p>
+<h3 id="the-state-file">The state file<a class="headerlink" href="#the-state-file" title="Permanent link">&para;</a></h3>
+<p>It is one JSON file that the control app can read while the run goes on. <code>tm-update</code> writes it to a temporary file beside it, syncs it, and renames it, so a reader sees the old file or the new one and never half of one. It holds codes and numbers, never a line from another program and never a secret.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema</code></td>
+<td><code>1</code>.</td>
+</tr>
+<tr>
+<td><code>run_id</code>, <code>channel</code></td>
+<td>From the hand-over.</td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td><code>version</code> and <code>commit</code> of what was installed, from the manifest (both <code>null</code> when the manifest couldn't be read).</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td><code>version</code> (from <code>update.json</code>), <code>commit</code>, and <code>tag</code>.</td>
+</tr>
+<tr>
+<td><code>stage</code></td>
+<td>One of the <a href="#the-stages">stage ids</a>, or <code>null</code> before the first.</td>
+</tr>
+<tr>
+<td><code>stages</code></td>
+<td>A list of <code>{id, started_at, finished_at}</code>, in UTC.</td>
+</tr>
+<tr>
+<td><code>result</code></td>
+<td><code>null</code> while the run goes on, then <code>ok</code> or <code>failed</code>.</td>
+</tr>
+<tr>
+<td><code>reason</code>, <code>detail</code></td>
+<td><code>null</code> unless the run failed. <code>reason</code> is a <a href="#the-reason-codes">code</a>. <code>detail</code> is at most 200 characters.</td>
+</tr>
+<tr>
+<td><code>reboot</code></td>
+<td><code>null</code> until the switch finishes, then whether the device was restarted.</td>
+</tr>
+<tr>
+<td><code>boot_id</code></td>
+<td>The boot's id just before the restart, which <code>resume</code> compares to know the restart has happened.</td>
+</tr>
+<tr>
+<td><code>restore_point</code></td>
+<td>The restore point's folder, or <code>null</code> before it is saved.</td>
+</tr>
+<tr>
+<td><code>tmdb_backup</code></td>
+<td>The migration runner's copy of the traffic database that this update made, or <code>null</code> when it made none.</td>
+</tr>
+<tr>
+<td><code>switch_attempts</code></td>
+<td>The number of times the switch has started, at most 2.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-resume-marker">The resume marker<a class="headerlink" href="#the-resume-marker" title="Permanent link">&para;</a></h3>
+<p><code>update/resume.json</code> is <code>{"contract": 1, "tree": &lt;path&gt;, "handover": &lt;path&gt;}</code>. <code>tm-update</code> writes it just before the switch stops anything and removes it when the run ends, ok or failed. A unit that runs after a restart, which is planned, reads it to know which tree's <code>tm-update resume</code> to start and with which hand-over. <code>resume</code> takes the lock like <code>run</code>, and then:</p>
+<ul>
+<li>with no marker, it does nothing and exits 0;</li>
+<li>with a marker it can't read, it removes it and exits 2, and with one that names another tree or hand-over, it exits 2 and leaves it for that run;</li>
+<li>with a run that has already ended, it removes the marker and exits 0;</li>
+<li>in the stage <code>reboot</code>, while the boot id is still the one recorded, it exits 0 and leaves the marker, because the restart hasn't happened yet;</li>
+<li>otherwise it carries on from <code>reboot</code> with the health check, from <code>switch</code> with another attempt (a run whose switch already started twice ends as <code>switch_failed</code>), from <code>health</code> with the check again, and from <code>cleanup</code> with the clean-up. A run cut off in an earlier stage ends with that stage's code. When the manifest can't be used, a run cut off in <code>switch</code> ends as <code>switch_failed</code> with the services started again, one in <code>reboot</code> or <code>health</code> ends as <code>health_failed</code>, and one in <code>cleanup</code> still runs the clean-up and ends <code>ok</code>.</li>
+</ul>
+<h3 id="updatejson">update.json<a class="headerlink" href="#updatejson" title="Permanent link">&para;</a></h3>
+<p><code>script/update.json</code> is in every tree. It lets the caller read what a tree accepts without running it.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>contracts</code></td>
+<td>The hand-over contracts the tree accepts, such as <code>[1]</code>.</td>
+</tr>
+<tr>
+<td><code>tm_version</code></td>
+<td>The tree's version, which <code>tm-update</code> records as <code>to.version</code>.</td>
+</tr>
+<tr>
+<td><code>tmdb_schema</code></td>
+<td>The number of the newest migration in <code>container/node-red-tm/schema/migrations/</code>.</td>
+</tr>
+<tr>
+<td><code>state_schema</code></td>
+<td>The number of the control app's database migrations.</td>
+</tr>
+</tbody>
+</table>
+<p>A test holds the last three to the real files, so a migration can't be added without updating this file.</p>
+<h2 id="the-images">The images<a class="headerlink" href="#the-images" title="Permanent link">&para;</a></h2>
+<p>The update builds every image in <code>tmsetup_update_images</code> (<code>vars/main.yml</code>): Frigate's, Node-RED's, and the revproxy's. The Plate Recognizer add-on isn't one of them, and a device that has it is refused.</p>
+<p>Each builds in its own folder under the work folder, with the files the installer would write into the code folder, and with the same owner, group, and mode. A <code>COPY</code> step's cache key reads the owner and group of the files, so with the same owner and group the switch's build units find every step in the cache. The builds run in <code>tm-update.slice</code>.</p>
+<p>Frigate's <code>build-ffmpeg</code> stage and the revproxy's <code>ui</code> stage are the first stages of two-stage builds. A first stage has no tag of its own, and <code>podman image prune</code> removes it, so the next build would start over (see <a href="../dev-environment/#what-the-build-cache-depends-on">what the build cache depends on</a>). After each build, Prepare tags each first stage <code>localhost/&lt;name&gt;:stage-&lt;stage&gt;</code>. A tagged stage survives a prune, and so does everything under it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Prepare moves the <code>stage-*</code> tags to the new version's stages during Prepare, not at the switch. If an update fails after its builds, the running version's first stages have no tag until the next update ends ok. A <code>podman image prune</code> run by hand in that time costs the running version its build cache, and its next build at boot takes minutes and needs the internet.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p><code>podman untag &lt;name&gt;</code> with one argument removes every name of that image. To remove one tag, use <code>podman untag &lt;image id&gt; &lt;full name&gt;</code>, or <code>podman rmi &lt;full name&gt;</code>. <code>tm-update</code> always uses one of these.</p>
+</div>
+<h2 id="the-clean-up">The clean-up<a class="headerlink" href="#the-clean-up" title="Permanent link">&para;</a></h2>
+<p>The clean-up runs after a healthy switch, and the update is already done by then. A step that fails is logged, with a note such as <code>step_failed:&lt;name&gt;</code>, and the next step runs. The steps, in order:</p>
+<ol>
+<li>Remove the throwaway tags.</li>
+<li>Remove the tags in the three image repositories that no build unit and no stage rule names. A tag that can't be removed stays, and the log says so (<code>podman rmi</code>, never forced).</li>
+<li>Prune dangling images. The stage tags keep the first stages.</li>
+<li>Remove base images of earlier versions that nothing uses: the images in the repositories the Containerfiles build <code>FROM</code> that no current <code>FROM</code> line names. It removes nothing unless it can find every current base.</li>
+<li>Give the slice its low weights again (a restart drops them), then build each image once more from the staged folders to check that every step still comes from the cache. A miss rebuilds the image then, while the internet is probably there, and not at the next boot. The log notes it as <code>cache_rebuilt:&lt;name&gt;</code>.</li>
+<li>Remove source trees but the running one and the one it replaced (none at all when the manifest already named the new commit before the run, as it does after a switch that failed late, because then it can't tell which tree came before), Ansible environments but the one the tree's lock names, and all but the ten newest run logs. The current run's log counts as one of the ten.</li>
+</ol>
+<p>The run's state is then set to <code>ok</code>, the resume marker is removed, and last of all the work folder is removed, still under the lock. A restart before that leaves the folder for the next run to clear.</p>
+<h2 id="the-restore-point">The restore point<a class="headerlink" href="#the-restore-point" title="Permanent link">&para;</a></h2>
+<p>Before the switch, <code>tm-update</code> saves what an earlier version needs to be restored:</p>
+<ul>
+<li>the device's settings: Node-RED's and Frigate's <code>config.yml</code>, go2rtc's <code>go2rtc.yaml</code>, and the polkit rule;</li>
+<li>every <code>*.env</code> file in the code folder's component folders, and any <code>services/*.service</code> files there;</li>
+<li>the manifest;</li>
+<li>every secret file;</li>
+<li>the Quadlet units in <code>/etc/containers/systemd/</code> and the <code>tm-*</code> units in <code>/etc/systemd/system/</code>;</li>
+<li>a consistent copy of the control app's <code>state.sqlite</code>, made with SQLite's backup API, so it is whole while the control app keeps writing.</li>
+</ul>
+<p>It is built in a folder whose name ends in <code>.partial</code> and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. <code>restore.json</code> in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in <code>src/</code> when it is still there (<code>previous_tree</code>, which is <code>null</code> when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and <code>tmdb_backup</code>.</p>
+<p>The traffic database, <code>tmdb.sqlite</code>, is not in the restore point, because it can be several gigabytes. When the new version has a schema change, the migration runner copies the database to <code>db/backup/</code> in Node-RED's folder before it applies the change. After the health check, <code>tmdb_backup</code> in the state file and the restore point names the newest copy made since the switch began. It is <code>null</code> when none was made.</p>
+<p>The two newest restore points are kept. The one just made is always kept, whatever the clock said when it was named.</p>
+<h3 id="restoring-by-hand">Restoring by hand<a class="headerlink" href="#restoring-by-hand" title="Permanent link">&para;</a></h3>
+<p>There is no undo command.</p>
+<p>Use the newest restore point, unless its <code>restore.json</code> has the same commit under <code>from</code> and under <code>to</code>. Such a restore point was made by a run that repeated an update whose switch had failed late, so the files it copied may already be partly changed, and it names no previous tree. Use the restore point before it instead: its <code>from</code> is the version to go back to.</p>
+<p>To put a device back on the version it had, as a person at a shell:</p>
+<ol>
+<li>Stop the pod, the control app, and the revproxy: <code>sudo systemctl stop traffic-monitor.service tm-control.service revproxy.service</code>.</li>
+<li>
+<p>Copy the files back. Under the restore point's <code>files/</code> folder, each file is at its own path. Copy each one listed in <code>restore.json</code> and give it the owner and group the list records. Don't copy the folders over <code>/</code>, because that would change the modes of the system's own folders. For example:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>python3<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
+<span class="s">import json, os, shutil</span>
+<span class="s">point = "/var/lib/traffic-monitor/restore/&lt;name&gt;"</span>
+<span class="s">for row in json.load(open(point + "/restore.json"))["files"]:</span>
+<span class="s">    os.makedirs(os.path.dirname(row["path"]), exist_ok=True)</span>
+<span class="s">    shutil.copy2(point + "/files" + row["path"], row["path"])</span>
+<span class="s">    os.chown(row["path"], row["uid"], row["gid"])</span>
+<span class="s">EOF</span>
+</code></pre></div>
+<p>Remove any <code>state.sqlite-wal</code> and <code>state.sqlite-shm</code> beside <code>/var/lib/tm-control/state.sqlite</code>, then run <code>sudo systemctl daemon-reload</code>.
+3. When <code>tmdb_backup</code> isn't <code>null</code>, copy that file over <code>tmdb.sqlite</code> in Node-RED's <code>db/</code> folder, as the code owner (<code>tmadmin</code> unless the install chose another). Rows written since the migration are lost. When it is <code>null</code>, the runner made no copy, so there is nothing to put back.
+4. Run the old tree's installer as the login that installed the device (<code>installing_user</code> in the manifest), from the tree <code>previous_tree</code> names: <code>bash script/tmsetup.sh -y -a "e tmsetup_source_commit=&lt;old commit&gt;"</code>. A tree made with <code>git archive</code> has no <code>.git</code>, so the commit has to be passed. This is a full install and needs the internet. If <code>previous_tree</code> is <code>null</code>, make the tree again with <code>git archive</code> from the commit under <code>from</code> in <code>restore.json</code>.
+5. The installer starts the services. If it asks for a restart, restart the device.</p>
+</li>
+</ol>
+<h2 id="run-an-update-by-hand-on-a-bench-device">Run an update by hand on a bench device<a class="headerlink" href="#run-an-update-by-hand-on-a-bench-device" title="Permanent link">&para;</a></h2>
+<p>Use this on a bench device only. It runs the real installer, which restarts the pod and the control app and may restart the device, so never run it on a device in the field. Run the commands through <code>tmdev.py run &lt;host&gt; -- ...</code> to keep them in the run log (see <a href="../dev-environment/#testing-on-a-dev-pi">Testing on a dev Pi</a>).</p>
+<ol>
+<li>
+<p>Put the tree on the device, as <code>git archive</code> makes it, as root. The folder is named for the commit, which is where the clean-up looks for it:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">commit</span><span class="o">=</span><span class="k">$(</span>git<span class="w"> </span>rev-parse<span class="w"> </span>HEAD<span class="k">)</span>
+git<span class="w"> </span>archive<span class="w"> </span>--format<span class="o">=</span>tar.gz<span class="w"> </span>--prefix<span class="o">=</span><span class="s2">"</span><span class="nv">$commit</span><span class="s2">/"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$commit</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>ssh<span class="w"> </span>&lt;pi&gt;<span class="w"> </span><span class="s1">'sudo mkdir -p /var/lib/traffic-monitor/src &amp;&amp; sudo tar -xzf - -C /var/lib/traffic-monitor/src'</span>
+</code></pre></div>
+</li>
+<li>
+<p>Write a <a href="#the-hand-over-file">hand-over file</a> on the device. The work folder, state file, and log are under <code>/var/lib/traffic-monitor/update/</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"contract"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20261125T101500Z"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"development"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"commit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;the 40-character commit id&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"tag"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"from_version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;the version that runs now&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"work_dir"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/traffic-monitor/update/work/20261125T101500Z"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"state_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/traffic-monitor/update/state.json"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"log_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/traffic-monitor/update/log/20261125T101500Z.log"</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Save it as root, in the update folder (for example <code>/var/lib/traffic-monitor/update/handover.json</code>).</p>
+</li>
+<li>
+<p>Start it as a transient service, so that stopping the control app or closing your session doesn't end it:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemd-run<span class="w"> </span>--unit<span class="o">=</span>tm-update-bench<span class="w"> </span>--collect<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/var/lib/traffic-monitor/src/&lt;commit&gt;/script/tm-update<span class="w"> </span>run<span class="w"> </span>--contract<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--handover<span class="w"> </span>/var/lib/traffic-monitor/update/handover.json
+</code></pre></div>
+</li>
+<li>
+<p>Follow it in the state file, which anyone can read, and in the log, which root or the code group can:</p>
+<div class="highlight"><pre><span></span><code>watch<span class="w"> </span>-n<span class="w"> </span><span class="m">5</span><span class="w"> </span>cat<span class="w"> </span>/var/lib/traffic-monitor/update/state.json
+sudo<span class="w"> </span>tail<span class="w"> </span>-f<span class="w"> </span>/var/lib/traffic-monitor/update/log/20261125T101500Z.log
+</code></pre></div>
+</li>
+<li>
+<p>When the state's <code>stage</code> is <code>reboot</code>, the device restarts. Nothing starts <code>resume</code> for you yet, so after the restart run the same command with <code>resume --handover ...</code> in place of <code>run --contract 1 --handover ...</code>.</p>
+</li>
+<li>The run is over when <code>result</code> is <code>ok</code> or <code>failed</code>. Then run the device tests that check what an update leaves behind: <code>tmdev.py test &lt;host&gt; -- -k test_update</code>.</li>
+</ol>
+<p><code>tm-update</code> doesn't compare versions or commits: it installs the tree you give it, so the same commit can be installed again.</p>
+  
+
+
+
+
+
+
+
+  
+
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

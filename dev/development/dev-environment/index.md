@@ -80,6 +80,8 @@ You can skip this section unless you build images on a device. The device builds
 
 The build units run at every boot, so a build that starts over runs then, and it needs the internet to pull layers and packages. On the same Pi, Frigate's rebuild took about 8 to 13 minutes. Don't prune a device's images unless it is online and can take that wait.
 
+An update keeps those first stages with tags of their own: after each build it tags them `localhost/<name>:stage-<stage>` (`stage-build-ffmpeg` on Frigate's image, `stage-ui` on the revproxy's), and `podman image prune` keeps a tagged stage and everything under it. To remove one tag, never run `podman untag <name>` with one argument, because that removes every name of the image. Use `podman untag <image id> <full name>`, or `podman rmi <full name>`. See [Software update](https://docs.trafficmonitor.ai/dev/development/software-update/#the-images) for when the tags move.
+
 ## Testing on a dev Pi
 
 `script/devpi/tmdev.py` deploys your working copy to a bench Pi over SSH, runs commands on it, and records a PR's Pi test plan as a checklist. Every deploy, command, and check goes into a run log on your machine, so you can see later what ran on which Pi and how it went.
