@@ -129,15 +129,24 @@ from an existing lockfile without trouble, so the image still builds and tests t
   (`canTake` in `reference.ts`, which also holds the pictures' addresses and the legend's rows). It
   opens `ReferencePicture.vue`, one dialog the page keeps, in two steps. The first has the intro and the note on what
   the picture gives away, and only Take the pictures: the note comes before any picture, because what it asks (make
-  sure nobody is in either picture, which the device doesn't check and the admin answers for; share them as you would
-  the exact location) is decided before the take, not after, and it stays above the pictures on the second step. The
-  second shows the two pictures side by side on a desktop and stacked on a phone (`v-col cols="12" md="6"`), the
+  sure nobody is in either picture, which the admin answers for; share them as you would the exact location) is
+  decided before the take, not after, and it stays above the pictures on the second step. The device asks Frigate
+  whether it is tracking a person on the camera when the pictures are taken, so the note says what that check can and
+  can't promise. The second step opens with one line, between the note and the pictures, because it is about these
+  pictures and is read before them (`peopleLine` in `reference.ts`, an alert marked `data-people`): a warning when
+  Frigate was tracking a person, and plain information for the other two, "Frigate wasn't tracking a person" and "the
+  device couldn't check", because neither of them is a finding. The line never disables a button: Save the zip and
+  Take again work the same for all three, because the admin answers for the pictures. It follows the newest take and
+  goes with the pictures when they are dropped. Below it the second step shows the two pictures side by side on a
+  desktop and stacked on a phone (`v-col cols="12" md="6"`), the
   zones' legend with a `v-sheet` swatch in each zone's colour, the location box, and Save the zip, Take again, and
   Close. The pictures are plain `<img>` elements pointing at the device: the session cookie authorizes them, and the
   page keeps no copy of them, so nothing is left once the dialog closes; closing it, or taking again, tells the device
   to drop them. A picture that fails to load, or a 404 from Save, means
   the device no longer holds them, so the dialog goes back to its first step and says so rather than showing a broken
-  picture with a working Save button.
+  picture with a working Save button. In fake mode the three lines are reached without changing code: the line for
+  "wasn't tracking" is the default, `TM_CONTROL_FAKE_PERSON=1` gives the warning, and a camera whose detection switch
+  on the Cameras page is off gives the "couldn't check" line.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form

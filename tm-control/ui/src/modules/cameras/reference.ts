@@ -1,4 +1,5 @@
-// The reference picture on the Cameras page: which rows offer one, where the held pictures are, and the legend's rows.
+// The reference picture on the Cameras page: which rows offer one, where the held pictures are, the legend's rows, and
+// the line about people.
 // The rules about the pictures themselves are the backend's.
 import type { components } from '../../api/schema'
 import { rowState, type CameraRow } from './rows'
@@ -29,4 +30,31 @@ export function legendRows(reference: ReferenceOut): { key: string; color: strin
     } else if (!zone.drawn) detail = 'no outline'
     return { key: zone.key, color: zone.color ?? FALLBACK_COLOR, detail }
   })
+}
+
+// The one line above the pictures, from the device's answer to "was Frigate tracking a person" at the two takes. Only
+// `seen` is a warning: neither of the others is a finding, and none of the three stops the admin from saving.
+export function peopleLine(people: ReferenceOut['people']): { type: 'warning' | 'info'; text: string } {
+  if (people === 'seen') {
+    return {
+      type: 'warning',
+      text:
+        'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
+        'then take them again.',
+    }
+  }
+  if (people === 'none') {
+    return {
+      type: 'info',
+      text:
+        "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both pictures " +
+        'yourself.',
+    }
+  }
+  return {
+    type: 'info',
+    text:
+      "The device couldn't check for people, because Frigate's detection is off for this camera or Frigate didn't " +
+      'answer. Look at both pictures yourself.',
+  }
 }

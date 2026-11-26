@@ -14,13 +14,24 @@ const ZIP = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0])
 const EXPIRED = 'These pictures are no longer held on the device. Take them again.'
 const NOTE =
   'This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. ' +
-  "The device doesn't check the pictures for people. You are responsible for making sure nobody is in either " +
-  'picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only ' +
-  "with people you would give the unit's exact location. The data file also holds that location unless you clear " +
-  'the box below.'
+  'When the pictures are taken, the device asks Frigate whether it is tracking a person on this camera, and says so ' +
+  "above them. That works only while Frigate's detection is on for the camera. Frigate can miss a person who is far " +
+  'away, half hidden, or in poor light, or who walks in between the two pictures. You are still responsible for ' +
+  'making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and ' +
+  "take them again. Share them only with people you would give the unit's exact location. The data file also holds " +
+  'that location unless you clear the box below.'
 const INTRO =
   'A still picture of what this camera sees, and the same view with its zones marked, for a tool that places ' +
   'recorded paths on a street. You get one zip with both pictures, a data file with the zones, and a labelled drawing.'
+const SEEN =
+  'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, then take ' +
+  'them again.'
+const NONE =
+  "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both pictures " +
+  'yourself.'
+const UNCHECKED =
+  "The device couldn't check for people, because Frigate's detection is off for this camera or Frigate didn't " +
+  'answer. Look at both pictures yourself.'
 const LOCATION = "Include this place's exact location"
 
 function zipAnswer() {
@@ -89,6 +100,7 @@ describe('Reference picture', () => {
     expect(dialogText()).toContain(INTRO)
     expect(dialogText()).toContain(NOTE)
     expect(pictures()).toEqual([])
+    expect(dialog()?.querySelector('[data-people]')).toBeNull()
     expect(buttonsIn(dialog(), 'Take the pictures')).toHaveLength(1)
     expect(api.sent.some((request) => request.method === 'POST')).toBe(false)
   })
@@ -120,8 +132,75 @@ describe('Reference picture', () => {
     expect(dialog()?.querySelectorAll('[data-legend-row]')).toHaveLength(4)
     expect(text).toContain('A–B 12 m, B–C 7.3 m, C–D 12 m, D–A 7.3 m')
     expect(text).toContain('off in Frigate, not drawn')
+  })
+
+  it('warns above the pictures when Frigate was tracking a person', async () => {
+    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people: 'seen' }) })
+    await openDialog(wrapper)
+    await takePictures()
+    const line = dialog()?.querySelector('[data-people]')
+    expect(line?.textContent).toContain(SEEN)
+    expect(line?.className).toContain('v-alert--variant-tonal')
+    expect(line?.className).toContain('text-warning')
+    const first = dialog()?.querySelector('img')
+    expect(line && first && line.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const note = dialog()?.querySelector('[data-note]')
+    expect(note && line && note.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(dialog()?.querySelectorAll('[data-people]')).toHaveLength(1)
+  })
+
+  it("says when Frigate wasn't tracking a person", async () => {
+    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people: 'none' }) })
+    await openDialog(wrapper)
+    await takePictures()
+    const line = dialog()?.querySelector('[data-people]')
+    expect(line?.textContent).toContain(NONE)
+    expect(line?.className).toContain('text-info')
+    expect(line?.className).not.toContain('text-warning')
+    expect(dialogText()).not.toContain(SEEN)
+  })
+
+  it("says when the device couldn't check", async () => {
+    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people: 'unchecked' }) })
+    await openDialog(wrapper)
+    await takePictures()
+    const line = dialog()?.querySelector('[data-people]')
+    expect(line?.textContent).toContain(UNCHECKED)
+    expect(line?.className).toContain('text-info')
+    expect(dialogText()).not.toContain(NONE)
+  })
+
+  it.each(['seen', 'none', 'unchecked'] as const)('keeps Save the zip for every result (%s)', async (people) => {
+    const { wrapper } = await openPage({ [TAKE]: referenceOut({ people }) })
+    await openDialog(wrapper)
+    await takePictures()
+    const save = buttonsIn(dialog(), 'Save the zip')
+    expect(save).toHaveLength(1)
+    expect(save[0].disabled).toBe(false)
+    expect(buttonsIn(dialog(), 'Take again')).toHaveLength(1)
+  })
+
+  it("shows the newest take's result after Take again", async () => {
+    const answers = [referenceOut({ people: 'seen' }), referenceOut({ people: 'none' })]
+    const { wrapper } = await openPage({ [TAKE]: () => json(200, answers.shift()) })
+    await openDialog(wrapper)
+    await takePictures()
+    expect(dialog()?.querySelector('[data-people]')?.textContent).toContain(SEEN)
+    await clickIn(dialog(), 'Take again')
+    expect(dialog()?.querySelectorAll('[data-people]')).toHaveLength(1)
+    expect(dialog()?.querySelector('[data-people]')?.textContent).toContain(NONE)
+    expect(dialogText()).not.toContain(SEEN)
+  })
+
+  it('drops the result line with the pictures', async () => {
+    saveSpies()
+    const { wrapper } = await openPage({ [PACKAGE]: apiError(404, 'reference_expired', EXPIRED) })
+    await openDialog(wrapper)
+    await takePictures()
+    expect(dialog()?.querySelector('[data-people]')).not.toBeNull()
+    await clickIn(dialog(), 'Save the zip')
+    expect(pictures()).toEqual([])
     expect(dialog()?.querySelector('[data-people]')).toBeNull()
-    expect(text).not.toContain('Frigate was tracking')
   })
 
   it('saves the zip with the location while the box is ticked, and without it once cleared', async () => {
