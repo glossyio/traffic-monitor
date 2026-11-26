@@ -1356,6 +1356,26 @@ def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
     assert {"node-red-tm/data/package.json", "node-red-tm/data/package-lock.json"} <= set(task["loop"])
 
 
+def test_the_installer_sets_no_time_zone_unless_asked():
+    """The device always has a zone (the imager's or the image's) and the Date and time page changes it, so a run of
+    the installer sets the clock's zone only when `-z` gives one. A place's zone is a separate fact."""
+    assert load_role_yaml("defaults/main.yml")["tmsetup_timezone"] == ""
+    task = next(
+        task for task in load_role_yaml("tasks/base_setup.yml")
+        if task["name"] == "TMSetup - Base Setup - Set timezone"
+    )
+    assert task["when"] == ["not (tmsetup_update_mode | bool)", "tmsetup_timezone | length > 0"]
+    assert task["community.general.timezone"]["name"] == "{{ tmsetup_timezone }}"
+
+    def runs(**variables):
+        return all(evaluate("{{ (" + condition + ") }}", **variables) for condition in task["when"])
+
+    assert runs(tmsetup_update_mode=False, tmsetup_timezone="") is False
+    assert runs(tmsetup_update_mode=False, tmsetup_timezone="Europe/Berlin") is True
+    # an update never sets the clock's zone, even with one given
+    assert runs(tmsetup_update_mode=True, tmsetup_timezone="Europe/Berlin") is False
+
+
 # --- update mode ----------------------------------------------------------------------------------------------------
 # `tmsetup_update_mode` installs from the files an earlier run staged under `tmsetup_update_stage_dir`: no internet,
 # no package index, and nothing that asks a question.
@@ -1363,7 +1383,9 @@ def test_the_node_red_lock_is_copied_beside_package_json_for_the_image_build():
 STAGE = "/var/lib/traffic-monitor/update/stage"
 UPDATE_VARS = {"tmsetup_update_stage_dir": STAGE, "tmsetup_dpkg_architecture": "arm64",
                "tmsetup_frigate_coral_model_file": "model.tflite", "tmsetup_tm_control_dir": "/usr/local/lib/traffic-monitor/tm-control",
-               "tmsetup_tm_control_claim_register": {"stdout": "unclaimed"}}
+               "tmsetup_tm_control_claim_register": {"stdout": "unclaimed"},
+               # a zone given with -z, so the Set timezone task's own condition holds and only the switch decides
+               "tmsetup_timezone": "Europe/Berlin"}
 CORAL_PRESENT = {"edgetpu_pci": {"dev_path_available": True, "exists": True},
                  "edgetpu_usb": {"dev_path_available": False, "exists": False}}
 CORAL_ABSENT = {"edgetpu_pci": {"dev_path_available": False, "exists": False},

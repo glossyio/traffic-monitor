@@ -3,6 +3,6 @@
         1
     ],
     "tm_version": "0.8.0-dev",
-    "tmdb_schema": 11,
-    "state_schema": 7
+    "tmdb_schema": 12,
+    "state_schema": 8
 }

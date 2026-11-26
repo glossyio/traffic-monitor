@@ -2,16 +2,19 @@
 
 GET lists the places (after reconcile.ensure has brought the store and config.yml into step). An admin can plan a
 place (POST), edit or delete one, deploy one (write it and its sensors' headings into Node-RED's config.yml, then wait
-for Node-RED to start the deployments), correct a used place's location or one deployment's heading, read and save how
-each sensor is mounted at the place in use (asking "Did the unit move or turn?" when it matters), change the precision
-tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds them (a
-one-time download link; Node-RED makes the copy), and import planned places from CSV.
+for Node-RED to start the deployments), correct a used place's location or one deployment's heading, set or clear a
+place's time zone, read and save how each sensor is mounted at the place in use (asking "Did the unit move or turn?"
+when it matters), change the precision tmdb stores coordinates at, export the places with their exact coordinates and
+zones, start a database copy that holds them (a one-time download link; Node-RED makes the copy), and import planned
+places from CSV.
 
 Every write to config.yml or the places store holds app.state.reconcile_lock, so a GET's reconcile never sees half of
 one. config.yml is written before the store, so a refused or failed save leaves both as they were. No coordinate,
 description, or reason is logged, audited, or put in an error message: audit rows carry the survey id (and the
-deployment id, or the precision) only; a mounting correction's row adds the values it changed among the five, which
-identify no place. The mounting rules are mounting.py's; this module only calls them.
+deployment id, or the precision) only; a mounting correction's row adds the values it changed among the five, and a
+zone change's the old and new zone, which identify no place. A zone appears in no log line or error message. A zone
+is stored trimmed and only when the device lists it (the Date and time page's list). The mounting rules are
+mounting.py's; this module only calls them.
 """
 
 import csv
@@ -21,6 +24,7 @@ import math
 import re
 import secrets
 import time
+from functools import cache
 from time import sleep
 from typing import Annotated, Literal
 
@@ -61,6 +65,8 @@ from tm_control.modules.location.mounting import (
 from tm_control.modules.location.mounting import read as read_mounting
 from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.location.region import LatLon, region
+from tm_control.modules.location.zones import ZONE_MAX, read_zone
+from tm_control.modules.time.router import _clock, _timezones
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +77,7 @@ DEPLOY_TIMEOUT = 20.0  # how long a deploy waits for them (decision 6; nginx's r
 TEXT_MAX = 200
 SENSOR_NAME_MAX = 64
 HEADING_TEXT = "a whole number from 0 to 359"
+ZONE_COLUMN = "timezone"  # the places CSV's column for a place's zone, after lon
 CSV_HEADING_TEXT = f"{HEADING_TEXT}, a compass point (n, ne, e, se, s, sw, w, nw), or blank"
 _DIGITS = re.compile(r"[0-9]{1,3}", re.ASCII)  # at most three, so int() never meets a string too long for it
 
@@ -118,6 +125,7 @@ class PlacesState(BaseModel):
     reconcile: Literal["done", "waiting_nodered", "config_unreadable"]
     nodered: bool  # whether Node-RED answered the usage counts
     map: MapSources
+    clock_timezone: str | None  # the device clock's zone, which a place's needn't match; None when it can't be read
 
 
 class SurveyIn(BaseModel):
@@ -125,6 +133,12 @@ class SurveyIn(BaseModel):
     lat: float | None = None
     lon: float | None = None
     headings: list[SensorHeading] = Field(default_factory=list, max_length=32)
+    # One the device lists; null or blank is none. POST without the key is none; PATCH without it keeps the stored zone.
+    timezone: str | None = Field(default=None, max_length=ZONE_MAX)
+
+
+class TimezoneIn(BaseModel):
+    timezone: str | None = Field(max_length=ZONE_MAX)  # required: a name the device lists, or null (or blank) to clear
 
 
 class DeployIn(BaseModel):
@@ -241,6 +255,7 @@ class ImportRow(BaseModel):
     lat: float | None
     lon: float | None
     headings: list[SensorHeading]
+    timezone: str | None
 
 
 class ImportProblem(BaseModel):
@@ -366,15 +381,15 @@ def _map_sources(info: MapInfo) -> MapSources:
     return MapSources(style_url=style)
 
 
-def _region(app_state) -> LatLon | None:
-    """The device's region, from its time zone and Wi-Fi country (fake mode's own, as the Time page does)."""
-    if app_state.settings.fake:
-        zone = app_state.fake_clock.show().timezone
-        country = app_state.fake_network.country
-    else:
-        state = timedate.show()
-        zone = state.timezone if state else None
-        country = network.wifi_country()
+def _clock_zone(app_state) -> str | None:
+    """The device clock's time zone (fake mode's own, as the Time page does); None when it can't be read."""
+    state = app_state.fake_clock.show() if app_state.settings.fake else timedate.show()
+    return state.timezone if state else None
+
+
+def _region(app_state, zone: str | None) -> LatLon | None:
+    """The device's region, from the clock's time zone and the Wi-Fi country (fake mode's own)."""
+    country = app_state.fake_network.country if app_state.settings.fake else network.wifi_country()
     return region(zone, country)
 
 
@@ -394,9 +409,10 @@ def _state(request: Request, admin: User) -> PlacesState:
     usage, unassigned, answered = _usage(app_state)
     places = Places(app_state.state)
     current = places.in_use()
+    clock_zone = _clock_zone(app_state)
     sources = _map_sources(app_state.manifest.map)
     if sources.style_url:  # a region is of no use without a map
-        sources.region = _region(app_state)
+        sources.region = _region(app_state, clock_zone)
     return PlacesState(
         precision=precision,
         in_use=current.id if current else None,
@@ -411,6 +427,7 @@ def _state(request: Request, admin: User) -> PlacesState:
         reconcile=outcome.state,
         nodered=answered,
         map=sources,
+        clock_timezone=clock_zone,
     )
 
 
@@ -454,6 +471,23 @@ def _description(value: str | None) -> str | None:
     return text or None
 
 
+def _known_zone(text: str, listed) -> bool:
+    """Whether trimmed, non-blank text is a zone the device lists (`listed()` reads the list, the Date and time page's;
+    a list that can't be read is that page's 500) and has a zone's shape, which config.yml needs to take it back."""
+    return text in listed() and read_zone(text) == text
+
+
+def _zone(app_state, value: str | None) -> str | None:
+    """A zone from a request, as the store keeps it: trimmed, a blank one none, and 422 naming the field (never the
+    value) for one the device doesn't list."""
+    text = (value or "").strip()
+    if not text:
+        return None
+    if not _known_zone(text, lambda: _timezones(_clock(app_state))):
+        raise _invalid("The device doesn't know that time zone.", "timezone")
+    return text
+
+
 # Routes. The fixed paths (precision, export, import) come before any /{survey_id} path that could take them.
 
 
@@ -470,10 +504,11 @@ def create_place(body: SurveyIn, request: Request, admin: User = Depends(require
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
     headings = _headings(body.headings)
+    zone = _zone(app_state, body.timezone)
     survey_id = new_survey_id()
     with app_state.reconcile_lock:
         survey = Places(app_state.state).create(
-            survey_id, _description(body.description), lat, lon, headings, "ui", "planned", admin.id
+            survey_id, _description(body.description), lat, lon, headings, "ui", "planned", admin.id, timezone=zone
         )
     Audit(app_state.state).record(admin.id, "survey.create", survey_id)
     return _one(app_state, survey, ask_nodered=False)
@@ -512,13 +547,14 @@ def export_places(request: Request, admin: User = Depends(require_admin)):
         raise config_error(error) from None
     text = io.StringIO()
     writer = csv.writer(text, lineterminator="\r\n")
-    writer.writerow(["survey_id", "lat", "lon", "status", "created_at", "updated_at"])
+    writer.writerow(["survey_id", "lat", "lon", "timezone", "status", "created_at", "updated_at"])
     count = 0
     for place in Places(app_state.state).list():
         writer.writerow([
             place.id,
             "" if place.lat is None else f"{place.lat:.5f}",
             "" if place.lon is None else f"{place.lon:.5f}",
+            place.timezone or "",
             place.status,
             place.created_at,
             place.updated_at,
@@ -575,11 +611,12 @@ def database_copy(request: Request, response: Response, admin: User = Depends(re
 
 @router.post("/import", response_model=ImportOut)
 def import_places(body: ImportIn, request: Request, admin: User = Depends(require_admin)):
-    """Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless
-    dry_run, create them all, or none when any line is refused (422 with the problems in detail)."""
+    """Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading, and a
+    `timezone` column anywhere after lon) and, unless dry_run, create them all, or none when any line is refused (422
+    with the problems in detail)."""
     app_state = request.app.state
     sensors = load_config(app_state).sensors()
-    rows, errors = _parse_csv(body.csv, sensors)
+    rows, errors = _parse_csv(body.csv, sensors, cache(lambda: _timezones(_clock(app_state))))
     if body.dry_run:
         return ImportOut(rows=rows, errors=errors, created=[])
     if errors:
@@ -592,7 +629,10 @@ def import_places(body: ImportIn, request: Request, admin: User = Depends(requir
         places = Places(app_state.state)
         for row in rows:
             survey_id = new_survey_id()
-            places.create(survey_id, row.description, row.lat, row.lon, row.headings, "csv", "planned", admin.id)
+            places.create(
+                survey_id, row.description, row.lat, row.lon, row.headings, "csv", "planned", admin.id,
+                timezone=row.timezone,
+            )
             created.append(survey_id)
     audit = Audit(app_state.state)
     for survey_id in created:
@@ -602,16 +642,19 @@ def import_places(body: ImportIn, request: Request, admin: User = Depends(requir
 
 @router.patch("/{survey_id}", response_model=SurveyOut)
 def edit_place(survey_id: str, body: SurveyIn, request: Request, admin: User = Depends(require_admin)):
-    """Edit a planned place (409 not_planned for one in use or used: correct those instead)."""
+    """Edit a planned place (409 not_planned for one in use or used: correct those instead). The body replaces the
+    place's description, point, and headings; a body without `timezone` keeps its zone (null or blank clears it)."""
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
     headings = _headings(body.headings)
+    zone_sent = "timezone" in body.model_fields_set  # absent, not null: a form that doesn't show the zone keeps it
+    zone = _zone(app_state, body.timezone) if zone_sent else None
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         if place.status != "planned":
             raise ApiError(409, "not_planned", "Only a planned place can be edited. Correct a used place instead.")
         survey = Places(app_state.state).update_planned(
-            place.id, _description(body.description), lat, lon, headings
+            place.id, _description(body.description), lat, lon, headings, zone if zone_sent else place.timezone
         )
     Audit(app_state.state).record(admin.id, "survey.update", place.id)
     return _one(app_state, survey, ask_nodered=False)
@@ -632,11 +675,11 @@ def delete_place(survey_id: str, request: Request, admin: User = Depends(require
 
 @router.post("/{survey_id}/deploy", response_model=DeployOut)
 def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User = Depends(require_admin)):
-    """Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
-    out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to
-    another place also removes each sensor's other four from the file, at a place used before as at a new one: the
-    store keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a
-    mounting save.
+    """Put the place in use: its id, point, zone (blank for none), and each enabled sensor's heading into config.yml (a
+    sensor the body leaves out takes the place's stored heading, else the file's), then wait for Node-RED to start the
+    deployments. Moving to another place also removes each sensor's other four from the file, at a place used before
+    as at a new one: the store keeps the values last saved there, and `previous` names the sensors whose values wait to
+    be confirmed by a mounting save.
 
     Node-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see
     _reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it."""
@@ -660,6 +703,7 @@ def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User =
 
         deployed_at = int(time.time() * 1000)
         config.set_place(place.id, place.lat, place.lon)
+        config.set_timezone(place.timezone)  # in the same save, so the new rows carry it from their start
         for (sensor_type, sensor_name), heading in chosen.items():
             config.set_sensor_heading(sensor_type, sensor_name, heading)
             if moving:
@@ -784,6 +828,41 @@ def correct_location(survey_id: str, body: LocationCorrection, request: Request,
             raise _nodered_error(
                 error, "The place's location changed, but its stored rows weren't re-rounded. Correct it again."
             ) from None
+        survey = places.get(place.id)
+    return _one(app_state, survey)
+
+
+@router.put("/{survey_id}/timezone", response_model=SurveyOut)
+def set_place_timezone(survey_id: str, body: TimezoneIn, request: Request, admin: User = Depends(require_admin)):
+    """Set or clear (null) a place's time zone, whatever its status: config.yml for the place in use, the store (with
+    an audit row naming the old and new zone, when it changed), and every one of Node-RED's rows of a place that has
+    been used, ended ones too. A change starts no deployment. A 502 means the store and the file changed and the rows
+    didn't; saving the same zone again rewrites them. The reconcile runs first (see _reconciled), and for the place in
+    use a file that no longer names it by the time the lock is held is refused (409 config_changed)."""
+    app_state = request.app.state
+    _reconciled(app_state, admin)
+    with app_state.reconcile_lock:
+        place = _place(app_state, survey_id)
+        zone = _zone(app_state, body.timezone)
+        if place.status == "in_use":
+            config = load_config(app_state)
+            if config.deployment().survey_id != place.id:
+                raise _not_the_place(config)
+            config.set_timezone(zone)
+            save_config(app_state, config)  # first, so the follow step never sees the store ahead of the file
+        places = Places(app_state.state)
+        if zone != place.timezone:
+            places.set_timezone(place.id, zone)
+            Audit(app_state.state).record(
+                admin.id, "survey.timezone", f"{place.id} {_value_text(place.timezone)}>{_value_text(zone)}"
+            )
+        if place.status != "planned":
+            try:
+                app_state.nodered.set_timezone(place.id, zone)  # also when unchanged: saving again heals the rows
+            except NodeRedError as error:
+                raise _nodered_error(
+                    error, "The place's time zone changed, but its stored rows weren't updated. Save it again."
+                ) from None
         survey = places.get(place.id)
     return _one(app_state, survey)
 
@@ -1233,9 +1312,10 @@ def _sensor_columns(fields: list[str], sensors: list[SensorHeading]) -> tuple[di
     return columns, unknown
 
 
-def _parse_csv(text: str, sensors: list[SensorHeading]) -> tuple[list[ImportRow], list[ImportProblem]]:
+def _parse_csv(text: str, sensors: list[SensorHeading], zones) -> tuple[list[ImportRow], list[ImportProblem]]:
     """The places a CSV describes and, by line, what is wrong with the rest; one problem per line, naming the column,
-    never the value."""
+    never the value. A column headed exactly `timezone` after lon is the place's zone, never a sensor's; `zones()` is
+    the device's list, read only when a line has a zone."""
     reader = csv.DictReader(io.StringIO(text))
     try:
         header = [field.strip() for field in (reader.fieldnames or [])]
@@ -1243,7 +1323,10 @@ def _parse_csv(text: str, sensors: list[SensorHeading]) -> tuple[list[ImportRow]
         return [], [ImportProblem(line=1, message="The first line isn't a CSV header.")]
     if header[:3] != ["description", "lat", "lon"]:
         return [], [ImportProblem(line=1, message="The first line must start with description,lat,lon.")]
-    columns, unknown = _sensor_columns(header[3:], sensors)
+    zone_columns = [index for index, field in enumerate(header) if index >= 3 and field == ZONE_COLUMN]
+    if len(zone_columns) > 1:
+        return [], [ImportProblem(line=1, message=f"Column {zone_columns[1] + 1} is a second timezone column.")]
+    columns, unknown = _sensor_columns([field for field in header[3:] if field != ZONE_COLUMN], sensors)
     if unknown:
         # By position, not by name: a header cell can hold anything, and an error message repeats nothing sent.
         numbers = ", ".join(str(header.index(field) + 1) for field in unknown)
@@ -1256,7 +1339,7 @@ def _parse_csv(text: str, sensors: list[SensorHeading]) -> tuple[list[ImportRow]
         for record in reader:
             line = reader.line_num
             try:
-                rows.append(_import_row(line, record, columns))
+                rows.append(_import_row(line, record, columns, zones))
             except ValueError as error:
                 errors.append(ImportProblem(line=line, message=str(error)))
     except csv.Error:
@@ -1264,7 +1347,7 @@ def _parse_csv(text: str, sensors: list[SensorHeading]) -> tuple[list[ImportRow]
     return rows, errors
 
 
-def _import_row(line: int, record: dict, columns: dict) -> ImportRow:
+def _import_row(line: int, record: dict, columns: dict, zones) -> ImportRow:
     """One CSV record as a place; ValueError, with a message that names no value, for one that can't be."""
     try:
         lat, lon = exact(record.get("lat"), "lat"), exact(record.get("lon"), "lon")
@@ -1286,7 +1369,10 @@ def _import_row(line: int, record: dict, columns: dict) -> ImportRow:
         if heading is None:
             raise ValueError(f"The heading for {column} must be {CSV_HEADING_TEXT}.")
         headings.append(SensorHeading(sensor_type=sensor_type, sensor_name=sensor_name, heading_deg=heading))
+    zone = (record.get(ZONE_COLUMN) or "").strip() or None
+    if zone is not None and not _known_zone(zone, zones):
+        raise ValueError("The time zone isn't one the device knows.")
     if record.get(None):
         raise ValueError("This line has more values than the header has columns.")
-    return ImportRow(line=line, description=description, lat=lat, lon=lon, headings=headings)
+    return ImportRow(line=line, description=description, lat=lat, lon=lon, headings=headings, timezone=zone)
 

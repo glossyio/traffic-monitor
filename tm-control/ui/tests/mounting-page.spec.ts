@@ -31,6 +31,7 @@ const IN_USE: SurveyOut = {
   open_count: 2,
   deployment_count: 2,
   imported: false,
+  timezone: null,
 }
 
 const PLACES: PlacesState = {
@@ -46,6 +47,7 @@ const PLACES: PlacesState = {
   reconcile: 'done',
   nodered: true,
   map: { style_url: null },
+  clock_timezone: null,
 }
 
 const SURVEYS = 'GET /api/v1/surveys'

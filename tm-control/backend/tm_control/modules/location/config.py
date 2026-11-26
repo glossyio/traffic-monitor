@@ -30,6 +30,7 @@ from tm_control.modules.location.coordinates import (
 )
 from tm_control.modules.location.mounting import FIELDS, Mounting, read as read_mounting
 from tm_control.modules.location.places import SensorHeading
+from tm_control.modules.location.zones import read_zone
 from tm_control.modules.sharing.consents import normalize_host
 
 SENSOR_TYPES = ("cameras", "radars", "airquality_monitors")
@@ -58,6 +59,7 @@ class Deployment(BaseModel):
     # A lat or lon that is there but isn't a number in range, or only one of the two: lat and lon are then not a
     # point to follow or match, though the file has something in them.
     coordinates_invalid: bool
+    timezone: str | None  # the zone's text when it has a zone's shape, else None (see zones.read_zone)
 
 
 def _blank(value) -> bool:
@@ -104,6 +106,7 @@ def _parse_deployment(data: Mapping) -> Deployment:
         coordinates_invalid=(
             (not lat_blank and lat is None) or (not lon_blank and lon is None) or lat_blank != lon_blank
         ),
+        timezone=read_zone(block.get("timezone")),
     )
 
 
@@ -581,6 +584,27 @@ class NodeRedConfig:
             raise ValueError("precision must be none, 1 or 2")
         block = self._deployment_block()
         put_after(block, "database_precision", SingleQuotedScalarString(precision), after="survey_id")
+
+    def set_timezone(self, zone: str | None) -> bool:
+        """Write deployment.timezone as plain text, after database_precision when the block lacks the key. None blanks a
+        key that is there and adds none. True when this changed the block's value, compared as the file holds it (not as
+        read_zone reads it: a number, an empty string, or a name with spaces inside quotes is changed); False, and the
+        block untouched, when the key already holds exactly that value, or is missing or blank with None given."""
+        if zone is not None and read_zone(zone) != zone:
+            raise ValueError("timezone must be a time zone name")
+        if zone is None:
+            block = self._file.data.get("deployment")
+            if not isinstance(block, CommentedMap) or "timezone" not in block:
+                return False
+            if block["timezone"] in (None, ""):
+                return False
+        else:
+            block = self._deployment_block()
+            held = block.get("timezone")
+            if isinstance(held, str) and held == zone:
+                return False
+        put_after(block, "timezone", zone, after="database_precision")
+        return True
 
     def set_sensor_heading(self, sensor_type: str, sensor_name: str, heading_deg: int | None) -> None:
         """Write sensors.<type>.<name>.deployment.heading_deg as a plain number, or blank for None, creating the sensor's

@@ -22,6 +22,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     created_at: '2026-10-01T12:00:00+00:00',
     updated_at: '2026-10-01T12:00:00+00:00',
     headings: [],
+    timezone: null,
     stored_lat: 45.0,
     stored_lon: -122.0,
     first_used: 1760000000000,
@@ -63,6 +64,7 @@ const STATE: PlacesState = {
   reconcile: 'done',
   nodered: true,
   map: { style_url: 'https://tiles.example.invalid/style' },
+  clock_timezone: null,
 }
 
 const DEPLOY = 'POST /api/v1/surveys/c0ffee01-si/deploy'

@@ -24,7 +24,9 @@
 
 - name: TMSetup - Base Setup - Set timezone
   become: true
-  when: not (tmsetup_update_mode | bool)
+  when:
+    - not (tmsetup_update_mode | bool)
+    - tmsetup_timezone | length > 0
   community.general.timezone:
     name: '{{ tmsetup_timezone }}'
 

@@ -885,7 +885,7 @@ def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_pa
 
 
 def test_node_red_config_template_has_no_time_section():
-    """Nothing reads time:; the time zone is set at install (tmsetup_timezone) and later in the control app."""
+    """Nothing reads time:; the time zone is set in the control app, or at install only with -z (tmsetup_timezone)."""
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
     assert set(config) == {"thingsboard", "deployment", "sensors"}
 

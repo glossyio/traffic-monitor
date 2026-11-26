@@ -3,8 +3,8 @@
 
 // Share data: an event with its speed, its path across the picture, its box, and how long it stood still and spent in
 // each zone (stationary_time, stops, zone_times), a deployment row whose location is rounded to the stored precision
-// and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount), and the watch
-// log, which every five minutes says whether each camera and radar was working
+// and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount) and the place's
+// time zone (timezone), and the watch log, which every five minutes says whether each camera and radar was working
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -37,6 +37,7 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
       height_m: 3.6,
       view_distance_m: 16.94,
       mount: 'pole',
+      timezone: 'America/New_York',
     },
     watch: {
       cameras: [
