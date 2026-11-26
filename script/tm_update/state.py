@@ -72,6 +72,25 @@ def _fresh(handover: Handover, installed, to_version: "str | None") -> dict:
     }
 
 
+def _text_or_none(value: object) -> bool:
+    return value is None or isinstance(value, str)
+
+
+# The keys a run carries on from a state file of its own run_id that the caller may have started, each with the type
+# it must have; one of another type keeps the fresh value. stages is checked by _usable, and stage may be one of the
+# caller's own ids.
+_CARRIED = {
+    "stage": _text_or_none,
+    "stages": lambda value: True,
+    "boot_id": _text_or_none,
+    "reboot": lambda value: value is None or isinstance(value, bool),
+    "restore_point": _text_or_none,
+    "tmdb_backup": _text_or_none,
+    # bool is a kind of int
+    "switch_attempts": lambda value: type(value) is int and value >= 0,
+}
+
+
 def _usable(old: object, run_id: str) -> bool:
     return (isinstance(old, dict) and old.get("run_id") == run_id and isinstance(old.get("stages", []), list)
             and all(isinstance(row, dict) for row in old.get("stages", [])))
@@ -91,8 +110,8 @@ class State:
         except (OSError, ValueError):
             old = None
         if _usable(old, handover.run_id):
-            for key in ("stage", "stages", "boot_id", "reboot", "restore_point", "tmdb_backup", "switch_attempts"):
-                if key in old:
+            for key, right_type in _CARRIED.items():
+                if key in old and right_type(old[key]):
                     data[key] = old[key]
         state = cls(handover.state_path, data)
         state._save()

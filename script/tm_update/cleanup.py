@@ -334,10 +334,14 @@ def _remove_paths(log, entries) -> bool:
 
 
 def _old_trees(ctx) -> "list[Path]":
-    """Source trees but the running one and the one installed before it. Only folders named by a commit id."""
+    """Source trees but the running one and the one installed before it. Only folders named by a commit id. None
+    when the run installed the commit the manifest already named (a switch that failed late wrote it): which tree came
+    before is unknown, and a later update removes them."""
     keep = {ctx.handover.commit}
     before = ctx.state.data.get("from")
     commit = before.get("commit") if isinstance(before, dict) else None
+    if commit == ctx.handover.commit:
+        return []
     if isinstance(commit, str) and _COMMIT.fullmatch(commit):
         keep.add(commit)
     tree = Path(ctx.tree).resolve()
@@ -362,13 +366,20 @@ def _old_venvs(ctx) -> "list[Path]":
 
 
 def _old_logs(ctx) -> "list[Path]":
-    """Run logs but the ten newest by name. This run's log is never removed and counts as one of the ten."""
+    """Run logs but the ten newest by modification time (then by name). This run's log is never removed and counts as
+    one of the ten. A log whose time can't be read is left alone."""
     if not ctx.paths.log_dir.is_dir():
         return []
     mine = ctx.handover.log_path.name
-    logs = sorted(entry for entry in ctx.paths.log_dir.iterdir()
-                  if entry.name.endswith(".log") and entry.name != mine and entry.is_file()
-                  and not entry.is_symlink())
+    dated = []
+    for entry in ctx.paths.log_dir.iterdir():
+        if not entry.name.endswith(".log") or entry.name == mine or entry.is_symlink() or not entry.is_file():
+            continue
+        try:
+            dated.append((entry.stat().st_mtime_ns, entry.name, entry))
+        except OSError:
+            continue
+    logs = [entry for _, _, entry in sorted(dated)]
     return logs[:max(len(logs) - (LOGS_KEPT - 1), 0)]
 
 

@@ -191,7 +191,7 @@ It is one JSON file that the control app can read while the run goes on. `tm-upd
 * with a marker it can't read, it removes it and exits 2, and with one that names another tree or hand-over, it exits 2 and leaves it for that run;
 * with a run that has already ended, it removes the marker and exits 0;
 * in the stage `reboot`, while the boot id is still the one recorded, it exits 0 and leaves the marker, because the restart hasn't happened yet;
-* otherwise it carries on from `reboot` with the health check, from `switch` with another attempt (a run whose switch already started twice ends as `switch_failed`), from `health` with the check again, and from `cleanup` with the clean-up. A run cut off in an earlier stage ends with that stage's code.
+* otherwise it carries on from `reboot` with the health check, from `switch` with another attempt (a run whose switch already started twice ends as `switch_failed`), from `health` with the check again, and from `cleanup` with the clean-up. A run cut off in an earlier stage ends with that stage's code. When the manifest can't be used, a run cut off in `switch` ends as `switch_failed` with the services started again, one in `reboot` or `health` ends as `health_failed`, and one in `cleanup` still runs the clean-up and ends `ok`.
 
 ### update.json
 
@@ -231,7 +231,7 @@ The clean-up runs after a healthy switch, and the update is already done by then
 3. Prune dangling images. The stage tags keep the first stages.
 4. Remove base images of earlier versions that nothing uses: the images in the repositories the Containerfiles build `FROM` that no current `FROM` line names. It removes nothing unless it can find every current base.
 5. Give the slice its low weights again (a restart drops them), then build each image once more from the staged folders to check that every step still comes from the cache. A miss rebuilds the image then, while the internet is probably there, and not at the next boot. The log notes it as `cache_rebuilt:<name>`.
-6. Remove source trees but the running one and the one it replaced, Ansible environments but the one the tree's lock names, and all but the ten newest run logs. The current run's log counts as one of the ten.
+6. Remove source trees but the running one and the one it replaced (none at all when the manifest already named the new commit before the run, as it does after a switch that failed late, because then it can't tell which tree came before), Ansible environments but the one the tree's lock names, and all but the ten newest run logs. The current run's log counts as one of the ten.
 
 The run's state is then set to `ok`, the resume marker is removed, and last of all the work folder is removed, still under the lock. A restart before that leaves the folder for the next run to clear.
 
@@ -246,7 +246,7 @@ Before the switch, `tm-update` saves what an earlier version needs to be restore
 * the Quadlet units in `/etc/containers/systemd/` and the `tm-*` units in `/etc/systemd/system/`;
 * a consistent copy of the control app's `state.sqlite`, made with SQLite's backup API, so it is whole while the control app keeps writing.
 
-It is built in a folder whose name ends in `.partial` and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. `restore.json` in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in `src/` when it is still there (`previous_tree`), the files it found missing, and `tmdb_backup`.
+It is built in a folder whose name ends in `.partial` and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. `restore.json` in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in `src/` when it is still there (`previous_tree`, which is `null` when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and `tmdb_backup`.
 
 The traffic database, `tmdb.sqlite`, is not in the restore point, because it can be several gigabytes. When the new version has a schema change, the migration runner copies the database to `db/backup/` in Node-RED's folder before it applies the change. After the health check, `tmdb_backup` in the state file and the restore point names the newest copy made since the switch began. It is `null` when none was made.
 
@@ -254,7 +254,11 @@ The two newest restore points are kept. The one just made is always kept, whatev
 
 ### Restoring by hand
 
-There is no undo command. To put a device back on the version it had, as a person at a shell:
+There is no undo command.
+
+Use the newest restore point, unless its `restore.json` has the same commit under `from` and under `to`. Such a restore point was made by a run that repeated an update whose switch had failed late, so the files it copied may already be partly changed, and it names no previous tree. Use the restore point before it instead: its `from` is the version to go back to.
+
+To put a device back on the version it had, as a person at a shell:
 
 1. Stop the pod, the control app, and the revproxy: `sudo systemctl stop traffic-monitor.service tm-control.service revproxy.service`.
 2. Copy the files back. Under the restore point's `files/` folder, each file is at its own path. Copy each one listed in `restore.json` and give it the owner and group the list records. Don't copy the folders over `/`, because that would change the modes of the system's own folders. For example:
@@ -272,7 +276,7 @@ There is no undo command. To put a device back on the version it had, as a perso
 
     Remove any `state.sqlite-wal` and `state.sqlite-shm` beside `/var/lib/tm-control/state.sqlite`, then run `sudo systemctl daemon-reload`.
 3. When `tmdb_backup` isn't `null`, copy that file over `tmdb.sqlite` in Node-RED's `db/` folder, as the code owner (`tmadmin` unless the install chose another). Rows written since the migration are lost. When it is `null`, the runner made no copy, so there is nothing to put back.
-4. Run the old tree's installer as the login that installed the device (`installing_user` in the manifest), from the tree `previous_tree` names: `bash script/tmsetup.sh -y -a "e tmsetup_source_commit=<old commit>"`. A tree made with `git archive` has no `.git`, so the commit has to be passed. This is a full install and needs the internet. If `previous_tree` is `null`, make the tree again with `git archive` from the old commit in `restore.json`.
+4. Run the old tree's installer as the login that installed the device (`installing_user` in the manifest), from the tree `previous_tree` names: `bash script/tmsetup.sh -y -a "e tmsetup_source_commit=<old commit>"`. A tree made with `git archive` has no `.git`, so the commit has to be passed. This is a full install and needs the internet. If `previous_tree` is `null`, make the tree again with `git archive` from the commit under `from` in `restore.json`.
 5. The installer starts the services. If it asks for a restart, restart the device.
 
 ## Run an update by hand on a bench device

@@ -105,6 +105,33 @@ def test_a_state_file_the_caller_started_is_carried_on_with_its_own_stages(world
     assert state.data["switch_attempts"] == 0
 
 
+@pytest.mark.parametrize(("key", "value"), [
+    ("switch_attempts", None), ("switch_attempts", "1"), ("switch_attempts", True), ("switch_attempts", -1),
+    ("switch_attempts", 1.0), ("boot_id", 5), ("boot_id", ["b"]), ("restore_point", 5), ("restore_point", {}),
+    ("tmdb_backup", False), ("tmdb_backup", ["t"]), ("reboot", "yes"), ("reboot", 1), ("stage", 5),
+    ("stage", ["prepare"])])
+def test_a_key_of_the_wrong_type_in_a_state_file_the_caller_started_is_not_carried_on(world, key, value):
+    paths, _ = world
+    fresh = State.open(handover(paths, run_id="fresh"), installed(), "0.8.0").data
+    paths.state.write_text(json.dumps({"schema": 1, "run_id": "20261125T101500Z-abc", "channel": "stable",
+                                       "stages": [], key: value}))
+    state = State.open(handover(paths), installed(), "0.8.0")
+    assert state.data[key] == fresh[key]
+    assert json.loads(paths.state.read_text())[key] == fresh[key]
+
+
+def test_a_state_file_the_caller_started_keeps_its_own_stage_ids_and_good_values(world):
+    paths, _ = world
+    rows = [{"id": "fetch", "started_at": "2026-11-25T10:15:00Z", "finished_at": "2026-11-25T10:15:09Z"},
+            {"id": "verify", "started_at": "2026-11-25T10:15:09Z", "finished_at": None}]
+    paths.state.write_text(json.dumps({"schema": 1, "run_id": "20261125T101500Z-abc", "channel": "stable",
+                                       "stage": "verify", "stages": rows, "boot_id": None, "reboot": False,
+                                       "restore_point": "r", "tmdb_backup": None, "switch_attempts": 0}))
+    data = State.open(handover(paths), installed(), "0.8.0").data
+    assert data["stage"] == "verify" and data["stages"] == rows
+    assert (data["reboot"], data["restore_point"], data["switch_attempts"]) == (False, "r", 0)
+
+
 def test_a_state_file_of_another_run_is_started_over(world):
     paths, _ = world
     other = State.open(handover(paths, run_id="other"), installed(), "0.8.0")

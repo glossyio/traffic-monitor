@@ -35,7 +35,8 @@ class Context:
     tree: Path
     handover: Handover
     handover_path: Path
-    installed: Installed
+    # None only for a clean-up resumed without a usable manifest: the clean-up never reads it
+    installed: "Installed | None"
     state: State
     log: IO[str]
     venv: "Path | None" = None
@@ -153,7 +154,9 @@ def _restore_point(ctx: Context) -> None:
     ctx.state.begin("restore_point")
     _say(ctx.log, "stage restore_point")
     tree = ctx.paths.src_root / ctx.installed.commit
-    folder = restore.make(ctx.installed, ctx.handover, ctx.paths, tree if tree.is_dir() else None)
+    # After a switch that failed late the manifest names the new commit already, and its folder is the new tree
+    previous = tree if tree.is_dir() and ctx.installed.commit != ctx.handover.commit else None
+    folder = restore.make(ctx.installed, ctx.handover, ctx.paths, previous)
     restore.keep_newest(ctx.paths, just_made=folder)
     ctx.state.set(restore_point=str(folder))
     ctx.state.finish("restore_point")
@@ -360,13 +363,25 @@ def _resume(paths: Paths, tree: Path, handover: Handover, handover_path: Path, l
         try:
             installed = installed_module.read(paths)
         except Failed as refusal:
-            if stage != "switch":
+            if stage not in ("switch", "reboot", "health", "cleanup"):
+                # Cut off before the switch: nothing in use has changed
                 return _fail(state, log, refusal, paths)
-            # A switch a restart cut off may have stopped the units and run part of the installer
             _say(log, f"resume at stage {stage}: the manifest can't be used")
-            switch.start_again(log)
-            return _fail(state, log, Failed("switch_failed", "manifest"), paths)
-        _give_log_to_group(log, installed.codegroup)
+            if stage == "switch":
+                # A switch a restart cut off may have stopped the units and run part of the installer
+                switch.start_again(log)
+                return _fail(state, log, Failed("switch_failed", "manifest"), paths)
+            if stage != "cleanup":
+                # The switch has happened, and the health check needs the manifest to name the new commit
+                if stage == "reboot":
+                    state.finish("reboot")
+                    state.begin("health")
+                return _fail(state, log, Failed("health_failed", "manifest"), paths)
+            # The switch was healthy, and the clean-up never reads the manifest
+            installed = None
+            _say(log, "the log keeps its own group")
+        else:
+            _give_log_to_group(log, installed.codegroup)
         _say(log, f"resume at stage {stage}")
         ctx = Context(paths, tree, handover, handover_path, installed, state, log)
         return _guarded(ctx, lambda ctx: _carry_on(ctx, stage))

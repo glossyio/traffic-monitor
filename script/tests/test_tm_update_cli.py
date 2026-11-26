@@ -92,6 +92,16 @@ def test_the_restore_point_is_saved_after_the_images_and_its_folder_is_in_the_st
     assert "marker-7e1d" not in device.log() and "marker-7e1d" not in device.paths.state.read_text()
 
 
+def test_a_commit_installed_again_has_no_previous_tree_in_its_restore_point(tmp_path, monkeypatch):
+    # A switch that failed late left the manifest naming the new commit
+    device = Device(tmp_path, monkeypatch, manifest_data=manifest(git={"commit": COMMIT, "branch": "main",
+                                                                       "modified": False}))
+    (device.paths.src_root / COMMIT).mkdir(parents=True)
+    assert device.main() == 0
+    listing = json.loads((Path(device.state()["restore_point"]) / "restore.json").read_text())
+    assert listing["previous_tree"] is None
+
+
 def test_only_two_restore_points_are_kept_by_a_run(device):
     for name in ("20261101T000000Z-aaaaaaa", "20261102T000000Z-bbbbbbb", "20261103T000000Z-ccccccc"):
         (device.paths.restore_root / name).mkdir(parents=True)
@@ -580,12 +590,57 @@ def test_a_resumed_switch_whose_manifest_cannot_be_used_starts_the_three_service
     assert state["from"] == {"version": "0.7.1", "commit": "b" * 40}
 
 
-@pytest.mark.parametrize("stage", ["reboot", "health", "cleanup"])
-def test_a_manifest_that_cannot_be_used_after_the_switch_keeps_its_own_code(device, stage):
+@pytest.mark.parametrize("stage", ["reboot", "health"])
+def test_a_manifest_that_cannot_be_used_after_the_switch_fails_the_health_check(device, stage):
     _cut_off(device, stage, boot_id=OTHER_BOOT)
     device.paths.manifest.unlink()
     assert device.resume() == 1
-    assert device.state()["reason"] == "needs_manual_update"
+    state = device.state()
+    # The switch has happened, so this is not a code that says nothing in use changed
+    assert (state["result"], state["reason"], state["detail"]) == ("failed", "health_failed", "manifest")
+    assert state["stage"] == "health" and [row["id"] for row in state["stages"]][-1] == "health"
+    assert all(row["finished_at"] for row in state["stages"])
+    assert not device.paths.resume.exists()
+    assert device.systemctl_calls("start") == [] and device.systemctl_calls("is-active") == []
+    assert device.work.is_dir()
+
+
+def test_a_manifest_that_cannot_be_used_before_the_restart_still_waits_for_it(device):
+    _cut_off(device, "reboot", boot_id=BOOT)
+    device.paths.manifest.unlink()
+    before = device.paths.state.read_bytes()
+    assert device.resume() == 0
+    assert device.paths.state.read_bytes() == before and device.paths.resume.exists()
+
+
+def test_a_manifest_that_cannot_be_used_in_the_clean_up_still_ends_ok(device):
+    _cut_off(device, "cleanup", boot_id=OTHER_BOOT)
+    device.paths.manifest.unlink()
+    older = device.paths.src_root / ("c" * 40)
+    older.mkdir(parents=True)
+    assert device.resume() == 0
+    state = device.state()
+    assert (state["result"], state["reason"], state["detail"]) == ("ok", None, None)
+    assert [row["id"] for row in state["stages"]][-1] == "cleanup"
+    assert all(row["finished_at"] for row in state["stages"])
+    assert not device.paths.resume.exists() and not device.work.exists()
+    # The clean-up ran without the manifest
+    assert not older.exists()
+    assert "the log keeps its own group" in device.log()
+    assert device.systemctl_calls("start") == []
+
+
+def test_a_manifest_that_cannot_be_used_before_the_switch_is_a_manual_update(device):
+    _cut_off(device, "switch", switched=False)
+    state = json.loads(device.paths.state.read_text())
+    state["stage"], state["stages"] = "images", state["stages"][:2]
+    state["stages"][-1]["finished_at"] = None
+    device.paths.state.write_text(json.dumps(state))
+    device.paths.manifest.unlink()
+    assert device.resume() == 1
+    state = device.state()
+    assert (state["result"], state["reason"]) == ("failed", "needs_manual_update")
+    assert not device.paths.resume.exists()
     assert device.systemctl_calls("start") == []
 
 

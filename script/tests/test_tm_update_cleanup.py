@@ -2,6 +2,7 @@
 stays, the check that every build still comes from the cache, and the folders and logs it removes."""
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -341,8 +342,9 @@ def _folders(ctx):
         (venv / name / "bin").mkdir(parents=True)
     logs.mkdir(parents=True)
     older = [f"2026110{day}T000000Z-x{n}.log" for day in range(1, 7) for n in (1, 2)]  # 12, all older than this run
-    for name in older:
+    for age, name in enumerate(reversed(older)):
         (logs / name).write_text("x")
+        os.utime(logs / name, (1_700_000_000 - age * 60, 1_700_000_000 - age * 60))
     (logs / (RUN + ".log")).write_text("this run")
     (logs / "README").write_text("not a run log")
     return current, older
@@ -356,7 +358,7 @@ def test_the_work_folder_older_trees_older_venvs_and_older_logs_go(world):
     assert sorted(entry.name for entry in src.iterdir()) == sorted([COMMIT, OLD_COMMIT, "C" * 40, "notes", "d" * 40])
     assert sorted(entry.name for entry in ctx.paths.venv_root.iterdir()) == sorted([current.name, "other-env"])
     logs = sorted(entry.name for entry in ctx.paths.log_dir.iterdir())
-    # The ten newest by name stay, this run's among them
+    # The ten newest stay, this run's among them
     assert logs == sorted(older[-9:] + [RUN + ".log", "README"])
     # The work folder goes once the run has ended (remove_work_folder, from cli), not in the clean-up
     assert ctx.handover.work_dir.is_dir()
@@ -381,6 +383,31 @@ def test_only_the_running_tree_stays_when_the_one_before_is_unknown(world):
     cleanup.run(ctx)
     assert sorted(entry.name for entry in ctx.paths.src_root.iterdir()) == sorted([COMMIT, "C" * 40, "notes",
                                                                                    "d" * 40])
+
+
+def test_no_tree_is_removed_when_the_commit_was_installed_again(world):
+    # A switch that failed late left the manifest naming the new commit, so which tree came before is unknown
+    ctx, podman, run = world
+    ctx.state._data["from"]["commit"] = COMMIT
+    _folders(ctx)
+    cleanup.run(ctx)
+    assert sorted(entry.name for entry in ctx.paths.src_root.iterdir()) == sorted(
+        [COMMIT, OLD_COMMIT, "c" * 40, "0123456789" * 4, "C" * 40, "notes", "d" * 40])
+
+
+def test_the_ten_newest_logs_are_chosen_by_time_not_by_name(world):
+    ctx, podman, run = world
+    logs = ctx.paths.log_dir
+    logs.mkdir(parents=True)
+    names = [f"run-{letter}.log" for letter in "abcdefghijkl"]  # 12; the later the name, the older the file
+    for age, name in enumerate(reversed(names)):
+        (logs / name).write_text("x")
+        os.utime(logs / name, (1_700_000_000 + age * 60, 1_700_000_000 + age * 60))
+    (logs / (RUN + ".log")).write_text("this run")
+    os.utime(logs / (RUN + ".log"), (1_600_000_000, 1_600_000_000))  # even an old clock keeps this run's log
+    cleanup.run(ctx)
+    kept = sorted(entry.name for entry in logs.iterdir())
+    assert kept == sorted(names[:9] + [RUN + ".log"])
 
 
 def test_no_venv_is_removed_when_the_current_one_cannot_be_named(world):
