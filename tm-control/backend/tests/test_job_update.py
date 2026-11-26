@@ -9,6 +9,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "fixtures"))
 
-from job_update_world import JOB, REPO_NAME, RUN_ID, World, set_user_version, update_json  # noqa: E402
+from job_update_world import JOB, REAL_GIT, REPO_NAME, RUN_ID, World, set_user_version, update_json  # noqa: E402
 
 SYSTEM_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
 FRESH_KEYS = {"schema", "run_id", "channel", "from", "to", "stage", "stages", "result", "reason", "detail", "boot_id",
@@ -36,6 +37,14 @@ def failed_with(world, result, reason):
     return state
 
 
+def last_run(world, commit, result, stages=("fetch", "verify", "prepare", "images", "restore_point", "switch")):
+    """A state file of an earlier run to this commit: by default one that tm-update ran for, as far as its switch."""
+    rows = [{"id": stage, "started_at": "2026-11-01T00:00:00Z", "finished_at": "2026-11-01T00:01:00Z"}
+            for stage in stages]
+    world.write_state(run_id="20261101T000000Z", to={"commit": commit}, stages=rows, result=result,
+                      reason="switch_failed" if result == "failed" else None)
+
+
 def nothing_unpacked(world, commit):
     assert world.ran() is None
     assert not (world.src / commit).exists()
@@ -49,8 +58,8 @@ def test_the_job_is_executable():
 
 
 @pytest.mark.parametrize("change", [
-    "missing key", "extra key", "run_id ../x", "channel beta", "commit HEAD", "commit None", "tag 3", "not JSON",
-    "a list"])
+    "missing key", "extra key", "run_id ../x", "channel beta", "commit HEAD", "commit None", "tag 3",
+    "tag not a version", "tag text", "not JSON", "a list"])
 def test_a_request_that_is_not_the_four_keys_of_the_right_types_ends_64_and_is_deleted(world, change):
     good = {"run_id": RUN_ID, "channel": "development", "commit": world.ids["dev"], "tag": None}
     bodies = {
@@ -61,6 +70,8 @@ def test_a_request_that_is_not_the_four_keys_of_the_right_types_ends_64_and_is_d
         "commit HEAD": dict(good, commit="HEAD"),
         "commit None": dict(good, commit=None),
         "tag 3": dict(good, tag=3),
+        "tag not a version": dict(good, tag="v0.8.1^{tree}"),
+        "tag text": dict(good, tag="latest"),
         "not JSON": "{",
         "a list": "[]",
     }
@@ -86,12 +97,15 @@ def test_a_manifest_that_names_no_code_owner_ends_64(world, manifest):
     assert not world.state_path.exists()
 
 
-def test_a_request_from_another_owner_or_through_a_link_ends_64(world):
+def test_a_request_through_a_link_or_in_a_folder_others_can_write_ends_64(world):
     request = world.request()
     link = world.jobs / "link.json"
     link.symlink_to(request)
     assert world.run(link).returncode == 64
     assert world.ran() is None
+    world.jobs.chmod(0o770)
+    assert world.run(world.request()).returncode == 64
+    assert world.ran() is None and not world.state_path.exists()
 
 
 def test_a_held_lock_ends_75_and_leaves_the_state_file_alone(world):
@@ -174,10 +188,11 @@ def test_a_good_stable_request_needs_its_tag(world):
 CASES = [
     ("commit not on dev", "stale_check"), ("commit not in the mirror", "stale_check"),
     ("commit an annotated tag's id", "stale_check"),
-    ("tag on development", "stale_check"), ("tag not a version", "stale_check"),
+    ("tag on development", "stale_check"),
     ("tag names another commit", "stale_check"), ("tag not on main", "stale_check"),
     ("target behind installed", "not_forward"), ("target is installed, last run ok", "not_forward"),
-    ("target is installed, no last run", "not_forward"), ("target is installed, last run to another commit",
+    ("target is installed, no last run", "not_forward"),
+    ("target is installed, last run failed before tm-update ran", "not_forward"), ("target is installed, last run to another commit",
                                                          "not_forward"),
     ("installed unknown, development", "not_forward"), ("installed unknown, stable, same version", "not_forward"),
     ("installed not in the mirror, stable, older version", None),
@@ -227,8 +242,6 @@ def arrange(world, case):
         return world.request(commit=ids["annotated"])
     if case == "tag on development":
         return world.request(tag="v0.8.2")
-    if case == "tag not a version":
-        return stable(world, "v081", "v0.8.1^{tree}")
     if case == "tag names another commit":
         return stable(world, "v081", "v0.8.0")
     if case == "tag not on main":
@@ -239,9 +252,11 @@ def arrange(world, case):
     if case.startswith("target is installed"):
         world.install("dev", "0.8.2-dev")
         if case.endswith("last run ok"):
-            world.write_state(run_id="20261101T000000Z", to={"commit": ids["dev"]}, result="ok")
+            last_run(world, ids["dev"], "ok")
         if case.endswith("another commit"):
-            world.write_state(run_id="20261101T000000Z", to={"commit": ids["v081"]}, result="failed")
+            last_run(world, ids["v081"], "failed")
+        if case.endswith("before tm-update ran"):
+            last_run(world, ids["dev"], "failed", stages=("fetch", "verify"))
         return world.request()
     if case == "installed unknown, development":
         world.install("unknown", "0.8.0")
@@ -300,12 +315,53 @@ def test_each_refusal_takes_its_code_changes_nothing_and_exits_1(tmp_path, case,
 @pytest.mark.parametrize("last_result", ["failed", None])
 def test_the_same_commit_runs_again_only_after_a_run_to_it_that_did_not_end_ok(world, last_result):
     world.install("dev", "0.8.2-dev")
-    world.write_state(run_id="20261101T000000Z", to={"commit": world.ids["dev"]}, result=last_result,
-                      reason="switch_failed" if last_result else None)
+    last_run(world, world.ids["dev"], last_result)
     result = world.run()
     assert result.returncode == 0, result.stdout + result.stderr
     assert world.ran()["argv"][:3] == ["run", "--contract", "1"]
     assert world.state()["from"] == {"version": "0.8.2-dev", "commit": world.ids["dev"]}
+
+
+def test_the_jobs_own_refusals_never_make_a_repeat_allowed(world):
+    world.install("dev", "0.8.2-dev")
+    last_run(world, world.ids["dev"], "ok")
+    for _ in range(2):  # the first refusal's own state file must not let the second through
+        failed_with(world, world.run(), "not_forward")
+    # A refusal before the forward check (a tag on development) names the commit too, and still allows nothing
+    failed_with(world, world.run(world.request(tag="v0.8.2")), "stale_check")
+    assert world.state()["to"]["commit"] == world.ids["dev"]
+    failed_with(world, world.run(), "not_forward")
+    assert world.ran() is None
+
+
+def test_a_killed_fetchs_lock_files_are_cleared(world):
+    mirror = world.src / "repo.git"
+    mirror.parent.mkdir(parents=True)
+    subprocess.run([REAL_GIT, "init", "-q", "--bare", str(mirror)], check=True, capture_output=True)
+    (mirror / "refs/heads/main.lock").write_text("")
+    (mirror / "packed-refs.lock").write_text("")
+    outside = world.tmp / "outside.lock"
+    outside.write_text("")
+    (mirror / "refs/tags/linked.lock").symlink_to(outside)
+    result = world.run()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert world.ran() is not None
+    assert not (mirror / "refs/heads/main.lock").exists() and not (mirror / "packed-refs.lock").exists()
+    assert outside.exists()
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root writes into a read-only folder")
+def test_a_state_file_that_cannot_be_written_ends_1_with_one_line(world):
+    world.update_dir.mkdir(parents=True)
+    (world.update_dir / "lock").write_text("")
+    world.update_dir.chmod(0o555)
+    try:
+        result = world.run()
+    finally:
+        world.update_dir.chmod(0o755)
+    assert result.returncode == 1
+    assert result.stdout.strip() == "failed: prepare_failed (unexpected PermissionError)"
+    assert "Traceback" not in result.stderr
 
 
 def test_an_installed_commit_git_does_not_know_is_compared_by_version_on_stable(world):
@@ -393,11 +449,35 @@ def test_no_address_comes_from_the_request(world):
     assert "protocol.file.allow=always" not in sum((call["argv"] for call in world.git_calls()), [])
 
 
-def test_the_repository_rule_is_a_function_of_the_manifest():
-    spec = importlib.util.spec_from_loader("tm_job_update_rule", importlib.machinery.SourceFileLoader(
-        "tm_job_update_rule", str(JOB)))
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+def load_job_module(monkeypatch):
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)  # no __pycache__ beside the job, which tmsetup installs
+    loader = importlib.machinery.SourceFileLoader("tm_job_update", str(JOB))
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+    loader.exec_module(module)
+    return module
+
+
+def test_root_ignores_the_test_seams(monkeypatch, tmp_path):
+    job = load_job_module(monkeypatch)
+    monkeypatch.setenv("TM_UPDATE_ROOT", str(tmp_path))
+    monkeypatch.setenv("TM_UPDATE_REMOTE", str(tmp_path / "remote.git"))
+    monkeypatch.setenv("TM_UPDATE_GIT", str(tmp_path / "git"))
+    monkeypatch.setattr(job.os, "geteuid", lambda: 0)
+    assert job.rooted(job.STATE) == "/var/lib/traffic-monitor/update/state.json"
+    assert job.rooted(job.LAUNCHER) == "/usr/local/libexec/traffic-monitor/tm-update-resume"
+    assert job.address(REPO_NAME) == f"https://github.com/{REPO_NAME}.git"
+    argv, env = job.git_command(["fetch"])
+    assert argv[0] == "git" and env["PATH"] == SYSTEM_PATH
+    assert "protocol.file.allow=always" not in argv
+    assert "--git-dir=/var/lib/traffic-monitor/src/repo.git" in argv
+    monkeypatch.setattr(job.os, "geteuid", lambda: 1000)
+    assert job.rooted(job.STATE) == str(tmp_path / "var/lib/traffic-monitor/update/state.json")
+    assert job.address(REPO_NAME) == str(tmp_path / "remote.git")
+    assert job.git_command(["fetch"])[0][0] == str(tmp_path / "git")
+
+
+def test_the_repository_rule_is_a_function_of_the_manifest(monkeypatch):
+    module = load_job_module(monkeypatch)
     assert module.repo_of({"update": {"repo": REPO_NAME}}) == REPO_NAME
     for manifest in ({}, {"update": None}, {"update": {"repo": "a/.."}}):
         with pytest.raises(module.Refused) as refused:

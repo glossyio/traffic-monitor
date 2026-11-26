@@ -8,7 +8,8 @@ tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-cont
 - it is read as tm-job-system-password reads its own: the jobs directory must be the code owner's and writable by no
   one else, and the request a small regular file of the code owner's with one link, opened without following a
   symlink; it is deleted once read;
-- it must hold exactly those four keys, each of its type and form;
+- it must hold exactly those four keys, each of its type and form (a tag is null or vX.Y.Z), so no other text
+  reaches the state file;
 - it never names an address or a ref. The only remote is https://github.com/<update.repo>.git, from the manifest
   (root's), and everything the request says is checked against this job's own fetch.
 
@@ -21,13 +22,16 @@ One run, in order:
 4. The state file that is there (for step 8), then the rest of the manifest, each value type-checked. This run's
    state file starts; from here every refusal ends it `failed` with a reason code and exits 1.
 5. Stage `fetch`: main, dev, and the v* tags into the mirror src/repo.git. git reads no config but the mirror's,
-   asks nothing, follows no redirect, and speaks only https.
+   asks nothing, follows no redirect, and speaks only https. Lock files that a killed fetch left in the mirror are
+   removed first (only this job touches the mirror, under the run lock), or every later fetch would fail.
 6. Stage `verify`: development needs no tag and the commit on dev; stable needs a vX.Y.Z tag that names the commit,
    on main. Otherwise `stale_check`.
 7. Forward only: when the mirror has the installed commit, it must be an ancestor of the target and not the target;
    when it hasn't (or the manifest says `unknown`), stable compares versions and development is refused. Otherwise
    `not_forward`.
-8. The installed commit again only when the state file of step 4 names it as the target of a run that didn't end ok.
+8. The installed commit again only when the state file of step 4 names it as the target of a run that didn't end ok
+   and that tm-update ran for (a stage other than fetch and verify). This job's own refusals write a state file
+   too, and they must never make a repeat allowed.
 9. The tree's own word, read from the mirror: no script/tm-update or no readable script/update.json, or on stable a
    version that isn't the tag's, is `target_not_updatable`; a tree that doesn't accept contract 1 is
    `needs_manual_update`. Keys of update.json that this doesn't read are ignored.
@@ -186,8 +190,8 @@ def check_request(request):
         raise Refused("no_request", "the channel is not stable or development")
     if not isinstance(commit, str) or not COMMIT.fullmatch(commit):
         raise Refused("no_request", "the commit is not a full commit id")
-    if tag is not None and not (isinstance(tag, str) and 1 <= len(tag) <= 200 and tag.isprintable()):
-        raise Refused("no_request", "the tag is not text or null")
+    if tag is not None and not (isinstance(tag, str) and TAG.fullmatch(tag)):
+        raise Refused("no_request", "the tag is not a release tag or null")
     return request
 
 
@@ -311,14 +315,30 @@ def remove(path):
         shutil.rmtree(path)
 
 
+def address(repo):
+    return trusted("TM_UPDATE_REMOTE", None) or f"https://github.com/{repo}.git"
+
+
+def clear_locks():
+    """The lock files a fetch killed mid-way leaves in the mirror. Links are removed, never followed."""
+    mirror = rooted(MIRROR)
+    found = [os.path.join(mirror, name) for name in ("packed-refs.lock", "HEAD.lock", "config.lock", "shallow.lock")]
+    if not os.path.islink(os.path.join(mirror, "refs")):
+        for top, _folders, files in os.walk(os.path.join(mirror, "refs")):
+            found += [os.path.join(top, name) for name in files if name.endswith(".lock")]
+    for path in found:
+        if os.path.islink(path) or os.path.isfile(path):
+            os.unlink(path)
+
+
 def fetch(repo):
     if git(["rev-parse", "--git-dir"], capture=True)[0] != 0:
         remove(rooted(MIRROR))
         os.makedirs(rooted(SRC), exist_ok=True)
-        if git(["init", "--bare", rooted(MIRROR)], mirror=False)[0] != 0:
+        if git(["init", "--bare", "--initial-branch=main", rooted(MIRROR)], mirror=False)[0] != 0:
             raise Refused("prepare_failed", "git init")
-    address = trusted("TM_UPDATE_REMOTE", None) or f"https://github.com/{repo}.git"
-    status = git(["fetch", "--no-tags", "--prune", "--force", address, *REFSPECS], timeout=FETCH_LIMIT,
+    clear_locks()
+    status = git(["fetch", "--no-tags", "--prune", "--force", address(repo), *REFSPECS], timeout=FETCH_LIMIT,
                  reason="fetch_failed")[0]
     if status != 0:
         raise Refused("fetch_failed", f"git fetch exit status {status}")
@@ -347,7 +367,7 @@ def check_channel(commit, channel, tag):
     if not is_commit(commit):
         raise Refused("stale_check", "the commit is not in the repository")
     if channel == "stable":
-        if tag is None or not TAG.fullmatch(tag):
+        if tag is None:
             raise Refused("stale_check", "no release tag")
         if peeled(f"refs/tags/{tag}") != commit:
             raise Refused("stale_check", "the tag names another commit")
@@ -363,12 +383,19 @@ def version_key(value):
     return match and (int(match[1]), int(match[2]), int(match[3]), match[4] is None)
 
 
+def repeatable(commit, last):
+    """A run to this commit that tm-update ran for (a stage of its own) and that didn't end well may be repeated."""
+    if not isinstance(last, dict) or not isinstance(last.get("to"), dict) or not isinstance(last.get("stages"), list):
+        return False
+    ran = any(isinstance(row, dict) and isinstance(row.get("id"), str) and row["id"] not in ("fetch", "verify")
+              for row in last["stages"])
+    return ran and last["to"].get("commit") == commit and last.get("result") != "ok"
+
+
 def check_forward(commit, channel, tag, version, installed_commit, last):
     if installed_commit is not None and is_commit(installed_commit):
         if installed_commit == commit:
-            # Only a run to this commit that didn't end well may be repeated
-            target = last.get("to") if isinstance(last, dict) else None
-            if not (isinstance(target, dict) and target.get("commit") == commit and last.get("result") != "ok"):
+            if not repeatable(commit, last):
                 raise Refused("not_forward", "the commit is installed")
         elif not ancestor(installed_commit, commit):
             raise Refused("not_forward", "the commit is not ahead of the installed one")
@@ -490,13 +517,14 @@ def prepare(request, manifest):
     """Steps 4 to 11, under the lock. The state, tm-update's path, and the hand-over's; or the exit status 1."""
     last = read_json(rooted(STATE))
     commit, channel, tag = request["commit"], request["channel"], request["tag"]
+    state = None
     try:
-        version, installed_commit, codedir, repo = installed(manifest)
-    except Refused as refused:
-        State(request, None, None).end(refused)
-        return 1
-    state = State(request, version, installed_commit)
-    try:
+        try:
+            version, installed_commit, codedir, repo = installed(manifest)
+        except Refused:
+            state = State(request, None, None)
+            raise
+        state = State(request, version, installed_commit)
         state.begin("fetch")
         fetch(repo)
         state.finish()
@@ -513,7 +541,11 @@ def prepare(request, manifest):
         state.end(refused)
         return 1
     except Exception as error:  # nothing in use has changed
-        state.end(Refused("prepare_failed", f"unexpected {type(error).__name__}"))
+        refused = Refused("prepare_failed", f"unexpected {type(error).__name__}")
+        if state is None:  # the state file itself can't be written
+            say(f"failed: {refused.code} ({refused.detail})")
+        else:
+            state.end(refused)
         return 1
     return state, program, handover
 
