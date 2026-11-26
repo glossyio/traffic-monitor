@@ -1,12 +1,12 @@
 ---
-description: The two setup history tables and the events_with_setup view, which record which detection model, software versions, and camera settings were in force over time, so you can compare counts across them.
+description: The three setup history tables and the events_with_setup view, which record which detection model, software versions, camera settings, and radar answers were in force over time, so you can compare counts and speeds across them.
 ---
 
 # Setup history
 
 The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.
 
-The device keeps two tables, `setup_device` for the whole unit and `setup_camera` for each camera, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export.
+The device keeps three tables, `setup_device` for the whole unit, `setup_camera` for each camera, and `setup_radar` for each radar, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export.
 
 ## How the rows work
 
@@ -14,7 +14,7 @@ A row says what was true from `started` until `ended`. The row in force has no `
 
 Times in these tables are Unix time in milliseconds, as in the deployment history. An event's `start_time` is in seconds, so the view compares `start_time * 1000`.
 
-A camera has a row for each key under `sensors.cameras` in [config.yml](../configuration/node-red-config.md#sensorscameras) whose Frigate camera exists, named by that key, the same name as `events.camera`. If two keys point at one Frigate camera, only the one that comes first in `config.yml` gets a row. A camera's row ends when its key leaves `config.yml`.
+A camera has a row for each key under `sensors.cameras` in [config.yml](../configuration/node-red-config.md#sensorscameras) whose Frigate camera exists, named by that key, the same name as `events.camera`. If two keys point at one Frigate camera, only the one that comes first in `config.yml` gets a row. A camera's row ends when its key leaves `config.yml`. A radar has a row for each key under `sensors.radars` the same way, and its row ends when its key leaves `config.yml`.
 
 ## setup_device
 
@@ -126,14 +126,38 @@ A mask is an area where Frigate ignores motion or objects. The column is `{}` fo
 }
 ```
 
+## setup_radar
+
+One row for each radar and period. The primary key is `id`; the rows of one radar are those with the same `radar`. The columns hold what the radar itself answered when the device set it up, not what `config.yml` asks for, so a row also shows a radar that was replaced by another model, or that kept an angle you didn't expect.
+
+| Column | Type | Meaning | Values |
+|---|---|---|---|
+| `id` | TEXT | The row's id | |
+| `started` | INTEGER | When the row's answers began to hold | Unix time in milliseconds |
+| `ended` | INTEGER | When they stopped holding | Unix time in milliseconds; empty while the row is in force |
+| `radar` | TEXT | The radar's key under `sensors.radars` in `config.yml` | The same as `radarName` in the radar tables and in `events`, such as `TM_RADAR_SERIAL_PORT_00` |
+| `part_number` | TEXT | The radar's model, from its `Product` answer | Such as `OPS243-A` |
+| `firmware_version` | TEXT | The radar's firmware, from its `Version` answer | |
+| `cosine_inbound_deg` | REAL | The angle the radar says it corrects traffic coming toward it by, in degrees, from `InboundSensorAngleDegrees` | Empty when the radar didn't say. Not `0`. |
+| `cosine_outbound_deg` | REAL | The same for traffic going away, from `OutboundSensorAngleDegrees` | Empty when the radar didn't say. Not `0`. |
+| `speed_unit` | TEXT | The unit of the radar's speeds, from `Units` | Such as `mph` |
+| `sampling_rate` | INTEGER | The samples the radar takes each second, from `SamplingRate` | |
+| `speed_min` | REAL | The lowest speed the radar reports, from `RequiredMinSpeed`, in `speed_unit` | |
+| `magnitude_min` | REAL | The lowest signal strength the radar reports, from `MagnitudeMin` | |
+
+After each setup of a radar, which runs when Node-RED starts and whenever you save `config.yml`, the device asks the radar these questions and compares the answers with the radar's open row. It ends the row and starts a new one only when an answer differs, so a radar nobody touches has one row for months. An answer the radar doesn't give, as an older firmware does for the angles, is empty and never `0`, because a radar that said `0` is not a radar that said nothing. A round of answers with no part number, as when the radar was unplugged or slow to answer, changes nothing, and the row in force stays. The radar's serial number isn't asked for or kept.
+
+The two angle columns say what the radar was using, which can differ from what `config.yml` asks for until the next setup. The [`cosine_inbound_deg` and `cosine_outbound_deg` settings](../configuration/node-red-config.md#the-radars-cosine-angles) are the ones you change.
+
 ## events_with_setup
 
 The view lists every column of `events`, then the setup in force when each event started. An event appears once, whatever the tables hold.
 
 * `setup_device_id`, then the `setup_device` facts under a `setup_` prefix: `setup_tm_version`, `setup_model_file`, `setup_model_sha256`, and so on.
 * `setup_camera_id`, then the `setup_camera` facts under a `camera_` prefix: `camera_detect_width`, `camera_zones`, `camera_profile`, and so on.
+* `setup_radar_id`, then the `setup_radar` facts of the radar named in the event's `radarName` under a `radar_` prefix: `radar_part_number`, `radar_firmware_version`, `radar_cosine_inbound_deg`, `radar_cosine_outbound_deg`, `radar_speed_unit`, `radar_sampling_rate`, `radar_speed_min`, and `radar_magnitude_min`. An event with no radar has them empty.
 
-The setup in force is the row with `started` at or before the event's `start_time` and with no `ended`, or an `ended` after it. An event with no row in force has all of these columns empty.
+The setup in force is the row with `started` at or before the event's `start_time` and with no `ended`, or an `ended` after it. An event with no row in force has the columns of that setup empty.
 
 Replace `picam_h265` below with your camera's name.
 
@@ -159,6 +183,21 @@ WHERE camera = 'picam_h265'
 GROUP BY label
 ORDER BY events DESC;
 ```
+
+A radar that is set to correct for the angle it sits at reports a higher speed than it measured along its beam. To see an event's speed as the beam measured it, undo the correction in force when the event started. This one is for events whose speed came from the radar and that went toward the unit; use `radar_cosine_outbound_deg` for the ones going away. It uses SQLite's math functions, which recent builds of the `sqlite3` tool include:
+
+```sql
+SELECT id,
+       speed_calc AS reported_speed,
+       speed_calc * cos(radians(radar_cosine_inbound_deg)) AS beam_speed,
+       radar_cosine_inbound_deg AS angle
+FROM events_with_setup
+WHERE speed_source = 'radar'
+  AND direction_calc = 'inbound'
+  AND radar_cosine_inbound_deg IS NOT NULL;
+```
+
+An event with an empty angle isn't in the answer: the radar didn't say what it used, so the correction isn't known.
 
 To compare two models, compare their counts over periods of similar traffic, and check each model's `labels_available` first: a label a model can't recognise is never counted.
 
