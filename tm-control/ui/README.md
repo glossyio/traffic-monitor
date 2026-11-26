@@ -136,7 +136,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
   pictures and is read before them (`peopleLine` in `reference.ts`, an alert marked `data-people`): a warning when
   Frigate was tracking a person, and plain information for the other two, "Frigate wasn't tracking a person" and "the
   device couldn't check", because neither of them is a finding. The `seen` warning is solid (`variant="flat"`), so it
-  doesn't read as part of the note above it, which is a tonal warning. The line never disables a button: Save the zip and
+  doesn't read as part of the note above it, which is a tonal warning. Its text is the navy, not white (`on-warning`
+  in `theme.ts`; see Color below). The line never disables a button: Save the zip and
   Take again work the same for all three, because the admin answers for the pictures. It follows the newest take and
   goes with the pictures when they are dropped. Below it the second step shows the two pictures side by side on a
   desktop and stacked on a phone (`v-col cols="12" md="6"`), the
@@ -203,7 +204,9 @@ the red about 3.5:1, so filled buttons use the navy as their text color (5.2:1 o
 of the background and body text colors reads better on each button color, so a device with other colors keeps
 readable buttons. Warning, info, and success colors stay Vuetify's dark-theme defaults. They appear only as alert
 text and as the status marks on the Status page, which against the navy are 5.2:1 (error) to 7.9:1 (warning); the
-alert's faint tint lowers that a little.
+alert's faint tint lowers that a little. The one solid warning, the reference picture's "tracking a person" line,
+turns that around: its text is the navy on the orange (7.9:1), chosen by `theme.ts` the same way as a button's,
+because white on the orange would be about 2.4:1.
 
 ### Type
 
