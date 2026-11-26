@@ -42,6 +42,22 @@ Long-term deployments work anywhere the camera has a good view of the roadway an
 
 Long-term deployments, with permission, on a private rooftop and a gate entrance
 
+## Usual mounts
+
+Three mounts cover most sites. When you record how the unit is mounted on the control app's [Mounting page](https://docs.trafficmonitor.ai/dev/use/location/#record-how-the-unit-is-mounted), picking one fills in its height and tilt as a starting point. Measure your own mount and correct the numbers afterwards.
+
+| Mount                                | Height         | Tilt below level |
+| ------------------------------------ | -------------- | ---------------- |
+| Tripod beside the road               | 7 ft (2.13 m)  | 15°              |
+| Pole or sign post                    | 12 ft (3.66 m) | 15°              |
+| Upstairs window over an intersection | 16 ft (4.88 m) | 15°              |
+
+- **Tripod beside the road** is the temporary setup above: a tripod raised to about 7 feet, with the camera looking down the road.
+- **Pole or sign post** is a long-term mount on a post or pole you have permission to use, high enough to stay out of reach.
+- **Upstairs window over an intersection** is a view from inside a building, above the street, looking down at the crossing.
+
+A tilt of 0 is level and 90 is straight down. The tilt of 15 degrees is a starting point for all three, and the height is from the road surface to the lens.
+
 ## Best practices
 
 - Mount the device above the roadway and out of reach, about 10 to 12 feet up, for the best view and the least tampering.

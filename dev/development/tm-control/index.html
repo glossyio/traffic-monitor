@@ -2327,6 +2327,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#the-mounting-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Mounting page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-map-on-the-location-page" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2687,6 +2698,17 @@
   
     <nav class="md-nav" aria-label="The Location module">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-mounting-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Mounting page
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#the-map-on-the-location-page" class="md-nav__link">
@@ -3249,6 +3271,19 @@
 </tr>
 </tbody>
 </table>
+<h4 id="the-mounting-page">The Mounting page<a class="headerlink" href="#the-mounting-page" title="Permanent link">&para;</a></h4>
+<p>The Location module's UI has one page for the mounting routes, <code>MountingPage.vue</code> at <code>/location/mounting</code> (admin only, no menu entry; the Location page and the deploy's result lead to it). Its pieces are <code>HeadingDial.vue</code>, <code>MountSideView.vue</code>, <code>lengths.ts</code>, and <code>heading.ts</code>, and <code>tm-control/ui/README.md</code> has the layout and the reasons.</p>
+<ul>
+<li><strong>A dry run after every change.</strong> The page waits 400 ms after the form changes, then sends the whole form to <code>PUT /surveys/{id}/mounting</code> with <code>dry_run</code> true, and uses only the newest answer. It sends every section each time, a radar that follows its camera as <code>same_as_camera: true</code>, because a save writes only the sensors it names. The answer gives the worked-out one of tilt and distance, <code>changes</code>, <code>ask</code>, and <code>suggested</code>. Save sends the same body with <code>dry_run</code> false, and <code>moved</code> when the question is shown.</li>
+<li><strong>What the UI computes.</strong> Feet to metres (0.3048, half away from zero to two decimals, and only for a value someone typed: a field nobody touched is sent as it was loaded), the dial's geometry (the angle under a pointer, the needle, the ticks), the side view's drawing, and whether the form differs from what it loaded, which only turns Save on. The compass table in <code>heading.ts</code> is the one repeat of <code>coordinates.py</code>, pinned by a test.</li>
+<li><strong>What it doesn't.</strong> Tilt from distance or distance from tilt, which changes count, whether to ask, and the answer chosen in advance all come from the API, so the rules stay in <code>mounting.py</code>. A tilt of 0 shows an empty distance because the API gives none.</li>
+<li><strong>The question.</strong> The page shows "Did the unit move or turn?" when the newest dry run says <code>ask</code>, with <code>suggested</code> chosen. It lists only the changes with <code>counts</code>. The person's answer holds while those changes stay the same; when they differ, the dry run's <code>suggested</code> is chosen again. A 409 <code>answer_needed</code> from a save sends a dry run, so the question appears; another 409 loads the page again.</li>
+<li><strong>A heading field left empty changes nothing.</strong> Only the <strong>Not set</strong> button clears a heading.</li>
+<li><strong>Unreadable text</strong> in the height or in the measured one of tilt and distance isn't sent: the field says so and Save stays off, and no dry run runs meanwhile. The other of the two forgets unreadable text when it stops being the measured one.</li>
+<li><strong>A running deployment</strong> at the place in use is changed on this page, through a save that doesn't start a new one. <strong>Correct heading</strong> stays for a deployment that has ended, and for a running one whose sensor has no section on the page (a sensor listed but turned off in <code>config.yml</code> keeps its open row, and <code>GET .../mounting</code> lists enabled sensors only).</li>
+<li><strong>The unit</strong> (feet or metres) is kept in the browser's <code>localStorage</code> under <code>tm.mounting.unit</code>. It never reaches the API, which takes and gives metres.</li>
+<li><strong>Fake mode</strong> counts an open camera or radar row as having recorded traffic 30 seconds after it starts, so the question can be seen on a laptop.</li>
+</ul>
 <h4 id="the-map-on-the-location-page">The map on the Location page<a class="headerlink" href="#the-map-on-the-location-page" title="Permanent link">&para;</a></h4>
 <p>The place form and <strong>Correct location</strong> can pick the point on a map. The map is the browser's business: tm-control only reports where to get it (<code>map</code> in <code>GET /surveys</code>, from the manifest) and makes no request to it. The UI (<code>ui/src/modules/location/</code>) draws it with MapLibre GL, which only <code>PinMap.vue</code> imports. <code>MapPicker.vue</code> loads <code>PinMap.vue</code> with a dynamic <code>import()</code>, so the library, its stylesheet, and its worker are separate files that the browser fetches the first time the picker opens, and the page's first download doesn't grow by them. The worker is a <code>.mjs</code> file, which the revproxy's nginx serves as JavaScript (<code>types { text/javascript mjs; }</code> in <code>nginx.conf.j2</code>, because its <code>mime.types</code> has none).</p>
 <p>The specs don't run the library, which needs WebGL: <code>pin-map.spec.ts</code> replaces <code>maplibre-gl</code> with small classes that record what <code>PinMap.vue</code> asks of them (the options, the marker, the events), and <code>map-picker.spec.ts</code> replaces <code>PinMap.vue</code> with a stub that can drop a pin or fail. To see the real map, run <a href="#run-it-on-a-laptop">fake mode</a>, whose manifest names a map source, in a browser with internet access.</p>
