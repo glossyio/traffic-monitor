@@ -2,13 +2,18 @@
 
 import ast
 import configparser
+import json
 import re
+import subprocess
 from pathlib import Path
 
 import pins
 import pytest
 import yaml
+from required_tools import needs
 from tmsetup_render import REPO, load_role_yaml, render
+
+needs_node = needs("node")
 
 LOCATIONS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_locations"]
 
@@ -963,7 +968,72 @@ def tm_job_unit(job):
         f"{TM_CONTROL_TEMPLATES}/tm-job-{job}.service.j2",
         tmsetup_tm_control_dir=TM_CONTROL_DIR, tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor",
         tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_secrets_dir="/etc/traffic-monitor/secrets",
+        tmsetup_update_dir="/var/lib/traffic-monitor/update", tmsetup_update_slice="tm-update.slice",
     )
+
+
+def update_unit(name):
+    return render(
+        f"{TM_CONTROL_TEMPLATES}/{name}.service.j2",
+        tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor", tmsetup_etc_dir="/etc/traffic-monitor",
+        tmsetup_update_dir="/var/lib/traffic-monitor/update", tmsetup_update_slice="tm-update.slice",
+    )
+
+
+def unit_section(unit, name):
+    lines = unit.splitlines()
+    start = lines.index(f"[{name}]") + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith("[")), len(lines))
+    return lines[start:end]
+
+
+def test_the_update_job_is_a_root_oneshot_on_the_systems_python():
+    unit = update_unit("tm-job-update")
+    lines = unit.splitlines()
+    assert "Type=oneshot" in lines
+    assert "[Install]" not in unit
+    assert not any(line.startswith(("User=", "DynamicUser=")) for line in lines)
+    assert "StartLimitIntervalSec=0" in unit_section(unit, "Unit")
+    assert "Environment=TM_CONTROL_MANIFEST=/etc/traffic-monitor/manifest.json" in lines
+    # The update rewrites tm-control's venv while this runs, so the job must not run from it
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/traffic-monitor/tm-job-update" in lines
+    assert "venv" not in "\n".join(line for line in lines if not line.startswith("#"))
+
+
+def test_the_update_job_stops_its_builds_and_carries_a_cut_off_switch_on_when_it_ends():
+    stops = [line for line in update_unit("tm-job-update").splitlines() if line.startswith("ExecStopPost=")]
+    assert stops == [
+        "ExecStopPost=-/usr/bin/systemctl stop tm-update.slice",
+        "ExecStopPost=-/usr/bin/systemctl start --no-block tm-update-resume.service",
+    ]
+
+
+def test_the_update_job_may_run_for_six_hours():
+    assert "TimeoutStartSec=6h" in update_unit("tm-job-update").splitlines()
+
+
+def test_the_resume_unit_runs_only_with_a_marker_and_at_boot():
+    unit = update_unit("tm-update-resume")
+    lines = unit.splitlines()
+    assert "ConditionPathExists=/var/lib/traffic-monitor/update/resume.json" in unit_section(unit, "Unit")
+    assert "WantedBy=multi-user.target" in unit_section(unit, "Install")
+    # Order only: a missing app must not stop the resume from running
+    assert not any(line.startswith(("Requires=", "Wants=", "BindsTo=")) for line in lines)
+    after = next(line for line in lines if line.startswith("After="))
+    assert after.split("=", 1)[1].split() == [
+        "tm-control.service", "traffic-monitor.service", "revproxy.service", "go2rtc_server.service"]
+    assert "Type=oneshot" in lines
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/traffic-monitor/tm-update-resume" in lines
+    assert "TimeoutStartSec=3h" in lines
+    stops = [line for line in lines if line.startswith("ExecStopPost=")]
+    assert stops == ["ExecStopPost=-/usr/bin/systemctl stop tm-update.slice"]  # and never a start of itself
+
+
+@pytest.mark.parametrize("name", ["tm-job-update", "tm-update-resume"])
+def test_the_update_units_say_what_starts_them_and_why_their_limits_are_what_they_are(name):
+    header = update_unit(name).split("[Unit]")[0]
+    assert header.startswith("# /etc/systemd/system/" + name + ".service")
+    assert "TimeoutStartSec" in header or "hours" in header
 
 
 @pytest.mark.parametrize("job", JOBS)
@@ -1056,7 +1126,8 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert '"tm-job-network.service"' in rules
     assert '"tm-job-network-join.service"' in rules
     assert '["start", "stop", "restart"]' in rules
-    assert rules.count("polkit.Result.YES") == 2
+    assert '"tm-job-update.service"' in rules
+    assert rules.count("polkit.Result.YES") == 3
     # The code-owner test comes first, so neither YES is reached for anyone else
     assert rules.index('subject.user !== "tmadmin"') < rules.index("polkit.Result.YES")
 
@@ -1079,7 +1150,42 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
         "tm-job-network.service", "tm-job-network-join.service", "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
+    # The update job may be started, never stopped or restarted, and its resume unit not at all
+    assert polkit["start_only_units"] == ["tm-job-update.service"]
+    assert not set(polkit["start_only_units"]) & set(polkit["units"])
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS
+
+
+POLKIT_CASES = [  # (unit, verb, allowed)
+    ("tm-job-update.service", "start", True), ("tm-job-update.service", "stop", False),
+    ("tm-job-update.service", "restart", False), ("tm-update-resume.service", "start", False),
+    ("frigate.service", "restart", True), ("tm-job-network.service", "stop", True), ("ssh.service", "start", False),
+]
+
+
+def polkit_answer(user, unit, verb):
+    """Run the rendered rule in node with a stub polkit: addRule keeps the function, Result has YES and NOT_HANDLED."""
+    script = f"""
+        let rule;
+        const polkit = {{addRule: (f) => {{ rule = f; }}, Result: {{YES: "YES", NOT_HANDLED: "NOT_HANDLED"}}}};
+        {polkit_rules()}
+        const lookups = {{unit: {json.dumps(unit)}, verb: {json.dumps(verb)}}};
+        const action = {{id: "org.freedesktop.systemd1.manage-units", lookup: (name) => lookups[name]}};
+        console.log(rule(action, {{user: {json.dumps(user)}}}));
+    """
+    return subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout.strip()
+
+
+@needs_node
+@pytest.mark.parametrize(("unit", "verb", "allowed"), POLKIT_CASES)
+def test_polkit_decides_each_unit_and_verb(unit, verb, allowed):
+    assert polkit_answer("tmadmin", unit, verb) == ("YES" if allowed else "NOT_HANDLED")
+
+
+@needs_node
+@pytest.mark.parametrize(("unit", "verb", "allowed"), POLKIT_CASES)
+def test_polkit_gives_another_user_nothing(unit, verb, allowed):
+    assert polkit_answer("someone", unit, verb) == "NOT_HANDLED"
 
 
 def js_brackets_balance(source):
