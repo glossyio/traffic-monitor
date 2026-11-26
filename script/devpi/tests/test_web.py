@@ -1244,6 +1244,37 @@ def test_tm_internal_status_has_the_upload_section(host, expect):
     assert not problems, "Node-RED's upload section: " + "; ".join(problems)
 
 
+RADAR_INFO_KEYS = ["answered_at", "cosine_inbound_deg", "cosine_outbound_deg", "firmware_version", "magnitude_min",
+                   "part_number", "sampling_rate", "speed_min", "speed_unit"]
+
+
+def test_tm_internal_status_has_each_radars_answers(host, expect):
+    """With the token, Node-RED's internal status gives each radar the host expects an `info` with the eight answers
+    the radar's setup history keeps and `answered_at`, and the part number and firmware version are text. Only the
+    shape is kept, not even a radar's name or answer is printed, and the status's `info` has no serial number."""
+    if not expect["radars"]:
+        pytest.skip("the host expects no radar")
+    require_pii_free(expect, "a device secret")
+    status, body = tm_internal_answer(host, tm_internal_token(host))
+    radars = body.get("radars") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
+    assert isinstance(radars, dict), f"Node-RED's status has no radars section (it is {type(radars).__name__})"
+    problems = []
+    for radar in expect["radars"]:
+        info = radars.get(radar["env_name"])
+        info = info.get("info") if isinstance(info, dict) else None
+        if not isinstance(info, dict):
+            problems.append(f"{radar['env_name']} has no info; it is set after the radar's setup, so check again "
+                            "once Node-RED has been up a minute")
+        elif sorted(info) != RADAR_INFO_KEYS:
+            problems.append(f"{radar['env_name']}'s info has the keys {sorted(info)}, not {RADAR_INFO_KEYS}")
+        else:
+            problems += [f"{radar['env_name']}'s info.{key} isn't text"
+                         for key in ("part_number", "firmware_version") if not isinstance(info[key], str)]
+    assert not problems, "Node-RED's radar answers: " + "; ".join(problems)
+
+
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body
 # holds no coordinate (an empty body on the copy's route, which would refuse it), so a request that got past the token
 # check would change nothing.

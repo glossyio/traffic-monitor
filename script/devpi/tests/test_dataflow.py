@@ -369,3 +369,26 @@ def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, fr
                 problems.append(f"setup.received_at is {age:.0f} seconds before now, not within "
                                 f"{SETUP_MAX_AGE_SECONDS}")
     assert not problems, "; ".join(problems)
+
+
+def test_setup_radar_has_an_open_row_for_each_expected_radar(host, expect, codedir):
+    """The setup history has exactly one open setup_radar row for each radar the host expects, named by its key under
+    sensors.radars, with a part number, and none for another radar. Reads only; messages name the radars' keys, never
+    an answer."""
+    if not expect["radars"]:
+        pytest.skip("the host expects no radar")
+    active = service_active_seconds(host, "node-red-tm.service")
+    if active < SETUP_FIRST_ROWS_SECONDS:
+        pytest.skip(f"node-red-tm.service has been active for {active:.0f} seconds; a radar's first row comes after "
+                    f"its setup, so check again after {SETUP_FIRST_ROWS_SECONDS} seconds")
+    rows = {}
+    for radar, part_number in db_query(host, codedir, "SELECT radar, part_number FROM setup_radar WHERE ended IS NULL"):
+        rows.setdefault(radar, []).append(part_number)
+    expected = {radar["env_name"] for radar in expect["radars"]}
+    problems = [f"setup_radar has {len(rows.get(name, []))} rows with no ended for {name}, not 1"
+                for name in sorted(expected) if len(rows.get(name, [])) != 1]
+    problems += [f"setup_radar has an open row for {name}, which the host has no radar for"
+                 for name in sorted(set(rows) - expected)]
+    problems += [f"the open setup_radar row for {name} has no part number"
+                 for name in sorted(expected) if len(rows.get(name, [])) == 1 and not rows[name][0]]
+    assert not problems, "; ".join(problems)
