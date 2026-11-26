@@ -63,13 +63,31 @@ def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
     and its config watch would start a deployment. So the start converts config.yml's bearing, before any flow runs,
     as the code owner (who owns config.yml), and a failure never keeps Node-RED down: the flows read a bearing too."""
     starts = [line for line in node_red_unit() if line.startswith("ExecStartPre=")]
-    assert len(starts) == 2
+    assert len(starts) == 3
     assert all(line.startswith("ExecStartPre=-") for line in starts)
     assert "tmdb_migrate.py" in starts[0]
     assert starts[1] == (
         "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
         "--node-red-headings /opt/traffic-monitor/node-red-tm/config/config.yml"
     )
+
+
+def test_node_red_moves_a_hand_set_cosine_angle_at_its_start_after_the_headings():
+    """The same reasoning as the bearing: the old Node-RED is still up while the installer runs, and its config watch
+    would re-send the radar's setup on the change, so the start moves the angle, before any flow runs."""
+    unit = node_red_unit()
+    starts = [line for line in unit if line.startswith("ExecStartPre=")]
+    assert starts[2] == (
+        "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
+        "--node-red-cosine /opt/traffic-monitor/node-red-tm/config/config.yml"
+    )
+    assert unit.index(starts[1]) < unit.index(starts[2])
+    above = []
+    for line in reversed(unit[:unit.index(starts[2])]):
+        if not line.startswith("#"):
+            break
+        above.append(line)
+    assert "installer" in " ".join(above)
 
 
 def revproxy_unit():

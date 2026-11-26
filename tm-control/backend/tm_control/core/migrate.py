@@ -1,9 +1,12 @@
 """Bring config files from older installs up to date. Each step is idempotent: running it again changes nothing."""
 
+import json
 import os
 import re
 import sys
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlsplit
 
 from ruamel.yaml import YAMLError
@@ -773,6 +776,181 @@ def _run_node_red_headings(config_path, dry_run):
         return 0
     for kind, path, block, centre in bearing_changes:
         _apply_bearing_change(document.data, kind, path, block, centre)
+    return _save_node_red(document, config_path, steps)
+
+
+# A radar's cosine correction: the angle between its beam and the traffic, 0 to 89 degrees with one decimal, in each
+# direction. Both readers of a `^/` command use this one: modules/location/mounting.py imports it from here (this module
+# can't import that one), and Node-RED's "init config defaults" repeats the trim and the prefix, tied by a test.
+COSINE_MAX_DEG = 89.0
+_COSINE_NUMBER = re.compile(r"\d+(?:\.\d*)?|\.\d+")
+_COSINE_DIRECTIONS = {"+": "inbound", "-": "outbound"}
+COSINE_KEYS = {"inbound": "cosine_inbound_deg", "outbound": "cosine_outbound_deg"}
+
+
+def cosine_command(text: str) -> tuple[Literal["inbound", "outbound"] | None, float | None] | None:
+    """What a radar command string says about the cosine angle. None when the trimmed text doesn't start with ^/.
+    Otherwise (direction, angle): "+" is inbound and "-" outbound, anything else None; the angle is the rest, trimmed,
+    read as a plain decimal number and rounded to one decimal (half away from zero on the double's exact value, as the
+    flows' toFixed), and None unless that is 0 to 89."""
+    trimmed = text.strip()
+    if not trimmed.startswith("^/"):
+        return None
+    direction = _COSINE_DIRECTIONS.get(trimmed[2:3])
+    if direction is None:
+        return None, None
+    rest = trimmed[3:].strip()
+    if not _COSINE_NUMBER.fullmatch(rest):
+        return direction, None
+    try:
+        rounded = Decimal(float(rest)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    except (ArithmeticError, ValueError, OverflowError):
+        return direction, None
+    angle = float(rounded)
+    return direction, (angle if 0 <= angle <= COSINE_MAX_DEG else None)
+
+
+def _radars(config):
+    """(name, mapping) of each radar under sensors.radars that has a mapping of its own, on or off."""
+    sensors = config.get("sensors") if isinstance(config, dict) else None
+    radars = sensors.get("radars") if isinstance(sensors, dict) else None
+    return [(name, radar) for name, radar in (radars.items() if isinstance(radars, dict) else ())
+            if isinstance(radar, dict)]
+
+
+def _extra_commands(value):
+    """The JSON list of text in an opt_api_commands_array string, or None when it isn't one (or there is none)."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        commands = json.loads(value)
+    except ValueError:
+        return None
+    return commands if isinstance(commands, list) and all(isinstance(item, str) for item in commands) else None
+
+
+def _cosine_change(radar, dotted, config_path):
+    """What to do about the ^/ entries in one radar's opt_api_commands_array: (kept list, {direction: angle to write
+    or None for "no key"}) or None when nothing changes. An entry that doesn't read is kept, and the list gets one
+    warning by its key path. A direction's last entry that reads is the one that counts, a 0 included."""
+    value = radar.get("opt_api_commands_array")
+    if _unset(value):
+        return None
+    commands = _extra_commands(value)
+    path = f"{dotted}.opt_api_commands_array"
+    if commands is None:
+        _warn_secret(config_path, f"{path} isn't a JSON list of text; left as it is.")
+        return None
+    kept, angles, unreadable = [], {}, False
+    for command in commands:
+        read = cosine_command(command)
+        if read is None:
+            kept.append(command)
+        elif read[0] is None or read[1] is None:
+            kept.append(command)
+            unreadable = True
+        else:
+            angles[read[0]] = read[1]
+    if unreadable:
+        _warn_secret(config_path, f"{path} holds a ^/ command that isn't a direction (+ or -) and an angle from 0 to "
+                     f"{COSINE_MAX_DEG:g}; left as it is. Set {COSINE_KEYS['inbound']} and {COSINE_KEYS['outbound']}.")
+    if not angles:
+        return None
+    return kept, angles
+
+
+def _move_after(mapping, key, new):
+    """Put the (key, value) pairs of new in the mapping after key (after the last entry when it has no such key). The
+    comment and blank lines that followed the line before them go after the last pair instead, so they still sit above
+    the next entry."""
+    keys = list(mapping)
+    after_key = key if key in mapping else keys[-1]
+    tokens = mapping.ca.items.get(after_key)
+    moved = None
+    if tokens and tokens[2] is not None:
+        line_end, newline, rest = tokens[2].value.partition("\n")
+        if rest:
+            moved = CommentToken("\n" + rest, CommentMark(0), None)
+            tokens[2].value = line_end + newline
+    position = keys.index(after_key) + 1
+    for offset, (name, value) in enumerate(new):
+        mapping.insert(position + offset, name, value)
+    if moved is not None:
+        mapping.ca.items[new[-1][0]] = [None, None, moved, None]
+
+
+def _requoted_list(old, text):
+    """The list's new text in the quoting the old one had."""
+    if isinstance(old, SingleQuotedScalarString):
+        return SingleQuotedScalarString(text)
+    if isinstance(old, DoubleQuotedScalarString):
+        return DoubleQuotedScalarString(text)
+    return text
+
+
+def _apply_cosine_change(radar, kept, angles):
+    """Write each direction's angle into its key when the key is blank and the angle isn't 0, and the list without
+    its ^/ entries, in the quotes it had."""
+    new = []
+    for direction in ("inbound", "outbound"):
+        key = COSINE_KEYS[direction]
+        if direction not in angles or not _unset(radar.get(key)) or angles[direction] == 0:
+            continue
+        if key in radar:
+            radar[key] = angles[direction]
+        else:
+            new.append((key, angles[direction]))
+    if new:
+        _move_after(radar, "enabled", new)
+    radar["opt_api_commands_array"] = _requoted_list(radar["opt_api_commands_array"], json.dumps(kept))
+
+
+def _cosine_steps(dotted, radar, angles):
+    steps = []
+    for direction in ("inbound", "outbound"):
+        if direction not in angles:
+            continue
+        key = COSINE_KEYS[direction]
+        sign = "+" if direction == "inbound" else "-"
+        list_path = f"{dotted}.opt_api_commands_array"
+        if angles[direction] != 0 and _unset(radar.get(key)):
+            steps.append((f"move the ^/{sign} command in {list_path} into {dotted}.{key}",
+                          f"moved the ^/{sign} command in {list_path} into {dotted}.{key}"))
+        else:
+            why = f"which sits beside {dotted}.{key}" if not _unset(radar.get(key)) else "which adds nothing"
+            steps.append((f"remove the ^/{sign} command from {list_path}, {why}",
+                          f"removed the ^/{sign} command from {list_path}, {why}"))
+    return steps
+
+
+def run_node_red_cosine(config_path, dry_run=False):
+    """Node-RED's start, before any flow runs: move a hand-set ^/+n or ^/-n cosine command (n from 0 to 89) out of each
+    radar's opt_api_commands_array into its blank cosine_inbound_deg / cosine_outbound_deg, unless n is 0, and take it
+    out of the list; an entry beside a key that is set is removed, and one that doesn't read is left, with a warning by
+    key path. Return a process exit code. It needs no secrets, so the code owner can run it. Nothing printed holds a
+    value."""
+    return _unexpected(config_path, _run_node_red_cosine, Path(config_path), dry_run)
+
+
+def _run_node_red_cosine(config_path, dry_run):
+    document = _load_node_red(config_path)
+    if document is None:
+        return 1
+    steps, changes = [], []  # steps: (what a dry run would do, what was done)
+    for name, radar in _radars(document.data):
+        dotted = f"sensors.radars.{name}"
+        change = _cosine_change(radar, dotted, config_path)
+        if change is not None:
+            steps.extend(_cosine_steps(dotted, radar, change[1]))
+            changes.append((radar, *change))
+    if not steps:
+        print(f"{PREFIX} {config_path}: up to date")
+        return 0
+    if dry_run:
+        print(f"{PREFIX} {config_path}: would " + ", ".join(would for would, _ in steps))
+        return 0
+    for radar, kept, angles in changes:
+        _apply_cosine_change(radar, kept, angles)
     return _save_node_red(document, config_path, steps)
 
 

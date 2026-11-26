@@ -985,6 +985,18 @@ def test_a_cosine_command_in_the_extras_is_never_sent():
 
 
 @needs_node
+def test_the_flows_drop_what_the_control_app_calls_a_cosine_command():
+    """The flows and tm-control migrate read a ^/ command the same way: the extras the flows keep are exactly the
+    strings for which mounting.cosine_command is None (ordinary ASCII whitespace; JS trim and Python strip agree)."""
+    texts = ["OL", "R>3\n", "", " ", "^", "^/", "^/+", "^/+20.0\n", "^/-0.00\n", "  ^/-20.0\n", "\t^/+5", "^/+abc",
+             "^/+95", "^/20", "^/x", "x^/+20", "R^/+5\n", "OL ^/+5", "^ /+5", "/^+5", "^/+12.34\r\n", "\n^/-1"]
+    radar, _ = radar_setup(radar_config(opt_api_commands_array=json.dumps(texts)))
+    kept = radar["api_commands"][len(FIXED_RADAR_COMMANDS):-2]
+    assert kept == [text for text in texts if mounting.cosine_command(text) is None]
+    assert [text for text in texts if text not in kept]  # something was dropped
+
+
+@needs_node
 @pytest.mark.parametrize("value, extras, errors", [
     ("not json", [], [EXTRAS_NOT_A_LIST]),
     ('{"a": 1}', [], [EXTRAS_NOT_A_LIST]),
