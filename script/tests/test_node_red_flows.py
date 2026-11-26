@@ -19,7 +19,8 @@ from tmsetup_render import REPO, load_role_yaml, render
 sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 
 from tm_control.modules.setup_history import snapshot  # noqa: E402  (needs tm-control/backend on sys.path)
-from tm_control.modules.location.coordinates import read_heading  # noqa: E402  (needs tm-control/backend on sys.path)
+from tm_control.modules.location import mounting  # noqa: E402
+from tm_control.modules.location.coordinates import read_heading  # noqa: E402
 
 FLOWS = Path(__file__).resolve().parents[2] / "container" / "node-red-tm" / "data" / "flows.json"
 needs_node = needs("node")
@@ -715,6 +716,101 @@ def test_the_flows_read_a_heading_as_the_control_app_does():
             assert headings(own)[1] == expected, block
 
 
+# The other four facts of how a sensor is mounted, beside its heading: each a value within its limits, rounded, or
+# None for none yet. A config error names the key's path and never the value.
+MOUNTING_KEYS = ("pitch_deg", "height_m", "view_distance_m", "mount")
+MOUNTING_ERRORS = {
+    "pitch_deg": "isn't a number from 0 to 90",
+    "height_m": "isn't a number above 0 and at most 100",
+    "view_distance_m": "isn't a number from 0 to 1000",
+    "mount": "isn't 1 to 32 lower-case letters, digits, or underscores",
+}
+CAMERA_KEY = ("cameras", "picam_h265")
+GIVEN_MOUNTING = {"pitch_deg": 14.94, "height_m": 2.134, "view_distance_m": 7.951, "mount": "tripod"}
+KEPT_MOUNTING = {"pitch_deg": 14.9, "height_m": 2.13, "view_distance_m": 7.95, "mount": "tripod"}
+BAD_MOUNTING = [("pitch_deg", 91), ("pitch_deg", -1), ("pitch_deg", "15"), ("pitch_deg", True), ("height_m", 0),
+                ("height_m", 101), ("height_m", "2"), ("view_distance_m", -1), ("view_distance_m", 1001),
+                ("mount", "Tripod!"), ("mount", "m" * 33), ("mount", 5)]
+
+
+def camera_mounting(payload):
+    """The camera's heading and its other four."""
+    deployment = payload["sensors"]["cameras"]["picam_h265"]["deployment"]
+    return {key: deployment[key] for key in ("heading_deg", *MOUNTING_KEYS)}
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, dict.fromkeys(MOUNTING_KEYS), []),
+    (dict.fromkeys(MOUNTING_KEYS), dict.fromkeys(MOUNTING_KEYS), []),
+    (dict.fromkeys(MOUNTING_KEYS, ""), dict.fromkeys(MOUNTING_KEYS), []),
+    (GIVEN_MOUNTING, KEPT_MOUNTING, []),
+    *[({**GIVEN_MOUNTING, key: bad}, {**KEPT_MOUNTING, key: None}, [key]) for key, bad in BAD_MOUNTING],
+], ids=["no-key", "null", "empty", "rounded", *[f"{key}-{bad!r}"[:40] for key, bad in BAD_MOUNTING]])
+def test_init_config_defaults_mounting_keys(given, expected, errors):
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40, **given}))
+    assert camera_mounting(payload) == {"heading_deg": 40, **expected}
+    assert logged == [(f"{CAMERA_PATH}.{key} {MOUNTING_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+def test_init_config_defaults_mounting_keys_reach_every_enabled_sensor():
+    """A sensor with no block of its own (the radar) gets the four too, each None when nothing sets it."""
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40}))
+    radar = payload["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"]
+    assert {key: radar[key] for key in MOUNTING_KEYS} == dict.fromkeys(MOUNTING_KEYS)
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("key, value", [("pitch_deg", 0), ("pitch_deg", 90), ("height_m", 0.01), ("height_m", 100),
+                                        ("view_distance_m", 0), ("view_distance_m", 1000)])
+def test_init_config_defaults_limits_are_inclusive(key, value):
+    payload, logged = init_defaults(heading_config({"heading_deg": 90}, {"heading_deg": 40, key: value}))
+    assert camera_mounting(payload)[key] == value
+    assert logged == []
+
+
+# The rounding edges are chosen on the doubles' exact values: 90.05, 100.005 and 1000.005 are held a hair below the half
+# and round back inside, 0.005 and -0.005 a hair above it, and 0.004 rounds to 0, which a height refuses.
+LIMIT_EDGES = {
+    "pitch_deg": [0, 90, 90.04, 90.05, 90.06, 91, -0.04, -0.05, -0.06, -1, 14.96, 0.04, "15", True, [1]],
+    "height_m": [0.01, 100, 0, 0.004, 0.005, 100.004, 100.005, 100.006, 101, -2, 3.665, "2", False, [1]],
+    "view_distance_m": [0, 1000, -0.004, -0.005, 1000.004, 1000.005, 1000.006, 1001, -1, 13.664, "7", True, [1]],
+    "mount": ["tripod", "a" * 32, "a" * 33, "Tripod", " tripod", "tripod ", "tripod\n", "a b", "a-b", "é", 5, True, [1]],
+}
+
+
+@needs_node
+def test_mounting_limits_match_the_control_apps():
+    """Each limit, one step past it and the rounding edges go through both copies the flows hold of the table (init
+    config defaults, on what config.yml gives, and the validator of a mounting correction, on what the control app
+    sends), and what each keeps or refuses is what mounting.read keeps or refuses."""
+    flows = json.loads(FLOWS.read_text())
+    defaults = named(flows, "init config defaults")
+    validator = named(flows, "tm-internal: validate mounting correction")
+    cases = [(key, value) for key, values in LIMIT_EDGES.items() for value in values]
+    expected = [getattr(mounting.read(*CAMERA_KEY, {key: value}), key) for key, value in cases]
+    assert any(value is None for value in expected) and any(value is not None for value in expected)
+
+    steps = [(defaults, {"payload": heading_config({"heading_deg": 90}, {"heading_deg": 40, key: value})})
+             for key, value in cases]
+    for (key, value), step, want in zip(cases, run_functions(steps)["results"], expected):
+        camera = step["result"]["payload"]["sensors"]["cameras"]["picam_h265"]["deployment"]
+        assert camera[key] == want, (key, value)
+        errors = [text for level, text, with_msg in step["logged"] if level == "error"]
+        assert errors == ([] if want is not None else [f"{CAMERA_PATH}.{key} {MOUNTING_ERRORS[key]}"]), (key, value)
+
+    steps = [(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": mounting_body(**{key: value})})
+             for key, value in cases]
+    for (key, value), step, want in zip(cases, run_functions(steps)["results"], expected):
+        passed, refused = step["result"]
+        if want is None:
+            assert passed is None and refused["payload"] == bad_request(key), (key, value)
+        else:
+            assert refused is None and passed["params"][f"${key}"] == want, (key, value)
+
+
 def test_config_template_has_the_survey_keys():
     """A new device starts with no survey and two decimal places stored; the Location page sets survey_id later."""
     deployment = new_device_config()["deployment"]
@@ -1020,16 +1116,18 @@ ENGINE_PLACE = {"survey_id": ENGINE_SURVEY, "database_precision": "1", "lat": 45
 ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
-                         "sensorName, deviceName, survey_id, location_precision) VALUES ($id, $started, $lat, $lon, "
-                         "$heading_deg, $sensorType, $sensorName, $deviceName, $survey_id, $location_precision)",
+                         "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
+                         "mount) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
+                         "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
+                         "$mount)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
                           "location_precision = $location_precision, heading_deg = $heading_deg WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision FROM deployment WHERE entryEndDateTime IS NULL "
-                 "ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount FROM deployment "
+                 "WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
-            "deviceName", "survey_id", "location_precision"}
+            "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount"}
 
 
 def engine_sensors(camera_deployment=None):
@@ -1040,12 +1138,13 @@ def engine_sensors(camera_deployment=None):
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
-             started=10, row_id=None):
+             started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
-            "location_precision": precision}
+            "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
+            "view_distance_m": view_distance_m, "mount": mount}
 
 
 def camera_row(**kwargs):
@@ -1198,6 +1297,85 @@ def test_engine_adopts_only_when_the_heading_matches(row_heading):
     assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
     assert [message["params"]["$sensorName"] for message in run.insert] == ["picam_h265"]
     assert run.rewrite == []
+
+
+# How the camera is mounted, as a row stores it and as config.yml says it (the file's tilt as 15.0)
+MOUNTED = {"heading_deg": 40, "pitch_deg": 15, "height_m": 2.13, "view_distance_m": 7.95, "mount": "tripod"}
+MOUNTED_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+
+
+def mounted_row(**values):
+    """An open camera row mounted as MOUNTED, but for values."""
+    mounted = {**MOUNTED, **values}
+    return camera_row(heading=mounted.pop("heading_deg"), **mounted)
+
+
+@needs_node
+def test_engine_keeps_rows_from_before_the_columns():
+    """An open row read before the four columns existed has none of their keys; a sensor with none set matches it."""
+    rows = [{key: value for key, value in row.items() if key not in MOUNTING_KEYS}
+            for row in (camera_row(), radar_row())]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_keeps_a_row_whose_mounting_matches():
+    camera = mounted_row()
+    run = engine(engine_sensors({**MOUNTED, "pitch_deg": 15.0}), [camera, radar_row()], ENGINE_PLACE)
+    assert run.written() == []
+
+
+MOUNTING_CHANGES = [
+    ("heading_deg", 40, 41), ("heading_deg", 40, None), ("heading_deg", None, 40),
+    ("pitch_deg", 15, 14.9), ("pitch_deg", 15, None), ("pitch_deg", None, 15),
+    ("height_m", 2.13, 2.14), ("height_m", 2.13, None), ("height_m", None, 2.13),
+    ("view_distance_m", 7.95, 0), ("view_distance_m", 7.95, None), ("view_distance_m", None, 7.95),
+    ("mount", "tripod", "pole"), ("mount", "tripod", None), ("mount", None, "tripod"),
+]
+
+
+@needs_node
+@pytest.mark.parametrize("key, row_value, file_value", MOUNTING_CHANGES)
+def test_engine_starts_a_deployment_when_a_mounting_value_changes(key, row_value, file_value):
+    camera = mounted_row(**{key: row_value})
+    sensor = {**MOUNTED, key: file_value}
+    run = engine(engine_sensors(sensor), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    [inserted] = run.insert
+    assert tuple(inserted["params"][param] for param in MOUNTED_PARAMS) == tuple(sensor.values())
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_adopts_only_when_the_mounting_matches_too():
+    """A row from before any survey is adopted only when it is mounted as the file says; else it ends."""
+    camera = mounted_row(survey_id=None)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], ENGINE_PLACE)
+    assert run.close == [] and run.insert == [] and [m["params"]["$id"] for m in run.rewrite] == [camera["id"]]
+    camera = mounted_row(survey_id=None, height_m=3.66)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [camera["id"]]
+    assert [message["params"]["$height_m"] for message in run.insert] == [2.13]
+    assert run.rewrite == []
+
+
+@needs_node
+def test_engine_without_a_survey_id_holds_a_mounting_change():
+    camera = mounted_row(height_m=3.66)
+    run = engine(engine_sensors(MOUNTED), [camera, radar_row()], {**ENGINE_PLACE, "survey_id": None})
+    assert run.written() == []
+
+
+@needs_node
+def test_engine_rows_for_thingsboard_carry_the_mounting():
+    run = engine(engine_sensors(MOUNTED), [mounted_row(height_m=3.66), radar_row()], ENGINE_PLACE)
+    rows = run.payload["updatedDeployment"] + run.payload["currentDeployment"]
+    assert len(rows) == 3 and all(set(row) == ROW_KEYS for row in rows)
+    [ended] = run.payload["updatedDeployment"]
+    assert ended["height_m"] == 3.66
+    [started] = [row for row in run.payload["currentDeployment"] if row["sensorName"] == "picam_h265"]
+    assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
 @needs_node
@@ -1474,18 +1652,25 @@ STATUS_TOKEN_CHECK = "cbc268130cc14c58"
 TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-internal/surveys/usage",
                      "/tm-internal/surveys/:id/events", "/tm-internal/deployments/precision",
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
+                     "/tm-internal/deployments/:id/mounting", "/tm-internal/surveys/:id/recorded",
                      "/tm-internal/database/exact-copy", "/tm-internal/setup"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
+                       "/tm-internal/deployments/:id/mounting": "post", "/tm-internal/surveys/:id/recorded": "get",
                        "/tm-internal/database/exact-copy": "post", "/tm-internal/setup": "post"}
+RECORDED_SQL = (
+    "SELECT d.id AS id, CASE d.sensorType WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id) "
+    "WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov WHERE time >= d.entryStartDateTime / 1000.0 - 86400 "
+    "AND deployment_id = d.id) END AS recorded FROM deployment d "
+    "WHERE d.survey_id = $survey_id AND d.entryEndDateTime IS NULL")
 SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
-                                 "sensorType, "
-                                 "sensorName, survey_id, location_precision FROM deployment WHERE survey_id = "
-                                 "$survey_id ORDER BY entryStartDateTime"),
+                                 "sensorType, sensorName, survey_id, location_precision, pitch_deg, height_m, "
+                                 "view_distance_m, mount FROM deployment WHERE survey_id = $survey_id "
+                                 "ORDER BY entryStartDateTime"),
     "/tm-internal/surveys/usage": ("read survey usage",
                                    "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
                                    "AS last_end, SUM(entryEndDateTime IS NULL) AS open_count, COUNT(*) AS "
@@ -1494,6 +1679,7 @@ SURVEY_SQL = {
                                         "SELECT COUNT(*) AS event_count, MIN(start_time) AS first_event, "
                                         "MAX(start_time) AS last_event FROM events WHERE deployment_id IN (SELECT id "
                                         "FROM deployment WHERE survey_id = $survey_id)"),
+    "/tm-internal/surveys/:id/recorded": ("read survey recorded", RECORDED_SQL),
 }
 PRECISION_SQL = {
     "rewrite precision": "UPDATE deployment SET lat = ROUND(lat, $p), lon = ROUND(lon, $p), location_precision = $p "
@@ -1504,6 +1690,8 @@ PRECISION_SQL = {
 VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/location": "tm-internal: validate location correction",
               "/tm-internal/deployments/:id/heading": "tm-internal: validate heading correction",
+              "/tm-internal/deployments/:id/mounting": "tm-internal: validate mounting correction",
+              "/tm-internal/surveys/:id/recorded": "tm-internal: validate recorded path",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
@@ -1633,6 +1821,9 @@ def bad_request(detail):
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
     ("tm-internal: validate survey path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e-si"}}}, True),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e"}}}, False),
+    ("tm-internal: validate recorded path", {"req": {"params": {"id": "3f9a1c2e-si "}}}, False),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "2"}}, True),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "1"}}, True),
     ("tm-internal: validate precision", {"req": {}, "payload": {"precision": "none"}}, True),
@@ -1736,7 +1927,7 @@ def test_database_errors_answer_500():
     flows, by_id, endpoints = tm_internal_endpoints()
     queries = {node["id"] for node in reachable(by_id, [endpoints[url]["id"] for url in TM_INTERNAL_PATHS])
                if node["type"] == "sqlite"}
-    assert len(queries) == 13
+    assert len(queries) == 15
     writes = {node["id"] for node in flows if node["type"] == "sqlite"
               and node.get("name") in ("close setup_device", "insert setup_device", "close setup_camera",
                                        "insert setup_camera")}
@@ -2644,6 +2835,162 @@ def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
 
 
+FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
+MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+
+
+def mounting_body(**changes):
+    return {**FULL_MOUNTING, **changes}
+
+
+def without(body, key):
+    return {name: value for name, value in body.items() if name != key}
+
+
+@needs_node
+@pytest.mark.parametrize("deployment_id, body, detail", [
+    (DEPLOYMENT_ID, mounting_body(), None),
+    (DEPLOYMENT_ID, {key: None for key in FULL_MOUNTING}, None),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=0, pitch_deg=0, view_distance_m=0), None),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=359, pitch_deg=90, height_m=100, view_distance_m=1000), None),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=14.9, height_m=3.67, view_distance_m=13.66, mount="a_" * 16), None),
+    (DEPLOYMENT_ID, mounting_body(mount="x" * 32), None),
+    (DEPLOYMENT_ID, without(mounting_body(), "heading_deg"), "heading_deg"),
+    (DEPLOYMENT_ID, without(mounting_body(), "pitch_deg"), "pitch_deg"),
+    (DEPLOYMENT_ID, without(mounting_body(), "height_m"), "height_m"),
+    (DEPLOYMENT_ID, without(mounting_body(), "view_distance_m"), "view_distance_m"),
+    (DEPLOYMENT_ID, without(mounting_body(), "mount"), "mount"),
+    (DEPLOYMENT_ID, {}, "heading_deg"),
+    (DEPLOYMENT_ID, "heading_deg=40", "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=360), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=-1), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg=40.5), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=90.06), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=-0.05), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m=0), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(height_m=0.004), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(height_m=100.006), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=-0.005), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=1000.006), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(mount=""), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="Pole"), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="x" * 33), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount="a b"), "mount"),
+    (DEPLOYMENT_ID, mounting_body(mount=5), "mount"),
+    (DEPLOYMENT_ID, mounting_body(heading_deg="40"), "heading_deg"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg="40"), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m="3.66"), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m="13"), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg=True), "pitch_deg"),
+    (DEPLOYMENT_ID, mounting_body(height_m=False), "height_m"),
+    (DEPLOYMENT_ID, mounting_body(view_distance_m=[1]), "view_distance_m"),
+    (DEPLOYMENT_ID, mounting_body(pitch_deg="40", height_m=0), "pitch_deg"),
+    ("1761800000000-0A1B2C3D-d", mounting_body(), "deployment_id"),
+    ("0a1b2c3d-d", mounting_body(), "deployment_id"),
+    ("1761800000000-0a1b2c3d-d ", mounting_body(), "deployment_id"),
+    ("nope", mounting_body(heading_deg=360), "deployment_id"),
+])
+def test_mounting_correction_is_validated(deployment_id, body, detail):
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
+    msg = {"req": {"params": {"id": deployment_id}}, "payload": body}
+    [step] = run_functions([(validator, msg)])["results"]
+    passed, refused = step["result"]
+    if detail is None:
+        assert refused is None
+        assert list(passed["params"]) == ["$id", *MOUNTING_PARAMS]
+        assert passed["params"]["$id"] == deployment_id
+        assert {name[1:]: value for name, value in passed["params"].items() if name != "$id"} == body
+        return
+    assert passed is None
+    assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
+    assert json.dumps(body) not in json.dumps(refused["payload"])
+
+
+@needs_node
+def test_mounting_correction_rounds_as_the_defaults_node_does():
+    """The same limits, checked after rounding (one decimal for tilt, two for lengths), so the two never disagree."""
+    validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
+    for given, stored in (((14.96, 3.665, 13.664), (15.0, 3.67, 13.66)),
+                          ((90.04, 100.004, 1000.004), (90.0, 100.0, 1000.0)),
+                          ((-0.04, 0.005, -0.004), (0, 0.01, 0))):
+        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2])
+        [step] = run_functions([(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": body})])["results"]
+        params = step["result"][0]["params"]
+        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"]) == stored
+
+
+def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
+    validator, query, answer, response_id, by_id = correction_chain("/tm-internal/deployments/:id/mounting")
+    assert validator["outputs"] == 2
+    assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
+        "sqlite", "rewrite deployment mounting", "prepared", TMDB)
+    assert sql_text(query) == ("UPDATE deployment SET heading_deg = $heading_deg, pitch_deg = $pitch_deg, "
+                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount "
+                               "WHERE id = $id")
+    assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+    assert answer["name"] == "tm-internal: answer mounting correction"
+
+
+@needs_node
+def test_mounting_correction_answers_204():
+    _, _, answer, *_ = correction_chain("/tm-internal/deployments/:id/mounting")
+    [step] = run_functions([(answer, {"params": {}, "payload": []})])["results"]
+    assert step["result"]["statusCode"] == 204 and step["result"]["payload"] == ""
+
+
+def test_the_mounting_correction_leaves_the_heading_correction_alone():
+    validator, query, *_ = correction_chain("/tm-internal/deployments/:id/heading")
+    assert validator["name"] == "tm-internal: validate heading correction"
+    assert query["name"] == "rewrite deployment heading"
+
+
+def recorded_database():
+    con = sqlite3.connect(":memory:")
+    con.executescript(SCHEMA_SQL.read_text())
+    start = 1761800000000
+    rows = [("c-open", "cameras", None, "3f9a1c2e-si"), ("c-quiet", "cameras", None, "3f9a1c2e-si"),
+            ("r-open", "radars", None, "3f9a1c2e-si"), ("r-quiet", "radars", None, "3f9a1c2e-si"),
+            ("r-old", "radars", None, "3f9a1c2e-si"), ("r-day", "radars", None, "3f9a1c2e-si"),
+            ("a-open", "airquality_monitors", None, "3f9a1c2e-si"),
+            ("c-closed", "cameras", start + 5000, "3f9a1c2e-si"), ("c-other", "cameras", None, "7b2e9d41-si")]
+    for deployment_id, sensor_type, ended, survey_id in rows:
+        con.execute("INSERT INTO deployment (id, entryStartDateTime, entryEndDateTime, sensorType, sensorName, "
+                    "survey_id) VALUES (?, ?, ?, ?, 'x', ?)", (deployment_id, start, ended, sensor_type, survey_id))
+    for deployment_id in ("c-open", "c-closed", "c-other"):
+        con.execute("INSERT INTO events (id, camera, deployment_id) VALUES (?, 'camera_1', ?)",
+                    ("e-" + deployment_id, deployment_id))
+    seconds = start / 1000.0
+    for deployment_id, time in (("r-open", seconds + 60), ("r-old", seconds - 86401), ("r-day", seconds - 86399),
+                                ("a-open", seconds + 60)):
+        con.execute("INSERT INTO radar_dov (time, deployment_id) VALUES (?, ?)", (time, deployment_id))
+    con.row_factory = sqlite3.Row
+    return con
+
+
+def test_survey_recorded_statement():
+    query = named(json.loads(FLOWS.read_text()), "read survey recorded")
+    assert sql_text(query) == RECORDED_SQL
+    con = recorded_database()
+    rows = {row["id"]: row["recorded"] for row in con.execute(query["sql"], {"survey_id": "3f9a1c2e-si"})}
+    assert rows == {"c-open": 1, "c-quiet": 0, "r-open": 1, "r-quiet": 0, "r-old": 0, "r-day": 1, "a-open": None}
+    plan = " ".join(row[3] for row in con.execute("EXPLAIN QUERY PLAN " + query["sql"], {"survey_id": "x"}))
+    assert "radar_dov" in plan and "time" in plan
+
+
+@needs_node
+@pytest.mark.parametrize("rows, expected", [
+    ([{"id": "a-d", "recorded": 1}, {"id": "b-d", "recorded": 0}, {"id": "c-d", "recorded": None}],
+     {"a-d": True, "b-d": False, "c-d": None}),
+    ([{"id": "a-d", "recorded": 1}], {"a-d": True}),
+    ([], {}),
+], ids=["all-three", "one", "none"])
+def test_survey_recorded_answer(rows, expected):
+    msg = {"params": {"$survey_id": SURVEY_ID}, "payload": rows}
+    [step] = run_functions([(shape("/tm-internal/surveys/:id/recorded"), msg)])["results"]
+    assert step["result"]["payload"] == {"deployments": expected}
+    assert step["result"].get("statusCode") in (None, 200)
+
+
 def test_the_old_bearing_correction_path_is_gone():
     flows = json.loads(FLOWS.read_text())
     assert not [node for node in flows if node["type"] == "http in" and node.get("url", "").endswith("/bearing")]
@@ -3128,6 +3475,10 @@ EVENT_COLUMNS = [
     "frigate_speed_unit", "frigate_velocity_angle", "speed_unit", "speed_source", "radar_readings", "direction_source",
     "stationary_time", "stops", "zone_times",
 ]
+DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
+                      "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
+                      "view_distance_m", "mount"]
+MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
 
@@ -3595,12 +3946,13 @@ def test_everything_uploaded_passes_the_gate():
 
 def test_upload_lists_file():
     lists = upload_lists()
-    assert list(lists) == ["telemetry", "attributes", "event", "watch_camera", "watch_radar"]
+    assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar"]
     assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
                                    "sysinfo_frigateVersion"]
     assert lists["event"] == [name for name in EVENT_COLUMNS if name not in KEPT_ON_THE_UNIT]
+    assert lists["deployment"] == DEPLOYMENT_COLUMNS
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
@@ -3620,8 +3972,10 @@ def test_the_gate_holds_no_list_of_its_own():
     {"telemetry": ["event"], "attributes": [], "event": ["id", 7]},
     {key: names for key, names in upload_lists().items() if key != "watch_camera"},
     {**upload_lists(), "watch_radar": ["time", 7]},
+    {key: names for key, names in upload_lists().items() if key != "deployment"},
+    {**upload_lists(), "deployment": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
-        "no-watch-camera-list", "watch-radar-name-not-text"])
+        "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -3660,6 +4014,70 @@ WATCH_VALUE = {"cameras": [CAMERA_ROWS[0]], "radars": [RADAR_ROWS[0]]}
 
 def watch_item(value):
     return {"type": "telemetry", "payload": {"ts": TICK_MS, "values": {"watch": value}}}
+
+
+@needs_node
+def test_gate_keeps_only_the_listed_deployment_fields():
+    """A telemetry row goes out with the listed fields, the five among them, and a key that isn't listed is named
+    once as deployment.<key>, never with its value."""
+    row = {**GATE_ROW, **MOUNTING}
+    unlisted = {**row, "note": "kept-on-the-unit"}
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [unlisted], "currentDeployment": [unlisted]}}}
+    out, logged = gate({"type": "telemetry", "payload": payload})
+    assert out["payload"]["values"]["deployments"] == {"updatedDeployment": [row], "currentDeployment": [row]}
+    assert logged == [["warn", "ThingsBoard upload: left out deployment.note, which isn't on the list of what is "
+                               "shared.", False]]
+    assert "kept-on-the-unit" not in json.dumps(logged)
+
+
+@needs_node
+def test_gate_cuts_the_deployments_attribute_rows_too():
+    """Each sensor's entry is cut to the list; deploymentTopLevel is as it was."""
+    top = {"survey_id": "3f9a1c2e-si", "database_precision": "2"}
+    sensor = {"sensorType": "cameras", "lat": "45.52", "lon": "-122.69", "heading_deg": "0", "id": "x-d",
+              "note": "kept-on-the-unit"}
+    sent = attributes({"deployments": {"picam_h265": sensor, "deploymentTopLevel": top}})["deployments"]
+    assert sent["deploymentTopLevel"] == top
+    assert sent["picam_h265"] == {key: value for key, value in sensor.items() if key != "note"}
+    out, logged = gate({"type": "attributes", "payload": {"deployments": {"picam_h265": sensor,
+                                                                          "deploymentTopLevel": top}}})
+    assert [text for _, text, _ in logged] == [
+        "ThingsBoard upload: left out deployment.note, which isn't on the list of what is shared."]
+    assert "kept-on-the-unit" not in json.dumps(logged)
+
+
+@needs_node
+def test_gate_drops_a_deployment_row_with_no_listed_field():
+    rows = [{"surprise": "kept-on-the-unit"}, GATE_ROW]
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": rows, "currentDeployment": [GATE_ROW]}}}
+    out, logged = gate({"type": "telemetry", "payload": payload})
+    assert out["payload"]["values"]["deployments"] == {"updatedDeployment": [GATE_ROW], "currentDeployment": [GATE_ROW]}
+    assert "kept-on-the-unit" not in json.dumps(logged)
+    sent = attributes({"deployments": {"picam_h265": {"surprise": "kept-on-the-unit"},
+                                       "deploymentTopLevel": {"survey_id": "x-si"}}})["deployments"]
+    assert set(sent) == {"deploymentTopLevel"}
+
+
+@needs_node
+def test_gate_still_re_rounds_a_cut_row():
+    """location_precision is on the list, so the row is cut first and then re-rounded by it."""
+    row = {**deployment_row(location_precision=1), **MOUNTING, "note": "kept-on-the-unit"}
+    payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [row], "currentDeployment": [row]}}}
+    out, _ = gate({"type": "telemetry", "payload": payload}, deployment={**GATE_PLACE, "database_precision": "2"})
+    deployments = out["payload"]["values"]["deployments"]
+    for rows in deployments.values():
+        [sent] = rows
+        assert (sent["lat"], sent["lon"]) == (45.5, -122.7)
+        assert {key: sent[key] for key in MOUNTING} == MOUNTING and "note" not in sent
+
+
+def test_every_deployment_row_key_is_on_the_upload_list():
+    """What the engine's rows and the attribute's template write is all on the list, so no key is left out unseen."""
+    listed = set(upload_lists()["deployment"])
+    assert ROW_KEYS <= listed
+    template = named(json.loads(FLOWS.read_text()), "set deployment client side attribute payload")["template"]
+    written = set(re.findall(r'^\s*"(\w+)": "\{\{', template, re.M)) - {"survey_id", "database_precision"}
+    assert written and written <= listed
 
 
 @needs_node

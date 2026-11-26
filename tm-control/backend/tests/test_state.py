@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version() == 5
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 7
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -154,7 +154,7 @@ def test_migration_five_turns_bearings_into_headings(tmp_path, monkeypatch):
         )
     con.close()
 
-    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:5])
     assert state.migrate() == 5
     con = state.connect()
     tables = {row["name"] for row in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
@@ -199,3 +199,70 @@ def test_migration_five_turns_bearings_into_headings(tmp_path, monkeypatch):
         con.execute("DELETE FROM surveys WHERE id = '0123abcd-si'")  # the rows go with their place, as before
     assert con.execute("SELECT count(*) FROM survey_sensors").fetchone()[0] == 0
     assert con.execute("SELECT count(*) FROM survey_corrections").fetchone()[0] == 0
+
+
+def test_migration_six_adds_the_mounting_columns(tmp_path, monkeypatch):
+    """The five facts' other four join a sensor's row: a row written before keeps its heading and NULLs, and measured
+    is one of pitch or distance."""
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:5])
+    state = _migrated(tmp_path)
+    con = state.connect()
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+        con.execute(
+            "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg, map_block_ref) "
+            "VALUES ('0123abcd-si', 'cameras', 'picam_h265', 40, 'block-7')"
+        )
+    con.close()
+
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:6])
+    assert state.migrate() == 6
+    con = state.connect()
+    columns = [row["name"] for row in con.execute("PRAGMA table_info(survey_sensors)")]
+    assert columns == [
+        "survey_id", "sensor_type", "sensor_name", "heading_deg", "map_block_ref", "map_side",
+        "pitch_deg", "height_m", "view_distance_m", "measured", "mount",
+    ]
+    row = con.execute("SELECT * FROM survey_sensors").fetchone()
+    assert (row["heading_deg"], row["map_block_ref"]) == (40, "block-7")
+    assert [row[key] for key in ("pitch_deg", "height_m", "view_distance_m", "measured", "mount")] == [None] * 5
+    with con:
+        con.execute(
+            "UPDATE survey_sensors SET pitch_deg = 15.0, height_m = 3.66, view_distance_m = 13.66, "
+            "measured = 'pitch', mount = 'pole'"
+        )
+    with pytest.raises(sqlite3.IntegrityError), con:
+        con.execute("UPDATE survey_sensors SET measured = 'both'")
+
+
+def test_migration_seven_leaves_every_row_confirmed(tmp_path, monkeypatch):
+    """A row's mounting is marked unconfirmed when a move brings it back; every row from before holds what the file
+    has, so it stays confirmed."""
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS[:6])
+    state = _migrated(tmp_path)
+    con = state.connect()
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+        con.execute(
+            "INSERT INTO survey_sensors (survey_id, sensor_type, sensor_name, heading_deg, pitch_deg, height_m, "
+            "measured, mount) VALUES ('0123abcd-si', 'cameras', 'picam_h265', 40, 15.0, 3.66, 'pitch', 'pole')"
+        )
+    con.close()
+
+    monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
+    assert state.migrate() == 7
+    con = state.connect()
+    columns = [row["name"] for row in con.execute("PRAGMA table_info(survey_sensors)")]
+    assert columns[-1] == "unconfirmed"
+    row = con.execute("SELECT * FROM survey_sensors").fetchone()
+    assert (row["heading_deg"], row["height_m"], row["mount"], row["unconfirmed"]) == (40, 3.66, "pole", 0)
+    with pytest.raises(sqlite3.IntegrityError), con:
+        con.execute("UPDATE survey_sensors SET unconfirmed = 2")

@@ -2,14 +2,16 @@
 
 GET lists the places (after reconcile.ensure has brought the store and config.yml into step). An admin can plan a
 place (POST), edit or delete one, deploy one (write it and its sensors' headings into Node-RED's config.yml, then wait
-for Node-RED to start the deployments), correct a used place's location or one deployment's heading, change the
-precision tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds
-them (a one-time download link; Node-RED makes the copy), and import planned places from CSV.
+for Node-RED to start the deployments), correct a used place's location or one deployment's heading, read and save how
+each sensor is mounted at the place in use (asking "Did the unit move or turn?" when it matters), change the precision
+tmdb stores coordinates at, export the places with their exact coordinates, start a database copy that holds them (a
+one-time download link; Node-RED makes the copy), and import planned places from CSV.
 
 Every write to config.yml or the places store holds app.state.reconcile_lock, so a GET's reconcile never sees half of
 one. config.yml is written before the store, so a refused or failed save leaves both as they were. No coordinate,
 description, or reason is logged, audited, or put in an error message: audit rows carry the survey id (and the
-deployment id, or the precision) only.
+deployment id, or the precision) only; a mounting correction's row adds the values it changed among the five, which
+identify no place. The mounting rules are mounting.py's; this module only calls them.
 """
 
 import csv
@@ -23,6 +25,8 @@ from time import sleep
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
 from tm_control.adapters import network, timedate
@@ -43,6 +47,18 @@ from tm_control.modules.location.coordinates import (
     stored,
     valid_heading,
 )
+from tm_control.modules.location.mounting import (
+    FIELDS,
+    MOUNTS,
+    Change,
+    Mount,
+    Mounting,
+    MountingError,
+    SensorKey,
+    checked,
+    review,
+)
+from tm_control.modules.location.mounting import read as read_mounting
 from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.location.region import LatLon, region
 
@@ -122,6 +138,10 @@ class DeploymentOut(BaseModel):
     lat: float | None
     lon: float | None
     heading_deg: int | None
+    pitch_deg: float | None
+    height_m: float | None
+    view_distance_m: float | None
+    mount: str | None
     sensor_type: str
     sensor_name: str
     location_precision: int | None
@@ -135,6 +155,7 @@ class DeployOut(BaseModel):
     deployed_at: int  # ms, taken before config.yml was written
     reloaded: bool  # whether Node-RED was seen to start the deployments
     deployments: list[DeploymentOut]  # the place's open deployments
+    previous: list[SensorKey]  # after a move: the sensors whose values from the place's last use wait to be confirmed
 
 
 class EventsOut(BaseModel):
@@ -157,6 +178,51 @@ class LocationCorrection(BaseModel):
 class HeadingCorrection(BaseModel):
     heading_deg: Annotated[int, Field(strict=True)] | None  # whole degrees from 0 to 359; null for none
     reason: str | None = Field(default=None, max_length=TEXT_MAX)
+
+
+class PreviousMounting(BaseModel):
+    """What was last saved for a sensor at the place, beside its heading. A move there records none of it; it is
+    offered until a save writes that sensor."""
+
+    pitch_deg: float | None
+    height_m: float | None
+    view_distance_m: float | None
+    measured: Literal["pitch", "distance"] | None
+    mount: str | None
+
+
+class SensorMounting(Mounting):
+    camera: str | None  # for a radar: the first enabled camera whose camera_radar names it
+    same_as_camera: bool  # camera is set and the radar's five equal that camera's
+    deployment_id: str | None  # its open deployment row; None when Node-RED has none or didn't answer
+    recorded: bool | None  # whether that row has recorded traffic; None when Node-RED can't say
+    previous: PreviousMounting | None  # the place's last values waiting to be confirmed; None when none wait
+
+
+class MountingState(BaseModel):
+    sensors: list[SensorMounting]  # cameras, each followed by its radar; then other radars; then the rest
+    mounts: list[Mount]
+    nodered: bool  # whether Node-RED answered
+
+
+class SensorMountingIn(Mounting):
+    same_as_camera: bool = False  # take the five and measured from this radar's camera
+
+
+class MountingIn(BaseModel):
+    sensors: list[SensorMountingIn] = Field(max_length=32)  # a sensor left out keeps its values
+    moved: bool | None = None  # the answer to "Did the unit move or turn?"
+    dry_run: bool = True
+
+
+class MountingOut(BaseModel):
+    saved: bool
+    sensors: list[SensorMounting]  # as stored after a save, or as they would be
+    changes: list[Change]
+    ask: bool
+    suggested: Literal["moved", "measured"] | None
+    new_deployments: list[SensorKey]
+    reloaded: bool | None  # after a save that starts deployments: whether Node-RED was seen to
 
 
 class DatabaseCopyOut(BaseModel):
@@ -271,6 +337,8 @@ def _deployment(row: dict) -> DeploymentOut | None:
         return float(value) if _finite(value) else None
 
     precision = row.get("location_precision")
+    sensor_type, sensor_name = str(row.get("sensorType") or ""), str(row.get("sensorName") or "")
+    mounted = read_mounting(sensor_type, sensor_name, row)  # the four as the file's are read: within limits, else None
     return DeploymentOut(
         id=row["id"],
         started=_int(row.get("entryStartDateTime")),
@@ -278,8 +346,12 @@ def _deployment(row: dict) -> DeploymentOut | None:
         lat=number("lat"),
         lon=number("lon"),
         heading_deg=row["heading_deg"] if valid_heading(row.get("heading_deg")) else None,
-        sensor_type=str(row.get("sensorType") or ""),
-        sensor_name=str(row.get("sensorName") or ""),
+        pitch_deg=mounted.pitch_deg,
+        height_m=mounted.height_m,
+        view_distance_m=mounted.view_distance_m,
+        mount=mounted.mount,
+        sensor_type=sensor_type,
+        sensor_name=sensor_name,
         location_precision=_int(precision) if precision is not None else None,
     )
 
@@ -561,10 +633,15 @@ def delete_place(survey_id: str, request: Request, admin: User = Depends(require
 @router.post("/{survey_id}/deploy", response_model=DeployOut)
 def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User = Depends(require_admin)):
     """Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
-    out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.
+    out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to
+    another place also removes each sensor's other four from the file, at a place used before as at a new one: the
+    store keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a
+    mounting save.
 
-    Node-RED not answering isn't an error: the file is written, and `reloaded` is false."""
+    Node-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see
+    _reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it."""
     app_state = request.app.state
+    _reconciled(app_state, admin)
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         config = load_config(app_state)
@@ -577,30 +654,53 @@ def deploy_place(survey_id: str, body: DeployIn, request: Request, admin: User =
             named[key] = item.heading_deg
         kept = {(h.sensor_type, h.sensor_name): h.heading_deg for h in place.headings}
         chosen = {key: named.get(key, kept.get(key, current)) for key, current in enabled.items()}
-        switching = config.deployment().survey_id != place.id
+        switching = config.deployment().survey_id != place.id  # which rows to wait for
+        moving = place.status != "in_use"  # the unit goes to another place
         waiting = {key: heading for key, heading in chosen.items() if switching or heading != enabled[key]}
 
         deployed_at = int(time.time() * 1000)
         config.set_place(place.id, place.lat, place.lon)
         for (sensor_type, sensor_name), heading in chosen.items():
             config.set_sensor_heading(sensor_type, sensor_name, heading)
+            if moving:
+                config.set_sensor_mounting(sensor_type, sensor_name, None)  # a move records none of the four
         save_config(app_state, config)  # the file first: a refused save leaves the store as it was
         places = Places(app_state.state)
         places.set_in_use(place.id)
         for (sensor_type, sensor_name), heading in chosen.items():
             places.set_heading(place.id, sensor_type, sensor_name, heading)
+        previous = [
+            SensorKey(sensor_type=each.sensor_type, sensor_name=each.sensor_name)
+            for each in places.unconfirmed(place.id) if _key(each) in chosen
+        ] if moving else []
     Audit(app_state.state).record(admin.id, "survey.deploy", place.id)
     reloaded, rows = _wait_for_rows(app_state.nodered, place.id, waiting, deployed_at)
-    return DeployOut(deployed_at=deployed_at, reloaded=reloaded, deployments=rows)
+    return DeployOut(deployed_at=deployed_at, reloaded=reloaded, deployments=rows, previous=previous)
 
 
 def _wait_for_rows(nodered, survey_id: str, waiting: dict, deployed_at: int) -> tuple[bool, list[DeploymentOut]]:
-    """Ask Node-RED for the place's rows until every sensor in `waiting` (sensor -> the heading deployed) has its row,
-    for up to DEPLOY_TIMEOUT; stop at once when Node-RED doesn't answer. Returns whether they all appeared (and Node-RED
-    answered), and the place's open rows as last seen.
+    """Ask Node-RED for the place's rows until every sensor in `waiting` (sensor -> the heading deployed) has its row
+    (see _poll_rows).
 
     A sensor's row is an open one of this place with that heading that started at or after deployed_at, or one Node-RED
     adopted: a row open from before any survey takes the survey's id and keeps its start (the engine's rule 4)."""
+
+    def arrived(rows: list[DeploymentOut]) -> bool:
+        started = _started(rows, deployed_at)
+        facing = {_key(row): row.heading_deg for row in rows}
+        return all(key in started or (key in facing and facing[key] == heading) for key, heading in waiting.items())
+
+    return _poll_rows(nodered, survey_id, arrived)
+
+
+def _started(rows: list[DeploymentOut], since: int) -> set[tuple[str, str]]:
+    """The sensors with a row that started at or after `since` (ms)."""
+    return {_key(row) for row in rows if row.started is not None and row.started >= since}
+
+
+def _poll_rows(nodered, survey_id: str, arrived) -> tuple[bool, list[DeploymentOut]]:
+    """Ask Node-RED for the place's open rows until `arrived(rows)`, for up to DEPLOY_TIMEOUT; stop at once when
+    Node-RED doesn't answer. Returns whether they arrived (and Node-RED answered), and the open rows as last seen."""
     deadline = time.monotonic() + DEPLOY_TIMEOUT
     rows: list[DeploymentOut] = []
     while True:
@@ -610,12 +710,7 @@ def _wait_for_rows(nodered, survey_id: str, waiting: dict, deployed_at: int) -> 
             if error.code == "unreachable" or time.monotonic() >= deadline:
                 return False, []
         else:
-            started = {
-                (row.sensor_type, row.sensor_name) for row in rows
-                if row.started is not None and row.started >= deployed_at
-            }
-            facing = {(row.sensor_type, row.sensor_name): row.heading_deg for row in rows}
-            if all(key in started or (key in facing and facing[key] == heading) for key, heading in waiting.items()):
+            if arrived(rows):
                 return True, rows
             if time.monotonic() >= deadline:
                 return False, rows
@@ -654,9 +749,12 @@ def place_events(survey_id: str, request: Request, admin: User = Depends(require
 def correct_location(survey_id: str, body: LocationCorrection, request: Request, admin: User = Depends(require_admin)):
     """Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,
     and Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed
-    and the rows didn't; correcting again with the same pair re-rounds them."""
+    and the rows didn't; correcting again with the same pair re-rounds them. The reconcile runs first (see
+    _reconciled), and for the place in use a file that no longer names it by the time the lock is held is refused (409
+    config_changed)."""
     app_state = request.app.state
     lat, lon = _pair(body.lat, body.lon)
+    _reconciled(app_state, admin)
     with app_state.reconcile_lock:
         place = _place(app_state, survey_id)
         if place.status == "planned":
@@ -667,6 +765,9 @@ def correct_location(survey_id: str, body: LocationCorrection, request: Request,
             )
         if place.status == "in_use":
             config = load_config(app_state)
+            if config.deployment().survey_id != place.id:
+                # writing the id into that file would start deployments without the place's values
+                raise _not_the_place(config)
             config.set_place(place.id, lat, lon)
             save_config(app_state, config)  # first, so the follow step never sees the store ahead of the file
         places = Places(app_state.state)
@@ -754,6 +855,361 @@ def _put_row_back(nodered, row: DeploymentOut) -> None:
         nodered.correct_heading(row.id, row.heading_deg)
     except NodeRedError as error:
         log.warning("putting a deployment's heading back in Node-RED failed: %s", type(error).__name__)
+
+
+# Mounting
+
+
+def _key(item) -> tuple[str, str]:
+    return (item.sensor_type, item.sensor_name)
+
+
+def _refused(message: str, field: str, index: int | None = None) -> ApiError:
+    """422 `validation` naming the field refused and, for a sensor of the body, its index in `sensors`."""
+    detail = {"field": field} if index is None else {"field": field, "index": index}
+    return ApiError(422, "validation", message, detail=detail)
+
+
+def _refused_body(error: RequestValidationError) -> ApiError:
+    """A body pydantic refused, answered as the route's own refusals are: the first error's field, never its value."""
+    errors = error.errors()
+    where = list(errors[0]["loc"])[1:] if errors else []  # after "body"
+    names = [part for part in where if isinstance(part, str)]
+    if not names:
+        return ApiError(422, "validation", "The request is not valid.")
+    index = where[1] if where[0] == "sensors" and len(where) > 1 and isinstance(where[1], int) else None
+    return _refused(f"{names[-1]} isn't valid.", names[-1], index)
+
+
+class _NamedRefusals(APIRoute):
+    """A route whose refused body answers like its own refusals (see _refused_body), not with pydantic's list."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def named(request):
+            try:
+                return await handler(request)
+            except RequestValidationError as error:
+                raise _refused_body(error) from None
+
+        return named
+
+
+def _in_use(app_state, survey_id: str) -> Survey:
+    place = _place(app_state, survey_id)
+    if place.status != "in_use":
+        raise ApiError(409, "not_in_use", "Only the place in use has a mounting to read or save. Deploy it first.")
+    return place
+
+
+def _reconciled(app_state, admin: User) -> None:
+    """Bring the store and config.yml into step first, as GET /surveys does: a file tmsetup.sh -f reset gets the
+    place's id, headings, and mounting back before a mounting route reads it. Takes the lock itself."""
+    try:
+        reconcile.ensure(app_state, admin.id)
+    except ConfigError as error:
+        raise config_error(error) from None
+
+
+def _not_the_place(config: NodeRedConfig) -> ApiError:
+    """409 config_changed for a file that no longer names the place in use: reset again since the reconcile, or, when
+    its survey_id isn't an id (which the reconcile leaves alone, so reloading can't help), where to look."""
+    if config.deployment().survey_id_invalid:
+        return ApiError(
+            409, "config_changed",
+            "config.yml's deployment.survey_id isn't a survey id. The Status page's Location check says what to fix.",
+        )
+    return config_error(ConfigError("changed"))
+
+
+def _radar_cameras(config: NodeRedConfig) -> dict[tuple[str, str], str]:
+    """Each radar an enabled camera names in camera_radar -> the first such camera."""
+    found: dict[tuple[str, str], str] = {}
+    for camera in config.cameras():
+        if camera.enabled and camera.camera_radar is not None:
+            found.setdefault(("radars", camera.camera_radar), camera.name)
+    return found
+
+
+def _stored(app_state, survey_id: str) -> tuple[dict, dict]:
+    """The place's store rows by sensor as saved for this use, where a row whose other four wait to be confirmed (after
+    a move) counts as its heading alone; and those rows as stored, which `previous` offers."""
+    places = Places(app_state.state)
+    waiting = {_key(each): each for each in places.unconfirmed(survey_id)}
+    kept = {
+        _key(each): Mounting(sensor_type=each.sensor_type, sensor_name=each.sensor_name, heading_deg=each.heading_deg)
+        if _key(each) in waiting else each
+        for each in places.mountings(survey_id)
+    }
+    return kept, waiting
+
+
+def _with_measured(found: Mounting, kept: Mounting | None) -> Mounting:
+    """The file's values with `measured`: the store's when the file holds that one, else the tilt when the file has
+    one, else the distance when it has one."""
+    holds = {"pitch": found.pitch_deg is not None, "distance": found.view_distance_m is not None}
+    if kept is not None and kept.measured is not None and holds[kept.measured]:
+        measured = kept.measured
+    else:
+        measured = next((name for name, held in holds.items() if held), None)
+    return found.model_copy(update={"measured": measured})
+
+
+def _current(config: NodeRedConfig, kept: dict, cameras: dict) -> list[Mounting]:
+    """Every enabled sensor as config.yml has it (with `measured`): cameras, each followed by its radar; then the other
+    radars; then the rest, each in the file's order."""
+    found = [_with_measured(each, kept.get(_key(each))) for each in config.mountings()]
+    radar_of = {camera: radar for radar, camera in cameras.items()}
+    by_key = {_key(each): each for each in found}
+    ordered = []
+    for each in found:
+        if each.sensor_type == "cameras":
+            ordered.append(each)
+            radar = by_key.get(radar_of.get(each.sensor_name))
+            if radar is not None:
+                ordered.append(radar)
+    placed = {_key(each) for each in ordered}
+    ordered += [each for each in found if each.sensor_type == "radars" and _key(each) not in placed]
+    ordered += [each for each in found if each.sensor_type not in ("cameras", "radars")]
+    return ordered
+
+
+def _open_rows(rows: list[DeploymentOut]) -> dict[tuple[str, str], DeploymentOut]:
+    """Each sensor's open row (the latest started, should Node-RED have more than one)."""
+    open_rows = sorted((row for row in rows if row.ended is None), key=lambda row: row.started or 0)
+    return {_key(row): row for row in open_rows}
+
+
+def _described(
+    found: list[Mounting], cameras: dict, open_rows: dict, recorded: dict, waiting: dict
+) -> list[SensorMounting]:
+    """The sensors as the API answers them: each radar's camera and whether it is mounted as that camera is, each
+    sensor's open row and whether it has recorded traffic, and the values that wait to be confirmed (see _stored)."""
+    by_key = {_key(each): each for each in found}
+    described = []
+    for each in found:
+        camera = cameras.get(_key(each))
+        source = by_key.get(("cameras", camera)) if camera is not None else None
+        row = open_rows.get(_key(each))
+        described.append(SensorMounting(
+            **each.model_dump(),
+            camera=camera,
+            same_as_camera=source is not None and all(getattr(each, f) == getattr(source, f) for f in FIELDS),
+            deployment_id=row.id if row is not None else None,
+            recorded=recorded.get(row.id) if row is not None else None,
+            previous=_previous(waiting.get(_key(each))),
+        ))
+    return described
+
+
+def _previous(stored: Mounting | None) -> PreviousMounting | None:
+    if stored is None:
+        return None
+    return PreviousMounting(**stored.model_dump(include=set(PreviousMounting.model_fields)))
+
+
+def _requested(given: list[SensorMountingIn], now: list[Mounting], cameras: dict) -> list[Mounting]:
+    """Every enabled sensor as the body would leave it, in `now`'s order: a sensor the body names as mounting.checked
+    settles it, or with its camera's five and `measured` (the camera's item in the body, else its values now) when
+    same_as_camera; any other as it is now. 422 for a sensor that isn't enabled or is named twice, for same_as_camera
+    on a sensor with no camera, and for a value mounting.checked refuses; the mount the file holds for the sensor, or
+    for a radar its camera's (which same_as_camera copies), passes whatever its key."""
+    by_key = {_key(each): each for each in now}
+    sent: dict[tuple[str, str], tuple[int, SensorMountingIn]] = {}
+    for index, item in enumerate(given):
+        key = _key(item)
+        if key not in by_key:
+            raise _refused("A sensor isn't enabled in config.yml.", "sensor_name", index)
+        if key in sent:
+            raise _refused("A sensor is named more than once.", "sensor_name", index)
+        if item.same_as_camera and key not in cameras:
+            raise _refused("Only a radar an enabled camera names can be mounted as it is.", "same_as_camera", index)
+        sent[key] = (index, item)
+    settled: dict[tuple[str, str], Mounting] = {}
+    for key, (index, item) in sent.items():
+        if not item.same_as_camera:
+            camera_mount = by_key[("cameras", cameras[key])].mount if key in cameras else None
+            keep = camera_mount if item.mount == camera_mount else by_key[key].mount
+            try:
+                settled[key] = checked(item, keep=keep)  # a key typed into the file passes as it is
+            except MountingError as error:
+                raise _refused(f"{error}.", error.field, index) from None
+    for key, (_, item) in sent.items():
+        if item.same_as_camera:
+            camera = ("cameras", cameras[key])
+            source = settled.get(camera, by_key[camera])
+            settled[key] = source.model_copy(update={"sensor_type": key[0], "sensor_name": key[1]})
+    return [settled.get(_key(each), each) for each in now]
+
+
+def _five(item) -> tuple:
+    return tuple(getattr(item, field) for field in FIELDS)
+
+
+def _differs(new: Mounting, old: Mounting | None) -> bool:
+    """Whether any of the five or `measured` differs; a sensor with no stored row has none of them."""
+    if old is None:
+        old = Mounting(sensor_type=new.sensor_type, sensor_name=new.sensor_name)
+    return _five(new) != _five(old) or new.measured != old.measured
+
+
+def _value_text(value) -> str:
+    return "none" if value is None else str(value)
+
+
+def _correction_detail(survey_id: str, row: DeploymentOut, new: Mounting) -> str:
+    """The audit detail of a row corrected in place: the place, the row, and each of the other four it changed, as
+    `name old>new`. The heading has its correction row."""
+    changed = [
+        f"{field} {_value_text(getattr(row, field))}>{_value_text(getattr(new, field))}"
+        for field in FIELDS[1:]
+        if getattr(row, field) != getattr(new, field)
+    ]
+    return " ".join([survey_id, row.id, *changed])
+
+
+def _put_rows_back(nodered, corrected: list[tuple[DeploymentOut, Mounting]]) -> None:
+    """The save failed after these rows were corrected, so each gets its old values back. Best effort: the failure is
+    what the caller answers."""
+    for row, _ in corrected:
+        try:
+            nodered.correct_mounting(row.id, {field: getattr(row, field) for field in FIELDS})
+        except NodeRedError as error:
+            log.warning("putting a deployment's mounting back in Node-RED failed: %s", type(error).__name__)
+
+
+@router.get("/{survey_id}/mounting", response_model=MountingState)
+def place_mounting(survey_id: str, request: Request, admin: User = Depends(require_admin)):
+    """How each enabled sensor is mounted at the place in use, as config.yml has it (with which of tilt and distance
+    was measured, from the store), each sensor's `previous`, and the usual mounts. Node-RED not answering isn't an
+    error: `nodered` is false and no sensor has a deployment or a recorded."""
+    app_state = request.app.state
+    _reconciled(app_state, admin)
+    place = _in_use(app_state, survey_id)
+    config = load_config(app_state)
+    cameras = _radar_cameras(config)
+    kept, waiting = _stored(app_state, place.id)
+    found = _current(config, kept, cameras)
+    try:
+        open_rows = _open_rows(_deployments(app_state.nodered.deployments(place.id)))
+        recorded = app_state.nodered.recorded(place.id)
+    except NodeRedError:
+        return MountingState(sensors=_described(found, cameras, {}, {}, waiting), mounts=list(MOUNTS), nodered=False)
+    return MountingState(
+        sensors=_described(found, cameras, open_rows, recorded, waiting), mounts=list(MOUNTS), nodered=True
+    )
+
+
+def save_mounting(survey_id: str, body: MountingIn, request: Request, admin: User = Depends(require_admin)):
+    """Check (dry_run) or save how the sensors are mounted at the place in use; a sensor the body leaves out keeps its
+    values, and nothing is written for it: not its row, its block in config.yml, or its stored mounting. The answer
+    lists what changed, whether "Did the unit move or turn?" must be answered (409 answer_needed for a save without
+    `moved`), the answer chosen in advance, and which sensors would start a new deployment.
+
+    A save corrects the open row of each sensor whose change is corrected in place, then writes config.yml, then the
+    store, so Node-RED starts a deployment only for a sensor that moved. A refused correction or file save puts the
+    rows already corrected back. A sensor the save writes has its stored values confirmed, so its `previous` is null
+    from then on. A save is refused (502) while Node-RED doesn't answer; a dry run then answers with every sensor's
+    recorded unknown. The reconcile runs first (see _reconciled), and a save whose file no longer names
+    the place by the time it holds the lock is refused (409 config_changed)."""
+    app_state = request.app.state
+    _reconciled(app_state, admin)
+    with app_state.reconcile_lock:
+        place = _in_use(app_state, survey_id)
+        config = load_config(app_state)
+        if not body.dry_run and config.deployment().survey_id != place.id:
+            # the file's values aren't the place's, so saving them would empty it
+            raise _not_the_place(config)
+        cameras = _radar_cameras(config)
+        kept, waiting = _stored(app_state, place.id)
+        old = _current(config, kept, cameras)
+        new = _requested(body.sensors, old, cameras)
+        try:
+            open_rows = _open_rows(_deployments(app_state.nodered.deployments(place.id)))
+        except NodeRedError as error:
+            if not body.dry_run:
+                raise _nodered_error(error) from None
+            open_rows = {}
+        try:
+            recorded = app_state.nodered.recorded(place.id)
+        except NodeRedError:
+            recorded = {}  # every sensor unknown
+        found = review(old, new, {key: recorded.get(row.id) for key, row in open_rows.items()}, body.moved)
+        answer = {
+            "changes": found.changes, "ask": found.ask, "suggested": found.suggested,
+            "new_deployments": found.new_deployments, "reloaded": None,
+        }
+        if body.dry_run:
+            return MountingOut(saved=False, sensors=_described(new, cameras, open_rows, recorded, waiting), **answer)
+        if found.ask and body.moved is None:
+            raise ApiError(
+                409, "answer_needed", "Say whether the unit moved or turned, or was measured better, and save again."
+            )
+        before = {_key(each): each for each in old}
+        named = {_key(item) for item in body.sensors}
+        written = [
+            each for each in new
+            if _key(each) in named and (_differs(each, before[_key(each)]) or _differs(each, kept.get(_key(each))))
+        ]
+        if not written:
+            return MountingOut(saved=True, sensors=_described(new, cameras, open_rows, recorded, waiting), **answer)
+
+        starting = {_key(each) for each in found.new_deployments}
+        saved_at = int(time.time() * 1000)
+        corrected: list[tuple[DeploymentOut, Mounting]] = []
+        for each in written:
+            row = open_rows.get(_key(each))
+            if _key(each) in starting or row is None or _five(row) == _five(each):
+                continue
+            try:
+                app_state.nodered.correct_mounting(row.id, each.model_dump())
+            except NodeRedError as error:
+                # this row too: the call may have failed after Node-RED changed it (a timeout)
+                _put_rows_back(app_state.nodered, [*corrected, (row, each)])
+                raise _nodered_error(error) from None
+            corrected.append((row, each))
+        try:
+            for each in written:
+                config.set_sensor_mounting(each.sensor_type, each.sensor_name, each)
+            save_config(app_state, config)  # before the store: a refused save leaves the store as it was
+        except (ConfigError, ApiError) as error:
+            _put_rows_back(app_state.nodered, corrected)
+            if isinstance(error, ConfigError):
+                raise config_error(error) from None
+            raise
+        places = Places(app_state.state)
+        for each in written:
+            places.set_mounting(place.id, each)  # confirms what was waiting
+            waiting.pop(_key(each), None)
+        for row, each in corrected:
+            if row.heading_deg != each.heading_deg:
+                places.record_correction(
+                    place.id, row.id, "heading_deg", _heading_text(row.heading_deg), _heading_text(each.heading_deg),
+                    None, "ui", admin.id,
+                )
+    audit = Audit(app_state.state)
+    audit.record(admin.id, "survey.mounting", place.id)
+    for row, each in corrected:
+        audit.record(admin.id, "survey.correct_mounting", _correction_detail(place.id, row, each))
+    if starting:
+        answer["reloaded"], latest = _poll_rows(
+            app_state.nodered, place.id, lambda rows: starting <= _started(rows, saved_at)
+        )
+        if latest:
+            open_rows = _open_rows(latest)
+            # a row this save started has recorded nothing yet; `recorded` was read before it, by the old ids
+            recorded = {**recorded, **{
+                row.id: False for key, row in open_rows.items()
+                if key in starting and row.started is not None and row.started >= saved_at
+            }}
+    return MountingOut(saved=True, sensors=_described(new, cameras, open_rows, recorded, waiting), **answer)
+
+
+router.add_api_route(
+    "/{survey_id}/mounting", save_mounting, methods=["PUT"], response_model=MountingOut,
+    route_class_override=_NamedRefusals,
+)
 
 
 # CSV import

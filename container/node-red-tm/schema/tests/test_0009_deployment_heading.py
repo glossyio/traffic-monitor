@@ -8,7 +8,8 @@ from helpers import LATEST_VERSION, LEGACY_SCHEMA, SCHEMA_DIR, columns, create_d
 
 OLD_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "bearing", "sensorType",
                "sensorName", "deviceName", "survey_id", "location_precision"]
-NEW_COLUMNS = [name for name in OLD_COLUMNS if name != "bearing"] + ["heading_deg"]
+MOUNTING_COLUMNS = ["pitch_deg", "height_m", "view_distance_m", "mount"]  # added by 0011, after the file under test
+NEW_COLUMNS = [name for name in OLD_COLUMNS if name != "bearing"] + ["heading_deg"] + MOUNTING_COLUMNS
 
 
 def at_version(tmp_path, version, bearings=()):

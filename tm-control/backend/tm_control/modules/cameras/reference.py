@@ -20,6 +20,8 @@ from typing import Literal
 
 from tm_control.modules.cameras.svg import reference_svg
 from tm_control.modules.cameras.zones import ZoneFacts
+from tm_control.modules.location.coordinates import facing
+from tm_control.modules.location.mounting import Mounting
 
 NO_PLACE = "no-place"  # the stem's survey part when no place is in use
 FORMAT = "traffic-monitor-reference"
@@ -48,6 +50,7 @@ class Reference:
     survey_id: str | None
     point: tuple[float, float] | None  # the place's exact lat, lon
     deployment_id: str | None
+    pose: dict | None  # how the camera is mounted, as pose_of gives it; None when nothing is recorded
     clean: bytes
     zones_picture: bytes
     clean_at: float  # Unix seconds, when each answer arrived
@@ -98,6 +101,18 @@ class References:
             held = self._held.get(ticket)
             if held is not None and held.user_id == user_id:
                 del self._held[ticket]
+
+
+def pose_of(mounting: Mounting | None) -> dict | None:
+    """The camera's recorded mounting for the data file: the five facts and an empty field of view; None when the
+    camera has no entry among the enabled sensors or all five are empty. `measured` is the control app's memory of
+    which of tilt and distance was typed, not part of the pose."""
+    if mounting is None:
+        return None
+    five = {key: getattr(mounting, key) for key in ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")}
+    if all(value is None for value in five.values()):
+        return None
+    return five | {"hfov_deg": None}
 
 
 def jpeg_size(data: bytes) -> tuple[int, int] | None:
@@ -161,6 +176,7 @@ def data_file(reference: Reference, with_location: bool) -> dict:
         "camera": reference.camera,
         "deployment_id": reference.deployment_id,
         "location": location,
+        "pose": reference.pose,
         "pictures": {
             "clean": {"file": f"{name}_clean.jpg", "taken_at": iso(reference.clean_at)},
             "zones": {"file": f"{name}_zones.jpg", "taken_at": iso(reference.zones_at)},
@@ -175,11 +191,14 @@ def data_file(reference: Reference, with_location: bool) -> dict:
 
 
 def caption(reference: Reference) -> str:
-    """The drawing's caption: the place, the camera, and the clean picture's time in UTC."""
-    return (
+    """The drawing's caption: the place, the camera, the clean picture's time in UTC, and which way the camera faces
+    when its heading is recorded."""
+    text = (
         f"Traffic Monitor reference picture  ·  place {reference.survey_id or 'none'}  ·  camera {reference.camera}"
         f"  ·  {_utc(reference.clean_at, '%Y-%m-%d %H:%M:%S')} UTC"
     )
+    heading = (reference.pose or {}).get("heading_deg")
+    return text if heading is None else f"{text}  ·  facing {facing(heading)}"
 
 
 def package(reference: Reference, with_location: bool) -> bytes:

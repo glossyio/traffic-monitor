@@ -1272,7 +1272,7 @@
           "location"
         ],
         "summary": "Deploy Place",
-        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false.",
+        "description": "Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves\nout takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to\nanother place also removes each sensor's other four from the file, at a place used before as at a new one: the\nstore keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a\nmounting save.\n\nNode-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see\n_reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.",
         "operationId": "deploy_place_api_v1_surveys__survey_id__deploy_post",
         "parameters": [
           {
@@ -1411,7 +1411,7 @@
           "location"
         ],
         "summary": "Correct Location",
-        "description": "Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,\nand Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed\nand the rows didn't; correcting again with the same pair re-rounds them.",
+        "description": "Correct where a used or in-use place was: the store (with a correction row), config.yml for the place in use,\nand Node-RED's rows, re-rounded to the precision each was stored at. A 502 means the store and the file changed\nand the rows didn't; correcting again with the same pair re-rounds them. The reconcile runs first (see\n_reconciled), and for the place in use a file that no longer names it by the time the lock is held is refused (409\nconfig_changed).",
         "operationId": "correct_location_api_v1_surveys__survey_id__location_post",
         "parameters": [
           {
@@ -1503,6 +1503,100 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeploymentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/surveys/{survey_id}/mounting": {
+      "get": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Place Mounting",
+        "description": "How each enabled sensor is mounted at the place in use, as config.yml has it (with which of tilt and distance\nwas measured, from the store), each sensor's `previous`, and the usual mounts. Node-RED not answering isn't an\nerror: `nodered` is false and no sensor has a deployment or a recorded.",
+        "operationId": "place_mounting_api_v1_surveys__survey_id__mounting_get",
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Survey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MountingState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "location"
+        ],
+        "summary": "Save Mounting",
+        "description": "Check (dry_run) or save how the sensors are mounted at the place in use; a sensor the body leaves out keeps its\nvalues, and nothing is written for it: not its row, its block in config.yml, or its stored mounting. The answer\nlists what changed, whether \"Did the unit move or turn?\" must be answered (409 answer_needed for a save without\n`moved`), the answer chosen in advance, and which sensors would start a new deployment.\n\nA save corrects the open row of each sensor whose change is corrected in place, then writes config.yml, then the\nstore, so Node-RED starts a deployment only for a sensor that moved. A refused correction or file save puts the\nrows already corrected back. A sensor the save writes has its stored values confirmed, so its `previous` is null\nfrom then on. A save is refused (502) while Node-RED doesn't answer; a dry run then answers with every sensor's\nrecorded unknown. The reconcile runs first (see _reconciled), and a save whose file no longer names\nthe place by the time it holds the lock is refused (409 config_changed).",
+        "operationId": "save_mounting_api_v1_surveys__survey_id__mounting_put",
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Survey Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MountingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MountingOut"
                 }
               }
             }
@@ -3182,6 +3276,34 @@
         ],
         "title": "CamerasState"
       },
+      "Change": {
+        "properties": {
+          "sensor_type": {
+            "type": "string",
+            "title": "Sensor Type"
+          },
+          "sensor_name": {
+            "type": "string",
+            "title": "Sensor Name"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "counts": {
+            "type": "boolean",
+            "title": "Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensor_type",
+          "sensor_name",
+          "field",
+          "counts"
+        ],
+        "title": "Change"
+      },
       "Check": {
         "properties": {
           "id": {
@@ -3387,13 +3509,21 @@
             },
             "type": "array",
             "title": "Deployments"
+          },
+          "previous": {
+            "items": {
+              "$ref": "#/components/schemas/SensorKey"
+            },
+            "type": "array",
+            "title": "Previous"
           }
         },
         "type": "object",
         "required": [
           "deployed_at",
           "reloaded",
-          "deployments"
+          "deployments",
+          "previous"
         ],
         "title": "DeployOut"
       },
@@ -3458,6 +3588,50 @@
             ],
             "title": "Heading Deg"
           },
+          "pitch_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Deg"
+          },
+          "height_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height M"
+          },
+          "view_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Distance M"
+          },
+          "mount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount"
+          },
           "sensor_type": {
             "type": "string",
             "title": "Sensor Type"
@@ -3486,6 +3660,10 @@
           "lat",
           "lon",
           "heading_deg",
+          "pitch_deg",
+          "height_m",
+          "view_distance_m",
+          "mount",
           "sensor_type",
           "sensor_name",
           "location_precision"
@@ -4699,6 +4877,166 @@
         ],
         "title": "ModelsState"
       },
+      "Mount": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "height_m": {
+            "type": "number",
+            "title": "Height M"
+          },
+          "pitch_deg": {
+            "type": "number",
+            "title": "Pitch Deg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "height_m",
+          "pitch_deg"
+        ],
+        "title": "Mount"
+      },
+      "MountingIn": {
+        "properties": {
+          "sensors": {
+            "items": {
+              "$ref": "#/components/schemas/SensorMountingIn"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "title": "Sensors"
+          },
+          "moved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensors"
+        ],
+        "title": "MountingIn"
+      },
+      "MountingOut": {
+        "properties": {
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "sensors": {
+            "items": {
+              "$ref": "#/components/schemas/SensorMounting"
+            },
+            "type": "array",
+            "title": "Sensors"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "ask": {
+            "type": "boolean",
+            "title": "Ask"
+          },
+          "suggested": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "moved",
+                  "measured"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested"
+          },
+          "new_deployments": {
+            "items": {
+              "$ref": "#/components/schemas/SensorKey"
+            },
+            "type": "array",
+            "title": "New Deployments"
+          },
+          "reloaded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reloaded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "saved",
+          "sensors",
+          "changes",
+          "ask",
+          "suggested",
+          "new_deployments",
+          "reloaded"
+        ],
+        "title": "MountingOut"
+      },
+      "MountingState": {
+        "properties": {
+          "sensors": {
+            "items": {
+              "$ref": "#/components/schemas/SensorMounting"
+            },
+            "type": "array",
+            "title": "Sensors"
+          },
+          "mounts": {
+            "items": {
+              "$ref": "#/components/schemas/Mount"
+            },
+            "type": "array",
+            "title": "Mounts"
+          },
+          "nodered": {
+            "type": "boolean",
+            "title": "Nodered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensors",
+          "mounts",
+          "nodered"
+        ],
+        "title": "MountingState"
+      },
       "Nearby": {
         "properties": {
           "name": {
@@ -5074,6 +5412,79 @@
         ],
         "title": "PrecisionIn"
       },
+      "PreviousMounting": {
+        "properties": {
+          "pitch_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Deg"
+          },
+          "height_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height M"
+          },
+          "view_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Distance M"
+          },
+          "measured": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pitch",
+                  "distance"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured"
+          },
+          "mount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pitch_deg",
+          "height_m",
+          "view_distance_m",
+          "measured",
+          "mount"
+        ],
+        "title": "PreviousMounting",
+        "description": "What was last saved for a sensor at the place, beside its heading. A move there records none of it; it is\noffered until a save writes that sensor."
+      },
       "ReferenceOut": {
         "properties": {
           "ticket": {
@@ -5407,6 +5818,257 @@
           "heading_deg"
         ],
         "title": "SensorHeading"
+      },
+      "SensorKey": {
+        "properties": {
+          "sensor_type": {
+            "type": "string",
+            "title": "Sensor Type"
+          },
+          "sensor_name": {
+            "type": "string",
+            "title": "Sensor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensor_type",
+          "sensor_name"
+        ],
+        "title": "SensorKey"
+      },
+      "SensorMounting": {
+        "properties": {
+          "sensor_type": {
+            "type": "string",
+            "title": "Sensor Type"
+          },
+          "sensor_name": {
+            "type": "string",
+            "title": "Sensor Name"
+          },
+          "heading_deg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Deg"
+          },
+          "pitch_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Deg"
+          },
+          "height_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height M"
+          },
+          "view_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Distance M"
+          },
+          "measured": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pitch",
+                  "distance"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured"
+          },
+          "mount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount"
+          },
+          "camera": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera"
+          },
+          "same_as_camera": {
+            "type": "boolean",
+            "title": "Same As Camera"
+          },
+          "deployment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployment Id"
+          },
+          "recorded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreviousMounting"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensor_type",
+          "sensor_name",
+          "camera",
+          "same_as_camera",
+          "deployment_id",
+          "recorded",
+          "previous"
+        ],
+        "title": "SensorMounting"
+      },
+      "SensorMountingIn": {
+        "properties": {
+          "sensor_type": {
+            "type": "string",
+            "title": "Sensor Type"
+          },
+          "sensor_name": {
+            "type": "string",
+            "title": "Sensor Name"
+          },
+          "heading_deg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Deg"
+          },
+          "pitch_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pitch Deg"
+          },
+          "height_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height M"
+          },
+          "view_distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Distance M"
+          },
+          "measured": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pitch",
+                  "distance"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured"
+          },
+          "mount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mount"
+          },
+          "same_as_camera": {
+            "type": "boolean",
+            "title": "Same As Camera",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "sensor_type",
+          "sensor_name"
+        ],
+        "title": "SensorMountingIn"
       },
       "ServerStatus": {
         "properties": {

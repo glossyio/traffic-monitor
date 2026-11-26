@@ -12,6 +12,7 @@ from tm_control.modules.location.config import (
     read_deployment,
     sends_public_map,
 )
+from tm_control.modules.location.mounting import Mounting
 from tm_control.modules.location.places import SensorHeading
 
 FIXTURE = Path(__file__).parent / "fixtures" / "node_red_config_ok.yml"
@@ -810,3 +811,164 @@ def test_the_saved_file_loads_as_node_red_would(path):
     }
     assert loaded["thingsboard"]["enabled"] is True
     assert loaded["deployment"]["lat"] == 45.0
+
+
+def mounting(name="picam_h265", sensor_type="cameras", **values):
+    return Mounting(sensor_type=sensor_type, sensor_name=name, **values)
+
+
+def test_mountings_reads_the_file_as_the_engine_does(path):
+    """Each enabled sensor, in sensors()'s order, read by mounting.read: a good value rounded and kept, a refused one
+    None, an old bearing its point's centre, a disabled sensor left out; `measured` is never in the file."""
+    path.write_text(
+        "sensors:\n    cameras:\n"
+        "        a:\n            enabled: true\n            deployment:\n                heading_deg: 40\n"
+        "                pitch_deg: 15.04\n                height_m: 3.666\n                view_distance_m: 13.66\n"
+        "                mount: pole\n"
+        "        b:\n            enabled: true\n            deployment:\n                heading_deg: 400\n"
+        "                pitch_deg: 95\n                height_m: 0\n                view_distance_m: '12'\n"
+        "                mount: Pole\n"
+        "        c:\n            enabled: true\n            deployment:\n                bearing: ' NE '\n"
+        "        d:\n            enabled: false\n            deployment:\n                height_m: 2\n"
+        "    radars:\n        r:\n            enabled: true\n"
+    )
+    assert NodeRedConfig(path).mountings() == [
+        mounting("a", heading_deg=40, pitch_deg=15.0, height_m=3.67, view_distance_m=13.66, mount="pole"),
+        mounting("b"),
+        mounting("c", heading_deg=45),
+        mounting("r", "radars"),
+    ]
+    assert [(m.sensor_type, m.sensor_name) for m in NodeRedConfig(path).mountings()] == [
+        (h.sensor_type, h.sensor_name) for h in NodeRedConfig(path).sensors()
+    ]
+
+
+def test_mountings_takes_a_key_from_the_top_level_block_when_the_sensor_has_none_of_its_own(path):
+    """init config defaults copies the top-level deployment block down key by key: a sensor with no height_m of its own
+    gets the top-level one, and a key of the sensor's own, even a blank one, wins."""
+    path.write_text(
+        "deployment:\n    heading_deg: 90\n    height_m: 3.0\n    pitch_deg: 20\n    mount: tripod\n"
+        "sensors:\n    cameras:\n"
+        "        plain:\n            enabled: true\n"
+        "        own_height:\n            enabled: true\n            deployment:\n                height_m: 4.5\n"
+        "        blank_height:\n            enabled: true\n            deployment:\n                height_m:\n"
+        "        own_heading:\n            enabled: true\n            deployment:\n                heading_deg: 10\n"
+    )
+    assert NodeRedConfig(path).mountings() == [
+        mounting("plain", heading_deg=90, height_m=3.0, pitch_deg=20.0, mount="tripod"),
+        mounting("own_height", heading_deg=90, height_m=4.5, pitch_deg=20.0, mount="tripod"),
+        mounting("blank_height", heading_deg=90, pitch_deg=20.0, mount="tripod"),
+        mounting("own_heading", heading_deg=10, height_m=3.0, pitch_deg=20.0, mount="tripod"),
+    ]
+
+
+SENSOR_BLOCK = (
+    "sensors:\n    cameras:\n        cam:\n            enabled: true\n            deployment:\n"
+    "                heading_deg: 90  # facing the road\n                note: kept\n\n"
+    "    radars:\n        r:\n            enabled: true\n"
+)
+
+
+def test_set_sensor_mounting_writes_the_keys_in_order_after_the_heading(path):
+    path.write_text(SENSOR_BLOCK)
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", mounting(
+        "cam", heading_deg=40, pitch_deg=15.0, height_m=3.66, view_distance_m=13.66, measured="pitch", mount="pole",
+    ))
+    assert config.save() is True
+    assert path.read_text() == (
+        "sensors:\n    cameras:\n        cam:\n            enabled: true\n            deployment:\n"
+        "                heading_deg: 40  # facing the road\n                pitch_deg: 15.0\n"
+        "                height_m: 3.66\n                view_distance_m: 13.66\n                mount: pole\n"
+        "                note: kept\n\n"
+        "    radars:\n        r:\n            enabled: true\n"
+    )  # measured is the store's alone: the file holds the five
+    assert NodeRedConfig(path).mountings()[0] == mounting(
+        "cam", heading_deg=40, pitch_deg=15.0, height_m=3.66, view_distance_m=13.66, mount="pole",
+    )
+
+
+def test_set_sensor_mounting_keeps_comments_and_other_keys(path):
+    """A round trip changes the bytes only in the sensor's own block."""
+    path.write_text(
+        "# the unit\nthingsboard:\n    enabled: false  # off\n\ndeployment:\n    lat: 45.0\n    lon: -122.0\n\n"
+        + SENSOR_BLOCK
+    )
+    before = path.read_text()
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", mounting("cam", heading_deg=90, height_m=2.13, mount="tripod"))
+    config.save()
+    after = path.read_text()
+    block = "            deployment:\n                heading_deg: 90  # facing the road\n"
+    head, tail = before.split(block)
+    assert after.startswith(head + block) and after.endswith("                note: kept\n\n    radars:\n"
+                                                              "        r:\n            enabled: true\n")
+    assert after[len(head + block):] == (
+        "                height_m: 2.13\n                mount: tripod\n" + tail
+    )
+
+
+def test_a_none_value_removes_its_key(path):
+    path.write_text(
+        "sensors:\n    cameras:\n        cam:\n            enabled: true\n            deployment:\n"
+        "                heading_deg: 90\n                pitch_deg: 15.0  # tilt\n                height_m: 3.66\n"
+        "                view_distance_m: 13.66\n                mount: pole\n\n"
+        "    radars:\n        r:\n            enabled: true\n"
+    )
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", mounting("cam", heading_deg=90, height_m=3.66, mount=None))
+    config.save()
+    assert path.read_text() == (
+        "sensors:\n    cameras:\n        cam:\n            enabled: true\n            deployment:\n"
+        "                heading_deg: 90\n                height_m: 3.66\n\n"
+        "    radars:\n        r:\n            enabled: true\n"
+    )  # the blank line after the sensor stays where it was
+
+
+def test_none_removes_the_four_and_keeps_the_heading(path):
+    path.write_text(
+        "sensors:\n    cameras:\n        cam:\n            enabled: true\n            deployment:\n"
+        "                heading_deg: 90\n                pitch_deg: 15.0\n                height_m: 3.66\n"
+        "                view_distance_m: 13.66\n                mount: pole\n"
+    )
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", None)
+    assert config.save() is True
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"heading_deg": 90}
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", None)  # nothing left to remove
+    assert config.save() is False
+
+
+def test_set_sensor_mounting_creates_the_deployment_block(path):
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("radars", "TM_RADAR_SERIAL_PORT_00", mounting(
+        "TM_RADAR_SERIAL_PORT_00", "radars", heading_deg=270, height_m=2.13, mount="tripod",
+    ))
+    config.save()
+    assert read_config(path).data["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"] == {
+        "heading_deg": 270, "height_m": 2.13, "mount": "tripod",
+    }
+    # a mounting of values with no heading, over a top-level heading that reads blank, still gets its own block
+    path.write_text("deployment:\n    heading_deg:\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", mounting("cam", height_m=3.66))
+    config.save()
+    assert read_config(path).data["sensors"]["cameras"]["cam"]["deployment"] == {"heading_deg": None, "height_m": 3.66}
+    # nothing to say, nothing added
+    path.write_text("deployment:\n    heading_deg:\nsensors:\n    cameras:\n        cam:\n            enabled: true\n")
+    config = NodeRedConfig(path)
+    config.set_sensor_mounting("cameras", "cam", mounting("cam"))
+    config.set_sensor_mounting("cameras", "cam", None)
+    assert config.save() is False
+
+
+def test_set_sensor_mounting_for_a_sensor_not_in_the_file_is_a_key_error(path):
+    config = NodeRedConfig(path)
+    with pytest.raises(KeyError):
+        config.set_sensor_mounting("cameras", "nope", mounting("nope", heading_deg=1))
+    with pytest.raises(KeyError):
+        config.set_sensor_mounting("cameras", "nope", None)
+    with pytest.raises(KeyError):
+        config.set_sensor_mounting("lidars", "picam_h265", None)
+    assert config.save() is False

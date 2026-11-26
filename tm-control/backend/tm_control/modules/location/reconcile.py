@@ -3,11 +3,13 @@
 Once per unit (the device table's surveys_reconciled_at): on a fresh unit with nothing in the file and no tmdb backup,
 create the first place and write its id; on a unit upgraded from a release, import the places the pre-migration tmdb
 backup holds and work out which one is in use. Every run after that: follow a hand edit of the file, so a survey_id no
-place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in
-use. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets its id back, the precision
-last seen with a survey named unless the file's is coarser, the place's headings where the file's are blank, and the
-place's point, if it has one, over whatever the installer rendered; blank lat and lon get the place's point back too,
-since a place with a point is never corrected to none (decision 9).
+place has becomes a place, a known one is a move there, and changed coordinates become a correction of the place in use.
+A place that already existed and is put in use, by the import or by a hand edit, stores the file's heading for each
+enabled sensor it has no row for. A file that lost the place in use (a blank survey_id, as tmsetup.sh -f leaves it) gets
+its id back, the precision last seen with a survey named unless the file's is coarser, the place's headings where the
+file's are blank, the mounting stored and confirmed for the place where a sensor has none in the file and faces as
+stored, and the place's point, if it has one, over whatever the installer rendered; blank lat and lon get the place's
+point back too, since a place with a point is never corrected to none (decision 9).
 
 Runs at claim, on every GET /surveys, and on every status report (decision 5), always under app_state.reconcile_lock,
 and so does the sharing follow step after it (modules/sharing/follow.py).
@@ -29,6 +31,7 @@ from pydantic import BaseModel
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.modules.location.config import DEFAULT_PRECISION, ConfigError, Deployment, NodeRedConfig
 from tm_control.modules.location.coordinates import exact, is_coarser, new_survey_id, normalize_survey_id
+from tm_control.modules.location.mounting import FIELDS
 from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.sharing import follow
 
@@ -274,6 +277,7 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
     if deployment.survey_id is not None:
         if places.get(deployment.survey_id) is not None:
             places.set_in_use(deployment.survey_id)
+            _store_missing_headings(places, config, deployment.survey_id)
         else:
             _create_from_file(places, config, deployment, deployment.survey_id, user_id)
         return
@@ -285,6 +289,7 @@ def _put_in_use(places: Places, config: NodeRedConfig, deployment: Deployment, u
     config.save()
     if match is not None:
         places.set_in_use(match.id)
+        _store_missing_headings(places, config, match.id)
     elif point == (None, None) and not deployment.coordinates_invalid and not places.list():
         # Nothing in the file, and nothing imported (the backup couldn't be read): as a fresh unit starts
         _create_in_use(places, survey_id, DEFAULT_DESCRIPTION, point, config.sensors(), "default", user_id)
@@ -312,6 +317,16 @@ def _create_in_use(
     places.set_in_use(survey_id)
 
 
+def _store_missing_headings(places: Places, config: NodeRedConfig, survey_id: str) -> None:
+    """A place that already existed is now in use (one the upgrade imported has no sensors at all): each enabled sensor
+    it has no row for gets one with its heading as the engine reads it from the file, so a reset gives it back. A row
+    the place has is never changed, and only the store is written, so no deployment can start."""
+    have = {(h.sensor_type, h.sensor_name) for h in places.get(survey_id).headings}
+    for sensor in config.sensors():
+        if (sensor.sensor_type, sensor.sensor_name) not in have:
+            places.set_heading(survey_id, sensor.sensor_type, sensor.sensor_name, sensor.heading_deg)
+
+
 # Every run
 
 
@@ -330,6 +345,7 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
             config.set_place(named.id, named.lat, named.lon)
             config.save()
             places.set_in_use(named.id)
+            _store_missing_headings(places, config, named.id)
             # Node-RED's watch fired on the hand edit and started the new deployments at the coordinates the file
             # held then; they take the place's point. Residual: a place with no point has nothing to give them, so
             # those rows keep the coordinates the hand edit left (the engine starts no new rows when only lat and lon
@@ -345,12 +361,14 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     # The file lost the place in use (tmsetup.sh -f renders it from the template): the id goes back, and each enabled
     # sensor whose heading is blank gets the place's back, so the engine, which holds a heading change while no survey
     # is named, starts no deployment with no heading once the id returns. A heading in the file is the operator's and
-    # stays. The precision is the template's, finer than an operator may have chosen, so the one last seen with a
-    # survey named goes back, unless the file's is coarser still: the template never renders that, so it's a hand edit,
-    # and restoring would store more than the operator chose. The file's coordinates came from the installer's values,
-    # not from a correction: a place with a point gets it back whatever the file holds (the Location page is where a
-    # place is corrected); a typo stays as typed; only a place with no point follows the file's. Saved with whatever
-    # follows.
+    # stays, and so do the other four of a sensor that has one (_restore_mountings: the stored ones go back, in this
+    # same save, to a sensor that has none and faces as stored, unless they wait to be confirmed after a move, which
+    # recorded none of them). The precision is the template's, finer than an
+    # operator may have chosen, so the one last seen with a survey named goes back, unless the file's is coarser still:
+    # the template never renders that, so it's a hand edit, and restoring would store more than the operator chose. The
+    # file's coordinates came from the installer's values, not from a correction: a place with a point gets it back
+    # whatever the file holds (the Location page is where a place is corrected); a typo stays as typed; only a place
+    # with no point follows the file's. Saved with whatever follows.
     restoring = deployment.survey_id is None and not deployment.survey_id_invalid
     if restoring:
         config.set_survey_id(current.id)
@@ -361,6 +379,7 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
         for sensor_type, name in config.blank_headings():
             if stored.get((sensor_type, name)) is not None:  # 0 is a heading, north
                 config.set_sensor_heading(sensor_type, name, stored[(sensor_type, name)])
+        _restore_mountings(config, places.mountings(current.id), places.unconfirmed(current.id))
     if deployment.coordinates_invalid:
         # coordinates that aren't a point are a typo to fix, not a move: the Status check reports them
         return _saved(config, restoring) or followed
@@ -379,6 +398,26 @@ def _follow(app_state, places: Places, config: NodeRedConfig, user_id) -> str:
     places.record_correction(current.id, None, "location", point_text(*old), point_text(*new), None, "config", None)
     _re_round(app_state, current.id, new[0], new[1])
     return "coordinates"
+
+
+def _restore_mountings(config: NodeRedConfig, stored, unconfirmed) -> None:
+    """Put back, in the same save as the place's id and headings (a second save would show the engine the place with no
+    mounting and start a deployment), the mounting stored for the place in use of each enabled sensor that has none of
+    the other four in the file, has some stored and confirmed, and faces the way it did when they were stored: a
+    heading someone put in the reset file is theirs, and so is a sensor with a value of its own. Four that wait to be
+    confirmed (Places.unconfirmed) were never recorded for this use, so they don't go back."""
+    in_file = {(found.sensor_type, found.sensor_name): found for found in config.mountings()}
+    waiting = {(found.sensor_type, found.sensor_name) for found in unconfirmed}
+    for mounting in stored:
+        key = (mounting.sensor_type, mounting.sensor_name)
+        found = in_file.get(key)
+        if found is None or key in waiting or found.heading_deg != mounting.heading_deg:
+            continue
+        if all(getattr(mounting, key) is None for key in FIELDS[1:]):
+            continue
+        if any(getattr(found, key) is not None for key in FIELDS[1:]):
+            continue
+        config.set_sensor_mounting(mounting.sensor_type, mounting.sensor_name, mounting)
 
 
 def _keep_precision(places: Places, deployment: Deployment) -> None:
