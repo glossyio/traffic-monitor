@@ -1,0 +1,24 @@
+{
+    "schema": 1,
+    "run_id": "20261126T101500Z",
+    "channel": "stable",
+    "from": {"version": "0.8.0", "commit": "1111111111111111111111111111111111111111"},
+    "to": {"version": "0.8.1", "commit": "2222222222222222222222222222222222222222", "tag": "v0.8.1"},
+    "stage": "cleanup",
+    "stages": [
+        {"id": "prepare", "started_at": "2026-11-26T10:15:02Z", "finished_at": "2026-11-26T10:20:40Z"},
+        {"id": "images", "started_at": "2026-11-26T10:20:41Z", "finished_at": "2026-11-26T10:41:09Z"},
+        {"id": "restore_point", "started_at": "2026-11-26T10:41:09Z", "finished_at": "2026-11-26T10:41:30Z"},
+        {"id": "switch", "started_at": "2026-11-26T10:41:30Z", "finished_at": "2026-11-26T10:47:12Z"},
+        {"id": "health", "started_at": "2026-11-26T10:47:12Z", "finished_at": "2026-11-26T10:48:05Z"},
+        {"id": "cleanup", "started_at": "2026-11-26T10:48:05Z", "finished_at": "2026-11-26T10:48:20Z"}
+    ],
+    "result": "ok",
+    "reason": null,
+    "detail": null,
+    "reboot": false,
+    "boot_id": null,
+    "restore_point": "/var/lib/traffic-monitor/restore/20261126T104130Z-1111111",
+    "tmdb_backup": null,
+    "switch_attempts": 1
+}
