@@ -57,6 +57,15 @@ describe('router', () => {
     expect(await landing('/cameras')).toBe('/cameras')
   })
 
+  it('keeps a viewer off the Mounting page, lets an admin open it, and lists it in no menu', async () => {
+    device(true, VIEWER)
+    expect(await landing('/location/mounting')).toBe('/')
+    setActivePinia(createPinia())
+    device(true, ADMIN)
+    expect(await landing('/location/mounting')).toBe('/location/mounting')
+    expect(MODULES.flatMap((module) => module.nav).some((item) => item.to === '/location/mounting')).toBe(false)
+  })
+
   it('lets a viewer open the Network page, and lists it in the menu after Device', async () => {
     device(true, VIEWER)
     expect(await landing('/network')).toBe('/network')

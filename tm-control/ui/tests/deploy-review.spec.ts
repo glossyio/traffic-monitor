@@ -116,16 +116,10 @@ describe('the deploy review', () => {
   it.each([
     ['planned', 'Deploy here', 'Deploy'],
     ['used', 'Re-deploy here', 'Re-deploy'],
-    ['in_use', 'Modify deployment', 'Modify'],
   ] as const)('names itself for a %s place', (status, title, confirm) => {
     const wrapper = mountAlone(DeployReview, { place: place({ status }), state: STATE })
     expect(wrapper.find('.v-card-title').text()).toBe(title)
     expect(button(wrapper, confirm).exists()).toBe(true)
-  })
-
-  it('says what a heading change does at the place in use', () => {
-    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
-    expect(wrapper.text()).toContain('Every sensor keeps its deployment. Change a heading to start a new one.')
   })
 
   it('starts a new deployment for every sensor at a place not in use', async () => {
@@ -152,47 +146,25 @@ describe('the deploy review', () => {
     expect(exact).not.toContain('rounded location')
   })
 
-  it('lists New deployment starts for the sensor whose heading changes and Unchanged for the other', async () => {
-    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
-    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
-    await choose(wrapper, 'picam_h265', 90)
+  it('starts every sensor anew, whichever heading is chosen', async () => {
+    const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
+    await choose(wrapper, 'picam_h265', 0)
     expect(sensorRow(wrapper, 'picam_h265').text()).toContain('New deployment starts')
+    expect(wrapper.text()).not.toContain('Unchanged')
+    expect(button(wrapper, 'Re-deploy').attributes('disabled')).toBeUndefined()
     const radar = sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()
-    expect(radar).toContain('Unchanged')
     expect(radar).toContain('Was not set, now')
     expect(radar).toContain('Not set') // the select shows an empty heading by its title
   })
 
-  it('disables Modify at the place in use while every heading is unchanged', async () => {
-    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: STATE })
-    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
-    expect(sensorRow(wrapper, 'TM_RADAR_SERIAL_PORT_00').text()).toContain('Unchanged')
-    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
-    expect(wrapper.text()).not.toContain('Counts from now on attach to the new deployment.')
-    await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 270)
-    expect(button(wrapper, 'Modify').attributes('disabled')).toBeUndefined()
-    expect(wrapper.text()).toContain('Counts from now on attach to the new deployment.')
-  })
-
-  it("starts the place in use at the headings config.yml has now, not the place's stored ones", async () => {
-    const turned = { ...IN_USE, headings: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 45 }] }
-    const wrapper = mountAlone(DeployReview, { place: turned, state: STATE })
-    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Unchanged')
-    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
-  })
-
-  it('shows a measured heading as it is and leaves it unchanged until another is chosen', async () => {
+  it('shows a measured heading as it is', () => {
     const measured = {
       ...STATE,
       sensors: [{ sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 40 }, STATE.sensors[1]],
     }
-    const wrapper = mountAlone(DeployReview, { place: IN_USE, state: measured })
-    const camera = sensorRow(wrapper, 'picam_h265')
-    expect(camera.text()).toContain('Was NE (40°), now')
-    expect(camera.text()).toContain('Unchanged')
-    expect(button(wrapper, 'Modify').attributes('disabled')).toBeDefined()
-    await choose(wrapper, 'picam_h265', 45)
-    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('New deployment starts')
+    const wrapper = mountAlone(DeployReview, { place: place({ status: 'planned' }), state: measured })
+    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('Was NE (40°), now')
+    expect(sensorRow(wrapper, 'picam_h265').text()).toContain('NE (40°)') // the pick, starting at the heading now
   })
 
   it('says nothing is stored when the precision stores no location', async () => {
@@ -205,7 +177,7 @@ describe('the deploy review', () => {
   })
 
   it("deploys with every sensor's heading", async () => {
-    const api = fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS } })
+    const api = fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS, previous: [] } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
     await choose(wrapper, 'TM_RADAR_SERIAL_PORT_00', 90)
     await click(wrapper, 'Re-deploy')
@@ -231,13 +203,13 @@ describe('the deploy review', () => {
     await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain('Waiting for Node-RED to reload the settings')
     expect(button(wrapper, 'Cancel').attributes('disabled')).toBeDefined()
-    answer(json(200, { deployed_at: 1762000000000, reloaded: true, deployments: ROWS }))
+    answer(json(200, { deployed_at: 1762000000000, reloaded: true, deployments: ROWS, previous: [] }))
     await flushPromises()
     expect(wrapper.text()).not.toContain('Waiting for Node-RED')
   })
 
   it("says Node-RED hasn't reloaded yet and not to deploy again", async () => {
-    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: false, deployments: [] } })
+    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: false, deployments: [], previous: [] } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
     await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain(
@@ -252,7 +224,7 @@ describe('the deploy review', () => {
     const writeText = vi.fn(async () => {})
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
     Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
-    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS } })
+    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS, previous: [] } })
     const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
     await click(wrapper, 'Re-deploy')
     expect(wrapper.text()).toContain('1762000000000-0123abcd-d')
@@ -262,6 +234,29 @@ describe('the deploy review', () => {
     await copies[1].trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain('Copied.'))
     expect(writeText).toHaveBeenCalledWith('1762000000000-4567cdef-d')
+  })
+
+  it('says to record the mounting next, with a Mounting button', async () => {
+    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: true, deployments: ROWS, previous: [] } })
+    const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
+    await click(wrapper, 'Re-deploy')
+    expect(wrapper.text()).toContain('Next, record how the unit is mounted.')
+    expect(wrapper.text()).not.toContain('from the last time')
+    const mounting = wrapper.findAll('a').filter((a) => a.text().trim() === 'Mounting')
+    expect(mounting.map((a) => a.attributes('href'))).toEqual(['/location/mounting'])
+  })
+
+  it('a return to a place says its last values wait to be confirmed', async () => {
+    const previous = [{ sensor_type: 'cameras', sensor_name: 'picam_h265' }]
+    fakeApi({ [DEPLOY]: { deployed_at: 1762000000000, reloaded: false, deployments: [], previous } })
+    const wrapper = mountAlone(DeployReview, { place: USED, state: STATE })
+    await click(wrapper, 'Re-deploy')
+    expect(wrapper.text()).toContain(
+      "This place has mounting values from the last time the unit was here. They aren't recorded until you confirm " +
+        'them.',
+    )
+    expect(wrapper.text()).not.toContain('Next, record how the unit is mounted.')
+    expect(wrapper.findAll('a').some((a) => a.text().trim() === 'Mounting')).toBe(true)
   })
 
   it("shows the API's message when the deploy is refused", async () => {

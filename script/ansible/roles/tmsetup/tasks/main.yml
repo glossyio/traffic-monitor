@@ -66,7 +66,9 @@
   ansible.builtin.import_tasks:
     file: detectors_check.yml
 
+# An update changes no driver: they were installed when the device was set up, and installing one needs the internet
 - name: TMSetup - Main - Detector - Install Detectors
+  when: not (tmsetup_update_mode | bool)
   tags:
     - podman
     - frigate
@@ -151,7 +153,9 @@
   ansible.builtin.import_tasks:
     file: revproxy_setup.yml
 
+# An update leaves the Wi-Fi alone: restarting NetworkManager's profiles could cut off whoever started the update
 - name: TMSetup - Main - Setup WiFI
+  when: not (tmsetup_update_mode | bool)
   tags:
     - wifi
   ansible.builtin.import_tasks:
@@ -231,7 +235,9 @@
     - go2rtc
     - revproxy
     - tm-control
-  when: tmsetup_tm_control_claim_register.stdout | default('') == 'unclaimed'
+  when:
+    - not (tmsetup_update_mode | bool)
+    - tmsetup_tm_control_claim_register.stdout | default('') == 'unclaimed'
   ansible.builtin.debug:
     msg: >-
       This device isn't claimed yet. Open http://{{ ansible_facts['hostname'] }}.local/ (or its IP address)

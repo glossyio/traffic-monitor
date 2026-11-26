@@ -1,10 +1,10 @@
 ---
-description: Record where a Traffic Monitor is, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.
+description: Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.
 ---
 
 # Places and location
 
-The control app's **Location** page records where the device is and which way its sensors face. It also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.
+The control app's **Location** page records where the device is and which way its sensors face, and its **Mounting** page records how each sensor is mounted. The Location page also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.
 
 ## Places and deployments
 
@@ -12,13 +12,13 @@ A *place* is somewhere the device has been, is, or will be. Each place has an id
 
 One place is always **In use**. The others are **Planned**, entered ahead of a move, or **Used**, where the device has been. Claiming a new device creates its first place, **First location**, with no location.
 
-Each sensor at a place, facing one way, for one stretch of time, is a *deployment*. Every count and reading is stored with its deployment, so you can tell where it was taken after the device moves. Moving to another place, or turning a sensor, starts a new deployment, and the earlier ones keep what they recorded.
+Each sensor at a place, facing one way, for one stretch of time, is a *deployment*. Every count and reading is stored with its deployment, so you can tell where it was taken after the device moves. Moving to another place, or moving or turning a sensor, starts a new deployment, and the earlier ones keep what they recorded.
 
 The exact location is kept in the control app and in Node-RED's settings file, [`config.yml`](../configuration/node-red-config.md#deployment). The database stores the place's id and the location rounded to the [precision](#choose-the-precision) you choose.
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. Then come the list of places, the exact locations ([a list](#export-the-exact-locations) and [a copy of the database](#download-the-database-with-exact-locations)), and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the exact locations ([a list](#export-the-exact-locations) and [a copy of the database](#download-the-database-with-exact-locations)), and, last, the [precision](#choose-the-precision).
 
 ![The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its two buttons, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
 
@@ -27,8 +27,8 @@ Each place in the list shows its description, or **No description**, its mark (*
 * **Imported from your previous settings** for a place that came from an older version's data; see [Update the software](../build-your-own-device-diy/update.md#places-after-an-update).
 * When the place was first and last used, or **Not used yet**.
 * How many events were recorded there, and between which dates.
-* Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with the way it faced and **Correct heading**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when.
-* The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Modify deployment** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; and **Delete** for any place but the one in use.
+* Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with what it recorded, such as **Facing NE (40°) · 7.0 ft up · tilted 15°**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when. A deployment that has ended has **Correct heading**. One that is running at the place in use has **Mounting** instead, because that is where it is changed.
+* The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Mounting** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; and **Delete** for any place but the one in use.
 
 **Before any place was recorded** counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.
 
@@ -70,32 +70,113 @@ A device updated from an older release has its earlier headings converted; see [
 
 ## Move or turn the device
 
-When the device moves to another place, record it from that place: **Deploy here** if the place is planned, or **Re-deploy here** if the device has been there before. When a sensor is turned to face another way, record it with **Modify deployment** on the place in use.
+When the device moves to another place, record it from that place: **Deploy here** if the place is planned, or **Re-deploy here** if the device has been there before. When a sensor is moved or turned at the place in use, record it on the [Mounting page](#record-how-the-unit-is-mounted).
 
-1. Open the place, and choose its button.
+1. Open the place, and choose **Deploy here** or **Re-deploy here**.
 2. Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are what the database will store for the place and whether the device shares its data.
-3. Choose **Deploy**, **Re-deploy**, or **Modify**.
+3. Choose **Deploy** or **Re-deploy**.
 
 ![The Deploy here review on a phone: each sensor with "New deployment starts" and its heading before and after, the location the database will store, and Cancel and Deploy](../assets/images/location-deploy-review.png){ width="300" }
 
-The page waits while Node-RED starts the new deployments, then lists their ids, each with **Copy**. Counts from then on belong to the new deployments.
-
-In **Modify deployment**, the review starts with each sensor's heading as it is, and each sensor reads **Unchanged** until you change its heading. **Modify** stays off until at least one heading changes, and only the sensors you turned start a new deployment.
+The page waits while Node-RED starts the new deployments, then lists their ids, each with **Copy**. Counts from then on belong to the new deployments. Under the list is the next step, **Mounting**, which opens the page where you record how the unit is mounted. At a place the unit was at before, the values last saved there are offered, and the next step says so; **Use these values** and then **Save** confirm them. See [A place used before](#a-place-used-before).
 
 !!! warning "Don't deploy twice"
 
     If Node-RED hasn't loaded the new settings within about 20 seconds, the page says the settings are saved and the deployments appear once Node-RED loads them. If the connection drops while the page waits, it says the settings may already be saved. In both cases, close the dialog and check the place in the list before you deploy again.
 
-Deploying at another place records none of a sensor's tilt, height, distance, or mount, at a place the unit was at before just as at a new one, because the unit was taken down and put up again. **Modify deployment** keeps them, because the unit stayed where it was. The sensors have none of the four until you record them (see [How a sensor is mounted](../configuration/node-red-config.md#how-a-sensor-is-mounted)). At a place used before, the control app keeps the values last saved for each sensor there and offers them, and they are recorded when someone saves them, which for now is a save through the control app's API. There is no way to dismiss them: they are offered until a save records that sensor's mounting. A value typed into `config.yml` by hand isn't remembered. The heading is the one you choose in the review, which starts from the place's last one.
+A deploy records none of a sensor's tilt, height, distance, or mount, at a place the unit was at before just as at a new one, because the unit was taken down and put up again. The sensors have none of the four until you record them on the Mounting page (see also [How a sensor is mounted](../configuration/node-red-config.md#how-a-sensor-is-mounted)). The heading is the one you choose in the review, which starts from the place's last one.
 
 A move usually also needs the camera's zones adjusted; see [First-time setup](../setup-guide.md#3-adjust-the-zones).
 
+## Record how the unit is mounted
+
+The **Mounting** page records how each sensor is mounted at the place in use. Open it from the **Mounting** button in the place in use's panel in the list, from the **Mounting** link on a running deployment, from the button the deploy leaves, or from the card at the top while the place has [values from last time](#a-place-used-before) to confirm. Only the administrator sees it. It works on the unit's own [hotspot](wifi-hotspot.md), because it needs no internet.
+
+![The Mounting page on a phone: the units and the usual mounts, a section for the camera with its dial, height, tilt, distance, and side view, a radar that takes its camera's values, and the question "Did the unit move or turn?" above Save](../assets/images/location-mounting.png){ width="300" }
+
+The page says what the numbers are for: they are stored with each deployment and help place the recorded paths on a street plan. Under the title are the **Units**, **Feet** or **Metres**, and **Start from a usual mount**. Then comes a section for each sensor, with a camera first and its radar under it. If Node-RED doesn't answer, the page warns that changes can't be saved, and **Save** stays off.
+
+Everything is optional. Record what you know, and leave the rest empty. Use **Save** when you are done: nothing is recorded until then, and **Cancel** goes back to the Location page.
+
+### Feet and metres
+
+**Feet** is the default. Each length is shown in the unit you chose, and under it in the other, such as **7.0 ft (2.13 m)**. The page remembers your choice in the browser. The device stores metres, rounded to two decimals, so a length typed in feet is stored as the nearest centimetre, and a length you don't touch, or type back to what it showed, is saved exactly as it was. A comma works as the decimal mark too, as in 7,5, but not before exactly three digits, as in 1,000. A field that holds something that isn't a number says **Enter a number, such as 12 or 12.5.**, and **Save** stays off until you fix it.
+
+### Start from a usual mount
+
+Picking a usual mount fills in a typical height and tilt for every camera and radar section, chooses **I measured the tilt**, and records the mount's name. It changes nothing else. Change the numbers afterwards to what you measured, or choose **My own measurements** to keep the numbers and drop the name of the mount. Nothing is saved until you choose **Save**. The three mounts are in [Usual mounts](../deployment-and-mounting-guide.md#usual-mounts).
+
+### Which way it faces
+
+Each sensor has a dial labelled **Which way it faces**. The heading is in whole degrees clockwise from true north, as in [Which way a sensor faces](#which-way-a-sensor-faces). Set it in any of these ways:
+
+* Tap or drag on the ring. North is at the top. The needle follows your finger, and a drag may leave the ring. Pressing the very centre changes nothing.
+* Tap one of the eight compass points around the ring, which sets the heading to the point's centre. This is fine when the point is all you know.
+* Type a number in **Degrees from north**. A number that isn't a whole number from 0 to 359 gets the message **Enter a whole number from 0 to 359.** An empty field changes nothing: use **Not set** to clear the heading.
+
+The dial also says the heading in words, for example, "52°, north-east." A line of help says: "North is up on a map. A phone's compass shows magnetic north unless it is set to true north. If you only know the compass point, tap it."
+
+### Height, tilt, and distance
+
+For each camera and radar that isn't following its camera (see [Radar](#a-radar-with-its-camera)), three values describe how it is aimed.
+
+| Field | What it is | How to measure it |
+|---|---|---|
+| **Height above the road** | How high the lens is above the road. | "From the road surface straight below the camera up to the lens. Use a tape measure." |
+| **Tilt below level** | How far the camera points down, in degrees. | "How far the camera points down. 0 is level, 90 is straight down. Hold a phone's level app against the camera." |
+| **Distance to the centre of the view** | How far away the middle of the picture is on the road. | "Along the ground, from the spot right below the camera to the spot on the road at the very centre of the picture." |
+
+The tilt and the distance describe the same thing from two sides, so with the height you measure one and the page works out the other. Choose **I measured the tilt** or **I measured the distance**. The other field is greyed out and shows what the page worked out. A tilt of 0 points at the horizon, so it has no distance, and the field stays empty. Choosing the other as the one you measured starts it from the number it showed, or, when the page can't work one out because there is no height yet, from the number you last typed in it, so switching changes no number.
+
+The **side view** under the fields draws the road, the support with the unit on it at its height, and the line of sight down to the centre of the view, with the three values beside their parts. It follows what you type. With no height it says "Enter the height to see the side view."
+
+The page records no roll, so level the camera from side to side when you mount it.
+
+### A radar with its camera
+
+A radar that a camera names has a checkbox, **Same as** and the camera's name. Tick it for a radar that sits in the same case as its camera: the section then reads "Takes picam_h265's heading, height, and tilt.", with your camera's name in place of `picam_h265`, and records the camera's values. Untick it to give the radar values of its own, which start as the camera's. The page never ticks the box for you, but it shows it ticked when the radar's values already equal the camera's. An air-quality monitor has the dial only, because it has no height or tilt to record.
+
+### A place used before
+
+When the unit comes back to a place it was at before, the control app remembers what was last saved there for each sensor. Those values aren't recorded again by themselves, because the unit was taken down and put up again. Instead the Location page's card and the deploy's result say: "This place has mounting values from the last time the unit was here. They aren't recorded until you confirm them." A place with nothing to offer says "Next, record how the unit is mounted." after a deploy.
+
+On the Mounting page, the sensor's section starts with "From last time:", then its height, tilt (or, without one, its distance), and mount, such as "From last time: 12.0 ft up, tilted 15°, pole or sign post". Choose **Use these values** to fill the fields in, check them, and choose **Save**. Saving confirms them, and the notice goes. A radar ticked **Same as** its camera shows its own notice only when its values from last time aren't the camera's; there, **Use these values** unticks it and fills in its own values. The notice stays until you save that sensor: there is no way to dismiss it. A value typed into `config.yml` by hand isn't remembered.
+
+### Did the unit move or turn?
+
+Changing a value that was already recorded raises a question, because a change can mean two things. Either you measured it better, and the record was wrong, or the unit really moved or turned, and the traffic from now on belongs to a new deployment. The page asks "Did the unit move or turn?" above **Save** when both of these hold:
+
+* A value that was set is changed or cleared: the heading, the height, or the one of tilt and distance that you measured. Filling in an empty value doesn't count. The name of a usual mount never counts, but the height and tilt a usual mount fills in do when they replace values that were set, so switching from one mount to another after traffic was recorded can raise the question. The tilt or distance the page worked out is never a change of its own.
+* The running deployment has recorded traffic, or Node-RED couldn't say. Before it has recorded anything, a change corrects it.
+
+The question lists only the changes that count, such as "picam_h265: heading 40° to 62°", and offers two answers:
+
+* **No, it is where it was. I measured it better.** The running deployment's record is corrected in place. The page says: "The record of the running deployment is corrected."
+* **Yes, it was moved or turned.** A new deployment starts now for each sensor with a change that counts. The page says: "A new deployment starts now for" those sensors, and "Traffic already recorded keeps the old values."
+
+The page chooses one for you from the size of the change. It chooses the second when the heading turned by 20 degrees or more (the smaller angle: 350° to 10° is 20°), the height changed by 0.3 m (about a foot) or more, or the tilt by 5 degrees or more. It chooses the first for anything smaller. Change the answer if you know better. The page asks again, and chooses afresh, whenever the changes that count are no longer the ones you answered for. A change that isn't asked about, such as filling in a value for the first time, corrects the running deployment.
+
+### The result
+
+**Save** stays off until something differs from what the page loaded, the page has checked the form, and no field is refused. After a save the page says one of:
+
+* "Saved."
+* "Saved. A new deployment started for" the sensors that got one.
+* "Saved. Node-RED hasn't loaded the settings yet; the new deployment appears once it does. Don't save again."
+* The reason the save was refused, such as a value outside its limit, which shows under its field. Nothing is half saved: when a save is refused, the record and `config.yml` stay as they were.
+
+The limits are a height above 0 and at most 100 m, a tilt from 0 to 90 degrees, and a distance from 0 to 1,000 m. After each change, the page waits a moment and then has the control app check the whole form, which is how it works out the tilt or distance and knows whether to ask a question. The control app doesn't save anything until you choose **Save**. If the check gets no answer, for example because the phone left the unit's Wi-Fi for a moment, the page says so under **Save** with **Try again**, and **Save** stays off until the check is answered.
+
+!!! info "What is stored"
+
+    The five values (heading, tilt, height, distance, and the usual mount's name) are stored with each deployment, in `config.yml` under the sensor, and, with **Share data**, sent with the deployment rows. They hold no place's coordinates or name. See [How a sensor is mounted](../configuration/node-red-config.md#how-a-sensor-is-mounted).
+
 ## Correct a wrong location or heading
 
-A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, [record that](#move-or-turn-the-device) instead.
+A correction is for a value that was entered wrong. It changes what the records already say, and starts no new deployment. If the device moved or was turned, [record that](#move-or-turn-the-device) or, at the place in use, [on the Mounting page](#record-how-the-unit-is-mounted) instead.
 
 * **Correct location**, on a used place or the place in use, takes a new latitude and longitude, typed or [picked on a map](#pick-the-point-on-a-map). Every record from the place then says it was at the new point, rounded to the precision each was stored at. For the place in use, `config.yml` takes the new point too. A point more than about 1 km from the old one looks like a move, so the page asks a second time and gives the distance. A place with no location can't be corrected to one: add a new place with the location, and deploy it.
-* **Correct heading**, on each deployment in an open place, takes the way the sensor really faced, as a compass point or **Not set**. Every record from that deployment then says so. For a deployment that is still running, `config.yml` takes the new heading too.
+* **Correct heading**, on each deployment that has ended, takes the way the sensor really faced, as a compass point or **Not set**. Every record from that deployment then says so. A deployment that is running at the place in use is corrected on the [Mounting page](#record-how-the-unit-is-mounted) instead: change the heading there and, if the page asks, answer "No, it is where it was. I measured it better." The one exception is a sensor that is listed but turned off in `config.yml`, which has no section on the Mounting page: its running deployment keeps **Correct heading**, and `config.yml` takes the new heading too.
 
 Each correction can have a **Reason**, which is kept with the correction on the device. Copies of the database already downloaded, and data already uploaded, keep the old values.
 
