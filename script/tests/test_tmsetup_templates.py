@@ -2,6 +2,7 @@
 
 import ast
 import configparser
+import json
 import re
 from pathlib import Path
 
@@ -1332,3 +1333,58 @@ def test_the_api_learns_from_nginx_whether_the_request_came_over_the_hotspot():
     for name in LOCATIONS:
         if name != "tm-control-api.conf":
             assert "X-TM-Hotspot" not in location(name), name
+
+
+# --- The device's flows.json: the serial nodes of a radar whose port isn't there are switched off -------------------
+
+FLOWS_TEMPLATE = "script/ansible/roles/tmsetup/templates/node-red-tm/flows.json.j2"
+REPO_FLOWS = REPO / "container" / "node-red-tm" / "data" / "flows.json"
+RADAR_NAMES = [f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(4)]
+
+
+def device_flows(missing):
+    return render(FLOWS_TEMPLATE, tmsetup_radars_missing=missing)
+
+
+def switched_off(text):
+    """The ids of the nodes that differ from the repo's file, each checked to differ only by "d": true."""
+    repo = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    device = json.loads(text)
+    assert [node["id"] for node in device] == list(repo)
+    changed = []
+    for node in device:
+        if node != repo[node["id"]]:
+            assert node == {**repo[node["id"]], "d": True}, node["id"]
+            changed.append(node["id"])
+    return changed
+
+
+def test_flows_template_with_every_port_there_is_the_repos_file():
+    """Read at test time, so a later edit to flows.json is compared as it is: indent 4, key order, non-ASCII,
+    and no trailing newline, as Node-RED writes it."""
+    assert device_flows([]).encode("utf-8") == REPO_FLOWS.read_bytes()
+
+
+def test_flows_template_switches_off_a_missing_radars_three_nodes():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(["TM_RADAR_SERIAL_PORT_03"]))
+    assert sorted(changed) == sorted(["9436149d39191450", "e221212a505a78ac", "1ad62db35274c50d"])
+    assert flows["9436149d39191450"]["serialport"] == "${TM_RADAR_SERIAL_PORT_03}"
+    assert {flows[node_id]["name"] for node_id in changed} == {"", "receive RADAR_03", "send to RADAR_03"}
+
+
+def test_flows_template_with_no_radar_switches_off_all_twelve():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(RADAR_NAMES))
+    assert len(changed) == 12
+    assert {flows[node_id]["type"] for node_id in changed} == {"serial-port", "serial in", "serial out"}
+    assert [flows[node_id]["type"] for node_id in changed].count("serial-port") == 4
+
+
+def test_flows_template_ends_without_a_newline_whatever_is_off():
+    """Ansible's template module gives the output as many trailing newlines as the template file has, so the file
+    itself ends without one (an editor that adds it breaks the byte-for-byte copy)."""
+    assert not (REPO / FLOWS_TEMPLATE).read_text().endswith("\n")
+    for missing in ([], ["TM_RADAR_SERIAL_PORT_01"]):
+        text = device_flows(missing)
+        assert not text.endswith("\n") and text.endswith("]")

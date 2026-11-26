@@ -6491,3 +6491,27 @@ def test_a_copy_that_ends_early_drops_its_claimed_list(name, msg):
                            modules=("fs", "path"))
     assert result["flow"]["exactCopyPlaces"] == {"/db/snapshot/x2": [PLACE]}
     assert "45.52252" not in json.dumps(result["results"])
+
+
+SERIAL_TYPES = ("serial-port", "serial in", "serial out")
+
+
+def test_no_node_is_switched_off_in_the_repo():
+    """The installer switches off the serial nodes of a radar whose port isn't there (flows.json.j2); the repo's
+    file keeps every one on, so a device with all four radars gets this file as it is."""
+    flows = json.loads(FLOWS.read_text())
+    assert [node["id"] for node in flows if node["type"] in SERIAL_TYPES and "d" in node] == []
+
+
+def test_each_radar_has_one_port_one_receive_and_one_send():
+    """What flows.json.j2 relies on: each radar name is one serial-port node's ${name}, read by one serial in and
+    written by one serial out, and no other node uses the port."""
+    flows = json.loads(FLOWS.read_text())
+    ports = [node for node in flows if node["type"] == "serial-port"]
+    assert sorted(node["serialport"] for node in ports) == [f"${{{name}}}" for name in RADAR_NAMES]
+    for port in ports:
+        users = sorted(node["type"] for node in flows if node.get("serial") == port["id"])
+        assert users == ["serial in", "serial out"], port["serialport"]
+        [receive] = [node for node in flows if node["type"] == "serial in" and node["serial"] == port["id"]]
+        assert SERIAL_IN[receive["id"]] == port["serialport"][2:-1]
+    assert sum(node["type"] in ("serial in", "serial out") for node in flows) == 8

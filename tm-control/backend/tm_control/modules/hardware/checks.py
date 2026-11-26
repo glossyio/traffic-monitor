@@ -213,7 +213,8 @@ def _radar(context: Context, path: str, name: str | None, radars: dict | None) -
                               "tmsetup.sh -t node-red-tm.")
     if name is None:
         return check("warn", "A radar is plugged in, but no TM_RADAR_SERIAL_PORT_ line in node-red-tm.env names "
-                             "this port, so Node-RED doesn't read it. Name it there, then restart Node-RED.")
+                             "this port, so Node-RED doesn't read it. Name it there, then re-run the installer with "
+                             "tmsetup.sh -t node-red-tm.")
     if configured is None:
         return check("unknown", f"config.yml couldn't be read, so it's unknown whether {name} is enabled.")
     if not configured:

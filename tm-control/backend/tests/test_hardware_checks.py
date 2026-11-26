@@ -414,6 +414,17 @@ def test_radar_names_come_from_node_red_env(hw):
     assert _radar(hw).status == "ok"  # the template's mapping: TM_RADAR_SERIAL_PORT_00 is /dev/ttyACM0
 
 
+def test_a_radar_on_a_port_no_name_points_at_says_to_re_run_the_installer(hw):
+    """The installer switches on the serial nodes of a radar name only when its port is there, so naming a port in
+    node-red-tm.env takes a run of tmsetup.sh -t node-red-tm, not just a restart of Node-RED."""
+    hw.env.write_text(NODE_RED_ENV.replace("PORT_00=/dev/ttyACM0", "PORT_00=/dev/ttyACM9"))
+    check = _radar(hw)
+    assert (check.status, check.fix) == ("warn", RESCAN)
+    assert "no TM_RADAR_SERIAL_PORT_ line in node-red-tm.env names this port" in check.detail
+    assert check.detail.endswith("Name it there, then re-run the installer with tmsetup.sh -t node-red-tm.")
+    assert "restart Node-RED" not in check.detail
+
+
 def test_every_check_that_isnt_ok_has_a_fix(hw):
     hw.usb, hw.pci = [USB_HUB, USB_CORAL], None
     hw.paths = set()
