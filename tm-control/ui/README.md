@@ -1055,19 +1055,19 @@ importing places open dialogs from this page, so they move nothing on it.
   from the Pi's own time-zone data, rounded to two places, and null with no map. The data is two tzdata tables:
   `zone1970.tab` answers first, and a zone it doesn't list (it merged many names away, such as `Europe/Amsterdam`) is
   looked up in `zone.tab` beside it. Legacy aliases such as `US/Pacific` give none. The region is used only when the
-  Wi-Fi country is set and is one of the countries the zone's row lists. The installer sets the zone (`-z`, default
-  `America/Los_Angeles`) and the Wi-Fi country (`US` when the device has none), so a unit left on both defaults
-  passes the check and opens over Los Angeles until its zone is set on the Date and time page; the check keeps a zone
-  from sending the map to a country the Wi-Fi isn't set for. Rejected: looking up the device's internet address, and
-  time-zone boundary data. Both come from outside the device, and the maintainer ruled out any outside request for
-  this. The region isn't private: it is a time zone's city, `GET /surveys` is admin-only, and the map's host learns
-  little more at this zoom than the phone's internet address tells it. The zoom is 3, a wide view around the city,
-  about the size of a time zone. A time zone's city often sits at the zone's edge (Los Angeles at the south end of the
-  Pacific zone), so the view has to be wide to show much of the zone around the city. Zoom 5 showed only the south of
-  California and zoom 4 only California and part of its neighbours; a fake-mode review at 375 and 1280 px found zoom 3
-  holds the whole Pacific zone on a phone and, on a wide screen, runs from Portland to Mexico. Going further out or in
-  is one constant (`REGION_ZOOM` in `PinMap.vue`) and its test. Fake mode is in the Pacific zone with Wi-Fi country
-  US, so it shows this.
+  Wi-Fi country is set and is one of the countries the zone's row lists. The installer sets the zone only with `-z`, and
+  a unit's zone is the imager's or the image's unless changed. It sets the Wi-Fi country (`US` when the device has
+  none), so a unit whose zone is a US one passes the check and opens over that zone's city until the zone is set on the
+  Date and time page; the check keeps a zone from sending the map to a country the Wi-Fi isn't set for. Rejected:
+  looking up the device's internet address, and time-zone boundary data. Both come from outside the device, and the
+  maintainer ruled out any outside request for this. The region isn't private: it is a time zone's city, `GET /surveys`
+  is admin-only, and the map's host learns little more at this zoom than the phone's internet address tells it. The zoom
+  is 3, a wide view around the city, about the size of a time zone. A time zone's city often sits at the zone's edge
+  (Los Angeles at the south end of the Pacific zone), so the view has to be wide to show much of the zone around the
+  city. Zoom 5 showed only the south of California and zoom 4 only California and part of its neighbours; a fake-mode
+  review at 375 and 1280 px found zoom 3 holds the whole Pacific zone on a phone and, on a wide screen, runs from
+  Portland to Mexico. Going further out or in is one constant (`REGION_ZOOM` in `PinMap.vue`) and its test. Fake mode is
+  in the Pacific zone with Wi-Fi country US, so it shows this.
 - "Use this point" writes the field at five decimal places, as the device keeps an exact location, and the admin can
   still change it before saving. It waits for the map itself to set the pin (a tap or a drag) and is off while the
   map has failed, so the field's own point is never written back as a pick. Typed coordinates with fewer than four
@@ -1162,28 +1162,40 @@ picture, which this page doesn't touch.)
     can be changed later and the place's records must keep the time zone they were made in.
   - Ticked, the list opens under the box, starting at the same time zone. Unticking puts the clock's back.
   - The box starts ticked when the place already has a time zone other than the clock's, so Edit shows it as it is.
-  - When the clock's time zone is unknown, there is no line and no box: the list shows at once, empty unless the
-    place has a time zone.
+  - When the clock's time zone is unknown (null, or an empty name, which the page reads as unknown), there is no line
+    and no box: the list shows at once, empty unless the place has a time zone.
   - The hint, "Recorded with this place's data, also when no location is stored.", always shows, because an admin who
     chose No location stored wouldn't expect anything about the place to be kept.
 - The list is the Date and time page's picker: a `v-autocomplete` over `GET /time/timezones`, outlined, labelled
   "Time zone", with its text selected on focus, so typing "Berlin" replaces the time zone (that page's screenshot
   review found the caret landing mid-name). The page asks for the list once, when it opens, and passes it to every
   control. When it can't be loaded, the box still works, since the clock's time zone needs no list; ticked, the field
-  shows the error in place of the hint and is disabled, and the form still saves everything else.
+  shows the error in place of the hint and is disabled, and the form still saves everything else. Emptying its text
+  changes nothing: Vuetify clears a single list's model when its text is emptied, so the control ignores the empty
+  value, keeps the last name, and shows it again when the list loses focus. That is what keeps the page from clearing a
+  time zone. The place form also leaves `timezone` out of its body when there is none (the clock's is unknown and none
+  was picked), so an edit keeps the stored one and a new place has none, and the review sends no time zone it doesn't
+  have.
 - The browser's time zone isn't used. The unit's clock is set for where the unit is, and a place planned from a desk
   in another time zone would get the desk's.
 - The review saves a changed time zone with its own request (`PUT /surveys/{id}/timezone`) before it deploys, and
   deploys only once that is answered. A refusal shows beside the buttons and deploys nothing. The deploy then writes
   the place's time zone into the settings with its id, so the new deployments carry it from their start. An unchanged
   time zone sends no request. A planned place with none (from an import with the column blank, or from before this
-  version) gets the clock's at its review.
+  version) gets the clock's at its review. For a used place, a line under the control says "Changing it corrects this
+  place's stored deployments." while the choice differs from the saved one (a place with none counts as differing),
+  because the same save rewrites that place's stored rows, which the planned place's doesn't; it is gone once the review
+  has saved the choice. It doesn't say "It starts no new deployment", which would be untrue in a review that starts
+  them. The review asks the page to load the places again (`stale`) when the request failed in any way, and when the
+  deploy then failed after a request this review sent, so the page doesn't keep showing the old time zone beside a
+  store that has the new one; a 409 asks once.
 - Each used place and the place in use show "Time zone" on their panel, with "Not set" for none, beside First used
   and Last used. It shows also when Node-RED didn't answer, because the time zone comes from the control app. Their
   "Time zone" button, after Correct location, opens the dialog, which has the same control: for a place with none,
   Save sets the clock's. A planned place has neither, because Edit shows its time zone. The dialog's sentence says what
   a change does to the records, as the corrections' do, but its button reads Save, not Correct: setting a time zone for
-  the first time isn't correcting a mistake.
+  the first time isn't correcting a mistake. A 409 or a 5xx makes the page load the places again, because after a 502
+  the time zone is saved though its rows weren't updated.
   Save is never disabled for an unchanged time zone, so a save that failed halfway can be finished, as Correct location
   allows the same point again; it waits only when there is no time zone to send (no clock time zone, none chosen),
   because the page never sends null.
