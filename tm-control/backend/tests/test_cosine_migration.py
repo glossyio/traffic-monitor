@@ -31,6 +31,13 @@ def output(capsys):
     return captured.out + captured.err
 
 
+def printed_without_paths(capsys, config):
+    """What was printed with the config's path and any backup's name taken out, so a check that a value isn't in it
+    can't be failed by a temp directory's number or the backup's timestamp."""
+    text = output(capsys).replace(str(config), "<config>")
+    return re.sub(r"\(backup: [^)]*\)", "(backup: <name>)", text)
+
+
 def backups(config):
     return list(config.parent.glob("config.yml.*.bak"))
 
@@ -167,7 +174,7 @@ def test_a_later_zero_is_the_last_entry_and_leaves_no_key(tmp_path):
 
 
 def test_an_entry_beside_a_set_key_is_removed_and_the_key_kept(tmp_path, capsys):
-    config = config_with(tmp_path, ["^/+30\n", "^/-5\n"])
+    config = config_with(tmp_path, ["^/+30.5\n", "^/-5\n"])
     config.write_text(config.read_text().replace(
         "            enabled: true\n            opt_api",
         "            enabled: true\n            cosine_inbound_deg: 12.5\n            opt_api"))
@@ -176,7 +183,9 @@ def test_an_entry_beside_a_set_key_is_removed_and_the_key_kept(tmp_path, capsys)
     assert radar["cosine_inbound_deg"] == 12.5  # kept
     assert radar["cosine_outbound_deg"] == 5.0  # the blank one takes its entry
     assert radar["opt_api_commands_array"] == "[]"
-    assert "30" not in output(capsys)
+    printed = printed_without_paths(capsys, config)
+    assert "moved" in printed and "removed" in printed  # something was printed to check
+    assert "30.5" not in printed
 
 
 @pytest.mark.parametrize("entry", ["^/+95\n", "^/+abc\n", "^/20\n"])
@@ -190,7 +199,7 @@ def test_an_entry_that_does_not_parse_is_left_with_a_warning(tmp_path, capsys, e
     warnings = [line for line in captured.err.splitlines() if "WARNING" in line]
     assert len(warnings) == 1
     assert LIST_PATH in warnings[0]
-    assert entry.strip() not in captured.out + captured.err
+    assert entry.strip() not in (captured.out + captured.err).replace(str(config), "<config>")
     assert "up to date" in captured.out
 
 
@@ -324,7 +333,8 @@ def test_no_value_is_printed(tmp_path, capsys):
     config = config_with(tmp_path, ["^/+12.5\n", "^/-34.5\n", "OL-SECRET", "^/+abc\n"])
     assert migrate.run_node_red_cosine(config, dry_run=True) == 0
     assert migrate.run_node_red_cosine(config) == 0
-    printed = output(capsys)
+    printed = printed_without_paths(capsys, config)
+    assert "<config>" in printed  # the paths were there to take out
     for value in ("12.5", "34.5", "SECRET", "abc"):
         assert value not in printed
 
