@@ -65,14 +65,6 @@ class UpdateInfo:
     channel: str = "stable"
 
 
-def _usable_update(value):
-    """A block that isn't an object, or whose repo or channel isn't text, becomes an unknown source (empty repo), so the
-    control app still starts and its page says where updates come from is unknown."""
-    if isinstance(value, dict) and all(isinstance(value.get(key, ""), str) for key in ("repo", "channel")):
-        return value
-    return {"repo": "", "channel": "stable"}
-
-
 class Manifest(BaseModel):
     manifest_version: int
     tm_version: str
@@ -91,7 +83,14 @@ class Manifest(BaseModel):
     probes: Probes
     homepage: Homepage
 
-    _update_usable = field_validator("update", mode="before")(staticmethod(_usable_update))
+    @field_validator("update", mode="before")
+    @classmethod
+    def _usable_update(cls, value):
+        """A block that isn't an object, or whose repo or channel isn't text, becomes an unknown source (empty repo),
+        so the control app still starts and the Software update page says the source is unknown."""
+        if isinstance(value, dict) and all(isinstance(value.get(key, ""), str) for key in ("repo", "channel")):
+            return value
+        return {"repo": "", "channel": "stable"}
 
 
 class ManifestError(RuntimeError):

@@ -63,7 +63,8 @@ def _repository(update: dict) -> "str | None":
     if "repo" not in update:
         return None
     repo = update["repo"]
-    # The value becomes part of a URL, so a segment of only dots (. and ..) is refused, and the role's check, the update job, and the control app apply the same rule
+    # The value becomes part of a URL, so a segment of only dots (. and ..) is refused. The role's check, the update
+    # job, and the control app apply the same rule.
     if (not isinstance(repo, str) or not _REPO.fullmatch(repo)
             or any(set(part) == {"."} for part in repo.split("/"))):
         raise _bad("manifest update.repo")

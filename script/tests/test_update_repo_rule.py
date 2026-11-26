@@ -16,8 +16,7 @@ sys.path.insert(0, str(REPO / "tm-control" / "backend"))
 from tm_control.core.manifest import UpdateInfo  # noqa: E402
 from tm_control.modules.update.source import repo_of as control_repo_of  # noqa: E402
 
-from tm_update.installed import Refusal  # noqa: E402
-from tm_update.installed import _repository as installed_repository  # noqa: E402
+from tm_update.installed import Refusal, _repository as installed_repository  # noqa: E402
 
 GOOD = ["glossyio/traffic-monitor", "a-b/c.d_e", "a/" + "b" * 100, "a" * 100 + "/b", "x/.hidden", "a.b/c"]
 BAD = ["glossyio", "a/b/c", "https://github.com/a/b", "a/b ", " a/b", "a/..", "./b", "a/" + "b" * 101,
