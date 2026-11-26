@@ -191,3 +191,13 @@ def test_fake_correct_mounting_accepts_the_limits_themselves(fake):
     ):
         fake.correct_mounting(row["id"], values)
         assert [row[key] for key in FIVE] == list(values.values())
+
+
+def test_the_fake_answers_the_people_check(fake):
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked("cam").append({"label": "person", "stationary": False})  # an answer is a copy
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked_objects = [{"label": "person", "stationary": True}]
+    assert fake.tracked("cam") == [{"label": "person", "stationary": True}]
+    fake.tracked_objects = None
+    assert fake.tracked("cam") is None

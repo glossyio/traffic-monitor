@@ -31,6 +31,10 @@ PYTHONPATH=tm-control/backend python -m tm_control dump-openapi > tm-control/ui/
 cd tm-control/ui && npm run api:generate
 ```
 
+In fake mode the fake Frigate tracks a car, so a reference picture's people check says nobody was tracked; start the
+backend with `TM_CONTROL_FAKE_PERSON=1` to have it track a person too, and turn a camera's detection off on the Cameras
+page to reach the line that says the device couldn't check.
+
 To try the home button that nginx adds to each app's page, open `http://localhost:5173/home-button-demo.html` while
 `npm run dev` runs. It's a stand-in app page with the button on it; add `?app=nr` (or `dashboard`, `ui`, `feeds`) to
 try another app's spot. Drag it to either side, drop it at an edge to tuck it, and reload to see that it stays where

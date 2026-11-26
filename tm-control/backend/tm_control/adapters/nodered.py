@@ -20,6 +20,7 @@ from tm_control.adapters.yamlfile import (  # ConfigRead: what config() returns,
 BASE = "http://127.0.0.1:1880/tm-internal"
 STATUS_URL = f"{BASE}/status"
 TOKEN_HEADER = "X-TM-Internal-Token"
+OBJECTS_TIMEOUT = 5.0  # seconds: longer than the 3 Node-RED waits for Frigate's answer, so its "no answer" arrives
 MOUNTING_KEYS = ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")  # what a correction carries
 
 
@@ -63,6 +64,8 @@ class NodeRedError(RuntimeError):
         self.status = status
 
 
+_Tracked = list[dict]  # what Frigate is tracking on a camera: {"label": str, "stationary": bool} for each object
+
 _CODES = {401: "refused", 400: "bad_request", 500: "database_error"}
 
 
@@ -72,13 +75,16 @@ class NodeRed:
     def __init__(self, token: str):
         self._token = token
 
-    def _call(self, method: str, path: str, query: dict | None = None, body: dict | None = None):
+    def _call(
+        self, method: str, path: str, query: dict | None = None, body: dict | None = None,
+        timeout: float | None = None,
+    ):
         url = BASE + path + (f"?{urlencode(query)}" if query else "")
         headers = {TOKEN_HEADER: self._token}
         if method == "GET":
-            status, data = httpjson.get(url, headers)
+            status, data = httpjson.get(url, headers, timeout)
         else:
-            status, data = httpjson.post(url, json.dumps(body).encode(), "application/json", headers)
+            status, data = httpjson.post(url, json.dumps(body).encode(), "application/json", headers, timeout)
         if status is None:
             raise NodeRedError("unreachable")
         if not 200 <= status < 300:
@@ -144,6 +150,23 @@ class NodeRed:
         if not isinstance(found, dict) or not all(value is None or isinstance(value, bool) for value in found.values()):
             raise NodeRedError("unexpected")
         return dict(found)
+
+    def tracked(self, camera: str) -> _Tracked | None:
+        """What Frigate is tracking on the camera (a sensors.cameras key) right now: each object's label and whether it
+        is stationary, in Frigate's order, and nothing else. None when Frigate gave no list to trust (its detection is
+        off for the camera, or it didn't answer Node-RED in time). Nothing here is logged or put in an error."""
+        found = self._call("GET", f"/cameras/{quote(camera, safe='')}/objects", timeout=OBJECTS_TIMEOUT)
+        if not isinstance(found, dict) or not isinstance(found.get("answered"), bool) or "objects" not in found:
+            raise NodeRedError("unexpected")
+        objects = found["objects"]
+        if objects is None:
+            return None
+        if not isinstance(objects, list) or not all(
+            isinstance(one, dict) and isinstance(one.get("label"), str) and isinstance(one.get("stationary"), bool)
+            for one in objects
+        ):
+            raise NodeRedError("unexpected")
+        return [{"label": one["label"], "stationary": one["stationary"]} for one in objects]
 
     def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
         """Hand Node-RED the exact locations of places for one database copy, under a ticket it keeps for ten minutes."""

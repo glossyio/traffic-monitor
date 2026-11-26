@@ -1,5 +1,6 @@
 """The tm-control web app: the FastAPI app behind nginx on 127.0.0.1:8090 (`tm-control serve`)."""
 
+import os
 import threading
 
 from fastapi import FastAPI, Request
@@ -77,7 +78,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.config_path = config_file_path(settings, manifest)
     if settings.fake:
         fake.seed_config(settings)
-        app.state.nodered = fake.FakeNodeRed(app.state.config_path)
+        app.state.nodered = fake.FakeNodeRed(app.state.config_path, settings)
+        if os.environ.get("TM_CONTROL_FAKE_PERSON") == "1":  # the fake Frigate tracks a person too
+            app.state.nodered.tracked_objects.append({"label": "person", "stationary": False})
         app.state.backup_dir = fake.backup_dir(settings)
     else:
         app.state.nodered = NodeRed(secrets.node_red_internal_token)

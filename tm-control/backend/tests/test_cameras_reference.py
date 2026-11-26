@@ -33,7 +33,11 @@ def reference(**changes) -> Reference:
         point=(45.5231, -122.6765), deployment_id="1795026000000-1a2b3c4d-d", pose=dict(POSE),
         clean=jpeg(1536, 864), zones_picture=jpeg(1536, 864)[:-2] + b"zones\xff\xd9",
         clean_at=1795026605.0, zones_at=1795026606.0, width=1536, height=864, unit="m",
-        zones=[zone_facts(CAMERA)[0]], tm_version="0.8.0", frigate_version="0.18.2-abc1234",
+        zones=[zone_facts(CAMERA)[0]],
+        objects={"checked": True, "before": [{"label": "car", "stationary": True}],
+                 "after": [{"label": "car", "stationary": True}, {"label": "person", "stationary": False}],
+                 "person": True},
+        tm_version="0.8.0", frigate_version="0.18.2-abc1234",
         expires=1000.0,
     )
     return Reference(**values | changes)
@@ -101,8 +105,11 @@ def test_the_data_file():
     found = data_file(reference(), with_location=True)
     assert list(found) == ["format", "format_version", "survey_id", "camera", "deployment_id", "location", "pose",
                            "pictures",
-                           "traffic_monitor_version", "frigate_version", "detect", "distance_unit", "zones"]
-    assert (found["format"], found["format_version"]) == ("traffic-monitor-reference", 1)
+                           "traffic_monitor_version", "frigate_version", "detect", "distance_unit", "zones", "objects"]
+    assert (found["format"], found["format_version"]) == ("traffic-monitor-reference", 2)
+    assert found["objects"] == {
+        "checked": True, "before": [{"label": "car", "stationary": True}],
+        "after": [{"label": "car", "stationary": True}, {"label": "person", "stationary": False}], "person": True}
     assert (found["survey_id"], found["camera"]) == ("3f9a1c2e-si", "camera_1_3fa9c2")
     assert found["deployment_id"] == "1795026000000-1a2b3c4d-d"
     assert found["location"] == {"lat": 45.5231, "lon": -122.6765}
@@ -117,6 +124,13 @@ def test_the_data_file():
     assert found["detect"] == {"width": 1536, "height": 864} and found["distance_unit"] == "m"
     assert found["zones"][0]["sides"][0] == {"start": "A", "end": "B", "length": 12.0}
     json.dumps(found)  # nothing in it that JSON can't hold
+
+
+def test_the_data_file_keeps_version_1s_keys_in_order():
+    version_1 = ["format", "format_version", "survey_id", "camera", "deployment_id", "location", "pose", "pictures",
+                 "traffic_monitor_version", "frigate_version", "detect", "distance_unit", "zones"]
+    assert len(version_1) == 13
+    assert list(data_file(reference(), with_location=False)) == [*version_1, "objects"]
 
 
 def test_the_data_file_holds_the_pose():

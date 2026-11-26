@@ -281,6 +281,7 @@ export function referenceOut(changes: Partial<ReferenceOut> = {}): ReferenceOut 
       zoneFacts({ key: 'zone_lane_bus', color: null, drawn: false, corners: [], distances: [], sides: [] }),
     ],
     has_location: true,
+    people: 'none',
     ...changes,
   }
 }
