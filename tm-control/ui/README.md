@@ -148,8 +148,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
   `FactRow.vue` (a label above a value with its Copy button), and `summary.ts`, the words for the unit's links and
   internet that the Device page's card reuses.
 - The `sharing` module is the Sharing page (`SharingPage.vue`: the summary card, the review alert, and the polling after
-  a save), its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three
-  sample payloads the "See an example" buttons show.
+  a save), its Download your data card for admins (`DownloadCard.vue`, with `size.ts` for the database's size in words),
+  its form for admins (`SharingForm.vue`), one choice's box (`ConsentBox.vue`), and `examples.ts`, the three sample
+  payloads the "See an example" buttons show.
 - The `about` module is the About page (`AboutPage.vue`), open to every signed-in user and last in the menu. It makes no
   request of its own. `credits.json` is its list of credits, one row per project; `script/tests/test_about_credits.py`
   checks it against the dependencies. `RoadParade.vue` and `parade.ts` are the parade, described in "The About page" below.
@@ -886,26 +887,16 @@ importing places open dialogs from this page, so they move nothing on it.
 - The place in use is the page's one card, the device card's `StatusCard`, because it's the one object the page is
   about. It shows both the coordinates the database stores and the exact ones, labelled "Stored in the database" and
   "Exact location", so an admin sees what the precision does to their point before changing it.
-- "Exact locations" sits between the places and the precision: one sentence and two buttons, "Export exact locations"
-  and "Download the database with exact locations", in a row that wraps (`d-flex flex-wrap ga-3`). Both are outlined,
-  primary, and large, and both ask first, in a `ConfirmDialog` whose confirm button is the primary colour, not the error
-  colour, because nothing is destroyed, only handed out. The export comes from `GET /surveys/export` and is saved with
-  `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's line
-  say "Sharing: data and the exact location" when the exact location is on.
-- The database copy is a different kind of download: `POST /surveys/database-copy` answers with the address of the
-  device's own `/storefiles` download, and the page hands it to `openDownload` (`components/download.ts`), which is
-  `window.location.assign`. That is how the Dashboard's download starts, and the only way that works in Android's
-  sign-in window, which gives a download to a helper that follows a navigation and sends no cookie. The page can't
-  watch the download, so after the request it says in an info alert what is happening: the device makes the copy first,
-  which takes a few minutes for a large database, and the download starts by itself. The alert stays until the page is reloaded;
-  a failure shows the API's message in the section's error alert and opens nothing.
-- The copy button is disabled, with its reason in normal text under the buttons, until a place with the status in use
-  or used has both coordinates. That is what the API needs (it answers 409 `no_exact_locations` otherwise), and a
-  planned place doesn't count, because the copy holds only places the device has been at. In fake mode the link leads
-  nowhere (there is no Node-RED to make the copy), so the browser lands on a 404 after the info alert shows.
-- Once a copy has started the button stays disabled until the page is reloaded (the maintainer chose this on review):
-  the request is answered at once, but the device may still be making a multi-GB copy, and a second confirm would start
-  a second copy that holds the exact locations. A request that fails doesn't count as started, so it can be retried.
+- "Exact locations" sits between the places and the precision: one paragraph and one button, "Export exact locations",
+  outlined, primary, and large. It asks first, in a `ConfirmDialog` whose confirm button is the primary colour, not the
+  error colour, because nothing is destroyed, only handed out. The export comes from `GET /surveys/export` and is saved
+  with `saveBlob`, as the Detection page's downloads are. The place in use's "Sharing" line and the deploy review's
+  line say "Sharing: data and the exact location" when the exact location is on.
+- The download of the database with each place's exact location used to be a second button here. It moved to the
+  Sharing page's Download your data card, with the same request (`POST /surveys/database-copy`), and the Location page
+  no longer starts a database download. The card's design notes, in the Sharing section below, now describe the
+  question, the tick, and why the button stays off after a start. This page's "Exact locations" and
+  Precision paragraphs each end in a `router-link` to `/sharing` (text-primary, as the Device page links to Sharing).
 - The precision comes last, because most devices never change it and the places are what the page is used for. Its
   header is at the same level as Places, and the paragraph under it, always in view, says why the location is rounded
   and what a shared copy holds. The choices are one closed panel, whose title names the device's choice, so the value
@@ -1501,17 +1492,6 @@ line with Correct heading and its dialog, the deploy review, the place form, and
   "NE"), so a person can see that choosing NE changes the heading to 45. It stays listed after a point is chosen,
   so a tap on the wrong point can be undone without Cancel.
 
-The database copy's button (checked in fake mode at 320, 375, and 1366 px wide: the section, the confirmation, the
-"making the copy" alert, the failure alert, and the disabled button):
-
-- At 320 px the long button name was cut off on both sides, because a button's text doesn't wrap. The name is in a
-  `text-wrap` span inside a button of automatic height, so it breaks onto two lines and the button grows.
-- Looked at and kept: at 375 px the name also breaks onto two lines, under the shorter "Export exact locations"
-  button, since the two don't fit on one row; at 1366 px both sit on one row.
-- Looked at and kept: the file name in the info alert breaks after "tmdb-exact-" on a phone. It is a name to recognise,
-  not to type, so it isn't held together.
-- Looked at and kept: the disabled button's reason is in normal text, as for the Sharing page's disabled boxes.
-
 The map pin (checked in fake mode at 375 and 1280 px wide, with the real map: the form with its button, the picker
 with and without a pin, the failure message, the hotspot sentence, and the warning; the marker was tapped and dragged
 and the picker closed mid-fade, in a real browser):
@@ -1557,10 +1537,6 @@ to a place used before):
   Node-RED hasn't reloaded must stay until it's read.
 - A table for the import's preview: a sensor column per sensor doesn't fit 375 px. Each place is a short list item,
   as the deployments are.
-- A progress bar or polling for the database copy: the device doesn't report progress, and the browser's own download
-  list shows the transfer once it starts. The info alert says what to expect instead.
-- A link in the info alert for the download: the address is good for ten minutes, and a link left on the page would
-  let a later click start another copy that holds the exact locations. The page opens it once and keeps no link.
 - One Import button that previews and imports in one go: the preview is what lets an admin catch a wrong column
   before anything is created.
 - OpenStreetMap's own tiles: its usage policy is for light use, not for an app that every install's phones would
@@ -1981,6 +1957,15 @@ so the Status page's "Check the token" link doesn't land under the app bar).
   also sits in a bordered sheet so the two read as separate.
 - **Polling is quiet.** A failed check while the page waits for the first upload stops the checking and shows nothing,
   because the form above still works; only the page's first read shows an error.
+- **Download your data.** The card is the first on the page and only admins see it. It's a `StatusCard` so it looks
+  like Saved settings below it: the size is the card's one item (none when the device can't say), and the box, button,
+  message, and note sit in its slot. The question is a `ConfirmDialog` with a primary button rather than a warning
+  one, because a download changes nothing on the device. Unticked, Download asks `POST /sharing/download`; ticked, it
+  asks `POST /surveys/database-copy`. The tick, the message, and "started" are the card's own state, so the page reading
+  its state again (after a save, after "I've reviewed this") changes none of them. Once a download has started,
+  Download and the box stay off until the page is reloaded, because each download makes a full copy of the database on
+  the device. In fake mode the answered link points at `/storefiles`, which the dev server doesn't serve, so nothing
+  downloads.
 
 #### What the screenshot review changed
 
@@ -2009,8 +1994,7 @@ The first-run step and the Location page's "Exact locations" were checked the sa
   "Save and finish", so the two never look alike.
 - Looked at and kept: the Location page's Precision paragraph still says a later update will export the database with
   each place's exact location. The new file lists the places, not the database, so the sentence is still true.
-  (Since changed: the database copy now exists, and the paragraph points at Download the database with exact
-  locations.)
+  (Since changed: the database copy now exists, and the paragraph points at Download your data on the Sharing page.)
 - Looked at and kept: the export confirmation uses the primary colour, not the error colour used for deletes.
 
 #### Defaults rejected
@@ -2022,6 +2006,10 @@ The first-run step and the Location page's "Exact locations" were checked the sa
   box.
 - Polling for as long as the page is open: the first upload takes a minute at most, and a page left open on a unit
   with the server down would ask every 5 seconds for ever.
+- A progress bar or polling for the download: the device doesn't report progress, and the browser's own download list
+  shows the transfer once it starts. The note says what to expect instead.
+- A link in the note for the download: the address is good for ten minutes, and a link left on the page would let a
+  later click start another copy. The page opens it once and keeps no link.
 
 ### The home button
 

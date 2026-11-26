@@ -920,6 +920,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sharing/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Download
+         * @description A one-time link to the whole database, for the Sharing page's Download your data card (without the exact
+         *     locations; with them, POST /surveys/database-copy). The audit row has no detail, and the link is in no log.
+         */
+        post: operations["start_download_api_v1_sharing_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sharing/reviewed": {
         parameters: {
             query?: never;
@@ -1795,6 +1816,13 @@ export interface components {
             /** Free */
             free: number;
         };
+        /** DownloadFacts */
+        DownloadFacts: {
+            /** Database Bytes */
+            database_bytes: number | null;
+            /** Exact Places */
+            exact_places: number;
+        };
         /** DownloadLink */
         DownloadLink: {
             /** Url */
@@ -1804,6 +1832,11 @@ export interface components {
         DownloadLinkRequest: {
             /** Files */
             files: string;
+        };
+        /** DownloadOut */
+        DownloadOut: {
+            /** Url */
+            url: string;
         };
         /** EulaAcceptance */
         EulaAcceptance: {
@@ -2583,6 +2616,7 @@ export interface components {
             /** Writable */
             writable: boolean;
             server: components["schemas"]["ServerStatus"];
+            download: components["schemas"]["DownloadFacts"] | null;
         };
         /** Side */
         Side: {
@@ -4270,6 +4304,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+        };
+    };
+    start_download_api_v1_sharing_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadOut"];
                 };
             };
         };

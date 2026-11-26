@@ -1,6 +1,7 @@
 <!--
   The Sharing page (GET /sharing): what this device uploads and to which server, for every signed-in user, and for
-  admins the form that changes it (SharingForm). A summary card says what is shared and how the server last answered.
+  admins the Download your data card (DownloadCard, above the summary) and the form that changes what is shared
+  (SharingForm). A summary card says what is shared and how the server last answered.
   After a save that leaves the upload on, the page reads the state again every 5 seconds, for up to a minute, while
   the server hasn't answered yet (waiting, or Node-RED not answering), so the admin sees whether the first upload was
   taken. When the state says an upload was found on that nobody chose (review_needed), an alert says so and an admin
@@ -14,6 +15,7 @@ import type { components } from '../../api/schema'
 import { agoAt } from '../../components/relative-time'
 import StatusCard from '../../components/StatusCard.vue'
 import { useSession } from '../../stores/session'
+import DownloadCard from './DownloadCard.vue'
 import SharingForm from './SharingForm.vue'
 
 type SharingState = components['schemas']['SharingState']
@@ -153,6 +155,8 @@ const facts = computed(() => {
         </template>
       </v-alert>
       <v-alert v-if="reviewError" type="error" class="mb-6">{{ reviewError }}</v-alert>
+
+      <DownloadCard v-if="session.isAdmin && state.download" :facts="state.download" class="mb-6" />
 
       <StatusCard title="Saved settings" :items="facts" />
 
