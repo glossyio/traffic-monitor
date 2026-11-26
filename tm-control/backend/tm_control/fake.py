@@ -427,6 +427,98 @@ class FakeNetwork:
             self.join = None
 
 
+class FakeUpdate:
+    """Fake mode's Software update: a check that offers 0.8.1 on stable and a commit 12 ahead on development, and a run
+    that moves one stage every STEP seconds by the wall clock. A stable run ends ok; a development run fails in the
+    images stage with build_failed. Nothing is read from GitHub, the units, or the update folder."""
+
+    STEP = 2.0
+    STAGES = {
+        "stable": ("fetch", "verify", "prepare", "images", "switch", "health", "cleanup"),
+        "development": ("fetch", "verify", "prepare", "images"),
+    }
+    OFFERED = {"stable": "5" * 40, "development": "6" * 40}
+
+    def __init__(self, manifest):
+        self.manifest = manifest
+        self._clock = time.time  # tests replace it
+        self.begun: dict | None = None  # run_id, channel, commit, tag, version, at
+
+    def check(self, channel: str, now: datetime):
+        from tm_control.modules.update.offer import Offer
+
+        stable = channel == "stable"
+        return Offer(
+            channel=channel, relation="ahead", version="0.8.1" if stable else None, commit=self.OFFERED[channel],
+            tag="v0.8.1" if stable else None, released_at="2026-11-20T10:00:00Z" if stable else None,
+            ahead_by=None if stable else 12,
+            checked_at=now.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        )
+
+    def start(self, run_id: str, channel: str, commit: str, tag: str | None, offer) -> None:
+        version = offer.version if offer is not None and offer.commit == commit else tag and tag[1:]
+        self.begun = {"run_id": run_id, "channel": channel, "commit": commit, "tag": tag, "version": version,
+                      "at": self._clock()}
+
+    def _outcome(self) -> tuple[int, str]:
+        """How many stages are done (the last may be running) and the run's status."""
+        stages = self.STAGES[self.begun["channel"]]
+        done = int((self._clock() - self.begun["at"]) // self.STEP)
+        if self.begun["channel"] == "stable":
+            return (len(stages), "ok") if done >= len(stages) else (done, "running")
+        return (len(stages), "failed") if done >= len(stages) else (done, "running")
+
+    def run(self):
+        from tm_control.modules.update.run import Run, StageRow
+
+        if self.begun is None:
+            return None
+        begun = self.begun
+        stages = self.STAGES[begun["channel"]]
+        done, status = self._outcome()
+        shown = []
+        for index, name in enumerate(stages[: min(done + 1, len(stages))]):
+            started = _clock_iso(begun["at"] + index * self.STEP)
+            finished = _clock_iso(begun["at"] + (index + 1) * self.STEP) if index < done else None
+            shown.append(StageRow(id=name, started_at=started, finished_at=finished))
+        ended = status != "running"
+        return Run(
+            status=status, readable=True, run_id=begun["run_id"], channel=begun["channel"],
+            from_version=self.manifest.tm_version, from_commit=self.manifest.git.commit, to_version=begun["version"],
+            to_commit=begun["commit"], to_tag=begun["tag"], stage=shown[-1].id,
+            stages=shown, reason="build_failed" if status == "failed" else None,
+            detail="The images could not be built." if status == "failed" else None,
+            finished_at=shown[-1].finished_at if ended else None,
+        )
+
+    def log_lines(self) -> list[str] | None:
+        run = self.run()
+        if run is None:
+            return None
+        lines = [f"fake: {row.id} {'done' if row.finished_at else 'started'}" for row in run.stages]
+        if run.status == "failed":
+            lines.append("fake: the images could not be built")
+        return lines
+
+    def state_text(self) -> str | None:
+        run = self.run()
+        return None if run is None else run.model_dump_json(indent=2)
+
+    def log(self):
+        from tm_control.modules.update.router import UpdateLog
+
+        run = self.run()
+        return UpdateLog(
+            run_id=run.run_id if run else None,
+            job=journal_tail("tm-job-update.service", 50) + journal_tail("tm-update-resume.service", 50),
+            log=self.log_lines() or [],
+        )
+
+
+def _clock_iso(when: float) -> str:
+    return datetime.fromtimestamp(when, timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def journal_tail(unit: str, lines: int) -> list[str]:
     """Fake mode's stand-in for systemd.journal_tail: a few ordinary lines."""
     stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(time.time() - 2 * 3600))

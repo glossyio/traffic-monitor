@@ -2971,6 +2971,133 @@
           }
         }
       }
+    },
+    "/api/v1/update": {
+      "get": {
+        "tags": [
+          "update"
+        ],
+        "summary": "Get Update",
+        "operationId": "get_update_api_v1_update_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateState"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/update/check": {
+      "post": {
+        "tags": [
+          "update"
+        ],
+        "summary": "Check For Update",
+        "description": "Ask GitHub what the channel offers. A refusal to ask, and each of GitHub's troubles, is an answer with a code.",
+        "operationId": "check_for_update_api_v1_update_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/update/start": {
+      "post": {
+        "tags": [
+          "update"
+        ],
+        "summary": "Start Update",
+        "description": "Start the update job for the offer the last check made, or for the last run's target (Try again).",
+        "operationId": "start_update_api_v1_update_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/update/log": {
+      "get": {
+        "tags": [
+          "update"
+        ],
+        "summary": "Get Log",
+        "description": "The two units' last journal lines and the run's own log's last lines, redacted as the diagnostics are.",
+        "operationId": "get_log_api_v1_update_log_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateLog"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3422,6 +3549,23 @@
           "detail"
         ],
         "title": "Check"
+      },
+      "CheckRequest": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "development"
+            ],
+            "title": "Channel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel"
+        ],
+        "title": "CheckRequest"
       },
       "Claim": {
         "properties": {
@@ -4331,6 +4475,39 @@
           "timezone"
         ],
         "title": "ImportRow"
+      },
+      "Installed": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "commit": {
+            "type": "string",
+            "title": "Commit"
+          },
+          "modified": {
+            "type": "boolean",
+            "title": "Modified"
+          },
+          "source_known": {
+            "type": "boolean",
+            "title": "Source Known"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "channel",
+          "commit",
+          "modified",
+          "source_known"
+        ],
+        "title": "Installed"
       },
       "Job": {
         "properties": {
@@ -5344,6 +5521,93 @@
         ],
         "title": "Ntp"
       },
+      "Offer": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "development"
+            ],
+            "title": "Channel"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "ahead",
+              "identical",
+              "behind",
+              "diverged",
+              "unknown"
+            ],
+            "title": "Relation"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "commit": {
+            "type": "string",
+            "title": "Commit"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          },
+          "released_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Released At"
+          },
+          "ahead_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead By"
+          },
+          "checked_at": {
+            "type": "string",
+            "title": "Checked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "relation",
+          "version",
+          "commit",
+          "tag",
+          "released_at",
+          "ahead_by",
+          "checked_at"
+        ],
+        "title": "Offer"
+      },
       "OrderRequest": {
         "properties": {
           "uuids": {
@@ -5758,6 +6022,171 @@
           "unit"
         ],
         "title": "RestartQueued"
+      },
+      "Run": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "ok",
+              "failed",
+              "interrupted",
+              "cut_off"
+            ],
+            "title": "Status"
+          },
+          "readable": {
+            "type": "boolean",
+            "title": "Readable"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
+          },
+          "from_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Version"
+          },
+          "from_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Commit"
+          },
+          "to_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Version"
+          },
+          "to_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Commit"
+          },
+          "to_tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Tag"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/StageRow"
+            },
+            "type": "array",
+            "title": "Stages",
+            "default": []
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "restore_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restore Point"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "readable"
+        ],
+        "title": "Run"
       },
       "RunningOut": {
         "properties": {
@@ -6635,6 +7064,100 @@
         "title": "SidecarForm",
         "description": "What Frigate needs to know about a model file: Frigate checks the values when the model is used."
       },
+      "StageRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "StageRow"
+      },
+      "StartRequest": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "stable",
+              "development"
+            ],
+            "title": "Channel"
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$",
+            "title": "Commit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "commit"
+        ],
+        "title": "StartRequest"
+      },
+      "Started": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "starting",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "reason"
+        ],
+        "title": "Started"
+      },
       "SurveyIn": {
         "properties": {
           "description": {
@@ -6981,6 +7504,24 @@
         ],
         "title": "SystemPassword"
       },
+      "Target": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "commit": {
+            "type": "string",
+            "title": "Commit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "commit"
+        ],
+        "title": "Target"
+      },
       "Throttled": {
         "properties": {
           "raw": {
@@ -7257,6 +7798,111 @@
         ],
         "title": "Unassigned",
         "description": "The deployment rows recorded before any place was: counted, not listed."
+      },
+      "UpdateLog": {
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "job": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Job"
+          },
+          "log": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Log"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "job",
+          "log"
+        ],
+        "title": "UpdateLog"
+      },
+      "UpdateState": {
+        "properties": {
+          "installed": {
+            "$ref": "#/components/schemas/Installed"
+          },
+          "offer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Offer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            },
+            "type": "array",
+            "title": "Checks"
+          },
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Run"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "started": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Started"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Target"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "installed",
+          "offer",
+          "checks",
+          "can_start",
+          "run",
+          "started",
+          "retry"
+        ],
+        "title": "UpdateState"
       },
       "UseQueued": {
         "properties": {
