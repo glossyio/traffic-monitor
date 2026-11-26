@@ -13,6 +13,7 @@ import setup from './setup'
 import sharing from './sharing'
 import status from './status'
 import time from './time'
+import update from './update'
 
 export interface NavItem {
   title: string
@@ -28,4 +29,4 @@ export interface Module {
 }
 
 // In menu order
-export const MODULES: Module[] = [home, status, device, network, detection, cameras, location, sharing, time, account, about, auth, setup]
+export const MODULES: Module[] = [home, status, device, network, detection, cameras, location, sharing, time, update, account, about, auth, setup]
