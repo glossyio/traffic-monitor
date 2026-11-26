@@ -88,6 +88,18 @@ def test_manifest_fixture_loads():
     assert m.homepage.colors["background"] == "#0C1120"
 
 
+def test_manifest_fixture_says_the_tree_was_not_modified():
+    assert load_manifest(FIXTURES / "manifest.json").git.modified is False
+
+
+def test_an_older_manifest_without_git_modified_loads_as_not_modified(tmp_path):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    del doc["git"]["modified"]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).git.modified is False
+
+
 def test_an_older_manifest_without_frigate_loads_with_no_coral_model(tmp_path):
     doc = json.loads((FIXTURES / "manifest.json").read_text())
     del doc["frigate"]

@@ -6991,6 +6991,10 @@
             "type": "string",
             "title": "Branch"
           },
+          "modified": {
+            "type": "boolean",
+            "title": "Modified"
+          },
           "installing_user": {
             "anyOf": [
               {
@@ -7008,6 +7012,7 @@
           "version",
           "commit",
           "branch",
+          "modified",
           "installing_user"
         ],
         "title": "TmInstall"

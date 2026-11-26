@@ -2727,6 +2727,8 @@ export interface components {
             commit: string;
             /** Branch */
             branch: string;
+            /** Modified */
+            modified: boolean;
             /** Installing User */
             installing_user: string | null;
         };

@@ -1,0 +1,8 @@
+{
+    "contracts": [
+        1
+    ],
+    "tm_version": "0.8.0-dev",
+    "tmdb_schema": 11,
+    "state_schema": 7
+}

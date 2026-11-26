@@ -80,12 +80,49 @@
   changed_when: false
   failed_when: false
 
+# Untracked files that git doesn't ignore count as changes, because the role copies whole folders.
+- name: TMSetup - tm-control Service - Read the git changes
+  when: >-
+    not (tmsetup_source_commit is defined and tmsetup_source_commit is string
+         and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)'))
+  become: false
+  delegate_to: localhost
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - '{{ playbook_dir }}/../..'
+      - status
+      - --porcelain
+  register: tmsetup_tm_control_git_status_register
+  changed_when: false
+  failed_when: false
+
 - name: TMSetup - tm-control Service - Check for the plate-recognizer unit
   become: true
   ansible.builtin.stat:
     path: /etc/containers/systemd/plate-recognizer.container
     get_checksum: false
   register: tmsetup_tm_control_plate_recognizer_stat_register
+
+# A caller may pass who installed it (tmsetup_installing_user: a login name that isn't root) and which repository
+# updates come from (tmsetup_update_repo, whose role default always applies here). Both must be text: a JSON or YAML
+# -e can pass a number, a boolean, or null. The message names the variable and never the value.
+- name: TMSetup - tm-control Service - Check the values a caller passed
+  ansible.builtin.assert:
+    that:
+      - >-
+        tmsetup_installing_user is not defined
+        or (tmsetup_installing_user is string
+            and tmsetup_installing_user is match('(?s)[a-z_][a-z0-9_-]{0,31}(?!.)')
+            and tmsetup_installing_user != 'root')
+      - >-
+        tmsetup_update_repo is string
+        and tmsetup_update_repo is match('(?s)[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(?!.)')
+    fail_msg: >-
+      tmsetup_installing_user must be a login name other than root, and tmsetup_update_repo must be a GitHub
+      repository as owner/name.
+    quiet: true
 
 # Must match tm-control's Manifest model (tm-control/backend/tm_control/core/manifest.py)
 - name: TMSetup - tm-control Service - Collect the install manifest
@@ -109,7 +146,15 @@
                 and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)')
              else tmsetup_tm_control_git_branch_register.stdout
              if tmsetup_tm_control_git_branch_register.rc | default(1) == 0 else 'unknown' }}
-      installing_user: "{{ ansible_facts['user_id'] }}"
+        # A caller that passes the commit says whether its tree had changes (anything but true counts as none);
+        # otherwise git's own answer counts, and a failing git says none
+        modified: >-
+          {{ (tmsetup_source_modified | default(false) | bool)
+             if tmsetup_source_commit is defined and tmsetup_source_commit is string
+                and tmsetup_source_commit is match('(?s)[0-9a-f]{40}(?!.)')
+             else (tmsetup_tm_control_git_status_register.rc | default(1) == 0
+                   and (tmsetup_tm_control_git_status_register.stdout | default('') | trim) != '') }}
+      installing_user: "{{ tmsetup_installing_user | default(ansible_facts['user_id']) }}"
       codedir: '{{ tmsetup_codedir }}'
       codeowner: '{{ tmsetup_codeowner }}'
       components:
