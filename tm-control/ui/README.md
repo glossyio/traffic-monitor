@@ -2155,8 +2155,10 @@ into words.
 | update carries on.               |
 |                                  |
 |   or, after a run:               |
-| Last update                 (h6) |  "The update didn't start" for a
-| (x) The new version's images     |  start the device refused
+| The update didn't start     (h6) |  only after a start the device
+| (x) Another install or update... |  refused; the run's ending stays
+| Last update                 (h6) |
+| (x) The new version's images     |
 |     didn't build, so nothing ... |
 |     Detail: ...                  |
 | (v) Download ... (x) Build       |  the stages as they ended
@@ -2233,7 +2235,9 @@ into words.
   confirmed) post the run's own target, `retry`, and show only when the device gives one. After an update that ended
   ok while the page was open (the page saw it running), "This page is from the version before." and Reload. A start
   the device refused (`started.status` `failed`) is newer than any run, so it comes first, under "The update didn't
-  start", and stays until the next start or a restart of the control app; the page has no Dismiss for it.
+  start", and stays until the next start or a restart of the control app; the page has no Dismiss for it. It shows above
+  the last run's ending, never in its place: a refused Finish the update or Try again must leave that button (and the
+  run's stages) where they were, or the switch could no longer be finished from the page. With no run, it stands alone.
 - **The log** is one expansion panel at the end, its title inside the `h2` as on the Device page, folded on every visit
   and loaded each time it is opened (`GET /update/log`), with Refresh and a Copy button. The run's own log comes first,
   then the two units' journal lines after a blank line, in one bordered box in Vuetify's monospace class that scrolls
@@ -2258,7 +2262,7 @@ older run's final file, and one the page can't read.
   in the middle of four lines. It is a line of its own under the choice, lined up with the label.
 - A Development offer one commit ahead read "1 changes ... are available". It reads "1 change ... is available".
 - The result of a run had no heading, so a page opened days later showed an alert with nothing to say it was about the
-  last update. It is under "Last update" now, and a refused start under "The update didn't start".
+  last update. It is under "Last update" now, and a refused start under "The update didn't start", above it.
 - With a run cut off or failed, Check for updates and Finish the update (or Try again) were both filled. Check is
   outlined whenever another button is the one to press.
 - Looked at and kept: in fake mode, after a Stable run ends ok, the page still offers 0.8.1, because the fake unit's

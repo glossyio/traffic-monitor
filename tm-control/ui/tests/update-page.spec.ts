@@ -383,7 +383,39 @@ describe('the Software update page', () => {
 
     const other = await page(updateState({ offer: STABLE_OFFER, started: { run_id: 'r', status: 'failed', reason: 'error' } }))
     expect(other.wrapper.text()).toContain('The update failed. The log below has the details.')
+    expect(other.wrapper.findAll('h2').map((h) => h.text())).not.toContain('Last update') // no run: the refusal alone
   })
+
+  it.each(['busy', 'error'])(
+    'keeps the way to finish or retry the last run when a start is refused (%s)',
+    async (reason) => {
+      const target = { channel: 'stable', commit: STABLE_OFFER.commit }
+      const refused = { run_id: '20261126T130000Z', status: 'failed' as const, reason }
+      const refusal =
+        reason === 'busy'
+          ? 'Another install or update is running on this device. Wait for it to end.'
+          : 'The update failed. The log below has the details.'
+
+      // A switch that was cut off: Finish the update pressed, and the start refused
+      const cut = await page(
+        updateState({ run: updateRun({ status: 'cut_off', stage: 'switch' }), retry: target, started: refused }),
+        { [START]: json(202, updateState({ run: updateRun({ stage: 'switch' }) })) },
+      )
+      expect(cut.wrapper.text()).toContain(refusal)
+      expect(cut.wrapper.text()).toContain('The update was cut off while it was switching.')
+      expect(cut.wrapper.findAll('[data-stage]').length).toBeGreaterThan(0) // the run's stages still show
+      await click(cut.wrapper, 'Finish the update')
+      expect(posts(cut.api.sent)).toEqual([{ method: 'POST', path: '/api/v1/update/start', body: target }])
+      cut.wrapper.unmount()
+
+      // A run that failed: Try again pressed, and the start refused
+      const failed = updateRun({ status: 'failed', stage: 'images', reason: 'build_failed' })
+      const again = await page(updateState({ run: failed, retry: target, started: refused }))
+      expect(again.wrapper.text()).toContain(refusal)
+      expect(again.wrapper.text()).toContain("The new version's images didn't build")
+      expect(button(again.wrapper, 'Try again').exists()).toBe(true)
+    },
+  )
 
   it('loads the log only when its panel is opened', async () => {
     const { api, wrapper } = await page(updateState({ run: updateRun({ status: 'ok', stage: 'cleanup' }) }), {

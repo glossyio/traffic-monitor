@@ -161,10 +161,18 @@ const runTitle = computed(() => {
   return name ? `Updating to ${name}` : 'An update is running.'
 })
 
+// A start the device refused (the job found another install or update running, or failed before the run began). The
+// device keeps it until the next start, so it shows above the last run's ending, never instead of it: that run's Try
+// again or Finish the update must stay within reach.
+const refusal = computed(() => {
+  const started = state.value?.started
+  if (started?.status !== 'failed') return null
+  return reasonWords(started.reason === 'busy' ? 'busy' : null)
+})
+
 // How the last run ended: its words (and a link), the button that carries on from it, and, after an update that ended
-// ok while this page was open, Reload. A start the device refused comes first, being newer than the run.
+// ok while this page was open, Reload.
 interface Ending {
-  title: string
   type: 'success' | 'error' | 'warning'
   lines: string[]
   link: ReasonLink | null
@@ -172,35 +180,28 @@ interface Ending {
   reload: boolean
 }
 
-const LAST = 'Last update'
-
 const ending = computed<Ending | null>(() => {
-  const started = state.value?.started
-  if (started?.status === 'failed') {
-    const words = reasonWords(started.reason === 'busy' ? 'busy' : null)
-    return { title: "The update didn't start", type: 'error', lines: [words], link: null, button: null, reload: false }
-  }
   const last = run.value
   if (!last || last.status === 'running') return null
   const canRetry = state.value?.retry != null
   if (last.status === 'ok') {
     const words = `Updated to ${targetName(last.to_version, last.to_commit)}.`
-    return { title: LAST, type: 'success', lines: [words], link: null, button: null, reload: sawRun.value }
+    return { type: 'success', lines: [words], link: null, button: null, reload: sawRun.value }
   }
   if (last.status === 'failed') {
     const lines = [reasonWords(last.reason ?? null)]
     if (last.detail) lines.push(`Detail: ${last.detail}`)
     const button = canRetry ? 'Try again' : null
-    return { title: LAST, type: 'error', lines, link: reasonLink(last.reason ?? null), button, reload: false }
+    return { type: 'error', lines, link: reasonLink(last.reason ?? null), button, reload: false }
   }
   if (last.status === 'interrupted') {
     const lines = ['The update stopped before it finished (a restart or a power cut).']
     if (!last.stage || BEFORE_SWITCH.has(last.stage)) lines.push('Nothing was changed.')
-    return { title: LAST, type: 'warning', lines, link: null, button: canRetry ? 'Try again' : null, reload: false }
+    return { type: 'warning', lines, link: null, button: canRetry ? 'Try again' : null, reload: false }
   }
   // cut_off: the switch had begun, and starting the same target again finishes it
   const lines = ['The update was cut off while it was switching.']
-  return { title: LAST, type: 'warning', lines, link: null, button: canRetry ? 'Finish the update' : null, reload: false }
+  return { type: 'warning', lines, link: null, button: canRetry ? 'Finish the update' : null, reload: false }
 })
 
 // Check for updates is the page's main (filled) button unless another one is: Update to ..., or the last run's button
@@ -284,32 +285,38 @@ const beforeStart = computed(() => ({ id: 'update-checks', title: 'Before you st
         </template>
       </section>
 
-      <section v-else-if="ending" class="mt-8">
-        <h2 class="text-h6 mb-2">{{ ending.title }}</h2>
-        <v-alert :type="ending.type" variant="tonal">
-          <p v-for="(line, index) in ending.lines" :key="index" :class="{ 'mt-2': index > 0 }">{{ line }}</p>
-          <p v-if="ending.link" class="mt-2">
-            <a v-if="ending.link.external" :href="ending.link.href" class="text-primary">{{ ending.link.text }}</a>
-            <router-link v-else :to="ending.link.href" class="text-primary">{{ ending.link.text }}</router-link>
-          </p>
-        </v-alert>
-        <RunProgress v-if="run && run.status !== 'ok' && !state.started" :run="run" :lost="false" class="mt-4" />
-        <template v-if="ending.reload">
-          <p class="text-body-1 mt-4">This page is from the version before.</p>
-          <v-btn color="primary" variant="flat" size="large" class="mt-4" @click="reload">Reload</v-btn>
+      <section v-else-if="refusal || ending" class="mt-8">
+        <template v-if="refusal">
+          <h2 class="text-h6 mb-2">The update didn't start</h2>
+          <v-alert type="error" variant="tonal" :class="{ 'mb-8': ending }">{{ refusal }}</v-alert>
         </template>
-        <v-btn
-          v-if="ending.button"
-          color="primary"
-          variant="flat"
-          size="large"
-          class="mt-4"
-          :loading="starting"
-          @click="pressEnding(ending.button)"
-        >
-          {{ ending.button }}
-        </v-btn>
-        <v-alert v-if="startError && startedFrom === 'retry'" type="error" class="mt-4">{{ startError }}</v-alert>
+        <template v-if="ending">
+          <h2 class="text-h6 mb-2">Last update</h2>
+          <v-alert :type="ending.type" variant="tonal">
+            <p v-for="(line, index) in ending.lines" :key="index" :class="{ 'mt-2': index > 0 }">{{ line }}</p>
+            <p v-if="ending.link" class="mt-2">
+              <a v-if="ending.link.external" :href="ending.link.href" class="text-primary">{{ ending.link.text }}</a>
+              <router-link v-else :to="ending.link.href" class="text-primary">{{ ending.link.text }}</router-link>
+            </p>
+          </v-alert>
+          <RunProgress v-if="run && run.status !== 'ok'" :run="run" :lost="false" class="mt-4" />
+          <template v-if="ending.reload">
+            <p class="text-body-1 mt-4">This page is from the version before.</p>
+            <v-btn color="primary" variant="flat" size="large" class="mt-4" @click="reload">Reload</v-btn>
+          </template>
+          <v-btn
+            v-if="ending.button"
+            color="primary"
+            variant="flat"
+            size="large"
+            class="mt-4"
+            :loading="starting"
+            @click="pressEnding(ending.button)"
+          >
+            {{ ending.button }}
+          </v-btn>
+          <v-alert v-if="startError && startedFrom === 'retry'" type="error" class="mt-4">{{ startError }}</v-alert>
+        </template>
       </section>
 
       <!-- Looking for an update: not while one runs, which would refuse a start anyway -->
