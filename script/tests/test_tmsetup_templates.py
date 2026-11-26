@@ -1029,11 +1029,16 @@ def test_the_resume_unit_runs_only_with_a_marker_and_at_boot():
     assert stops == ["ExecStopPost=-/usr/bin/systemctl stop tm-update.slice"]  # and never a start of itself
 
 
-@pytest.mark.parametrize("name", ["tm-job-update", "tm-update-resume"])
-def test_the_update_units_say_what_starts_them_and_why_their_limits_are_what_they_are(name):
+@pytest.mark.parametrize(("name", "starters", "limit"), [
+    ("tm-job-update", ["tm-control starts it through polkit", "tm-update-resume.service"], "TimeoutStartSec is 6h"),
+    ("tm-update-resume", ["Starts at boot, and from tm-job-update.service"], "TimeoutStartSec is 3h"),
+])
+def test_the_update_units_say_what_starts_them_and_why_their_limits_are_what_they_are(name, starters, limit):
     header = update_unit(name).split("[Unit]")[0]
-    assert header.startswith("# /etc/systemd/system/" + name + ".service")
-    assert "TimeoutStartSec" in header or "hours" in header
+    assert header.startswith(f"# /etc/systemd/system/{name}.service, installed by tmsetup.sh (tm-control tag)")
+    comment = " ".join(line.lstrip("# ") for line in header.splitlines())
+    for text in starters + [limit]:
+        assert text in comment
 
 
 @pytest.mark.parametrize("job", JOBS)
