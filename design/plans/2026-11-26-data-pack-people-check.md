@@ -313,8 +313,8 @@ Edited: the status group `d9d94c0d493873b9`, whose `nodes` gains the new group's
 
 **Interfaces:**
 - Consumes: Task 3's `ReferenceOut.people`.
-- Produces, `reference.ts`: `peopleLine(people: ReferenceOut['people']): { type: 'warning' | 'info'; text: string }`, with item 11's three lines; `warning` for `seen`, `info` for the other two.
-- Produces, `ReferencePicture.vue`: `NOTE` is item 11's note. Inside the `v-if="reference"` block, above the pictures' row, a `v-alert` marked `data-people`, `variant="tonal"`, with the line's type and text. The header comment says the device asks Frigate and what the line is.
+- Produces, `reference.ts`: `peopleLine(people: ReferenceOut['people']): { type: 'warning' | 'info'; variant: 'flat' | 'tonal'; text: string }`, with item 11's three lines; `warning` and `flat` for `seen`, `info` and `tonal` for the other two.
+- Produces, `ReferencePicture.vue`: `NOTE` is item 11's note. Inside the `v-if="reference"` block, above the pictures' row, a `v-alert` marked `data-people`, `variant="flat"` for `seen` and `variant="tonal"` for the other two (the maintainer's decision of 2026-11-26: a solid warning doesn't read as part of the note above it), with the line's type and text. The header comment says the device asks Frigate and what the line is.
 
 - [ ] **Step 1: Show the maintainer item 11's four texts and the design note, and stop.** The note, for the UI README's reference picture paragraph: the line sits between the note and the pictures, because it is about these pictures and is read before them; `seen` is a warning and the other two are information, because neither of them is a finding; the line never disables a button, because the admin answers for the pictures; in fake mode, how each line is reached. Take his edits into item 11 before any test is written.
 - [ ] **Step 2: Write the failing tests.**

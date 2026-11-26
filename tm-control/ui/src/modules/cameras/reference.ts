@@ -33,11 +33,17 @@ export function legendRows(reference: ReferenceOut): { key: string; color: strin
 }
 
 // The one line above the pictures, from the device's answer to "was Frigate tracking a person" at the two takes. Only
-// `seen` is a warning: neither of the others is a finding, and none of the three stops the admin from saving.
-export function peopleLine(people: ReferenceOut['people']): { type: 'warning' | 'info'; text: string } {
+// `seen` is a warning: neither of the others is a finding, and none of the three stops the admin from saving. The
+// warning is solid, so it doesn't read as part of the tonal warning (the note) above it; the other two stay tonal.
+export function peopleLine(people: ReferenceOut['people']): {
+  type: 'warning' | 'info'
+  variant: 'flat' | 'tonal'
+  text: string
+} {
   if (people === 'seen') {
     return {
       type: 'warning',
+      variant: 'flat',
       text:
         'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
         'then take them again.',
@@ -46,6 +52,7 @@ export function peopleLine(people: ReferenceOut['people']): { type: 'warning' | 
   if (people === 'none') {
     return {
       type: 'info',
+      variant: 'tonal',
       text:
         "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both pictures " +
         'yourself.',
@@ -53,6 +60,7 @@ export function peopleLine(people: ReferenceOut['people']): { type: 'warning' | 
   }
   return {
     type: 'info',
+    variant: 'tonal',
     text:
       "The device couldn't check for people, because Frigate's detection is off for this camera or Frigate didn't " +
       'answer. Look at both pictures yourself.',

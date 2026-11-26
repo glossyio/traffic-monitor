@@ -52,24 +52,27 @@ describe('legendRows', () => {
 })
 
 describe('peopleLine', () => {
-  it('warns when Frigate was tracking a person', () => {
+  it('warns, in a solid alert, when Frigate was tracking a person', () => {
     expect(peopleLine('seen')).toEqual({
       type: 'warning',
+      variant: 'flat',
       text:
         'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
         'then take them again.',
     })
   })
 
-  it("informs when Frigate wasn't tracking a person, and when the device couldn't check", () => {
+  it("informs, in a tonal alert, when Frigate wasn't tracking a person, and when the device couldn't check", () => {
     expect(peopleLine('none')).toEqual({
       type: 'info',
+      variant: 'tonal',
       text:
         "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both " +
         'pictures yourself.',
     })
     expect(peopleLine('unchecked')).toEqual({
       type: 'info',
+      variant: 'tonal',
       text:
         "The device couldn't check for people, because Frigate's detection is off for this camera or Frigate " +
         "didn't answer. Look at both pictures yourself.",

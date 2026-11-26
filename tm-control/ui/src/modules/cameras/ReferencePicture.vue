@@ -3,8 +3,8 @@
   street. Two steps: first the intro and the note on what the picture gives away, before any picture is taken; then,
   after Take the pictures (POST /cameras/{name}/reference), both pictures as the device holds them, the zones' legend,
   the location box, and Save the zip. The device asks Frigate whether it is tracking a person on the camera, at each of
-  the two pictures, and the take's `people` answer becomes one line above them (warning for a person, information for
-  none or for no check); the note, shown on both steps, says what the line can't promise and leaves the looking to the
+  the two pictures, and the take's `people` answer becomes one line above them (a solid warning for a person, tonal
+  information for none or for no check); the note, shown on both steps, says what the line can't promise and leaves the looking to the
   admin, so the line never disables a button.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
   dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored),
@@ -139,7 +139,7 @@ async function save() {
         <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
         <template v-if="reference">
-          <v-alert v-if="people" :type="people.type" variant="tonal" class="mb-4 text-body-2" data-people>
+          <v-alert v-if="people" :type="people.type" :variant="people.variant" class="mb-4 text-body-2" data-people>
             {{ people.text }}
           </v-alert>
           <v-row dense>

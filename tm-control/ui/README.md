@@ -135,7 +135,8 @@ from an existing lockfile without trouble, so the image still builds and tests t
   can't promise. The second step opens with one line, between the note and the pictures, because it is about these
   pictures and is read before them (`peopleLine` in `reference.ts`, an alert marked `data-people`): a warning when
   Frigate was tracking a person, and plain information for the other two, "Frigate wasn't tracking a person" and "the
-  device couldn't check", because neither of them is a finding. The line never disables a button: Save the zip and
+  device couldn't check", because neither of them is a finding. The `seen` warning is solid (`variant="flat"`), so it
+  doesn't read as part of the note above it, which is a tonal warning. The line never disables a button: Save the zip and
   Take again work the same for all three, because the admin answers for the pictures. It follows the newest take and
   goes with the pictures when they are dropped. Below it the second step shows the two pictures side by side on a
   desktop and stacked on a phone (`v-col cols="12" md="6"`), the
