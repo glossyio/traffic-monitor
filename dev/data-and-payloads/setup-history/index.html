@@ -1774,6 +1774,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-the-device-uploads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the device uploads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-an-operator-typed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2463,6 +2474,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-the-device-uploads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the device uploads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-an-operator-typed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2506,7 +2528,7 @@
   <h1 id="setup-history">Setup history<a class="headerlink" href="#setup-history" title="Permanent link">&para;</a></h1>
 <p class="tm-description">The two setup history tables and the events_with_setup view, which record which detection model, software versions, and camera settings were in force over time, so you can compare counts across them.</p>
 <p>The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.</p>
-<p>The device keeps two tables, <code>setup_device</code> for the whole unit and <code>setup_camera</code> for each camera, and one view, <code>events_with_setup</code>. They are in the database, in the <a href="../../ui/database/">Data export</a> page's database download. They are not in the JSON export.</p>
+<p>The device keeps two tables, <code>setup_device</code> for the whole unit and <code>setup_camera</code> for each camera, and one view, <code>events_with_setup</code>. They are in the database, in the <a href="../../ui/database/">Data export</a> page's database download. They are not in the JSON export. With <a href="../../use/sharing/">Share data</a> on, the rows are also <a href="#what-the-device-uploads">uploaded</a>.</p>
 <h2 id="how-the-rows-work">How the rows work<a class="headerlink" href="#how-the-rows-work" title="Permanent link">&para;</a></h2>
 <p>A row says what was true from <code>started</code> until <code>ended</code>. The row in force has no <code>ended</code>. The device starts a new row only when something differs from the row in force, so a unit that is never changed has one row of each kind for months. Every few minutes the device compares the setup with the open rows. A list that is only reordered, such as the same zones in another order, is not a difference.</p>
 <p>Times in these tables are Unix time in milliseconds, as in the deployment history. An event's <code>start_time</code> is in seconds, so the view compares <code>start_time * 1000</code>.</p>
@@ -2864,8 +2886,19 @@
 <li><strong>Events from before this was installed have no row.</strong> Their setup columns in the view are empty. The first rows start within a few minutes of an upgrade.</li>
 <li><strong>The Status page says when it stops.</strong> The <strong>Setup history</strong> check on the <a href="../../use/device-health/#the-setup-history-checks">Status</a> page warns when no snapshot has arrived for 15 minutes.</li>
 </ul>
+<h2 id="what-the-device-uploads">What the device uploads<a class="headerlink" href="#what-the-device-uploads" title="Permanent link">&para;</a></h2>
+<p>With <strong>Share data</strong> on, the device sends the setup history to the server as one <code>setup</code> telemetry value, <code>{"device": [...], "cameras": [...]}</code>: the rows of <code>setup_device</code> and <code>setup_camera</code>. A list with no rows is left out, so a value can hold <code>device</code> only or <code>cameras</code> only. There is no separate choice for it. <a href="../integrations/#thingsboard">MQTT and ThingsBoard</a> lists the fields sent and the three that never leave the device.</p>
+<ul>
+<li><strong>When a row opens or closes,</strong> the device sends it. A change to the model sends the row that ended and the new one.</li>
+<li><strong>Zones that are off are not sent.</strong> A camera row's <code>zones</code> holds only the zones that are on. When you turn a zone on, the device starts a new row for the camera, and that row is sent with the zone.</li>
+<li><strong>A camera that isn't captured is sent without its zones.</strong> If a camera's <strong>Database capture</strong> is off on the <a href="../../use/cameras/">Cameras</a> page, its row still goes out, with its detection settings and masks, but without <code>zones</code>. When the cameras that are captured change, the open rows are sent again, so the same row can arrive with <code>zones</code> at one time and without them at another. A row without <code>zones</code> says nothing about the camera's zones.</li>
+<li><strong>Every open row is sent again</strong> after the cameras that are captured change, on the first complete snapshot after Node-RED starts, after the upload is turned on or its server changes, and once a day. A unit that starts sharing months after its rows opened still tells the server its setup, and an open row the server missed arrives again within a day at most.</li>
+<li><strong>A row can arrive more than once.</strong> A server should keep one row for each <code>id</code>. A row that closed while sharing was off, or while the server couldn't be reached, is never sent after the fact. The server learns the setup from the open rows, and a close it missed shows as the start of the next row.</li>
+<li><strong>A sent row</strong> has the table's columns in order, less the three names that stay on the device, with the JSON columns as lists and objects, <code>zones</code> as described above, and <code>ended</code> empty while the row is in force.</li>
+</ul>
 <h2 id="what-an-operator-typed">What an operator typed<a class="headerlink" href="#what-an-operator-typed" title="Permanent link">&para;</a></h2>
 <p>The rows hold a few names a person chose, and they are saved with your data. They are a zone's <code>key</code>, a model's title (<code>model_title</code>) and file name (<code>model_file</code>), and a profile's key (<code>profile</code>). A zone's key is saved with every event already; see <a href="../../use/cameras/#zone-names-are-saved-with-your-data">Zone names are saved with your data</a>. Don't name any of these after a street, a house number, or a person. The Status page's <strong>Model and profile names</strong> check warns when a model's title, the file name of a model you uploaded (the part before its last dot), or a profile's key looks like an address or a person's name, and never shows the name.</p>
+<p>The key of a zone that is on, on a camera that is captured, is sent inside <code>zones</code>. Those are the zones the <strong>Zone names</strong> check reads. A zone that is off, and every zone of a camera that isn't captured, stays on the device, in the database and its download. A model's title, its file name, and a profile's key stay on the device, in the database and its download, and are never uploaded; <a href="../integrations/#thingsboard">MQTT and ThingsBoard</a> says what a server sees instead.</p>
 <p>The names Frigate shows for zones, masks, and cameras are not kept. Frigate's own name for a camera, a camera's stream address, and a mask's id aren't either. The rows say which camera by its key in <code>config.yml</code>.</p>
   
 
