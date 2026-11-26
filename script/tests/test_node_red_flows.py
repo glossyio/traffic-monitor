@@ -901,6 +901,135 @@ def test_mounting_limits_match_the_control_apps():
             assert refused is None and passed["params"][f"${key}"] == want, (key, value)
 
 
+# The radar's setup: the Traffic Monitor's own commands, then the extra commands from opt_api_commands_array, then the
+# two cosine angles from their typed keys, each with one decimal. A ^/ command reaches the radar only from the keys. A
+# config error names the key's path and never the value.
+RADAR_NAME = "TM_RADAR_SERIAL_PORT_00"
+RADAR_PATH = f"sensors.radars.{RADAR_NAME}"
+FIXED_RADAR_COMMANDS = ["OJ", "US", "F2", "S2", "K+", "IG", "ON", "OU", "OT", "Oh", "Oc", "@O", "@|300\n", "OM",
+                        "M>20\n", "OS", "R>5\n", "O3"]
+ZERO_COSINE = ["^/+0.0\n", "^/-0.0\n"]
+EXTRAS_NOT_A_LIST = (f"{RADAR_PATH}.opt_api_commands_array isn't a JSON list of text", True)
+EXTRAS_HOLD_A_COSINE = (f"{RADAR_PATH}.opt_api_commands_array holds a cosine command (^/), which is never sent from "
+                        "there. Set cosine_inbound_deg and cosine_outbound_deg, or use the Mounting page.", True)
+BAD_COSINE = ["20", True, -1, 90, 89.96, [20]]
+
+
+def cosine_error(key):
+    return (f"{RADAR_PATH}.{key} isn't a number from 0 to 89", True)
+
+
+def radar_config(**keys):
+    """A new device's config.yml with these keys set on its radar; MISSING takes a key out."""
+    config = new_device_config()
+    radar = config["sensors"]["radars"][RADAR_NAME]
+    for key, value in keys.items():
+        if value is MISSING:
+            radar.pop(key, None)
+        else:
+            radar[key] = value
+    return config
+
+
+def radar_setup(config):
+    """The radar's entry after init config defaults, and the node's errors."""
+    payload, errors = init_defaults(config)
+    return payload["sensors"]["radars"][RADAR_NAME], errors
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, (0, 0), []),
+    ({"cosine_inbound_deg": None, "cosine_outbound_deg": ""}, (0, 0), []),
+    ({"cosine_inbound_deg": 18.94, "cosine_outbound_deg": 18.56}, (18.9, 18.6), []),
+    ({"cosine_inbound_deg": 0, "cosine_outbound_deg": 89}, (0, 89), []),
+    *[({"cosine_inbound_deg": bad, "cosine_outbound_deg": 18.6}, (0, 18.6), ["cosine_inbound_deg"])
+      for bad in BAD_COSINE],
+    *[({"cosine_inbound_deg": 18.9, "cosine_outbound_deg": bad}, (18.9, 0), ["cosine_outbound_deg"])
+      for bad in BAD_COSINE],
+], ids=["missing", "blank", "rounded", "limits", *[f"inbound-{bad!r}" for bad in BAD_COSINE],
+        *[f"outbound-{bad!r}" for bad in BAD_COSINE]])
+def test_cosine_keys(given, expected, errors):
+    """A blank angle is 0. A number is rounded to one decimal, then must be 0 to 89; anything else is 0 for that key
+    and one config error, given with msg so the catch records it, that names the key's path and holds no value."""
+    radar, logged = radar_setup(radar_config(**given))
+    assert (radar["cosine_inbound_deg"], radar["cosine_outbound_deg"]) == expected
+    assert radar["api_commands"][-2:] == [f"^/+{expected[0]:.1f}\n", f"^/-{expected[1]:.1f}\n"]
+    assert logged == [cosine_error(key) for key in errors]
+
+
+@needs_node
+def test_the_cosine_commands_come_last():
+    radar, logged = radar_setup(radar_config(cosine_inbound_deg=18.9, cosine_outbound_deg=18.6,
+                                             opt_api_commands_array='["OL", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+18.9\n", "^/-18.6\n"]
+    assert logged == []
+
+
+@needs_node
+def test_a_new_devices_radar_is_sent_zero_as_before():
+    """The installer's file sends the radar the same 0 in both directions that its old extra commands did."""
+    radar, logged = radar_setup(new_device_config())
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *ZERO_COSINE]
+    assert logged == []
+
+
+@needs_node
+def test_a_cosine_command_in_the_extras_is_never_sent():
+    """Each entry whose trimmed text starts with ^/ is left out; the radar is sent the keys' angles, and the list gets
+    one error by its path."""
+    radar, logged = radar_setup(radar_config(
+        cosine_inbound_deg=12.5, opt_api_commands_array='["OL", "^/+20.0\\n", "  ^/-20.0\\n", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+12.5\n", "^/-0.0\n"]
+    assert logged == [EXTRAS_HOLD_A_COSINE]
+
+
+@needs_node
+@pytest.mark.parametrize("value, extras, errors", [
+    ("not json", [], [EXTRAS_NOT_A_LIST]),
+    ('{"a": 1}', [], [EXTRAS_NOT_A_LIST]),
+    ('"OL"', [], [EXTRAS_NOT_A_LIST]),
+    (5, [], [EXTRAS_NOT_A_LIST]),
+    (["OL"], [], [EXTRAS_NOT_A_LIST]),
+    ('["OL", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ('["^/+1.0\\n", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ("[]", [], []),
+    ("", [], []),
+    (None, [], []),
+    (MISSING, [], []),
+], ids=["not-json", "json-object", "json-text", "number", "yaml-list", "an-item-not-text", "an-item-not-text-beside-a-cosine", "empty-list",
+        "empty", "null", "missing"])
+def test_extra_commands_that_do_not_parse(value, extras, errors):
+    """A value that isn't a JSON list of text, even one item that isn't text, sends no extra command and is one error
+    for the radar; a blank value, or an empty list, is no extra commands and no error."""
+    radar, logged = radar_setup(radar_config(opt_api_commands_array=value))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *extras, *ZERO_COSINE]
+    assert logged == errors
+
+
+@needs_node
+def test_a_radar_that_is_off_gets_its_commands_too():
+    """A radar that is off has its list built as one that is on (it is sent when it's switched on); an entry with
+    nothing under it stays as it is."""
+    config = radar_config(enabled=False, cosine_inbound_deg=12.5, opt_api_commands_array='["OL"]')
+    config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_01"] = None
+    payload, logged = init_defaults(config)
+    radars = payload["sensors"]["radars"]
+    assert radars[RADAR_NAME]["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "^/+12.5\n", "^/-0.0\n"]
+    assert radars["TM_RADAR_SERIAL_PORT_01"] is None
+    assert logged == []
+
+
+def test_the_setup_node_sends_the_commands_between_the_clock_and_power_on():
+    """The radar's list goes after the clock and the time zone and before PA and A!, so the angles are the last
+    settings it is sent."""
+    func = named(json.loads(FLOWS.read_text()), "init: radar settings, ~4-sec each")["func"]
+    order = ['"PI"', '"C=" + ', '"CZ" + ', "...radarConfig.api_commands", '"PA"', '"A!"']
+    positions = [func.index(text) for text in order]
+    assert positions == sorted(positions)
+    assert all(func.count(text) == 1 for text in order)
+
+
 def test_config_template_has_the_survey_keys():
     """A new device starts with no survey and two decimal places stored; the Location page sets survey_id later."""
     deployment = new_device_config()["deployment"]

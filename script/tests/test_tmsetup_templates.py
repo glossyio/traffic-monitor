@@ -885,6 +885,16 @@ def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_pa
     assert not any("Device page" in line for line in text.splitlines())
 
 
+def test_node_red_config_template_gives_the_radar_no_extra_commands():
+    """The radar's angles are its two typed keys, 0 while blank, so a new device's file sets neither and sends no extra
+    command."""
+    text = render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml"))
+    radar = yaml.safe_load(text)["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]
+    assert radar == {"enabled": True, "opt_api_commands_array": "[]"}
+    assert "            opt_api_commands_array: '[]'\n" in text
+    assert "cosine" not in text and "^/" not in text
+
+
 def test_node_red_config_template_has_no_time_section():
     """Nothing reads time:; the time zone is set in the control app, or at install only with -z (tmsetup_timezone)."""
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
