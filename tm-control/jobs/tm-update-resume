@@ -86,7 +86,7 @@ def main():
     try:
         with open(path, "rb") as file:
             argv = command(json.loads(file.read(4096)))
-    except (OSError, ValueError):
+    except Exception:  # a nested marker raises RecursionError; whatever it is, the marker is not usable
         argv = None
     if argv is not None:
         say("carrying on an update that was cut off")

@@ -88,6 +88,8 @@ class Device:
 
 @pytest.fixture
 def device(tmp_path):
+    if os.geteuid() == 0:
+        pytest.skip("as root the launcher ignores the test seams and would touch the real device")
     return Device(tmp_path)
 
 
@@ -117,6 +119,9 @@ def bad_markers(device):
     device.handover("/var/lib/traffic-monitor/update/other/handover.json")
     device.tree("f" * 40)
     device.tree("a" * 40, program=False)
+    (device.tree("c" * 40, program=False) / "script/tm-update").mkdir()
+    (device.tree("d" * 40) / "script/tm-update").chmod(0o644)
+    (device.root / HANDOVER.lstrip("/")).parent.joinpath("folder.json").mkdir()
     link = device.root / "var/lib/traffic-monitor/update/work/link.json"
     link.symlink_to(device.root / "var/lib/traffic-monitor/update/other/handover.json")
     tree_link = device.root / "var/lib/traffic-monitor/src" / ("b" * 40)
@@ -134,12 +139,16 @@ def bad_markers(device):
         "tree upper case": dict(good, tree="/var/lib/traffic-monitor/src/" + COMMIT.upper()),
         "tree without tm-update": dict(good, tree="/var/lib/traffic-monitor/src/" + "a" * 40),
         "tree is a link": dict(good, tree="/var/lib/traffic-monitor/src/" + "b" * 40),
+        "tree script is a folder": dict(good, tree="/var/lib/traffic-monitor/src/" + "c" * 40),
+        "tree script not executable": dict(good, tree="/var/lib/traffic-monitor/src/" + "d" * 40),
+        "deeply nested": "[" * 4000,
         "tree not text": dict(good, tree=5),
         "handover outside work": dict(good, handover="/var/lib/traffic-monitor/update/other/handover.json"),
         "handover with ..": dict(good, handover="/var/lib/traffic-monitor/update/work/../other/handover.json"),
         "handover is the folder": dict(good, handover="/var/lib/traffic-monitor/update/work"),
         "handover missing": dict(good, handover="/var/lib/traffic-monitor/update/work/none/handover.json"),
         "handover links out": dict(good, handover="/var/lib/traffic-monitor/update/work/link.json"),
+        "handover is a folder under work": dict(good, handover=HANDOVER.rsplit("/", 1)[0] + "/folder.json"),
         "handover not text": dict(good, handover=None),
         "a key missing": {"contract": 1, "tree": TREE},
     }
@@ -148,8 +157,9 @@ def bad_markers(device):
 @pytest.mark.parametrize("name", [
     "not JSON", "not an object", "contract 2", "contract true", "contract 1.0", "tree outside src", "tree with ..",
     "tree trailing part", "tree short id", "tree upper case", "tree without tm-update", "tree is a link",
-    "tree not text", "handover outside work", "handover with ..", "handover is the folder", "handover missing",
-    "handover links out", "handover not text", "a key missing"])
+    "tree script is a folder", "tree script not executable", "deeply nested", "tree not text",
+    "handover outside work", "handover with ..", "handover is the folder", "handover missing",
+    "handover is a folder under work", "handover links out", "handover not text", "a key missing"])
 def test_an_unusable_marker_is_set_aside_the_services_start_and_it_exits_2(device, name):
     device.mark(bad_markers(device)[name])
     result = device.run()
@@ -201,3 +211,21 @@ def test_root_ignores_the_test_seams(monkeypatch, tmp_path):
     monkeypatch.setattr(module.os, "geteuid", lambda: 1000)
     assert module.rooted(module.RESUME) == str(tmp_path / "var/lib/traffic-monitor/update/resume.json")
     assert module.trusted("TM_UPDATE_SYSTEMCTL", "systemctl") == str(tmp_path / "systemctl")
+
+
+def test_an_error_while_reading_the_marker_still_ends_unusable(monkeypatch, device):
+    loader = importlib.machinery.SourceFileLoader("tm_update_resume_reading", str(LAUNCHER))
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
+    loader.exec_module(module)
+
+    def too_deep(_data):
+        raise RecursionError
+
+    monkeypatch.setenv("TM_UPDATE_ROOT", str(device.root))
+    monkeypatch.setenv("TM_UPDATE_SYSTEMCTL", str(device.systemctl()))
+    monkeypatch.setattr(module.json, "loads", too_deep)
+    device.mark(device.good())
+    assert module.main() == 2
+    monkeypatch.undo()  # the stand-in is the json module's own loads, which the assertions below use
+    assert (device.update / "resume.json.unusable").exists() and not device.marker.exists()
+    assert device.systemctl_calls() == [["start", "--no-block", *UNITS]]
