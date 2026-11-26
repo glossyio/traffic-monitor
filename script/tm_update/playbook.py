@@ -32,8 +32,8 @@ def ensure_venv(tree: Path, paths: Paths, log) -> Path:
     shutil.rmtree(venv, ignore_errors=True)
     made = proc.run(["python3", "-m", "venv", str(venv)], env=env, log=log)
     if made.returncode == 0:
-        made = proc.run([str(venv / "bin" / "pip"), "install", "--no-input", "--disable-pip-version-check",
-                         "--require-hashes", "-r", str(lock)], env=env, log=log)
+        made = proc.run([str(venv / "bin" / "pip"), "install", "--no-input", "--no-cache-dir",
+                         "--disable-pip-version-check", "--require-hashes", "-r", str(lock)], env=env, log=log)
     if made.returncode != 0 or not (venv / "bin" / "ansible-playbook").exists():
         shutil.rmtree(venv, ignore_errors=True)
         raise Failed("prepare_failed", "ansible environment")

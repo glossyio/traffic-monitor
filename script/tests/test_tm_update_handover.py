@@ -85,6 +85,23 @@ def test_the_updates_folder_itself_is_not_a_work_folder(tmp_path, paths):
         load(write(tmp_path, handover_dict(paths, work_dir=str(paths.update_dir))), paths)
 
 
+def test_the_three_paths_must_be_exactly_the_ones_tm_update_derives(tmp_path, paths):
+    run = handover_dict(paths)["run_id"]
+    wrong = {
+        "work_dir": [paths.update_dir / "restore", paths.work_root / "another-run", paths.work_root,
+                     paths.work_root / run / "inner"],
+        "state_path": [paths.update_dir / "other.json", paths.update_dir / "log" / "state.json"],
+        "log_path": [paths.update_dir / "other.log", paths.log_dir / "another-run.log", paths.update_dir / (run + ".log"),
+                     paths.log_dir / run / "x.log"],
+    }
+    for key, values in wrong.items():
+        for value in values:
+            with pytest.raises(HandoverError) as error:
+                load(write(tmp_path, handover_dict(paths, **{key: str(value)})), paths)
+            assert key in str(error.value)
+            assert str(value) not in str(error.value)
+
+
 @pytest.mark.parametrize("text", ["", "not json", "[]", "5", "null"])
 def test_a_file_that_is_not_a_json_object_is_refused(tmp_path, paths, text):
     with pytest.raises(HandoverError):

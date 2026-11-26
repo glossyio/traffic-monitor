@@ -40,15 +40,15 @@ def _text(data: dict, key: str, *, none_ok: bool = False) -> "str | None":
     return value
 
 
-def _inside(data: dict, key: str, folder: Path) -> Path:
+def _exactly(data: dict, key: str, expected: Path) -> Path:
+    """The path the caller gave for `key`, which must be the one tm-update derives for it: the rest of the code
+    (clearing leftovers, removing the work folder, keeping logs) relies on it."""
     value = data[key]
     if not isinstance(value, str) or "\x00" in value or not value.startswith("/"):
         raise HandoverError(f"{key} is not an absolute path")
     path = Path(value)
-    if ".." in path.parts:
-        raise HandoverError(f"{key} is not inside the update folder")
-    if path == folder or folder not in path.parents:
-        raise HandoverError(f"{key} is not inside the update folder")
+    if ".." in path.parts or path != expected:
+        raise HandoverError(f"{key} is not the path tm-update uses for it")
     return path
 
 
@@ -75,9 +75,9 @@ def load(path: Path, paths: Paths) -> Handover:
         raise HandoverError("commit is not a full commit id")
     tag = _text(data, "tag", none_ok=True)
     from_version = _text(data, "from_version")
-    folder = paths.update_dir
     return Handover(
         run_id=run_id, channel=data["channel"], commit=commit, tag=tag, from_version=from_version,
-        work_dir=_inside(data, "work_dir", folder), state_path=_inside(data, "state_path", folder),
-        log_path=_inside(data, "log_path", folder),
+        work_dir=_exactly(data, "work_dir", paths.work_root / run_id),
+        state_path=_exactly(data, "state_path", paths.state),
+        log_path=_exactly(data, "log_path", paths.log_dir / (run_id + ".log")),
     )

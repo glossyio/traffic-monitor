@@ -3,6 +3,7 @@
 import fcntl
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -605,3 +606,12 @@ def test_a_first_switch_that_fails_before_its_marker_stops_and_starts_nothing(de
     assert state["switch_attempts"] == 0
     assert device.systemctl_calls("stop") == [] and device.systemctl_calls("start") == []
     assert not device.paths.resume.exists()
+
+
+def test_the_command_writes_no_bytecode_into_the_tree_it_runs_from(tmp_path):
+    tree = tmp_path / "script"
+    shutil.copytree(SCRIPT.parent, tree, ignore=shutil.ignore_patterns("__pycache__", "tests", "ansible"))
+    done = subprocess.run([sys.executable, "-EP", str(tree / "tm-update"), "--help"], capture_output=True, text=True,
+                          timeout=60)
+    assert done.returncode == 0
+    assert not list(tree.rglob("__pycache__"))

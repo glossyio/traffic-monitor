@@ -112,7 +112,7 @@ A failed run has a `reason`, always one of these codes and never a sentence. `de
 | `addon_needs_installer` | The Plate Recognizer add-on is installed. | Run the full installer by hand. |
 | `reboot_pending` | The device has a restart waiting (`/var/run/reboot-required`). | Restart it, then try again. |
 | `low_space` | Less than 8 GB plus 1.2 times the size of `tmdb.sqlite` is free where the update works, or at the switch, less than 1.2 times that size is free on the code folder's filesystem. | Free space. The detail gives both numbers in MB. |
-| `hardware_needs_installer` | An attached Hailo-8 or PCIe Coral has no driver yet, and an update installs none. | Run the full installer by hand. |
+| `hardware_needs_installer` | An attached Hailo-8L or PCIe Coral has no driver yet, and an update installs none. | Run the full installer by hand. |
 | `no_internet` | One `HEAD` request to the go2rtc release address got no answer. GitHub's redirect counts as an answer. | Connect the device and try again. |
 | `settings_need_attention` | The dry run of the settings changes failed. | Look at the log. |
 | `prepare_failed` | Anything else that fails in `prepare` or `restore_point`, including an unexpected error. Nothing in use has changed. | Look at the log. |
@@ -157,9 +157,11 @@ The caller writes it, and `--handover` names it. It is JSON, with exactly these 
 | `commit` | The full 40-character commit id of the tree. |
 | `tag` | The release tag, or `null`. |
 | `from_version` | The version that was running, as printable text up to 200 characters. |
-| `work_dir` | An absolute path inside `/var/lib/traffic-monitor/update/`, with no `..`. The work folder is only removed afterwards when this is `update/work/<run_id>`. |
-| `state_path` | The state file, inside the same folder. |
-| `log_path` | The log, inside the same folder. |
+| `work_dir` | Exactly `/var/lib/traffic-monitor/update/work/<run_id>`. Any other path is refused. |
+| `state_path` | Exactly `/var/lib/traffic-monitor/update/state.json`. |
+| `log_path` | Exactly `/var/lib/traffic-monitor/update/log/<run_id>.log`. |
+
+The caller owns the hand-over file. When it is kept in the work folder, it is removed with that folder when the run ends ok, and `resume` needs it until then.
 
 ### The state file
 
@@ -262,6 +264,7 @@ There is no undo command. To put a device back on the version it had, as a perso
     import json, os, shutil
     point = "/var/lib/traffic-monitor/restore/<name>"
     for row in json.load(open(point + "/restore.json"))["files"]:
+        os.makedirs(os.path.dirname(row["path"]), exist_ok=True)
         shutil.copy2(point + "/files" + row["path"], row["path"])
         os.chown(row["path"], row["uid"], row["gid"])
     EOF

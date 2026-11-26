@@ -369,8 +369,7 @@ def _old_logs(ctx) -> "list[Path]":
     logs = sorted(entry for entry in ctx.paths.log_dir.iterdir()
                   if entry.name.endswith(".log") and entry.name != mine and entry.is_file()
                   and not entry.is_symlink())
-    keep = LOGS_KEPT - 1 if ctx.handover.log_path.parent == ctx.paths.log_dir else LOGS_KEPT
-    return logs[:max(len(logs) - keep, 0)]
+    return logs[:max(len(logs) - (LOGS_KEPT - 1), 0)]
 
 
 def remove_work_folder(paths, handover, log) -> None:
@@ -378,9 +377,6 @@ def remove_work_folder(paths, handover, log) -> None:
     is removed by the next run's clearing of leftovers."""
     work = paths.work_root / handover.run_id
     try:
-        if handover.work_dir != work:
-            say(log, "the work folder is not <work_root>/<run_id>; it is left as it is")
-            return
         if work.exists() or work.is_symlink():
             _remove_paths(log, [work])
     except Exception as error:

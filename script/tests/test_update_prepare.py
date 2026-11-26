@@ -283,6 +283,7 @@ def test_the_wheels_are_installed_offline_before_the_dry_run():
     assert download[:2] == [pip, "download"] and install[:2] == [pip, "install"]
     for argv in (download, install):
         assert "--require-hashes" in argv and option(argv, "--requirement") == lock
+        assert "--no-cache-dir" in argv
     assert option(download, "--dest") == STAGE + "/wheels"
     assert option(install, "--find-links") == STAGE + "/wheels"
     venv, = [argv for _, argv in commands(variables, "venv")]

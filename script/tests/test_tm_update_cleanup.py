@@ -392,15 +392,6 @@ def test_no_venv_is_removed_when_the_current_one_cannot_be_named(world):
     assert "step_failed:venvs" in notes
 
 
-def test_a_work_folder_outside_the_work_root_is_left_alone(world, tmp_path):
-    ctx, podman, run = world
-    elsewhere = ctx.paths.update_dir / "elsewhere"
-    shutil.copytree(ctx.handover.work_dir, elsewhere)
-    hand = handover(ctx.paths, work_dir=elsewhere)
-    cleanup.remove_work_folder(ctx.paths, hand, ctx.log)
-    assert elsewhere.is_dir() and (ctx.paths.work_root / RUN).is_dir()
-
-
 @pytest.mark.parametrize("facts", ["", "[]", '{"images": "x"}', '{"images": [{"name": 5}]}',
                                    '{"images": [{"name": "revproxy", "repository": "localhost/revproxy", '
                                    '"tag": "latest", "build_tag": "prepare-0123456", "stages": ["ui"], '

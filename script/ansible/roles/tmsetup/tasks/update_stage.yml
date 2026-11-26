@@ -2,7 +2,8 @@
 # TMSetup - Update Stage: the first half of an update's prepare, run by update_prepare.yml while the installed
 # version keeps running. It refuses what an update can't do, downloads everything the switch (update mode) reads into
 # tmsetup_update_stage_dir, and tries the settings changes on the new code without writing them. It writes only into
-# tmsetup_update_work_dir and tmsetup_update_reason_file; apt keeps its own downloads in its package cache.
+# tmsetup_update_work_dir and tmsetup_update_reason_file, except that apt's package index is refreshed and its package
+# cache fills, the one thing written outside the work folder.
 # A refusal (update_refuse.yml) is a code the caller reads: hardware_needs_installer, no_internet,
 # settings_need_attention.
 - name: TMSetup - Update Stage - Set variables
@@ -15,7 +16,7 @@
 
 # An update changes no driver. A detector that is attached but has none yet needs the full installer, as
 # detectors_install.yml's blocks say.
-- name: TMSetup - Update Stage - Refuse an attached Hailo-8 with no driver
+- name: TMSetup - Update Stage - Refuse an attached Hailo-8L with no driver
   when:
     - tmsetup_detectors.hailo8l is defined
     - tmsetup_detectors.hailo8l.exists
@@ -164,6 +165,7 @@
       - '{{ tmsetup_update_work_dir }}/check-venv/bin/pip'
       - download
       - --no-input
+      - --no-cache-dir
       - --disable-pip-version-check
       - --require-hashes
       - --requirement
@@ -179,6 +181,7 @@
       - '{{ tmsetup_update_work_dir }}/check-venv/bin/pip'
       - install
       - --no-input
+      - --no-cache-dir
       - --disable-pip-version-check
       - --no-index
       - --find-links

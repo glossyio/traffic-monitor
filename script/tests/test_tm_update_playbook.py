@@ -62,6 +62,7 @@ def test_a_half_made_venv_is_made_again(world, monkeypatch):
     assert first == ["python3", "-m", "venv", str(venv)]
     assert second[0] == str(venv / "bin" / "pip")
     assert "--require-hashes" in second
+    assert "--no-cache-dir" in second
     assert second[second.index("-r") + 1] == str(tree / "script" / "requirements.lock")
     assert (venv / "bin" / "ansible-playbook").exists()
 
