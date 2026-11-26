@@ -58,7 +58,7 @@ def the_control_apps_reader(value):
 READERS = [
     the_roles_check,
     tm_updates_reader,
-    pytest.param(the_jobs_reader, marks=pytest.mark.xfail(strict=True, reason="tm-job-update arrives in Task 3")),
+    the_jobs_reader,
     the_control_apps_reader,
 ]
 

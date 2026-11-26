@@ -1,0 +1,566 @@
+#!/usr/bin/python3
+"""Fetch a version of Traffic Monitor, check it against the request, and hand over to that version's tm-update.
+
+tm-job-update.service runs this as root (`/usr/bin/python3 -EP`: the system's Python, because the update rewrites
+tm-control's venv), after tm-control writes the request /run/tm-control/jobs/update.json:
+{"run_id": "<YYYYMMDDTHHMMSSZ>", "channel": "stable" | "development", "commit": "<40 hex>", "tag": "<vX.Y.Z>" | null}.
+tm-control runs unprivileged as the manifest's code owner, who owns /run/tm-control, so the request is hostile:
+- it is read as tm-job-system-password reads its own: the jobs directory must be the code owner's and writable by no
+  one else, and the request a small regular file of the code owner's with one link, opened without following a
+  symlink; it is deleted once read;
+- it must hold exactly those four keys, each of its type and form;
+- it never names an address or a ref. The only remote is https://github.com/<update.repo>.git, from the manifest
+  (root's), and everything the request says is checked against this job's own fetch.
+
+One run, in order:
+1. The manifest's code owner, then the request. No usable owner or request: one line, exit 64, nothing written.
+2. A resume marker means a run that a restart or a stop cut off: the process becomes the launcher (tm-update-resume),
+   whatever the request names, so that run is finished first.
+3. The run lock that tm-update and tmsetup.sh take (flock; the file is never replaced). Held: one line, exit 75,
+   nothing written.
+4. The state file that is there (for step 8), then the rest of the manifest, each value type-checked. This run's
+   state file starts; from here every refusal ends it `failed` with a reason code and exits 1.
+5. Stage `fetch`: main, dev, and the v* tags into the mirror src/repo.git. git reads no config but the mirror's,
+   asks nothing, follows no redirect, and speaks only https.
+6. Stage `verify`: development needs no tag and the commit on dev; stable needs a vX.Y.Z tag that names the commit,
+   on main. Otherwise `stale_check`.
+7. Forward only: when the mirror has the installed commit, it must be an ancestor of the target and not the target;
+   when it hasn't (or the manifest says `unknown`), stable compares versions and development is refused. Otherwise
+   `not_forward`.
+8. The installed commit again only when the state file of step 4 names it as the target of a run that didn't end ok.
+9. The tree's own word, read from the mirror: no script/tm-update or no readable script/update.json, or on stable a
+   version that isn't the tag's, is `target_not_updatable`; a tree that doesn't accept contract 1 is
+   `needs_manual_update`. Keys of update.json that this doesn't read are ignored.
+10. Neither database (tmdb.sqlite, tm-control's state.sqlite, both opened read-only) may be newer than the tree
+    knows: `schema_newer`.
+11. The tree is unpacked into src/<commit>.partial and renamed; the hand-over goes in a fresh work/<run_id>/.
+12. The lock is released, and the process becomes the tree's `script/tm-update run --contract 1 --handover <file>`,
+    whose exit status (0, 1, 2) is the unit's from then on.
+`prepare_failed` ends a run on an error this didn't expect. Nothing on the device changes before step 11, and
+nothing in use at all.
+
+Each step prints one plain line. git's own output goes to the journal as it is: no line here quotes it, and no rule
+reads it. Exit statuses decide, and git's stdout is read only for one commit id and for update.json.
+
+Standard library only, and no tm_control or tm_update imports: this file stays as the release that installed it
+until an update replaces it. Tests pass the request as argv[1] and the manifest in TM_CONTROL_MANIFEST, as for the
+other jobs, and, only when not running as root, TM_UPDATE_ROOT (a folder every device path is moved under),
+TM_UPDATE_REMOTE (a local repository in place of GitHub's, with git's file transport allowed), and TM_UPDATE_GIT
+(the git to run).
+"""
+
+import fcntl
+import json
+import os
+import pwd
+import re
+import shutil
+import sqlite3
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.parse
+from datetime import datetime, timezone
+
+REQUEST = "/run/tm-control/jobs/update.json"
+MANIFEST = "/etc/traffic-monitor/manifest.json"
+LAUNCHER = "/usr/local/libexec/traffic-monitor/tm-update-resume"
+UPDATE = "/var/lib/traffic-monitor/update"
+LOCK, STATE, RESUME = UPDATE + "/lock", UPDATE + "/state.json", UPDATE + "/resume.json"
+WORK, LOG = UPDATE + "/work", UPDATE + "/log"
+SRC = "/var/lib/traffic-monitor/src"
+MIRROR = SRC + "/repo.git"
+TM_CONTROL_STATE = "/var/lib/tm-control/state.sqlite"
+SYSTEM_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
+FETCH_LIMIT, GIT_LIMIT, UNPACK_LIMIT = 900, 120, 600  # seconds
+NO_REQUEST, HELD = 64, 75  # exit statuses beside tm-update's 0, 1, and 2
+MAX_REQUEST = 4096  # bytes
+GIT_SETTINGS = ("protocol.allow=never", "protocol.https.allow=always", "http.followRedirects=false",
+                "http.lowSpeedLimit=1000", "http.lowSpeedTime=60", "transfer.fsckObjects=true",
+                "core.hooksPath=/dev/null", "gc.auto=0")
+REFSPECS = ("+refs/heads/main:refs/heads/main", "+refs/heads/dev:refs/heads/dev", "+refs/tags/v*:refs/tags/v*")
+BRANCHES = {"stable": "refs/heads/main", "development": "refs/heads/dev"}
+RUN_ID = re.compile(r"[0-9]{8}T[0-9]{6}Z")
+COMMIT = re.compile(r"[0-9a-f]{40}")
+INSTALLED_COMMIT = re.compile(r"[0-9a-f]{40}|unknown")
+TAG = re.compile(r"v[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}")
+VERSION = re.compile(r"([0-9]{1,9})\.([0-9]{1,9})\.([0-9]{1,9})(-dev)?")
+USERNAME = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
+CODEDIR = re.compile(r"/[A-Za-z0-9._-][A-Za-z0-9._/-]*")
+REPO = re.compile(r"[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}")
+
+
+class Refused(Exception):
+    """The run ends here: a code, and a short detail this code made. Neither ever holds a value from the request."""
+
+    def __init__(self, code, detail=None):
+        super().__init__(code if detail is None else f"{code}: {detail}")
+        self.code, self.detail = code, detail
+
+
+def say(text):
+    print(text, flush=True)
+
+
+def trusted(name, default):
+    """The setting `name` from the environment, but only when not root: root always uses the installed values."""
+    return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def rooted(path):
+    """A device path, under TM_UPDATE_ROOT for a test."""
+    return os.path.join(trusted("TM_UPDATE_ROOT", "/"), path.lstrip("/"))
+
+
+def read_json(path):
+    try:
+        with open(path, "rb") as file:
+            return json.load(file)
+    except (OSError, ValueError):
+        return None
+
+
+def read_manifest(path):
+    """The install manifest, and its code owner's uid."""
+    manifest = read_json(path)
+    owner = manifest.get("codeowner") if isinstance(manifest, dict) else None
+    if isinstance(owner, str) and USERNAME.fullmatch(owner):
+        try:
+            return manifest, pwd.getpwnam(owner).pw_uid
+        except KeyError:
+            pass
+    raise Refused("no_request", "the manifest names no code owner that exists here")
+
+
+def open_jobs_dir(path, owner_uid):
+    """A descriptor for the jobs directory, which must be the code owner's and writable by no one else."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError as error:
+        raise Refused("no_request", f"the jobs directory can't be opened ({error.strerror})") from None
+    info = os.fstat(fd)
+    if info.st_uid != owner_uid or info.st_mode & 0o022:
+        os.close(fd)
+        raise Refused("no_request", "the jobs directory is not tm-control's own")
+    return fd
+
+
+def read_request(dir_fd, name, owner_uid):
+    """The request's JSON object, read without following a symlink and only from a small regular file."""
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=dir_fd)
+    except OSError as error:
+        raise Refused("no_request", f"the request can't be opened ({error.strerror})") from None
+    with os.fdopen(fd, "rb") as file:
+        info = os.fstat(file.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != owner_uid:
+            raise Refused("no_request", "the request is not a plain file of tm-control's")
+        data = file.read(MAX_REQUEST + 1)
+    try:
+        request = json.loads(data) if len(data) <= MAX_REQUEST else None
+    except ValueError:
+        request = None
+    if not isinstance(request, dict):
+        raise Refused("no_request", "the request is not a small JSON object")
+    return request
+
+
+def delete_request(dir_fd, name):
+    try:
+        os.unlink(name, dir_fd=dir_fd)
+    except FileNotFoundError:
+        pass
+    except OSError as error:
+        say(f"the request could not be deleted ({error.strerror})")
+
+
+def check_request(request):
+    if set(request) != {"run_id", "channel", "commit", "tag"}:
+        raise Refused("no_request", "the request must have exactly the keys run_id, channel, commit, and tag")
+    run_id, channel, commit, tag = request["run_id"], request["channel"], request["commit"], request["tag"]
+    if not isinstance(run_id, str) or not RUN_ID.fullmatch(run_id):
+        raise Refused("no_request", "the run_id is not a UTC time")
+    if not isinstance(channel, str) or channel not in BRANCHES:
+        raise Refused("no_request", "the channel is not stable or development")
+    if not isinstance(commit, str) or not COMMIT.fullmatch(commit):
+        raise Refused("no_request", "the commit is not a full commit id")
+    if tag is not None and not (isinstance(tag, str) and 1 <= len(tag) <= 200 and tag.isprintable()):
+        raise Refused("no_request", "the tag is not text or null")
+    return request
+
+
+def text(value, name, pattern=None):
+    if (not isinstance(value, str) or not 1 <= len(value) <= 200 or not value.isprintable()
+            or (pattern is not None and not pattern.fullmatch(value))):
+        raise Refused("needs_manual_update", f"manifest {name}")
+    return value
+
+
+def repo_of(manifest: dict) -> str:
+    """The manifest's update.repo, which becomes part of a URL: owner/name, and neither part made only of dots. The
+    role's check, tm-update, and the control app apply the same rule."""
+    update = manifest.get("update")
+    repo = text(update.get("repo") if isinstance(update, dict) else None, "update.repo", REPO)
+    if any(set(part) == {"."} for part in repo.split("/")):
+        raise Refused("needs_manual_update", "manifest update.repo")
+    return repo
+
+
+def installed(manifest):
+    """The installed version and commit (None when the manifest says unknown), the code folder, and the repository."""
+    version = text(manifest.get("tm_version"), "tm_version")
+    block = manifest.get("git")
+    commit = text(block.get("commit") if isinstance(block, dict) else None, "git.commit", INSTALLED_COMMIT)
+    codedir = text(manifest.get("codedir"), "codedir", CODEDIR)
+    if ".." in codedir.split("/"):
+        raise Refused("needs_manual_update", "manifest codedir")
+    return version, None if commit == "unknown" else commit, codedir, repo_of(manifest)
+
+
+def now():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def write_whole(path, data):
+    """Write beside the file, sync, and rename over it (0644): a reader sees the old file or the new one, never half."""
+    directory = os.path.dirname(path)
+    fd, temporary = tempfile.mkstemp(prefix=".job-", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            os.fchmod(file.fileno(), 0o644)
+            json.dump(data, file, indent=2)
+            file.write("\n")
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
+    dir_fd = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(dir_fd)
+    finally:
+        os.close(dir_fd)
+
+
+class State:
+    """This run's state file, in tm-update's shape, which tm-update carries on for the same run_id."""
+
+    def __init__(self, request, version, commit):
+        self.data = {
+            "schema": 1, "run_id": request["run_id"], "channel": request["channel"],
+            "from": {"version": version, "commit": commit},
+            "to": {"version": None, "commit": request["commit"], "tag": request["tag"]},
+            "stage": None, "stages": [], "result": None, "reason": None, "detail": None, "boot_id": None,
+            "reboot": None, "restore_point": None, "tmdb_backup": None, "switch_attempts": 0,
+        }
+        self.save()
+
+    def save(self):
+        write_whole(rooted(STATE), self.data)
+
+    def begin(self, stage):
+        say(f"stage {stage}")
+        self.data["stage"] = stage
+        self.data["stages"].append({"id": stage, "started_at": now(), "finished_at": None})
+        self.save()
+
+    def finish(self):
+        for row in self.data["stages"]:
+            row["finished_at"] = row["finished_at"] or now()
+        self.save()
+
+    def end(self, refused):
+        say(f"failed: {refused.code}" + (f" ({refused.detail})" if refused.detail else ""))
+        self.data.update(result="failed", reason=refused.code, detail=refused.detail and refused.detail[:200])
+        self.finish()
+
+
+def git_command(args, mirror=True):
+    """git's argv and environment: no config but the mirror's, no prompt, no redirect, https only (and with the test
+    seam, the local repository's file transport)."""
+    settings = GIT_SETTINGS + (("protocol.file.allow=always",) if trusted("TM_UPDATE_REMOTE", None) else ())
+    argv = [trusted("TM_UPDATE_GIT", "git")]
+    for setting in settings:
+        argv += ["-c", setting]
+    argv += ([f"--git-dir={rooted(MIRROR)}"] if mirror else []) + list(args)
+    return argv, {"PATH": SYSTEM_PATH, "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_NOSYSTEM": "1",
+                  "GIT_TERMINAL_PROMPT": "0"}
+
+
+def git(args, timeout=GIT_LIMIT, capture=False, reason="prepare_failed", mirror=True):
+    """Its exit status, and its stdout when captured; otherwise its output goes to the journal."""
+    argv, env = git_command(args, mirror)
+    try:
+        result = subprocess.run(argv, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE if capture else None,
+                                timeout=timeout, check=False)
+    except subprocess.TimeoutExpired:
+        raise Refused(reason, f"git {args[0]} timed out") from None
+    return result.returncode, result.stdout
+
+
+def remove(path):
+    if os.path.islink(path) or os.path.isfile(path):
+        os.unlink(path)
+    elif os.path.isdir(path):
+        shutil.rmtree(path)
+
+
+def fetch(repo):
+    if git(["rev-parse", "--git-dir"], capture=True)[0] != 0:
+        remove(rooted(MIRROR))
+        os.makedirs(rooted(SRC), exist_ok=True)
+        if git(["init", "--bare", rooted(MIRROR)], mirror=False)[0] != 0:
+            raise Refused("prepare_failed", "git init")
+    address = trusted("TM_UPDATE_REMOTE", None) or f"https://github.com/{repo}.git"
+    status = git(["fetch", "--no-tags", "--prune", "--force", address, *REFSPECS], timeout=FETCH_LIMIT,
+                 reason="fetch_failed")[0]
+    if status != 0:
+        raise Refused("fetch_failed", f"git fetch exit status {status}")
+
+
+def peeled(name):
+    """The id of the commit a name (an id or a ref) comes down to, or None."""
+    status, out = git(["rev-parse", "--verify", "--quiet", name + "^{commit}"], capture=True)
+    return out.decode("ascii", "replace").strip() if status == 0 else None
+
+
+def is_commit(commit):
+    """A commit of the mirror's under its own id: an annotated tag's id comes down to a commit too, but isn't one."""
+    return peeled(commit) == commit
+
+
+def ancestor(older, newer):
+    """By git's exit status: 0 yes, 1 no."""
+    status = git(["merge-base", "--is-ancestor", older, newer])[0]
+    if status not in (0, 1):
+        raise Refused("prepare_failed", f"git merge-base exit status {status}")
+    return status == 0
+
+
+def check_channel(commit, channel, tag):
+    if not is_commit(commit):
+        raise Refused("stale_check", "the commit is not in the repository")
+    if channel == "stable":
+        if tag is None or not TAG.fullmatch(tag):
+            raise Refused("stale_check", "no release tag")
+        if peeled(f"refs/tags/{tag}") != commit:
+            raise Refused("stale_check", "the tag names another commit")
+    elif tag is not None:
+        raise Refused("stale_check", "a tag on development")
+    if not ancestor(commit, BRANCHES[channel]):
+        raise Refused("stale_check", "the commit is not on the channel's branch")
+
+
+def version_key(value):
+    """<n>.<n>.<n> with an optional -dev, which comes before the same numbers without it."""
+    match = VERSION.fullmatch(value)
+    return match and (int(match[1]), int(match[2]), int(match[3]), match[4] is None)
+
+
+def check_forward(commit, channel, tag, version, installed_commit, last):
+    if installed_commit is not None and is_commit(installed_commit):
+        if installed_commit == commit:
+            # Only a run to this commit that didn't end well may be repeated
+            target = last.get("to") if isinstance(last, dict) else None
+            if not (isinstance(target, dict) and target.get("commit") == commit and last.get("result") != "ok"):
+                raise Refused("not_forward", "the commit is installed")
+        elif not ancestor(installed_commit, commit):
+            raise Refused("not_forward", "the commit is not ahead of the installed one")
+        return
+    old, new = version_key(version), channel == "stable" and version_key(tag[1:])
+    if not (old and new and new > old):
+        raise Refused("not_forward", "the installed commit is unknown")
+
+
+def tree_word(commit, channel, tag):
+    """The tree's version and the two schema numbers it knows, from its script/update.json."""
+    if git(["cat-file", "-e", f"{commit}:script/tm-update"])[0] != 0:
+        raise Refused("target_not_updatable", "no script/tm-update")
+    status, out = git(["cat-file", "blob", f"{commit}:script/update.json"], capture=True)
+    try:
+        data = json.loads(out) if status == 0 else None
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        raise Refused("target_not_updatable", "no readable script/update.json")
+    contracts = data.get("contracts")
+    # bool is a kind of int and 1.0 equals 1, so neither may pass for the number 1
+    if not isinstance(contracts, list) or not all(type(number) is int for number in contracts) or 1 not in contracts:
+        raise Refused("needs_manual_update", "the tree does not accept contract 1")
+    version, schemas = data.get("tm_version"), (data.get("tmdb_schema"), data.get("state_schema"))
+    if (not isinstance(version, str) or not 1 <= len(version) <= 200 or not version.isprintable()
+            or not all(type(number) is int and number >= 0 for number in schemas)):
+        raise Refused("target_not_updatable", "script/update.json is not valid")
+    if channel == "stable" and version != tag[1:]:
+        raise Refused("target_not_updatable", "the tree's version is not its tag's")
+    return version, schemas
+
+
+def user_version(path):
+    """PRAGMA user_version of a database, opened read-only; 0 for one that isn't there."""
+    if not os.path.exists(path):
+        return 0
+    connection = sqlite3.connect(f"file:{urllib.parse.quote(path)}?mode=ro", uri=True, timeout=10)
+    try:
+        return connection.execute("PRAGMA user_version").fetchone()[0]
+    finally:
+        connection.close()
+
+
+def check_schemas(codedir, schemas):
+    databases = (("tmdb", rooted(codedir + "/node-red-tm/db/tmdb.sqlite")), ("state", rooted(TM_CONTROL_STATE)))
+    for (name, path), known in zip(databases, schemas):
+        found = user_version(path)
+        if found > known:
+            raise Refused("schema_newer", f"{name} {found} > {known}")
+
+
+def unpack(commit):
+    """git archive | tar into src/<commit>.partial, renamed when whole."""
+    tree, partial = rooted(f"{SRC}/{commit}"), rooted(f"{SRC}/{commit}.partial")
+    remove(partial)
+    remove(tree)
+    os.makedirs(partial)
+    say(f"unpacking {commit}")
+    argv, env = git_command(["archive", "--format=tar", commit])
+    archive = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+    processes = [archive]
+    try:
+        # As root, tar keeps the archive's modes unless told not to; these get the umask's
+        processes.append(subprocess.Popen(
+            ["tar", "-x", "-f", "-", "--no-same-owner", "--no-same-permissions", "-C", partial],
+            env={"PATH": SYSTEM_PATH}, stdin=archive.stdout))
+        archive.stdout.close()
+        deadline = time.monotonic() + UNPACK_LIMIT
+        statuses = [process.wait(timeout=max(1, deadline - time.monotonic())) for process in processes]
+    except subprocess.TimeoutExpired:
+        raise Refused("prepare_failed", "unpack timed out") from None
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+    if statuses != [0, 0]:
+        raise Refused("prepare_failed", "unpack exit statuses {} {}".format(*statuses))
+    os.rename(partial, tree)
+    program = os.path.join(tree, "script", "tm-update")
+    if not (os.path.isfile(program) and os.access(program, os.X_OK)):
+        remove(tree)
+        raise Refused("target_not_updatable", "script/tm-update is not a program")
+    return program
+
+
+def write_handover(request, from_version):
+    run_id = request["run_id"]
+    work = rooted(f"{WORK}/{run_id}")
+    remove(work)
+    os.makedirs(work)
+    path = os.path.join(work, "handover.json")
+    write_whole(path, {
+        "contract": 1, "run_id": run_id, "channel": request["channel"], "commit": request["commit"],
+        "tag": request["tag"], "from_version": from_version, "work_dir": work, "state_path": rooted(STATE),
+        "log_path": rooted(f"{LOG}/{run_id}.log"),
+    })
+    return path
+
+
+def take_lock():
+    """The run lock as tm-update takes it: created 0644 when it is new, never replaced. None when it is held."""
+    os.makedirs(rooted(UPDATE), exist_ok=True)
+    try:
+        fd = os.open(rooted(LOCK), os.O_RDONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o644)
+        os.fchmod(fd, 0o644)
+    except FileExistsError:
+        fd = os.open(rooted(LOCK), os.O_RDONLY | os.O_CLOEXEC)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        return None
+    return fd
+
+
+def prepare(request, manifest):
+    """Steps 4 to 11, under the lock. The state, tm-update's path, and the hand-over's; or the exit status 1."""
+    last = read_json(rooted(STATE))
+    commit, channel, tag = request["commit"], request["channel"], request["tag"]
+    try:
+        version, installed_commit, codedir, repo = installed(manifest)
+    except Refused as refused:
+        State(request, None, None).end(refused)
+        return 1
+    state = State(request, version, installed_commit)
+    try:
+        state.begin("fetch")
+        fetch(repo)
+        state.finish()
+        state.begin("verify")
+        check_channel(commit, channel, tag)
+        check_forward(commit, channel, tag, version, installed_commit, last)
+        state.data["to"]["version"], schemas = tree_word(commit, channel, tag)
+        state.save()
+        check_schemas(codedir, schemas)
+        program = unpack(commit)
+        handover = write_handover(request, version)
+        state.finish()
+    except Refused as refused:
+        state.end(refused)
+        return 1
+    except Exception as error:  # nothing in use has changed
+        state.end(Refused("prepare_failed", f"unexpected {type(error).__name__}"))
+        return 1
+    return state, program, handover
+
+
+def main(argv):
+    os.umask(0o022)
+    directory, name = os.path.split(argv[1] if len(argv) > 1 else rooted(REQUEST))
+    try:
+        manifest, owner_uid = read_manifest(os.environ.get("TM_CONTROL_MANIFEST") or MANIFEST)
+        dir_fd = open_jobs_dir(directory or ".", owner_uid)
+        try:
+            request = check_request(read_request(dir_fd, name, owner_uid))
+        finally:
+            delete_request(dir_fd, name)
+            os.close(dir_fd)
+    except Refused as refused:
+        say(f"refused: {refused.detail}")
+        return NO_REQUEST
+    except Exception as error:  # a message could quote the request, so print only the kind of error
+        say(f"refused: {type(error).__name__}")
+        return NO_REQUEST
+    if os.path.lexists(rooted(RESUME)):
+        say("an update that was cut off is carried on first")
+        try:
+            os.execv(rooted(LAUNCHER), [rooted(LAUNCHER)])
+        except OSError as error:
+            say(f"failed: the launcher can't start ({error.strerror})")
+            return 1
+    lock = take_lock()
+    if lock is None:
+        say("busy: another install or update holds the lock")
+        return HELD
+    outcome = prepare(request, manifest)
+    os.close(lock)
+    if isinstance(outcome, int):
+        return outcome
+    state, program, handover = outcome
+    say(f"handing over to the tm-update of {request['commit']}")
+    try:
+        os.execv(program, [program, "run", "--contract", "1", "--handover", handover])
+    except OSError as error:
+        # The lock was free a moment ago; the state is this run's to end only while no one else holds it
+        lock = take_lock()
+        if lock is not None:
+            state.end(Refused("prepare_failed", f"tm-update can't start ({error.strerror})"))
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
