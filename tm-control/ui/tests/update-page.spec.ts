@@ -168,7 +168,9 @@ describe('the Software update page', () => {
     expect(ready.wrapper.text()).toContain(
       "The update saves the settings as a restore point. It doesn't save the counted data: download the database first.",
     )
-    expect(ready.wrapper.findAll('a').some((a) => a.attributes('href') === '/dashboard/')).toBe(true)
+    // the sentence's link goes to the Sharing page's Download your data card (the menu has a Sharing link too)
+    const download = ready.wrapper.findAll('a').find((a) => a.text() === 'download the database')
+    expect(download?.attributes('href')).toBe('/sharing')
     ready.wrapper.unmount()
 
     const addon = {

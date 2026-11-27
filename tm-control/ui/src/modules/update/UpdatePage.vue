@@ -373,7 +373,7 @@ const beforeStart = computed(() => ({ id: 'update-checks', title: 'Before you st
             <h2 v-else class="text-h6 mb-1">Before you start</h2>
             <p class="text-body-1 mt-2">
               The update saves the settings as a restore point. It doesn't save the counted data:
-              <a href="/dashboard/" class="text-primary">download the database</a> first.
+              <router-link to="/sharing" class="text-primary">download the database</router-link> first.
             </p>
           </section>
 

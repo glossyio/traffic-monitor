@@ -2207,7 +2207,7 @@ into words.
   docs' update page. The update button names the target: "Update to 0.8.1", or "Update to commit 6666666".
 - **Before you start** shows only for an offer that is ahead: the API's `checks` drawn by the Status page's
   `CheckList` (its marks, title, detail, and hint), then the sentence about the restore point with a link to the
-  Dashboard's database download (`/dashboard/`). With no checks the heading stands alone above that sentence. The
+  Sharing page (`/sharing`), whose Download your data card gives the database. With no checks the heading stands alone above that sentence. The
   update button is disabled while `can_start` is false (any check is an error); a warning doesn't block it.
 - **One main button.** Check for updates is filled until another button is the one to press: Update to ..., the last
   run's Try again or Finish the update, or Reload. Then it is outlined.
