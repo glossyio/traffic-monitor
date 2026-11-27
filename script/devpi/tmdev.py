@@ -90,19 +90,58 @@ def source_tree(path):
 
 # --- PR checks -------------------------------------------------------------------------------
 
-def active_marker():
-    return devlog.log_dir() / "active-check"
+LEGACY_MARKER = "active-check"  # the one global marker older tmdev versions wrote
 
 
-def active_check():
-    marker = active_marker()
-    if not marker.exists():
+def marker_path(host):
+    """The open check's marker for host: a file in the log folder holding its run directory."""
+    return devlog.log_dir() / f"{LEGACY_MARKER}-{host}"
+
+
+def write_marker(path, run):
+    staged = path.with_name(f".{path.name}.{os.getpid()}.new")
+    staged.write_text(str(run.dir.relative_to(devlog.log_dir())))
+    os.replace(staged, path)
+
+
+def read_marker(path):
+    """The check a marker points at, or None; a marker whose run directory has no meta.json is removed. An empty one
+    is left alone: an old tmdev writes the global marker in place, so another session can catch it mid-write."""
+    try:
+        name = path.read_text().strip()
+    except FileNotFoundError:
         return None
-    directory = devlog.log_dir() / marker.read_text().strip()
+    if not name:
+        return None
+    directory = devlog.log_dir() / name
     if not (directory / "meta.json").exists():
-        marker.unlink()
+        path.unlink(missing_ok=True)
         return None
-    return devlog.Run.load(directory)
+    try:
+        return devlog.Run.load(directory)
+    except (OSError, ValueError) as exc:
+        raise DevPiError(f"can't read the open check in {directory} ({exc}); try again; if it stays, repair its meta.json") from exc
+
+
+def open_checks():
+    """{host: open check}, one per host. An old global marker counts as the open check of the host its meta.json
+    names, unless that host has a marker of its own."""
+    checks = {}
+    for path in sorted(devlog.log_dir().glob(f"{LEGACY_MARKER}-*")):
+        if (run := read_marker(path)) is not None:
+            checks[path.name.removeprefix(f"{LEGACY_MARKER}-")] = run
+    if (run := read_marker(devlog.log_dir() / LEGACY_MARKER)) is not None:
+        checks.setdefault(run.meta["host"], run)
+    return checks
+
+
+def host_check(host):
+    """host's open check, or None; never another host's."""
+    return open_checks().get(host)
+
+
+def describe(checks):
+    return ", ".join(f"{host} ({run.dir})" for host, run in checks.items())
 
 
 def check_source(run):
@@ -110,11 +149,21 @@ def check_source(run):
     return source_tree(run.meta["src"]) if run and run.meta.get("src") else None
 
 
-def require_active():
-    run = active_check()
-    if run is None:
+def pick_check(host=None, required=True):
+    """The open check to act on: host's with --host, else the only one open. With two or more open, --host is needed.
+    With none open, an error, or None when required is false."""
+    checks = open_checks()
+    if host is not None:
+        if host not in checks:
+            raise DevPiError(f"no check is open on {host}; open checks: {describe(checks) or 'none'}")
+        return checks[host]
+    if len(checks) > 1:
+        raise DevPiError(f"{len(checks)} checks are open; name one with --host: {describe(checks)}")
+    if checks:
+        return next(iter(checks.values()))
+    if required:
         raise DevPiError("no check is open; start one with: tmdev.py check start --host HOST --title TEXT")
-    return run
+    return None
 
 
 def latest_items(run):
@@ -155,21 +204,24 @@ def write_checklist(run):
 
 
 def check_start(args):
-    if (run := active_check()) is not None:
-        raise DevPiError(f"a check is already open ({run.dir}); end it first")
     if args.host != "local":
         get_host(args.host)
     src = source_tree(args.src) if args.src else None
-    run = devlog.Run.start("check", args.host, pr=args.pr, code=devlog.code_state(src) if src else None,
-                           src=str(src) if src else None, title=args.title, deploy=devlog.last_deploy(args.host))
-    active_marker().write_text(str(run.dir.relative_to(devlog.log_dir())))
+    # log.lock from the host's check to its marker, so two sessions can't both find the host free. Nothing in here
+    # may take log.lock again (Run.finish does): a second open of it in this process would wait forever.
+    with devlog.index_lock():
+        if (run := host_check(args.host)) is not None:
+            raise DevPiError(f"a check is already open on {args.host} ({run.dir}); end it first")
+        run = devlog.Run.start("check", args.host, pr=args.pr, code=devlog.code_state(src) if src else None,
+                               src=str(src) if src else None, title=args.title, deploy=devlog.last_deploy(args.host))
+        write_marker(marker_path(args.host), run)
     write_checklist(run)
-    log(f"check open: {run.dir}")
+    log(f"check open on {args.host}: {run.dir}")
     return 0
 
 
 def check_item(args):
-    run = require_active()
+    run = pick_check(args.host)
     missing = [name for name in args.evidence if not (run.dir / f"{name}.out").exists()]
     if missing:
         raise DevPiError(f"no such command output in this check: {', '.join(missing)}")
@@ -182,14 +234,15 @@ def check_item(args):
 
 
 def check_status(args):
-    run = require_active()
+    run = pick_check(args.host)
     write_checklist(run)
     print((run.dir / "checklist.md").read_text(), end="")
     return 0
 
 
 def check_end(args):
-    run = require_active()
+    run = pick_check(args.host)
+    host = run.meta["host"]
     items = latest_items(run)
     counts = collections.Counter(item["status"] for item in items)
     if counts["fail"]:
@@ -205,26 +258,31 @@ def check_end(args):
     run.meta["deploy_at_close"] = devlog.last_deploy(run.meta["host"])
     run.finish(result, ok)
     write_checklist(run)
-    active_marker().unlink()
+    # Remove whichever marker points at this run: the host's own, or the old global one. Never one naming another run.
+    for path in (marker_path(host), devlog.log_dir() / LEGACY_MARKER):
+        if (named := read_marker(path)) is not None and named.dir == run.dir:
+            path.unlink(missing_ok=True)
     print((run.dir / "checklist.md").read_text(), end="")
     return 0 if ok else 1
 
 
 def check_reopen(args):
-    if (run := active_check()) is not None:
-        raise DevPiError(f"a check is already open ({run.dir}); end it first")
     directory = devlog.log_dir() / "runs" / Path(args.run_dir).name
     if not (directory / "meta.json").is_file():
         raise DevPiError(f"no run named {directory.name} in {directory.parent}; see tmdev.py log")
     run = devlog.Run.load(directory)
     if run.meta["kind"] != "check":
         raise DevPiError(f"{directory} is a {run.meta['kind']} run, not a check")
-    # Ending it again records a new result; until then the checklist shows it as open.
-    for key in ("finished", "result", "ok", "deploy_at_close", "code_at_finish"):
-        run.meta.pop(key, None)
-    run.save()
-    write_checklist(run)
-    active_marker().write_text(str(directory.relative_to(devlog.log_dir())))
+    host = run.meta["host"]
+    with devlog.index_lock():  # as in check_start: from the host's check to its marker, and no Run.finish inside
+        if (other := host_check(host)) is not None:
+            raise DevPiError(f"a check is already open on {host} ({other.dir}); end it first")
+        # Ending it again records a new result; until then the checklist shows it as open.
+        for key in ("finished", "result", "ok", "deploy_at_close", "code_at_finish"):
+            run.meta.pop(key, None)
+        run.save()
+        write_checklist(run)
+        write_marker(marker_path(host), run)
     log(f"check reopened: {directory}; ending it again adds a new row to the log")
     return 0
 
@@ -309,9 +367,11 @@ def cmd_hosts(args):
 def cmd_run(args):
     """Run a command on a dev Pi, or on this machine with host 'local', and log it.
 
-    The log goes to the open check if there is one, otherwise to adhoc/<date>/. A local command
-    runs in the open check's --src checkout if it has one, otherwise in the current directory,
-    with this interpreter's venv first on PATH, so `python -m pytest` works in a --src worktree.
+    A Pi's command is logged in that host's open check, never another host's, otherwise in
+    adhoc/<date>/. A local command is logged in the open check (with two or more open, the one
+    --host names), and runs in its --src checkout if it has one, otherwise in the current
+    directory, with this interpreter's venv first on PATH, so `python -m pytest` works in a
+    --src worktree.
 
     The words after -- are joined with spaces and run by a shell (bash here, the login shell on
     the Pi), as ssh does. Quote a compound command as one word: -- 'cmd1; cmd2'.
@@ -319,7 +379,9 @@ def cmd_run(args):
     command = " ".join(args.extra)
     if not command:
         raise DevPiError("no command given; put it after --, e.g. tmdev.py run tm-dev-01 -- uptime")
-    check = active_check()
+    if args.check_host is not None and args.host != "local":
+        raise DevPiError("--host is only for run local; a Pi's command goes to that host's check")
+    check = pick_check(args.check_host, required=False) if args.host == "local" else host_check(args.host)
     cwd = env = None
     if args.host == "local":
         cwd = check_source(check) or os.getcwd()
@@ -330,7 +392,15 @@ def cmd_run(args):
         where, argv, shell = args.host, [*ssh, destination, command], False
     directory = check.dir if check else devlog.log_dir() / "adhoc" / f"{devlog.utc_now():%Y-%m-%d}"
     directory.mkdir(parents=True, exist_ok=True)
-    name = f"cmd-{len(list(directory.glob('cmd-*.out'))) + 1:03d}"
+    number = len(list(directory.glob("cmd-*.out")))
+    while True:  # reserve the name, since another session may be logging into this directory too
+        number += 1
+        name = f"cmd-{number:03d}"
+        try:
+            open(directory / f"{name}.out", "x").close()
+            break
+        except FileExistsError:
+            continue
     started, clock = devlog.utc_now(), time.monotonic()
     code = stream(argv, directory / f"{name}.out", shell, cwd, env)
     with open(directory / "commands.log", "a") as commands:
@@ -398,9 +468,9 @@ def deploy_on_pi(name, hostvars, src, tmsetup_args, log_file):
 
 
 def cmd_deploy(args):
-    """Deploy --src, else the open check's --src, else this checkout; --pr defaults to the open check's."""
+    """Deploy --src, else the host's open check's --src, else this checkout; --pr defaults to that check's."""
     hostvars = get_host(args.host)
-    check = active_check()
+    check = host_check(args.host)
     src = source_tree(args.src) if args.src else check_source(check) or devlog.REPO_ROOT
     pr = args.pr or (check.meta["pr"] if check else None)
     run = devlog.Run.start("deploy", args.host, pr=pr, code=devlog.code_state(src),
@@ -473,16 +543,19 @@ def main(argv=None):
                                  help="run a checkout's tmsetup.sh for a dev Pi; tmsetup.sh options go after --")
     deploy.add_argument("host")
     deploy.add_argument("--src", metavar="DIR",
-                        help="checkout to deploy (default: the open check's --src, else this checkout)")
+                        help="checkout to deploy (default: this host's open check's --src, else this checkout)")
     deploy.add_argument("--on-pi", action="store_true",
                         help=f"copy the working tree to ~/{ON_PI_DIR} on the Pi and run tmsetup.sh there")
-    deploy.add_argument("--pr", type=int, help="PR number to show in the log (default: the open check's)")
+    deploy.add_argument("--pr", type=int, help="PR number to show in the log (default: this host's open check's)")
     run = commands.add_parser("run", help="run a command and log it; the command goes after --, and a shell "
                                           "runs it (quote a compound command: -- 'cmd1; cmd2')")
     run.add_argument("host", help="inventory host name, or 'local' for this machine")
+    run.add_argument("--host", dest="check_host", metavar="HOST",
+                     help="with local: the check to log in and whose --src to run in (needed when two or more are open)")
     check = commands.add_parser("check", help="record a PR check (start, item, status, end, reopen)")
     actions = check.add_subparsers(dest="action", required=True)
-    start = actions.add_parser("start", help="open a check; later run commands are logged in it")
+    start = actions.add_parser("start", help="open a check on a host, which has at most one open; "
+                                             "later run commands on that host are logged in it")
     start.add_argument("--host", required=True, help="inventory host name, or 'local' for off-device checks")
     start.add_argument("--pr", type=int)
     start.add_argument("--title", required=True)
@@ -494,9 +567,12 @@ def main(argv=None):
     item.add_argument("status", choices=STATUSES, help="'manual' means waiting on the developer")
     item.add_argument("--evidence", nargs="+", default=[], metavar="cmd-NNN", help="commands that show the result")
     item.add_argument("--note", default="")
-    actions.add_parser("status", help="show the open check's checklist")
-    actions.add_parser("end", help="close the check and add its row to the log")
-    reopen = actions.add_parser("reopen", help="reopen a closed check, e.g. to record manual results")
+    status = actions.add_parser("status", help="show the open check's checklist")
+    end = actions.add_parser("end", help="close the check and add its row to the log")
+    for action in (item, status, end):
+        action.add_argument("--host", help="the check's host (needed when two or more checks are open)")
+    reopen = actions.add_parser("reopen", help="reopen a closed check, e.g. to record manual results, "
+                                               "unless its host has another check open")
     reopen.add_argument("run_dir")
     test = commands.add_parser("test", help="run the device tests and log the results; pytest options go after --")
     test.add_argument("host", nargs="?", default=devlog.INVENTORY_GROUP,

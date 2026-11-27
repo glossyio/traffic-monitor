@@ -7,10 +7,13 @@ git work tree: the inventory names real devices, and the log records what ran on
     run log    $TM_DEV_LOG_DIR, default ${XDG_STATE_HOME:-~/.local/state}/traffic-monitor/dev-tests/
 
 The log is one directory per run under runs/, plus two indexes with one row per run:
-LOG.md for people and runs.jsonl for scripts.
+LOG.md for people and runs.jsonl for scripts. Every session on the machine appends to the
+same indexes, so each append holds an exclusive flock on log.lock in the log folder.
 """
 
+import contextlib
 import datetime
+import fcntl
 import json
 import os
 import re
@@ -80,6 +83,15 @@ def log_dir():
     (path / "runs").mkdir(parents=True, exist_ok=True)
     path.chmod(0o700)
     return path
+
+
+@contextlib.contextmanager
+def index_lock():
+    """Hold log.lock while appending to the indexes, so two sessions' rows can't interleave, and while tmdev opens a
+    check. Not reentrant: a second open of log.lock in the same process waits forever."""
+    with open(log_dir() / "log.lock", "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
 
 
 def load_hosts():
@@ -187,7 +199,14 @@ class Run:
         return cls(directory, json.loads((directory / "meta.json").read_text()))
 
     def save(self):
-        (self.dir / "meta.json").write_text(json.dumps(self.meta, indent=2) + "\n")
+        """Write meta.json to a temporary file and rename it into place, so a reader never sees half of one."""
+        temporary = self.dir / f".meta.json.{os.getpid()}.tmp"
+        temporary.write_text(json.dumps(self.meta, indent=2) + "\n")
+        try:
+            os.replace(temporary, self.dir / "meta.json")
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
 
     def finish(self, result, ok):
         """Record the outcome and add this run's row to both indexes."""
@@ -198,12 +217,13 @@ class Run:
         row = {key: self.meta.get(key) for key in ("kind", "host", "pr", "started", "finished", "result", "ok")}
         row.update(code=code_label(self.meta["code"]), run=str(relative))
         root = log_dir()
-        with open(root / "runs.jsonl", "a") as index:
-            index.write(json.dumps(row) + "\n")
-        log = root / "LOG.md"
-        if not log.exists():
-            log.write_text(LOG_HEADER.format(root=root))
         cells = [row["finished"].replace("T", " ")[:16], row["kind"], row["host"], row["code"],
                  str(row["pr"] or ""), row["result"], f"[{relative.name}]({relative}/)"]
-        with open(log, "a") as index:
-            index.write("| " + " | ".join(cell.replace("|", "\\|") for cell in cells) + " |\n")
+        with index_lock():
+            with open(root / "runs.jsonl", "a") as index:
+                index.write(json.dumps(row) + "\n")
+            log = root / "LOG.md"
+            if not log.exists():
+                log.write_text(LOG_HEADER.format(root=root))
+            with open(log, "a") as index:
+                index.write("| " + " | ".join(cell.replace("|", "\\|") for cell in cells) + " |\n")

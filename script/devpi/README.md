@@ -98,7 +98,7 @@ Both modes:
 
 `run` behaves like `ssh`: the words after `--` are joined with spaces and go to the Pi's shell, so quote a compound command as one word (`-- 'cmd1; cmd2'`). With the host `local`, bash runs it on your machine instead, with tmdev's venv first on `PATH`, so `python` is the dev venv's even in a `--src` worktree that has no `.venv`.
 
-Each command's output is shown and also saved as `cmd-NNN.out`. A line in `commands.log` records the command, the time, and the exit code. The files go into the open PR check, or into `adhoc/<date>/` when no check is open. `tmdev.py` exits with the command's exit code.
+Each command's output is shown and also saved as `cmd-NNN.out`. A line in `commands.log` records the command, the time, and the exit code. The files go into the host's open PR check, or into `adhoc/<date>/` when that host has none (see [Several checks at once](#several-checks-at-once) for `run local`). `tmdev.py` exits with the command's exit code.
 
 Output, logged commands, and saved deploy logs have values that look like secrets replaced with `<redacted>`. That covers:
 - `KEY=value` and `"key": value` pairs where a part of the key, split at `_`, `.`, or `-`, is `password`, `pass`, `pwd`, `secret`, `token`, `api_key`, `access_key`, or `credential`;
@@ -130,6 +130,27 @@ The check's result is:
 - **pending** if any item is still `manual`;
 - **pass** otherwise.
 
+### Several checks at once
+
+Each host has at most one open check, and a check on `local` is one more host. So two sessions can bench two units at the same time, from the same machine or the same run log: `check start --host tm-dev-02` refuses only while `tm-dev-02` already has a check open.
+
+A command for a Pi always goes with that Pi's check:
+- `run tm-dev-02` logs in `tm-dev-02`'s check, or in `adhoc/<date>/` when it has none, never in another host's check.
+- `deploy tm-dev-02` takes `--src` and the PR number from `tm-dev-02`'s check only. With no check on that host, it deploys this checkout.
+
+The other commands name no Pi, so with two or more checks open they need `--host`:
+
+```bash
+$T check item "Frigate starts" pass --evidence cmd-003 --host tm-dev-02
+$T check status --host tm-dev-02
+$T check end --host tm-dev-02
+$T run local --host tm-dev-02 -- bash -n script/tmsetup.sh   # logged in tm-dev-02's check, run in its --src
+```
+
+Without `--host`, they stop with an error that lists the open checks and their hosts. With only one check open, they use it, as before, whichever unit it is on: `run local` without `--host` then logs in that check and runs in its `--src`, even when the check is another session's bench of another unit. `check reopen` refuses only when the check's host has another one open.
+
+Each open check is a file `active-check-<host>` in the log directory, holding the check's run directory. Older versions of `tmdev.py` kept a single `active-check` file; it still counts as the open check of the host its `meta.json` names. While it does, `check start` and `check reopen` on that host refuse, and `check end` on that check removes it; nothing renames it, so the older session that wrote it can still find its check. The run directory stays either way. A session still running an older `tmdev.py`, from a branch that doesn't have this change, sees only that single file, so it can't find a check the newer version opened.
+
 ### Testing another branch
 
 The tools can test a branch that doesn't contain them, such as an open PR that this one isn't based on. Add a worktree for that branch and open the check with `--src`:
@@ -142,8 +163,8 @@ $T run local -- bash -n script/tmsetup.sh   # local commands run in ../tm-pr210
 ```
 
 While that check is open:
-- `deploy` uses its `--src` checkout and PR number, unless you pass `--src` or `--pr`.
-- `run local` runs in that checkout.
+- `deploy tm-dev-01` uses its `--src` checkout and PR number, unless you pass `--src` or `--pr`. A deploy to another host doesn't.
+- `run local` runs in that checkout (with another check open too, add `--host tm-dev-01`).
 - `checklist.md` names the code under test, and also the checkout the tools ran from.
 
 `--src` must be the top of a git work tree containing `script/tmsetup.sh`.
@@ -302,12 +323,15 @@ Every message, `summary.md`, and `checklist.md` gives the full path of its run d
 ~/.local/state/traffic-monitor/dev-tests/
   LOG.md          one row per deploy, check, or test run, newest last
   runs.jsonl      the same rows as JSON lines
+  log.lock        held while a row is added to either, so two sessions' rows don't mix, and while a check
+                  opens, so two sessions can't both find a host free
+  active-check-<host>  the host's open check: its run directory
   runs/<UTC time>-<kind>-<host>[-pr<N>]/
     meta.json     host, code under test (branch, commit, uncommitted files), tools if they differ, arguments, result
     tmsetup.log   deploys (on-Pi deploys also keep rsync.log)
     summary.md    device-test runs, with results.jsonl
     checklist.md  checks, with commands.log and cmd-NNN.out
-  adhoc/<date>/   commands run while no check was open
+  adhoc/<date>/   commands run while their host had no check open
 ```
 
 To see how a Pi did:

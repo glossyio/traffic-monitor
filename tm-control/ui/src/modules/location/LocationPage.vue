@@ -7,7 +7,8 @@
   "Mounting" on the place in use opens the Mounting page, where its headings and mounting change. While a sensor of the
   place in use has mounting values from the last time the unit was there (GET /surveys/{id}/mounting), the card says
   so. A used place or the place in use can have its location, or an ended deployment's heading, corrected in
-  CorrectDialog. "Import places" adds
+  CorrectDialog. "Time zone" on a used place or the place in use opens TimeZoneDialog
+  (PUT /surveys/{id}/timezone). "Import places" adds
   planned places from a CSV in ImportPlaces. A planned or used place can be deleted (DELETE /surveys/{id}) after a
   confirmation; the place in use can't. "Exact locations" saves the places' exact locations as a CSV (GET /surveys/export)
   after a confirmation. The download of a database copy that holds them is on the Sharing page (Download your data),
@@ -35,6 +36,8 @@ import { facing } from './heading'
 import ImportPlaces from './ImportPlaces.vue'
 import PlaceDetails, { type Details } from './PlaceDetails.vue'
 import PlaceForm from './PlaceForm.vue'
+import TimeZoneDialog from './TimeZoneDialog.vue'
+import { loadTimeZones } from './timezones'
 
 type PlacesState = components['schemas']['PlacesState']
 type SurveyOut = components['schemas']['SurveyOut']
@@ -59,6 +62,8 @@ const SHARING_WORDS = {
 }
 
 const state = ref<PlacesState | null>(null)
+// The unit's clock's time zone, which a place starts with; null when unknown, which includes an empty name
+const clockTimeZone = computed(() => state.value?.clock_timezone || null)
 const loadError = ref('')
 
 function titleOf(place: SurveyOut) {
@@ -291,6 +296,16 @@ function openCorrection(kind: 'location' | 'heading', place: SurveyOut, deployme
   correctOpen.value = true
 }
 
+// Setting a place's time zone in TimeZoneDialog. `timeZoning` keeps the place after the dialog closes, as `correcting`
+// does. Once saved, the places load again: the panel's time zone comes from the list, not from the details.
+const timeZoneOpen = ref(false)
+const timeZoning = ref<SurveyOut | null>(null)
+
+function openTimeZone(place: SurveyOut) {
+  timeZoning.value = place
+  timeZoneOpen.value = true
+}
+
 // Importing places from a CSV in ImportPlaces; `imports` counts the openings, so each one starts over
 const importOpen = ref(false)
 const imports = ref(0)
@@ -323,7 +338,23 @@ async function load() {
   }
 }
 
-onMounted(load)
+// The device's list of time zones, asked for once when the page opens and passed to every control. It doesn't hold up
+// the page: with no list, a place still gets the unit's clock's time zone, and the controls say why the list is empty.
+const timeZones = ref<string[]>([])
+const timeZonesError = ref('')
+
+async function loadTimeZoneList() {
+  try {
+    timeZones.value = await loadTimeZones()
+  } catch (error) {
+    timeZonesError.value = messageOf(error)
+  }
+}
+
+onMounted(() => {
+  void loadTimeZoneList()
+  void load()
+})
 </script>
 
 <template>
@@ -395,6 +426,7 @@ onMounted(load)
                 :place="place"
                 :details="details[place.id]"
                 :nodered="state.nodered"
+                :clock-time-zone="clockTimeZone"
                 :mounting-sensors="mounting?.sensors ?? null"
                 @retry="loadDetails(place.id)"
                 @correct-heading="(deployment) => openCorrection('heading', place, deployment)"
@@ -424,6 +456,15 @@ onMounted(load)
                   @click="openCorrection('location', place)"
                 >
                   Correct location
+                </v-btn>
+                <v-btn
+                  v-if="place.status !== 'planned'"
+                  variant="outlined"
+                  color="primary"
+                  size="large"
+                  @click="openTimeZone(place)"
+                >
+                  Time zone
                 </v-btn>
                 <v-btn
                   v-if="place.status !== 'in_use'"
@@ -566,6 +607,9 @@ onMounted(load)
       :survey="editing"
       :map="state.map"
       :centre="centre"
+      :time-zones="timeZones"
+      :time-zones-error="timeZonesError"
+      :clock-time-zone="clockTimeZone"
       @saved="load"
       @stale="load"
     />
@@ -581,6 +625,8 @@ onMounted(load)
         :key="reviews"
         :place="deployTo"
         :state="state"
+        :time-zones="timeZones"
+        :time-zones-error="timeZonesError"
         @deployed="refresh"
         @stale="load"
         @close="deployOpen = false"
@@ -595,6 +641,16 @@ onMounted(load)
       :map="state.map"
       :centre="centre"
       @corrected="refresh"
+      @stale="load"
+    />
+    <TimeZoneDialog
+      v-if="timeZoning && state"
+      v-model:open="timeZoneOpen"
+      :place="timeZoning"
+      :time-zones="timeZones"
+      :time-zones-error="timeZonesError"
+      :clock-time-zone="clockTimeZone"
+      @saved="load"
       @stale="load"
     />
     <!-- Scrollable: a long preview scrolls inside the dialog, and the title and buttons stay in view. Persistent: a
