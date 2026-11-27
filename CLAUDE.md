@@ -77,14 +77,14 @@ From a dev machine, against a bench Pi defined in the local dev-Pi inventory (`s
 ```bash
 .venv/bin/python script/devpi/tmdev.py pi-login [--key <name>] [--shell]       # tmdev login for a new card (cloud-init) or running Pi
 .venv/bin/python script/devpi/tmdev.py hosts                                   # dev Pis in the inventory
-.venv/bin/python script/devpi/tmdev.py deploy <host> [--on-pi] -- -t <tag>     # tmsetup.sh with -y; may reboot the Pi
-.venv/bin/python script/devpi/tmdev.py run <host>|local -- <command>           # run and log a command
-.venv/bin/python script/devpi/tmdev.py check start|item|status|end ...         # record a PR's Pi test plan
+.venv/bin/python script/devpi/tmdev.py deploy <host> [--on-pi] -- -t <tag>     # tmsetup.sh with -y (the host's check's --src); may reboot the Pi
+.venv/bin/python script/devpi/tmdev.py run <host>|local [--host <h>] -- <command>  # run and log a command (in the host's check)
+.venv/bin/python script/devpi/tmdev.py check start|item|status|end ...         # record a PR's Pi test plan; one open check per host
 .venv/bin/python script/devpi/tmdev.py test <host> [--disruptive] [-- -k <expr>]  # device tests vs. the host's tm_expect
 .venv/bin/python script/devpi/tmdev.py log                                     # newest rows of the run log
 ```
 
-The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH. Device tests that read `config.yml` or `tmdb.sqlite` run only on hosts marked `tm_expect.pii_free: true`.
+Each host has at most one open check, so sessions on different units don't block each other; with two or more open, `run local` and `check item`, `status`, and `end` need `--host <h>`. A session should always pass `--host` to those four: with one check open they use it even when it is another session's. The inventory and the run log live outside the repo. Never commit them, and keep device names and addresses out of commits and PR text. tmdev logs in as a key-only `tmdev` account with passwordless sudo, because Raspberry Pi OS 6.2 and later asks for a sudo password by default and `tmsetup.sh -K` can't be answered over SSH. Device tests that read `config.yml` or `tmdb.sqlite` run only on hosts marked `tm_expect.pii_free: true`.
 
 Containers run as rootful, Quadlet-generated systemd units:
 
