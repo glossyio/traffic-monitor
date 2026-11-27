@@ -162,6 +162,14 @@ def pi_now(host):
     return float(host.check_output("date +%s"))
 
 
+def service_active_seconds(host, unit):
+    """How long a service has been active, from systemd's monotonic stamp against the Pi's uptime,
+    so a jump of the wall clock since the start doesn't change it."""
+    entered = int(host.check_output(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}"))
+    uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
+    return uptime - entered / 1e6
+
+
 def broker_login(host, expect, codedir):
     """The broker login in node-red-tm.env, as Redacted (username, password); each is empty when none is set."""
     if not expect["pii_free"]:

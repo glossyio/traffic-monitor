@@ -10,8 +10,8 @@ import re
 from datetime import datetime
 
 import pytest
-from devpi_checks import (db_query, pi_now, places_state, read_root_file, require_pii_free, role_vars, session,
-                          tm_internal_answer, tm_internal_token)
+from devpi_checks import (db_query, pi_now, places_state, read_root_file, require_pii_free, role_vars,
+                          service_active_seconds, session, tm_internal_answer, tm_internal_token)
 
 MAX_RADAR_AGE_SECONDS = 15 * 60
 MAX_EVENT_AGE_SECONDS = 60 * 60
@@ -141,14 +141,6 @@ WATCH_MAX_AGE_SECONDS = 400
 # The first mark after a start writes nothing, so the first rows come at the second mark: up to ten minutes
 # after the start, plus the time to write them.
 WATCH_FIRST_ROWS_SECONDS = 11 * 60
-
-
-def service_active_seconds(host, unit):
-    """How long a service has been active, from systemd's monotonic stamp against the Pi's uptime,
-    so a jump of the wall clock since the start doesn't change it."""
-    entered = int(host.check_output(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}"))
-    uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
-    return uptime - entered / 1e6
 
 
 def node_red_active_seconds(host):
