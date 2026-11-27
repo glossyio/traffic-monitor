@@ -143,6 +143,7 @@ def test_the_mirror_and_the_trees_are_roots(host):
         top = path.split("/")[0]
         if top.endswith(".partial") or (path and top != "repo.git" and not TREE_NAME.fullmatch(top)):
             continue  # one being made, or not this job's
-        if (owner, group) != ("root", "root") or int(mode, 8) & 0o022:
+        # A symlink's own mode is always 777 and means nothing, so only its owner and group are checked
+        if (owner, group) != ("root", "root") or (kind != "l" and int(mode, 8) & 0o022):
             problems.append(f"{path or SOURCE_ROOT}: {kind} {mode} {owner}:{group}")
     assert not problems, "not root's alone: " + "; ".join(problems)
