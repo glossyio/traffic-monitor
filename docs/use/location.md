@@ -1,5 +1,5 @@
 ---
-description: Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, and export or download the exact locations.
+description: Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.
 ---
 
 # Places and location
@@ -18,9 +18,9 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the exact locations ([a list](#export-the-exact-locations) and [a copy of the database](#download-the-database-with-exact-locations)), and, last, the [precision](#choose-the-precision).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the [list of exact locations](#export-the-exact-locations), and, last, the [precision](#choose-the-precision). A copy of the database with the exact locations in it is on the [Sharing page](sharing.md#include-each-places-exact-location).
 
-![The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its two buttons, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
+![The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its Export button and a link to the Sharing page, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
 
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 
@@ -208,47 +208,11 @@ The place in use can't be deleted. Deploy another place first.
 
 **Export exact locations**, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.
 
-The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see [Download the database with exact locations](#download-the-database-with-exact-locations).
+The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see [Download your data](sharing.md#include-each-places-exact-location) on the Sharing page.
 
 ## Download the database with exact locations
 
-**Download the database with exact locations**, next to **Export exact locations**, saves a copy of the database that also holds where the device was. Use it when the person who analyzes the data should map it at the real places, and a separate list of places to match by id would be one more step.
-
-Choose the button and read the question. It says that the copy holds the exact location of each place the device has been at, that the database on the device keeps its rounded locations, and that you should give the copy only to someone who should know where the device was. Choose **Download**. The device makes a consistent copy of the database first, so the download starts after a wait, which can take a few minutes for a large database, and the page says so. The copy needs free space about the size of the database, as the [Data export](../ui/database.md#download-the-database) download does. If the device can't make the copy, the browser has already left the Location page and shows a plain text page with the reason instead of a file: go back to the Location page, and reload it before you try again. Once a copy has started, the button stays off until you reload the page, so that a second copy isn't started by mistake while the first is still being made.
-
-The button is off, with the reason under it, until a place the device has been at, one marked **In use** or **Used**, has a location. A planned place doesn't count, because the device was never there.
-
-The file is named `<hostname>_<time>_tmdb-exact-locations.tar.gz` and holds `tmdb-exact-locations.sqlite`. The name says what it is, so nobody takes it for the database you can share. On a phone joined to the unit's hotspot, see [Phones](wifi-hotspot.md#phones) for how downloads save.
-
-### What the copy adds
-
-The copy is the database as it is, with two more things in it:
-
-* The table `survey_exact_location` has one row for each place: its id, and its exact latitude and longitude.
-* The view `deployment_exact` is the `deployment` table with two more columns, `exact_lat` and `exact_lon`, from the place the row names.
-
-The `deployment` table itself is not changed. Its `lat` and `lon` still hold the location rounded to the [precision](#choose-the-precision) stored with each row, so a script that reads them gets the rounded location from every file, and an exact point can't be picked up by mistake. To list where the device was and when, with each deployment's sensor, start, end, and exact point:
-
-```sql
-SELECT sensorName,
-       datetime(entryStartDateTime / 1000, 'unixepoch') AS started,
-       datetime(entryEndDateTime / 1000, 'unixepoch') AS ended,
-       exact_lat, exact_lon
-FROM deployment_exact
-ORDER BY entryStartDateTime;
-```
-
-The times are in UTC, and `ended` is empty for a deployment that is still running. A place has one exact point, so this covers every place the device has been at, past ones included, and not only the one in use.
-
-The table holds the places the device has been at that have a location. A planned place is never in it, and neither is a place the database doesn't name. The view's `exact_lat` and `exact_lon` are empty for:
-
-* A place with no location.
-* A place the control app no longer has, because you deleted it.
-* A deployment from [before any place was recorded](#the-location-page), which names no place.
-
-A [correction](#correct-a-wrong-location-or-heading) shows in the copy as corrected: the place has one point, and a corrected place has the new one, with its rows' rounded location corrected the same way. A copy you downloaded earlier keeps the values it had, so two copies of the same device can differ, and the newer one is right. The copy doesn't hold the record of corrections.
-
-The database on the device is unchanged: it never holds the table or the view, and the **Download the database** button on the [Data export](../ui/database.md#download-the-database) page still saves rounded locations only. The device removes its working copy when the download ends. The file you saved says where the device was, so give it only to people who should know. The table holds what the [`exact_location`](../data-and-payloads/data-overview.md#the-exact-location-in-a-database-copy) attribute holds when you share the exact location.
+This download moved to the **Download your data** card on the [Sharing page](sharing.md#download-your-data). Tick [**Include each place's exact location**](sharing.md#include-each-places-exact-location) there to save a copy of the database that also holds where the device was.
 
 ## Choose the precision
 
@@ -260,7 +224,7 @@ The database on the device is unchanged: it never holds the table or the view, a
 | **About 10 km** (45.5, -122.7) | One decimal place, about a city |
 | **About 1 km** (45.52, -122.69), the default | Two decimal places, about a neighborhood |
 
-The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](sharing.md), [export it](#export-the-exact-locations), [download a copy of the database that holds it](#download-the-database-with-exact-locations), or save it with a camera's [reference picture](cameras.md#take-a-reference-picture). Choose one and **Save**.
+The exact location is never stored in the database. It stays on this device, and leaves it only if you [share it](sharing.md), [export it](#export-the-exact-locations), [download a copy of the database that holds it](sharing.md#include-each-places-exact-location), or save it with a camera's [reference picture](cameras.md#take-a-reference-picture). Choose one and **Save**.
 
 * **A coarser choice** applies to the deployments running now at once. Rows stored before them keep their precision unless you tick **Also round the rows already stored**, which asks first, because it can't be undone.
 * **No location stored** removes the stored location from the deployments running now at once. Tick **Also remove it from the rows already stored** to remove it from every row in the database as well, which also asks first. The exact location stays on the device, but the database can't get the rounded values back.
@@ -269,8 +233,8 @@ The exact location is never stored in the database. It stays on this device, and
 ## What leaves the device
 
 * A place's description, and the reasons you give for corrections, never leave the device.
-* A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Download the database with exact locations**](#download-the-database-with-exact-locations), which adds each place's exact location in a table of its own.
-* Data you [share](sharing.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download the database with exact locations**](#download-the-database-with-exact-locations), go where you send them.
+* A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Include each place's exact location**](sharing.md#include-each-places-exact-location) ticked under **Download your data** on the Sharing page, which adds each place's exact location in a table of its own.
+* Data you [share](sharing.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download your data**](sharing.md#include-each-places-exact-location) with the exact locations, go where you send them.
 * A camera's [reference picture](cameras.md#take-a-reference-picture) holds the exact location of the place in use unless you clear **Include this place's exact location**, and the pictures show the street. The zip goes where you send it.
 * A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
 

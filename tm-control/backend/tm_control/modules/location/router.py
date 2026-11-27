@@ -585,16 +585,14 @@ def database_copy(request: Request, response: Response, admin: User = Depends(re
     except ConfigError as error:
         raise config_error(error) from None
     places = [
-        {"survey_id": place.id, "lat": place.lat, "lon": place.lon}
-        for place in Places(app_state.state).list()
-        if place.status in ("in_use", "used") and place.lat is not None and place.lon is not None
+        {"survey_id": place.id, "lat": place.lat, "lon": place.lon} for place in Places(app_state.state).located()
     ]
     if not places:
         raise ApiError(
             409,
             "no_exact_locations",
             "No place this device has been at has an exact location, so a copy would hold nothing more than the "
-            "database download on the Data export page.",
+            "download without the box ticked.",
         )
     ticket = secrets.token_hex(16)
     try:

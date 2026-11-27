@@ -77,6 +77,7 @@ def _surveys(con, where: str = "", args: tuple = ()) -> list[Survey]:
 # `list` is a method of Places, so inside the class body the name no longer means the builtin; before Python 3.14
 # evaluates annotations lazily, `list[SensorHeading]` or `list[Mounting]` in a signature below it would fail.
 _HeadingList = list[SensorHeading]
+_SurveyList = list[Survey]
 _MountingList = list[Mounting]
 
 
@@ -87,6 +88,11 @@ class Places:
     def list(self) -> list[Survey]:
         with _reading(self.state) as con:
             return _surveys(con)
+
+    def located(self) -> _SurveyList:
+        """The places the device has been at (in use or used) that have both coordinates, in list order."""
+        with _reading(self.state) as con:
+            return _surveys(con, "WHERE status IN ('in_use', 'used') AND lat IS NOT NULL AND lon IS NOT NULL")
 
     def get(self, survey_id: str) -> Survey | None:
         with _reading(self.state) as con:

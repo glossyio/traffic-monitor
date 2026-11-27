@@ -22,7 +22,7 @@ Images do exist on the device, briefly. Frigate keeps snapshots and short clips 
 
 By default, the device sends no images or video anywhere. Everything is processed on the device, and `tmdb.sqlite` holds only metadata. The live view and the recordings are behind the device's [login](../use/control-app.md), which decides who on your network can open the apps. It isn't a control on the images themselves: anyone with an account on the device can see them, and they're ordinary files on the device's card. Frigate can also publish a snapshot of each detected object on the device's [MQTT broker](integrations.md#mqtt). New installs turn those snapshots off, and they stay on the device unless you give the broker a login, which opens it to your network. [Tune object detection](../configuration/frigate-config.md#recordings-and-snapshots) shows the setting. A snapshot you choose to [submit to Frigate+](../configuration/frigate-config.md#submit-snapshots) does leave the device, and it can show people.
 
-With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose **About 10 km** or **No location stored** on the [Location](../use/location.md) page before it starts recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database. The database, and the download on the Data export page, hold rounded locations; the Location page's separate [download with exact locations](../use/location.md#download-the-database-with-exact-locations) adds the exact ones, for admins.
+With the default settings, the database is de-identified: it holds no images, plate numbers, or exact location. The place the device was used at is stored as a survey id, which has no coordinates in it, and any coordinates are rounded to about 1 km by default and never stored more precisely (see [deployment](#deployment)). Where homes are far apart, a square about 1 km across may hold only one or two of them, so the rounded location can point to the house even though it isn't exact. If the device is at a home, especially in a rural area, choose **About 10 km** or **No location stored** on the [Location](../use/location.md) page before it starts recording. The exact location stays on the device, in `config.yml` and in the control app's list of places, and neither is part of the database. The database, and the download on the Data export page, hold rounded locations; the Sharing page's [download with each place's exact location](../use/sharing.md#include-each-places-exact-location) adds the exact ones, for admins.
 
 The database stops being de-identified if you:
 
@@ -109,7 +109,7 @@ Free-text notes an operator adds on the [Data export](../ui/database.md) page, f
 
 ### The exact location in a database copy
 
-The database on the device never holds an exact location. A copy made with [**Download the database with exact locations**](../use/location.md#download-the-database-with-exact-locations) on the Location page does: the device adds a table and a view to the copy, and only to the copy. The database itself, and the download on the [Data export](../ui/database.md) page, never have them. The `deployment` table in the copy is unchanged, so its `lat` and `lon` stay rounded.
+The database on the device never holds an exact location. A copy made with [**Download your data**](../use/sharing.md#include-each-places-exact-location) on the Sharing page, with **Include each place's exact location** ticked, does: the device adds a table and a view to the copy, and only to the copy. The database itself, and the download on the [Data export](../ui/database.md) page, never have them. The `deployment` table in the copy is unchanged, so its `lat` and `lon` stay rounded.
 
 `survey_exact_location` has one row for each place the device has been at that has a location:
 
@@ -119,7 +119,7 @@ The database on the device never holds an exact location. A copy made with [**Do
 | `lat` | REAL | Latitude in decimal degrees, to five decimal places |
 | `lon` | REAL | Longitude in decimal degrees, to five decimal places |
 
-`deployment_exact` is the `deployment` table with two more columns after its own, `exact_lat` and `exact_lon`, taken from `survey_exact_location` by `survey_id`. They are empty for a row whose place has no row in the table: a place with no location, a place deleted from the Location page, and a deployment from before any place was recorded. A planned place is never in the table. The table holds what the `exact_location` attribute holds when the exact location is [shared](../use/sharing.md): a place's id and its coordinates. [Places and location](../use/location.md#what-the-copy-adds) has an example query.
+`deployment_exact` is the `deployment` table with two more columns after its own, `exact_lat` and `exact_lon`, taken from `survey_exact_location` by `survey_id`. They are empty for a row whose place has no row in the table: a place with no location, a place deleted from the Location page, and a deployment from before any place was recorded. A planned place is never in the table. The table holds what the `exact_location` attribute holds when the exact location is [shared](../use/sharing.md): a place's id and its coordinates. [Share data](../use/sharing.md#what-the-copy-adds) has an example query.
 
 ### Schema versions
 
@@ -129,7 +129,7 @@ If a migration fails, it's rolled back, and Node-RED starts on the previous vers
 
 ## Getting the data
 
-* **Download** the whole database, or a JSON export of events, radar readings, or air quality readings over a date range, from the [Data export](../ui/database.md) page.
+* **Download** the whole database from the [Sharing page](../use/sharing.md#download-your-data), or from the [Data export](../ui/database.md) page, which also exports events, radar readings, or air quality readings over a date range as JSON.
 * **Open** the database with [DB Browser for SQLite](https://sqlitebrowser.org/), or from code with any SQLite library, such as Python's built-in `sqlite3`.
 * **Subscribe** to today's counts over MQTT, or **upload** everything to ThingsBoard. See [MQTT and ThingsBoard](integrations.md).
 * **Review** snapshots and clips in Frigate's **Explore** view at `http://<device>/frigate/`.

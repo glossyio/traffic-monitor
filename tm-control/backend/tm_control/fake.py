@@ -498,6 +498,7 @@ class FakeNodeRed(NodeRed):
     """
 
     SCHEMA_VERSION = 2
+    DATABASE_BYTES = 734_003_200  # 700 MiB: what the status says of the database file
     RECORDS_AFTER = 30.0  # seconds after which a camera's or a radar's open row counts as having recorded traffic
 
     def __init__(self, config_path: Path):
@@ -629,6 +630,7 @@ class FakeNodeRed(NodeRed):
         return {
             "status": "ok",
             "schema_version": self.SCHEMA_VERSION,
+            "database_bytes": self.DATABASE_BYTES,
             "config": {"loaded_at": None, "errors": []},
             "deployment": {
                 "survey_id": place.survey_id if place else None,

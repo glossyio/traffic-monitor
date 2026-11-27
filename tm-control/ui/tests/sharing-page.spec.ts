@@ -1,7 +1,17 @@
 // The Sharing page: what this device shares and with which server, for everyone, and the form for admins.
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ADMIN, SHARING_ON, VIEWER, apiError, json, sharingState, signedIn, type SharingState } from './fake-api'
+import {
+  ADMIN,
+  DOWNLOAD_FACTS,
+  SHARING_ON,
+  VIEWER,
+  apiError,
+  json,
+  sharingState,
+  signedIn,
+  type SharingState,
+} from './fake-api'
 import { click, field, mountApp } from './mount'
 
 const SHARING = 'GET /api/v1/sharing'
@@ -94,6 +104,38 @@ describe('the Sharing page', () => {
     await click(wrapper, "I've reviewed this")
     expect(api.sent.some((r) => r.method === 'POST' && r.path === '/api/v1/sharing/reviewed')).toBe(true)
     expect(wrapper.text()).not.toContain(REVIEW_TEXT)
+  })
+
+  it('shows an admin the download card above the saved settings', async () => {
+    signedIn(ADMIN, { [SHARING]: { ...SHARING_ON, download: DOWNLOAD_FACTS } })
+    const { wrapper } = await mountApp('/sharing')
+    const titles = wrapper.findAll('h2').map((h) => h.text())
+    expect(titles.indexOf('Download your data')).toBe(0)
+    expect(titles.indexOf('Saved settings')).toBe(1)
+    expect(field(wrapper, "Include each place's exact location").element.checked).toBe(false)
+  })
+
+  it('shows a viewer no download card', async () => {
+    signedIn(VIEWER, { [SHARING]: { ...FOR_VIEWER, download: null } })
+    const { wrapper } = await mountApp('/sharing')
+    expect(wrapper.text()).not.toContain('Download your data')
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Download')).toBe(false)
+  })
+
+  it('keeps the tick when the page reads the state again', async () => {
+    let reviewed = false
+    signedIn(ADMIN, {
+      [SHARING]: () => json(200, { ...SHARING_ON, download: DOWNLOAD_FACTS, review_needed: !reviewed }),
+      [REVIEWED]: () => {
+        reviewed = true
+        return json(204, null)
+      },
+    })
+    const { wrapper } = await mountApp('/sharing')
+    await field(wrapper, "Include each place's exact location").setValue(true)
+    await click(wrapper, "I've reviewed this")
+    expect(wrapper.text()).not.toContain(REVIEW_TEXT) // the state was read again
+    expect(field(wrapper, "Include each place's exact location").element.checked).toBe(true)
   })
 
   it('shows a viewer the review notice without the button', async () => {

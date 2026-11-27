@@ -194,11 +194,10 @@ describe('the Location page', () => {
       expect(headings).toEqual(['Places', 'Exact locations', 'Precision'])
       const note = wrapper.findAll('section > h2')[1].element.nextElementSibling as HTMLElement
       expect(note.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-        "The database keeps a rounded location. You can save each place's exact one as a list, or download a copy of " +
-          'the database that has the exact locations in it.',
+        "The database keeps a rounded location. You can save each place's exact one as a list here. To download the " +
+          'database with the exact locations in it, go to Sharing.',
       )
       expect(button(wrapper, 'Export exact locations')).toBeDefined()
-      expect(button(wrapper, 'Download the database with exact locations')).toBeDefined()
     })
 
     it('asks first, and fetches nothing until the admin confirms', async () => {
@@ -243,143 +242,46 @@ describe('the Location page', () => {
       expect(save).not.toHaveBeenCalled()
     })
 
-    describe('the database copy', () => {
-      const COPY = 'POST /api/v1/surveys/database-copy'
-      const COPY_BUTTON = 'Download the database with exact locations'
-      const LINK = '/storefiles?files=/db/tmdb-exact-locations&tm_token=abc'
-      const NOTE_START = 'The device is making the copy.'
+    it('has no database download', async () => {
+      // A unit with no located place: neither the button nor the line that explained its being off is left
+      const unlocated = place({ id: 'bbbbbbbb-si', status: 'used', lat: null, lon: null })
+      signedIn(ADMIN, { [SURVEYS]: { ...PLACES, in_use: null, surveys: [PLANNED, unlocated] } })
+      const { wrapper } = await mountApp('/location')
+      expect(wrapper.findAll('button').filter((b) => b.text().includes('Download the database'))).toHaveLength(0)
+      expect(wrapper.text()).not.toContain('No place this device has been at has an exact location yet.')
+      expect(button(wrapper, 'Export exact locations')).toBeDefined()
+    })
 
-      it('asks before starting a database copy, then opens the link the API gives', async () => {
-        const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [COPY]: { url: LINK, places: 2 } })
-        const open = vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        await click(wrapper, COPY_BUTTON)
-        expect(dialogText()).toContain('Download the database with exact locations?')
-        expect(dialogText()).toContain(
-          'This copy of the database includes the exact location of each place the device has been at. The database on ' +
-            'this device keeps its rounded locations. Give the copy only to someone who should know where the device was.',
-        )
-        expect(api.sent.some((r) => r.method === 'POST' && r.path === '/api/v1/surveys/database-copy')).toBe(false)
-        expect(open).not.toHaveBeenCalled()
-        expect(wrapper.text()).not.toContain(NOTE_START)
-
-        await clickInDialog('Download')
-        expect(api.sent.filter((r) => r.method === 'POST' && r.path === '/api/v1/surveys/database-copy')).toHaveLength(1)
-        expect(open).toHaveBeenCalledTimes(1)
-        expect(open).toHaveBeenCalledWith(LINK)
-        expect(wrapper.text()).toContain(
-          "The device is making the copy. The download starts by itself when the copy is ready, which can take a few minutes for a large database. The file's name ends in tmdb-exact-locations.tar.gz.",
-        )
-      })
-
-      it('opens nothing when the dialog is cancelled', async () => {
-        const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [COPY]: { url: LINK, places: 2 } })
-        const open = vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Cancel')
-        expect(api.sent.some((r) => r.method === 'POST')).toBe(false)
-        expect(open).not.toHaveBeenCalled()
-        expect(wrapper.text()).not.toContain(NOTE_START)
-      })
-
-      it("shows the API's message and opens nothing when the copy can't start", async () => {
-        signedIn(ADMIN, {
-          [SURVEYS]: PLACES,
-          [COPY]: apiError(502, 'nodered_error', 'Node-RED did not accept the places.'),
-        })
-        const open = vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Download')
-        expect(wrapper.text()).toContain('Node-RED did not accept the places.')
-        expect(wrapper.text()).not.toContain(NOTE_START)
-        expect(open).not.toHaveBeenCalled()
-      })
-
-      it('clears an earlier failure when the admin starts again', async () => {
-        let calls = 0
-        signedIn(ADMIN, {
-          [SURVEYS]: PLACES,
-          [COPY]: () =>
-            ++calls === 1 ? apiError(502, 'nodered_error', 'Node-RED did not accept the places.') : json(200, { url: LINK, places: 2 }),
-        })
-        vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Download')
-        expect(wrapper.text()).toContain('Node-RED did not accept the places.')
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Download')
-        expect(wrapper.text()).not.toContain('Node-RED did not accept the places.')
-        expect(wrapper.text()).toContain(NOTE_START)
-      })
-
-      it('keeps the database copy disabled after a copy has started, until the page is reloaded', async () => {
-        const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [COPY]: { url: LINK, places: 2 } })
-        vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeUndefined()
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Download')
-        expect(wrapper.text()).toContain(NOTE_START)
-        // A second copy, with the exact locations, would sit on the card too: no second request is possible
-        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeDefined()
-        await button(wrapper, COPY_BUTTON).trigger('click')
-        await flushPromises()
-        expect(document.querySelectorAll('.v-overlay--active .v-dialog')).toHaveLength(0) // no question opens
-        expect(api.sent.filter((r) => r.method === 'POST' && r.path === '/api/v1/surveys/database-copy')).toHaveLength(1)
-      })
-
-      it('lets the admin try again after the copy could not start', async () => {
-        signedIn(ADMIN, {
-          [SURVEYS]: PLACES,
-          [COPY]: apiError(502, 'nodered_error', 'Node-RED did not accept the places.'),
-        })
-        vi.spyOn(download, 'openDownload').mockImplementation(() => {})
-        const { wrapper } = await mountApp('/location')
-        await click(wrapper, COPY_BUTTON)
-        await clickInDialog('Download')
-        expect(wrapper.text()).toContain('Node-RED did not accept the places.')
-        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeUndefined()
-      })
-
-      it('disables the database copy when no place the device has been at has an exact location, and says why', async () => {
-        const REASON = 'No place this device has been at has an exact location yet.'
-        // Only a located planned place, and a used place with no coordinates: neither counts
-        const unlocated = place({ id: 'bbbbbbbb-si', status: 'used', lat: null, lon: null })
-        signedIn(ADMIN, { [SURVEYS]: { ...PLACES, in_use: null, surveys: [PLANNED, unlocated] } })
-        const { wrapper } = await mountApp('/location')
-        expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeDefined()
-        expect(wrapper.text()).toContain(REASON)
-        expect(button(wrapper, 'Export exact locations').attributes('disabled')).toBeUndefined()
-      })
-
-      it('enables the database copy for a located place in use or used, with no reason shown', async () => {
-        const REASON = 'No place this device has been at has an exact location yet.'
-        for (const located of [IN_USE, USED]) {
-          signedIn(ADMIN, { [SURVEYS]: { ...PLACES, in_use: null, surveys: [PLANNED, located] } })
-          const { wrapper } = await mountApp('/location')
-          expect(button(wrapper, COPY_BUTTON).attributes('disabled')).toBeUndefined()
-          expect(wrapper.text()).not.toContain(REASON)
-          wrapper.unmount()
-        }
-      })
+    it('points to the Sharing page for the database', async () => {
+      signedIn(ADMIN, { [SURVEYS]: PLACES })
+      const { wrapper } = await mountApp('/location')
+      const [, exact, precision] = wrapper.findAll('section > h2').map((h) => h.element.nextElementSibling as HTMLElement)
+      const words = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim()
+      expect(words(exact)).toBe(
+        "The database keeps a rounded location. You can save each place's exact one as a list here. To download the " +
+          'database with the exact locations in it, go to Sharing.',
+      )
+      expect(exact.querySelector('a')?.getAttribute('href')).toBe('/sharing')
+      expect(exact.querySelector('a')?.textContent).toBe('Sharing')
+      expect(words(precision)?.endsWith(
+        "To give someone a copy of the database with each place's exact location, for analysis and mapping, tick " +
+          "Include each place's exact location under Download your data on the Sharing page.",
+      )).toBe(true)
+      expect(precision.querySelector('a')?.getAttribute('href')).toBe('/sharing')
+      expect(precision.querySelector('a')?.textContent).toBe('the Sharing page')
+    })
 
       it('keeps Export exact locations as it was', async () => {
         const api = signedIn(ADMIN, { [SURVEYS]: PLACES, [EXPORT]: csvFile })
         const save = vi.spyOn(download, 'saveBlob').mockImplementation(() => {})
-        const open = vi.spyOn(download, 'openDownload').mockImplementation(() => {})
         const { wrapper } = await mountApp('/location')
         await click(wrapper, 'Export exact locations')
         expect(dialogText()).toContain('Export the exact locations?')
         await clickInDialog('Export')
         expect(api.sent.filter((r) => r.path === '/api/v1/surveys/export')).toHaveLength(1)
         expect(save).toHaveBeenCalledTimes(1)
-        expect(open).not.toHaveBeenCalled()
         expect(api.sent.some((r) => r.path === '/api/v1/surveys/database-copy')).toBe(false)
       })
-    })
   })
 
   it('lists the places in use, planned, then used, and marks the imported one', async () => {
@@ -464,7 +366,7 @@ describe('the Location page', () => {
       "To better protect your privacy, by default the database stores each place's location rounded to about 1 km. A " +
         'shared copy of the database holds only the rounded location. This device keeps the exact location you enter, ' +
         'outside the database. To give someone a copy of the database with each place\'s exact location, for analysis ' +
-        'and mapping, use Download the database with exact locations, above.',
+        "and mapping, tick Include each place's exact location under Download your data on the Sharing page.",
     )
     const card = wrapper.find('.v-card').element
     expect(card.nextElementSibling?.tagName).toBe('SECTION') // nothing else between the card and the places

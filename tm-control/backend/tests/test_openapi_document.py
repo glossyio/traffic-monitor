@@ -23,6 +23,7 @@ def test_sharing_paths_are_declared_with_their_answers(settings):
     expected = {
         ("/api/v1/sharing", "get"): "200",
         ("/api/v1/sharing", "put"): "200",
+        ("/api/v1/sharing/download", "post"): "200",
         ("/api/v1/sharing/notice", "get"): "200",
         ("/api/v1/sharing/reviewed", "post"): "204",
     }

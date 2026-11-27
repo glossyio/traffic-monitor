@@ -1750,6 +1750,28 @@
         }
       }
     },
+    "/api/v1/sharing/download": {
+      "post": {
+        "tags": [
+          "sharing"
+        ],
+        "summary": "Start Download",
+        "description": "A one-time link to the whole database, for the Sharing page's Download your data card (without the exact\nlocations; with them, POST /surveys/database-copy). The audit row has no detail, and the link is in no log.",
+        "operationId": "start_download_api_v1_sharing_download_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sharing/reviewed": {
       "post": {
         "tags": [
@@ -3767,6 +3789,31 @@
         ],
         "title": "Disk"
       },
+      "DownloadFacts": {
+        "properties": {
+          "database_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Database Bytes"
+          },
+          "exact_places": {
+            "type": "integer",
+            "title": "Exact Places"
+          }
+        },
+        "type": "object",
+        "required": [
+          "database_bytes",
+          "exact_places"
+        ],
+        "title": "DownloadFacts"
+      },
       "DownloadLink": {
         "properties": {
           "url": {
@@ -3794,6 +3841,19 @@
           "files"
         ],
         "title": "DownloadLinkRequest"
+      },
+      "DownloadOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "DownloadOut"
       },
       "EulaAcceptance": {
         "properties": {
@@ -6424,6 +6484,16 @@
           },
           "server": {
             "$ref": "#/components/schemas/ServerStatus"
+          },
+          "download": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DownloadFacts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6445,7 +6515,8 @@
           "has_location",
           "precision",
           "writable",
-          "server"
+          "server",
+          "download"
         ],
         "title": "SharingState"
       },
