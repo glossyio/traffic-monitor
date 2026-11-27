@@ -13,6 +13,7 @@ from pydantic import BaseModel, ValidationError
 class GitInfo(BaseModel):
     commit: str
     branch: str
+    modified: bool = False  # the installed tree had changes git could see; older manifests say nothing
 
 
 class Probes(BaseModel):

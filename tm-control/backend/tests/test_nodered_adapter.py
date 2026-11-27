@@ -109,6 +109,24 @@ def test_correct_location_posts_json(wire):
     assert json.loads(body) == {"lat": 45.52252, "lon": -122.6912}
 
 
+def test_set_timezone_posts_the_body(wire):
+    wire.answer = (204, b"")
+    assert NodeRed(TOKEN).set_timezone(SURVEY, "Asia/Tokyo") is None
+    method, url, headers, body, content_type = wire.calls[0]
+    assert (method, url, content_type) == ("POST", f"{BASE}/surveys/{SURVEY}/timezone", "application/json")
+    assert headers == {"X-TM-Internal-Token": TOKEN}
+    assert json.loads(body) == {"timezone": "Asia/Tokyo"}
+    assert NodeRed(TOKEN).set_timezone(SURVEY, None) is None  # clearing is sent as null, the key never left out
+    assert json.loads(wire.calls[1][3]) == {"timezone": None}
+
+
+def test_set_timezone_refused_names_no_zone(wire):
+    wire.answer = (400, b'{"error": "bad_request", "detail": "timezone"}')
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).set_timezone(SURVEY, "Asia/Tokyo")
+    assert raised.value.code == "bad_request" and "Tokyo" not in str(raised.value)
+
+
 def test_correct_heading_posts_json(wire):
     wire.answer = (204, b"")
     assert NodeRed(TOKEN).correct_heading(DEPLOYMENT, 45) is None

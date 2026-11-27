@@ -498,6 +498,7 @@ class FakeNodeRed(NodeRed):
     """
 
     SCHEMA_VERSION = 2
+    DATABASE_BYTES = 734_003_200  # 700 MiB: what the status says of the database file
     RECORDS_AFTER = 30.0  # seconds after which a camera's or a radar's open row counts as having recorded traffic
 
     def __init__(self, config_path: Path, settings: Settings | None = None):
@@ -568,7 +569,7 @@ class FakeNodeRed(NodeRed):
             row = {
                 "id": f"{now}-{secrets.token_hex(4)}-d", "entryStartDateTime": now, "entryEndDateTime": None,
                 **stored, "sensorType": sensor.sensor_type, "sensorName": sensor.sensor_name, "survey_id": survey_id,
-                **{key: getattr(sensor, key) for key in FIELDS},
+                **{key: getattr(sensor, key) for key in FIELDS}, "timezone": place.timezone,
             }
             self.rows.append(row)
 
@@ -589,13 +590,17 @@ class FakeNodeRed(NodeRed):
             same_mounting = _heading_of(row.get("heading_deg")) == sensor.heading_deg and all(
                 row.get(key) == getattr(sensor, key) for key in FIELDS[1:]
             )
-            if want_survey is not None and row["survey_id"] is None and same_mounting:  # 4. adopt
-                row.update(stored, survey_id=want_survey)
+            if want_survey is not None and row["survey_id"] is None and same_mounting:  # 4. adopt, at the file's zone
+                row.update(stored, survey_id=want_survey, timezone=place.timezone)
             elif want_survey is not None and (row["survey_id"] != want_survey or not same_mounting):  # 5. new
                 row["entryEndDateTime"] = now
                 insert(sensor, want_survey)
-            elif fineness(row["location_precision"]) > fineness(places):  # 3 and 6: kept, a coarser one re-rounds
-                row.update(location(row["lat"], row["lon"], places))
+            else:  # 3 and 6: kept; a coarser precision re-rounds the row, and the zone is the file's (under no survey,
+                # the row's own), written in place: a zone never starts or ends a deployment
+                if fineness(row["location_precision"]) > fineness(places):
+                    row.update(location(row["lat"], row["lon"], places))
+                if want_survey is not None:
+                    row["timezone"] = place.timezone
 
         if listed is not None:  # 7. a sensor the file no longer lists, on or off, ends its deployment
             for row in self.rows:
@@ -642,6 +647,7 @@ class FakeNodeRed(NodeRed):
         return {
             "status": "ok",
             "schema_version": self.SCHEMA_VERSION,
+            "database_bytes": self.DATABASE_BYTES,
             "config": {"loaded_at": None, "errors": []},
             "deployment": {
                 "survey_id": place.survey_id if place else None,
@@ -720,6 +726,23 @@ class FakeNodeRed(NodeRed):
                 if row["survey_id"] == survey_id and row["location_precision"] is not None:
                     digits = row["location_precision"]
                     row.update(lat=round_half_away(lat, digits), lon=round_half_away(lon, digits))
+
+    def set_timezone(self, survey_id: str, name) -> None:
+        """What the flows' validator refuses is refused (a bad id, a zone that isn't trimmed text of a zone's shape, a
+        missing key can't happen here); the zone is stored trimmed. Every row of the survey takes it, ended ones too."""
+        from tm_control.modules.location.zones import read_zone
+
+        self._check_survey(survey_id)
+        zone = None
+        if name is not None:
+            zone = read_zone(name)
+            if zone is None:
+                raise NodeRedError("bad_request", 400)
+        self._watch()
+        with self._lock:
+            for row in self.rows:
+                if row["survey_id"] == survey_id:
+                    row["timezone"] = zone
 
     def keep_exact_copy(self, ticket: str, places: list[dict]) -> None:
         self.exact_copies[ticket] = [dict(place) for place in places]

@@ -7,6 +7,7 @@
         "errors": []
     },
     "schema_version": 1,
+    "database_bytes": 734003200,
     "radars": {
         "TM_RADAR_SERIAL_PORT_00": {
             "enabled": true,

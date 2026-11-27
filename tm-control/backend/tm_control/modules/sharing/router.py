@@ -6,7 +6,9 @@ server). A viewer gets no host of an operator's own server and no token state. P
 choices: under app.state.reconcile_lock, the store first follows config.yml (so a hand edit since the page was read
 is what the save is judged against), then config.yml is written (the thingsboard: and sharing: blocks) and the
 consent rows second, so a refused save records nothing; should the rows fail, the follow step writes the file back to
-what the store holds. POST /reviewed clears the review an upload found on asks for.
+what the store holds. POST /reviewed clears the review an upload found on asks for. For an admin, GET and PUT also
+carry `download` (the download card's facts), and POST /download makes the plain database's one-time link
+(download.py).
 
 No host, token, or notice version is logged, audited, or put in an error message: audit rows name the fields that
 changed, never a value.
@@ -25,11 +27,11 @@ from tm_control.core.auth import Audit, User
 from tm_control.core.errors import ApiError
 from tm_control.core.secrets import THINGSBOARD_ACCESS_TOKEN
 from tm_control.modules import Module
-from tm_control.modules.auth.deps import current_user, require_admin
+from tm_control.modules.auth.deps import client_ip, current_user, require_admin
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, Upload
 from tm_control.modules.secrets.router import SecretState, secret_state
-from tm_control.modules.sharing import follow
+from tm_control.modules.sharing import download, follow
 from tm_control.modules.sharing.consents import (
     CONSENTS,
     MAINTAINER,
@@ -39,6 +41,7 @@ from tm_control.modules.sharing.consents import (
     normalize_host,
     target_key,
 )
+from tm_control.modules.sharing.download import DownloadFacts
 from tm_control.modules.sharing.server import ServerStatus, server_status
 
 router = APIRouter(prefix="/sharing", tags=["sharing"])
@@ -78,6 +81,11 @@ class SharingState(BaseModel):
     precision: Literal["none", "1", "2"]
     writable: bool  # the user may save (an admin)
     server: ServerStatus
+    download: DownloadFacts | None  # the Download your data card's facts; None for a viewer
+
+
+class DownloadOut(BaseModel):
+    url: str  # a one-time /storefiles link to the database
 
 
 class NoticeOut(BaseModel):
@@ -126,15 +134,15 @@ def _notice_current(target: str | None, latest: dict[str, Consent], version: str
     return _granted(share) and share.notice_version == version
 
 
-def _server(app_state) -> ServerStatus:
+def _report(app_state) -> dict | None:
+    """Node-RED's status, None when it doesn't answer."""
     try:
-        report = app_state.nodered.report()
+        return app_state.nodered.report()
     except NodeRedError:
-        report = None
-    return server_status(report, time.time())
+        return None
 
 
-def _state(app_state, user: User, server: ServerStatus) -> SharingState:
+def _state(app_state, user: User, report: dict | None) -> SharingState:
     config = load_config(app_state)
     maintainer_host = app_state.manifest.sharing.maintainer_host
     upload = config.upload()
@@ -163,7 +171,8 @@ def _state(app_state, user: User, server: ServerStatus) -> SharingState:
         has_location=place.lat is not None and place.lon is not None,
         precision=place.precision,
         writable=admin,
-        server=server,
+        server=server_status(report, time.time()),
+        download=download.facts(app_state, report) if admin else None,
     )
 
 
@@ -269,13 +278,13 @@ def get_sharing(request: Request, user: User = Depends(current_user)):
     """Where the upload goes and what is shared, after config.yml is followed. Node-RED not answering isn't an error:
     the server's state is unknown."""
     app_state = request.app.state
-    server = _server(app_state)
+    report = _report(app_state)
     with app_state.reconcile_lock:
         try:
             follow.run(app_state)
         except ConfigError as error:
             raise config_error(error) from None
-        return _state(app_state, user, server)
+        return _state(app_state, user, report)
 
 
 @router.get("/notice", response_model=NoticeOut)
@@ -353,9 +362,20 @@ def save_sharing(body: SharingIn, request: Request, admin: User = Depends(requir
         ):
             changed.append("notice_version")
         Audit(app_state.state).record(admin.id, "sharing.update", ",".join(changed) or None)
-    server = _server(app_state)
+    report = _report(app_state)
     with app_state.reconcile_lock:
-        return _state(app_state, admin, server)
+        return _state(app_state, admin, report)
+
+
+@router.post("/download", response_model=DownloadOut)
+def start_download(request: Request, response: Response, admin: User = Depends(require_admin)):
+    """A one-time link to the whole database, for the Sharing page's Download your data card (without the exact
+    locations; with them, POST /surveys/database-copy). The audit row has no detail, and the link is in no log."""
+    app_state = request.app.state
+    url = download.link(app_state, admin, client_ip(request))
+    Audit(app_state.state).record(admin.id, "sharing.download")
+    response.headers["Cache-Control"] = "no-store"
+    return {"url": url}
 
 
 @router.post("/reviewed", status_code=204, response_class=Response)

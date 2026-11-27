@@ -143,7 +143,7 @@ export const SYSTEM_INFO: components['schemas']['SystemInfo'] = {
   uptime_seconds: 2 * 86400 + 3 * 3600,
   memory: { total: 8 * GB, available: 5.5 * GB },
   disks: [{ path: '/', total: 58 * GB, used: 50.5 * GB, free: 7.5 * GB }],
-  tm: { version: '0.8.0', commit: '2da617a1234567890abcdef1234567890abcdef1', branch: 'dev', installing_user: 'pi' },
+  tm: { version: '0.8.0', commit: '2da617a1234567890abcdef1234567890abcdef1', branch: 'dev', modified: false, installing_user: 'pi' },
   components: { frigate: '0.18.1', node_red: '5.0.8', go2rtc: 'v1.9.14', nginx: '1.31.0' },
   soc_temperature_c: 52.7,
   throttled: { raw: '0x0', now: [], since_boot: [] },
@@ -391,11 +391,16 @@ export const SHARING_STATE: SharingState = {
   precision: '1',
   writable: true,
   server: { state: 'off', at: null },
+  download: null,
 }
 
 export function sharingState(changes: Partial<SharingState> = {}): SharingState {
   return { ...SHARING_STATE, ...changes }
 }
+
+// What an admin's Sharing state says about the download card: the database's size in bytes (700 MB) and the places with
+// an exact location
+export const DOWNLOAD_FACTS: NonNullable<SharingState['download']> = { database_bytes: 734003200, exact_places: 2 }
 
 // A device sharing data with the maintainer's server under the current notice, with the token set
 export const SHARING_ON: SharingState = sharingState({

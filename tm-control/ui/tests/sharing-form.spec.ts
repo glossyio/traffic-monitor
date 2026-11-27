@@ -233,6 +233,24 @@ describe('the sharing form', () => {
     expect(wrapper.find('pre').text()).toContain('-122.6912')
   })
 
+  it('shows the setup history in the Share data example, without the names a person typed', async () => {
+    const wrapper = mountForm(SHARING_ON)
+    const examples = wrapper.findAll('button').filter((b) => b.text() === 'See an example')
+    await examples[0].trigger('click')
+    const shown = JSON.parse(wrapper.find('pre').text())
+    expect(Object.keys(shown.setup)).toEqual(['device', 'cameras'])
+    const [device] = shown.setup.device
+    const [camera] = shown.setup.cameras
+    expect(device.id).toMatch(/^\d+-[0-9a-f]{8}-sd$/)
+    expect(camera.id).toMatch(/^\d+-[0-9a-f]{8}-sc$/)
+    expect(device.ended).toBeNull()
+    expect(camera.zones).toHaveLength(1)
+    expect(camera.zones[0].corners).toHaveLength(4)
+    for (const typed of ['model_title', 'model_file', 'profile', 'friendly_name']) {
+      expect(wrapper.find('pre').text()).not.toContain(typed)
+    }
+  })
+
   it('hides the notice and the map for your own server and shows the responsibility text', async () => {
     const wrapper = mountForm(SHARING_ON)
     expect(wrapper.text()).toContain('Show this device on the public map')

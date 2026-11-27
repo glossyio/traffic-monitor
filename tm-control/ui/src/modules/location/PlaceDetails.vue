@@ -4,17 +4,22 @@
   `details` (undefined until then); `retry` asks it to try again after an error. The deployments are grouped by the
   deploy they came from: Node-RED starts every row of one config load together, at the same instant in this version
   and a millisecond or so apart in released ones, so rows that start within a second of a deploy's first row are that
-  deploy. Newest first, so the running one is on top on a phone. Each deployment of a used place or the place in use
-  has "Correct heading", which asks the page to open its correction dialog (`correctHeading`).
+  deploy. Newest first, so the running one is on top on a phone. Each deployment's line says what is recorded: its
+  heading, and the height and the tilt in the unit the Mounting page last used. A deployment that has ended has
+  "Correct heading", which asks the page to open its correction dialog (`correctHeading`); a running one at the place
+  in use is changed on the Mounting page instead, so it has "Mounting", unless its sensor has no section there
+  (`mountingSensors`: a sensor disabled since its deployment started keeps its open row), which keeps Correct heading.
 -->
 <script setup lang="ts">
 import type { components } from '../../api/schema'
 import { ago } from '../../components/relative-time'
 import { facing } from './heading'
+import { savedUnit, shown } from './lengths'
 
 type SurveyOut = components['schemas']['SurveyOut']
 type EventsOut = components['schemas']['EventsOut']
 type DeploymentOut = components['schemas']['DeploymentOut']
+type SensorKey = components['schemas']['SensorKey']
 
 export interface Details {
   events: EventsOut | null
@@ -22,10 +27,11 @@ export interface Details {
   error: string
 }
 
-defineProps<{
+const props = defineProps<{
   place: SurveyOut
   details: Details | undefined
   nodered: boolean // whether Node-RED answered the usage counts
+  mountingSensors?: SensorKey[] | null // the sensors the Mounting page has a section for; unknown when left out
 }>()
 const emit = defineEmits<{ retry: []; correctHeading: [deployment: DeploymentOut] }>()
 
@@ -55,6 +61,26 @@ function eventsLine(events: EventsOut) {
   }
   const count = events.event_count === 1 ? '1 event' : `${events.event_count} events`
   return `${count} from ${day(events.first_event * 1000)} to ${day(events.last_event * 1000)}`
+}
+
+// What a deployment recorded, in one line: "Facing NE (40°) · 7.0 ft up · tilted 15°"
+const unit = savedUnit()
+
+function recorded(deployment: DeploymentOut) {
+  const parts = [deployment.heading_deg === null ? 'No heading set' : `Facing ${facing(deployment.heading_deg)}`]
+  if (deployment.height_m !== null) parts.push(`${shown(deployment.height_m, unit)} ${unit} up`)
+  if (deployment.pitch_deg !== null) parts.push(`tilted ${deployment.pitch_deg}°`)
+  return parts.join(' · ')
+}
+
+// A running deployment at the place in use is changed on the Mounting page, when that page has its sensor
+function onMountingPage(deployment: DeploymentOut) {
+  if (deployment.ended !== null || props.place.status !== 'in_use') return false
+  const listed = props.mountingSensors
+  return (
+    !listed ||
+    listed.some((sensor) => sensor.sensor_type === deployment.sensor_type && sensor.sensor_name === deployment.sensor_name)
+  )
 }
 
 // The sensors of a deploy in this order, so a camera comes first and its radar under it
@@ -166,11 +192,18 @@ function attached(deployment: DeploymentOut, deploy: Deploy) {
                 >
                   <div class="text-body-1 text-break">{{ deployment.sensor_name }}</div>
                   <div class="d-flex flex-wrap align-center gc-2">
-                    <span class="text-body-2 text-secondary">
-                      {{ deployment.heading_deg === null ? 'No heading set' : `Facing ${facing(deployment.heading_deg)}` }}
-                    </span>
+                    <span class="text-body-2 text-secondary">{{ recorded(deployment) }}</span>
                     <v-btn
-                      v-if="place.status !== 'planned'"
+                      v-if="onMountingPage(deployment)"
+                      variant="text"
+                      color="primary"
+                      min-height="44"
+                      to="/location/mounting"
+                    >
+                      Mounting
+                    </v-btn>
+                    <v-btn
+                      v-else-if="place.status !== 'planned'"
                       variant="text"
                       color="primary"
                       min-height="44"

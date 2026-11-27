@@ -474,7 +474,7 @@ def test_drift_is_reported_for_an_old_deployment_table_and_left_alone(db_path, c
     assert "0010_deployment_drop_bearing.sql: skipped, deployment has no column bearing" in log
     assert columns(db_path, "deployment") == ["id", "entryDateTime", "lat", "lon", "orientation", "address", "description",
                                               "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
-                                              "view_distance_m", "mount"]
+                                              "view_distance_m", "mount", "timezone"]
 
 
 def test_drift_is_reported_for_a_missing_index(db_path, make_migrations, capsys):

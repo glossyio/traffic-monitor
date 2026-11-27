@@ -22,8 +22,8 @@ Role Variables
   - default: `'{{ ansible_user_dir }}/code'`
 - `tmsetup_nodereddir`: STRING # Path to directory for nodered installation
   - default: `'{{ ansible_user_dir }}/.node-red'`
-- `tmsetup_timezone`: STRING - Timezone to set system clock to. You can view a list of availbe timezones by running `timedatectl list-timezones`
-  - default: `'America/Los_Angeles'`
+- `tmsetup_timezone`: STRING - Timezone to set system clock to; left as it is when empty. You can view a list of available timezones by running `timedatectl list-timezones`
+  - default: `''`
 - `tmsetup_frigate_rtsp_password`: STRING # Password for frigate rtsp for frigate container
   - default: `password`
 - `tmsetup_frigate_mqtt_user`: STRING # MQTT user for Frigate container

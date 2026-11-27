@@ -1,0 +1,191 @@
+---
+# TMSetup - Update Images: the second half of an update's prepare, run by update_prepare.yml while the installed
+# version keeps running. It builds every image in tmsetup_update_images from this tree under the tag
+# tmsetup_update_build_tag, beside the images in use, and checks the tree's nginx config on the new revproxy image.
+#
+# Each image builds in tmsetup_update_work_dir/build/<name>, a folder that holds what the installer writes into
+# tmsetup_codedir/<dir> for the build: the Containerfile and every file a COPY reads, from the same template or copy,
+# with the same owner, group, and mode. A COPY step's cache key reads the files' owner and group, so the switch's
+# build units, which build from tmsetup_codedir, then find every step in the cache.
+#
+# A failure refuses with build_failed (update_refuse.yml).
+- name: TMSetup - Update Images - Set variables
+  ansible.builtin.import_tasks:
+    file: set_vars.yml
+
+- name: TMSetup - Update Images - Check for attached detectors
+  ansible.builtin.import_tasks:
+    file: detectors_check.yml
+
+- name: TMSetup - Update Images - Build the images
+  block:
+    # unarchive never deletes, so a folder from an earlier try would keep files this tree doesn't have
+    - name: TMSetup - Update Images - Remove earlier build folders
+      become: true
+      ansible.builtin.file:
+        path: '{{ tmsetup_update_work_dir }}/build'
+        state: absent
+
+    # The folders as frigate_setup.yml and node-red-tm_setup.yml create theirs
+    - name: TMSetup - Update Images - Create the Frigate and Node-RED build folders
+      become: true
+      loop:
+        - '{{ tmsetup_update_work_dir }}/build/frigate-tm'
+        - '{{ tmsetup_update_work_dir }}/build/node-red-tm'
+        - '{{ tmsetup_update_work_dir }}/build/node-red-tm/data'
+      ansible.builtin.file:
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0750'
+        owner: '{{ tmsetup_codeowner }}'
+        path: '{{ item }}'
+        state: directory
+
+    # As revproxy_setup.yml creates them, with no group
+    - name: TMSetup - Update Images - Create the revproxy build folders
+      become: true
+      loop:
+        - '{{ tmsetup_update_work_dir }}/build/revproxy'
+        - '{{ tmsetup_update_work_dir }}/build/revproxy/ui'
+      ansible.builtin.file:
+        mode: '0750'
+        owner: '{{ tmsetup_codeowner }}'
+        path: '{{ item }}'
+        state: directory
+
+    - name: TMSetup - Update Images - Create the Frigate Containerfile
+      become: true
+      ansible.builtin.template:
+        dest: '{{ tmsetup_update_work_dir }}/build/frigate-tm/Containerfile'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0644'
+        owner: '{{ tmsetup_codeowner }}'
+        src: container/frigate/Containerfile.j2
+
+    - name: TMSetup - Update Images - Create the Node-RED Containerfile
+      become: true
+      ansible.builtin.template:
+        dest: '{{ tmsetup_update_work_dir }}/build/node-red-tm/Containerfile'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0644'
+        owner: '{{ tmsetup_codeowner }}'
+        src: container/node-red-tm/Containerfile.j2
+
+    - name: TMSetup - Update Images - Copy the Node-RED package files
+      become: true
+      loop:
+        - data/package.json
+        - data/package-lock.json
+      ansible.builtin.copy:
+        dest: '{{ tmsetup_update_work_dir }}/build/node-red-tm/{{ item }}'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0644'
+        owner: '{{ tmsetup_codeowner }}'
+        src: 'container/node-red-tm/{{ item }}'
+
+    - name: TMSetup - Update Images - Create the revproxy Containerfile
+      become: true
+      ansible.builtin.template:
+        dest: '{{ tmsetup_update_work_dir }}/build/revproxy/Containerfile'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0640'
+        owner: '{{ tmsetup_codeowner }}'
+        src: container/revproxy/Containerfile.j2
+
+    - name: TMSetup - Update Images - Copy the revproxy build ignore file
+      become: true
+      ansible.builtin.copy:
+        dest: '{{ tmsetup_update_work_dir }}/build/revproxy/.containerignore'
+        group: '{{ tmsetup_codegroup }}'
+        mode: '0640'
+        owner: '{{ tmsetup_codeowner }}'
+        src: container/revproxy/.containerignore
+
+    # Packed by the same script as the same user as revproxy_setup.yml packs them in the switch, so both get the
+    # same files
+    - name: TMSetup - Update Images - Pack the UI sources
+      become: false
+      ansible.builtin.command:
+        argv:
+          - bash
+          - '{{ role_path }}/files/pack-ui-sources.sh'
+          - '{{ role_path }}/files/tm-control'
+          - '{{ tmsetup_update_work_dir }}/ui-sources.tar.gz'
+      changed_when: false
+
+    - name: TMSetup - Update Images - Unpack the UI sources
+      become: true
+      ansible.builtin.unarchive:
+        dest: '{{ tmsetup_update_work_dir }}/build/revproxy'
+        group: '{{ tmsetup_codegroup }}'
+        mode: 'u=rwX,g=rX,o='
+        owner: '{{ tmsetup_codeowner }}'
+        remote_src: true
+        src: '{{ tmsetup_update_work_dir }}/ui-sources.tar.gz'
+
+    # Low CPU and I/O weight, so the running version keeps up while the images build
+    - name: TMSetup - Update Images - Give the update's slice its weights
+      become: true
+      ansible.builtin.command:
+        argv: '{{ ["systemctl", "set-property", "--runtime", tmsetup_update_slice] + tmsetup_update_slice_properties }}'
+      changed_when: true
+
+    # Pull=missing as in the build units. --file is relative, so each build runs in its folder.
+    - name: TMSetup - Update Images - Build each image under the update's tag
+      become: true
+      loop: '{{ tmsetup_update_images }}'
+      loop_control:
+        label: '{{ item.name }}'
+      ansible.builtin.command:
+        argv:
+          - podman
+          - build
+          - --pull=missing
+          - --cgroup-parent={{ tmsetup_update_slice }}
+          - --tag
+          - localhost/{{ item.name }}:{{ tmsetup_update_build_tag }}
+          - --file
+          - Containerfile
+          - '{{ tmsetup_update_work_dir }}/build/{{ item.name }}'
+        chdir: '{{ tmsetup_update_work_dir }}/build/{{ item.name }}'
+      changed_when: true
+
+    # After its image is built, a first stage's build is a cache hit that only tags the stage, so that
+    # `podman image prune` keeps it and the next build finds it
+    - name: TMSetup - Update Images - Tag each first stage
+      become: true
+      loop: "{{ tmsetup_update_images | subelements('stages') }}"
+      loop_control:
+        label: '{{ item.0.name }} {{ item.1 }}'
+      ansible.builtin.command:
+        argv:
+          - podman
+          - build
+          - --pull=missing
+          - --cgroup-parent={{ tmsetup_update_slice }}
+          - --tag
+          - localhost/{{ item.0.name }}:stage-{{ item.1 }}
+          - --file
+          - Containerfile
+          - --target
+          - '{{ item.1 }}'
+          - '{{ tmsetup_update_work_dir }}/build/{{ item.0.name }}'
+        chdir: '{{ tmsetup_update_work_dir }}/build/{{ item.0.name }}'
+      changed_when: true
+
+    - name: TMSetup - Update Images - Check the new NGinx config on the new image
+      ansible.builtin.import_tasks:
+        file: revproxy_nginx_check.yml
+      vars:
+        tmsetup_revproxy_check_image: 'localhost/revproxy:{{ tmsetup_update_build_tag }}'
+  rescue:
+    - name: TMSetup - Update Images - Refuse an update whose images don't build
+      ansible.builtin.include_tasks: update_refuse.yml
+      vars:
+        tmsetup_update_reason: build_failed
+  always:
+    - name: TMSetup - Update Images - Remove the UI sources archive
+      become: true
+      ansible.builtin.file:
+        path: '{{ tmsetup_update_work_dir }}/ui-sources.tar.gz'
+        state: absent
+...

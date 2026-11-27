@@ -16,7 +16,7 @@ from tm_control.modules.location.mounting import Mounting
 STATUSES = ("planned", "in_use", "used")
 SOURCES = ("ui", "csv", "default", "imported_config", "imported_backup")
 
-_SURVEY_COLUMNS = "id, description, lat, lon, status, source, created_at, updated_at"
+_SURVEY_COLUMNS = "id, description, lat, lon, status, source, created_at, updated_at, timezone"
 _MOUNTING_COLUMNS = ("pitch_deg", "height_m", "view_distance_m", "measured", "mount")  # beside heading_deg
 _HOLDS_THE_FOUR = "(pitch_deg IS NOT NULL OR height_m IS NOT NULL OR view_distance_m IS NOT NULL OR mount IS NOT NULL)"
 _MOUNTING_SELECT = (
@@ -50,6 +50,7 @@ class Survey(BaseModel):
     created_at: str
     updated_at: str
     headings: list[SensorHeading]
+    timezone: str | None  # an IANA name as picked, or None; never taken from the device's clock
 
 
 def _insert_headings(con, survey_id: str, headings: list[SensorHeading]) -> None:
@@ -76,6 +77,7 @@ def _surveys(con, where: str = "", args: tuple = ()) -> list[Survey]:
 # `list` is a method of Places, so inside the class body the name no longer means the builtin; before Python 3.14
 # evaluates annotations lazily, `list[SensorHeading]` or `list[Mounting]` in a signature below it would fail.
 _HeadingList = list[SensorHeading]
+_SurveyList = list[Survey]
 _MountingList = list[Mounting]
 
 
@@ -86,6 +88,11 @@ class Places:
     def list(self) -> list[Survey]:
         with _reading(self.state) as con:
             return _surveys(con)
+
+    def located(self) -> _SurveyList:
+        """The places the device has been at (in use or used) that have both coordinates, in list order."""
+        with _reading(self.state) as con:
+            return _surveys(con, "WHERE status IN ('in_use', 'used') AND lat IS NOT NULL AND lon IS NOT NULL")
 
     def get(self, survey_id: str) -> Survey | None:
         with _reading(self.state) as con:
@@ -109,6 +116,7 @@ class Places:
         user_id: int | None,
         now: float | None = None,
         updated_now: float | None = None,
+        timezone: str | None = None,
     ) -> Survey:
         """updated_now, when given, sets updated_at apart from created_at (an imported place's last use)."""
         at = _timestamp(now)
@@ -117,23 +125,30 @@ class Places:
             if status == "in_use" and con.execute("SELECT 1 FROM surveys WHERE status = 'in_use'").fetchone():
                 raise ValueError("a place is already in use")
             con.execute(
-                "INSERT INTO surveys (id, description, lat, lon, status, source, created_at, updated_at, created_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (survey_id, description, lat, lon, status, source, at, updated_at, user_id),
+                "INSERT INTO surveys "
+                "(id, description, lat, lon, status, source, created_at, updated_at, created_by, timezone) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (survey_id, description, lat, lon, status, source, at, updated_at, user_id, timezone),
             )
             _insert_headings(con, survey_id, headings)
             return _surveys(con, "WHERE id = ?", (survey_id,))[0]
 
     def update_planned(
-        self, survey_id: str, description: str | None, lat: float | None, lon: float | None, headings: _HeadingList
+        self,
+        survey_id: str,
+        description: str | None,
+        lat: float | None,
+        lon: float | None,
+        headings: _HeadingList,
+        timezone: str | None,
     ) -> Survey:
         with _writing(self.state) as con:
             row = con.execute("SELECT status FROM surveys WHERE id = ?", (survey_id,)).fetchone()
             if row is None or row["status"] != "planned":
                 raise ValueError("only a planned place can be edited this way")
             con.execute(
-                "UPDATE surveys SET description = ?, lat = ?, lon = ?, updated_at = ? WHERE id = ?",
-                (description, lat, lon, _timestamp(), survey_id),
+                "UPDATE surveys SET description = ?, lat = ?, lon = ?, timezone = ?, updated_at = ? WHERE id = ?",
+                (description, lat, lon, timezone, _timestamp(), survey_id),
             )
             kept_columns = (*_MOUNTING_COLUMNS, "unconfirmed")
             kept = {
@@ -175,6 +190,13 @@ class Places:
             con.execute(
                 "UPDATE surveys SET lat = ?, lon = ?, updated_at = ? WHERE id = ?",
                 (lat, lon, _timestamp(now), survey_id),
+            )
+
+    def set_timezone(self, survey_id: str, timezone: str | None, now: float | None = None) -> None:
+        """Set or clear (None) the place's time zone, whatever its status."""
+        with _writing(self.state) as con:
+            con.execute(
+                "UPDATE surveys SET timezone = ?, updated_at = ? WHERE id = ?", (timezone, _timestamp(now), survey_id)
             )
 
     def set_heading(self, survey_id: str, sensor_type: str, sensor_name: str, heading_deg: int | None) -> None:

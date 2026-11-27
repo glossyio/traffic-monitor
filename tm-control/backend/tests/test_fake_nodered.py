@@ -201,3 +201,107 @@ def test_the_fake_answers_the_people_check(fake):
     assert fake.tracked("cam") == [{"label": "person", "stationary": True}]
     fake.tracked_objects = None
     assert fake.tracked("cam") is None
+
+
+def test_the_report_has_the_database_size(fake):
+    report = fake.report()
+    assert report["database_bytes"] == FakeNodeRed.DATABASE_BYTES == 734_003_200
+    assert list(report)[:3] == ["status", "schema_version", "database_bytes"]
+
+
+# The place's time zone
+
+NEW_YORK, TOKYO, BERLIN = "America/New_York", "Asia/Tokyo", "Europe/Berlin"
+
+
+def set_file_zone(path, fake, zone):
+    config = NodeRedConfig(path)
+    config.set_timezone(zone)
+    config.save()
+    fake.after_config_write()
+
+
+def ids(fake):
+    return sorted(row["id"] for row in fake.rows)
+
+
+def test_rows_carry_the_zone(path):
+    set_file_zone(path, FakeNodeRed(path), NEW_YORK)
+    fake = FakeNodeRed(path)
+    assert fake.rows and all(row["timezone"] == NEW_YORK for row in fake.rows)
+
+
+def test_a_row_with_no_zone_in_the_file_has_none(fake):
+    assert fake.rows and all(row["timezone"] is None for row in fake.rows)
+
+
+def test_fake_engine_heals_the_zone_and_starts_nothing(path, fake):
+    before = ids(fake)
+    set_file_zone(path, fake, NEW_YORK)
+    assert ids(fake) == before and all(row["timezone"] == NEW_YORK for row in fake.rows)
+    assert not [row for row in fake.rows if row["entryEndDateTime"] is not None]
+    set_file_zone(path, fake, BERLIN)
+    assert ids(fake) == before and all(row["timezone"] == BERLIN for row in fake.rows)
+    set_file_zone(path, fake, None)
+    assert ids(fake) == before and all(row["timezone"] is None for row in fake.rows)
+    assert not [row for row in fake.rows if row["entryEndDateTime"] is not None]
+
+
+def test_fake_engine_adopts_a_row_at_the_files_zone(tmp_path):
+    target = tmp_path / "config.yml"
+    target.write_text(CONFIG.replace(f"    survey_id: {SURVEY}\n", "    survey_id:\n    timezone: Asia/Tokyo\n"))
+    fake = FakeNodeRed(target)
+    assert all(row["survey_id"] is None and row["timezone"] == TOKYO for row in fake.rows)
+    before = ids(fake)
+    config = NodeRedConfig(target)
+    config.set_survey_id(SURVEY)
+    config.set_timezone(NEW_YORK)
+    config.save()
+    fake.after_config_write()
+    assert ids(fake) == before  # adopted, not started
+    assert all(row["survey_id"] == SURVEY and row["timezone"] == NEW_YORK for row in fake.rows)
+
+
+def test_fake_engine_without_a_survey_leaves_the_zone(tmp_path):
+    target = tmp_path / "config.yml"
+    target.write_text(CONFIG.replace(f"    survey_id: {SURVEY}\n", "    survey_id:\n    timezone: Asia/Tokyo\n"))
+    fake = FakeNodeRed(target)
+    # the rows came from before any survey; the file's zone is not applied to a row kept under no survey
+    for row in fake.rows:
+        row["timezone"] = BERLIN
+    before = ids(fake)
+    set_file_zone(target, fake, NEW_YORK)
+    assert ids(fake) == before and all(row["timezone"] == BERLIN for row in fake.rows)
+
+
+def test_fake_set_timezone_rewrites_every_row_of_the_place(path, fake):
+    other = {**fake.rows[0], "id": "1700000000000-0badf00d-d", "survey_id": "0000000b-si", "timezone": BERLIN}
+    ended = {**fake.rows[0], "id": "1700000000001-0badf00d-d", "entryEndDateTime": 1, "timezone": None}
+    fake.rows.extend([other, ended])
+    before = ids(fake)
+    assert fake.set_timezone(SURVEY, TOKYO) is None
+    by_survey = [row for row in fake.rows if row["survey_id"] == SURVEY]
+    assert any(row["entryEndDateTime"] is not None for row in by_survey)
+    assert any(row["entryEndDateTime"] is None for row in by_survey)
+    assert all(row["timezone"] == TOKYO for row in by_survey)
+    assert other["timezone"] == BERLIN
+    fake.set_timezone(SURVEY, None)
+    assert all(row["timezone"] is None for row in fake.rows if row["survey_id"] == SURVEY)
+    assert ids(fake) == before
+
+
+def test_fake_set_timezone_trims_like_the_flows(fake):
+    fake.set_timezone(SURVEY, f"  {TOKYO} ")
+    assert all(row["timezone"] == TOKYO for row in fake.rows if row["survey_id"] == SURVEY)
+
+
+@pytest.mark.parametrize("survey_id, zone", [
+    ("nope", TOKYO), (5, TOKYO), (SURVEY, 5), (SURVEY, ""), (SURVEY, "   "), (SURVEY, "not a zone!"),
+    (SURVEY, "a/b/c/d"), (SURVEY, "x" * 65), (SURVEY, "../../etc/passwd"), (SURVEY, ["Asia/Tokyo"]),
+])
+def test_fake_set_timezone_refuses_what_the_flows_refuse(fake, survey_id, zone):
+    before = [row["timezone"] for row in fake.rows]
+    with pytest.raises(NodeRedError) as raised:
+        fake.set_timezone(survey_id, zone)
+    assert (raised.value.code, raised.value.status) == ("bad_request", 400)
+    assert [row["timezone"] for row in fake.rows] == before

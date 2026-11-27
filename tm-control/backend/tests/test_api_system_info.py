@@ -164,6 +164,7 @@ def test_system_info_for_a_viewer(device_client, login, host):
             "version": "0.7.1-test",
             "commit": "0000000000000000000000000000000000000000",
             "branch": "test",
+            "modified": False,
             "installing_user": None,  # the system account's name is for administrators only (#265)
         },
         "components": {
@@ -176,6 +177,16 @@ def test_system_info_for_a_viewer(device_client, login, host):
         "soc_temperature_c": 52.5,
         "throttled": {"raw": "0x0", "now": [], "since_boot": []},
     }
+
+
+def test_system_info_says_when_the_installed_tree_was_modified(device_client, login):
+    login(device_client, *ADMIN)
+    manifest = device_client.app.state.manifest
+    device_client.app.state.manifest = manifest.model_copy(
+        update={"git": manifest.git.model_copy(update={"modified": True})})
+    r = device_client.get("/api/v1/system/info")
+    assert r.status_code == 200, r.text
+    assert r.json()["tm"]["modified"] is True
 
 
 def test_system_info_names_the_installing_user_for_an_admin(device_client, login, host):

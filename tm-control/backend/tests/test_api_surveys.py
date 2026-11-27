@@ -83,10 +83,10 @@ def heading(sensor, value):
     return {"sensor_type": sensor[0], "sensor_name": sensor[1], "heading_deg": value}
 
 
-def create(client, description=MAIN_ST, lat=45.52252, lon=-122.6912, headings=()):
+def create(client, description=MAIN_ST, lat=45.52252, lon=-122.6912, headings=(), **zone):
     r = client.post(
         "/api/v1/surveys",
-        json={"description": description, "lat": lat, "lon": lon, "headings": list(headings)},
+        json={"description": description, "lat": lat, "lon": lon, "headings": list(headings), **zone},
         headers=ORIGIN,
     )
     assert r.status_code == 201, r.text
@@ -1010,8 +1010,9 @@ def test_import_previews_then_creates(admin):
     preview = r.json()
     assert preview["errors"] == [] and preview["created"] == []
     assert preview["rows"] == [
-        {"line": 2, "description": "Main St", "lat": 45.52252, "lon": -122.6912, "headings": [heading(CAMERA, 0)]},
-        {"line": 3, "description": "No location", "lat": None, "lon": None, "headings": []},
+        {"line": 2, "description": "Main St", "lat": 45.52252, "lon": -122.6912, "headings": [heading(CAMERA, 0)],
+         "timezone": None},
+        {"line": 3, "description": "No location", "lat": None, "lon": None, "headings": [], "timezone": None},
     ]
     assert len(places(admin)["surveys"]) == 1
 
@@ -1227,11 +1228,11 @@ def test_export_is_admin_only_and_has_no_description(claimed_client, login):
     assert r.headers["content-type"] == "text/csv; charset=utf-8"
     assert r.headers["content-disposition"] == 'attachment; filename="traffic-monitor-places.csv"'
     lines = r.text.splitlines()
-    assert lines[0] == "survey_id,lat,lon,status,created_at,updated_at"
+    assert lines[0] == "survey_id,lat,lon,timezone,status,created_at,updated_at"
     assert len(lines) == 1 + len(places(claimed_client)["surveys"])
     mine = next(line for line in lines if line.startswith(place["id"] + ","))
-    assert mine.startswith(f"{place['id']},45.52252,-122.69120,planned,")
-    assert len(mine.split(",")) == 6
+    assert mine.startswith(f"{place['id']},45.52252,-122.69120,,planned,")
+    assert len(mine.split(",")) == 7
     assert "Main St" not in r.text and MAIN_ST not in r.text
     assert ("survey.export", str(len(lines) - 1)) in audit_rows(claimed_client)
     assert "45.52252" not in str([detail for _, detail in audit_rows(claimed_client)])
@@ -1254,7 +1255,7 @@ def test_export_lists_the_places_in_the_lists_order(admin):
 def test_export_writes_an_empty_pair_for_no_location(admin):
     place = create(admin, "Somewhere", lat=None, lon=None)
     line = next(line for line in export(admin).text.splitlines() if line.startswith(place["id"] + ","))
-    assert line.startswith(f"{place['id']},,,planned,")
+    assert line.startswith(f"{place['id']},,,,planned,")
 
 
 # The database copy with exact locations
@@ -1326,6 +1327,10 @@ def test_database_copy_needs_a_located_place(admin):
     grants = len(admin.app.state.download_grants)
     r = admin.post(COPY, headers=JSON_HEADERS)
     assert r.status_code == 409 and r.json()["error"]["code"] == "no_exact_locations"
+    assert r.json()["error"]["message"] == (
+        "No place this device has been at has an exact location, so a copy would hold nothing more than the "
+        "download without the box ticked."
+    )
     assert admin.app.state.nodered.exact_copies == {}
     assert len(admin.app.state.download_grants) == grants
     assert not [row for row in audit_rows(admin) if row[0] == "survey.database_copy"]
@@ -1380,3 +1385,352 @@ def test_two_database_copies_get_different_tickets(admin):
     second = admin.post(COPY, headers=JSON_HEADERS).json()["url"]
     assert COPY_URL.match(first).group(1) != COPY_URL.match(second).group(1)
     assert len(admin.app.state.nodered.exact_copies) == 2
+
+
+# A place's time zone
+
+NEW_YORK, TOKYO, BERLIN = "America/New_York", "Asia/Tokyo", "Europe/Berlin"  # fake mode's clock lists all three
+UNKNOWN = "Mars/Olympus"  # no device lists it
+UNKNOWN_ZONE = "The device doesn't know that time zone."
+ZONE_502 = "The place's time zone changed, but its stored rows weren't updated. Save it again."
+NO_KEY = object()
+
+
+def put_zone(client, survey_id, zone):
+    return client.put(f"/api/v1/surveys/{survey_id}/timezone", json={"timezone": zone}, headers=ORIGIN)
+
+
+def stored_zone(client, survey_id):
+    return Places(client.app.state.state).get(survey_id).timezone
+
+
+def file_zone(client):
+    """deployment.timezone in config.yml; NO_KEY when the block has no such key."""
+    return file_data(client)["deployment"].get("timezone", NO_KEY)
+
+
+def fake_rows(client, survey_id) -> list[dict]:
+    """The fake Node-RED's rows of the place, ended ones too, as it keeps them (with their zone)."""
+    client.app.state.nodered._watch()
+    return [dict(row) for row in client.app.state.nodered.rows if row["survey_id"] == survey_id]
+
+
+def row_zones(client, survey_id) -> set:
+    return {row["timezone"] for row in fake_rows(client, survey_id)}
+
+
+def zone_audit(client) -> list:
+    return [detail for action, detail in audit_rows(client) if action == "survey.timezone"]
+
+
+def nodered_down(monkeypatch, client) -> list:
+    """Every Node-RED call this module makes fails as an unreachable Node-RED's would; the list records set_timezone's
+    calls."""
+    called = []
+    nodered = client.app.state.nodered
+
+    def unreachable(*args, **kwargs):
+        raise NodeRedError("unreachable")
+
+    def set_timezone(*args):
+        called.append(args)
+        raise NodeRedError("unreachable")
+
+    for name in ("deployments", "usage", "correct_location", "set_precision"):
+        monkeypatch.setattr(nodered, name, unreachable)
+    monkeypatch.setattr(nodered, "set_timezone", set_timezone)
+    return called
+
+
+def test_a_place_is_planned_and_edited_with_a_zone(admin):
+    first_place(admin)
+    zoned = create(admin, timezone=f"  {NEW_YORK} ")
+    assert zoned["timezone"] == NEW_YORK and stored_zone(admin, zoned["id"]) == NEW_YORK
+    assert create(admin, timezone="   ")["timezone"] is None
+    keyless = create(admin)
+    assert keyless["timezone"] is None and stored_zone(admin, keyless["id"]) is None
+
+    url = f"/api/v1/surveys/{zoned['id']}"
+    r = admin.patch(url, json={"headings": [], "timezone": TOKYO}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["timezone"] == TOKYO and stored_zone(admin, zoned["id"]) == TOKYO
+    r = admin.patch(url, json={"headings": [], "timezone": ""}, headers=ORIGIN)
+    assert r.status_code == 200 and r.json()["timezone"] is None
+    assert admin.patch(url, json={"headings": [], "timezone": BERLIN}, headers=ORIGIN).json()["timezone"] == BERLIN
+    # No key keeps the zone: a page that neither shows nor sends it never loses it. null clears it.
+    r = admin.patch(url, json={"headings": []}, headers=ORIGIN)
+    assert r.status_code == 200 and r.json()["timezone"] == BERLIN
+    assert stored_zone(admin, zoned["id"]) == BERLIN
+    r = admin.patch(url, json={"headings": [], "timezone": None}, headers=ORIGIN)
+    assert r.status_code == 200 and r.json()["timezone"] is None
+    assert stored_zone(admin, zoned["id"]) is None
+
+    # A body shaped like today's Edit form (no timezone key) keeps a zone set by PUT.
+    assert put_zone(admin, keyless["id"], TOKYO).status_code == 200
+    form = {"description": "Renamed", "lat": None, "lon": None, "headings": [heading(CAMERA, 90)]}
+    r = admin.patch(f"/api/v1/surveys/{keyless['id']}", json=form, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    assert r.json()["description"] == "Renamed" and r.json()["timezone"] == TOKYO
+    assert survey(places(admin), keyless["id"])["timezone"] == TOKYO
+
+
+def test_an_unknown_zone_is_refused_and_changes_nothing(admin):
+    in_use = first_place(admin)
+    assert put_zone(admin, in_use, BERLIN).status_code == 200
+    planned = create(admin, timezone=TOKYO)
+    text = admin.app.state.config_path.read_text()
+    store = Places(admin.app.state.state).list()
+    before_rows = fake_rows(admin, in_use)
+    for r in (
+        admin.post("/api/v1/surveys", json={"headings": [], "timezone": UNKNOWN}, headers=ORIGIN),
+        admin.patch(f"/api/v1/surveys/{planned['id']}", json={"headings": [], "timezone": UNKNOWN}, headers=ORIGIN),
+        put_zone(admin, in_use, UNKNOWN),
+        put_zone(admin, planned["id"], f" {UNKNOWN} "),
+    ):
+        assert r.status_code == 422, r.text
+        assert r.json()["error"] == {"code": "validation", "message": UNKNOWN_ZONE, "detail": {"field": "timezone"}}
+    assert admin.app.state.config_path.read_text() == text
+    assert Places(admin.app.state.state).list() == store
+    assert fake_rows(admin, in_use) == before_rows
+    assert zone_audit(admin) == [f"{in_use} none>{BERLIN}"]
+
+
+def test_a_listed_name_without_a_zones_shape_is_refused(admin, monkeypatch):
+    """The device's list is trusted for which names exist, not for their shape: a name the file couldn't hold back is
+    refused as one the device doesn't know."""
+    in_use = first_place(admin)
+    monkeypatch.setattr(admin.app.state.fake_clock, "list_timezones", lambda: [NEW_YORK, "Not a zone!"])
+    r = put_zone(admin, in_use, "Not a zone!")
+    assert r.status_code == 422 and r.json()["error"]["detail"] == {"field": "timezone"}
+    assert stored_zone(admin, in_use) is None and file_zone(admin) is NO_KEY
+
+
+def test_an_unreadable_zone_list_is_the_date_and_time_pages_500(admin, monkeypatch):
+    in_use = first_place(admin)
+
+    def unreadable():
+        raise RuntimeError("timedatectl list-timezones failed with exit status 1")
+
+    monkeypatch.setattr(admin.app.state.fake_clock, "list_timezones", unreadable)
+    r = put_zone(admin, in_use, NEW_YORK)
+    assert r.status_code == 500
+    assert r.json()["error"]["message"] == "The device's list of time zones couldn't be read."
+    assert stored_zone(admin, in_use) is None
+    assert put_zone(admin, in_use, None).status_code == 200  # clearing needs no list
+
+
+def test_put_sets_the_zone_of_the_place_in_use(admin):
+    in_use = first_place(admin)
+    r = put_zone(admin, in_use, NEW_YORK)
+    assert r.status_code == 200, r.text
+    assert r.json()["id"] == in_use and r.json()["timezone"] == NEW_YORK
+    assert stored_zone(admin, in_use) == NEW_YORK
+    assert file_zone(admin) == NEW_YORK
+    assert len(fake_rows(admin, in_use)) == 2 and row_zones(admin, in_use) == {NEW_YORK}
+    assert zone_audit(admin) == [f"{in_use} none>{NEW_YORK}"]
+    assert survey(places(admin), in_use)["timezone"] == NEW_YORK
+
+
+def test_a_change_keeps_every_deployment_id(admin):
+    in_use = first_place(admin)
+    before = deployment_ids(admin, in_use)
+    for zone in (NEW_YORK, TOKYO, None):
+        assert put_zone(admin, in_use, zone).status_code == 200
+        places(admin)  # and the reconcile after it
+        assert deployment_ids(admin, in_use) == before, zone
+        assert row_zones(admin, in_use) == {zone}
+
+
+def test_put_clears_the_zone(admin):
+    in_use = first_place(admin)
+    assert put_zone(admin, in_use, NEW_YORK).status_code == 200
+    r = put_zone(admin, in_use, None)
+    assert r.status_code == 200, r.text
+    assert r.json()["timezone"] is None and stored_zone(admin, in_use) is None
+    assert file_zone(admin) is None  # the key stays, blank
+    assert row_zones(admin, in_use) == {None}
+    assert zone_audit(admin) == [f"{in_use} none>{NEW_YORK}", f"{in_use} {NEW_YORK}>none"]
+
+
+def test_put_on_a_used_place_rewrites_its_rows_and_not_the_file(admin):
+    old = first_place(admin)
+    place = create(admin)
+    deploy(admin, place["id"])
+    text = admin.app.state.config_path.read_text()
+    r = put_zone(admin, old, TOKYO)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "used" and r.json()["timezone"] == TOKYO
+    assert all(row["entryEndDateTime"] is not None for row in fake_rows(admin, old))
+    assert row_zones(admin, old) == {TOKYO}
+    assert row_zones(admin, place["id"]) == {None}
+    assert admin.app.state.config_path.read_text() == text
+
+
+def test_a_planned_place_needs_no_nodered(admin, monkeypatch):
+    first_place(admin)
+    planned = create(admin)
+    called = nodered_down(monkeypatch, admin)
+    r = put_zone(admin, planned["id"], TOKYO)
+    assert r.status_code == 200, r.text
+    assert r.json()["timezone"] == TOKYO and stored_zone(admin, planned["id"]) == TOKYO
+    assert called == []
+    assert zone_audit(admin) == [f"{planned['id']} none>{TOKYO}"]
+
+
+def test_a_change_without_nodered_answers_502_and_keeps_the_change(admin, monkeypatch):
+    in_use = first_place(admin)
+    called = nodered_down(monkeypatch, admin)
+    r = put_zone(admin, in_use, NEW_YORK)
+    assert r.status_code == 502
+    assert r.json()["error"]["code"] == "nodered_error"
+    assert r.json()["error"]["message"].startswith(ZONE_502)
+    assert called == [(in_use, NEW_YORK)]
+    assert stored_zone(admin, in_use) == NEW_YORK
+    assert file_zone(admin) == NEW_YORK
+    assert zone_audit(admin) == [f"{in_use} none>{NEW_YORK}"]
+
+
+def test_saving_the_same_zone_again_rewrites_the_rows(admin, monkeypatch):
+    """On a used place, whose rows have all ended, so nothing but the endpoint rewrites them."""
+    old = first_place(admin)
+    deploy(admin, create(admin)["id"])
+    nodered_down(monkeypatch, admin)
+    assert put_zone(admin, old, BERLIN).status_code == 502
+    monkeypatch.undo()
+    assert row_zones(admin, old) == {None}
+    r = put_zone(admin, old, BERLIN)
+    assert r.status_code == 200, r.text
+    assert row_zones(admin, old) == {BERLIN}
+    assert zone_audit(admin) == [f"{old} none>{BERLIN}"]
+
+
+def test_put_refuses_a_file_that_names_another_place(admin, monkeypatch):
+    from tm_control.modules.location import reconcile
+
+    in_use = first_place(admin)
+    other = create(admin)
+    path = admin.app.state.config_path
+    path.write_text(path.read_text().replace(f"survey_id: {in_use}\n", f"survey_id: {other['id']}\n"))
+    monkeypatch.setattr(reconcile, "ensure", lambda *args, **kwargs: None)  # a hand edit after the reconcile
+    text = path.read_text()
+    before_rows = fake_rows(admin, in_use) + fake_rows(admin, other["id"])  # after the fake followed the edit
+    r = put_zone(admin, in_use, NEW_YORK)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "config_changed"
+    assert path.read_text() == text
+    assert stored_zone(admin, in_use) is None
+    assert fake_rows(admin, in_use) + fake_rows(admin, other["id"]) == before_rows
+    assert zone_audit(admin) == []
+
+
+def test_put_needs_an_admin_and_a_known_place(claimed_client, login):
+    login(claimed_client, *ADMIN)
+    in_use = first_place(claimed_client)
+    assert put_zone(claimed_client, "00000000-si", NEW_YORK).status_code == 404
+    assert put_zone(claimed_client, "not-an-id", NEW_YORK).status_code == 404
+    r = claimed_client.put(f"/api/v1/surveys/{in_use}/timezone", json={}, headers=ORIGIN)
+    assert r.status_code == 422  # the key is required; null clears
+    Users(claimed_client.app.state.state).create(*VIEWER, "viewer")
+    login(claimed_client, *VIEWER)
+    assert put_zone(claimed_client, in_use, NEW_YORK).status_code == 403
+    claimed_client.cookies.clear()
+    assert put_zone(claimed_client, in_use, NEW_YORK).status_code == 401
+    assert stored_zone(claimed_client, in_use) is None
+
+
+def test_deploying_writes_the_places_zone(admin):
+    first_place(admin)
+    zoned = create(admin, timezone=TOKYO)
+    result = deploy(admin, zoned["id"])
+    assert file_zone(admin) == TOKYO
+    started = {row["id"] for row in result["deployments"]}
+    assert len(started) == 2
+    assert {row["id"]: row["timezone"] for row in fake_rows(admin, zoned["id"])} == dict.fromkeys(started, TOKYO)
+
+    plain = create(admin)
+    deploy(admin, plain["id"])
+    assert file_zone(admin) is None  # blanked, not left as the last place's
+    assert row_zones(admin, plain["id"]) == {None}
+    assert row_zones(admin, zoned["id"]) == {TOKYO}
+
+
+def test_get_surveys_answers_the_clocks_zone(admin, monkeypatch):
+    assert places(admin)["clock_timezone"] == "America/Los_Angeles"  # fake mode's clock
+    admin.app.state.fake_clock.timezone = TOKYO
+    assert places(admin)["clock_timezone"] == TOKYO
+    monkeypatch.setattr(admin.app.state.fake_clock, "show", lambda: None)  # a clock that can't be read
+    state = places(admin)
+    assert state["clock_timezone"] is None and state["map"]["region"] is None
+
+
+def test_the_export_has_a_zone_column(admin):
+    zoned = create(admin, "Zoned", timezone=NEW_YORK)
+    plain = create(admin, "Plain", lat=None, lon=None)
+    lines = export(admin).text.splitlines()
+    assert lines[0] == "survey_id,lat,lon,timezone,status,created_at,updated_at"
+    line = next(line for line in lines if line.startswith(zoned["id"] + ","))
+    assert line.startswith(f"{zoned['id']},45.52252,-122.69120,{NEW_YORK},planned,")
+    line = next(line for line in lines if line.startswith(plain["id"] + ","))
+    assert line.startswith(f"{plain['id']},,,,planned,")
+
+
+def test_the_import_takes_a_zone_column(admin):
+    first_place(admin)
+    text = f"description,lat,lon,timezone\nA,,,{NEW_YORK}\nB,,, \n"
+    r = admin.post("/api/v1/surveys/import", json={"csv": text}, headers=ORIGIN)
+    assert r.status_code == 200 and r.json()["errors"] == []
+    assert [(row["description"], row["timezone"]) for row in r.json()["rows"]] == [("A", NEW_YORK), ("B", None)]
+
+    text = f"description,lat,lon,picam_h265,timezone\nC,,,90, {TOKYO} \nD,,,,\n"
+    r = admin.post("/api/v1/surveys/import", json={"csv": text}, headers=ORIGIN)
+    assert r.status_code == 200 and r.json()["errors"] == []
+    found = r.json()["rows"]
+    assert [(row["headings"], row["timezone"]) for row in found] == [([heading(CAMERA, 90)], TOKYO), ([], None)]
+    r = admin.post("/api/v1/surveys/import", json={"csv": text, "dry_run": False}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    created = r.json()["created"]
+    assert [stored_zone(admin, survey_id) for survey_id in created] == [TOKYO, None]
+    assert survey(places(admin), created[0])["headings"] == [heading(CAMERA, 90)]
+
+
+def test_the_import_refuses_an_unknown_zone_by_column(admin):
+    first_place(admin)
+    text = f"description,lat,lon,timezone,picam_h265\nA,,,{UNKNOWN},n\nB,,,not a zone!,\nC,,,{BERLIN},\n"
+    r = admin.post("/api/v1/surveys/import", json={"csv": text}, headers=ORIGIN)
+    assert r.status_code == 200
+    assert r.json()["errors"] == [
+        {"line": 2, "message": "The time zone isn't one the device knows."},
+        {"line": 3, "message": "The time zone isn't one the device knows."},
+    ]
+    assert [row["timezone"] for row in r.json()["rows"]] == [BERLIN]
+    for part in ("Mars", "Olympus", "not a zone"):
+        assert part not in r.text.replace(text, "")
+    r = admin.post("/api/v1/surveys/import", json={"csv": text, "dry_run": False}, headers=ORIGIN)
+    assert r.status_code == 422
+    assert len(places(admin)["surveys"]) == 1
+    text = "description,lat,lon,timezone,timezone\nA,,,,\n"
+    errors = admin.post("/api/v1/surveys/import", json={"csv": text}, headers=ORIGIN).json()["errors"]
+    assert errors == [{"line": 1, "message": "Column 5 is a second timezone column."}]
+
+
+def test_a_zone_never_reaches_a_log_line(admin, caplog, monkeypatch):
+    caplog.set_level(logging.DEBUG)
+    in_use = first_place(admin)
+    answers = [
+        put_zone(admin, in_use, NEW_YORK),
+        put_zone(admin, in_use, UNKNOWN),
+        admin.post("/api/v1/surveys", json={"headings": [], "timezone": UNKNOWN}, headers=ORIGIN),
+        admin.post("/api/v1/surveys/import", json={"csv": f"description,lat,lon,timezone\nA,,,{UNKNOWN}\n",
+                                                   "dry_run": False}, headers=ORIGIN),
+    ]
+    nodered_down(monkeypatch, admin)
+    answers.append(put_zone(admin, in_use, TOKYO))
+    places(admin)
+    assert [r.status_code for r in answers] == [200, 422, 422, 422, 502]
+    for r in answers[1:]:
+        for zone in (NEW_YORK, TOKYO, "Mars", "Olympus"):
+            assert zone not in r.text
+    assert caplog.records
+    for record in caplog.records:
+        message = record.getMessage()
+        for zone in (NEW_YORK, TOKYO, "Mars", "Olympus", "New_York", "Tokyo"):
+            assert zone not in message

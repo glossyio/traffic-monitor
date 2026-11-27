@@ -127,6 +127,11 @@ class NodeRed:
     def correct_location(self, survey_id: str, lat: float, lon: float) -> None:
         self._call("POST", f"/surveys/{quote(survey_id, safe='')}/location", body={"lat": lat, "lon": lon})
 
+    def set_timezone(self, survey_id: str, timezone: str | None) -> None:
+        """Set (a zone's name) or clear (None) the time zone on every deployment row of the survey, ended ones too. The
+        key is always sent: Node-RED refuses a body without it. A refusal is an error code, never the zone."""
+        self._call("POST", f"/surveys/{quote(survey_id, safe='')}/timezone", body={"timezone": timezone})
+
     def correct_heading(self, deployment_id: str, heading_deg: int | None) -> None:
         """Rewrite one deployment row's heading (whole degrees from 0 to 359, or None for none)."""
         self._call(

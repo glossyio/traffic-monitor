@@ -668,8 +668,9 @@ export interface paths {
         put?: never;
         /**
          * Import Places
-         * @description Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading) and, unless
-         *     dry_run, create them all, or none when any line is refused (422 with the problems in detail).
+         * @description Check a CSV of planned places (description,lat,lon, then a column per sensor holding its heading, and a
+         *     `timezone` column anywhere after lon) and, unless dry_run, create them all, or none when any line is refused (422
+         *     with the problems in detail).
          */
         post: operations["import_places_api_v1_surveys_import_post"];
         delete?: never;
@@ -697,7 +698,8 @@ export interface paths {
         head?: never;
         /**
          * Edit Place
-         * @description Edit a planned place (409 not_planned for one in use or used: correct those instead).
+         * @description Edit a planned place (409 not_planned for one in use or used: correct those instead). The body replaces the
+         *     place's description, point, and headings; a body without `timezone` keeps its zone (null or blank clears it).
          */
         patch: operations["edit_place_api_v1_surveys__survey_id__patch"];
         trace?: never;
@@ -713,11 +715,11 @@ export interface paths {
         put?: never;
         /**
          * Deploy Place
-         * @description Put the place in use: its id, point, and each enabled sensor's heading into config.yml (a sensor the body leaves
-         *     out takes the place's stored heading, else the file's), then wait for Node-RED to start the deployments. Moving to
-         *     another place also removes each sensor's other four from the file, at a place used before as at a new one: the
-         *     store keeps the values last saved there, and `previous` names the sensors whose values wait to be confirmed by a
-         *     mounting save.
+         * @description Put the place in use: its id, point, zone (blank for none), and each enabled sensor's heading into config.yml (a
+         *     sensor the body leaves out takes the place's stored heading, else the file's), then wait for Node-RED to start the
+         *     deployments. Moving to another place also removes each sensor's other four from the file, at a place used before
+         *     as at a new one: the store keeps the values last saved there, and `previous` names the sensors whose values wait to
+         *     be confirmed by a mounting save.
          *
          *     Node-RED not answering isn't an error: the file is written, and `reloaded` is false. The reconcile runs first (see
          *     _reconciled), so a file tmsetup.sh -f reset gets its precision back before the deploy writes the id beside it.
@@ -787,6 +789,30 @@ export interface paths {
          *     config_changed).
          */
         post: operations["correct_location_api_v1_surveys__survey_id__location_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/surveys/{survey_id}/timezone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Place Timezone
+         * @description Set or clear (null) a place's time zone, whatever its status: config.yml for the place in use, the store (with
+         *     an audit row naming the old and new zone, when it changed), and every one of Node-RED's rows of a place that has
+         *     been used, ended ones too. A change starts no deployment. A 502 means the store and the file changed and the rows
+         *     didn't; saving the same zone again rewrites them. The reconcile runs first (see _reconciled), and for the place in
+         *     use a file that no longer names it by the time the lock is held is refused (409 config_changed).
+         */
+        put: operations["set_place_timezone_api_v1_surveys__survey_id__timezone_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -888,6 +914,27 @@ export interface paths {
         get: operations["get_notice_api_v1_sharing_notice_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sharing/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Download
+         * @description A one-time link to the whole database, for the Sharing page's Download your data card (without the exact
+         *     locations; with them, POST /surveys/database-copy). The audit row has no detail, and the link is in no log.
+         */
+        post: operations["start_download_api_v1_sharing_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1769,6 +1816,13 @@ export interface components {
             /** Free */
             free: number;
         };
+        /** DownloadFacts */
+        DownloadFacts: {
+            /** Database Bytes */
+            database_bytes: number | null;
+            /** Exact Places */
+            exact_places: number;
+        };
         /** DownloadLink */
         DownloadLink: {
             /** Url */
@@ -1778,6 +1832,11 @@ export interface components {
         DownloadLinkRequest: {
             /** Files */
             files: string;
+        };
+        /** DownloadOut */
+        DownloadOut: {
+            /** Url */
+            url: string;
         };
         /** EulaAcceptance */
         EulaAcceptance: {
@@ -1925,6 +1984,8 @@ export interface components {
             lon: number | null;
             /** Headings */
             headings: components["schemas"]["SensorHeading"][];
+            /** Timezone */
+            timezone: string | null;
         };
         /** Job */
         Job: {
@@ -2246,6 +2307,8 @@ export interface components {
             /** Nodered */
             nodered: boolean;
             map: components["schemas"]["MapSources"];
+            /** Clock Timezone */
+            clock_timezone: string | null;
         };
         /** PlusUseQueued */
         PlusUseQueued: {
@@ -2558,6 +2621,7 @@ export interface components {
             /** Writable */
             writable: boolean;
             server: components["schemas"]["ServerStatus"];
+            download: components["schemas"]["DownloadFacts"] | null;
         };
         /** Side */
         Side: {
@@ -2600,6 +2664,8 @@ export interface components {
             lon?: number | null;
             /** Headings */
             headings?: components["schemas"]["SensorHeading"][];
+            /** Timezone */
+            timezone?: string | null;
         };
         /** SurveyOut */
         SurveyOut: {
@@ -2621,6 +2687,8 @@ export interface components {
             updated_at: string;
             /** Headings */
             headings: components["schemas"]["SensorHeading"][];
+            /** Timezone */
+            timezone: string | null;
             /** Stored Lat */
             stored_lat: number | null;
             /** Stored Lon */
@@ -2724,6 +2792,11 @@ export interface components {
             /** Rtc Time */
             rtc_time: string | null;
         };
+        /** TimezoneIn */
+        TimezoneIn: {
+            /** Timezone */
+            timezone: string | null;
+        };
         /** TmInstall */
         TmInstall: {
             /** Version */
@@ -2732,6 +2805,8 @@ export interface components {
             commit: string;
             /** Branch */
             branch: string;
+            /** Modified */
+            modified: boolean;
             /** Installing User */
             installing_user: string | null;
         };
@@ -4028,6 +4103,41 @@ export interface operations {
             };
         };
     };
+    set_place_timezone_api_v1_surveys__survey_id__timezone_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                survey_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimezoneIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     correct_heading_api_v1_surveys__survey_id__deployments__deployment_id__heading_post: {
         parameters: {
             query?: never;
@@ -4199,6 +4309,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+        };
+    };
+    start_download_api_v1_sharing_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadOut"];
                 };
             };
         };

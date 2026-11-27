@@ -23,6 +23,7 @@ def test_sharing_paths_are_declared_with_their_answers(settings):
     expected = {
         ("/api/v1/sharing", "get"): "200",
         ("/api/v1/sharing", "put"): "200",
+        ("/api/v1/sharing/download", "post"): "200",
         ("/api/v1/sharing/notice", "get"): "200",
         ("/api/v1/sharing/reviewed", "post"): "204",
     }
@@ -48,6 +49,7 @@ def test_surveys_paths_are_declared_with_their_answers(settings):
         ("/api/v1/surveys/{survey_id}/deployments", "get"): "200",
         ("/api/v1/surveys/{survey_id}/events", "get"): "200",
         ("/api/v1/surveys/{survey_id}/location", "post"): "200",
+        ("/api/v1/surveys/{survey_id}/timezone", "put"): "200",
         ("/api/v1/surveys/{survey_id}/deployments/{deployment_id}/heading", "post"): "200",
         ("/api/v1/surveys/{survey_id}/mounting", "get"): "200",
         ("/api/v1/surveys/{survey_id}/mounting", "put"): "200",

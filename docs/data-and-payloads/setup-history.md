@@ -6,7 +6,7 @@ description: The two setup history tables and the events_with_setup view, which 
 
 The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.
 
-The device keeps two tables, `setup_device` for the whole unit and `setup_camera` for each camera, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export.
+The device keeps two tables, `setup_device` for the whole unit and `setup_camera` for each camera, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export. With [Share data](../use/sharing.md) on, the rows are also [uploaded](#what-the-device-uploads).
 
 ## How the rows work
 
@@ -170,8 +170,21 @@ To compare two models, compare their counts over periods of similar traffic, and
 * **Events from before this was installed have no row.** Their setup columns in the view are empty. The first rows start within a few minutes of an upgrade.
 * **The Status page says when it stops.** The **Setup history** check on the [Status](../use/device-health.md#the-setup-history-checks) page warns when no snapshot has arrived for 15 minutes.
 
+## What the device uploads
+
+With **Share data** on, the device sends the setup history to the server as one `setup` telemetry value, `{"device": [...], "cameras": [...]}`: the rows of `setup_device` and `setup_camera`. A list with no rows is left out, so a value can hold `device` only or `cameras` only. There is no separate choice for it. [MQTT and ThingsBoard](integrations.md#thingsboard) lists the fields sent and the three that never leave the device.
+
+* **When a row opens or closes,** the device sends it. A change to the model sends the row that ended and the new one.
+* **Zones that are off are not sent.** A camera row's `zones` holds only the zones that are on. When you turn a zone on, the device starts a new row for the camera, and that row is sent with the zone.
+* **A camera that isn't captured is sent without its zones.** If a camera's **Database capture** is off on the [Cameras](../use/cameras.md) page, its row still goes out, with its detection settings and masks, but without `zones`. When the cameras that are captured change, the open rows are sent again, so the same row can arrive with `zones` at one time and without them at another. A row without `zones` says nothing about the camera's zones.
+* **Every open row is sent again** after the cameras that are captured change, on the first complete snapshot after Node-RED starts, after the upload is turned on or its server changes, and once a day. A unit that starts sharing months after its rows opened still tells the server its setup, and an open row the server missed arrives again within a day at most.
+* **A row can arrive more than once.** A server should keep one row for each `id`. A row that closed while sharing was off, or while the server couldn't be reached, is never sent after the fact. The server learns the setup from the open rows, and a close it missed shows as the start of the next row.
+* **A sent row** has the table's columns in order, less the three names that stay on the device, with the JSON columns as lists and objects, `zones` as described above, and `ended` empty while the row is in force.
+
 ## What an operator typed
 
 The rows hold a few names a person chose, and they are saved with your data. They are a zone's `key`, a model's title (`model_title`) and file name (`model_file`), and a profile's key (`profile`). A zone's key is saved with every event already; see [Zone names are saved with your data](../use/cameras.md#zone-names-are-saved-with-your-data). Don't name any of these after a street, a house number, or a person. The Status page's **Model and profile names** check warns when a model's title, the file name of a model you uploaded (the part before its last dot), or a profile's key looks like an address or a person's name, and never shows the name.
+
+The key of a zone that is on, on a camera that is captured, is sent inside `zones`. Those are the zones the **Zone names** check reads. A zone that is off, and every zone of a camera that isn't captured, stays on the device, in the database and its download. A model's title, its file name, and a profile's key stay on the device, in the database and its download, and are never uploaded; [MQTT and ThingsBoard](integrations.md#thingsboard) says what a server sees instead.
 
 The names Frigate shows for zones, masks, and cameras are not kept. Frigate's own name for a camera, a camera's stream address, and a mask's id aren't either. The rows say which camera by its key in `config.yml`.

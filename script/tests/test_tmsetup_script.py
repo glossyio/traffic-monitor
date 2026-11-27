@@ -299,3 +299,10 @@ def test_a_local_run_takes_the_lock_after_the_sudo_check_and_before_anything_is_
     ansible = next(i for i, line in enumerate(body) if line.startswith('_install_ansible_local "'))
     assert sudo_check < take < confirm < wifi < ansible
     assert sum("_take_run_lock" in line and "()" not in line for line in lines) == 1  # a remote run takes none
+
+
+def test_the_usage_text_names_no_default_time_zone(tmp_path):
+    result = run(["bash", str(SCRIPT), "-h"], tmp_path)
+    assert '-z TIMEZONE' in result.stdout
+    assert "America/Los_Angeles" not in result.stdout
+    assert "left as it is unless given" in result.stdout
