@@ -280,6 +280,10 @@ The Location module's UI has one page for the mounting routes, `MountingPage.vue
 - **The unit** (feet or metres) is kept in the browser's `localStorage` under `tm.mounting.unit`. It never reaches the API, which takes and gives metres.
 - **Fake mode** counts an open camera or radar row as having recorded traffic 30 seconds after it starts, so the question can be seen on a laptop.
 
+#### A place's time zone on the Location page
+
+One control, `TimeZonePick.vue`, sets a place's time zone in the place form, the deploy review, and `TimeZoneDialog.vue`, which a used place or the place in use opens with its **Time zone** button (`PUT /surveys/{id}/timezone`). A place starts with `clock_timezone` from `GET /surveys`, not the browser's time zone. The control's box, **This place is in a different time zone**, opens the device's list from `GET /time/timezones`, and nothing on the page sends a null time zone: the list ignores an emptied text, the place form leaves `timezone` out of its body when there is none, and the review sends none it doesn't have. The review asks the page to load the places again after any failed save of the time zone and after a failed deploy that followed a save, and the Time zone dialog after a 409 or a server error, so the page doesn't show a time zone older than the store's. `tm-control/ui/README.md` has the layout and the reasons.
+
 #### The map on the Location page
 
 The place form and **Correct location** can pick the point on a map. The map is the browser's business: tm-control only reports where to get it (`map` in `GET /surveys`, from the manifest) and makes no request to it. The UI (`ui/src/modules/location/`) draws it with MapLibre GL, which only `PinMap.vue` imports. `MapPicker.vue` loads `PinMap.vue` with a dynamic `import()`, so the library, its stylesheet, and its worker are separate files that the browser fetches the first time the picker opens, and the page's first download doesn't grow by them. The worker is a `.mjs` file, which the revproxy's nginx serves as JavaScript (`types { text/javascript mjs; }` in `nginx.conf.j2`, because its `mime.types` has none).

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.">
+        <meta name="description" content="Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place's time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.">
       
       
       
@@ -1101,6 +1101,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-the-places-time-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set the place's time zone
+      
+    </span>
+  </a>
   
 </li>
       
@@ -2566,6 +2577,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#set-the-places-time-zone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set the place's time zone
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#which-way-a-sensor-faces" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2800,7 +2822,7 @@
   
   
   <h1 id="places-and-location">Places and location<a class="headerlink" href="#places-and-location" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.</p>
+<p class="tm-description">Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place&#39;s time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.</p>
 <p>The control app's <strong>Location</strong> page records where the device is and which way its sensors face, and its <strong>Mounting</strong> page records how each sensor is mounted. The Location page also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.</p>
 <h2 id="places-and-deployments">Places and deployments<a class="headerlink" href="#places-and-deployments" title="Permanent link">&para;</a></h2>
 <p>A <em>place</em> is somewhere the device has been, is, or will be. Each place has an id such as <code>3f9a1c2e-si</code>, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts and records its data, only without saying where. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.</p>
@@ -2813,10 +2835,10 @@
 <p>Each place in the list shows its description, or <strong>No description</strong>, its mark (<strong>In use</strong>, <strong>Planned</strong>, or <strong>Used</strong>), its id, and its location as the database stores it. Select a place to open it. An open place shows:</p>
 <ul>
 <li><strong>Imported from your previous settings</strong> for a place that came from an older version's data; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Update the software</a>.</li>
-<li>When the place was first and last used, or <strong>Not used yet</strong>.</li>
+<li>When the place was first and last used, or <strong>Not used yet</strong>. A used place and the place in use also show their <strong>Time zone</strong>, or <strong>Not set</strong>; see <a href="#set-the-places-time-zone">Set the place's time zone</a>.</li>
 <li>How many events were recorded there, and between which dates.</li>
 <li>Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with what it recorded, such as <strong>Facing NE (40°) · 7.0 ft up · tilted 15°</strong>. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when. A deployment that has ended has <strong>Correct heading</strong>. One that is running at the place in use has <strong>Mounting</strong> instead, because that is where it is changed.</li>
-<li>The buttons for what you can do with the place: <strong>Deploy here</strong> for a planned place, <strong>Re-deploy here</strong> for a used one, or <strong>Mounting</strong> for the place in use; <strong>Edit</strong> for a planned place; <strong>Correct location</strong> for a used place or the place in use that has a location; and <strong>Delete</strong> for any place but the one in use.</li>
+<li>The buttons for what you can do with the place: <strong>Deploy here</strong> for a planned place, <strong>Re-deploy here</strong> for a used one, or <strong>Mounting</strong> for the place in use; <strong>Edit</strong> for a planned place; <strong>Correct location</strong> for a used place or the place in use that has a location; <strong>Time zone</strong> for a used place or the place in use; and <strong>Delete</strong> for any place but the one in use.</li>
 </ul>
 <p><strong>Before any place was recorded</strong> counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.</p>
 <p>If Node-RED hasn't answered yet, as right after an update, a warning at the top says past places may be missing. Reload the page once Node-RED is running. Opening the control app's home page or Status page sets the places up too.</p>
@@ -2825,16 +2847,28 @@
 <ul>
 <li><strong>Description</strong>: a name for the place, such as "Front of the school". It never leaves the device.</li>
 <li><strong>Coordinates</strong>: the latitude and longitude, pasted from a maps app as one value, such as <code>45.52252, -122.69120</code>, or <a href="#pick-the-point-on-a-map">picked on a map</a>. Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.</li>
+<li><strong>Time zone</strong>: the unit's clock's time zone, unless you tick <strong>This place is in a different time zone</strong>. See <a href="#set-the-places-time-zone">Set the place's time zone</a>.</li>
 <li><strong>Facing</strong>, for each sensor turned on in the settings: a compass point, <code>N</code>, <code>NE</code>, <code>E</code>, <code>SE</code>, <code>S</code>, <code>SW</code>, <code>W</code>, or <code>NW</code>, or <strong>Not set</strong>. See <a href="#which-way-a-sensor-faces">Which way a sensor faces</a>.</li>
 </ul>
 <p><strong>Use this phone's location</strong> fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.</p>
 <h3 id="pick-the-point-on-a-map">Pick the point on a map<a class="headerlink" href="#pick-the-point-on-a-map" title="Permanent link">&para;</a></h3>
 <p>Under the coordinates, <strong>Pick on a map</strong> opens a map. Tap the spot to place a pin, drag the pin to the exact place, and choose <strong>Use this point</strong>. The form fills in the coordinates with five decimal places, and you can still change them before you save. The same button is on <strong>Correct location</strong>.</p>
 <p><img alt="The map picker on a phone, with a pin beside a street, its coordinates under the map, and Cancel and Use this point" src="../../assets/images/location-map-pin.png" width="300" /></p>
-<p>The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer sets the time zone (its <code>-z</code> option, <code>America/Los_Angeles</code> unless you give another), so a device left on the installer's time zone and Wi-Fi country opens over Los Angeles until you set its time zone on the <a href="../device-health/#the-date-and-time-page">Date and time page</a>. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers <strong>Try again</strong>; type or paste the coordinates instead.</p>
+<p>The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer changes the time zone only when it is given its <code>-z</code> option, so a device keeps the time zone it came with, the one chosen when its card was imaged or the image's, until you set it on the <a href="../device-health/#the-date-and-time-page">Date and time page</a>. Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers <strong>Try again</strong>; type or paste the coordinates instead.</p>
 <p>The map isn't offered while your phone is on the device's own <a href="../wifi-hotspot/#phones">hotspot</a>, because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.</p>
 <p>To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.</p>
 <p>To change a planned place, open it and choose <strong>Edit</strong>. A place that has been used can't be edited; <a href="#correct-a-wrong-location-or-heading">correct it</a> instead.</p>
+<h2 id="set-the-places-time-zone">Set the place's time zone<a class="headerlink" href="#set-the-places-time-zone" title="Permanent link">&para;</a></h2>
+<p>The device stores every time in UTC. To read a place's data by the hour on the clock where the device stood, such as the morning rush, you need the place's time zone, so each place has one, recorded with its data. It is recorded also when no location is stored, so a place whose location you keep to yourself can still be read in local time.</p>
+<p>A place gets the time zone of the unit's clock unless you say otherwise. <strong>Add a place</strong>, <strong>Edit</strong>, and the deploy review show it under <strong>Time zone</strong>, in a line such as "America/New_York, the same as the unit's clock", above one box:</p>
+<ul>
+<li>Tick <strong>This place is in a different time zone</strong> for a place in another time zone. A list opens, the same list as on the <a href="../device-health/#the-date-and-time-page">Date and time page</a>: choose a name, or type part of one, such as <code>Berlin</code>, to find it. Unticking the box puts the clock's time zone back.</li>
+<li>The box is ticked when the place already has a time zone other than the clock's, so <strong>Edit</strong> shows it as it is.</li>
+<li>When the device can't say what its clock's time zone is, there is no line and no box: the list shows at once. If the list can't load, the box still works for the clock's time zone, and the field says why the list is off.</li>
+</ul>
+<p>The time zone comes from the unit's clock, never from your phone or computer, because you may plan a place from somewhere else. It is saved as a name, so changing the unit's clock later doesn't change a place's records. The page can't clear a place's time zone. A planned place with none, from an older version or from an <a href="#import-places-from-a-file">import</a> that left it blank, gets the unit's clock's time zone at its deploy review.</p>
+<p>The review saves a changed time zone before it deploys, and the new deployments carry it from their start. When you re-deploy a used place and change its time zone there, the change also corrects the time zone on that place's stored deployments, and the review says so under the field: "Changing it corrects this place's stored deployments." For a place that is used or in use, its panel shows <strong>Time zone</strong>, with <strong>Not set</strong> when it has none, and its <strong>Time zone</strong> button opens a dialog with the same control. <strong>Save</strong> corrects the time zone on the place's stored deployments, the ended ones too. It starts no new deployment, and it doesn't move or change anything else. For a place with none, <strong>Save</strong> sets the unit's clock's time zone, or the one you choose. On the place in use with no time zone, the panel also says "This place has no time zone. Set one so its data can be read in local time."</p>
+<p>A place's time zone isn't the device's clock. The <a href="../device-health/#the-date-and-time-page">Date and time page</a> sets the clock, and the Location page never does. When the place in use has a time zone other than the clock's, its panel says "The unit's clock is set to" the clock's time zone and "Change it on <strong>Date and time</strong>", with a link to the page. The line only informs: a place can rightly differ from the clock, but a device whose clock is wrong for where it stands needs its clock changed on that page.</p>
 <h2 id="which-way-a-sensor-faces">Which way a sensor faces<a class="headerlink" href="#which-way-a-sensor-faces" title="Permanent link">&para;</a></h2>
 <p>A sensor's <em>heading</em> is the way it faces, in whole degrees clockwise from true north, from 0 to 359: 0 is north, 90 is east, 180 is south, and 270 is west. The page shows it with the nearest compass point, such as <strong>NE (40°)</strong>. A point covers the 45 degrees around its centre, so 23 to 67 degrees is <code>NE</code>, and 338 to 359 and 0 to 22 is <code>N</code>.</p>
 <p>The page lets you pick one of the eight points, which sets the heading to the point's centre, as the <a href="../../configuration/node-red-config/#if-your-file-still-says-bearing">table of centres</a> lists. Nothing stores the point itself, only the number. A heading you measured more closely, such as 40 from a compass app, or typed into <a href="../../configuration/node-red-config/#deployment"><code>config.yml</code></a> or an <a href="#import-places-from-a-file">imported file</a>, is kept as it is and listed first in the choices as <strong>NE (40°)</strong>, so opening the choice and closing it changes nothing. Pick a point only to replace it. Until you save or close the form, the measured heading stays in the list, so you can choose it again if you picked a point by mistake.</p>
@@ -2844,10 +2878,10 @@
 <p>When the device moves to another place, record it from that place: <strong>Deploy here</strong> if the place is planned, or <strong>Re-deploy here</strong> if the device has been there before. When a sensor is moved or turned at the place in use, record it on the <a href="#record-how-the-unit-is-mounted">Mounting page</a>.</p>
 <ol>
 <li>Open the place, and choose <strong>Deploy here</strong> or <strong>Re-deploy here</strong>.</li>
-<li>Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are what the database will store for the place and whether the device shares its data.</li>
+<li>Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are the place's <a href="#set-the-places-time-zone">time zone</a>, what the database will store for the place, and whether the device shares its data.</li>
 <li>Choose <strong>Deploy</strong> or <strong>Re-deploy</strong>.</li>
 </ol>
-<p><img alt="The Deploy here review on a phone: each sensor with &quot;New deployment starts&quot; and its heading before and after, the location the database will store, and Cancel and Deploy" src="../../assets/images/location-deploy-review.png" width="300" /></p>
+<p><img alt="The Deploy here review on a phone: each sensor with &quot;New deployment starts&quot; and its heading before and after, the time zone with &quot;America/Los_Angeles, the same as the unit's clock&quot; and the box &quot;This place is in a different time zone&quot;, the location the database will store, and Cancel and Deploy" src="../../assets/images/location-deploy-review.png" width="300" /></p>
 <p>The page waits while Node-RED starts the new deployments, then lists their ids, each with <strong>Copy</strong>. Counts from then on belong to the new deployments. Under the list is the next step, <strong>Mounting</strong>, which opens the page where you record how the unit is mounted. At a place the unit was at before, the values last saved there are offered, and the next step says so; <strong>Use these values</strong> and then <strong>Save</strong> confirm them. See <a href="#a-place-used-before">A place used before</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Don't deploy twice</p>
@@ -2943,21 +2977,22 @@
 <h2 id="import-places-from-a-file">Import places from a file<a class="headerlink" href="#import-places-from-a-file" title="Permanent link">&para;</a></h2>
 <p>To plan several places at once, choose <strong>Import places</strong>. Pick a CSV file, or paste its lines into the box.</p>
 <ul>
-<li>The first line is the header. It starts with <code>description,lat,lon</code>, then has one column for each sensor turned on in the settings, named as in the settings. The dialog shows this device's header.</li>
+<li>The first line is the header. It starts with <code>description,lat,lon</code>, then has one column for each sensor turned on in the settings, named as in the settings, and may have a <code>timezone</code> column anywhere after <code>lon</code>. The dialog shows this device's header.</li>
 <li>Each further line is one place. Leave <code>lat</code> and <code>lon</code> both empty for a place with no location. A sensor's column holds the way it faces: a compass point (<code>n</code>, <code>ne</code>, <code>e</code>, <code>se</code>, <code>s</code>, <code>sw</code>, <code>w</code>, or <code>nw</code>), a heading in whole degrees from north (0 to 359, such as <code>40</code>), or nothing. A point is saved as its centre, so <code>e</code> is 90.</li>
+<li>The <code>timezone</code> column holds a time zone the device knows, such as <code>America/New_York</code>, or nothing. A place with none gets the unit's clock's time zone when it is deployed, as under <a href="#set-the-places-time-zone">Set the place's time zone</a>. A line with a time zone the device doesn't know is refused, and the preview names the line.</li>
 <li>A file can be up to 64 KiB.</li>
 </ul>
 <p>For a device with the Pi camera and one radar:</p>
-<div class="highlight"><pre><span></span><code>description,lat,lon,picam_h265,TM_RADAR_SERIAL_PORT_00
-Front of the school,45.52252,-122.69120,n,n
-Corner by the park,,,e,e
+<div class="highlight"><pre><span></span><code>description,lat,lon,timezone,picam_h265,TM_RADAR_SERIAL_PORT_00
+Front of the school,45.52252,-122.69120,America/Los_Angeles,n,n
+Corner by the park,,,,e,e
 </code></pre></div>
-<p>Choose <strong>Preview</strong> to see the places the file holds and, by line number, any lines with a problem. <strong>Import</strong> adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.</p>
+<p>Choose <strong>Preview</strong> to see the places the file holds, each with its time zone when it has one, and, by line number, any lines with a problem. <strong>Import</strong> adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.</p>
 <h2 id="delete-a-place">Delete a place<a class="headerlink" href="#delete-a-place" title="Permanent link">&para;</a></h2>
 <p>Open the place and choose <strong>Delete</strong>, then confirm. A planned place is removed from the list. A used place's exact location is deleted with it, and the database keeps the rounded location stored with each of its records. Deleting can't be undone.</p>
 <p>The place in use can't be deleted. Deploy another place first.</p>
 <h2 id="export-the-exact-locations">Export the exact locations<a class="headerlink" href="#export-the-exact-locations" title="Permanent link">&para;</a></h2>
-<p><strong>Export exact locations</strong>, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.</p>
+<p><strong>Export exact locations</strong>, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its time zone (empty for a place with none), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.</p>
 <p>The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see <a href="../sharing/#include-each-places-exact-location">Download your data</a> on the Sharing page.</p>
 <h2 id="download-the-database-with-exact-locations">Download the database with exact locations<a class="headerlink" href="#download-the-database-with-exact-locations" title="Permanent link">&para;</a></h2>
 <p>This download moved to the <strong>Download your data</strong> card on the <a href="../sharing/#download-your-data">Sharing page</a>. Tick <a href="../sharing/#include-each-places-exact-location"><strong>Include each place's exact location</strong></a> there to save a copy of the database that also holds where the device was.</p>

@@ -1357,10 +1357,10 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 Each place in the list shows its description, or **No description**, its mark (**In use**, **Planned**, or **Used**), its id, and its location as the database stores it. Select a place to open it. An open place shows:
 
 - **Imported from your previous settings** for a place that came from an older version's data; see [Update the software](https://docs.trafficmonitor.ai/dev/build-your-own-device-diy/update/#places-after-an-update).
-- When the place was first and last used, or **Not used yet**.
+- When the place was first and last used, or **Not used yet**. A used place and the place in use also show their **Time zone**, or **Not set**; see [Set the place's time zone](#set-the-places-time-zone).
 - How many events were recorded there, and between which dates.
 - Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with what it recorded, such as **Facing NE (40°) · 7.0 ft up · tilted 15°**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when. A deployment that has ended has **Correct heading**. One that is running at the place in use has **Mounting** instead, because that is where it is changed.
-- The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Mounting** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; and **Delete** for any place but the one in use.
+- The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Mounting** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; **Time zone** for a used place or the place in use; and **Delete** for any place but the one in use.
 
 **Before any place was recorded** counts the deployments that had already ended when the device got its first place. They belong to no place, and the database keeps them as they are. Deployments still running then joined that first place.
 
@@ -1372,6 +1372,7 @@ Choose **Add a place**, fill in what you know, and **Save**. The place is added 
 
 - **Description**: a name for the place, such as "Front of the school". It never leaves the device.
 - **Coordinates**: the latitude and longitude, pasted from a maps app as one value, such as `45.52252, -122.69120`, or [picked on a map](#pick-the-point-on-a-map). Use a dot as the decimal mark. The device keeps five decimal places, about a metre. Use at least four, about 10 metres, for an exact location: with fewer, the form warns and says how coarse the point is (about 100 metres for three decimals, and coarser for fewer), and still saves it. Leave the field empty for a place with no location.
+- **Time zone**: the unit's clock's time zone, unless you tick **This place is in a different time zone**. See [Set the place's time zone](#set-the-places-time-zone).
 - **Facing**, for each sensor turned on in the settings: a compass point, `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, or `NW`, or **Not set**. See [Which way a sensor faces](#which-way-a-sensor-faces).
 
 **Use this phone's location** fills in the coordinates from your phone's location. Browsers share a location only with pages opened over HTTPS, and the device uses plain HTTP, so the form usually says to paste coordinates instead.
@@ -1380,13 +1381,29 @@ Choose **Add a place**, fill in what you know, and **Save**. The place is added 
 
 Under the coordinates, **Pick on a map** opens a map. Tap the spot to place a pin, drag the pin to the exact place, and choose **Use this point**. The form fills in the coordinates with five decimal places, and you can still change them before you save. The same button is on **Correct location**.
 
-The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer sets the time zone (its `-z` option, `America/Los_Angeles` unless you give another), so a device left on the installer's time zone and Wi-Fi country opens over Los Angeles until you set its time zone on the [Date and time page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page). Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers **Try again**; type or paste the coordinates instead.
+The map is drawn by your phone or computer, not by the device. It opens at the coordinates in the field, else at the place in use, else over the region of the device's time zone: a wide view around that city, about the size of a time zone. The device finds the region from its own time zone, so it asks no one, and uses it only when its Wi-Fi country is set and is one of the countries that time zone covers. Otherwise it opens on the whole world. The installer changes the time zone only when it is given its `-z` option, so a device keeps the time zone it came with, the one chosen when its card was imaged or the image's, until you set it on the [Date and time page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page). Your browser asks the map's server, named in the dialog, for the pictures of the area you look at, and the device sends it nothing. The server sees the map tiles that cover the area you look at, squares of roughly one to two kilometres across, even when you zoom in as far as the map goes. That includes the area of the place in use the moment the map opens, even when you are adding a place somewhere else. Opened over the region, the map asks for tiles that cover an area thousands of kilometres across, which says little more than your phone's internet address already does. As any website does, the server also sees your phone's internet address. It never gets the exact point you choose. If the map can't load, the dialog says so and offers **Try again**; type or paste the coordinates instead.
 
 The map isn't offered while your phone is on the device's own [hotspot](https://docs.trafficmonitor.ai/dev/use/wifi-hotspot/#phones), because the hotspot has no internet. The form says so; paste the coordinates, or open the page once the device is on your Wi-Fi.
 
 To get coordinates from a maps app on your phone, in Google Maps press and hold the spot, then copy the coordinates shown. In Apple Maps, drop a pin; its card shows the coordinates. The phone's GPS needs no internet connection, though the app's map may not draw without one.
 
 To change a planned place, open it and choose **Edit**. A place that has been used can't be edited; [correct it](#correct-a-wrong-location-or-heading) instead.
+
+## Set the place's time zone
+
+The device stores every time in UTC. To read a place's data by the hour on the clock where the device stood, such as the morning rush, you need the place's time zone, so each place has one, recorded with its data. It is recorded also when no location is stored, so a place whose location you keep to yourself can still be read in local time.
+
+A place gets the time zone of the unit's clock unless you say otherwise. **Add a place**, **Edit**, and the deploy review show it under **Time zone**, in a line such as "America/New_York, the same as the unit's clock", above one box:
+
+- Tick **This place is in a different time zone** for a place in another time zone. A list opens, the same list as on the [Date and time page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page): choose a name, or type part of one, such as `Berlin`, to find it. Unticking the box puts the clock's time zone back.
+- The box is ticked when the place already has a time zone other than the clock's, so **Edit** shows it as it is.
+- When the device can't say what its clock's time zone is, there is no line and no box: the list shows at once. If the list can't load, the box still works for the clock's time zone, and the field says why the list is off.
+
+The time zone comes from the unit's clock, never from your phone or computer, because you may plan a place from somewhere else. It is saved as a name, so changing the unit's clock later doesn't change a place's records. The page can't clear a place's time zone. A planned place with none, from an older version or from an [import](#import-places-from-a-file) that left it blank, gets the unit's clock's time zone at its deploy review.
+
+The review saves a changed time zone before it deploys, and the new deployments carry it from their start. When you re-deploy a used place and change its time zone there, the change also corrects the time zone on that place's stored deployments, and the review says so under the field: "Changing it corrects this place's stored deployments." For a place that is used or in use, its panel shows **Time zone**, with **Not set** when it has none, and its **Time zone** button opens a dialog with the same control. **Save** corrects the time zone on the place's stored deployments, the ended ones too. It starts no new deployment, and it doesn't move or change anything else. For a place with none, **Save** sets the unit's clock's time zone, or the one you choose. On the place in use with no time zone, the panel also says "This place has no time zone. Set one so its data can be read in local time."
+
+A place's time zone isn't the device's clock. The [Date and time page](https://docs.trafficmonitor.ai/dev/use/device-health/#the-date-and-time-page) sets the clock, and the Location page never does. When the place in use has a time zone other than the clock's, its panel says "The unit's clock is set to" the clock's time zone and "Change it on **Date and time**", with a link to the page. The line only informs: a place can rightly differ from the clock, but a device whose clock is wrong for where it stands needs its clock changed on that page.
 
 ## Which way a sensor faces
 
@@ -1403,7 +1420,7 @@ A device updated from an older release has its earlier headings converted; see [
 When the device moves to another place, record it from that place: **Deploy here** if the place is planned, or **Re-deploy here** if the device has been there before. When a sensor is moved or turned at the place in use, record it on the [Mounting page](#record-how-the-unit-is-mounted).
 
 1. Open the place, and choose **Deploy here** or **Re-deploy here**.
-1. Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are what the database will store for the place and whether the device shares its data.
+1. Check the review. For each sensor, it says whether a new deployment starts, the way the sensor faced before, and the way it faces now, which you can change. Under the sensors are the place's [time zone](#set-the-places-time-zone), what the database will store for the place, and whether the device shares its data.
 1. Choose **Deploy** or **Re-deploy**.
 
 The page waits while Node-RED starts the new deployments, then lists their ids, each with **Copy**. Counts from then on belong to the new deployments. Under the list is the next step, **Mounting**, which opens the page where you record how the unit is mounted. At a place the unit was at before, the values last saved there are offered, and the next step says so; **Use these values** and then **Save** confirm them. See [A place used before](#a-place-used-before).
@@ -1510,19 +1527,20 @@ Each correction can have a **Reason**, which is kept with the correction on the 
 
 To plan several places at once, choose **Import places**. Pick a CSV file, or paste its lines into the box.
 
-- The first line is the header. It starts with `description,lat,lon`, then has one column for each sensor turned on in the settings, named as in the settings. The dialog shows this device's header.
+- The first line is the header. It starts with `description,lat,lon`, then has one column for each sensor turned on in the settings, named as in the settings, and may have a `timezone` column anywhere after `lon`. The dialog shows this device's header.
 - Each further line is one place. Leave `lat` and `lon` both empty for a place with no location. A sensor's column holds the way it faces: a compass point (`n`, `ne`, `e`, `se`, `s`, `sw`, `w`, or `nw`), a heading in whole degrees from north (0 to 359, such as `40`), or nothing. A point is saved as its centre, so `e` is 90.
+- The `timezone` column holds a time zone the device knows, such as `America/New_York`, or nothing. A place with none gets the unit's clock's time zone when it is deployed, as under [Set the place's time zone](#set-the-places-time-zone). A line with a time zone the device doesn't know is refused, and the preview names the line.
 - A file can be up to 64 KiB.
 
 For a device with the Pi camera and one radar:
 
 ```
-description,lat,lon,picam_h265,TM_RADAR_SERIAL_PORT_00
-Front of the school,45.52252,-122.69120,n,n
-Corner by the park,,,e,e
+description,lat,lon,timezone,picam_h265,TM_RADAR_SERIAL_PORT_00
+Front of the school,45.52252,-122.69120,America/Los_Angeles,n,n
+Corner by the park,,,,e,e
 ```
 
-Choose **Preview** to see the places the file holds and, by line number, any lines with a problem. **Import** adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.
+Choose **Preview** to see the places the file holds, each with its time zone when it has one, and, by line number, any lines with a problem. **Import** adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.
 
 ## Delete a place
 
@@ -1532,7 +1550,7 @@ The place in use can't be deleted. Deploy another place first.
 
 ## Export the exact locations
 
-**Export exact locations**, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.
+**Export exact locations**, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its time zone (empty for a place with none), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.
 
 The page asks first, because the file says exactly where the device has been, and anyone you give it to can match it to the database by place id. To get the exact locations inside a copy of the database instead, see [Download your data](https://docs.trafficmonitor.ai/dev/use/sharing/#include-each-places-exact-location) on the Sharing page.
 
@@ -4637,6 +4655,10 @@ The Location module's UI has one page for the mounting routes, `MountingPage.vue
 - **A running deployment** at the place in use is changed on this page, through a save that doesn't start a new one. **Correct heading** stays for a deployment that has ended, and for a running one whose sensor has no section on the page (a sensor listed but turned off in `config.yml` keeps its open row, and `GET .../mounting` lists enabled sensors only).
 - **The unit** (feet or metres) is kept in the browser's `localStorage` under `tm.mounting.unit`. It never reaches the API, which takes and gives metres.
 - **Fake mode** counts an open camera or radar row as having recorded traffic 30 seconds after it starts, so the question can be seen on a laptop.
+
+#### A place's time zone on the Location page
+
+One control, `TimeZonePick.vue`, sets a place's time zone in the place form, the deploy review, and `TimeZoneDialog.vue`, which a used place or the place in use opens with its **Time zone** button (`PUT /surveys/{id}/timezone`). A place starts with `clock_timezone` from `GET /surveys`, not the browser's time zone. The control's box, **This place is in a different time zone**, opens the device's list from `GET /time/timezones`, and nothing on the page sends a null time zone: the list ignores an emptied text, the place form leaves `timezone` out of its body when there is none, and the review sends none it doesn't have. The review asks the page to load the places again after any failed save of the time zone and after a failed deploy that followed a save, and the Time zone dialog after a 409 or a server error, so the page doesn't show a time zone older than the store's. `tm-control/ui/README.md` has the layout and the reasons.
 
 #### The map on the Location page
 

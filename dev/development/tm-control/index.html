@@ -2340,6 +2340,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#a-places-time-zone-on-the-location-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A place's time zone on the Location page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-map-on-the-location-page" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2734,6 +2745,17 @@
     <span class="md-ellipsis">
       
         The Mounting page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-places-time-zone-on-the-location-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A place's time zone on the Location page
       
     </span>
   </a>
@@ -3326,6 +3348,8 @@
 <li><strong>The unit</strong> (feet or metres) is kept in the browser's <code>localStorage</code> under <code>tm.mounting.unit</code>. It never reaches the API, which takes and gives metres.</li>
 <li><strong>Fake mode</strong> counts an open camera or radar row as having recorded traffic 30 seconds after it starts, so the question can be seen on a laptop.</li>
 </ul>
+<h4 id="a-places-time-zone-on-the-location-page">A place's time zone on the Location page<a class="headerlink" href="#a-places-time-zone-on-the-location-page" title="Permanent link">&para;</a></h4>
+<p>One control, <code>TimeZonePick.vue</code>, sets a place's time zone in the place form, the deploy review, and <code>TimeZoneDialog.vue</code>, which a used place or the place in use opens with its <strong>Time zone</strong> button (<code>PUT /surveys/{id}/timezone</code>). A place starts with <code>clock_timezone</code> from <code>GET /surveys</code>, not the browser's time zone. The control's box, <strong>This place is in a different time zone</strong>, opens the device's list from <code>GET /time/timezones</code>, and nothing on the page sends a null time zone: the list ignores an emptied text, the place form leaves <code>timezone</code> out of its body when there is none, and the review sends none it doesn't have. The review asks the page to load the places again after any failed save of the time zone and after a failed deploy that followed a save, and the Time zone dialog after a 409 or a server error, so the page doesn't show a time zone older than the store's. <code>tm-control/ui/README.md</code> has the layout and the reasons.</p>
 <h4 id="the-map-on-the-location-page">The map on the Location page<a class="headerlink" href="#the-map-on-the-location-page" title="Permanent link">&para;</a></h4>
 <p>The place form and <strong>Correct location</strong> can pick the point on a map. The map is the browser's business: tm-control only reports where to get it (<code>map</code> in <code>GET /surveys</code>, from the manifest) and makes no request to it. The UI (<code>ui/src/modules/location/</code>) draws it with MapLibre GL, which only <code>PinMap.vue</code> imports. <code>MapPicker.vue</code> loads <code>PinMap.vue</code> with a dynamic <code>import()</code>, so the library, its stylesheet, and its worker are separate files that the browser fetches the first time the picker opens, and the page's first download doesn't grow by them. The worker is a <code>.mjs</code> file, which the revproxy's nginx serves as JavaScript (<code>types { text/javascript mjs; }</code> in <code>nginx.conf.j2</code>, because its <code>mime.types</code> has none).</p>
 <p>The specs don't run the library, which needs WebGL: <code>pin-map.spec.ts</code> replaces <code>maplibre-gl</code> with small classes that record what <code>PinMap.vue</code> asks of them (the options, the marker, the events), and <code>map-picker.spec.ts</code> replaces <code>PinMap.vue</code> with a stub that can drop a pin or fail. To see the real map, run <a href="#run-it-on-a-laptop">fake mode</a>, whose manifest names a map source, in a browser with internet access.</p>
