@@ -269,6 +269,23 @@ describe('the sharing form', () => {
     }
   })
 
+  it("shows the radar's aim in the Share data example's deployment row", async () => {
+    const wrapper = mountForm(SHARING_ON)
+    const examples = wrapper.findAll('button').filter((b) => b.text() === 'See an example')
+    await examples[0].trigger('click')
+    const shown = JSON.parse(wrapper.find('pre').text())
+    expect(Object.keys(shown.deployment).slice(-8)).toEqual([
+      'road_angle_deg',
+      'lane_distance_m',
+      'lane_width_m',
+      'lanes_toward',
+      'lanes_away',
+      'turn_lane',
+      'toward_side',
+      'intersection',
+    ])
+  })
+
   it('hides the notice and the map for your own server and shows the responsibility text', async () => {
     const wrapper = mountForm(SHARING_ON)
     expect(wrapper.text()).toContain('Show this device on the public map')
