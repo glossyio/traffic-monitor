@@ -30,9 +30,9 @@ ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/timeout 2
 # Node-RED is up, whose config watch would start a new deployment on the change. The "-" starts Node-RED anyway; the
 # flows read a bearing as its point's centre, and the next start tries again.
 ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate --node-red-headings {{ tmsetup_codedir }}/node-red-tm/config/config.yml
-# Move a hand-set ^/ cosine angle from a radar's opt_api_commands_array into its cosine_inbound_deg / cosine_outbound_deg,
-# also while no flow runs and not in the installer's pass: the old Node-RED is up then, and its config watch would send
-# the radar's setup again on the change. The "-" starts Node-RED anyway; the flows never send a ^/ command from the list.
+# Move a hand-set ^/ cosine angle from a radar's opt_api_commands_array into its cosine_inbound_deg / cosine_outbound_deg
+# while no flow runs. It runs at every start, not once in the installer's pass, so a config.yml put back from an old
+# backup is converted too. The "-" starts Node-RED anyway; the flows never send a ^/ command from the list.
 ExecStartPre=-/usr/sbin/runuser -u {{ tmsetup_codeowner }} -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate --node-red-cosine {{ tmsetup_codedir }}/node-red-tm/config/config.yml
 # Backing up and migrating a large database can take minutes.
 TimeoutStartSec=30min

@@ -73,8 +73,8 @@ def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
 
 
 def test_node_red_moves_a_hand_set_cosine_angle_at_its_start_after_the_headings():
-    """The same reasoning as the bearing: the old Node-RED is still up while the installer runs, and its config watch
-    would re-send the radar's setup on the change, so the start moves the angle, before any flow runs."""
+    """Every start of Node-RED converts an old file, after the headings' line and before any flow runs, rather than
+    the installer's pass once, so a config.yml put back from an old backup is converted too."""
     unit = node_red_unit()
     starts = [line for line in unit if line.startswith("ExecStartPre=")]
     assert starts[2] == (
@@ -87,7 +87,9 @@ def test_node_red_moves_a_hand_set_cosine_angle_at_its_start_after_the_headings(
         if not line.startswith("#"):
             break
         above.append(line)
-    assert "installer" in " ".join(above)
+    comment = " ".join(above)
+    assert "installer" in comment and "backup" in comment
+    assert "config watch" not in comment
 
 
 def revproxy_unit():
