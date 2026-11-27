@@ -783,7 +783,7 @@ def _run_node_red_headings(config_path, dry_run):
 # direction. Both readers of a `^/` command use this one: modules/location/mounting.py imports it from here (this module
 # can't import that one), and Node-RED's "init config defaults" repeats the trim and the prefix, tied by a test.
 COSINE_MAX_DEG = 89.0
-_COSINE_NUMBER = re.compile(r"\d+(?:\.\d*)?|\.\d+")
+_COSINE_NUMBER = re.compile(r"[0-9]+(?:\.[0-9]*)?|\.[0-9]+")  # ASCII digits only: \d takes any script's
 _COSINE_DIRECTIONS = {"+": "inbound", "-": "outbound"}
 COSINE_KEYS = {"inbound": "cosine_inbound_deg", "outbound": "cosine_outbound_deg"}
 

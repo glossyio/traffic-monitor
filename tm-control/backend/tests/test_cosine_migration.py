@@ -188,7 +188,8 @@ def test_an_entry_beside_a_set_key_is_removed_and_the_key_kept(tmp_path, capsys)
     assert "30.5" not in printed
 
 
-@pytest.mark.parametrize("entry", ["^/+95\n", "^/+abc\n", "^/20\n"])
+# "\u0663" is ARABIC-INDIC DIGIT THREE, a digit float() reads but the radar has no use for
+@pytest.mark.parametrize("entry", ["^/+95\n", "^/+abc\n", "^/20\n", "^/+\u0663\n"])
 def test_an_entry_that_does_not_parse_is_left_with_a_warning(tmp_path, capsys, entry):
     config = config_with(tmp_path, [entry])
     original = config.read_text()
