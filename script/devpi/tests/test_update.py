@@ -15,6 +15,8 @@ UPDATE_DIR = role_vars()["tmsetup_update_dir"]
 STATE = f"{UPDATE_DIR}/state.json"
 RESUME_MARKER = f"{UPDATE_DIR}/resume.json"
 RESTORE_ROOT = "/var/lib/traffic-monitor/restore"
+SOURCE_ROOT = "/var/lib/traffic-monitor/src"
+TREE_NAME = re.compile(r"[0-9a-f]{40}")
 MANIFEST = f"{role_vars()['tmsetup_etc_dir']}/manifest.json"
 THROWAWAY_TAG = re.compile(r"localhost/[^/:]+:prepare-.+")
 
@@ -124,3 +126,23 @@ def test_the_restore_point_is_roots_alone(host, update_state):
         elif depth == 1 and kind == "d" and mode != "700":
             problems.append(f"{path}: folder mode {mode}, not 700")
     assert not problems, "; ".join(problems)
+
+
+def test_the_mirror_and_the_trees_are_roots(host):
+    """The update's mirror and the source trees that tm-update installs from are root's, and no one else can write to
+    them (the code owner runs tm-control, so a tree it could change would be a way to root). Only the folders'
+    own owners and modes are read, and a tree's top level; skipped on a device that has never fetched a version."""
+    with host.sudo():
+        if not host.file(SOURCE_ROOT).exists:
+            pytest.skip(f"no {SOURCE_ROOT}: this device has never fetched a version")
+        found = host.check_output(f"find {SOURCE_ROOT} -maxdepth 2 "
+                                  r"-printf '%P\t%y\t%m\t%u\t%g\n'")
+    problems = []
+    rows = [line.split("\t") for line in found.splitlines() if line.strip()]
+    for path, kind, mode, owner, group in rows:
+        top = path.split("/")[0]
+        if top.endswith(".partial") or (path and top != "repo.git" and not TREE_NAME.fullmatch(top)):
+            continue  # one being made, or not this job's
+        if (owner, group) != ("root", "root") or int(mode, 8) & 0o022:
+            problems.append(f"{path or SOURCE_ROOT}: {kind} {mode} {owner}:{group}")
+    assert not problems, "not root's alone: " + "; ".join(problems)

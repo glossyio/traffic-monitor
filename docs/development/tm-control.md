@@ -4,7 +4,7 @@ description: How the control app (tm-control) is built: its backend modules, the
 
 # tm-control
 
-`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, and About pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Wi-Fi and the hotspot](../use/wifi-hotspot.md), [Choose the detection model](../use/detection.md), [Cameras](../use/cameras.md), and [Places and location](../use/location.md) describe it from the operator's side. This page is for changing it.
+`tm-control` is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, Software update, and About pages. [Control app and login](../use/control-app.md), [Check and fix the device](../use/device-health.md), [Wi-Fi and the hotspot](../use/wifi-hotspot.md), [Choose the detection model](../use/detection.md), [Cameras](../use/cameras.md), and [Places and location](../use/location.md) describe it from the operator's side. [Software update](software-update.md) describes the update page's job and files. This page is for changing it.
 
 It has three parts, all in the repository's [`tm-control/`](https://github.com/glossyio/traffic-monitor/tree/main/tm-control) folder:
 
@@ -103,22 +103,23 @@ tm-control/backend/tm_control/
                  card (the device's card), manifest, migrate (config updates for older installs), secrets, settings, state
   adapters/      the outside world: command (runs an argv list with a timeout and an output cap, never a shell),
                  systemd, timedate, sysinfo, hardware, network (nmcli and iw, read-only), the apps' HTTP APIs (frigate,
-                 nodered, go2rtc), mqtt,
+                 nodered, go2rtc), github (the one way to the internet), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, network, secrets, system, time, detection, cameras, location, sharing
+                 hardware, network, secrets, system, time, detection, cameras, location, sharing, update
 ```
 
 Rules live in the backend; the UI shows what the API returns and posts what the operator types. `tm-control/ui/README.md` describes the UI's layout and design.
 
 ### Root jobs and polkit
 
-tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in `tmsetup_tm_control_polkit` in the role's `vars/main.yml`, and nothing else:
+tm-control never runs as root and never uses sudo. polkit lets its user do three things, all listed in `tmsetup_tm_control_polkit` in the role's `vars/main.yml`, and nothing else:
 
 * Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. `tm-job-network.service` is on it for the Network page's changes, `tm-job-network-join.service` for a Wi-Fi join, `tm-network-retry.service` is on it for the Hotspot check's fix, and `FIX_UNITS` in `modules/services/units.py` lists the units like it, which a check's fix may start but the Services list doesn't show; `POST /services/{unit}/restart` accepts them.
+* Start, and only start, the units in `start_only_units`: `tm-job-update.service`. It can't be stopped or restarted from the control app, because a stop in the middle of an update's switch would leave the device half installed.
 * Seven actions: `org.freedesktop.timedate1.set-time`, `set-timezone`, and `set-ntp` for the Date and time page, and `org.freedesktop.login1.reboot`, `reboot-multiple-sessions`, `power-off`, and `power-off-multiple-sessions` for the Device page. The `-ignore-inhibit` variants aren't granted, so tm-control asks logind (`CanReboot`, `CanPowerOff`) first and answers 409 while an inhibitor, such as an update, holds the device up.
 
-A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are four jobs:
+A time zone change restarts `traffic-monitor.service` and `revproxy.service` after the response, because the containers bind-mount `/etc/localtime` and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (`FRIGATE_JUMP_SECONDS` in `modules/time/router.py`), by `set-time` or by NTP while the request watched, restarts `frigate.service` the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to `/run/tm-control/jobs/<name>.json` and starts `tm-job-<name>.service`, a fixed root-owned oneshot unit. Its script in `tm-control/jobs/` checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and `GET /api/v1/jobs/{id}` reports its status and log lines. There are five jobs:
 
 | Job | What it does |
 |---|---|
@@ -126,6 +127,7 @@ A time zone change restarts `traffic-monitor.service` and `revproxy.service` aft
 | `set-secret` | Writes or empties one entered secret. The request holds the secret's name and value. The script accepts only the four names in its own table (`thingsboard_access_token`, `frigate_plus_api_key`, `plate_recognizer_token`, and `plate_recognizer_license_key`), and only an empty value or one that matches that secret's pattern, and it refuses anything else without printing the value. It writes the secret's file, rewrites the secret's `KEY=` lines in `node-red-tm.env`, `frigate.env`, or `plate-recognizer.env`, then restarts the units that read them, in that order. A step that fails leaves the device no worse than before, and the log says which step it was. If a restart fails, the secret is already written, and the next Save runs again. |
 | `network` | Changes the Wi-Fi hotspot: on or off, its name, its password, and whether its name is hidden. It also scans for networks, forgets a saved one, sets the order of the saved ones, and passes Switch now and Cancel to the join. See [The Network module and the hotspot](#the-network-module-and-the-hotspot). |
 | `network-join` | Tests a Wi-Fi network under a NetworkManager checkpoint, comes back, counts down, and switches to it. See [The Wi-Fi join](#the-wi-fi-join). |
+| `update` | Fetches a version from GitHub into a mirror, checks it, and hands over to that version's `tm-update`. It is the only job that is started, never stopped, from the control app. See [Software update](software-update.md#the-update-job). |
 
 `SECRETS` in `tm-control/jobs/tm-job-set-secret` repeats the secrets' patterns (`VALUE_PATTERNS` in `core/secrets.py`) and restart units (`ENTERED` in `modules/secrets/router.py`), because the script imports nothing from tm-control; tests keep them the same.
 
@@ -461,6 +463,23 @@ Two scripts in `jobs/` run as root, and neither is a `tm-job` unit. Both are sta
 nginx's sign-in rule is in `container/revproxy/nginx.conf.j2`. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign `Host`. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to `http://10.42.0.1/`, which makes the phone open its sign-in window. The rule must never answer such a test with success: on Android 17 no browser reaches the unit until its user allows the Nearby devices permission for it, so the sign-in window is the only way in that needs no setup. nginx also sets `X-TM-Hotspot: 1` from the address a request arrived on, replacing any value the client sent, and `GET /api/v1/setup/status` then returns `hotspot.local_name`, which the login and setup pages show in a note: the address to copy, and the steps from a phone's sign-in window to a browser. The same answer carries `hostname` for everyone, with no login, and the control app's tab and bar take the unit's name from it, so the pages before login name the unit too. The name is no secret: mDNS announces it on the network.
 
 `sudo tm-control card` (`core/card.py`) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. `--json` prints the same values, and `--unclaimed-only`, which the installer passes, prints nothing and exits 3 once the device is claimed.
+
+### The update module
+
+The `update` module is the Software update page's backend (`modules/update/`), for admins only. Its one way to the internet is `adapters/github.py`, which asks `api.github.com` for the latest release, a commit's id, and how two commits compare. The host is fixed, no proxy from the environment is used, no redirect is followed, a connection and each read time out after 10 seconds, an answer over 1 MiB is refused, and a repository name is accepted only in the one `owner/name` form that `modules/update/source.py` holds. Every failure is a `GithubError` with a kind (`offline`, `rate_limited`, `not_found`, or `refused`) that the router turns into a code. [Software update](software-update.md#what-check-sends-to-github) lists what a check sends.
+
+| Route | What it does |
+|---|---|
+| `GET /update` | What is installed, the last check's offer, the checks before a start, the run, and the start this app made. It never goes online and never fails because systemd or GitHub can't be asked. |
+| `POST /update/check` | Takes a `channel` and asks GitHub what it offers, at most once a minute (429 with `Retry-After` after that). The answer is an offer with a relation to the installed commit: `ahead`, `identical`, `behind`, `diverged`, or `unknown`. A unit with no recorded repository is 409 `no_source`; an unreachable GitHub is 502 `github_unreachable`, and an answer this version doesn't understand 502 `github_answer`. When GitHub doesn't know the installed commit, `stable` falls back to comparing versions. The offer is kept in memory only. |
+| `POST /update/start` | Takes a `channel` and a `commit`, and starts the job for the last check's offer when it is ahead, or for the last run's target (**Try again** and **Finish the update**). Another target is 409 `stale_check`, a start while a run is going 409 `update_running`, and a failed check before a start 409 `not_ready`. The request it writes holds the four keys the job reads, and the answer is 202. |
+| `GET /update/log` | The two units' last 50 journal lines and the last 400 lines of the run's log, redacted as the diagnostics are. |
+
+`GET /update` works the run's status out of the state file, the two units, the resume marker, and this boot's id (`modules/update/run.py`), never from a line of anyone's output: `running` while a unit runs or the restart the run asked for is still to come, then `ok` or `failed`, `cut_off` when the run stopped with the marker still there (the page offers **Finish the update**), and `interrupted` when it stopped without one. A state file of a schema it doesn't know isn't shown. The checks before a start are the Plate Recognizer add-on (an error, the add-on isn't rebuilt), a missing repository (an error), a run in progress (an error), and an installed tree that was changed by hand (a warning).
+
+Audit rows are `update.check`, `update.start`, and, once when a request first sees a run ended, `update.finished`. None holds a log line.
+
+[What Check sends to GitHub](software-update.md#what-check-sends-to-github) also says where the page's check and the job's checks can disagree.
 
 ### What the sandbox allows
 
