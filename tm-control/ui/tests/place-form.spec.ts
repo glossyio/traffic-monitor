@@ -4,6 +4,7 @@ import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
 import PlaceForm from '../src/modules/location/PlaceForm.vue'
+import TimeZonePick from '../src/modules/location/TimeZonePick.vue'
 import { apiError, fakeApi, json } from './fake-api'
 import { clickInDialog, dialogButtons, dialogField, dialogText, mountAlone, typeInto } from './mount'
 
@@ -88,8 +89,26 @@ function phone(answer: { latitude: number; longitude: number } | string) {
   return getCurrentPosition
 }
 
-function mountForm(survey?: SurveyOut) {
-  return mountAlone(PlaceForm, { open: true, sensors: SENSORS, survey, map: MAP, centre: null })
+const LIST = ['America/New_York', 'Asia/Tokyo', 'Europe/Berlin']
+const CLOCK = 'America/New_York'
+
+function mountForm(survey?: SurveyOut, props: Record<string, unknown> = {}) {
+  return mountAlone(PlaceForm, {
+    open: true,
+    sensors: SENSORS,
+    survey,
+    map: MAP,
+    centre: null,
+    timeZones: LIST,
+    timeZonesError: '',
+    clockTimeZone: CLOCK,
+    ...props,
+  })
+}
+
+// The time zone control's box, in the open dialog
+function differentBox() {
+  return document.querySelector<HTMLInputElement>('.v-overlay-container .v-dialog input[type="checkbox"]')
 }
 
 function saveButton() {
@@ -181,6 +200,7 @@ describe('the place form', () => {
           lat: 45.52252,
           lon: -122.6912,
           headings: SENSORS, // a new place starts at each sensor's current heading
+          timezone: CLOCK,
         },
       },
     ])
@@ -209,7 +229,7 @@ describe('the place form', () => {
     mountForm()
     await flushPromises()
     await clickInDialog('Save')
-    expect(api.sent[0].body).toEqual({ description: null, lat: null, lon: null, headings: SENSORS })
+    expect(api.sent[0].body).toEqual({ description: null, lat: null, lon: null, headings: SENSORS, timezone: CLOCK })
   })
 
   it("edits a planned place with PATCH, starting from its values", async () => {
@@ -232,6 +252,7 @@ describe('the place form', () => {
             { sensor_type: 'cameras', sensor_name: 'picam_h265', heading_deg: 135 },
             { sensor_type: 'radars', sensor_name: 'TM_RADAR_SERIAL_PORT_00', heading_deg: null },
           ],
+          timezone: CLOCK, // the place has none, so it gets the clock's
         },
       },
     ])
@@ -249,6 +270,131 @@ describe('the place form', () => {
     await form.setProps({ survey: other, open: true })
     await flushPromises()
     expect(titles()).not.toContain('NE (40°)')
+  })
+
+  it("a new place starts with the clock's time zone", async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    mountForm()
+    await flushPromises()
+    expect(dialogText()).toContain("America/New_York, the same as the unit's clock")
+    expect(dialogText()).toContain('This place is in a different time zone')
+    expect(differentBox()?.checked).toBe(false)
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe(CLOCK)
+  })
+
+  it('puts the time zone after the coordinates and before the headings', async () => {
+    mountForm()
+    await flushPromises()
+    const text = dialogText()
+    expect(text.indexOf('Coordinates')).toBeLessThan(text.indexOf('Time zone'))
+    expect(text.indexOf('Time zone')).toBeLessThan(text.indexOf('Which way each sensor faces here'))
+  })
+
+  it("an edited place starts with its own time zone", async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    const form = mountForm({ ...PLANNED, timezone: 'Asia/Tokyo' })
+    await flushPromises()
+    expect(differentBox()?.checked).toBe(true)
+    expect(form.findComponent({ name: 'VAutocomplete' }).props('modelValue')).toBe('Asia/Tokyo')
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe('Asia/Tokyo')
+  })
+
+  it("an edited place with none starts with the clock's", async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    mountForm(PLANNED)
+    await flushPromises()
+    expect(dialogText()).toContain("America/New_York, the same as the unit's clock")
+    expect(differentBox()?.checked).toBe(false)
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe(CLOCK)
+  })
+
+  it('a different time zone picked is sent', async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    const form = mountForm()
+    await flushPromises()
+    differentBox()!.click()
+    await flushPromises()
+    await form.findComponent({ name: 'VAutocomplete' }).setValue('Europe/Berlin')
+    await flushPromises()
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe('Europe/Berlin')
+  })
+
+  it('unticking the box sends the clock\'s time zone again', async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    mountForm({ ...PLANNED, timezone: 'Asia/Tokyo' })
+    await flushPromises()
+    differentBox()!.click()
+    await flushPromises()
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe(CLOCK)
+  })
+
+  it('starts over each time it opens, at the place now being edited', async () => {
+    const form = mountForm({ ...PLANNED, timezone: 'Asia/Tokyo' })
+    await flushPromises()
+    expect(differentBox()?.checked).toBe(true)
+    await form.setProps({ open: false })
+    await form.setProps({ survey: undefined, open: true })
+    await flushPromises()
+    expect(differentBox()?.checked).toBe(false)
+    expect(dialogText()).toContain("America/New_York, the same as the unit's clock")
+  })
+
+  it('saves without the list of time zones, sending the time zone the place has', async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    mountForm({ ...PLANNED, timezone: 'Asia/Tokyo' }, { timeZones: [], timeZonesError: 'The list is unavailable.' })
+    await flushPromises()
+    expect(dialogText()).toContain('The list is unavailable.')
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe('Asia/Tokyo')
+  })
+
+  it("saves a new place with the clock's time zone when the list didn't load", async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    mountForm(undefined, { timeZones: [], timeZonesError: 'The list is unavailable.' })
+    await flushPromises()
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe(CLOCK)
+  })
+
+  it('leaves the time zone out of a new place when the clock is unknown and none was picked', async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    mountForm(undefined, { clockTimeZone: null })
+    await flushPromises()
+    await clickInDialog('Save')
+    expect(api.sent[0].body).not.toHaveProperty('timezone')
+  })
+
+  it('leaves the time zone out of an edit of a place with none when the clock is unknown', async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    mountForm(PLANNED, { clockTimeZone: null })
+    await flushPromises()
+    await clickInDialog('Save')
+    expect(api.sent[0].body).not.toHaveProperty('timezone')
+  })
+
+  it('sends the time zone picked from the list when the clock is unknown', async () => {
+    const api = fakeApi({ 'POST /api/v1/surveys': json(201, PLANNED) })
+    const form = mountForm(undefined, { clockTimeZone: null })
+    await flushPromises()
+    await form.findComponent({ name: 'VAutocomplete' }).setValue('Europe/Berlin')
+    await flushPromises()
+    await clickInDialog('Save')
+    expect((api.sent[0].body as { timezone: string }).timezone).toBe('Europe/Berlin')
+  })
+
+  it('never sends null: a time zone the control handed up empty is left out, so an edit keeps the stored one', async () => {
+    const api = fakeApi({ 'PATCH /api/v1/surveys/0f0e0d0c-si': PLANNED })
+    const form = mountForm({ ...PLANNED, timezone: 'Asia/Tokyo' })
+    await flushPromises()
+    form.findComponent(TimeZonePick).vm.$emit('update:modelValue', null)
+    await flushPromises()
+    await clickInDialog('Save')
+    expect(api.sent[0].body).not.toHaveProperty('timezone')
   })
 
   it('asks the page to reload the places when the save is refused as out of date', async () => {

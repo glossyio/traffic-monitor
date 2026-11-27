@@ -9,8 +9,13 @@
   "Correct heading", which asks the page to open its correction dialog (`correctHeading`); a running one at the place
   in use is changed on the Mounting page instead, so it has "Mounting", unless its sensor has no section there
   (`mountingSensors`: a sensor disabled since its deployment started keeps its open row), which keeps Correct heading.
+  A used place and the place in use also show their time zone beside First used and Last used ("Not set" for none).
+  That fact comes from the control app, so it shows when Node-RED didn't answer too. Under the facts, only the place in
+  use gets a line when its time zone is missing, or differs from the unit's clock (`clockTimeZone`, null when unknown);
+  neither is an error, so both are plain text.
 -->
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { components } from '../../api/schema'
 import { ago } from '../../components/relative-time'
 import { facing } from './heading'
@@ -31,6 +36,7 @@ const props = defineProps<{
   place: SurveyOut
   details: Details | undefined
   nodered: boolean // whether Node-RED answered the usage counts
+  clockTimeZone: string | null // the unit's clock's time zone; null when unknown
   mountingSensors?: SensorKey[] | null // the sensors the Mounting page has a section for; unknown when left out
 }>()
 const emit = defineEmits<{ retry: []; correctHeading: [deployment: DeploymentOut] }>()
@@ -54,6 +60,26 @@ function usedFacts(place: SurveyOut) {
     { label: 'Last used', value: place.open_count > 0 ? 'In use now' : since(place.last_used) },
   ]
 }
+
+// First used, Last used, and the time zone, as far as they are known. A planned place shows its time zone on its Edit
+// form instead, and the used counts come from Node-RED.
+const facts = computed(() => [
+  ...(props.nodered && props.place.deployment_count > 0 ? usedFacts(props.place) : []),
+  ...(props.place.status === 'planned'
+    ? []
+    : [{ label: 'Time zone', value: props.place.timezone ?? 'Not set' }]),
+])
+
+const inUse = computed(() => props.place.status === 'in_use')
+
+// The place in use has none, or has another than the unit's clock; nothing is said when the clock's is unknown
+const clockDiffers = computed(
+  () =>
+    inUse.value &&
+    props.place.timezone !== null &&
+    props.clockTimeZone !== null &&
+    props.place.timezone !== props.clockTimeZone,
+)
 
 function eventsLine(events: EventsOut) {
   if (events.event_count === 0 || events.first_event === null || events.last_event === null) {
@@ -153,15 +179,20 @@ function attached(deployment: DeploymentOut, deploy: Deploy) {
 <template>
   <div>
     <p v-if="place.imported" class="text-body-1 mb-4">Imported from your previous settings</p>
-    <template v-if="nodered">
-      <v-row v-if="place.deployment_count > 0" dense class="mb-4">
-        <v-col v-for="fact in usedFacts(place)" :key="fact.label" cols="6" sm="4">
-          <div class="text-body-2 text-secondary">{{ fact.label }}</div>
-          <div class="text-body-1">{{ fact.value }}</div>
-        </v-col>
-      </v-row>
-      <p v-else class="text-body-1 mb-4">Not used yet.</p>
-    </template>
+    <p v-if="nodered && place.deployment_count === 0" class="text-body-1 mb-4">Not used yet.</p>
+    <v-row v-if="facts.length" dense class="mb-4">
+      <v-col v-for="fact in facts" :key="fact.label" :cols="fact.label === 'Time zone' ? 12 : 6" sm="4">
+        <div class="text-body-2 text-secondary">{{ fact.label }}</div>
+        <div class="text-body-1 text-break">{{ fact.value }}</div>
+      </v-col>
+    </v-row>
+    <p v-if="inUse && place.timezone === null" class="text-body-1 mb-4">
+      This place has no time zone. Set one so its data can be read in local time.
+    </p>
+    <p v-else-if="clockDiffers" class="text-body-1 mb-4">
+      The unit's clock is set to {{ clockTimeZone }}. Change it on
+      <router-link to="/time" class="text-primary">Date and time</router-link>.
+    </p>
 
     <template v-if="details">
       <v-alert v-if="details.error" type="error" class="mb-4">

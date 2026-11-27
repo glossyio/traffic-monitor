@@ -32,7 +32,7 @@
 
 **Decisions.** The maintainer's are marked with a date. The rest are calls made while writing this, open to change.
 
-1. **The zone belongs to the place. It is recorded at every precision, also at "No location stored", and can be cleared (maintainer, the design).** The operator confirms it; it is never taken silently from the device.
+1. **The zone belongs to the place. It is recorded at every precision, also at "No location stored" (maintainer, the design). The API can clear it, but the pages never do (Part B, 2026-11-26).** The operator confirms it.
 2. **The place's zone and the clock's zone stay independent (maintainer, 2026-11-25).** The Location page shows one line when they differ and never changes the clock, because a clock zone change restarts the pod and nginx.
 3. **Two pull requests, the records and then the pages (maintainer, 2026-11-25).** He first approved one PR. Mounting PR 3 was then given the Location page's folder, and the pages here would collide with it, so the plan split them and he approved the split the same day. The records can go now.
 4. **One name, `timezone`:** the tmdb column, the `config.yml` key, the API field, the CSV column, and the store's column.
@@ -56,13 +56,14 @@
 6. **Deploying** writes the place's zone into the file with its id. The new rows carry it from their start.
 7. **The upload** sends `timezone` on deployment rows, at every precision.
 8. **`GET /surveys`** answers each place's `timezone` and the device clock's zone as `clock_timezone`.
-9. **The pages (PR 2).**
-   - A **Time zone** field in Add a place, Edit, and the deploy review, picked from the device's list. Its hint: "Recorded with this place's data, also when no location is stored."
-   - A new place, and a deploy review of a place with no zone, start with the browser's zone when the device lists it, with the line "Filled in from this browser. Change it if the place is somewhere else." Otherwise the field starts empty.
-   - Each used or in-use place's panel shows **Time zone** ("Not set" for none) and has a **Time zone** button that opens a dialog to change or clear it. The dialog says: "Changing it corrects this place's stored deployments. It starts no new deployment."
-   - On the place in use, with no zone: "This place has no time zone. Set one so its data can be read in local time."
-   - On the place in use, when its zone and the clock's differ: "The unit's clock is set to `<zone>`. Change it on Date and time.", with a link to `/time`.
-   - The import's preview shows each line's zone.
+9. **The pages (PR 2).** The maintainer changed the default on 2026-11-26, before any page code: a place starts with the unit's clock's time zone, not the browser's, and nothing on the page clears a time zone.
+   - One **Time zone** control in Add a place, Edit, the deploy review, and the dialog below. It shows a "Time zone" label, the line "`<time zone>`, the same as the unit's clock", and one box, "This place is in a different time zone". Ticking the box opens the list, the Date and time page's picker over `GET /api/v1/time/timezones`; unticking it puts the clock's time zone back. The name is saved with the place, never a marker that follows the clock. The box starts ticked when the starting value differs from the clock's. When the clock's time zone is unknown, there is no line and no box, and the list shows at once.
+   - Its hint, "Recorded with this place's data, also when no location is stored.", always shows. When the list can't be loaded, the box still works; ticked, the list is disabled and shows the error in place of the hint.
+   - The browser's time zone is never used, and no field on the page clears a time zone: no clear button and no "None" choice. The API still takes null, and the page never sends it.
+   - Each used or in-use place's panel shows **Time zone** ("Not set" for none) and has a **Time zone** button that opens a dialog with the same control. The dialog says: "Changing it corrects this place's stored deployments. It starts no new deployment." Its Save is off only when there is no time zone to send.
+   - On the place in use, with no time zone: "This place has no time zone. Set one so its data can be read in local time."
+   - On the place in use, when its time zone and the clock's differ: "The unit's clock is set to `<time zone>`. Change it on Date and time.", with a link to `/time`.
+   - The import's preview shows each line's time zone as "Time zone: `<time zone>`".
 10. **The installer** changes the clock's zone only when `-z` is given.
 
 ## Where the code stands that this plan touches
@@ -104,7 +105,7 @@ Read at `dev` `f0c360a4`.
 
 ## Review Focus
 
-1. **A zone the device doesn't list.** A phone can report a name the device's tzdata lacks (`Asia/Calcutta` on a unit without the legacy names, or a zone newer than the unit's data). The field starts empty and nothing is refused; the API refuses the name with a 422 that names the field; a CSV line is refused by its column. Tests in Task 6 (`test_an_unknown_zone_is_refused_and_changes_nothing`, `test_the_import_refuses_an_unknown_zone_by_column`) and Task 10 (`browserZone gives null for a zone the device doesn't list`).
+1. **A zone the device doesn't list.** A name can be missing from the device's tzdata (`Asia/Calcutta` on a unit without the legacy names, or a zone newer than the unit's data). The pages never take a name from the browser, so only a typed CSV line or a direct request can bring one; the API refuses the name with a 422 that names the field; a CSV line is refused, and the preview names the line. Tests in Task 6 (`test_an_unknown_zone_is_refused_and_changes_nothing`, `test_the_import_refuses_an_unknown_zone_by_column`).
 2. **Node-RED is down while a zone changes.** The store and the file change, the route answers 502 and says to save again, and saving the same zone again rewrites the rows. A planned place needs no Node-RED. Tests in Task 6 (`test_a_change_without_nodered_answers_502_and_keeps_the_change`, `test_saving_the_same_zone_again_rewrites_the_rows`, `test_a_planned_place_needs_no_nodered`).
 3. **Nothing starts a deployment:** a zone set, changed, or cleared; a file put back after a hand edit; a reset file; the upgrade, where the file has no key and every row is NULL. Tests in Task 2 (`test_engine_never_starts_a_deployment_for_a_zone`, `test_engine_keeps_rows_from_before_the_columns`), Task 5 (`test_a_reset_file_gets_the_zone_back_in_the_same_save`, `test_a_file_without_the_key_is_left_alone_when_the_place_has_no_zone`, `test_fake_engine_heals_the_zone_and_starts_nothing`), and Task 6 (`test_a_change_keeps_every_deployment_id`).
 4. **A wrong value in the file:** a number, `not a zone!`, `../../etc/passwd`, four parts, 65 characters. Node-RED reads none and reports the key without the value, no row takes it, and the next reconcile writes the place's own zone back. Tests in Task 2 (`test_init_config_defaults_timezone`), Task 4 (`test_read_zone`, `test_the_flows_read_a_zone_as_the_control_app_does`), and Task 5 (`test_a_hand_edited_zone_is_put_back`).
@@ -245,7 +246,7 @@ PR 1 changes no page. After it, a zone is set through the API or the places CSV,
   - `test_nodered_adapter.py::test_set_timezone_posts_the_body`: the path, the method, and both bodies (a name, `null`).
   - `test_fake_nodered.py`: `test_rows_carry_the_zone`; `test_fake_engine_heals_the_zone_and_starts_nothing` (ids unchanged after the file's zone changes and after it is cleared); `test_fake_engine_without_a_survey_leaves_the_zone`; `test_fake_set_timezone_rewrites_every_row_of_the_place` (open, closed, and not another survey's); `test_fake_set_timezone_refuses_what_the_flows_refuse` (a bad id, `5`, `""`, `"not a zone!"`).
 - [ ] **Step 2: Run them.** They fail.
-- [ ] **Step 3: Write the three parts.** `_saved` saves when the run restores a reset file or the place's zone changed the file, and says `restored` then; otherwise it writes nothing, so a hand edit that is only formatting stays as typed.
+- [ ] **Step 3: Write the three parts.** `_saved` saves when the run restores a reset file or the place's zone changed the file, and says `restored` then, unless an unknown id was followed in the same run (`unknown_id`); otherwise it writes nothing, so a hand edit that is only formatting stays as typed.
 - [ ] **Step 4: Run** `python -m pytest tm-control/backend/tests`. PASS.
 - [ ] **Step 5: Commit** ("Put a place's time zone back into config.yml on every reconcile").
 
@@ -364,69 +365,72 @@ PR 1 changes no page. After it, a zone is set through the API or the places CSV,
 
 PR 2 changes no route, no file format, and no stored value. It starts after PR 1 and mounting PR 3 are in `dev`, and its first step re-reads `LocationPage.vue`, `DeployReview.vue`, and `PlaceDetails.vue` as mounting PR 3 left them.
 
-### Task 10: The zone pick
+**The maintainer changed the default on 2026-11-26,** after the plan was written and before any page code. The plan started a new place from the browser's time zone, with a "Filled in from this browser" line, and let a field clear it. The pages started instead from the unit's clock's time zone, with a box to choose another, and never clear one. The reasons are in the UI README's part "A place's time zone": the unit's clock is set for where the unit is, while a place planned from a desk in another time zone would get the desk's; and a time zone is recorded with the place's data, so the page offers no way to drop it. Words say "time zone" in full in every new name, since Frigate's zones are a different thing on the Cameras page: `TimeZonePick.vue`, `TimeZoneDialog.vue`, `timezones.ts`, and their specs `time-zone-pick.spec.ts`, `time-zone-dialog.spec.ts`, and `timezones.spec.ts`. The API's field stays `timezone`.
+
+Five rulings made while building, each cheap to undo:
+
+- **R1.** `PlaceDetails.vue` reads `place.status === 'in_use'` for the place in use's two lines, so it gets no new `inUse` prop (mounting PR 3's code already does the same).
+- **R2.** The panel's **Time zone** fact shows on every used or in-use place, also when Node-RED didn't answer, because the time zone comes from the control app's store.
+- **R3.** The import's "This unit's header" and its paragraph name the `timezone` column after `lon`, so the column isn't hidden from someone who copies the header.
+- **R4.** Placement: the control sits after the map pick and the phone's location in the place form, after the sensors in the deploy review (before "Stored in the database"), and the **Time zone** button after **Correct location** and before **Delete**.
+- **R5.** The deploy review remembers a time zone its `PUT` saved, so a deploy retried after a failed deploy doesn't send the `PUT` again.
+
+### Task 10: The time zone pick
 
 **Files:**
-- Create: `tm-control/ui/src/modules/location/ZonePick.vue`, `tm-control/ui/src/modules/location/zones.ts`
-- Test: `tm-control/ui/tests/zone-pick.spec.ts`, `tm-control/ui/tests/zones.spec.ts`
+- Create: `tm-control/ui/src/modules/location/TimeZonePick.vue`, `tm-control/ui/src/modules/location/timezones.ts`
+- Test: `tm-control/ui/tests/time-zone-pick.spec.ts`, `tm-control/ui/tests/timezones.spec.ts`
 - Modify: `tm-control/ui/README.md` (the design note)
 
 **Interfaces:**
-- Produces, `zones.ts`:
-  - `browserZone(zones: string[]): string | null`: `Intl.DateTimeFormat().resolvedOptions().timeZone` when `zones` has it, else `null`.
-  - `loadZones(): Promise<string[]>`: `GET /api/v1/time/timezones`.
-- Produces, `ZonePick.vue`: `v-model: string | null`; props `zones: string[]`, `prefilled?: boolean`, `error?: string`. A `v-autocomplete` labelled "Time zone", outlined, clearable, with item 9's hint shown always. With `prefilled`, item 9's "Filled in from this browser" line under it. With `error`, that text in place of the list, and the field disabled.
+- Produces, `timezones.ts`:
+  - `startingTimeZone(place, clock): string | null`: the place's time zone, else the clock's, else null.
+  - `loadTimeZones(): Promise<string[]>`: `GET /api/v1/time/timezones`.
+- Produces, `TimeZonePick.vue`: `v-model: string | null`; props `timeZones: string[]`, `clockTimeZone: string | null`, `error?: string`, `disabled?: boolean`. The label, the line, the box, the list, and the hint of item 9, with no clear button.
 
-- [ ] **Step 1: Write the design note** in the UI README: one pick for every place a zone is set, modelled on the Date and time page's picker; why it is clearable and that one isn't. Show it to the maintainer before the code.
+- [ ] **Step 1: Write the design note** in the UI README, and show it to the maintainer before the code.
 - [ ] **Step 2: Write the failing tests.**
-  - `zones.spec.ts`: `browserZone gives the browser's zone when the device lists it`; `browserZone gives null for a zone the device doesn't list`; `browserZone gives null for an empty list`.
-  - `zone-pick.spec.ts`: `shows the hint`; `emits the picked zone`; `emits null when cleared`; `shows the prefilled line only when prefilled`; `shows an error and disables the field when the list didn't load`.
+  - `timezones.spec.ts`: the place's time zone wins; the clock's when the place has none; null when neither is known; the list is asked for from the device; a failed request is thrown as the client throws it.
+  - `time-zone-pick.spec.ts`: the clock's time zone shows with the box unticked and the list hidden; ticking shows the list at the same time zone; the picked time zone is emitted; unticking emits the clock's; the box starts ticked when the value differs from the clock's; with no clock time zone the list shows and there is no box; the hint shows; there is no clear button; an error disables the list and replaces the hint, and the box still works; everything is disabled while `disabled`.
 - [ ] **Step 3: Run them.** They fail.
 - [ ] **Step 4: Write the two files.**
 - [ ] **Step 5: Run** the UI's build and tests in the pinned Node image. PASS.
-- [ ] **Step 6: Commit** ("Add the time zone pick to the Location page's parts").
+- [ ] **Step 6: Commit** ("Add the time zone control to the Location page's parts").
 
-### Task 11: The zone in Add a place, Edit, the deploy review, and the import's preview
+### Task 11: The time zone in Add a place, Edit, the deploy review, and the import's preview
 
 **Files:**
-- Modify: `tm-control/ui/src/modules/location/PlaceForm.vue`, `DeployReview.vue`, `ImportPlaces.vue`, `LocationPage.vue` (it loads the zones once and passes them down)
+- Modify: `tm-control/ui/src/modules/location/PlaceForm.vue`, `DeployReview.vue`, `ImportPlaces.vue`, `LocationPage.vue` (it loads the list once and passes it down)
 - Test: `tm-control/ui/tests/place-form.spec.ts`, `deploy-review.spec.ts`, `import-places.spec.ts`, `location-page.spec.ts`
 
 **Interfaces:**
-- Consumes: Task 10; PR 1's `SurveyIn.timezone`, `PUT /surveys/{id}/timezone`, `ImportRow.timezone`.
-- Produces: `PlaceForm` and `DeployReview` take `zones: string[]` and `zonesError: string`.
-  - `PlaceForm`: a new place starts from `browserZone(zones)`, an edited one from its own zone. The body it sends has `timezone`.
-  - `DeployReview`: starts from the place's zone, else `browserZone(zones)`. On Deploy, when the field differs from the place's zone, it sends the `PUT` first and deploys only after a 200. A failed `PUT` shows its message beside the button and deploys nothing.
-  - `ImportPlaces`: each previewed line with a zone shows "Time zone: `<zone>`".
-- Produces: when the zones didn't load, both forms still save everything else, and send the place's zone as it was.
+- Consumes: Task 10; PR 1's `SurveyIn.timezone`, `PUT /surveys/{id}/timezone`, `ImportRow.timezone`, and `clock_timezone`.
+- Produces: `PlaceForm` and `DeployReview` take `timeZones` and `timeZonesError` and read the clock's time zone from the page's state.
+  - `PlaceForm`: a new place starts with the clock's time zone, an edited one with its own. The body it sends has `timezone`.
+  - `DeployReview`: starts with the place's time zone, else the clock's. On Deploy, when the value differs from the place's as last saved, it sends the `PUT` first and deploys only after a 200 (and not again on a retry: R5). A failed `PUT` shows its message beside the buttons and deploys nothing.
+  - `ImportPlaces`: each previewed line with a time zone shows "Time zone: `<time zone>`".
+- Produces: when the list didn't load, both forms still save everything else, and the box still gives the clock's time zone.
 
-- [ ] **Step 1: Write the failing tests.**
-  - `place-form.spec.ts`: `a new place starts with the browser's zone`; `a new place starts empty when the device doesn't list it`; `an edited place starts with its own zone`; `the zone is sent with the place`; `a cleared zone is sent as null`; `the form saves without the list of zones`.
-  - `deploy-review.spec.ts`: `a place with no zone starts with the browser's`; `an unchanged zone sends no PUT`; `a changed zone is saved before the deploy`; `a refused zone shows the message and deploys nothing`.
-  - `import-places.spec.ts`: `the preview shows a line's zone`.
-  - `location-page.spec.ts`: `the zones are asked for once`.
+- [ ] **Step 1: Write the failing tests** for each of those: a new place starts with the clock's; an edited one with its own; the time zone is sent with the place; the form saves without the list; the review's unchanged time zone sends no `PUT`, a changed one is saved before the deploy, and a refused one deploys nothing; the preview shows a line's time zone; the list is asked for once.
 - [ ] **Step 2: Run them.** They fail.
 - [ ] **Step 3: Write the four changes.**
 - [ ] **Step 4: Run** the UI's build and tests. PASS.
 - [ ] **Step 5: Commit** ("Set a place's time zone when it is planned and when it is deployed").
 
-### Task 12: The zone on a place's panel
+### Task 12: The time zone on a place's panel
 
 **Files:**
-- Create: `tm-control/ui/src/modules/location/ZoneDialog.vue`
+- Create: `tm-control/ui/src/modules/location/TimeZoneDialog.vue`
 - Modify: `tm-control/ui/src/modules/location/PlaceDetails.vue`, `LocationPage.vue`
-- Test: `tm-control/ui/tests/zone-dialog.spec.ts`, `place-details.spec.ts`, `location-page.spec.ts`
+- Test: `tm-control/ui/tests/time-zone-dialog.spec.ts`, `place-details.spec.ts`, `location-page.spec.ts`
 
 **Interfaces:**
 - Consumes: Task 10; PR 1's `PUT`, `SurveyOut.timezone`, `PlacesState.clock_timezone`.
-- Produces, `ZoneDialog.vue`: `v-model:open`; props `place: SurveyOut`, `zones`, `zonesError`; a `ZonePick` starting from the place's zone, item 9's sentence about stored deployments, Cancel and Save. Save sends the `PUT`, emits `saved` with the answered place, and closes. An error stays beside the buttons; a 409 also emits `stale`.
-- Produces, `PlaceDetails.vue`: a **Time zone** fact beside First used and Last used, "Not set" for none; props `inUse: boolean` and `clockZone: string | null`; item 9's two lines, each only on the place in use.
+- Produces, `TimeZoneDialog.vue`: `v-model:open`; props `place`, `timeZones`, `timeZonesError`, `clockTimeZone`; a `TimeZonePick` starting from the place's time zone, else the clock's, the sentence of item 9, Cancel and Save. Save sends the `PUT` (saving the same time zone again is allowed, so a save that failed halfway can be finished), emits `saved` with the answered place, and closes. An error stays beside the buttons; a 409 also emits `stale`. It starts over each time it opens.
+- Produces, `PlaceDetails.vue`: a **Time zone** fact beside First used and Last used, "Not set" for none; the two lines of item 9, each only on the place in use, and neither when it would be wrong (no line about the clock when its time zone is unknown or the place has none).
 - Produces, `LocationPage.vue`: a **Time zone** button on each used or in-use place's panel, after **Correct location**, that opens the dialog; `saved` loads the places again.
 
-- [ ] **Step 1: Write the failing tests.**
-  - `zone-dialog.spec.ts`: `starts from the place's zone`; `saves a new zone and closes`; `saves a cleared zone as null`; `shows the API's message and stays open`; `a 409 asks the page to load again`.
-  - `place-details.spec.ts`: `shows the zone`; `shows Not set`; `the place in use with no zone is asked for one`; `a place that isn't in use is not`; `says when the clock's zone differs, with a link to Date and time`; `says nothing when they are the same`; `says nothing when the clock's zone is unknown`.
-  - `location-page.spec.ts`: `a used place has a Time zone button`; `a planned place has none`; `saving the zone loads the places again`.
+- [ ] **Step 1: Write the failing tests:** the dialog starts from the place's time zone, else the clock's; it saves and closes, also for a place with none and for the same time zone again; it shows the API's message and stays open; a 409 asks the page to load again; it starts over each time. The panel shows the time zone and "Not set", asks the place in use with none for one, says when the clock's differs with a link to Date and time, and says nothing when they match or the clock's is unknown. A used place has the button and a planned place has none.
 - [ ] **Step 2: Run them.** They fail.
 - [ ] **Step 3: Write the dialog and the two changes.**
 - [ ] **Step 4: Run** the UI's build and tests. PASS.
@@ -439,9 +443,9 @@ PR 2 changes no route, no file format, and no stored value. It starts after PR 1
 - Modify: `docs/use/location.md`, `docs/development/tm-control.md` (the UI's parts), `tm-control/ui/README.md`, `design/plans/2026-11-25-place-time-zone.md`
 
 - [ ] **Step 1: `docs/use/location.md`.**
-  - A part "Set the place's time zone": what it is for, where the field is, that it is filled in from the browser and should be checked, that it is recorded even when no location is stored, and how to clear it.
+  - A part "Set the place's time zone": what it is for, where the control is, that a place gets the unit's clock's time zone unless the box is ticked, that it is recorded even when no location is stored, and that the page can't clear it.
   - That it is not the device's clock: the Date and time page sets that, and the page says when the two differ.
-  - In the import's part: the `timezone` column.
+  - In the import's part: the `timezone` column; in the export's: its `timezone` column.
 - [ ] **Step 2: The public copy** gains anything Part B changed.
 - [ ] **Step 3: Run** `mkdocs build --strict`. PASS.
 - [ ] **Step 4: Commit** ("Document the Location page's time zone field").
@@ -450,23 +454,23 @@ PR 2 changes no route, no file format, and no stored value. It starts after PR 1
 
 - [ ] **Step 1: Pi plan,** as a logged `tmdev check` on a bench unit marked `pii_free`, after `tmdev deploy <host> -- -t tm-control -t revproxy` (the UI ships in the revproxy image).
   1. The device suite passes.
-  2. On a phone, **Add a place**: the field holds the phone's zone. Note the phone's browser and whether the zone was filled in. Repeat in one desktop browser.
-  3. Save the place and deploy it from the review with the zone changed there: the new rows hold the changed zone.
-  4. On the place in use, **Time zone**: change it. The panel shows the new zone, the deployment ids are the same, and the line about the unit's clock appears or goes as the two zones differ or match.
-  5. Clear it: the panel says "Not set" and asks for one.
+  2. On a phone, **Add a place**: the line names the unit's clock's time zone, the box is unticked, and the browser's time zone appears nowhere. Repeat in one desktop browser.
+  3. Save the place and deploy it from the review with the box ticked and another time zone chosen: the new rows hold the chosen time zone.
+  4. On the place in use, **Time zone**: change it. The panel shows the new time zone, the deployment ids are the same, and the line about the unit's clock appears or goes as the two differ or match.
+  5. Look for a way to clear it: there is none on the page. A place with no time zone says "Not set" and, in use, asks for one.
   6. A viewer doesn't see the Location page (unchanged).
 - [ ] **Step 2: Every off-device check once more;** the grep of Task 9's Step 2.
 - [ ] **Step 3: PR 2's text,** the template filled in, "Closes" the issue.
   - Title: `place-timezone PR 2: Set a place's time zone on the Location page`.
   - First body line: `Series: place-timezone PR 2 of 2 · stacked on #<PR 1> (merged) · next: none planned · map: #370`.
-  - The release note: "The Location page has a Time zone field for each place, filled in from your browser when you add a place or deploy it. The page says when the place's time zone and the device's clock differ."
+  - The release note: "The Location page has a Time zone setting for each place, which starts as the unit's clock's time zone when you add a place or deploy it. The page says when the place's time zone and the device's clock differ."
   - Also: the Docs list, the screenshots, the Pi plan's results, the limits, and the AI-assistance section.
   - The maintainer reads the commit messages and the PR text before any push.
 
 ## Later
 
 - **A zone worked out from the coordinates.** It needs a boundary file on the device, and the operator's check makes it unnecessary.
-- **Treating two names of one zone as the same** (`Asia/Calcutta` and `Asia/Kolkata`), for the line about the clock and for the browser's zone.
+- **Treating two names of one zone as the same** (`Asia/Calcutta` and `Asia/Kolkata`), for the line about the clock.
 - **Setting the clock's zone from the Location page,** or the place's from the Date and time page.
 - **The zone in a correction's history,** if someone needs more than the audit row.
 - **Sending an ended row again** after its place's zone or location is corrected.
