@@ -4963,7 +4963,10 @@ EVENT_COLUMNS = [
 ]
 DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
                       "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
-                      "view_distance_m", "mount", "timezone"]
+                      "view_distance_m", "mount", "timezone", "road_angle_deg", "lane_distance_m", "lane_width_m",
+                      "lanes_toward", "lanes_away", "turn_lane", "toward_side", "intersection"]
+AIM = {"road_angle_deg": 20.0, "lane_distance_m": 2.5, "lane_width_m": 3.5, "lanes_toward": 1, "lanes_away": 1,
+       "turn_lane": 1, "toward_side": "near", "intersection": 1}
 MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -5547,9 +5550,9 @@ def watch_item(value):
 
 @needs_node
 def test_gate_keeps_only_the_listed_deployment_fields():
-    """A telemetry row goes out with the listed fields, the five among them, and a key that isn't listed is named
-    once as deployment.<key>, never with its value."""
-    row = {**GATE_ROW, **MOUNTING}
+    """A telemetry row goes out with the listed fields, the five and the eight of the radar's aim among them, and a
+    key that isn't listed is named once as deployment.<key>, never with its value."""
+    row = {**GATE_ROW, **MOUNTING, **AIM}
     unlisted = {**row, "note": "kept-on-the-unit"}
     payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [unlisted], "currentDeployment": [unlisted]}}}
     out, logged = gate({"type": "telemetry", "payload": payload})

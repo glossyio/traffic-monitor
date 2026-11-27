@@ -70,7 +70,15 @@
         "height_m",
         "view_distance_m",
         "mount",
-        "timezone"
+        "timezone",
+        "road_angle_deg",
+        "lane_distance_m",
+        "lane_width_m",
+        "lanes_toward",
+        "lanes_away",
+        "turn_lane",
+        "toward_side",
+        "intersection"
     ],
     "watch_camera": [
         "time",
