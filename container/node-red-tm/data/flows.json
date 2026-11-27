@@ -776,7 +776,8 @@
             "c84e1a6d07b2f395",
             "9f1c6e3a2d8b7045",
             "e2a7d5b04c9f3816",
-            "5d09b8e3f17a26c4"
+            "5d09b8e3f17a26c4",
+            "c9a14d7e2f8b6053"
         ],
         "x": 94,
         "y": 459,
@@ -6114,7 +6115,36 @@
         "y": 620,
         "wires": [
             [
-                "c113788ccfa879b4"
+                "c113788ccfa879b4",
+                "c9a14d7e2f8b6053"
+            ]
+        ]
+    },
+    {
+        "id": "c9a14d7e2f8b6053",
+        "type": "change",
+        "z": "1c71c8f26f5b7b19",
+        "g": "805c5feafbb3610b",
+        "name": "radar round ended",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "radar round ended",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 960,
+        "y": 620,
+        "wires": [
+            [
+                "5b2e8f41c7d93a06"
             ]
         ]
     },
@@ -6507,6 +6537,26 @@
         "y": 280,
         "wires": [
             [
+                "5b2e8f41c7d93a06"
+            ]
+        ]
+    },
+    {
+        "id": "5b2e8f41c7d93a06",
+        "type": "function",
+        "z": "1c71c8f26f5b7b19",
+        "name": "one radar setup at a time",
+        "func": "// One radar setup at a time, with the latest config. Each config load (Node-RED's start and each change to\n// config.yml) waits until 2 s pass with no newer one, then starts one setup with the latest. While a setup and its\n// question round run, a newer load waits; when the round ends (\"radar round ended\"), the latest waiting load starts\n// one more setup, and the loads before it are dropped. Two setups at once overlap their rounds, and the second\n// round's start drops the first round's answers. A setup whose round never reports its end frees the way after 30 s.\n// A round started by hand frees it too when it ends. Node-RED clears this node's timers when the flows stop.\nconst QUIET_MS = 2000;\nconst FREE_AFTER_MS = 30000;\nconst RUNNING = \"radarSetupRunningSince\"; // when the running setup started (ms), or null\nconst WAITING = \"radarSetupWaiting\"; // the latest load not yet started, as { msg, at }, or null\n\n// Starts the waiting load once it has been quiet for 2 s and no setup runs. Each load sets its own check, and a\n// check that is early (a newer load came, or a setup still runs) sets another, so a stale check changes nothing.\n// A clock that went back counts as time up.\nfunction startWhenDue() {\n    const waiting = flow.get(WAITING);\n    if (!waiting) return;\n    const now = Date.now();\n    const quiet = now - waiting.at;\n    if (quiet >= 0 && quiet < QUIET_MS) {\n        setTimeout(startWhenDue, QUIET_MS - quiet);\n        return;\n    }\n    const since = flow.get(RUNNING);\n    const running = since == null ? null : now - since;\n    if (running !== null && running >= 0 && running < FREE_AFTER_MS) {\n        setTimeout(startWhenDue, FREE_AFTER_MS - running);\n        return;\n    }\n    flow.set(WAITING, null);\n    flow.set(RUNNING, now);\n    node.send(waiting.msg);\n}\n\nif (msg.topic === \"radar round ended\") {\n    // with no setup running, a round's end changes nothing\n    if (flow.get(RUNNING) != null) {\n        flow.set(RUNNING, null);\n        startWhenDue();\n    }\n    return null;\n}\n\nflow.set(WAITING, { msg, at: Date.now() });\nsetTimeout(startWhenDue, QUIET_MS);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// memory only, empty at each start\nflow.set(\"radarSetupRunningSince\", null);\nflow.set(\"radarSetupWaiting\", null);",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 280,
+        "wires": [
+            [
                 "365eb222a89dd7bd"
             ]
         ]
@@ -6528,7 +6578,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 270,
+        "x": 500,
         "y": 280,
         "wires": [
             [

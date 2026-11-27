@@ -3627,6 +3627,244 @@ def test_the_radar_chain_is_wired():
     assert "-sr" in engine["func"]
 
 
+# One radar setup at a time: two config loads a few seconds apart started two setups whose question rounds
+# overlapped, and the second round's start dropped the first round's answers. A guard on capture-radar, between
+# "init-config link in" and "delete msg.payload", waits 2 s for the loads to settle, runs one setup at a time, and
+# starts the latest waiting load when the round ends (or 30 s after a setup whose round never says so).
+
+INIT_CONFIG_LINK_IN = "a6b986e24a80c93b"  # capture-radar: init-config link in
+DELETE_PAYLOAD = "365eb222a89dd7bd"  # delete msg.payload
+RADAR_SETTINGS = "a0b880e68f9b7198"  # init: radar settings, ~4-sec each
+ROUND_START = "3e9d121913d7feae"  # the junction that starts the question round
+ROUND_COMPLETE = "7eb7b4b61d38b789"  # radar query complete?
+ROUND_END = "ae11d5c9948bf4e1"  # set flow.radarCollectInfo = false, complete
+RADAR_INFO_JOIN = "c113788ccfa879b4"
+MANUAL_SETTINGS, MANUAL_QUERY = "cca525a755c918da", "6a21bd2e9204bac0"
+GUARD_NAME, ROUND_ENDED_NAME = "one radar setup at a time", "radar round ended"
+GUARD_KEYS = ("radarSetupRunningSince", "radarSetupWaiting")
+GUARD_START = 1_800_000_000_000  # the fake clock's start, in ms
+
+# Runs one function node under a fake clock: Date and the timer functions are the harness's, so a test says when
+# each message arrives and reads when each one left. Messages and timers run in time order (at the same time, the
+# messages first, in the order given); what the node sends, with node.send or by returning it, is copied when sent.
+GUARD_HARNESS = r"""
+const vm = require("vm");
+const util = require("util");
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const START = input.start;
+let now = START;
+let seq = 0;
+const timers = new Map();
+const setTimeoutFake = (fn, ms, ...args) => {
+    seq += 1;
+    timers.set(seq, { at: now + Math.max(0, Number(ms) || 0), seq, fn: () => fn(...args) });
+    return seq;
+};
+class FakeDate extends Date {
+    constructor(...args) { if (args.length === 0) { super(now); } else { super(...args); } }
+    static now() { return now; }
+}
+const flowStore = input.flow;
+const flow = { get: (key) => flowStore[key], set: (key, value) => { flowStore[key] = value; } };
+const nodeStore = {};
+const sent = [];
+const logged = [];
+const capture = (msg) => { if (msg != null) sent.push({ at: now - START, msg: JSON.parse(JSON.stringify(msg)) }); };
+const log = (level) => (text) => logged.push([level, String(text)]);
+const node = { send: capture, error: log("error"), warn: log("warn"), log: log("log"), status: () => {},
+               done: () => {}, on: () => {} };
+const sandbox = {
+    console, util, Buffer, URL, URLSearchParams, Date: FakeDate, RED: { util: {} },
+    context: { get: (key) => nodeStore[key], set: (key, value) => { nodeStore[key] = value; } }, flow,
+    global: { get: () => undefined, set: () => {} }, env: { get: () => undefined },
+    setTimeout: setTimeoutFake, clearTimeout: (id) => { timers.delete(id); },
+    setInterval: () => { throw new Error("setInterval is not faked"); }, clearInterval: () => {},
+    promisify: util.promisify,
+};
+const context = vm.createContext(sandbox);
+const guarded = (run) => { try { run(); } catch (err) { logged.push(["error", String(err.message)]); } };
+if (input.initialize) {
+    guarded(() => new vm.Script("(function(node) {" + input.initialize + "\n})").runInContext(context)(node));
+}
+const body = new vm.Script("(function(msg, node) {" + input.func + "\n})").runInContext(context);
+const messages = input.events.map((event) => ({ at: START + event.at, msg: event.msg }));
+const end = START + input.until;
+for (let steps = 0; ; steps += 1) {
+    if (steps > 100000) throw new Error("the node keeps setting timers");
+    let timer = null;
+    for (const each of timers.values()) {
+        if (timer === null || each.at < timer.at || (each.at === timer.at && each.seq < timer.seq)) timer = each;
+    }
+    const messageAt = messages.length ? messages[0].at : Infinity;
+    const timerAt = timer ? timer.at : Infinity;
+    if (Math.min(messageAt, timerAt) > end) break;
+    if (messageAt <= timerAt) {
+        const { at, msg } = messages.shift();
+        now = at;
+        guarded(() => capture(body(msg, node)));
+    } else {
+        now = timer.at;
+        timers.delete(timer.seq);
+        guarded(timer.fn);
+    }
+}
+process.stdout.write(JSON.stringify({ sent, logged, flow: flowStore }), () => process.exit(0));
+"""
+
+
+def guard_nodes():
+    flows = json.loads(FLOWS.read_text())
+    return named(flows, GUARD_NAME), named(flows, ROUND_ENDED_NAME)
+
+
+def load(n):
+    """A config load as "init config defaults" passes it on: the config as payload; n tells the loads apart."""
+    return {"_msgid": f"load-{n}", "topic": "", "payload": {"sensors": {"radars": {RADAR: {"enabled": True}}}},
+            "load": n}
+
+
+def round_end():
+    """What reaches the guard when a question round ends: the round's message, tagged by "radar round ended"."""
+    _, tag = guard_nodes()
+    [rule] = tag["rules"]
+    return {"_msgid": "round", "topic": rule["to"], "complete": True}
+
+
+def run_guard(events, until, flow=None):
+    """Run the guard on (ms after the start, msg) events until the given ms; returns (sent, logged, flow): sent as
+    (ms, msg) pairs."""
+    guard, _ = guard_nodes()
+    payload = {"start": GUARD_START, "until": until, "flow": flow or {}, "func": guard["func"],
+               "initialize": guard.get("initialize", ""), "events": [{"at": at, "msg": msg} for at, msg in events]}
+    result = subprocess.run(["node", "-e", GUARD_HARNESS], input=json.dumps(payload), capture_output=True, text=True,
+                            timeout=30)
+    assert result.returncode == 0, result.stderr
+    out = json.loads(result.stdout)
+    return [(item["at"], item["msg"]) for item in out["sent"]], out["logged"], out["flow"]
+
+
+def started(sent):
+    """(ms, load) for each setup the guard started."""
+    return [(at, msg["load"]) for at, msg in sent]
+
+
+@needs_node
+def test_a_burst_of_loads_starts_one_setup():
+    sent, logged, flow = run_guard([(0, load(1)), (500, load(2)), (1000, load(3))], until=60_000)
+    assert started(sent) == [(3000, 3)]
+    assert sent[0][1] == load(3)
+    assert logged == []
+    assert flow == {"radarSetupRunningSince": GUARD_START + 3000, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_a_load_during_a_round_waits_for_its_end():
+    # the bench's case: a second save 3 s after the first, and a round that takes about 9 s
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (11_000, round_end()), (20_000, round_end())],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+
+
+@needs_node
+def test_loads_waiting_on_a_round_collapse_to_the_latest():
+    events = [(0, load(1)), (4000, load(2)), (5000, load(3)), (6000, load(4)), (11_000, round_end()),
+              (20_000, round_end())]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 4)]
+    assert sent[1][1] == load(4)
+    assert logged == []
+    assert flow == {"radarSetupRunningSince": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_a_load_just_after_a_round_ends_still_waits_its_2_s():
+    sent, _, _ = run_guard([(0, load(1)), (10_000, load(2)), (11_000, round_end())], until=60_000)
+    assert started(sent) == [(2000, 1), (12_000, 2)]
+
+
+@needs_node
+def test_a_round_that_never_ends_frees_the_way_after_30_s():
+    sent, logged, _ = run_guard([(0, load(1)), (5000, load(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
+    assert logged == []
+    # and a load that comes after the 30 s starts 2 s later
+    sent, _, _ = run_guard([(0, load(1)), (40_000, load(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (42_000, 2)]
+
+
+@needs_node
+def test_a_round_end_without_a_setup_changes_nothing():
+    # a round started by hand ends while no setup runs, or while a load is still settling
+    sent, logged, flow = run_guard([(0, round_end()), (1000, load(1)), (2000, round_end())], until=60_000)
+    assert started(sent) == [(3000, 1)]
+    assert logged == []
+    sent, _, flow = run_guard([(0, round_end())], until=60_000)
+    assert sent == [] and flow == {"radarSetupRunningSince": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_the_start_still_sets_up_the_radar():
+    # Node-RED's start (and a deploy) starts the guard empty, whatever an earlier run left
+    left = {"radarSetupRunningSince": GUARD_START - 1000, "radarSetupWaiting": {"msg": load(0), "at": GUARD_START}}
+    for flow in ({}, left):
+        sent, logged, _ = run_guard([(0, load(1))], until=600_000, flow=flow)
+        assert started(sent) == [(2000, 1)]
+        assert logged == []
+    # and the start's message goes from the guard to "init: radar settings" through "delete msg.payload"
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, _ = guard_nodes()
+    assert by_id[INIT_CONFIG_LINK_IN]["wires"] == [[guard["id"]]]
+    assert guard["wires"] == [[DELETE_PAYLOAD]]
+    assert by_id[DELETE_PAYLOAD]["wires"] == [[RADAR_SETTINGS]]
+
+
+def test_the_manual_injects_bypass_the_guard():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, tag = guard_nodes()
+    assert by_id[MANUAL_SETTINGS]["wires"] == [[RADAR_SETTINGS]]
+    assert by_id[MANUAL_QUERY]["wires"] == [[ROUND_START]]
+    # their messages reach the guard only as a round's end, through the tag
+    untagged = {**by_id, tag["id"]: {**tag, "wires": [[]]}}
+    for inject in (MANUAL_SETTINGS, MANUAL_QUERY):
+        assert by_id[inject]["type"] == "inject"
+        assert guard["id"] not in {node["id"] for node in reachable(untagged, [inject])}
+        assert guard["id"] in {node["id"] for node in reachable(by_id, [inject])}
+
+
+def test_the_radar_setup_chain_is_wired():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tab = tab_id(flows, "capture-radar")
+    guard, tag = guard_nodes()
+    # the order: init-config link in, the guard, delete msg.payload, init: radar settings
+    assert (guard["type"], guard["outputs"], guard["z"]) == ("function", 1, tab)
+    assert by_id[INIT_CONFIG_LINK_IN]["wires"] == [[guard["id"]]]
+    assert guard["wires"] == [[DELETE_PAYLOAD]]
+    # the round's end: the answers still go to the join first, and a copy, tagged, goes back to the guard
+    assert by_id[ROUND_COMPLETE]["wires"] == [[ROUND_END]]
+    assert by_id[ROUND_END]["wires"] == [[RADAR_INFO_JOIN, tag["id"]]]
+    assert (tag["type"], tag["z"], tag["wires"]) == ("change", tab, [[guard["id"]]])
+    assert [(rule["t"], rule["p"], rule["pt"], rule["to"], rule["tot"]) for rule in tag["rules"]] == [
+        ("set", "topic", "msg", ROUND_ENDED_NAME, "str")]
+    assert f'"{ROUND_ENDED_NAME}"' in guard["func"]
+    # nothing else reaches the guard
+    assert sorted(node["id"] for node in flows for output in node.get("wires") or [] if guard["id"] in output) == \
+        sorted([INIT_CONFIG_LINK_IN, tag["id"]])
+    # each sits in the group of the nodes beside it: the guard with the link in (none), the tag with the round's end
+    assert guard.get("g") == by_id[INIT_CONFIG_LINK_IN].get("g") == by_id[DELETE_PAYLOAD].get("g")
+    assert tag["g"] == by_id[ROUND_END]["g"] == RADAR_INFO_GROUP
+    assert tag["id"] in by_id[RADAR_INFO_GROUP]["nodes"]
+    # its state: the two flow keys, set empty at each start, and it logs nothing
+    for key in GUARD_KEYS:
+        assert f'"{key}"' in guard["func"]
+        assert f'flow.set("{key}", null);' in guard["initialize"]
+    assert not re.search(r"node\.(warn|log|error|trace|debug)\(", guard["func"] + guard["initialize"])
+    assert "global." not in guard["func"] and "context." not in guard["func"]
+
+
 @needs_node
 def test_status_reports_the_database_size(tmp_path):
     database = tmp_path / "tmdb.sqlite"
