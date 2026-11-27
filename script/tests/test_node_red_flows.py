@@ -2989,7 +2989,11 @@ def test_setup_rows_reach_the_upload_through_the_telemetry_group():
     by_id = {node["id"]: node for node in flows}
     engine, out = named(flows, "setup engine"), named(flows, "setup rows")
     link_in, fmt = named(flows, "setup rows link in"), named(flows, "format setup telemetry")
-    assert engine["wires"][5] == [out["id"]] and out["links"] == [link_in["id"]] and link_in["links"] == [out["id"]]
+    radar_out = named(flows, "radar setup rows")
+    assert engine["wires"][5] == [out["id"]] and out["links"] == [link_in["id"]]
+    assert link_in["links"] == [out["id"], radar_out["id"]] and radar_out["links"] == [link_in["id"]]
+    assert (radar_out["type"], radar_out["z"], radar_out["g"]) == ("link out", tab_id(flows, "capture-radar"),
+                                                                   RADAR_INFO_GROUP)
     assert (out["type"], out["z"]) == ("link out", engine["z"])
     assert (link_in["type"], link_in["z"], fmt["z"]) == ("link in", tab_id(flows, "thingsboard"), link_in["z"])
     assert link_in["wires"] == [[fmt["id"]]] and fmt["wires"] == [["8c521232f464d27a"]]
@@ -3008,6 +3012,11 @@ def test_format_setup_telemetry():
         "results"]
     assert step["result"] == {"payload": {"ts": 1795000000000, "values": {"setup": {
         "device": payload["device"], "cameras": payload["cameras"]}}}}
+    # a message from the radar engine has only the radars: no key for the lists it doesn't carry
+    radars = {"ts": 1795000000000, "radars": [{"id": "1-cccccccc-sr", "radar": "TM_RADAR_SERIAL_PORT_00", "ended": None}]}
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "format setup telemetry"), {"payload": radars})])[
+        "results"]
+    assert step["result"] == {"payload": {"ts": 1795000000000, "values": {"setup": {"radars": radars["radars"]}}}}
 
 
 # Prepared sqlite nodes with nothing to bind: an upstream function sets msg.params = {} for them ("tm-internal: usage
@@ -3327,6 +3336,7 @@ RADAR_ROW_FACTS = {"part_number": "OPS243-A", "firmware_version": "1.2.1", "cosi
                    "cosine_outbound_deg": 0.0, "speed_unit": "mph", "sampling_rate": 20000, "speed_min": 5.0,
                    "magnitude_min": 20.0}
 RADAR_CONFIG = {"sensors": {"radars": {RADAR: {"enabled": True}, "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
+UPLOAD_RADAR_CONFIG = {**RADAR_CONFIG, "thingsboard": UPLOAD_ON}
 
 
 def engine_radar_facts():
@@ -3342,13 +3352,15 @@ def open_radar(radar=RADAR, started=100, row_id="100-cccccccc-sr", **changes):
 
 
 class RadarRun:
-    """One run of the radar setup engine: its two outputs as lists of messages, the global context, and the log."""
+    """One run of the radar setup engine: its two outputs as lists of messages, the third (the upload's, or None),
+    the global and flow context, and the log."""
 
     def __init__(self, out, before, after):
         step = out["results"][0]
-        self.close, self.insert = ([] if output is None else output if isinstance(output, list) else [output]
-                                   for output in step["result"])
-        self.global_context, self.logged = out["global"], step["logged"]
+        self.close, self.insert, upload = ([] if output is None else output if isinstance(output, list) else [output]
+                                           for output in step["result"])
+        self.upload = upload[0] if upload else None
+        self.global_context, self.flow_context, self.logged = out["global"], out["flow"], step["logged"]
         self.results = out["results"]
         self.before, self.after = before, after
 
@@ -3362,18 +3374,20 @@ class RadarRun:
         return isinstance(value, int) and self.before <= value <= self.after
 
 
-def radar_engine(info, open_rows=(), config=MISSING, context=None, then=()):
+def radar_engine(info, open_rows=(), config=MISSING, context=None, then=(), flow=None):
     """Run the engine on one round's answers (msg.radarInfo: answers by radar name) and the open rows, then the steps
-    in then (with the same global context)."""
+    in then (with the same global context). With info MISSING the message has no radarInfo, as the daily tick's has."""
     before = int(time.time() * 1000)
-    msg = {"radarInfo": info, "payload": list(open_rows), "topic": ""}
+    msg = {"payload": list(open_rows), "topic": ""}
+    if info is not MISSING:
+        msg["radarInfo"] = info
     node = named(json.loads(FLOWS.read_text()), "radar setup engine")
     store = copy.deepcopy(context) if context is not None else {}
     if config is not MISSING:
         store["config"] = config
     elif "config" not in store:
         store["config"] = RADAR_CONFIG
-    out = run_functions([(node, msg), *then], context=store)
+    out = run_functions([(node, msg), *then], context=store, flow=flow)
     return RadarRun(out, before, int(time.time() * 1000) + 1)
 
 
@@ -3560,6 +3574,142 @@ def test_the_radar_engine_without_answers_writes_nothing():
     assert radar_engine(None, [open_radar("gone"), open_radar(started=50, row_id="50-x-sr")]).written() == []
 
 
+# The third output hands the radars' setup rows to the ThingsBoard upload, by the rule the setup history's engine
+# follows: each row that closed or opened in this round, and every open row when none was sent to this server yet or a
+# day has passed (the flow context's setup_radar_sent). The daily tick runs the engine with no answers: the day rule
+# only, and no write.
+
+def radar_flow(**mark):
+    return {"setup_radar_sent": {"to": UPLOAD_URL, "at": int(time.time() * 1000) - 1000, **mark}}
+
+
+def radar_ids(rows):
+    return [row["id"] for row in rows]
+
+
+@needs_node
+def test_the_radar_engine_sends_the_rows_it_wrote():
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow())
+    assert set(run.upload) == {"payload"} and set(run.upload["payload"]) == {"ts", "radars"}
+    assert run.in_time(run.upload["payload"]["ts"])
+    closed, opened = run.upload["payload"]["radars"]
+    assert closed["id"] == "100-cccccccc-sr" and run.in_time(closed["ended"]) and closed["firmware_version"] == "1.2.1"
+    assert opened["id"] == run.insert[0]["params"]["$id"] and opened["ended"] is None
+    assert opened["firmware_version"] == "1.2.2" and opened["radar"] == RADAR
+    for row in (closed, opened):
+        assert list(row) == SETUP_RADAR_COLUMNS
+        assert {column: row[column] for column in RADAR_ROW_FACTS if column != "firmware_version"} == {
+            column: value for column, value in RADAR_ROW_FACTS.items() if column != "firmware_version"}
+    # the changes alone went out: the open rows weren't due, so the mark stays
+    assert run.flow_context == radar_flow(at=run.flow_context["setup_radar_sent"]["at"])
+    assert run.flow_context["setup_radar_sent"]["at"] < run.before
+    # a first row, a radar the config dropped, and an older duplicate go out too
+    older, gone = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar("gone", row_id="1-dddddddd-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), older, gone], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow())
+    sent = run.upload["payload"]["radars"]
+    assert sorted(radar_ids(sent)) == ["1-dddddddd-sr", "50-cccccccc-sr"] and all(run.in_time(r["ended"]) for r in sent)
+    run = radar_engine({RADAR: RADAR_ANSWERS}, config=UPLOAD_RADAR_CONFIG, flow=radar_flow())
+    [opened] = run.upload["payload"]["radars"]
+    assert opened["ended"] is None and opened["id"] == run.insert[0]["params"]["$id"]
+
+
+@needs_node
+def test_a_round_that_changes_nothing_sends_nothing_that_is_not_due():
+    flow = radar_flow()
+    for info in ({RADAR: RADAR_ANSWERS}, {RADAR: {}}, {}):
+        run = radar_engine(info, [open_radar()], config=UPLOAD_RADAR_CONFIG, flow=flow)
+        assert run.upload is None and run.written() == [] and run.flow_context == flow
+
+
+@needs_node
+@pytest.mark.parametrize("sent", [
+    None, lambda now: {"to": "https://other.example.org", "at": now - 1000},
+    lambda now: {"to": UPLOAD_URL, "at": now - DAY_MS}, lambda now: {"to": UPLOAD_URL, "at": now + 60_000},
+    lambda now: {"to": UPLOAD_URL, "at": "yesterday"}, "text",
+], ids=["absent", "another-server", "a-day-ago", "in-the-future", "not-a-number", "not-a-mapping"])
+def test_open_rows_go_again_after_a_day_and_not_before(sent):
+    now = int(time.time() * 1000)
+    flow = {} if sent is None else {"setup_radar_sent": sent(now) if callable(sent) else sent}
+    other = open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), other], config=UPLOAD_RADAR_CONFIG, flow=flow)
+    payload = run.upload["payload"]
+    assert run.written() == [] and run.in_time(payload["ts"])
+    assert sorted(radar_ids(payload["radars"])) == ["1-eeeeeeee-sr", "100-cccccccc-sr"]
+    assert all(row["ended"] is None and list(row) == SETUP_RADAR_COLUMNS for row in payload["radars"])
+    assert set(run.flow_context["setup_radar_sent"]) == {"to", "at"}
+    assert run.flow_context["setup_radar_sent"]["to"] == UPLOAD_URL and run.in_time(run.flow_context["setup_radar_sent"]["at"])
+
+
+@needs_node
+def test_a_row_that_is_due_and_changed_is_sent_once():
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}},
+                       [open_radar(), open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")],
+                       config=UPLOAD_RADAR_CONFIG)
+    sent = run.upload["payload"]["radars"]
+    assert sorted((row["radar"], row["ended"] is None) for row in sent) == [
+        ("TM_RADAR_SERIAL_PORT_00", False), ("TM_RADAR_SERIAL_PORT_00", True), ("TM_RADAR_SERIAL_PORT_01", True)]
+    assert len(set(radar_ids(sent))) == 3 and run.in_time(run.flow_context["setup_radar_sent"]["at"])
+
+
+@needs_node
+@pytest.mark.parametrize("thingsboard", [{"enabled": False, "url": UPLOAD_URL}, None, {"enabled": True},
+                                         {"enabled": True, "url": ""}, {"enabled": "true", "url": UPLOAD_URL}],
+                         ids=["off", "no-block", "no-url", "empty-url", "enabled-not-true"])
+def test_nothing_is_sent_with_the_upload_off(thingsboard):
+    config = {**RADAR_CONFIG, **({} if thingsboard is None else {"thingsboard": thingsboard})}
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [open_radar()], config=config,
+                       flow=radar_flow())
+    assert run.upload is None and len(run.written()) == 2 and "setup_radar_sent" not in run.flow_context
+    tick = radar_engine(MISSING, [open_radar()], config=config, flow=radar_flow())
+    assert tick.upload is None and "setup_radar_sent" not in tick.flow_context
+    turned_on = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                             flow=run.flow_context)
+    assert radar_ids(turned_on.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+
+
+@needs_node
+def test_the_daily_tick_writes_no_row():
+    older, gone = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar("gone", row_id="1-dddddddd-sr")
+    for info in (MISSING, None, "text"):
+        run = radar_engine(info, [open_radar(), older, gone], config=UPLOAD_RADAR_CONFIG, flow=radar_flow(at=1))
+        assert run.written() == [] and run.logged == [] and run.global_context.get("tm_status") is None
+        # the day rule only: the open rows, one per radar, those the config lists
+        assert radar_ids(run.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+        assert run.upload["payload"]["radars"][0]["ended"] is None and run.in_time(run.upload["payload"]["ts"])
+        assert run.in_time(run.flow_context["setup_radar_sent"]["at"])
+    # not due: nothing, and the mark stays
+    flow = radar_flow()
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG, flow=flow)
+    assert run.upload is None and run.flow_context == flow and run.written() == []
+    # no rows: nothing to send, and the day isn't spent
+    run = radar_engine(MISSING, [], config=UPLOAD_RADAR_CONFIG, flow={})
+    assert run.upload is None
+
+
+@needs_node
+def test_the_radars_upload_rows_hold_no_serial_number():
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(part_number="OPS243-C")], config=UPLOAD_RADAR_CONFIG)
+    texts = strings_in(run.upload)
+    assert "0000" not in texts and not any("serialnumber" in text.lower().replace("_", "") for text in texts)
+    assert run.logged == []
+
+
+def test_the_radars_setup_rows_reach_the_setup_link():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    engine, out = named(flows, "radar setup engine"), named(flows, "radar setup rows")
+    tick, read = named(flows, "send the radars' setup rows, daily"), named(flows, "read open setup_radar")
+    link_in = named(flows, "setup rows link in")
+    assert engine["wires"][2] == [out["id"]] and out["links"] == [link_in["id"]] and out["id"] in link_in["links"]
+    assert (tick["type"], tick["repeat"], tick["once"], tick["wires"]) == ("inject", "86400", False, [[read["id"]]])
+    assert tick["props"] == [] or all(prop["p"] == "payload" for prop in tick["props"])
+    for node in (tick, out):
+        assert (node["z"], node["g"]) == (engine["z"], engine["g"])
+        assert node["id"] in by_id[engine["g"]]["nodes"]
+
+
 @needs_node
 def test_status_carries_each_radars_answers():
     [step] = run_functions([status_step()])["results"]
@@ -3611,8 +3761,9 @@ def test_the_radar_chain_is_wired():
     assert sql_text(read) == "SELECT * FROM setup_radar WHERE ended IS NULL ORDER BY started DESC, id DESC"
     [[engine_id]] = read["wires"]
     engine = by_id[engine_id]
-    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "radar setup engine", 2)
-    [[close_id], [insert_id]] = engine["wires"]
+    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "radar setup engine", 3)
+    [[close_id], [insert_id], [rows_id]] = engine["wires"]
+    assert by_id[rows_id]["name"] == "radar setup rows" and by_id[rows_id]["type"] == "link out"
     close, insert = by_id[close_id], by_id[insert_id]
     for node, name in ((close, "close setup_radar"), (insert, "insert setup_radar")):
         assert (node["type"], node["name"], node["sqlquery"], node["mydb"]) == ("sqlite", name, "prepared", TMDB)
@@ -4867,6 +5018,11 @@ SETUP_SENT_DEVICE = {**dict.fromkeys(sent_columns(SETUP_DEVICE_COLUMNS)),
 SETUP_SENT_CAMERA = {**dict.fromkeys(sent_columns(SETUP_CAMERA_COLUMNS)),
                      "id": "100-bbbbbbbb-sc", "started": 100, "ended": 200, "camera": "cam_a", "detect_width": 1536,
                      "labels_tracked": ["car"], "zones": [{"key": "zone_capture", "enabled": True}], "masks": {}}
+SETUP_SENT_RADAR = {**dict.fromkeys(sent_columns(SETUP_RADAR_COLUMNS)),
+                    "id": "100-cccccccc-sr", "started": 100, "ended": None, "radar": "TM_RADAR_SERIAL_PORT_00",
+                    "part_number": "OPS243-A", "firmware_version": "1.2.1", "cosine_inbound_deg": 0.0,
+                    "cosine_outbound_deg": 0.0, "speed_unit": "mph", "sampling_rate": 20000, "speed_min": 5.0,
+                    "magnitude_min": 20.0}
 SETUP_VALUE = {"device": [SETUP_SENT_DEVICE], "cameras": [SETUP_SENT_CAMERA]}
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
@@ -5311,7 +5467,7 @@ def test_everything_uploaded_passes_the_gate():
 def test_upload_lists_file():
     lists = upload_lists()
     assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar",
-                           "setup_device", "setup_camera"]
+                           "setup_device", "setup_camera", "setup_radar"]
     assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch", "setup"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
@@ -5321,6 +5477,7 @@ def test_upload_lists_file():
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert lists["setup_device"] == sent_columns(SETUP_DEVICE_COLUMNS)
     assert lists["setup_camera"] == sent_columns(SETUP_CAMERA_COLUMNS)
+    assert lists["setup_radar"] == sent_columns(SETUP_RADAR_COLUMNS) == SETUP_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -5343,9 +5500,11 @@ def test_the_gate_holds_no_list_of_its_own():
     {**upload_lists(), "deployment": ["id", 7]},
     {key: names for key, names in upload_lists().items() if key != "setup_device"},
     {**upload_lists(), "setup_camera": ["id", 7]},
+    {key: names for key, names in upload_lists().items() if key != "setup_radar"},
+    {**upload_lists(), "setup_radar": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
         "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text",
-        "no-setup-device-list", "setup-camera-name-not-text"])
+        "no-setup-device-list", "setup-camera-name-not-text", "no-setup-radar-list", "setup-radar-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -5514,11 +5673,39 @@ def test_gate_cuts_a_kept_name_that_reaches_it():
 
 
 @needs_node
+def test_gate_cuts_setup_radar_rows_to_their_list():
+    value = {"radars": [{**SETUP_SENT_RADAR, "serial_number": "SN-PLACEHOLDER"}]}
+    run = gate_run([setup_item(value), setup_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"setup": {"radars": [SETUP_SENT_RADAR]}}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["ThingsBoard upload: left out setup_radar.serial_number, which isn't on the list of what is shared."]
+    assert "SN-PLACEHOLDER" not in json.dumps(run["results"]) + json.dumps(run["global"])
+    # beside the other lists, in one message
+    out, _ = gate(setup_item({**SETUP_VALUE, "radars": [SETUP_SENT_RADAR]}))
+    assert out["payload"]["values"]["setup"] == {**SETUP_VALUE, "radars": [SETUP_SENT_RADAR]}
+
+
+@needs_node
+def test_every_setup_radar_column_is_on_the_upload_list():
+    """The table's twelve columns are on the list, in the table's order, and the engine's row has no others."""
+    db = sqlite3.connect(":memory:")
+    db.executescript(SCHEMA_SQL.read_text())
+    table = [row[1] for row in db.execute("PRAGMA table_info(setup_radar)")]
+    db.close()
+    assert len(table) == 12 and upload_lists()["setup_radar"] == table
+    run = radar_engine({RADAR: RADAR_ANSWERS}, config=UPLOAD_RADAR_CONFIG)
+    [row] = run.upload["payload"]["radars"]
+    assert list(row) == table
+
+
+@needs_node
 @pytest.mark.parametrize("value", [
     "text", ["device"], None, 7, {}, {"extra": []}, {"device": "all", "cameras": 7}, {"device": [], "cameras": []},
-    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]}, {"radars": [{"surprise": 1}]},
+    {"radars": "all"}, {"radars": ["text", None]},
 ], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
-        "no-listed-field"])
+        "no-listed-field", "radar-no-listed-field", "radars-not-a-list", "radar-rows-not-mappings"])
 def test_gate_leaves_out_setup_rows_it_cannot_read(value):
     radar = GATE_TELEMETRY["radar"]
     out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value, "radar": radar}}})
