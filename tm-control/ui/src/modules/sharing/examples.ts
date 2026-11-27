@@ -5,9 +5,9 @@
 // each zone (stationary_time, stops, zone_times), a deployment row whose location is rounded to the stored precision
 // and which says how the sensor is mounted (heading_deg, pitch_deg, height_m, view_distance_m, mount) and the place's
 // time zone (timezone), the watch log, which every five minutes says whether each camera and radar was working, and the setup history: a row for the
-// device and a row for each camera, sent when one opens or closes, with the model's fingerprint, the versions, and each
-// camera's detection settings, the zones that are on, and masks (never a model's title or file name, or a profile's
-// key)
+// device, a row for each camera, and a row for each radar, sent when one opens or closes, with the model's fingerprint, the
+// versions, each camera's detection settings, the zones that are on, and masks (never a model's title or file name, or
+// a profile's key), and each radar's model, firmware, and settings (never its serial number)
 export const SHARE_DATA_EXAMPLE = JSON.stringify(
   {
     event: {
@@ -128,6 +128,22 @@ export const SHARE_DATA_EXAMPLE = JSON.stringify(
             objects: [],
             object_filters: {},
           },
+        },
+      ],
+      radars: [
+        {
+          id: '1792000000000-8c1d4e07-sr',
+          started: 1_792_000_000_000,
+          ended: null,
+          radar: 'TM_RADAR_SERIAL_PORT_00',
+          part_number: 'OPS243-A',
+          firmware_version: '1.2.1',
+          cosine_inbound_deg: 0,
+          cosine_outbound_deg: 0,
+          speed_unit: 'mph',
+          sampling_rate: 20000,
+          speed_min: 5,
+          magnitude_min: 20,
         },
       ],
     },

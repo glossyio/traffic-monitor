@@ -238,12 +238,30 @@ describe('the sharing form', () => {
     const examples = wrapper.findAll('button').filter((b) => b.text() === 'See an example')
     await examples[0].trigger('click')
     const shown = JSON.parse(wrapper.find('pre').text())
-    expect(Object.keys(shown.setup)).toEqual(['device', 'cameras'])
+    expect(Object.keys(shown.setup)).toEqual(['device', 'cameras', 'radars'])
     const [device] = shown.setup.device
     const [camera] = shown.setup.cameras
+    const [radar] = shown.setup.radars
     expect(device.id).toMatch(/^\d+-[0-9a-f]{8}-sd$/)
     expect(camera.id).toMatch(/^\d+-[0-9a-f]{8}-sc$/)
+    expect(radar.id).toMatch(/^\d+-[0-9a-f]{8}-sr$/)
     expect(device.ended).toBeNull()
+    expect(radar.ended).toBeNull()
+    expect(Object.keys(radar)).toEqual([
+      'id',
+      'started',
+      'ended',
+      'radar',
+      'part_number',
+      'firmware_version',
+      'cosine_inbound_deg',
+      'cosine_outbound_deg',
+      'speed_unit',
+      'sampling_rate',
+      'speed_min',
+      'magnitude_min',
+    ])
+    expect(radar).not.toHaveProperty('serial_number')
     expect(camera.zones).toHaveLength(1)
     expect(camera.zones[0].corners).toHaveLength(4)
     for (const typed of ['model_title', 'model_file', 'profile', 'friendly_name']) {
