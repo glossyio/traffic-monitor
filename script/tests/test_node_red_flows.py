@@ -872,6 +872,121 @@ def test_init_config_defaults_limits_are_inclusive(key, value):
     assert logged == []
 
 
+# Where a radar points and what the street in its view looks like: the angle into the road, the street's six facts, and
+# the intersection tick, which a camera has too. Each is a value within its limits or None; a config error names the
+# key's path and never the value. A radar's key on another kind of sensor is None with no error.
+STREET_KEYS = ("lane_distance_m", "lane_width_m", "lanes_toward", "lanes_away", "turn_lane", "toward_side",
+               "intersection")
+AIM_KEYS = ("road_angle_deg", *STREET_KEYS)
+AIM_ERRORS = {
+    "road_angle_deg": "isn't a number from 0 to 89",
+    "lane_distance_m": "isn't a number from 0 to 100",
+    "lane_width_m": "isn't a number above 0 and at most 10",
+    "lanes_toward": "isn't a whole number from 0 to 3",
+    "lanes_away": "isn't a whole number from 0 to 3",
+    "turn_lane": "isn't true or false",
+    "toward_side": "isn't near or far",
+    "intersection": "isn't true or false",
+}
+RADAR_DEPLOYMENT_PATH = "sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment"
+GIVEN_AIM = {"road_angle_deg": 20.04, "lane_distance_m": 2.7, "lane_width_m": 3.4, "lanes_toward": 1,
+             "lanes_away": 2, "turn_lane": True, "toward_side": "near", "intersection": True}
+KEPT_AIM = {**GIVEN_AIM, "road_angle_deg": 20.0}
+BAD_AIM = [("road_angle_deg", 90), ("road_angle_deg", -1), ("road_angle_deg", "20"), ("lane_distance_m", -1),
+           ("lane_distance_m", 101), ("lane_width_m", 0), ("lane_width_m", 10.01), ("lanes_toward", 4),
+           ("lanes_toward", 1.5), ("lanes_toward", "2"), ("turn_lane", "yes"), ("toward_side", "left"),
+           ("intersection", "yes please"), ("intersection", 1)]
+
+
+def aim_config(radar=None, camera=None, top=None):
+    """A new device's config.yml with these deployment blocks for the radar and the camera (None: no block of its own)
+    and this much more in the top-level block."""
+    config = heading_config({"heading_deg": 90, **(top or {})}, camera)
+    if radar is not None:
+        config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"] = radar
+    return config
+
+
+def aim_of(payload, sensor_type, sensor_name):
+    deployment = payload["sensors"][sensor_type][sensor_name]["deployment"]
+    return {key: deployment[key] for key in AIM_KEYS}
+
+
+def radar_aim(payload):
+    return aim_of(payload, "radars", "TM_RADAR_SERIAL_PORT_00")
+
+
+def camera_aim(payload):
+    return aim_of(payload, "cameras", "picam_h265")
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, dict.fromkeys(AIM_KEYS), []),
+    (GIVEN_AIM, KEPT_AIM, []),
+    *[({**GIVEN_AIM, key: bad}, {**KEPT_AIM, key: None}, [key]) for key, bad in BAD_AIM],
+], ids=["no-key", "given", *[f"{key}-{bad!r}"[:40] for key, bad in BAD_AIM]])
+def test_init_config_defaults_aim_keys(given, expected, errors):
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, **given}))
+    assert radar_aim(payload) == expected
+    assert logged == [(f"{RADAR_DEPLOYMENT_PATH}.{key} {AIM_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+@pytest.mark.parametrize("key, value", [("road_angle_deg", 0), ("road_angle_deg", 89), ("lane_distance_m", 0),
+                                        ("lane_distance_m", 100), ("lane_width_m", 0.01), ("lane_width_m", 10),
+                                        ("lanes_toward", 0), ("lanes_toward", 3), ("lanes_away", 0),
+                                        ("lanes_away", 3), ("toward_side", "far")])
+def test_init_config_defaults_aim_limits_are_inclusive(key, value):
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, key: value}))
+    assert radar_aim(payload)[key] == value
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("value", [False, None, "", MISSING], ids=["false", "null", "empty", "missing"])
+def test_false_and_blank_ticks_are_empty(value):
+    ticks = {} if value is MISSING else {"turn_lane": value, "intersection": value}
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, **ticks}, {"heading_deg": 40, **ticks}))
+    assert (radar_aim(payload)["turn_lane"], radar_aim(payload)["intersection"]) == (None, None)
+    assert camera_aim(payload)["intersection"] is None
+    assert logged == []
+
+
+@needs_node
+def test_a_radars_keys_on_a_camera_are_dropped_without_an_error():
+    """The camera's own block, or the top-level block handed down, may set a radar's keys, even wrong ones: on a
+    camera each is None, with no error, and the camera keeps its intersection."""
+    payload, logged = init_defaults(aim_config(camera={"heading_deg": 40, **GIVEN_AIM, "lanes_toward": 4}))
+    assert camera_aim(payload) == {**dict.fromkeys(STREET_KEYS[:-1]), "road_angle_deg": None, "intersection": True}
+    assert logged == []
+    payload, logged = init_defaults(aim_config(top={**GIVEN_AIM, "toward_side": "left"}))
+    assert camera_aim(payload) == {**dict.fromkeys(AIM_KEYS), "intersection": True}
+    assert radar_aim(payload) == {**KEPT_AIM, "toward_side": None}
+    assert logged == [(f"{RADAR_DEPLOYMENT_PATH}.toward_side {AIM_ERRORS['toward_side']}", True)]
+
+
+@needs_node
+@pytest.mark.parametrize("value, expected, errors", [
+    (True, True, []), ("yes", None, ["intersection"]), (1, None, ["intersection"]),
+], ids=["ticked", "yes", "one"])
+def test_a_camera_keeps_its_own_intersection(value, expected, errors):
+    payload, logged = init_defaults(aim_config(camera={"heading_deg": 40, "intersection": value}))
+    assert camera_aim(payload)["intersection"] is expected
+    assert radar_aim(payload)["intersection"] is None
+    assert logged == [(f"{CAMERA_PATH}.{key} {AIM_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+def test_an_air_quality_monitor_has_none_of_the_eight():
+    config = aim_config()
+    config["sensors"]["airquality_monitors"]["sensorname01"]["enabled"] = True
+    config["sensors"]["airquality_monitors"]["sensorname01"]["deployment"] = {**GIVEN_AIM, "lanes_away": 9}
+    payload, logged = init_defaults(config)
+    assert aim_of(payload, "airquality_monitors", "sensorname01") == dict.fromkeys(AIM_KEYS)
+    assert logged == []
+
+
 # The rounding edges are chosen on the doubles' exact values: 90.05, 100.005 and 1000.005 are held a hair below the half
 # and round back inside, 0.005 and -0.005 a hair above it, and 0.004 rounds to 0, which a height refuses.
 LIMIT_EDGES = {
@@ -1368,37 +1483,49 @@ ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
                          "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
-                         "mount, timezone) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
-                         "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
-                         "$mount, $timezone)",
+                         "mount, timezone, road_angle_deg, lane_distance_m, lane_width_m, lanes_toward, lanes_away, "
+                         "turn_lane, toward_side, intersection) VALUES ($id, $started, $lat, $lon, $heading_deg, "
+                         "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision, $pitch_deg, "
+                         "$height_m, $view_distance_m, $mount, $timezone, $road_angle_deg, $lane_distance_m, "
+                         "$lane_width_m, $lanes_toward, $lanes_away, $turn_lane, $toward_side, $intersection)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
                           "location_precision = $location_precision, heading_deg = $heading_deg, "
-                          "timezone = $timezone WHERE id = $id",
+                          "timezone = $timezone, lane_distance_m = $lane_distance_m, lane_width_m = $lane_width_m, "
+                          "lanes_toward = $lanes_toward, lanes_away = $lanes_away, turn_lane = $turn_lane, "
+                          "toward_side = $toward_side, intersection = $intersection WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone "
-                 "FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone, "
+                 "road_angle_deg, lane_distance_m, lane_width_m, lanes_toward, lanes_away, turn_lane, toward_side, "
+                 "intersection FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
             "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount",
-            "timezone"}
+            "timezone", *AIM_KEYS}
+# A rewrite that writes none of the street's facts
+NO_STREET_PARAMS = {f"${key}": None for key in STREET_KEYS}
 
 
-def engine_sensors(camera_deployment=None):
+def engine_sensors(camera_deployment=None, radar_deployment=None):
     camera_deployment = {"heading_deg": 0} if camera_deployment is None else camera_deployment
+    radar_deployment = {"heading_deg": 180} if radar_deployment is None else radar_deployment
     return {"cameras": {"picam_h265": {"enabled": True, "deployment": camera_deployment}},
-            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"heading_deg": 180}},
+            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": radar_deployment},
                        "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
              started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None,
-             timezone=None):
+             timezone=None, road_angle_deg=None, lane_distance_m=None, lane_width_m=None, lanes_toward=None,
+             lanes_away=None, turn_lane=None, toward_side=None, intersection=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
             "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
-            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone}
+            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone,
+            "road_angle_deg": road_angle_deg, "lane_distance_m": lane_distance_m, "lane_width_m": lane_width_m,
+            "lanes_toward": lanes_toward, "lanes_away": lanes_away, "turn_lane": turn_lane,
+            "toward_side": toward_side, "intersection": intersection}
 
 
 def camera_row(**kwargs):
@@ -1494,7 +1621,7 @@ def test_engine_adopts_an_open_row_without_a_survey():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": None}]
+         "$heading_deg": 0, "$timezone": None, **NO_STREET_PARAMS}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
@@ -1634,6 +1761,167 @@ def test_engine_rows_for_thingsboard_carry_the_mounting():
     assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
+# Where the radar points and the street it faces, as config.yml says them (after init config defaults) and as a row
+# stores them (a tick as 1). The angle into the road starts a deployment as the mounting does; the other seven are
+# written into the open row in place.
+AIMED = {"road_angle_deg": 20.0, "lane_distance_m": 2.7, "lane_width_m": 3.4, "lanes_toward": 1, "lanes_away": 2,
+         "turn_lane": True, "toward_side": "near", "intersection": True}
+AIMED_ROW = {**AIMED, "turn_lane": 1, "intersection": 1}
+AIM_PARAMS = tuple(f"${key}" for key in AIM_KEYS)
+
+
+def aimed_radar_row(**values):
+    """An open radar row aimed as AIMED, but for values (as a row stores them)."""
+    return radar_row(**{**AIMED_ROW, **values})
+
+
+def aimed_sensors(**values):
+    """The sensors with the radar aimed as AIMED, but for values (as config.yml says them)."""
+    return engine_sensors(radar_deployment={"heading_deg": 180, **AIMED, **values})
+
+
+def as_row(key, value):
+    """A file's value as a row stores it: a tick is 1."""
+    return 1 if key in ("turn_lane", "intersection") and value is True else value
+
+
+@needs_node
+def test_engine_keeps_rows_from_before_the_aim_columns():
+    """An open row read before the eight columns existed has none of their keys; a sensor with none set matches it,
+    and the row passed on carries the eight, each None."""
+    rows = [{key: value for key, value in row.items() if key not in AIM_KEYS} for row in (camera_row(), radar_row())]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(set(row) == ROW_KEYS for row in current)
+    assert all(row[key] is None for row in current for key in AIM_KEYS)
+
+
+@needs_node
+def test_engine_keeps_an_aimed_row_that_matches():
+    run = engine(aimed_sensors(), [camera_row(), aimed_radar_row()], ENGINE_PLACE)
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_value, file_value", [(20, 30), (20, None), (None, 20)],
+                         ids=["changed", "cleared", "set"])
+def test_engine_starts_a_deployment_when_the_road_angle_changes(row_value, file_value):
+    radar = aimed_radar_row(road_angle_deg=row_value)
+    sensors = aimed_sensors(road_angle_deg=file_value)
+    run = engine(sensors, [camera_row(), radar], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [radar["id"]]
+    [inserted] = run.insert
+    assert inserted["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"
+    assert tuple(inserted["params"][param] for param in AIM_PARAMS) == tuple(
+        as_row(key, value) for key, value in {**AIMED, "road_angle_deg": file_value}.items())
+    assert run.rewrite == []
+
+
+STREET_CHANGES = [
+    ("lane_distance_m", None, 2.7), ("lane_distance_m", 2.7, 3.0), ("lane_distance_m", 2.7, None),
+    ("lane_width_m", None, 3.4), ("lane_width_m", 3.4, 3.0), ("lane_width_m", 3.4, None),
+    ("lanes_toward", None, 1), ("lanes_toward", 1, 0), ("lanes_toward", 1, None),
+    ("lanes_away", None, 2), ("lanes_away", 2, 3), ("lanes_away", 2, None),
+    ("turn_lane", None, True), ("turn_lane", 1, None),
+    ("toward_side", None, "near"), ("toward_side", "near", "far"), ("toward_side", "near", None),
+    ("intersection", None, True), ("intersection", 1, None),
+]
+
+
+@needs_node
+@pytest.mark.parametrize("key, row_value, file_value", STREET_CHANGES)
+def test_engine_heals_the_streets_facts_in_place(key, row_value, file_value):
+    radar = aimed_radar_row(**{key: row_value})
+    run = engine(aimed_sensors(**{key: file_value}), [camera_row(), radar], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    [rewritten] = run.rewrite
+    assert rewritten["params"] == rewritten_params(radar, **{key: as_row(key, file_value)})
+    assert rewritten["params"]["$id"] == radar["id"]
+    assert deployment_ids(run)["TM_RADAR_SERIAL_PORT_00"] == radar["id"]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == radar["id"]]
+    assert current[key] == as_row(key, file_value)
+    assert run.payload["updatedDeployment"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_value, file_value", [(None, True), (1, None)], ids=["set", "cleared"])
+def test_engine_heals_a_cameras_intersection_in_place(row_value, file_value):
+    camera = camera_row(intersection=row_value)
+    run = engine(engine_sensors({"heading_deg": 0, "intersection": file_value}), [camera, radar_row()],
+                 ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [rewritten_params(camera, intersection=as_row("intersection",
+                                                                                                 file_value))]
+
+
+@needs_node
+def test_a_rewrite_leaves_the_rows_road_angle():
+    """A rewrite never writes the angle into the road: a street's fact healed, or, with no survey in the file, a
+    coarser precision, leaves the row's own angle, also when the file's differs."""
+    radar = aimed_radar_row(lane_width_m=3.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    [rewritten] = run.rewrite
+    assert "$road_angle_deg" not in rewritten["params"]
+    radar = aimed_radar_row(lat=45.52, lon=-122.69, precision=2)
+    run = engine(aimed_sensors(road_angle_deg=30.0), [camera_row(), radar], {**ENGINE_PLACE, "survey_id": None})
+    assert run.close == [] and run.insert == []
+    [rewritten] = [m for m in run.rewrite if m["params"]["$id"] == radar["id"]]
+    assert "$road_angle_deg" not in rewritten["params"]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == radar["id"]]
+    assert current["road_angle_deg"] == 20.0
+
+
+@needs_node
+def test_engine_heals_nothing_without_a_survey_id():
+    """While the file names no survey a row is left as it is: no fact is healed, and a coarser precision's rewrite
+    carries the row's own seven."""
+    radar = aimed_radar_row(lanes_toward=3, toward_side="far", turn_lane=None)
+    place = {**ENGINE_PLACE, "survey_id": None}
+    assert engine(aimed_sensors(), [camera_row(), radar], place).written() == []
+    radar = aimed_radar_row(lanes_toward=3, lat=45.52, lon=-122.69, precision=2)
+    run = engine(aimed_sensors(), [camera_row(), radar], place)
+    [rewritten] = [m for m in run.rewrite if m["params"]["$id"] == radar["id"]]
+    assert rewritten["params"] == rewritten_params(radar, lat=45.5, lon=-122.7, location_precision=1)
+    assert rewritten["params"]["$lanes_toward"] == 3
+
+
+@needs_node
+def test_engine_adopts_an_aimed_row_and_takes_the_files_street():
+    """A row from before any survey is adopted only at the file's angle into the road, and takes the file's seven."""
+    radar = aimed_radar_row(survey_id=None, lanes_away=0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [rewritten_params(radar, survey_id=ENGINE_SURVEY, lanes_away=2)]
+    radar = aimed_radar_row(survey_id=None, road_angle_deg=25.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    assert [m["params"]["$id"] for m in run.close] == [radar["id"]]
+    assert [m["params"]["$road_angle_deg"] for m in run.insert] == [20.0]
+
+
+@needs_node
+def test_engine_rows_for_thingsboard_carry_the_eight():
+    radar = aimed_radar_row(road_angle_deg=30.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    rows = run.payload["updatedDeployment"] + run.payload["currentDeployment"]
+    assert len(rows) == 3 and all(set(row) == ROW_KEYS for row in rows)
+    [ended] = run.payload["updatedDeployment"]
+    assert {key: ended[key] for key in AIM_KEYS} == {**AIMED_ROW, "road_angle_deg": 30.0}
+    [started] = [row for row in run.payload["currentDeployment"] if row["sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+    assert {key: started[key] for key in AIM_KEYS} == AIMED_ROW
+
+
+@needs_node
+def test_a_ticked_row_stores_one_and_an_unticked_one_nothing():
+    run = engine(aimed_sensors(), [], ENGINE_PLACE)
+    [radar] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+    assert (radar["$turn_lane"], radar["$intersection"]) == (1, 1)
+    for unticked in (None, False):
+        run = engine(aimed_sensors(turn_lane=unticked, intersection=unticked), [], ENGINE_PLACE)
+        [radar] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+        assert (radar["$turn_lane"], radar["$intersection"]) == (None, None)
+
+
 # The place's time zone: each row that starts takes config.yml's, and an open row of the same place whose zone differs
 # is rewritten with it. The zone never starts or ends a deployment.
 
@@ -1641,7 +1929,7 @@ def rewritten_params(row, **values):
     """The parameters of the rewrite of this open row that changes only values (as $-less keys)."""
     params = {"$id": row["id"], "$survey_id": row["survey_id"], "$lat": row["lat"], "$lon": row["lon"],
               "$location_precision": row["location_precision"], "$heading_deg": row["heading_deg"],
-              "$timezone": row["timezone"]}
+              "$timezone": row["timezone"], **{f"${key}": row[key] for key in STREET_KEYS}}
     return {**params, **{f"${key}": value for key, value in values.items()}}
 
 
@@ -1696,7 +1984,7 @@ def test_engine_adopts_a_row_with_the_zone():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": "Asia/Tokyo"}]
+         "$heading_deg": 0, "$timezone": "Asia/Tokyo", **NO_STREET_PARAMS}]
 
 
 @needs_node
@@ -1738,7 +2026,8 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None, **NO_STREET_PARAMS} for row in rows),
+        key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -1753,13 +2042,14 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": None}]
+         "$heading_deg": 0, "$timezone": None, **NO_STREET_PARAMS}]
     rows = [camera_row(), radar_row()]
     run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
-          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None, **NO_STREET_PARAMS} for row in rows),
+        key=lambda params: params["$id"])
 
 
 @needs_node
@@ -2010,7 +2300,9 @@ SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
                                  "sensorType, sensorName, survey_id, location_precision, pitch_deg, height_m, "
-                                 "view_distance_m, mount FROM deployment WHERE survey_id = $survey_id "
+                                 "view_distance_m, mount, road_angle_deg, lane_distance_m, lane_width_m, "
+                                 "lanes_toward, lanes_away, turn_lane, toward_side, intersection FROM deployment "
+                                 "WHERE survey_id = $survey_id "
                                  "ORDER BY entryStartDateTime"),
     "/tm-internal/surveys/usage": ("read survey usage",
                                    "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
