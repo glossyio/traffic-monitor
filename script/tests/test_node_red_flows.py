@@ -3754,7 +3754,8 @@ def test_a_burst_of_loads_starts_one_setup():
     assert started(sent) == [(3000, 3)]
     assert sent[0][1] == load(3)
     assert logged == []
-    assert flow == {"radarSetupRunningSince": GUARD_START + 3000, "radarSetupWaiting": None}
+    assert flow == {"radarSetupRunningSince": {"since": GUARD_START + 3000, "freeAfterMs": 30_000},
+                    "radarSetupWaiting": None}
 
 
 @needs_node
@@ -3791,6 +3792,33 @@ def test_a_round_that_never_ends_frees_the_way_after_30_s():
     # and a load that comes after the 30 s starts 2 s later
     sent, _, _ = run_guard([(0, load(1)), (40_000, load(2))], until=120_000)
     assert started(sent) == [(2000, 1), (42_000, 2)]
+
+
+def load_with_radars(n, radars):
+    """A config load whose sensors.radars is radars."""
+    return {**load(n), "payload": {"sensors": {"radars": radars}}}
+
+
+@needs_node
+@pytest.mark.parametrize("radars, free_after", [
+    ({name: {"enabled": True} for name in RADAR_NAMES}, 120_000),
+    ({RADAR_NAMES[0]: {"enabled": True}, RADAR_NAMES[1]: {"enabled": True}, RADAR_NAMES[2]: {"enabled": False},
+      RADAR_NAMES[3]: None}, 60_000),
+    ({name: {"enabled": False} for name in RADAR_NAMES}, 30_000),
+    ({}, 30_000),
+    (None, 30_000),
+], ids=["four enabled", "two of four enabled", "none enabled", "no radars", "no radars mapping"])
+def test_the_fallback_gives_30_s_for_each_enabled_radar(radars, free_after):
+    # a setup and its round take about 8 to 9 s for each radar, so four radars can take over 30 s
+    events = [(0, load_with_radars(1, radars)), (5000, load(2))]
+    sent, logged, _ = run_guard(events, until=2000 + free_after - 1)
+    assert started(sent) == [(2000, 1)]
+    sent, _, _ = run_guard(events, until=300_000)
+    assert started(sent) == [(2000, 1), (2000 + free_after, 2)]
+    assert logged == []
+    # counted from the config the running setup started with, not the waiting one's
+    sent, _, _ = run_guard([(0, load(1)), (5000, load_with_radars(2, radars))], until=300_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
 
 
 @needs_node
