@@ -20,7 +20,9 @@ from tm_control.adapters.yamlfile import (  # ConfigRead: what config() returns,
 BASE = "http://127.0.0.1:1880/tm-internal"
 STATUS_URL = f"{BASE}/status"
 TOKEN_HEADER = "X-TM-Internal-Token"
-MOUNTING_KEYS = ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")  # what a correction carries
+MOUNTING_KEYS = (  # what a correction carries: the five of the Mounting form, and the row's angle into the road
+    "heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount", "road_angle_deg",
+)
 
 
 def status(token: str) -> tuple[int | None, dict | None]:
@@ -133,9 +135,10 @@ class NodeRed:
         )
 
     def correct_mounting(self, deployment_id: str, values: Mapping) -> None:
-        """Rewrite one deployment row's heading, tilt, height, view distance, and mount in place; a value of None clears
-        it. `values` must hold all five (a KeyError for a missing one, so a left-out key is never sent as a clear);
-        anything else in it is not sent."""
+        """Rewrite one deployment row's heading, tilt, height, view distance, mount, and angle into the road in place; a
+        value of None clears it. `values` must hold all six (a KeyError for a missing one, so a left-out key is never
+        sent as a clear); anything else in it is not sent. The angle is the row's own, as the control app read it: the
+        Mounting form has no field for it."""
         self._call(
             "POST",
             f"/deployments/{quote(deployment_id, safe='')}/mounting",

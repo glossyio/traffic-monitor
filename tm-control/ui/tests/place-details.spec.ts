@@ -43,6 +43,7 @@ function row(id: string, started: number | null, ended: number | null, type: str
     height_m: null,
     view_distance_m: null,
     mount: null,
+    road_angle_deg: null,
     sensor_type: type,
     sensor_name: name,
     location_precision: 1,

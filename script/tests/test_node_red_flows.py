@@ -4527,8 +4527,9 @@ def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
 
 
-FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
-MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole",
+                 "road_angle_deg": 20.0}
+MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount", "$road_angle_deg")
 
 
 def mounting_body(**changes):
@@ -4552,6 +4553,17 @@ def without(body, key):
     (DEPLOYMENT_ID, without(mounting_body(), "height_m"), "height_m"),
     (DEPLOYMENT_ID, without(mounting_body(), "view_distance_m"), "view_distance_m"),
     (DEPLOYMENT_ID, without(mounting_body(), "mount"), "mount"),
+    (DEPLOYMENT_ID, without(mounting_body(), "road_angle_deg"), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=0), None),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=89), None),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=90), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=89.06), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=-0.06), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=-1), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg="20"), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=True), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=[20]), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=90, mount="Pole"), "mount"),
     (DEPLOYMENT_ID, {}, "heading_deg"),
     (DEPLOYMENT_ID, "heading_deg=40", "heading_deg"),
     (DEPLOYMENT_ID, mounting_body(heading_deg=360), "heading_deg"),
@@ -4602,13 +4614,14 @@ def test_mounting_correction_is_validated(deployment_id, body, detail):
 def test_mounting_correction_rounds_as_the_defaults_node_does():
     """The same limits, checked after rounding (one decimal for tilt, two for lengths), so the two never disagree."""
     validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
-    for given, stored in (((14.96, 3.665, 13.664), (15.0, 3.67, 13.66)),
-                          ((90.04, 100.004, 1000.004), (90.0, 100.0, 1000.0)),
-                          ((-0.04, 0.005, -0.004), (0, 0.01, 0))):
-        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2])
+    for given, stored in (((14.96, 3.665, 13.664, 20.04), (15.0, 3.67, 13.66, 20.0)),
+                          ((90.04, 100.004, 1000.004, 89.04), (90.0, 100.0, 1000.0, 89.0)),
+                          ((-0.04, 0.005, -0.004, -0.04), (0, 0.01, 0, 0))):
+        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2], road_angle_deg=given[3])
         [step] = run_functions([(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": body})])["results"]
         params = step["result"][0]["params"]
-        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"]) == stored
+        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"],
+                params["$road_angle_deg"]) == stored
 
 
 def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
@@ -4617,8 +4630,8 @@ def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
     assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
         "sqlite", "rewrite deployment mounting", "prepared", TMDB)
     assert sql_text(query) == ("UPDATE deployment SET heading_deg = $heading_deg, pitch_deg = $pitch_deg, "
-                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount "
-                               "WHERE id = $id")
+                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount, "
+                               "road_angle_deg = $road_angle_deg WHERE id = $id")
     assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
     assert answer["name"] == "tm-internal: answer mounting correction"
 

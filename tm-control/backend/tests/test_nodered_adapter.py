@@ -135,31 +135,37 @@ def test_correct_heading_posts_json(wire):
     assert json.loads(wire.calls[1][3]) == {"heading_deg": None}
 
 
-def test_correct_mounting_posts_the_five_keys(wire):
+def test_correct_mounting_posts_the_six_keys(wire):
     wire.answer = (204, b"")
     values = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": None, "mount": "pole",
-              "measured": "pitch"}
+              "road_angle_deg": 20.0, "measured": "pitch"}
     assert NodeRed(TOKEN).correct_mounting(DEPLOYMENT, values) is None
     method, url, headers, body, content_type = wire.calls[0]
     assert (method, url, content_type) == ("POST", f"{BASE}/deployments/{DEPLOYMENT}/mounting", "application/json")
     assert headers == {"X-TM-Internal-Token": TOKEN}
-    assert json.loads(body) == {  # exactly the five: `measured` stays in the control app
+    assert json.loads(body) == {  # exactly the six: `measured` stays in the control app
         "heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": None, "mount": "pole",
+        "road_angle_deg": 20.0,
     }
     with pytest.raises(KeyError):  # a key left out is never sent as a clear
         NodeRed(TOKEN).correct_mounting(DEPLOYMENT, {"heading_deg": 40})
+    five = {key: values[key] for key in nodered.MOUNTING_KEYS[:5]}
+    with pytest.raises(KeyError):  # the angle too: the five alone are not a correction
+        NodeRed(TOKEN).correct_mounting(DEPLOYMENT, five)
     assert len(wire.calls) == 1
 
 
-def test_the_correction_carries_the_five_facts_in_the_rules_order():
+def test_the_correction_carries_the_five_facts_and_the_angle():
     from tm_control.modules.location.mounting import FIELDS
 
-    assert nodered.MOUNTING_KEYS == FIELDS  # the adapter doesn't import the modules; this keeps the two lists one
+    # the adapter doesn't import the modules; this keeps the lists one
+    assert nodered.MOUNTING_KEYS == (*FIELDS, "road_angle_deg")
 
 
 def test_a_refused_mounting_raises_without_the_body(wire):
     wire.answer = (400, b'{"error": "bad_request", "detail": "height_m"}')
-    values = {"heading_deg": None, "pitch_deg": None, "height_m": 3.66, "view_distance_m": None, "mount": None}
+    values = {"heading_deg": None, "pitch_deg": None, "height_m": 3.66, "view_distance_m": None, "mount": None,
+              "road_angle_deg": None}
     with pytest.raises(NodeRedError) as raised:
         NodeRed(TOKEN).correct_mounting(DEPLOYMENT, values)
     assert (raised.value.code, raised.value.status) == ("bad_request", 400)
