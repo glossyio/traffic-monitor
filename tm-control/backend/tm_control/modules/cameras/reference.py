@@ -8,6 +8,7 @@ the admin who took them. The picture and zip addresses carry the ticket, so `Hid
 access log (`cli.serve` installs it). nginx's own access log still holds it, as it holds a download link's token.
 """
 
+import dataclasses
 import io
 import json
 import logging
@@ -43,10 +44,21 @@ class HideTickets(logging.Filter):
         return True
 
 
+Mark = Literal["clear", "person", "unchecked"]
+
+
+def mark_of(objects: dict) -> Mark:
+    """The mark a take's `objects` block (people.facts) gives its picture: `person` true is "person", false is "clear",
+    and null (or no answer) is "unchecked"."""
+    person = (objects or {}).get("person")
+    return "unchecked" if person is None else "person" if person else "clear"
+
+
 @dataclass(frozen=True)
-class Reference:
-    ticket: str
-    user_id: int
+class Shot:
+    """One take of a camera's two frames, as shoot.py reads it from Frigate: everything the data file and the zip need,
+    and nothing about who asked or how long it is held."""
+
     camera: str  # the sensors.cameras key, never Frigate's name
     survey_id: str | None
     point: tuple[float, float] | None  # the place's exact lat, lon
@@ -63,6 +75,14 @@ class Reference:
     objects: dict  # what Frigate was tracking around the two pictures, as people.facts gives it
     tm_version: str
     frigate_version: str | None
+
+
+@dataclass(frozen=True)
+class Reference(Shot):
+    """A shot held in memory for the admin who took it, under a ticket."""
+
+    ticket: str
+    user_id: int
     expires: float  # on time.monotonic()'s clock
 
 
@@ -80,9 +100,10 @@ class References:
     def __len__(self) -> int:
         return len(self._held)
 
-    def keep(self, now: float, **fields) -> Reference:
+    def keep(self, now: float, user_id: int, shot: Shot) -> Reference:
         """Hold a new take's pictures; drops the user's earlier take, every expired one, then the oldest past LIMIT."""
-        kept = Reference(ticket=secrets.token_urlsafe(16), expires=now + self.TTL, **fields)
+        fields = {field.name: getattr(shot, field.name) for field in dataclasses.fields(Shot)}
+        kept = Reference(**fields, ticket=secrets.token_urlsafe(16), user_id=user_id, expires=now + self.TTL)
         with self._lock:
             for ticket in [t for t, old in self._held.items() if old.user_id == kept.user_id or now >= old.expires]:
                 del self._held[ticket]
@@ -158,14 +179,14 @@ def iso(when: float) -> str:
     return _utc(when, "%Y-%m-%dT%H:%M:%SZ")
 
 
-def stem(reference: Reference) -> str:
+def stem(reference: Shot) -> str:
     """The name the four files share: tm-reference_<survey id or no-place>_<camera>_<clean picture's UTC time>, with
     every character of the camera's key outside A-Z a-z 0-9 _ - replaced by _."""
     camera = _UNSAFE.sub("_", reference.camera)
     return f"tm-reference_{reference.survey_id or NO_PLACE}_{camera}_{_utc(reference.clean_at, '%Y%m%dT%H%M%SZ')}"
 
 
-def data_file(reference: Reference, with_location: bool) -> dict:
+def data_file(reference: Shot, with_location: bool) -> dict:
     """The data file: the place, the camera, the pictures, the versions, the detect size, every zone, and last what
     Frigate was tracking on the camera when the pictures were taken: `objects` holds whether both questions were
     answered (`checked`), the objects listed before the first picture and after the second (`before` and `after`: each
@@ -197,7 +218,7 @@ def data_file(reference: Reference, with_location: bool) -> dict:
     }
 
 
-def caption(reference: Reference) -> str:
+def caption(reference: Shot) -> str:
     """The drawing's caption: the place, the camera, the clean picture's time in UTC, and which way the camera faces
     when its heading is recorded."""
     text = (
@@ -208,7 +229,7 @@ def caption(reference: Reference) -> str:
     return text if heading is None else f"{text}  ·  facing {facing(heading)}"
 
 
-def package(reference: Reference, with_location: bool) -> bytes:
+def package(reference: Shot, with_location: bool) -> bytes:
     """The zip of the four files, built in memory: the two pictures as they were taken (stored), the data file and
     the drawing (deflated), each dated with the clean picture's UTC time."""
     name = stem(reference)

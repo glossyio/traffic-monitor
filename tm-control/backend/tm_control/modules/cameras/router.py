@@ -36,8 +36,9 @@ from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
 from tm_control.modules.cameras import people, reference
 from tm_control.modules.cameras.names import is_neutral, new_name
+from tm_control.modules.cameras.shoot import NoShot, shoot
 from tm_control.modules.cameras.state import CameraRadar, CameraRow, CamerasState, compare, frigate_now
-from tm_control.modules.cameras.zones import ZoneFacts, detect_size, distance_unit, zone_facts
+from tm_control.modules.cameras.zones import ZoneFacts
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
@@ -335,92 +336,22 @@ def _expired() -> ApiError:
     return ApiError(404, "reference_expired", "These pictures are no longer held on the device. Take them again.")
 
 
-def _live(frame, size: tuple[int, int]) -> bytes:
-    """The frame's bytes when it is the camera's current frame at the detect size; Frigate's error picture comes with
-    a 200 and no header, so its size is what gives it away."""
-    if frame is None or frame.offline or reference.jpeg_size(frame.data) != size:
-        raise _no_picture()
-    return frame.data
-
-
-def _sending(stats, camera: str) -> bool:
-    fps = probes.mapping(probes.mapping(probes.mapping(stats).get("cameras")).get(camera)).get("camera_fps")
-    return isinstance(fps, (int, float)) and not isinstance(fps, bool) and fps > 0
-
-
-def _open_deployment(app_state, survey_id: str, name: str) -> str | None:
-    """The id of the camera's open deployment row at the place; None when Node-RED doesn't answer or has none."""
-    try:
-        rows = app_state.nodered.deployments(survey_id)
-    except NodeRedError:
-        return None
-    found = None
-    for row in rows:
-        if (row.get("sensorType"), row.get("sensorName")) == ("cameras", name) and not row.get("entryEndDateTime"):
-            found = row.get("id")
-    return found if isinstance(found, str) else None
+# What each of shoot's refusals answers: the same errors the other routes give for the same things
+NO_SHOT = {
+    "not_found": _not_found, "unavailable": _unavailable, "changed": _changed, "camera_off": _camera_off,
+    "no_picture": _no_picture,
+}
 
 
 @router.post("/{name}/reference", response_model=ReferenceOut)
 def take_reference(name: str, request: Request, admin: User = Depends(require_admin)) -> ReferenceOut:
     """Take the camera's current frame from Frigate, plain and with its zone outlines, and hold both in memory."""
     app_state = request.app.state
-    settings = app_state.settings
-    config = load_config(app_state)
-    _exists(config, name)
-    whole = fake.frigate_answer(settings)[0] if settings.fake else frigate.config()
-    if whole is None or probes.frigate_safe_mode(whole):
-        raise _unavailable()
-    cameras = probes.mapping(whole.get("cameras"))
-    row = _entry(compare(config.cameras(), cameras, config.radars()), name)
-    if row.in_frigate == "absent" or row.duplicate_of is not None:
-        raise _changed()
-    if row.in_frigate == "off":
-        raise _camera_off()
-    camera = probes.mapping(cameras.get(row.frigate_camera))
-    size = detect_size(camera)
-    if size is None:
-        raise _no_picture()
-    stats = fake.frigate_stats(settings) if settings.fake else frigate.stats()
-    if not _sending(stats, row.frigate_camera):
-        raise _no_picture()
-
-    def frame(zones: bool):
-        if settings.fake:
-            return fake.frigate_frame(settings, row.frigate_camera, zones)
-        return frigate.latest_frame(row.frigate_camera, zones=zones)
-
-    before = people.ask(app_state.nodered, name)
-    clean = _live(frame(False), size)
-    clean_at = time.time()
-    zones_picture = _live(frame(True), size)
-    zones_at = time.time()
-    after = people.ask(app_state.nodered, name) if before is not None else None
-    objects = people.facts(before, after)
-
-    mounting = next((m for m in config.mountings() if (m.sensor_type, m.sensor_name) == ("cameras", name)), None)
-    place = Places(app_state.state).in_use()
-    point = (place.lat, place.lon) if place and place.lat is not None and place.lon is not None else None
-    kept = app_state.references.keep(
-        time.monotonic(),
-        user_id=admin.id,
-        camera=name,
-        survey_id=place.id if place else None,
-        point=point,
-        deployment_id=_open_deployment(app_state, place.id, name) if place else None,
-        pose=reference.pose_of(mounting),
-        clean=clean,
-        zones_picture=zones_picture,
-        clean_at=clean_at,
-        zones_at=zones_at,
-        width=size[0],
-        height=size[1],
-        unit=distance_unit(whole),
-        zones=zone_facts(camera),
-        objects=objects,
-        tm_version=app_state.manifest.tm_version,
-        frigate_version=fake.FAKE_FRIGATE_VERSION if settings.fake else frigate.version(),
-    )
+    try:
+        shot = shoot(app_state, name)
+    except NoShot as refusal:
+        raise NO_SHOT[refusal.code]() from None
+    kept = app_state.references.keep(time.monotonic(), admin.id, shot)
     Audit(app_state.state).record(admin.id, "camera.reference", name)
     return ReferenceOut(
         ticket=kept.ticket,
@@ -433,8 +364,8 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         height=kept.height,
         unit=kept.unit,
         zones=kept.zones,
-        has_location=point is not None,
-        people=people.result(objects),
+        has_location=kept.point is not None,
+        people=people.result(kept.objects),
     )
 
 
