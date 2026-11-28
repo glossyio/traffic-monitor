@@ -16,6 +16,8 @@ The [OmniPreSense OPS243-A](https://omnipresense.com/product/ops243-doppler-rada
 
 Across the tables, `direction` is `inbound` (toward the radar) or `outbound` (away from it), speeds are positive for inbound and negative for outbound, and the unit is the radar's speed unit, mph by default. `radarName` is the radar's name from [config.yml](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#sensorsradars), and `deployment_id` points at the [deployment](https://docs.trafficmonitor.ai/dev/data-and-payloads/data-overview/#deployment) the reading was taken in.
 
+The speeds in these tables are as the radar reported them, with the correction for its mounting angle already applied: the [cosine angles](https://docs.trafficmonitor.ai/dev/configuration/node-red-config/#the-radars-cosine-angles) in force when the reading was taken. The [`setup_radar`](https://docs.trafficmonitor.ai/dev/data-and-payloads/setup-history/#setup_radar) table records which angles the radar said it was using, and when, so a speed can be put back to what the beam measured.
+
 The times come from the radar's own clock, which starts again from zero whenever the radar loses power. The Traffic Monitor sets that clock from the device's clock when the service starts, whenever config.yml is saved, every hour, and within about half a minute of a radar being plugged back in. Once a minute it also asks each radar that is switched on in `config.yml` for its power state, for the [watch log](https://docs.trafficmonitor.ai/dev/data-and-payloads/watch-log/index.md). The answer isn't a reading and isn't stored in these tables.
 
 ## radar_dov

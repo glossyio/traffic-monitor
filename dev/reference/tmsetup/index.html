@@ -2588,7 +2588,7 @@
 </tr>
 <tr>
 <td><code>node-red-tm</code></td>
-<td>Node-RED's container, flows, settings, and the radars it needs. Rerun it after plugging in a radar.</td>
+<td>Node-RED's container, flows, settings, and the radars it needs. The flows it writes have the serial nodes of each radar port that isn't there switched off, so Node-RED opens no port for a radar that isn't plugged in. Rerun it after plugging in a radar.</td>
 </tr>
 <tr>
 <td><code>plate-recognizer</code></td>

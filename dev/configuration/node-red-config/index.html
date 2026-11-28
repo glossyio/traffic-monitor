@@ -1478,6 +1478,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="sensors.radars">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-radars-cosine-angles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The radar's cosine angles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2469,6 +2486,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="sensors.radars">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-radars-cosine-angles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The radar's cosine angles
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2824,10 +2858,22 @@
 <td>Read this radar. Set it to <code>false</code> on a device without a radar.</td>
 </tr>
 <tr>
+<td><code>cosine_inbound_deg</code></td>
+<td>a number from 0 to 89</td>
+<td>blank, which is <code>0</code></td>
+<td>The angle, in degrees, between the radar's beam and traffic coming toward the unit. The radar divides every inbound speed by the cosine of this angle, so it corrects the speed of a vehicle that crosses the beam at an angle. One decimal is kept. See <a href="#the-radars-cosine-angles">The radar's cosine angles</a>.</td>
+</tr>
+<tr>
+<td><code>cosine_outbound_deg</code></td>
+<td>a number from 0 to 89</td>
+<td>blank, which is <code>0</code></td>
+<td>The same for traffic going away from the unit.</td>
+</tr>
+<tr>
 <td><code>opt_api_commands_array</code></td>
 <td>a JSON array in a string</td>
-<td><code>'["^/+0.00\n", "^/-0.00\n"]'</code></td>
-<td>Extra <a href="https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf">OPS243 API</a> commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions.</td>
+<td><code>'[]'</code></td>
+<td>Extra <a href="https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf">OPS243 API</a> commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands and before the two cosine angles. A command that starts with <code>^/</code> is not sent from here: it is a cosine command, and the two keys above set the angles. The <a href="../../use/device-health/">Status</a> page's <strong>Node-RED configuration</strong> check reports it as a problem and names the key.</td>
 </tr>
 <tr>
 <td><code>deployment</code></td>
@@ -2837,6 +2883,15 @@
 </tr>
 </tbody>
 </table>
+<h3 id="the-radars-cosine-angles">The radar's cosine angles<a class="headerlink" href="#the-radars-cosine-angles" title="Permanent link">&para;</a></h3>
+<p>A radar measures the speed along its beam. A vehicle that crosses the beam at an angle is moving faster than the radar reports, by the cosine of that angle, and the radar corrects for it when you tell it the angle. The two keys give the angle for each direction because a radar can face the road at a different angle for traffic coming and going. A blank key is <code>0</code>, which leaves the speed as measured.</p>
+<ul>
+<li>A key that is a number below 0 or above 89, a number in quotes, or anything else that isn't a number is treated as <code>0</code>. The <a href="../../use/device-health/">Status</a> page's <strong>Node-RED configuration</strong> check reports the key's path, and never its value.</li>
+<li>The Traffic Monitor sends the angles after the extra commands, so that no extra command can change them. A blank key is sent as <code>0</code>, which replaces an angle set in the radar some other way.</li>
+<li>The speeds in the <a href="../../data-and-payloads/radar-payload/">radar tables</a> are as the radar reported them, with the correction in force already applied. The <a href="../../data-and-payloads/setup-history/#setup_radar">setup history</a> records which angles the radar reported, and when.</li>
+<li>No page of the control app sets these keys. Set them by editing this file.</li>
+</ul>
+<p>An angle in <code>opt_api_commands_array</code>, such as <code>^/+20.0</code> or <code>^/-20.0</code>, belongs in its key. When Node-RED starts, it moves each one into its key, unless the key already has a value or the angle is 0, and removes it from the list. It saves the file, with a backup beside it, only when something changed. A <code>^/</code> entry it can't read is left in the list, and Node-RED's start-up log names the key it is in.</p>
 <h2 id="sensorsairquality_monitors">sensors.airquality_monitors<a class="headerlink" href="#sensorsairquality_monitors" title="Permanent link">&para;</a></h2>
 <p>One entry per <a href="../../add-ons/air-quality/">air quality sensor</a>, named as the middle part of the topic the sensor publishes to: <code>aq/&lt;name&gt;/readings</code>.</p>
 <table>

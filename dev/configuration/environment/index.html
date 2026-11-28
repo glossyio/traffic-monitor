@@ -2475,7 +2475,7 @@
 <tr>
 <td><code>TM_RADAR_SERIAL_PORT_00</code> to <code>TM_RADAR_SERIAL_PORT_03</code></td>
 <td><code>/dev/ttyACM0</code> to <code>/dev/ttyACM3</code></td>
-<td>The serial port of each radar. The variable's name is the radar's name in <a href="../node-red-config/#sensorsradars">config.yml</a>. The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun <code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>.</td>
+<td>The serial port of each radar. The variable's name is the radar's name in <a href="../node-red-config/#sensorsradars">config.yml</a>. The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun <code>bash traffic-monitor/script/tmsetup.sh -t node-red-tm</code>. Changing one of these lines also needs that run; a restart of Node-RED isn't enough.</td>
 </tr>
 </tbody>
 </table>

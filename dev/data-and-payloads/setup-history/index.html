@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The two setup history tables and the events_with_setup view, which record which detection model, software versions, and camera settings were in force over time, so you can compare counts across them.">
+        <meta name="description" content="The three setup history tables and the events_with_setup view, which record which detection model, software versions, camera settings, and radar answers were in force over time, so you can compare counts and speeds across them.">
       
       
       
@@ -1752,6 +1752,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#setup_radar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setup_radar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#events_with_setup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2452,6 +2463,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#setup_radar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        setup_radar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#events_with_setup" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2526,13 +2548,13 @@
   
   
   <h1 id="setup-history">Setup history<a class="headerlink" href="#setup-history" title="Permanent link">&para;</a></h1>
-<p class="tm-description">The two setup history tables and the events_with_setup view, which record which detection model, software versions, and camera settings were in force over time, so you can compare counts across them.</p>
+<p class="tm-description">The three setup history tables and the events_with_setup view, which record which detection model, software versions, camera settings, and radar answers were in force over time, so you can compare counts and speeds across them.</p>
 <p>The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.</p>
-<p>The device keeps two tables, <code>setup_device</code> for the whole unit and <code>setup_camera</code> for each camera, and one view, <code>events_with_setup</code>. They are in the database, in the <a href="../../ui/database/">Data export</a> page's database download. They are not in the JSON export. With <a href="../../use/sharing/">Share data</a> on, the rows are also <a href="#what-the-device-uploads">uploaded</a>.</p>
+<p>The device keeps three tables, <code>setup_device</code> for the whole unit, <code>setup_camera</code> for each camera, and <code>setup_radar</code> for each radar, and one view, <code>events_with_setup</code>. They are in the database, in the <a href="../../ui/database/">Data export</a> page's database download. They are not in the JSON export. With <a href="../../use/sharing/">Share data</a> on, the rows of <code>setup_device</code> and <code>setup_camera</code> are also <a href="#what-the-device-uploads">uploaded</a>; the rows of <code>setup_radar</code> stay on the device.</p>
 <h2 id="how-the-rows-work">How the rows work<a class="headerlink" href="#how-the-rows-work" title="Permanent link">&para;</a></h2>
 <p>A row says what was true from <code>started</code> until <code>ended</code>. The row in force has no <code>ended</code>. The device starts a new row only when something differs from the row in force, so a unit that is never changed has one row of each kind for months. Every few minutes the device compares the setup with the open rows. A list that is only reordered, such as the same zones in another order, is not a difference.</p>
 <p>Times in these tables are Unix time in milliseconds, as in the deployment history. An event's <code>start_time</code> is in seconds, so the view compares <code>start_time * 1000</code>.</p>
-<p>A camera has a row for each key under <code>sensors.cameras</code> in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> whose Frigate camera exists, named by that key, the same name as <code>events.camera</code>. If two keys point at one Frigate camera, only the one that comes first in <code>config.yml</code> gets a row. A camera's row ends when its key leaves <code>config.yml</code>.</p>
+<p>A camera has a row for each key under <code>sensors.cameras</code> in <a href="../../configuration/node-red-config/#sensorscameras">config.yml</a> whose Frigate camera exists, named by that key, the same name as <code>events.camera</code>. If two keys point at one Frigate camera, only the one that comes first in <code>config.yml</code> gets a row. A camera's row ends when its key leaves <code>config.yml</code>. A radar has a row for each key under <code>sensors.radars</code> the same way, and its row ends when its key leaves <code>config.yml</code>.</p>
 <h2 id="setup_device">setup_device<a class="headerlink" href="#setup_device" title="Permanent link">&para;</a></h2>
 <p>One row for each period in which these facts were the same. The primary key is <code>id</code>.</p>
 <table>
@@ -2852,13 +2874,102 @@
 <span class="w">    </span><span class="nt">"object_filters"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
 <span class="p">}</span>
 </code></pre></div>
+<h2 id="setup_radar">setup_radar<a class="headerlink" href="#setup_radar" title="Permanent link">&para;</a></h2>
+<p>One row for each radar and period. The primary key is <code>id</code>; the rows of one radar are those with the same <code>radar</code>. The columns hold what the radar itself answered when the device set it up, not what <code>config.yml</code> asks for, so a row also shows a radar that was replaced by another model, or that kept an angle you didn't expect.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Meaning</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>TEXT</td>
+<td>The row's id</td>
+<td></td>
+</tr>
+<tr>
+<td><code>started</code></td>
+<td>INTEGER</td>
+<td>When the row's answers began to hold</td>
+<td>Unix time in milliseconds</td>
+</tr>
+<tr>
+<td><code>ended</code></td>
+<td>INTEGER</td>
+<td>When they stopped holding</td>
+<td>Unix time in milliseconds; empty while the row is in force</td>
+</tr>
+<tr>
+<td><code>radar</code></td>
+<td>TEXT</td>
+<td>The radar's key under <code>sensors.radars</code> in <code>config.yml</code></td>
+<td>The same as <code>radarName</code> in the radar tables and in <code>events</code>, such as <code>TM_RADAR_SERIAL_PORT_00</code></td>
+</tr>
+<tr>
+<td><code>part_number</code></td>
+<td>TEXT</td>
+<td>The radar's model, from its <code>Product</code> answer</td>
+<td>Such as <code>OPS243-A</code></td>
+</tr>
+<tr>
+<td><code>firmware_version</code></td>
+<td>TEXT</td>
+<td>The radar's firmware, from its <code>Version</code> answer</td>
+<td></td>
+</tr>
+<tr>
+<td><code>cosine_inbound_deg</code></td>
+<td>REAL</td>
+<td>The angle the radar says it corrects traffic coming toward it by, in degrees, from <code>InboundSensorAngleDegrees</code></td>
+<td>Empty when the radar didn't say. Not <code>0</code>.</td>
+</tr>
+<tr>
+<td><code>cosine_outbound_deg</code></td>
+<td>REAL</td>
+<td>The same for traffic going away, from <code>OutboundSensorAngleDegrees</code></td>
+<td>Empty when the radar didn't say. Not <code>0</code>.</td>
+</tr>
+<tr>
+<td><code>speed_unit</code></td>
+<td>TEXT</td>
+<td>The unit of the radar's speeds, from <code>Units</code></td>
+<td>Such as <code>mph</code></td>
+</tr>
+<tr>
+<td><code>sampling_rate</code></td>
+<td>INTEGER</td>
+<td>The samples the radar takes each second, from <code>SamplingRate</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>speed_min</code></td>
+<td>REAL</td>
+<td>The lowest speed the radar reports, from <code>RequiredMinSpeed</code>, in <code>speed_unit</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>magnitude_min</code></td>
+<td>REAL</td>
+<td>The lowest signal strength the radar reports, from <code>MagnitudeMin</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>After each setup of a radar, which runs when Node-RED starts and whenever you save <code>config.yml</code>, the device asks the radar these questions and compares the answers with the radar's open row. It ends the row and starts a new one only when an answer differs, so a radar nobody touches has one row for months. An answer the radar doesn't give is empty and never <code>0</code>, because a radar that said <code>0</code> is not a radar that said nothing. A round of answers with no part number, as when the radar was unplugged or slow to answer, changes nothing, and the row in force stays. The radar's serial number isn't asked for or kept.</p>
+<p>The two angle columns say what the radar was using, which can differ from what <code>config.yml</code> asks for until the next setup. The <a href="../../configuration/node-red-config/#the-radars-cosine-angles"><code>cosine_inbound_deg</code> and <code>cosine_outbound_deg</code> settings</a> are the ones you change.</p>
 <h2 id="events_with_setup">events_with_setup<a class="headerlink" href="#events_with_setup" title="Permanent link">&para;</a></h2>
 <p>The view lists every column of <code>events</code>, then the setup in force when each event started. An event appears once, whatever the tables hold.</p>
 <ul>
 <li><code>setup_device_id</code>, then the <code>setup_device</code> facts under a <code>setup_</code> prefix: <code>setup_tm_version</code>, <code>setup_model_file</code>, <code>setup_model_sha256</code>, and so on.</li>
 <li><code>setup_camera_id</code>, then the <code>setup_camera</code> facts under a <code>camera_</code> prefix: <code>camera_detect_width</code>, <code>camera_zones</code>, <code>camera_profile</code>, and so on.</li>
+<li><code>setup_radar_id</code>, then the <code>setup_radar</code> facts of the radar named in the event's <code>radarName</code> under a <code>radar_</code> prefix: <code>radar_part_number</code>, <code>radar_firmware_version</code>, <code>radar_cosine_inbound_deg</code>, <code>radar_cosine_outbound_deg</code>, <code>radar_speed_unit</code>, <code>radar_sampling_rate</code>, <code>radar_speed_min</code>, and <code>radar_magnitude_min</code>. An event with no radar has them empty.</li>
 </ul>
-<p>The setup in force is the row with <code>started</code> at or before the event's <code>start_time</code> and with no <code>ended</code>, or an <code>ended</code> after it. An event with no row in force has all of these columns empty.</p>
+<p>The setup in force is the row with <code>started</code> at or before the event's <code>start_time</code> and with no <code>ended</code>, or an <code>ended</code> after it. An event with no row in force has the columns of that setup empty.</p>
 <p>Replace <code>picam_h265</code> below with your camera's name.</p>
 <p>How many events of each label each model counted, with the events that came before the setup history listed apart:</p>
 <div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="k">COALESCE</span><span class="p">(</span><span class="n">setup_model_file</span><span class="p">,</span><span class="w"> </span><span class="s1">'(no setup recorded)'</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">model_file</span><span class="p">,</span>
@@ -2877,6 +2988,17 @@
 <span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">label</span>
 <span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span>
 </code></pre></div>
+<p>A radar that is set to correct for the angle it sits at reports a higher speed than it measured along its beam. To see an event's speed as the beam measured it, undo the correction in force when the event started. This one is for events whose speed came from the radar and that went toward the unit; use <code>radar_cosine_outbound_deg</code> for the ones going away. It uses SQLite's math functions, which recent builds of the <code>sqlite3</code> tool include:</p>
+<div class="highlight"><pre><span></span><code><span class="k">SELECT</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<span class="w">       </span><span class="n">speed_calc</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">reported_speed</span><span class="p">,</span>
+<span class="w">       </span><span class="n">speed_calc</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cos</span><span class="p">(</span><span class="n">radians</span><span class="p">(</span><span class="n">radar_cosine_inbound_deg</span><span class="p">))</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">beam_speed</span><span class="p">,</span>
+<span class="w">       </span><span class="n">radar_cosine_inbound_deg</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">angle</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">events_with_setup</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">speed_source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'radar'</span>
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">direction_calc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'inbound'</span>
+<span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="n">radar_cosine_inbound_deg</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">;</span>
+</code></pre></div>
+<p>An event with an empty angle isn't in the answer: the radar didn't say what it used, so the correction isn't known.</p>
 <p>To compare two models, compare their counts over periods of similar traffic, and check each model's <code>labels_available</code> first: a label a model can't recognise is never counted.</p>
 <h2 id="what-to-know">What to know<a class="headerlink" href="#what-to-know" title="Permanent link">&para;</a></h2>
 <ul>
