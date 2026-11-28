@@ -9,8 +9,10 @@ checks again; the ones here are the page's.
 In fake mode every route asks `app.state.fake_update` instead of the files, the units, and GitHub.
 """
 
+import logging
 import math
 import re
+import sqlite3
 import threading
 import time
 from datetime import datetime, timezone
@@ -34,6 +36,7 @@ from tm_control.modules.update.run import JOB_UNIT, RESUME_UNIT, Run
 from tm_control.modules.update.source import repo_of
 
 router = APIRouter(prefix="/update", tags=["update"])
+log = logging.getLogger(__name__)
 
 CHECK_SPACING = 60  # seconds between two checks of GitHub
 LOG_LINES = 400
@@ -49,12 +52,13 @@ _CHANNELS = ("stable", "development")
 
 STALE_MESSAGE = "That isn't the version the last check found. Check again."
 RUNNING_MESSAGE = "An update is already running."
-NOT_READY_MESSAGE = "This unit can't be updated yet. The checks say why."
-NO_SOURCE_MESSAGE = "This unit doesn't record where its updates come from, so it can't look for one."
-OFFLINE_MESSAGE = "GitHub could not be reached. Check the unit's internet connection and try again."
+NOT_READY_MESSAGE = "This device can't be updated yet. The checks say why."
+NO_SOURCE_MESSAGE = "This device doesn't record where its updates come from, so it can't look for one."
+OFFLINE_MESSAGE = "GitHub could not be reached. Check the device's internet connection and try again."
 ANSWER_MESSAGE = "GitHub gave an answer this version doesn't understand. Try again later."
-LIMITED_MESSAGE = "GitHub is limiting requests from this network. Try again later."
-TOO_SOON_MESSAGE = "A check was made a moment ago. Wait a little before checking again."
+# A 429 always carries Retry-After, and the page adds how long to wait.
+LIMITED_MESSAGE = "GitHub is limiting requests from this network."
+TOO_SOON_MESSAGE = "A check was made a moment ago."
 
 
 def _now() -> datetime:
@@ -139,7 +143,10 @@ def _last_target(run: Run | None) -> tuple[Target, str | None] | None:
 
 
 def _finish_row(app_state, run: Run | None) -> None:
-    """Write `update.finished` for a run that ended, once: the first request that sees it ended writes it."""
+    """Write `update.finished` for a run that ended, once: the first request that sees it ended writes it.
+
+    An audit that can't be read or written (a full disk, say) is logged by kind and never fails the request; the next
+    request tries again."""
     if run is None or run.status not in ("ok", "failed") or not logs.plain_id(run.run_id):
         return
     detail = f"{run.run_id} ok"
@@ -147,16 +154,19 @@ def _finish_row(app_state, run: Run | None) -> None:
         detail = f"{run.run_id} failed" + (f" {run.reason}" if run.reason and _CODE.fullmatch(run.reason) else "")
     prefix = f"{run.run_id} "
     with app_state.update_memory.lock:
-        con = app_state.state.connect()
         try:
-            found = con.execute(
-                "SELECT 1 FROM audit WHERE action = 'update.finished' AND substr(detail, 1, ?) = ? LIMIT 1",
-                (len(prefix), prefix),
-            ).fetchone()
-        finally:
-            con.close()
-        if found is None:
-            Audit(app_state.state).record(None, "update.finished", detail)
+            con = app_state.state.connect()
+            try:
+                found = con.execute(
+                    "SELECT 1 FROM audit WHERE action = 'update.finished' AND substr(detail, 1, ?) = ? LIMIT 1",
+                    (len(prefix), prefix),
+                ).fetchone()
+            finally:
+                con.close()
+            if found is None:
+                Audit(app_state.state).record(None, "update.finished", detail)
+        except sqlite3.Error as error:
+            log.warning("the update's finished row could not be written: %s", type(error).__name__)
 
 
 def _exit_status() -> str:
@@ -248,7 +258,10 @@ def check_for_update(body: CheckRequest, request: Request, admin: User = Depends
         if error.kind == "offline":
             raise ApiError(502, "github_unreachable", OFFLINE_MESSAGE) from None
         raise ApiError(502, "github_answer", ANSWER_MESSAGE) from None
-    memory.offer = found
+    with memory.lock:
+        memory.offer = found
+        if memory.started is not None and memory.started.status == "failed":
+            memory.started = None  # a refused start's words are about then; a check that worked is now
     Audit(app_state.state).record(admin.id, "update.check", f"{found.channel} {found.relation}")
     return _state(app_state)
 
@@ -259,7 +272,11 @@ def start_update(body: StartRequest, request: Request, admin: User = Depends(req
     app_state = request.app.state
     memory = app_state.update_memory
     run = _read(app_state)
+    # The run read here may be one that ended unseen, and the job is about to replace its file: record its end first.
+    _finish_row(app_state, run)
     with memory.lock:
+        if run is not None and run.status == "running":
+            raise ApiError(409, "update_running", RUNNING_MESSAGE)
         found = memory.offer
         if found is not None and found.relation == "ahead" and (found.channel, found.commit) == (
             body.channel, body.commit
@@ -270,8 +287,6 @@ def start_update(body: StartRequest, request: Request, admin: User = Depends(req
             if last is None or (last[0].channel, last[0].commit) != (body.channel, body.commit):
                 raise ApiError(409, "stale_check", STALE_MESSAGE)
             tag = last[1]
-        if run is not None and run.status == "running":
-            raise ApiError(409, "update_running", RUNNING_MESSAGE)
         if any(check.status == "error" for check in before_start(app_state.manifest, run)):
             raise ApiError(409, "not_ready", NOT_READY_MESSAGE)
         run_id = _now().strftime("%Y%m%dT%H%M%SZ")
@@ -286,19 +301,26 @@ def start_update(body: StartRequest, request: Request, admin: User = Depends(req
 
 @router.get("/log", response_model=UpdateLog)
 def get_log(request: Request, admin: User = Depends(require_admin)) -> UpdateLog:
-    """The two units' last journal lines and the run's own log's last lines, redacted as the diagnostics are."""
+    """The two units' last journal lines and the run's own log's last lines, redacted as the diagnostics are.
+
+    When the run names no id (no state file this version can read, or a unit running over an older run's file), the
+    log is the one written most recently, as in the diagnostics."""
     app_state = request.app.state
     fake = app_state.fake_update
     if fake is not None:
         return fake.log()
+    folder = app_state.settings.update_dir
     run = runs.read(app_state)
-    run_id = run.run_id if run is not None and logs.plain_id(run.run_id) else None
     job = [
         line for unit in (JOB_UNIT, RESUME_UNIT) for line in runs.systemd.journal_tail(unit, JOURNAL_LINES) or []
     ]
-    log = logs.run_log(app_state.settings.update_dir, run_id, LOG_LINES, LOG_CAP)
+    if run is not None and run.run_id is not None:
+        run_id = run.run_id if logs.plain_id(run.run_id) else None
+        lines = logs.run_log(folder, run_id, LOG_LINES, LOG_CAP)
+    else:
+        run_id, lines = logs.newest_run_log(folder, LOG_LINES, LOG_CAP)
     return UpdateLog(
         run_id=run_id,
         job=diagnostics.redacted(app_state, job),
-        log=diagnostics.redacted(app_state, log),
+        log=diagnostics.redacted(app_state, lines),
     )

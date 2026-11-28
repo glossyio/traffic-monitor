@@ -16,8 +16,6 @@ from ...adapters import systemd
 
 JOB_UNIT = "tm-job-update.service"
 RESUME_UNIT = "tm-update-resume.service"
-# The stages after which the services have been stopped: a run cut off from here on needs the launcher to carry on.
-SWITCHED = ("switch", "reboot", "health", "cleanup")
 STATE_FILE = "state.json"
 MARKER_FILE = "resume.json"
 BOOT_ID = Path("/proc/sys/kernel/random/boot_id")
@@ -34,7 +32,7 @@ class StageRow(BaseModel):
 
 class Run(BaseModel):
     status: Literal["running", "ok", "failed", "interrupted", "cut_off"]
-    readable: bool  # false: a state file of a schema this version doesn't know
+    readable: bool  # false: a state file is there, of a schema or shape this version doesn't know
     run_id: str | None = None
     channel: str | None = None
     from_version: str | None = None
@@ -89,15 +87,18 @@ def _stages(value: object) -> list[StageRow]:
 
 
 def derive(state: object, *, unit_running: bool, marker: bool, boot_id: str | None) -> Run | None:
-    """The run to show, or None when there is nothing readable and no unit running."""
+    """The run to show, or None when there is nothing readable and no unit running.
+
+    state is the parsed file, None when there is no file, or anything else (DAMAGED, say) for a file this version
+    can't read."""
     readable = isinstance(state, dict) and state.get("schema") == 1 and not isinstance(state.get("schema"), bool)
     file = state if readable else {}
     final = file.get("result") if file.get("result") in ("ok", "failed") else None
     if unit_running:
         if not readable or final:
             # An unreadable file isn't known to be this run's, and a final one is an older run's until the job writes
-            # its own, so neither is shown.
-            return Run(status="running", readable=readable)
+            # its own, so neither is shown. No file at all is a first run that hasn't written one yet.
+            return Run(status="running", readable=readable or state is None)
         return _run("running", file)
     if not readable:
         return None
@@ -117,7 +118,7 @@ def _run(status: str, file: dict) -> Run:
     return Run(
         status=status,
         readable=True,
-        run_id=_text(file.get("run_id"), 40),
+        run_id=_text(file.get("run_id"), 64),  # the hand-over's rule: 1 to 64 characters
         channel=_text(file.get("channel"), 40),
         from_version=_text(origin.get("version"), 100),
         from_commit=_commit(origin.get("commit")),
@@ -133,14 +134,20 @@ def _run(status: str, file: dict) -> Run:
     )
 
 
+# What _state_file gives for a file that is there but can't be read: too large, not JSON, or not a file to read.
+DAMAGED = object()
+
+
 def _state_file(path: Path) -> object:
-    """The parsed file, or None when it is missing, too large, or not JSON."""
+    """The parsed file, None when there is none, or DAMAGED."""
     try:
         if path.stat().st_size > MAX_FILE:
-            return None
+            return DAMAGED
         return json.loads(path.read_text())
-    except (OSError, ValueError, RecursionError):  # a bad encoding is a ValueError too
+    except FileNotFoundError:
         return None
+    except (OSError, ValueError, RecursionError):  # a bad encoding is a ValueError too
+        return DAMAGED
 
 
 def _running(unit: str) -> bool:

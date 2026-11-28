@@ -4,14 +4,19 @@ nothing here touches the network."""
 import io
 import json
 import socket
+import subprocess
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 import pytest
 
 from tm_control.adapters import github
 from tm_control.adapters.github import GithubError
+
+BACKEND = Path(__file__).resolve().parent.parent
 
 REPO = "glossyio/traffic-monitor"
 COMMIT = "a" * 40
@@ -308,3 +313,12 @@ def test_a_release_answer_of_another_shape_is_refused(ask, body):
 def test_a_release_without_a_date_has_none(ask):
     ask({f"/repos/{REPO}/releases/latest": Reply(body={"tag_name": "v1.2.3", "published_at": None})})
     assert github.latest_release(REPO) == {"tag": "v1.2.3", "published_at": None}
+
+
+def test_the_adapter_can_be_the_first_thing_imported():
+    # A fresh interpreter, so nothing else has loaded the modules first.
+    found = subprocess.run(
+        [sys.executable, "-B", "-c", "from tm_control.adapters import github"], cwd=BACKEND, capture_output=True,
+        text=True, timeout=60,
+    )
+    assert found.returncode == 0, found.stderr

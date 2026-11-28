@@ -59,7 +59,6 @@ def check(repo: str, installed_commit: str, installed_version: str, channel: str
         try:
             found = github.compare(repo, installed_commit, commit)
             relation, ahead_by = found["status"], found["ahead_by"]
-            known = True
         except GithubError as error:
             if error.kind != "not_found":
                 raise

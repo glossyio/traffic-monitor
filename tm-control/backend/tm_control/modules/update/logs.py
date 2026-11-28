@@ -48,15 +48,30 @@ def run_log(folder: Path, run_id: object, count: int, cap: int) -> list[str]:
     return tail(folder / LOG_FOLDER / f"{run_id}.log", count, cap) or []
 
 
-def newest_log(folder: Path, count: int, cap: int) -> list[str] | None:
-    """The last lines of the log written most recently, or None when there is none."""
+def _newest(folder: Path, plain_only: bool) -> Path | None:
     try:
-        found = [(path.stat().st_mtime, path) for path in (folder / LOG_FOLDER).glob("*.log") if path.is_file()]
+        found = [
+            (path.stat().st_mtime, path) for path in (folder / LOG_FOLDER).glob("*.log")
+            if path.is_file() and (not plain_only or plain_id(path.stem))
+        ]
     except OSError:
         return None
-    if not found:
-        return None
-    return tail(max(found, key=lambda item: item[0])[1], count, cap)
+    return max(found, key=lambda item: item[0])[1] if found else None
+
+
+def newest_log(folder: Path, count: int, cap: int) -> list[str] | None:
+    """The last lines of the log written most recently, or None when there is none."""
+    path = _newest(folder, plain_only=False)
+    return None if path is None else tail(path, count, cap)
+
+
+def newest_run_log(folder: Path, count: int, cap: int) -> tuple[str | None, list[str]]:
+    """The run id and last lines of the run log written most recently, among those named <plain id>.log (the only
+    names a run's log has); (None, []) when there is none."""
+    path = _newest(folder, plain_only=True)
+    if path is None:
+        return None, []
+    return path.stem, tail(path, count, cap) or []
 
 
 def state_text(folder: Path) -> str | None:

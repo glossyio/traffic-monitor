@@ -1640,6 +1640,9 @@ export interface paths {
         /**
          * Get Log
          * @description The two units' last journal lines and the run's own log's last lines, redacted as the diagnostics are.
+         *
+         *     When the run names no id (no state file this version can read, or a unit running over an older run's file), the
+         *     log is the one written most recently, as in the diagnostics.
          */
         get: operations["get_log_api_v1_update_log_get"];
         put?: never;

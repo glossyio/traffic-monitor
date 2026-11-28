@@ -15,7 +15,7 @@ def before_start(manifest: Manifest, run: Run | None) -> list[Check]:
         found.append(
             Check(
                 id="update.source", title="Update source", status="error",
-                detail="This unit doesn't record where its updates come from, so it can't look for one.",
+                detail="This device doesn't record where its updates come from, so it can't look for one.",
                 fix=RUN_THE_INSTALLER,
             )
         )

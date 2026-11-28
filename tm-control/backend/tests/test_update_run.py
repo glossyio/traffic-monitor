@@ -64,6 +64,12 @@ def test_the_runs_status_comes_from_the_file_the_units_and_the_marker(file, unit
     assert (found.status if found else None) == status
 
 
+def test_no_file_yet_with_a_unit_running_is_a_run_with_nothing_unreadable():
+    # A device's first update: the job has started and hasn't written its file yet.
+    found = derive(None, unit_running=True, marker=False, boot_id=BOOT)
+    assert (found.status, found.readable, found.run_id, found.stages) == ("running", True, None, [])
+
+
 def test_a_run_that_is_going_shows_what_the_file_holds():
     found = derive(fixture("running"), unit_running=True, marker=False, boot_id=BOOT)
     assert found.readable is True
@@ -125,7 +131,7 @@ def test_a_file_of_the_wrong_shape_never_raises(bad, unit_running):
     try:
         state = json.loads(bad)
     except ValueError:
-        state = None
+        state = run.DAMAGED  # what the reader gives for a file that is there but isn't JSON
     found = derive(state, unit_running=unit_running, marker=False, boot_id=BOOT)
     if unit_running:
         assert found.status == "running" and found.readable is False
@@ -223,6 +229,15 @@ def test_no_file_or_an_unreadable_one_with_nothing_running_is_no_run(world, cont
     if content is not None:
         (world.folder / "state.json").write_text(content)
     assert run.read(world.app_state) is None
+
+
+@pytest.mark.parametrize(("content", "readable"), [(None, True), ("not json", False), ("\x00", False), ("[]", False)])
+def test_with_a_unit_running_only_a_file_that_is_there_and_unknown_is_unreadable(world, content, readable):
+    if content is not None:
+        (world.folder / "state.json").write_text(content)
+    world.units.active[run.JOB_UNIT] = "activating"
+    found = run.read(world.app_state)
+    assert (found.status, found.readable) == ("running", readable)
 
 
 def test_a_file_that_is_not_text_never_raises(world):

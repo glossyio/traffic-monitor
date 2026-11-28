@@ -487,7 +487,7 @@ class FakeUpdate:
             from_version=self.manifest.tm_version, from_commit=self.manifest.git.commit, to_version=begun["version"],
             to_commit=begun["commit"], to_tag=begun["tag"], stage=shown[-1].id,
             stages=shown, reason="build_failed" if status == "failed" else None,
-            detail="The images could not be built." if status == "failed" else None,
+            detail="frigate" if status == "failed" else None,  # a real detail is a short name, such as the image's
             finished_at=shown[-1].finished_at if ended else None,
         )
 

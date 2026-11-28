@@ -15,7 +15,7 @@ from http.client import HTTPException
 from typing import Any
 from urllib.parse import urlsplit
 
-from ..modules.update.source import is_repo
+from ..core.repository import is_repo
 
 HOST = "api.github.com"
 TIMEOUT = 10  # seconds for the connection and for each read
@@ -60,7 +60,8 @@ def _build_opener() -> urllib.request.OpenerDirector:
 _OPENER = _build_opener()
 _clock = time.time
 
-# path (with its query) -> (ETag, body): a 304 answers with the body kept here, and GitHub does not count it.
+# path (with its query) -> (ETag, body): a 304 answers with the body kept here, which saves the download. GitHub
+# leaves a 304 out of its rate limit only for a request with a login, and these send none, so it still counts.
 _KEPT: dict[str, tuple[str, bytes]] = {}
 
 

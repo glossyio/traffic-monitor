@@ -267,6 +267,7 @@ def test_a_second_check_within_a_minute_is_429_with_the_wait(device_client, logi
     r = check(device_client, "development")
     assert r.status_code == 429
     assert r.json()["error"]["code"] == "rate_limited"
+    assert r.json()["error"]["message"] == "A check was made a moment ago."  # the page adds the wait
     assert r.headers["Retry-After"] == "15"
     assert len(online.asked) == asked
     clock.now += 15
@@ -286,6 +287,10 @@ def test_githubs_troubles_are_answers_not_errors(device_client, login, online, s
     assert r.json()["error"]["code"] == code
     if kind == "rate_limited":
         assert r.headers["Retry-After"] == "90"
+        assert r.json()["error"]["message"] == "GitHub is limiting requests from this network."
+    if kind == "offline":
+        assert r.json()["error"]["message"] == (
+            "GitHub could not be reached. Check the device's internet connection and try again.")
     assert get(device_client)["offer"] is None
     assert audit_rows(settings, "update.check") == []
 
@@ -298,6 +303,9 @@ def test_a_check_with_no_usable_source_is_409_and_asks_nothing(device_client, lo
     r = check(device_client)
     assert r.status_code == 409
     assert r.json()["error"]["code"] == "no_source"
+    assert r.json()["error"]["message"] == (
+        "This device doesn't record where its updates come from, so it can't look for one.")
+    assert get(device_client)["checks"][0]["detail"] == r.json()["error"]["message"]
 
 
 def test_a_check_for_another_channel_is_refused_by_the_schema(device_client, login, offline):
@@ -359,6 +367,107 @@ def test_a_start_while_a_run_is_running_is_409(device_client, login, online, job
     assert body["run"]["status"] == "running" and body["can_start"] is False
 
 
+def test_a_second_try_again_while_the_first_ones_job_runs_is_update_running(
+    device_client, login, offline, jobs, units, settings
+):
+    admin(device_client, login)
+    write_state(settings, stable_state(result="failed", reason="build_failed"))
+    assert get(device_client)["retry"] == {"channel": "stable", "commit": OFFERED}
+    assert start(device_client).status_code == 202  # tab 1's Try again
+    units.shown[JOB_UNIT]["ActiveState"] = "activating"
+    r = start(device_client)  # tab 2's, from the same page as it was
+    assert r.status_code == 409 and r.json()["error"]["code"] == "update_running"
+    assert len(jobs.started) == 1
+
+
+def test_a_start_that_is_first_to_see_the_last_run_ended_writes_its_finished_row_first(
+    device_client, login, online, jobs, units, settings
+):
+    admin(device_client, login)
+    assert check(device_client).status_code == 200  # tab 1: the offer is kept; no poll follows
+    write_state(settings, stable_state(run_id="20261126T110000Z", result="failed", reason="build_failed"))  # unseen
+    started = jobs.start
+
+    def start_and_activate(name, request, user_id):  # the unit is activating by the time the start returns
+        units.shown[JOB_UNIT]["ActiveState"] = "activating"
+        return started(name, request, user_id)
+
+    device_client.app.state.jobs.start = start_and_activate
+    assert start(device_client).status_code == 202  # tab 1's Update: the first request to see that run ended
+    write_state(settings, stable_state(run_id=RUN_ID))  # the job's own file replaces the ended run's
+    get(device_client)
+    units.shown[JOB_UNIT]["ActiveState"] = "inactive"
+    write_state(settings, stable_state(run_id=RUN_ID, result="ok"))
+    get(device_client)
+    rows = [(action, detail) for action, detail, _ in audit_rows(settings) if action != "update.check"]
+    assert rows == [
+        ("update.finished", "20261126T110000Z failed build_failed"),
+        ("update.start", "stable 2222222"),
+        ("update.finished", f"{RUN_ID} ok"),
+    ]
+
+
+def test_a_try_again_that_is_first_to_see_the_last_run_ended_writes_its_finished_row_first(
+    device_client, login, offline, jobs, settings
+):
+    admin(device_client, login)
+    write_state(settings, stable_state(run_id="20261126T100000Z", result="failed", reason="build_failed"))
+    assert get(device_client)["retry"] == {"channel": "stable", "commit": OFFERED}  # tab 1 shows Try again
+    write_state(settings, stable_state(run_id="20261126T110000Z", result="failed", reason="images_failed"))  # unseen
+    assert start(device_client).status_code == 202
+    rows = [(action, detail) for action, detail, _ in audit_rows(settings)]
+    assert rows == [
+        ("update.finished", "20261126T100000Z failed build_failed"),
+        ("update.finished", "20261126T110000Z failed images_failed"),
+        ("update.start", "stable 2222222"),
+    ]
+
+
+def test_an_audit_that_cannot_be_written_never_turns_an_answer_into_an_error(
+    device_client, login, offline, settings, monkeypatch, caplog
+):
+    admin(device_client, login)
+    write_state(settings, state_of("failed"))
+
+    def full(self, *args, **kwargs):
+        raise sqlite3.OperationalError("database or disk is full: /some/path")
+
+    monkeypatch.setattr(router_module.Audit, "record", full)
+    body = get(device_client)
+    assert body["run"]["status"] == "failed"
+    assert "OperationalError" in caplog.text and "disk is full" not in caplog.text
+    monkeypatch.undo()
+    get(device_client)
+    assert audit_rows(settings, "update.finished") == [
+        ("update.finished", "20261126T101500Z failed build_failed", None)]
+
+
+def test_a_failed_start_is_dropped_at_the_next_check_that_works(device_client, login, online, jobs, units, clock):
+    admin(device_client, login)
+    check(device_client)
+    start(device_client)
+    jobs.status = "failed"
+    units.shown[JOB_UNIT]["ExecMainStatus"] = "75"
+    assert get(device_client)["started"]["reason"] == "busy"
+    clock.now += 61
+    online.error = GithubError("offline")
+    assert check(device_client).status_code == 502
+    assert get(device_client)["started"]["reason"] == "busy"  # kept until a check works
+    clock.now += 61
+    online.error = None
+    r = check(device_client)
+    assert r.status_code == 200 and r.json()["started"] is None
+    assert get(device_client)["started"] is None
+
+
+def test_a_check_leaves_a_start_that_is_still_starting(device_client, login, online, jobs, clock):
+    admin(device_client, login)
+    check(device_client)
+    start(device_client)
+    clock.now += 61
+    assert check(device_client).json()["started"]["status"] == "starting"
+
+
 def test_a_start_with_the_addon_is_409_not_ready(device_client, login, online, jobs):
     admin(device_client, login)
     check(device_client)
@@ -367,6 +476,7 @@ def test_a_start_with_the_addon_is_409_not_ready(device_client, login, online, j
     assert "update.addon" in ids(get(device_client)["checks"])
     r = start(device_client)
     assert r.status_code == 409 and r.json()["error"]["code"] == "not_ready"
+    assert r.json()["error"]["message"] == "This device can't be updated yet. The checks say why."
     assert jobs.started == []
 
 
@@ -537,6 +647,53 @@ def test_a_missing_log_or_state_is_an_empty_answer(device_client, login, offline
     assert body == {"run_id": None, "job": ["job line", "resume line"], "log": []}
     write_state(settings, state_of("ok"))
     assert device_client.get(f"{URL}/log").json()["log"] == []
+
+
+@pytest.mark.parametrize("length", [40, 41, 64])
+def test_a_run_id_up_to_64_characters_reads_its_log_and_is_audited_whole(
+    device_client, login, offline, settings, length
+):
+    admin(device_client, login)
+    run_id = ("bench-20261125T101500Z-" + "a" * 64)[:length]
+    write_state(settings, state_of("ok") | {"run_id": run_id})
+    write_log(settings, run_id, "the run's log\n")
+    body = device_client.get(f"{URL}/log").json()
+    assert (body["run_id"], body["log"]) == (run_id, ["the run's log"])
+    assert get(device_client)["run"]["run_id"] == run_id
+    assert audit_rows(settings, "update.finished") == [("update.finished", f"{run_id} ok", None)]
+
+
+def test_the_log_of_a_run_whose_state_file_this_version_cannot_read_is_the_newest(
+    device_client, login, offline, units, settings
+):
+    admin(device_client, login)
+    units.shown[JOB_UNIT]["ActiveState"] = "active"
+    write_state(settings, state_of("later_version"))
+    write_log(settings, "20261126T101500Z", "2026-11-26T10:15:02Z stage prepare\n")
+    older = settings.update_dir / "log" / "20260101T000000Z.log"
+    older.write_text("an older run\n")
+    os.utime(older, (1, 1))
+    assert get(device_client)["run"]["readable"] is False
+    body = device_client.get(f"{URL}/log").json()
+    assert body == {
+        "run_id": "20261126T101500Z", "job": ["job line", "resume line"], "log": ["2026-11-26T10:15:02Z stage prepare"],
+    }
+
+
+def test_the_log_with_a_later_versions_file_and_nothing_running_is_the_newest(device_client, login, offline, settings):
+    admin(device_client, login)
+    write_state(settings, state_of("later_version"))
+    write_log(settings, "20261126T101500Z", "failed somewhere new\n")
+    assert get(device_client)["run"] is None
+    body = device_client.get(f"{URL}/log").json()
+    assert (body["run_id"], body["log"]) == ("20261126T101500Z", ["failed somewhere new"])
+
+
+def test_no_log_folder_is_an_empty_log(device_client, login, offline, units, settings):
+    admin(device_client, login)
+    units.shown[JOB_UNIT]["ActiveState"] = "active"
+    write_state(settings, state_of("later_version"))
+    assert device_client.get(f"{URL}/log").json() == {"run_id": None, "job": ["job line", "resume line"], "log": []}
 
 
 def test_a_log_that_is_a_link_is_not_followed(device_client, login, offline, settings):
