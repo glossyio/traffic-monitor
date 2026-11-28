@@ -14,12 +14,14 @@ from tm_update_support import (
     COMMIT,
     OTHER_BOOT,
     RUN,
+    SLICE_STOP,
     SWITCH_USEC,
     Device,
+    handover_dict,
     manifest,
 )
 
-from tm_update import installed as installed_module, playbook, restore
+from tm_update import installed as installed_module, playbook, proc, restore
 from tm_update.state import Failed
 
 SCRIPT = Path(__file__).resolve().parents[1] / "tm-update"
@@ -194,8 +196,99 @@ def test_a_manifest_that_cannot_be_trusted_ends_the_run_as_a_manual_update(tmp_p
     assert device.main() == 1
     state = device.state()
     assert (state["result"], state["reason"]) == ("failed", "needs_manual_update")
-    assert state["from"] == {"version": None, "commit": None}
+    assert state["from"] == {"version": "0.7.1", "commit": None}
     assert device.stages == []
+
+
+def test_a_manifest_refusal_still_names_the_version_the_caller_gave(tmp_path, monkeypatch):
+    device = Device(tmp_path, monkeypatch, with_manifest=False)
+    device.handover_path.write_text(json.dumps(handover_dict(device.paths, from_version="0.8.0")))
+    assert device.main() == 1
+    state = device.state()
+    assert (state["result"], state["reason"]) == ("failed", "needs_manual_update")
+    assert state["from"] == {"version": "0.8.0", "commit": None}
+
+
+def test_a_dead_runs_builds_are_stopped_before_its_leftovers_are_cleared(device):
+    other = device.paths.work_root / "older-run"
+    other.mkdir(parents=True)
+    device.images = [{"Id": "id1", "Names": ["localhost/frigate-tm:prepare-abc1234"]}]
+    seen = {}
+    answer = device.run.answer
+
+    def look(call):
+        if call["argv"] == SLICE_STOP:
+            seen["old_folder"] = other.exists()
+        return answer(call)
+
+    device.run.answer = look
+    assert device.main() == 0
+    # With the lock held nothing of this run builds yet, so whatever runs in the slice is a dead run's
+    assert device.run.calls[0]["argv"] == SLICE_STOP
+    assert device.run.calls[0]["timeout"] and device.run.calls[0]["log"] is not None
+    assert seen["old_folder"] is True
+    assert device.events.index(SLICE_STOP) < device.events.index(["podman", "images", "--format", "json"])
+    assert device.systemctl_calls("stop").count(SLICE_STOP) == 1
+
+
+@pytest.mark.parametrize("answer", [5, OSError("no systemctl"), subprocess.TimeoutExpired(["systemctl"], 1)])
+def test_a_slice_stop_that_fails_is_logged_and_the_rest_runs(device, answer):
+    other = device.paths.work_root / "older-run"
+    other.mkdir(parents=True)
+    device.images = [{"Id": "id1", "Names": ["localhost/frigate-tm:prepare-abc1234"]}]
+    device.systemctl[("stop", "tm-update.slice")] = answer
+    assert device.main() == 0
+    assert "could not stop what an earlier run left building" in device.log()
+    assert not other.exists()
+    assert ["podman", "untag", "id1", "localhost/frigate-tm:prepare-abc1234"] in device.run.argvs()
+    assert device.state()["result"] == "ok"
+
+
+def test_each_playbook_run_has_its_limit(tmp_path, monkeypatch):
+    real = playbook.run_playbook
+    device = Device(tmp_path, monkeypatch)
+    monkeypatch.setattr(playbook, "run_playbook", real)
+    device.main()
+    runs = [(call["argv"][3:4] + call["argv"][6:], call["timeout"]) for call in device.run.calls
+            if call["argv"][0].endswith("/ansible-playbook")]
+    assert runs == [(["update_prepare.yml", "--tags", "stage"], 1800),
+                    (["update_prepare.yml", "--tags", "images"], 7200),
+                    (["setup.yml"], 2700)]
+
+
+def test_a_timed_out_prepare_ends_as_prepare_failed_with_the_minutes(device):
+    device.playbook_rc[("stage",)] = proc.TimedOut("/v/bin/ansible-playbook", 1800)
+    assert device.main() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["stage"], state["detail"]) == (
+        "failed", "prepare_failed", "prepare", "timed out after 30 min")
+    assert device.systemctl_calls("stop") == [SLICE_STOP]
+    assert "Traceback" not in device.log()
+
+
+def test_a_timed_out_prepare_keeps_its_usual_code_whatever_the_reason_file_says(device):
+    def write_reason_then_time_out():
+        device.work.mkdir(parents=True, exist_ok=True)
+        (device.work / "reason").write_text("low_space\n")
+
+    device.when_a_stage_starts = write_reason_then_time_out
+    device.playbook_rc[("stage",)] = proc.TimedOut("/v/bin/ansible-playbook", 1800)
+    assert device.main() == 1
+    assert (device.state()["reason"], device.state()["detail"]) == ("prepare_failed", "timed out after 30 min")
+
+
+@pytest.mark.parametrize("stop", [0, 5])
+def test_a_timed_out_image_build_ends_as_build_failed_and_stops_the_slice(device, stop):
+    device.playbook_rc[("images",)] = proc.TimedOut("/v/bin/ansible-playbook", 7200)
+    device.systemctl[("stop", "tm-update.slice")] = stop
+    assert device.main() == 1
+    state = device.state()
+    assert (state["result"], state["reason"], state["stage"], state["detail"]) == (
+        "failed", "build_failed", "images", "timed out after 120 min")
+    images = device.events.index(("playbook", "update_prepare.yml", ("images",)))
+    assert device.events[images + 1:] == [SLICE_STOP]
+    assert device.systemctl_calls("stop") == [SLICE_STOP, SLICE_STOP]
+    assert "Traceback" not in device.log()
 
 
 def test_a_dead_runs_work_folders_and_build_tags_are_cleared_first(device):
@@ -480,7 +573,7 @@ def test_an_unhealthy_update_leaves_the_new_version_and_keeps_its_work_folder(de
     assert json.loads(device.paths.manifest.read_text())["git"]["commit"] == COMMIT
     assert (device.work / "vars.json").is_file()
     assert not device.paths.resume.exists()
-    assert device.systemctl_calls("start") == [] and len(device.systemctl_calls("stop")) == 1
+    assert device.systemctl_calls("start") == [] and len(device.unit_stops()) == 1
     assert [row["id"] for row in state["stages"]][-1] == "health"
     assert state["tmdb_backup"] is None
 
@@ -659,7 +752,7 @@ def test_a_first_switch_that_fails_before_its_marker_stops_and_starts_nothing(de
     state = device.state()
     assert (state["reason"], state["stage"], state["detail"]) == ("switch_failed", "switch", "unexpected OSError")
     assert state["switch_attempts"] == 0
-    assert device.systemctl_calls("stop") == [] and device.systemctl_calls("start") == []
+    assert device.unit_stops() == [] and device.systemctl_calls("start") == []
     assert not device.paths.resume.exists()
 
 

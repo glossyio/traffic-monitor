@@ -1,21 +1,123 @@
 ---
-description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.
+description: How a device installs a new version without anyone at a keyboard: the update job that fetches and checks a version, tm-update's two phases, the stages and reason codes, the files and units involved, the contract a later version must honor, restoring by hand, and running an update on a bench device.
 ---
 
 # Software update
 
-`tm-update` installs the version it ships with onto the device it runs on. It runs as root with no terminal, and it keeps the old version running while it downloads and builds everything the new one needs. A page in the control app that starts it, and the job that fetches and checks a new version, are planned. This page covers the installer side: what `tm-update` does, what it leaves on a device, and the files a later version must keep reading.
+`tm-update` installs the version it ships with onto the device it runs on. It runs as root with no terminal, and it keeps the old version running while it downloads and builds everything the new one needs. An administrator starts an update from the **Software update** page of the control app. The page asks GitHub what a channel offers, and when the administrator confirms, the control app starts the update job, a small root program that fetches that version, checks it, and hands over to the version's own `tm-update`. This page covers the whole chain: the job, what `tm-update` does, what both leave on a device, and the files a later version must keep reading. The page and the API behind it are described in [tm-control](tm-control.md#the-update-module).
 
 The command is [`script/tm-update`](https://github.com/glossyio/traffic-monitor/blob/main/script/tm-update), and its code is the [`tm_update` package](https://github.com/glossyio/traffic-monitor/tree/main/script/tm_update) beside it. The package imports only Python's standard library, because the device runs it with `/usr/bin/python3 -EP` before anything of the new version is installed. It never opens `tmdb.sqlite`, and it opens the control app's database only read-only, to copy it into the restore point.
 
 `tm-update` doesn't go through `tmsetup.sh`. It runs the same Ansible role itself, from the new version's own tree, with a variables file it writes. The `tmsetup_update_mode` variable switches the role into update mode. The two share one lock, so an install and an update never run at once.
+
+## The update job
+
+The job is [`tm-control/jobs/tm-job-update`](https://github.com/glossyio/traffic-monitor/blob/main/tm-control/jobs/tm-job-update). It runs as root, as the unit `tm-job-update.service`, on the system's Python (`/usr/bin/python3 -EP`), because an update rewrites the control app's virtual environment while it runs. It imports only Python's standard library and nothing from the control app or from `tm-update`, so the job stays the release that installed it until an update replaces it. Every outside command is an argument list, never a shell string, and each step prints one plain line. The text git prints goes to the journal, and no rule reads it.
+
+### What starts it
+
+The control app starts the job when an administrator confirms an update, after it writes the request `/run/tm-control/jobs/update.json`. The control app runs as the code owner, so the job treats the request as hostile, as every job does: the jobs folder must be the code owner's and writable by no one else, the request a small plain file of the code owner's with one link, opened without following a symlink, and it is deleted once read. The request holds exactly four keys:
+
+| Key | Value |
+|---|---|
+| `run_id` | A UTC time, `YYYYMMDDTHHMMSSZ`, which the control app makes. |
+| `channel` | `stable` or `development`. |
+| `commit` | The full 40-character commit id of the version to install. |
+| `tag` | A release tag such as `v0.8.1`, or `null`. |
+
+The request never names an address or a ref. The one place the job fetches from is `https://github.com/<repo>.git`, where `<repo>` is `update.repo` in the manifest (`owner/name`, the rule the installer, `tm-update`, the control app, and the job all share). Everything the request says is checked against what the job fetched itself.
+
+### The checks, in order
+
+Each refusal ends the run `failed` with a [reason code](#the-reason-codes) and exits 1, except the first three, which write no state file.
+
+| Step | What the job does | If it refuses |
+|---|---|---|
+| 1 | Reads the manifest's code owner and the request. | Prints one line and exits 64. |
+| 2 | Looks for a [resume marker](#a-run-that-was-cut-off-comes-first). | Not a refusal: the job becomes the launcher and finishes that run first. |
+| 3 | Takes the run lock that `tm-update` and `tmsetup.sh` take. | Prints `busy` and exits 75. |
+| 4 | Reads the rest of the manifest, each value type-checked, then starts this run's state file. | `needs_manual_update`. The state file is started anyway, with `version` and `commit` under `from` both `null`, because the manifest couldn't be read. |
+| 5 | Stage `fetch`: fetches into [the mirror](#the-mirror). | `fetch_failed`, or `prepare_failed` when the mirror can't be made. |
+| 6 | Stage `verify`: the commit is in the mirror, on the channel's branch, and for `stable` a `vX.Y.Z` tag names it; `development` takes no tag. | `stale_check`. |
+| 7 | Forward only. When the mirror holds the installed commit, it must be an ancestor of the target and not the target. When it doesn't (or the manifest says `unknown`), `stable` compares versions and `development` is refused. | `not_forward`. The same commit again is allowed only after [a failed run that `tm-update` ran for](#running-the-same-version-again). |
+| 8 | Reads the tree's own `script/tm-update` and `script/update.json` from the mirror. | `target_not_updatable` for no `script/tm-update`, no readable `update.json`, or on `stable` a version that isn't the tag's. `needs_manual_update` for a tree that [doesn't accept contract 1](#how-a-release-says-it-cant-be-installed-this-way). Keys of `update.json` the job doesn't read are ignored. |
+| 9 | Opens `tmdb.sqlite` and the control app's `state.sqlite` read-only. Neither may be newer than the tree knows (`tmdb_schema` and `state_schema` in its `update.json`). | `schema_newer`. |
+| 10 | Unpacks the tree into `src/<commit>.partial`, renames it, and writes the [hand-over](#the-hand-over-file) in a fresh `work/<run_id>/`. | `prepare_failed`, or `target_not_updatable` when the tree has no runnable `script/tm-update`. |
+| 11 | Lets go of the lock and becomes the tree's `script/tm-update run --contract 1 --handover <file>`. | Its exit status is the unit's from then on. |
+
+An error the job didn't expect ends the run `prepare_failed`. Before step 10 nothing on the device changes but the mirror and the state file, and nothing in use changes before the switch.
+
+The job's exit statuses stand beside `tm-update`'s 0, 1, and 2:
+
+| Status | Meaning |
+|---|---|
+| 0, 1, 2 | `tm-update`'s, once the job has handed over; or 1 when the job's own check refused. 0 and 2 are also the launcher's, when a marker came first. |
+| 1 | Also, with no state written for the run: the launcher couldn't be started, the lock file or the state file couldn't be made or written, or `tm-update` couldn't be started after the job let go of the lock and another run then held it. The job prints one line saying which. |
+| 64 | No usable request or manifest owner. The job writes none of its files. |
+| 75 | Another install or update holds the lock. The job writes none of its files. |
+
+For 64 and 75 the unit still runs its `ExecStopPost` commands as it ends, so it stops `tm-update.slice` (see [the units](#the-units)). That matters only for a run started by hand, which [the page can't see](#run-an-update-by-hand-on-a-bench-device).
+
+The limits are 3600 seconds for the fetch, 120 for any other git command, and 600 for the unpack. A first full fetch of the repository, about 82 MB today, needs roughly 0.18 Mbit/s to finish inside its hour, so a slower connection never completes the first update. git also gives up on a transfer that stays under 1 kB/s for a minute.
+
+### The mirror
+
+The mirror is a bare repository, `/var/lib/traffic-monitor/src/repo.git`, that holds `main`, `dev`, and the `v*` tags of the one repository. It is root's, and only the job touches it, under the run lock. The job gives git no configuration but the mirror's own and asks nothing: it speaks only https, follows no redirect, checks every object it receives (`transfer.fsckObjects`), and never runs a hook.
+
+Before each fetch the job tidies the mirror, because each of these makes git fail every later fetch:
+
+* the lock files a killed fetch leaves (`packed-refs.lock`, `HEAD.lock`, `config.lock`, `shallow.lock`, and `refs/**/*.lock`);
+* a file under `refs/` that doesn't hold exactly one commit id (40 lowercase hex characters and a newline), as a power cut just after a fetch can leave one empty; the fetch makes the ref again;
+* the `tmp_pack_*` files in `objects/pack/` that a fetch that failed part-way leaves, which would otherwise stay and take space.
+
+It is safe to do so, because the run lock means no other fetch is running. git also reads the mirror as bare (`core.bare=true`) whatever its `config` says, so an empty `config` doesn't stop a fetch either.
+
+The trees the job unpacks, `src/<commit>/`, are root's too. `tm-update` installs from one, and the [clean-up](#the-clean-up) keeps the running version's and the one before it.
+
+### A run that was cut off comes first
+
+`tm-update` writes the [resume marker](#the-resume-marker) just before the switch stops anything, and removes it when the run ends. A marker the job finds means a run that a restart, a power cut, or a stop cut off. The job then does not start the request's run. It becomes the launcher, `tm-update-resume`, and finishes the cut-off run first, whatever the request names. The page shows that run as cut off and offers **Finish the update**.
+
+### Running the same version again
+
+`tm-update` doesn't compare versions or commits, but the job does, and it normally refuses the commit that is installed. It allows the same commit again only when the last state file names that commit as its target, the run ended `failed` or has no result (it was cut off), and its `stages` include one other than `fetch` and `verify`, which shows that `tm-update` ran for it. That is the case after a switch that failed late, which leaves the manifest naming the new commit. The job's own refusals write a state file too, and they never make a repeat allowed.
+
+This has a cost. If a late switch failure is followed by a retry that fails at `fetch`, for example because the device is offline, the new state file holds only `fetch`, and the next try ends `not_forward`. Wait for the next version, or use the installer.
+
+### How a release says it can't be installed this way
+
+A tree's `script/update.json` lists the hand-over contracts it accepts. A release that must not be installed by an update, because it needs steps only a person at the installer can take, leaves `1` out of `contracts`. The job reads that from the mirror before it unpacks anything, ends the run `needs_manual_update`, and the page says to use the installer. A tree with no `script/tm-update` or no readable `update.json`, as every release before this one, is `target_not_updatable`, with the same advice.
+
+## The units
+
+Two units start the chain, both made by the installer's control app tag, and both stop the update's `tm-update.slice` when they end, so no build goes on without the run that started it (except after a kill of the whole unit, as the warning below says). Neither is in that slice themselves.
+
+`tm-job-update.service` is static, so it is never enabled and runs only when it is started. The polkit rule lets the control app start it and nothing else: it is in `start_only_units`, not in the `units` that the control app may stop and restart, because stopping the job in the middle of a switch would leave a device half installed. It is a oneshot with `TimeoutStartSec=6h`, because a slow card builds images for hours, and no start limit. When it ends, by its own exit, a stop, a crash, or a kill of its main process, its `ExecStopPost` commands stop the slice and start `tm-update-resume.service`, which does nothing without a marker.
+
+!!! warning "A kill of the whole unit"
+
+    `systemctl kill --signal=KILL tm-job-update.service` kills every process in the unit's control group, and that ends the `ExecStopPost` commands too. Then neither the slice stop nor the resume start runs. A switch cut off that way waits for the next boot, or for `sudo systemctl start tm-update-resume.service`, which carries it on at once. To stop the job by hand, use `sudo systemctl stop tm-job-update.service`.
+
+`tm-update-resume.service` is enabled, so it starts at boot, after the apps' units but without requiring them: an app that won't start is what a switch has to deal with. It runs only when `resume.json` exists (`ConditionPathExists`), has `TimeoutStartSec=3h`, and never starts itself again. It runs [`tm-update-resume`](https://github.com/glossyio/traffic-monitor/blob/main/tm-control/jobs/tm-update-resume), the launcher, on the system's Python.
+
+The launcher reads the marker and uses it only when it is usable: the contract is the number 1, the tree is exactly `/var/lib/traffic-monitor/src/<40-hex commit>` and holds `script/tm-update`, and the hand-over is a file under `/var/lib/traffic-monitor/update/work/`. A usable marker makes the launcher become that tree's `tm-update resume --handover <file>`, whose exit status is the unit's. Any other marker is renamed to `resume.json.unusable` (an older one is replaced), the control app, the pod, and the revproxy are started again, and the exit status is 2. The launcher never prints the marker. With no marker it prints one line and exits 0.
+
+While either unit is active, the installer stops at its first step and says that an update from the control app is running, because two installers would undo each other. A run from another computer connects first and is stopped by the role's first task; a local run is stopped even earlier, by the run lock. An update's own run of the installer isn't refused.
+
+## What Check sends to GitHub
+
+The control app asks GitHub only when an administrator presses **Check for updates**, and no more than once a minute. It sends requests to `api.github.com` over https, to one repository, `update.repo` in the manifest. The address holds that repository's name and, for the comparison, the installed commit's id. The device's public address reaches GitHub as it does with any request. Besides the address, each request carries a `User-Agent` that names the program (`traffic-monitor-update`), the GitHub API version it was written for, and, when it asks again for something GitHub answered before, the `ETag` of that answer, so GitHub can reply that nothing changed. The control app sends no cookie, token, device name, serial number, or location, and it follows no redirect, and it uses no proxy from the environment. An answer over 1 MiB is refused.
+
+Check asks for the channel's newest version (the latest release for `stable`, the `dev` branch for `development`) and how it stands to the installed commit. When GitHub doesn't know the installed commit, for example a tree built by hand, `stable` falls back to comparing versions, and `development` can't tell, so it offers nothing.
+
+The page's check and the job's checks use the same rules, but they look at different copies of the history. GitHub compares the installed commit with any commit it holds, and the job's mirror holds only `main`, `dev`, and the release tags. A device whose installed commit is on none of them, such as one built from a feature branch, can be offered an update that the job then refuses as `not_forward`, or on `stable` judges by version.
 
 ## The commands
 
 | Command | What it does |
 |---|---|
 | `tm-update run --contract 1 --handover <file>` | Installs the tree the command lives in. |
-| `tm-update resume --handover <file>` | Carries a run on after the device restarted in the middle of it. |
+| `tm-update resume --handover <file>` | Carries a run on after the device restarted in the middle of it. At boot, `tm-update-resume.service` starts it. |
 
 Both must run as root. Both read one [hand-over file](#the-hand-over-file) and write one state file and one log. `--contract` names the hand-over contract the caller speaks, and the tree must accept it (see [`update.json`](#updatejson)).
 
@@ -91,6 +193,8 @@ A health check that runs after a restart can't know when the switch began, becau
 
 | Stage | What it does | If it fails, the run ends as |
 |---|---|---|
+| `fetch` | The update job fetches the version into [the mirror](#the-mirror). `tm-update` never writes it. | `fetch_failed` |
+| `verify` | The update job checks the version against the request, the installed one, and the databases, then unpacks it. `tm-update` never writes it. | `stale_check`, `not_forward`, `target_not_updatable`, `needs_manual_update`, `schema_newer`, or `prepare_failed` |
 | `prepare` | Downloads and stages the files, and tries the settings changes. | `prepare_failed`, or the code the role's refusal names |
 | `images` | Builds the images and checks the nginx config. | `build_failed` |
 | `restore_point` | Saves the restore point. | `prepare_failed` |
@@ -98,6 +202,17 @@ A health check that runs after a restart can't know when the switch began, becau
 | `reboot` | Restarts the device when the installer asks for it. | `switch_failed` |
 | `health` | Waits for the new version to answer. | `health_failed` |
 | `cleanup` | Removes what the update no longer needs. | Never fails the run |
+
+A step that runs out of time ends the run with its stage's code and the detail `timed out after <n> min`. The limits are:
+
+| Step | Limit |
+|---|---|
+| Making the Ansible environment, and installing its packages | 15 min each |
+| Prepare's playbook run (stage `prepare`) | 30 min |
+| The image builds (stage `images`) | 2 h |
+| The switch's installer run | 45 min |
+
+Every outside command runs in a session of its own, so a command that runs out of time is ended with everything it started: its process group gets `TERM`, then `KILL` after 10 seconds. The image builds run in `tm-update.slice`, outside the playbook's process group, so a timeout there stops the slice as well.
 
 An error `tm-update` didn't expect ends the run with the code of the stage it was in. A run that a restart cut off before the switch can't know what it was doing, so `resume` ends it the same way.
 
@@ -108,19 +223,24 @@ A failed run has a `reason`, always one of these codes and never a sentence. `de
 | Code | When | What the person does |
 |---|---|---|
 | `busy` | Another install or update holds the lock. | Wait for it. This is the one code that isn't in the state file, because that file belongs to the run that holds the lock. `tm-update` writes `busy` to its log and to stderr, and exits 1. |
-| `needs_manual_update` | The manifest is missing, unreadable, or names root as the installing user, or a value in it is unusable. | Run the full installer by hand. |
+| `fetch_failed` | The job's `git fetch` failed or ran out of its 3600 seconds. | Connect the device and try again. |
+| `stale_check` | The commit isn't in the mirror, isn't on the channel's branch, or a release tag doesn't name it. | Check again. |
+| `not_forward` | The version isn't ahead of the installed one, or it is the installed commit and [isn't a repeat the job allows](#running-the-same-version-again). | Check again. |
+| `target_not_updatable` | The version has no `script/tm-update` or no readable `script/update.json`, or on `stable` its version isn't its tag's. | Run the full installer by hand. |
+| `schema_newer` | `tmdb.sqlite` or the control app's database is newer than the version knows. The detail gives both numbers. | Install a newer version, or use the installer. |
+| `needs_manual_update` | The manifest is missing, unreadable, or names root as the installing user, or a value in it is unusable, or the version doesn't accept contract 1 (see [how a release says it can't be installed this way](#how-a-release-says-it-cant-be-installed-this-way)). | Run the full installer by hand. |
 | `addon_needs_installer` | The Plate Recognizer add-on is installed. | Run the full installer by hand. |
 | `reboot_pending` | The device has a restart waiting (`/var/run/reboot-required`). | Restart it, then try again. |
 | `low_space` | Less than 8 GB plus 1.2 times the size of `tmdb.sqlite` is free where the update works, or at the switch, less than 1.2 times that size is free on the code folder's filesystem. | Free space. The detail gives both numbers in MB. |
 | `hardware_needs_installer` | An attached Hailo-8L or PCIe Coral has no driver yet, and an update installs none. | Run the full installer by hand. |
 | `no_internet` | One `HEAD` request to the go2rtc release address got no answer. GitHub's redirect counts as an answer. | Connect the device and try again. |
 | `settings_need_attention` | The dry run of the settings changes failed. | Look at the log. |
-| `prepare_failed` | Anything else that fails in `prepare` or `restore_point`, including an unexpected error. Nothing in use has changed. | Look at the log. |
+| `prepare_failed` | Anything else that fails in the job or in `prepare` or `restore_point`, including an unexpected error. Nothing in use has changed. | Look at the log. |
 | `build_failed` | An image doesn't build, or the new nginx config fails its check. | Look at the log. |
 | `switch_failed` | The stop, the installer, the restart request, or both attempts failed. The services were started again. | Look at the log. Restore by hand if the device isn't working. |
 | `health_failed` | The new version didn't come up in five minutes. The detail names the first check that didn't pass (`manifest`, `tm-control`, `health endpoint`, or a unit). | Look at the log. The device stays on the new version. |
 
-The codes down to `build_failed` end the run before anything in use has changed, `low_space` at the switch included, because it is checked before the stop. `switch_failed` and `health_failed` come with the switch, which stops the services.
+The job's five codes, and the codes down to `build_failed`, end the run before anything in use has changed, `low_space` at the switch included, because it is checked before the stop. `switch_failed` and `health_failed` come with the switch, which stops the services.
 
 ## The files
 
@@ -131,13 +251,14 @@ The update's files are under `/var/lib/traffic-monitor/`. Paths come from one `P
 | `update/lock` | The lock `tm-update` and `tmsetup.sh` both take with `flock`. | Always |
 | `update/state.json` | The [state file](#the-state-file) (mode 0644). | Until the next run replaces it |
 | `update/log/<run>.log` | One run's log (mode 0640, root and the code group). | The ten newest |
-| `update/work/<run>/` | The run's work folder: `vars.json`, `facts.json`, `stage/` (the downloads), `build/` (a folder for each image), `check-venv/`, `reason`, and the installer's restart flag. | Removed after the run has ended |
+| `update/work/<run>/` | The run's work folder: `handover.json` when the job made it, `vars.json`, `facts.json`, `stage/` (the downloads), `build/` (a folder for each image), `check-venv/`, `reason`, and the installer's restart flag. | Removed after the run has ended |
 | `update/resume.json` | The [resume marker](#the-resume-marker). | From just before the switch stops anything, until the run ends |
 | `restore/<time>-<commit>/` | A [restore point](#the-restore-point), named for the UTC time (`YYYYMMDDTHHMMSSZ`) and the first 7 characters of the old commit. Mode 0700, root. | The two newest |
-| `src/<commit>/` | A version's source tree. The caller makes it. | The running version and the one before it |
+| `src/repo.git` | [The mirror](#the-mirror). | Always |
+| `src/<commit>/` | A version's source tree. The update job makes it, or the caller by hand. | The running version and the one before it |
 | `venv/ansible-<12 characters>/` | The Ansible environment of a tree, named for the first 12 characters of the SHA-256 of its `script/requirements.lock`. | The one the running tree's lock names |
 
-At the start of every `run`, `tm-update` removes what a run that died left behind: other runs' work folders and any throwaway image tag.
+At the start of every `run`, `tm-update` first stops `tm-update.slice`, so a dead run's builds can't go on beside the new one. It then removes what that run left behind: other runs' work folders and any throwaway image tag.
 
 ## The contract
 
@@ -171,7 +292,7 @@ It is one JSON file that the control app can read while the run goes on. `tm-upd
 |---|---|
 | `schema` | `1`. |
 | `run_id`, `channel` | From the hand-over. |
-| `from` | `version` and `commit` of what was installed, from the manifest (both `null` when the manifest couldn't be read). |
+| `from` | `version` and `commit` of what was installed, from the manifest. When `tm-update` can't read the manifest, `version` is the hand-over's `from_version` and `commit` is `null`. A run the job refused because of the manifest has both `null`. |
 | `to` | `version` (from `update.json`), `commit`, and `tag`. |
 | `stage` | One of the [stage ids](#the-stages), or `null` before the first. |
 | `stages` | A list of `{id, started_at, finished_at}`, in UTC. |
@@ -185,7 +306,7 @@ It is one JSON file that the control app can read while the run goes on. `tm-upd
 
 ### The resume marker
 
-`update/resume.json` is `{"contract": 1, "tree": <path>, "handover": <path>}`. `tm-update` writes it just before the switch stops anything and removes it when the run ends, ok or failed. A unit that runs after a restart, which is planned, reads it to know which tree's `tm-update resume` to start and with which hand-over. `resume` takes the lock like `run`, and then:
+`update/resume.json` is `{"contract": 1, "tree": <path>, "handover": <path>}`. `tm-update` writes it just before the switch stops anything and removes it when the run ends, ok or failed. `tm-update-resume.service` reads it after a restart to know which tree's `tm-update resume` to start and with which hand-over, and the update job reads it to know that a cut-off run comes first (see [the units](#the-units)). `resume` takes the lock like `run`, and then:
 
 * with no marker, it does nothing and exits 0;
 * with a marker it can't read, it removes it and exits 2, and with one that names another tree or hand-over, it exits 2 and leaves it for that run;
@@ -246,7 +367,7 @@ Before the switch, `tm-update` saves what an earlier version needs to be restore
 * the Quadlet units in `/etc/containers/systemd/` and the `tm-*` units in `/etc/systemd/system/`;
 * a consistent copy of the control app's `state.sqlite`, made with SQLite's backup API, so it is whole while the control app keeps writing.
 
-It is built in a folder whose name ends in `.partial` and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. `restore.json` in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in `src/` when it is still there (`previous_tree`, which is `null` when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and `tmdb_backup`.
+Making one writes one line to the run's log: its folder's name, the number of files, and the paths it found missing. A restore point is built in a folder whose name ends in `.partial` and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. `restore.json` in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in `src/` when it is still there (`previous_tree`, which is `null` when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and `tmdb_backup`.
 
 The reference pictures an administrator kept are not in the restore point either. They are files beside `state.sqlite` (`/var/lib/tm-control/pictures/`), and the restore point holds only the database that lists them. Neither the installer nor an update touches them.
 
@@ -287,7 +408,11 @@ To put a device back on the version it had, as a person at a shell:
 
 ## Run an update by hand on a bench device
 
-Use this on a bench device only. It runs the real installer, which restarts the pod and the control app and may restart the device, so never run it on a device in the field. Run the commands through `tmdev.py run <host> -- ...` to keep them in the run log (see [Testing on a dev Pi](dev-environment.md#testing-on-a-dev-pi)).
+Use this on a bench device only. It runs the real installer, which restarts the pod and the control app and may restart the device, so never run it on a device in the field. To try the whole chain instead, start the update from the Software update page. These steps skip the update job and run `tm-update` directly, as the job would after its checks. Run the commands through `tmdev.py run <host> -- ...` to keep them in the run log (see [Testing on a dev Pi](dev-environment.md#testing-on-a-dev-pi)).
+
+!!! warning "The Software update page can't see a run started by hand"
+
+    Neither of the two units runs it, so while it goes on the page shows it as stopped (or cut off, once the switch has begun), and offers **Try again** or **Finish the update**. Don't press **Update** or **Try again** while a run started by hand goes on: the job is refused as `busy`, and as its unit ends it stops `tm-update.slice`, which stops that run's image builds.
 
 1. Put the tree on the device, as `git archive` makes it, as root. The folder is named for the commit, which is where the clean-up looks for it:
 
@@ -297,7 +422,7 @@ Use this on a bench device only. It runs the real installer, which restarts the 
       | ssh <pi> 'sudo mkdir -p /var/lib/traffic-monitor/src && sudo tar -xzf - -C /var/lib/traffic-monitor/src'
     ```
 
-2. Write a [hand-over file](#the-hand-over-file) on the device. The work folder, state file, and log are under `/var/lib/traffic-monitor/update/`:
+2. Write a [hand-over file](#the-hand-over-file) on the device, inside the run's own work folder, as the job does. Then the resume marker names a hand-over the launcher accepts, and a restart in the middle of the run is carried on at boot. The work folder, state file, and log are under `/var/lib/traffic-monitor/update/`:
 
     ```json
     {
@@ -313,14 +438,14 @@ Use this on a bench device only. It runs the real installer, which restarts the 
     }
     ```
 
-    Save it as root, in the update folder (for example `/var/lib/traffic-monitor/update/handover.json`).
+    Make the work folder (`sudo install -d -m 755 /var/lib/traffic-monitor/update/work/20261125T101500Z`) and save the file in it as root, as `handover.json`.
 
-3. Start it as a transient service, so that stopping the control app or closing your session doesn't end it:
+3. Start it as a transient service, and only that way. Every command `tm-update` runs has a session of its own, so a dropped SSH session would leave Ansible running without the lock, and a second run could start beside it. Under `systemd-run`, stopping the control app or closing your session doesn't end it:
 
     ```bash
     sudo systemd-run --unit=tm-update-bench --collect \
       /var/lib/traffic-monitor/src/<commit>/script/tm-update run --contract 1 \
-      --handover /var/lib/traffic-monitor/update/handover.json
+      --handover /var/lib/traffic-monitor/update/work/20261125T101500Z/handover.json
     ```
 
 4. Follow it in the state file, which anyone can read, and in the log, which root or the code group can:
@@ -330,7 +455,11 @@ Use this on a bench device only. It runs the real installer, which restarts the 
     sudo tail -f /var/lib/traffic-monitor/update/log/20261125T101500Z.log
     ```
 
-5. When the state's `stage` is `reboot`, the device restarts. Nothing starts `resume` for you yet, so after the restart run the same command with `resume --handover ...` in place of `run --contract 1 --handover ...`.
+5. When the state's `stage` is `reboot`, the device restarts, and `tm-update-resume.service` carries the run on at boot, because the marker is there. If the hand-over isn't under the work folder, the launcher sets the marker aside as `resume.json.unusable`, and you carry the run on yourself. Put the marker back first, because `resume` with no marker has nothing to carry on, then run the same command with `resume --handover ...` in place of `run --contract 1 --handover ...`:
+
+    ```bash
+    sudo mv /var/lib/traffic-monitor/update/resume.json.unusable /var/lib/traffic-monitor/update/resume.json
+    ```
 6. The run is over when `result` is `ok` or `failed`. Then run the device tests that check what an update leaves behind: `tmdev.py test <host> -- -k test_update`.
 
-`tm-update` doesn't compare versions or commits: it installs the tree you give it, so the same commit can be installed again.
+`tm-update` doesn't compare versions or commits: it installs the tree you give it, so the same commit can be installed again. The update job does compare them; see [Running the same version again](#running-the-same-version-again).

@@ -56,6 +56,8 @@ def run_migrate(args):
         codes.append(migrate.run_node_red(args.node_red_config, secrets_dir, dry_run=args.dry_run))
     if args.node_red_headings:
         codes.append(migrate.run_node_red_headings(args.node_red_headings, dry_run=args.dry_run))
+    if args.node_red_cosine:
+        codes.append(migrate.run_node_red_cosine(args.node_red_cosine, dry_run=args.dry_run))
     if args.plate_recognizer_env:
         codes.append(migrate.run_plate_recognizer_env(args.plate_recognizer_env, secrets_dir, dry_run=args.dry_run))
     if args.frigate_env:
@@ -80,6 +82,13 @@ def main(argv=None):
         type=Path,
         help="path to Node-RED's config.yml: turn each old bearing into heading_deg, and nothing else (Node-RED's "
         "start runs this before any flow does; it needs no secrets)",
+    )
+    migrate_parser.add_argument(
+        "--node-red-cosine",
+        type=Path,
+        help="path to Node-RED's config.yml: move a hand-set ^/ cosine angle from a radar's opt_api_commands_array "
+        "into its cosine_inbound_deg / cosine_outbound_deg (Node-RED's start runs this before any flow does; it "
+        "needs no secrets)",
     )
     migrate_parser.add_argument(
         "--plate-recognizer-env",
@@ -155,11 +164,11 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
     if args.command == "migrate":
-        if not (args.frigate_config or args.node_red_config or args.node_red_headings or args.plate_recognizer_env
-                or args.frigate_env):
+        if not (args.frigate_config or args.node_red_config or args.node_red_headings or args.node_red_cosine
+                or args.plate_recognizer_env or args.frigate_env):
             migrate_parser.error(
                 "give at least one of --frigate-config, --node-red-config, --node-red-headings, "
-                "--plate-recognizer-env, --frigate-env"
+                "--node-red-cosine, --plate-recognizer-env, --frigate-env"
             )
         return run_migrate(args)
     if args.command == "serve":

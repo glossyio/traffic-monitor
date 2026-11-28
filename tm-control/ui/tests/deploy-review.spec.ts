@@ -110,6 +110,7 @@ function row(id: string, sensorType: string, sensorName: string, heading: number
     height_m: null,
     view_distance_m: null,
     mount: null,
+    road_angle_deg: null,
     sensor_type: sensorType,
     sensor_name: sensorName,
     location_precision: 1,

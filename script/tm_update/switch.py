@@ -18,6 +18,7 @@ from .state import Failed, clear_marker, write_marker
 STOPPED_FIRST = ("traffic-monitor.service", "tm-control.service")
 STARTED_AFTER_A_FAILURE = ("tm-control.service", "traffic-monitor.service", "revproxy.service")
 ATTEMPTS = 2
+INSTALL_TIMEOUT = 2700  # the installer's run in update mode
 _BOOT_ID = re.compile(r"[0-9a-f-]{36}")
 _STOP_TIMEOUT = 300
 _START_TIMEOUT = 600
@@ -92,7 +93,11 @@ def _install(ctx) -> None:
     if status != 0:
         raise Failed("switch_failed", f"stop exit status {status}")
     _reset_flag(ctx.handover)
-    status = playbook.run_playbook(ctx.venv, ctx.tree, "setup.yml", ctx.vars_file, ctx.handover, ctx.log)
+    try:
+        status = playbook.run_playbook(ctx.venv, ctx.tree, "setup.yml", ctx.vars_file, ctx.handover, ctx.log,
+                                       timeout=INSTALL_TIMEOUT)
+    except proc.TimedOut as error:
+        raise Failed("switch_failed", error.detail) from None
     if status != 0:
         raise Failed("switch_failed", f"playbook exit status {status}")
 

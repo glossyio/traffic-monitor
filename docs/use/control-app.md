@@ -73,6 +73,7 @@ Each device has one administrator, the account created when it was claimed, and 
 | Status, Device, and Date and time pages | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
 | The **Detection** page | Yes | Read only; see [The Detection page](detection.md#the-detection-page) |
 | The **Cameras** page | Yes | No |
+| The **Software update** page | Yes | No |
 | The **Location** page | Yes | No |
 | The **Sharing** page | Yes | Read only; see [What viewers see](device-health.md#what-viewers-see) |
 | The **About** page | Yes | Yes |

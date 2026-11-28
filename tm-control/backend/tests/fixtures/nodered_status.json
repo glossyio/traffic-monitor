@@ -12,22 +12,36 @@
         "TM_RADAR_SERIAL_PORT_00": {
             "enabled": true,
             "port_open": true,
-            "last_reading_at": "2026-10-28T22:55:01.112Z"
+            "last_reading_at": "2026-10-28T22:55:01.112Z",
+            "info": {
+                "part_number": "OPS243-A",
+                "firmware_version": "1.2.1",
+                "cosine_inbound_deg": 0,
+                "cosine_outbound_deg": 0,
+                "speed_unit": "mph",
+                "sampling_rate": 20000,
+                "speed_min": 5,
+                "magnitude_min": 20,
+                "answered_at": "2026-10-28T22:54:53.204Z"
+            }
         },
         "TM_RADAR_SERIAL_PORT_01": {
             "enabled": false,
             "port_open": false,
-            "last_reading_at": null
+            "last_reading_at": null,
+            "info": null
         },
         "TM_RADAR_SERIAL_PORT_02": {
             "enabled": false,
             "port_open": false,
-            "last_reading_at": null
+            "last_reading_at": null,
+            "info": null
         },
         "TM_RADAR_SERIAL_PORT_03": {
             "enabled": false,
             "port_open": false,
-            "last_reading_at": null
+            "last_reading_at": null,
+            "info": null
         }
     },
     "deployment": {

@@ -461,8 +461,8 @@ def _device_with_images(tmp_path, monkeypatch):
     device.images = json.loads(json.dumps(IMAGES))
     real = device._run_playbook
 
-    def with_images(venv, tree, name, vars_file, hand, log, tags=None):
-        status = real(venv, tree, name, vars_file, hand, log, tags)
+    def with_images(venv, tree, name, vars_file, hand, log, tags=None, *, timeout):
+        status = real(venv, tree, name, vars_file, hand, log, tags, timeout=timeout)
         if tags == ["stage"]:
             images = []
             for image, text in CONTAINERFILES.items():

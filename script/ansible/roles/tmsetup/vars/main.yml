@@ -158,8 +158,9 @@ tmsetup_tm_control_dir: /usr/local/lib/traffic-monitor/tm-control
 tmsetup_libexec_dir: /usr/local/libexec/traffic-monitor
 # tm-control listens on loopback only; nginx proxies to it
 tmsetup_tm_control_port: 8090
-# What polkit lets tm-control's user (the code owner) do: these verbs on these units, and these actions (set the date,
-# time, time zone, and NTP; reboot and power off, also while someone else is logged in), nothing else
+# What polkit lets tm-control's user (the code owner) do: these verbs on these units, the start verb alone on the
+# start-only units, and these actions (set the date, time, time zone, and NTP; reboot and power off, also while someone
+# else is logged in), nothing else
 tmsetup_tm_control_polkit:
   units:
     - traffic-monitor.service
@@ -177,6 +178,9 @@ tmsetup_tm_control_polkit:
     - start
     - stop
     - restart
+  # May be started and nothing else: a stop or restart of the update job would cut a run off mid-switch
+  start_only_units:
+    - tm-job-update.service
   actions:
     - org.freedesktop.timedate1.set-time
     - org.freedesktop.timedate1.set-timezone

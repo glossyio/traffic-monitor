@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import traceback
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
-from . import cleanup, health, playbook, restore, switch
+from . import cleanup, health, playbook, proc, restore, switch
 from . import installed as installed_module
 from .handover import CONTRACT, Handover, HandoverError, load
 from .installed import Installed, Refusal, check_before_prepare
@@ -25,6 +26,9 @@ from .state import Failed, State, clear_marker
 STAGE_REASON = {"prepare": "prepare_failed", "images": "build_failed", "restore_point": "prepare_failed",
                 "switch": "switch_failed", "reboot": "switch_failed", "health": "health_failed"}
 _BUILD_TAG = re.compile(r"localhost/[^\s:]+:prepare-[^\s:]+")
+# How long each half of Prepare's playbook may take
+PREPARE_TIMEOUTS = {"prepare": 1800, "images": 7200}
+_SLICE_STOP_TIMEOUT = 300
 
 
 @dataclass
@@ -108,9 +112,24 @@ def _read_update_json(tree: Path) -> "tuple[list, str]":
     return contracts, version
 
 
+def _stop_the_slice(log) -> None:
+    """Stop every build in the update's slice. Its failure is logged and changes nothing else."""
+    try:
+        status = proc.run(["systemctl", "stop", cleanup.SLICE], log=log, timeout=_SLICE_STOP_TIMEOUT).returncode
+    except (OSError, subprocess.SubprocessError) as error:
+        _say(log, f"could not stop what an earlier run left building: {type(error).__name__}")
+        return
+    if status != 0:
+        _say(log, f"could not stop what an earlier run left building: exit status {status}")
+
+
 def _clear_leftovers(ctx: Context) -> None:
-    """What a run that died left: other runs' work folders and the throwaway image tags of earlier builds."""
+    """What a run that died left: builds still going in the update's slice, other runs' work folders, and the
+    throwaway image tags of earlier builds."""
     log = ctx.log
+    # With the lock held nothing of this run builds yet, so whatever is in the slice is a dead run's: stopped before
+    # its folders and tags go
+    _stop_the_slice(log)
     work_root = ctx.paths.work_root
     if work_root.is_dir():
         for entry in work_root.iterdir():
@@ -143,8 +162,14 @@ def _run_prepare_half(ctx: Context, stage: str, tags: "list[str]") -> None:
     if ctx.venv is None:
         ctx.venv = playbook.ensure_venv(ctx.tree, ctx.paths, ctx.log)
     vars_file = playbook.write_vars(ctx.handover, ctx.installed, ctx.tree, update_mode=True)
-    status = playbook.run_playbook(ctx.venv, ctx.tree, "update_prepare.yml", vars_file, ctx.handover, ctx.log,
-                                   tags=tags)
+    try:
+        status = playbook.run_playbook(ctx.venv, ctx.tree, "update_prepare.yml", vars_file, ctx.handover, ctx.log,
+                                       tags=tags, timeout=PREPARE_TIMEOUTS[stage])
+    except proc.TimedOut as error:
+        if stage == "images":
+            # The builds run in the slice, outside the playbook's process group
+            _stop_the_slice(ctx.log)
+        raise Failed(default, error.detail) from None
     if status != 0:
         raise Failed(playbook.reason_from(ctx.handover, default), f"playbook exit status {status}")
     ctx.state.finish(stage)
@@ -156,7 +181,7 @@ def _restore_point(ctx: Context) -> None:
     tree = ctx.paths.src_root / ctx.installed.commit
     # After a switch that failed late the manifest names the new commit already, and its folder is the new tree
     previous = tree if tree.is_dir() and ctx.installed.commit != ctx.handover.commit else None
-    folder = restore.make(ctx.installed, ctx.handover, ctx.paths, previous)
+    folder = restore.make(ctx.installed, ctx.handover, ctx.paths, previous, ctx.log)
     restore.keep_newest(ctx.paths, just_made=folder)
     ctx.state.set(restore_point=str(folder))
     ctx.state.finish("restore_point")

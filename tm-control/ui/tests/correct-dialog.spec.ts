@@ -68,6 +68,7 @@ const DEPLOYMENT: DeploymentOut = {
   height_m: null,
   view_distance_m: null,
   mount: null,
+  road_angle_deg: null,
   sensor_type: 'cameras',
   sensor_name: 'picam_h265',
   location_precision: 2,

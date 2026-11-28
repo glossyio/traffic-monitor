@@ -35,7 +35,6 @@
   become: true
   loop:
     - node-red-tm/data/flows_cred.json
-    - node-red-tm/data/flows.json
     - node-red-tm/data/README.md
     - node-red-tm/data/settings.js
     - node-red-tm/data/package.json
@@ -182,6 +181,45 @@
     path: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
     regexp: '^TM_PLATE_RECOGNIZER_TOKEN='
     line: "TM_PLATE_RECOGNIZER_TOKEN={{ tmsetup_secrets['plate_recognizer_token'] }}"
+  notify: Restart node-red-tm.service
+
+# The flows open the port that each TM_RADAR_SERIAL_PORT_ line in node-red-tm.env names, so the device's file says
+# which port is whose; a name the file doesn't give takes the role's path in its place, as the template does. Read
+# after the file is written above; it holds secrets, so neither the read nor the fact built from its text is shown.
+- name: TMSetup - Node-RED-TM Setup - Read node-red-tm.env for the radar ports
+  become: true
+  no_log: true
+  when: tmsetup_node_red_env_stat_register.stat.exists
+  ansible.builtin.slurp:
+    src: '{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env'
+  register: tmsetup_node_red_env_slurp_register
+
+# The padding gives every name a path, '' past the end of a shorter tmsetup_radar_paths.
+- name: TMSetup - Node-RED-TM Setup - Find the port of each radar name
+  no_log: true
+  vars:
+    radar_names: [TM_RADAR_SERIAL_PORT_00, TM_RADAR_SERIAL_PORT_01, TM_RADAR_SERIAL_PORT_02, TM_RADAR_SERIAL_PORT_03]
+    radar_line: '^(TM_RADAR_SERIAL_PORT_0[0-3])=[ \t]*(.*?)[ \t\r]*$'
+    env_text: "{{ tmsetup_node_red_env_slurp_register.content | b64decode if tmsetup_node_red_env_stat_register.stat.exists else '' }}"
+  ansible.builtin.set_fact:
+    tmsetup_radar_env_ports: "{{ dict(radar_names | zip(tmsetup_radar_paths + ['', '', '', '']))
+      | combine(dict(env_text | regex_findall(radar_line, multiline=true))) }}"
+
+# A radar whose port wasn't there isn't passed into the container either (node-red-tm.container.j2), so its serial
+# nodes are switched off below. A radar plugged in later needs this run again: tmsetup.sh -t node-red-tm.
+- name: TMSetup - Node-RED-TM Setup - List the radar names whose port isn't there
+  ansible.builtin.set_fact:
+    tmsetup_radars_missing: "{{ tmsetup_radar_env_ports | dict2items
+      | rejectattr('value', 'in', tmsetup_radars_confirmed | default([])) | map(attribute='key') | list }}"
+
+- name: TMSetup - Node-RED-TM Setup - Write flows.json with the serial nodes of missing radars off
+  become: true
+  ansible.builtin.template:
+    dest: '{{ tmsetup_codedir }}/node-red-tm/data/flows.json'
+    group: '{{ tmsetup_codegroup }}'
+    mode: '0644'
+    owner: '{{ tmsetup_codeowner }}'
+    src: node-red-tm/flows.json.j2
   notify: Restart node-red-tm.service
 
 - name: TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red

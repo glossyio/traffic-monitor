@@ -158,6 +158,7 @@ class DeploymentOut(BaseModel):
     height_m: float | None
     view_distance_m: float | None
     mount: str | None
+    road_angle_deg: float | None  # the radar's angle into the road, as the row has it; the Mounting form never sets it
     sensor_type: str
     sensor_name: str
     location_precision: int | None
@@ -368,6 +369,7 @@ def _deployment(row: dict) -> DeploymentOut | None:
         height_m=mounted.height_m,
         view_distance_m=mounted.view_distance_m,
         mount=mounted.mount,
+        road_angle_deg=number("road_angle_deg"),
         sensor_type=sensor_type,
         sensor_name=sensor_name,
         location_precision=_int(precision) if precision is not None else None,
@@ -1159,7 +1161,7 @@ def _put_rows_back(nodered, corrected: list[tuple[DeploymentOut, Mounting]]) -> 
     what the caller answers."""
     for row, _ in corrected:
         try:
-            nodered.correct_mounting(row.id, {field: getattr(row, field) for field in FIELDS})
+            nodered.correct_mounting(row.id, {field: getattr(row, field) for field in (*FIELDS, "road_angle_deg")})
         except NodeRedError as error:
             log.warning("putting a deployment's mounting back in Node-RED failed: %s", type(error).__name__)
 
@@ -1248,7 +1250,8 @@ def save_mounting(survey_id: str, body: MountingIn, request: Request, admin: Use
             if _key(each) in starting or row is None or _five(row) == _five(each):
                 continue
             try:
-                app_state.nodered.correct_mounting(row.id, each.model_dump())
+                # the form has no field for the angle into the road: the row's own goes back, never a new one
+                app_state.nodered.correct_mounting(row.id, {**each.model_dump(), "road_angle_deg": row.road_angle_deg})
             except NodeRedError as error:
                 # this row too: the call may have failed after Node-RED changed it (a timeout)
                 _put_rows_back(app_state.nodered, [*corrected, (row, each)])

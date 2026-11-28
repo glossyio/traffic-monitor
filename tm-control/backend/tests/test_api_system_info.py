@@ -35,6 +35,7 @@ INSTALLED = [
     "revproxy.service",
     "tm-control.service",
 ]
+UPDATE_UNITS = ["tm-job-update.service", "tm-update-resume.service"]  # their journals come first
 
 
 class Host:
@@ -139,7 +140,7 @@ def device_checks(client):
 
 def test_the_system_module_has_the_device_group_and_comes_before_time():
     ids = [m.id for m in MODULES]
-    assert ids[-2:] == ["system", "time"]
+    assert ids[-3:] == ["system", "time", "update"]
     (system,) = [m for m in MODULES if m.id == "system"]
     assert [g.id for g in system.check_groups] == ["device"]
 
@@ -483,10 +484,12 @@ def test_diagnostics_sections(device_client, login, host):
     login(device_client, *ADMIN)
     text = diagnostics(device_client).text
     headings = re.findall(r"^== (.+) ==$", text, re.MULTILINE)
-    assert headings == ["Device", "Date and time", "Status", "Services", "Manifest"] + [
-        f"Journal: {unit} (last 50 lines)" for unit in INSTALLED
+    assert headings == ["Device", "Date and time", "Status", "Services", "Manifest", "Update state",
+                        "Update log (last 200 lines)"] + [
+        f"Journal: {unit} (last 50 lines)" for unit in UPDATE_UNITS + INSTALLED
     ]
-    assert sorted(unit for unit, _ in host.journal_calls) == sorted(INSTALLED)  # tm-control.service once
+    # tm-control.service once
+    assert sorted(unit for unit, _ in host.journal_calls) == sorted(UPDATE_UNITS + INSTALLED)
     assert all(lines == 50 for _, lines in host.journal_calls)
     assert [u.unit for u in units_for(device_client.app.state.manifest)] == INSTALLED
     assert '"model": "Raspberry Pi 5 Model B Rev 1.0"' in text

@@ -19,6 +19,8 @@
     - tm-job-set-secret.service
     - tm-job-network.service
     - tm-job-network-join.service
+    - tm-job-update.service
+    - tm-update-resume.service
   ansible.builtin.template:
     src: tm-control/{{ item }}.j2
     dest: /etc/systemd/system/{{ item }}
@@ -107,7 +109,9 @@
 
 # A caller may pass who installed it (tmsetup_installing_user: a login name that isn't root) and which repository
 # updates come from (tmsetup_update_repo, whose role default always applies here). Both must be text: a JSON or YAML
-# -e can pass a number, a boolean, or null. The message names the variable and never the value.
+# -e can pass a number, a boolean, or null. The repository is owner/name, each part up to 100 characters and not made
+# only of dots: tm-update, the update job, and the control app apply the same rule when they read it back. The message
+# names the variable and never the value.
 - name: TMSetup - tm-control Service - Check the values a caller passed
   ansible.builtin.assert:
     that:
@@ -118,7 +122,9 @@
             and tmsetup_installing_user != 'root')
       - >-
         tmsetup_update_repo is string
-        and tmsetup_update_repo is match('(?s)[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(?!.)')
+        and tmsetup_update_repo is match('(?s)[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}(?!.)')
+        and tmsetup_update_repo is not match('(?s)[.]+/')
+        and tmsetup_update_repo is not match('(?s)[^/]*/[.]+(?!.)')
     fail_msg: >-
       tmsetup_installing_user must be a login name other than root, and tmsetup_update_repo must be a GitHub
       repository as owner/name.

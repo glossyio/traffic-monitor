@@ -161,9 +161,9 @@ def change(client, body):
 # Registration
 
 
-def test_the_time_module_comes_last_with_its_group():
-    assert MODULES[-1].id == "time"
-    assert [(g.id, g.title) for g in MODULES[-1].check_groups] == [("time", "Date and time")]
+def test_the_time_module_comes_last_but_the_update_with_its_group():
+    assert [m.id for m in MODULES][-2:] == ["time", "update"]  # the update has no check group
+    assert [(g.id, g.title) for g in MODULES[-2].check_groups] == [("time", "Date and time")]
     groups = [group.id for module in MODULES for group in module.check_groups]
     assert groups[-1] == "time"
 

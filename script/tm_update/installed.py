@@ -19,7 +19,7 @@ OPTIONS_REFUSED = ("plate_recognizer",)  # a device that has it is not updated t
 _BASE = 8_000_000_000
 _USER = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
 _DIR = re.compile(r"/[A-Za-z0-9._-][A-Za-z0-9._/-]*")
-_REPO = re.compile(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+")
+_REPO = re.compile(r"[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}")
 _COMMIT = re.compile(r"[0-9a-f]{40}|unknown")
 
 
@@ -63,7 +63,8 @@ def _repository(update: dict) -> "str | None":
     if "repo" not in update:
         return None
     repo = update["repo"]
-    # The value becomes part of a URL, so a segment of only dots (. and ..) is refused here, though the role allows it
+    # The value becomes part of a URL, so a segment of only dots (. and ..) is refused. The role's check, the update
+    # job, and the control app apply the same rule.
     if (not isinstance(repo, str) or not _REPO.fullmatch(repo)
             or any(set(part) == {"."} for part in repo.split("/"))):
         raise _bad("manifest update.repo")

@@ -127,9 +127,9 @@ def detector_name(expect):
     return "edgetpu" if kind.startswith("edgetpu") else "hailo8l" if kind.startswith("hailo8") else "cpu"
 
 
-def require_pii_free(expect):
+def require_pii_free(expect, reads="config.yml or tmdb.sqlite"):
     if not expect["pii_free"]:
-        pytest.skip("reads config.yml or tmdb.sqlite; set tm_expect.pii_free: true (bench units only)")
+        pytest.skip(f"reads {reads}; set tm_expect.pii_free: true (bench units only)")
 
 
 def find_hevc_decoder(host):
@@ -160,6 +160,14 @@ def pi_json(host, url):
 
 def pi_now(host):
     return float(host.check_output("date +%s"))
+
+
+def service_active_seconds(host, unit):
+    """How long a service has been active, from systemd's monotonic stamp against the Pi's uptime,
+    so a jump of the wall clock since the start doesn't change it."""
+    entered = int(host.check_output(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}"))
+    uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
+    return uptime - entered / 1e6
 
 
 def broker_login(host, expect, codedir):

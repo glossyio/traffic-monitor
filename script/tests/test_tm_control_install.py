@@ -277,12 +277,13 @@ def test_an_installing_user_that_is_not_a_login_name_stops_the_install(value):
     assert not check_passes(tmsetup_installing_user=value)
 
 
-@pytest.mark.parametrize("value", ["glossyio/traffic-monitor", "a-b/c.d_e"])
+@pytest.mark.parametrize("value", ["glossyio/traffic-monitor", "a-b/c.d_e", "a/" + "b" * 100])
 def test_a_repository_in_owner_name_form_passes(value):
     assert check_passes(tmsetup_update_repo=value)
 
 
-@pytest.mark.parametrize("value", ["glossyio", "a/b/c", "https://github.com/a/b", "a/b.git ", "a/b\n", "", 12, None])
+@pytest.mark.parametrize("value", ["glossyio", "a/b/c", "https://github.com/a/b", "a/b.git ", "a/b\n", "", 12, None,
+                                   "a/..", "./b", "a/" + "b" * 101])
 def test_a_repository_in_another_form_stops_the_install(value):
     assert not check_passes(tmsetup_update_repo=value)
 

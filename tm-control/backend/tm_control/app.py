@@ -29,6 +29,7 @@ from tm_control.modules.setup.eula import load_eula
 from tm_control.modules.setup_history import snapshot
 from tm_control.modules.setup_history.poster import Poster
 from tm_control.modules.sharing.notice import load_notice
+from tm_control.modules.update.router import Memory as UpdateMemory
 
 API_PREFIX = "/api/v1"
 
@@ -75,6 +76,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.fetches = Fetches()  # the Frigate+ model Frigate downloads for a use by its ID, and how the last one ended
     app.state.fake_clock = fake.FakeClock() if settings.fake else None
     app.state.fake_network = fake.FakeNetwork() if settings.fake else None
+    app.state.fake_update = fake.FakeUpdate(manifest) if settings.fake else None
+    app.state.update_memory = UpdateMemory()  # the Software update page's last check and start, in memory only
     app.state.jobs = FakeJobRunner(settings, state) if settings.fake else JobRunner(settings, state, systemd)
     # The Location module's: Node-RED's config.yml, its /tm-internal/ endpoints, and the lock reconcile runs under.
     # The internal token was read above on a device (a missing one fails startup); FakeSecrets always has one.

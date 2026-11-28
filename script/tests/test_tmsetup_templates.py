@@ -2,13 +2,18 @@
 
 import ast
 import configparser
+import json
 import re
+import subprocess
 from pathlib import Path
 
 import pins
 import pytest
 import yaml
+from required_tools import needs
 from tmsetup_render import REPO, load_role_yaml, render
+
+needs_node = needs("node")
 
 LOCATIONS = load_role_yaml("vars/main.yml")["tmsetup_revproxy_locations"]
 
@@ -62,13 +67,33 @@ def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
     and its config watch would start a deployment. So the start converts config.yml's bearing, before any flow runs,
     as the code owner (who owns config.yml), and a failure never keeps Node-RED down: the flows read a bearing too."""
     starts = [line for line in node_red_unit() if line.startswith("ExecStartPre=")]
-    assert len(starts) == 2
+    assert len(starts) == 3
     assert all(line.startswith("ExecStartPre=-") for line in starts)
     assert "tmdb_migrate.py" in starts[0]
     assert starts[1] == (
         "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
         "--node-red-headings /opt/traffic-monitor/node-red-tm/config/config.yml"
     )
+
+
+def test_node_red_moves_a_hand_set_cosine_angle_at_its_start_after_the_headings():
+    """Every start of Node-RED converts an old file, after the headings' line and before any flow runs, rather than
+    the installer's pass once, so a config.yml put back from an old backup is converted too."""
+    unit = node_red_unit()
+    starts = [line for line in unit if line.startswith("ExecStartPre=")]
+    assert starts[2] == (
+        "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
+        "--node-red-cosine /opt/traffic-monitor/node-red-tm/config/config.yml"
+    )
+    assert unit.index(starts[1]) < unit.index(starts[2])
+    above = []
+    for line in reversed(unit[:unit.index(starts[2])]):
+        if not line.startswith("#"):
+            break
+        above.append(line)
+    comment = " ".join(above)
+    assert "installer" in comment and "backup" in comment
+    assert "config watch" not in comment
 
 
 def revproxy_unit():
@@ -884,6 +909,16 @@ def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_pa
     assert not any("Device page" in line for line in text.splitlines())
 
 
+def test_node_red_config_template_gives_the_radar_no_extra_commands():
+    """The radar's angles are its two typed keys, 0 while blank, so a new device's file sets neither and sends no extra
+    command."""
+    text = render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml"))
+    radar = yaml.safe_load(text)["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]
+    assert radar == {"enabled": True, "opt_api_commands_array": "[]"}
+    assert "            opt_api_commands_array: '[]'\n" in text
+    assert "cosine" not in text and "^/" not in text
+
+
 def test_node_red_config_template_has_no_time_section():
     """Nothing reads time:; the time zone is set in the control app, or at install only with -z (tmsetup_timezone)."""
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
@@ -963,7 +998,80 @@ def tm_job_unit(job):
         f"{TM_CONTROL_TEMPLATES}/tm-job-{job}.service.j2",
         tmsetup_tm_control_dir=TM_CONTROL_DIR, tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor",
         tmsetup_etc_dir="/etc/traffic-monitor", tmsetup_secrets_dir="/etc/traffic-monitor/secrets",
+        tmsetup_update_dir="/var/lib/traffic-monitor/update", tmsetup_update_slice="tm-update.slice",
     )
+
+
+def update_unit(name):
+    return render(
+        f"{TM_CONTROL_TEMPLATES}/{name}.service.j2",
+        tmsetup_libexec_dir="/usr/local/libexec/traffic-monitor", tmsetup_etc_dir="/etc/traffic-monitor",
+        tmsetup_update_dir="/var/lib/traffic-monitor/update", tmsetup_update_slice="tm-update.slice",
+    )
+
+
+def unit_section(unit, name):
+    lines = unit.splitlines()
+    start = lines.index(f"[{name}]") + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith("[")), len(lines))
+    return lines[start:end]
+
+
+def test_the_update_job_is_a_root_oneshot_on_the_systems_python():
+    unit = update_unit("tm-job-update")
+    lines = unit.splitlines()
+    assert "Type=oneshot" in lines
+    assert "[Install]" not in unit
+    assert not any(line.startswith(("User=", "DynamicUser=")) for line in lines)
+    assert "StartLimitIntervalSec=0" in unit_section(unit, "Unit")
+    assert "Environment=TM_CONTROL_MANIFEST=/etc/traffic-monitor/manifest.json" in lines
+    # The update rewrites tm-control's venv while this runs, so the job must not run from it
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/traffic-monitor/tm-job-update" in lines
+    assert "venv" not in "\n".join(line for line in lines if not line.startswith("#"))
+    # Never in tm-update.slice: the slice stop in ExecStopPost would stop the job itself
+    assert not any(line.startswith("Slice=") for line in lines)
+
+
+def test_the_update_job_stops_its_builds_and_carries_a_cut_off_switch_on_when_it_ends():
+    stops = [line for line in update_unit("tm-job-update").splitlines() if line.startswith("ExecStopPost=")]
+    assert stops == [
+        "ExecStopPost=-/usr/bin/systemctl stop tm-update.slice",
+        "ExecStopPost=-/usr/bin/systemctl start --no-block tm-update-resume.service",
+    ]
+
+
+def test_the_update_job_may_run_for_six_hours():
+    assert "TimeoutStartSec=6h" in update_unit("tm-job-update").splitlines()
+
+
+def test_the_resume_unit_runs_only_with_a_marker_and_at_boot():
+    unit = update_unit("tm-update-resume")
+    lines = unit.splitlines()
+    assert "ConditionPathExists=/var/lib/traffic-monitor/update/resume.json" in unit_section(unit, "Unit")
+    assert "WantedBy=multi-user.target" in unit_section(unit, "Install")
+    # Order only: a missing app must not stop the resume from running
+    assert not any(line.startswith(("Requires=", "Wants=", "BindsTo=")) for line in lines)
+    after = next(line for line in lines if line.startswith("After="))
+    assert after.split("=", 1)[1].split() == [
+        "tm-control.service", "traffic-monitor.service", "revproxy.service", "go2rtc_server.service"]
+    assert "Type=oneshot" in lines
+    assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/traffic-monitor/tm-update-resume" in lines
+    assert "TimeoutStartSec=3h" in lines
+    stops = [line for line in lines if line.startswith("ExecStopPost=")]
+    assert stops == ["ExecStopPost=-/usr/bin/systemctl stop tm-update.slice"]  # and never a start of itself
+    assert not any(line.startswith("Slice=") for line in lines)
+
+
+@pytest.mark.parametrize(("name", "starters", "limit"), [
+    ("tm-job-update", ["tm-control starts it through polkit", "tm-update-resume.service"], "TimeoutStartSec is 6h"),
+    ("tm-update-resume", ["Starts at boot, and from tm-job-update.service"], "TimeoutStartSec is 3h"),
+])
+def test_the_update_units_say_what_starts_them_and_why_their_limits_are_what_they_are(name, starters, limit):
+    header = update_unit(name).split("[Unit]")[0]
+    assert header.startswith(f"# /etc/systemd/system/{name}.service, installed by tmsetup.sh (tm-control tag)")
+    comment = " ".join(line.lstrip("# ") for line in header.splitlines())
+    for text in starters + [limit]:
+        assert text in comment
 
 
 @pytest.mark.parametrize("job", JOBS)
@@ -1056,7 +1164,8 @@ def test_polkit_rules_allow_only_named_units_for_the_code_owner():
     assert '"tm-job-network.service"' in rules
     assert '"tm-job-network-join.service"' in rules
     assert '["start", "stop", "restart"]' in rules
-    assert rules.count("polkit.Result.YES") == 2
+    assert '"tm-job-update.service"' in rules
+    assert rules.count("polkit.Result.YES") == 3
     # The code-owner test comes first, so neither YES is reached for anyone else
     assert rules.index('subject.user !== "tmadmin"') < rules.index("polkit.Result.YES")
 
@@ -1079,7 +1188,42 @@ def test_polkit_allowlist_covers_the_traffic_monitor_units_only():
         "tm-job-network.service", "tm-job-network-join.service", "tm-network-retry.service",
     ]
     assert polkit["unit_verbs"] == ["start", "stop", "restart"]
+    # The update job may be started, never stopped or restarted, and its resume unit not at all
+    assert polkit["start_only_units"] == ["tm-job-update.service"]
+    assert not set(polkit["start_only_units"]) & set(polkit["units"])
     assert polkit["actions"] == TIME_AND_POWER_ACTIONS
+
+
+POLKIT_CASES = [  # (unit, verb, allowed)
+    ("tm-job-update.service", "start", True), ("tm-job-update.service", "stop", False),
+    ("tm-job-update.service", "restart", False), ("tm-update-resume.service", "start", False),
+    ("frigate.service", "restart", True), ("tm-job-network.service", "stop", True), ("ssh.service", "start", False),
+]
+
+
+def polkit_answer(user, unit, verb):
+    """Run the rendered rule in node with a stub polkit: addRule keeps the function, Result has YES and NOT_HANDLED."""
+    script = f"""
+        let rule;
+        const polkit = {{addRule: (f) => {{ rule = f; }}, Result: {{YES: "YES", NOT_HANDLED: "NOT_HANDLED"}}}};
+        {polkit_rules()}
+        const lookups = {{unit: {json.dumps(unit)}, verb: {json.dumps(verb)}}};
+        const action = {{id: "org.freedesktop.systemd1.manage-units", lookup: (name) => lookups[name]}};
+        console.log(rule(action, {{user: {json.dumps(user)}}}));
+    """
+    return subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout.strip()
+
+
+@needs_node
+@pytest.mark.parametrize(("unit", "verb", "allowed"), POLKIT_CASES)
+def test_polkit_decides_each_unit_and_verb(unit, verb, allowed):
+    assert polkit_answer("tmadmin", unit, verb) == ("YES" if allowed else "NOT_HANDLED")
+
+
+@needs_node
+@pytest.mark.parametrize(("unit", "verb", "allowed"), POLKIT_CASES)
+def test_polkit_gives_another_user_nothing(unit, verb, allowed):
+    assert polkit_answer("someone", unit, verb) == "NOT_HANDLED"
 
 
 def js_brackets_balance(source):
@@ -1332,3 +1476,58 @@ def test_the_api_learns_from_nginx_whether_the_request_came_over_the_hotspot():
     for name in LOCATIONS:
         if name != "tm-control-api.conf":
             assert "X-TM-Hotspot" not in location(name), name
+
+
+# --- The device's flows.json: the serial nodes of a radar whose port isn't there are switched off -------------------
+
+FLOWS_TEMPLATE = "script/ansible/roles/tmsetup/templates/node-red-tm/flows.json.j2"
+REPO_FLOWS = REPO / "container" / "node-red-tm" / "data" / "flows.json"
+RADAR_NAMES = [f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(4)]
+
+
+def device_flows(missing):
+    return render(FLOWS_TEMPLATE, tmsetup_radars_missing=missing)
+
+
+def switched_off(text):
+    """The ids of the nodes that differ from the repo's file, each checked to differ only by "d": true."""
+    repo = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    device = json.loads(text)
+    assert [node["id"] for node in device] == list(repo)
+    changed = []
+    for node in device:
+        if node != repo[node["id"]]:
+            assert node == {**repo[node["id"]], "d": True}, node["id"]
+            changed.append(node["id"])
+    return changed
+
+
+def test_flows_template_with_every_port_there_is_the_repos_file():
+    """Read at test time, so a later edit to flows.json is compared as it is: indent 4, key order, non-ASCII,
+    and no trailing newline, as Node-RED writes it."""
+    assert device_flows([]).encode("utf-8") == REPO_FLOWS.read_bytes()
+
+
+def test_flows_template_switches_off_a_missing_radars_three_nodes():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(["TM_RADAR_SERIAL_PORT_03"]))
+    assert sorted(changed) == sorted(["9436149d39191450", "e221212a505a78ac", "1ad62db35274c50d"])
+    assert flows["9436149d39191450"]["serialport"] == "${TM_RADAR_SERIAL_PORT_03}"
+    assert {flows[node_id]["name"] for node_id in changed} == {"", "receive RADAR_03", "send to RADAR_03"}
+
+
+def test_flows_template_with_no_radar_switches_off_all_twelve():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(RADAR_NAMES))
+    assert len(changed) == 12
+    assert {flows[node_id]["type"] for node_id in changed} == {"serial-port", "serial in", "serial out"}
+    assert [flows[node_id]["type"] for node_id in changed].count("serial-port") == 4
+
+
+def test_flows_template_ends_without_a_newline_whatever_is_off():
+    """Ansible's template module gives the output as many trailing newlines as the template file has, so the file
+    itself ends without one (an editor that adds it breaks the byte-for-byte copy)."""
+    assert not (REPO / FLOWS_TEMPLATE).read_text().endswith("\n")
+    for missing in ([], ["TM_RADAR_SERIAL_PORT_01"]):
+        text = device_flows(missing)
+        assert not text.endswith("\n") and text.endswith("]")

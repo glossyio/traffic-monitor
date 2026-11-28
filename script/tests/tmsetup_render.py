@@ -29,12 +29,31 @@ def _environment():
     for module in (core, encryption, mathstuff, urls, urlsplit):
         env.filters.update({name: f for name, f in module.FilterModule().filters().items() if name not in ("default", "d")})
     env.tests.update(core_tests.TestModule().tests())  # such as `is changed` on a registered result
+    env.globals["lookup"] = _lookup
     return env
 
 
+def _lookup(name, term):
+    """Ansible's file lookup as a role's template uses it: the path is under the role's files/, read on the
+    controller, with trailing whitespace stripped (the lookup's rstrip default). No other lookup is needed yet."""
+    if name not in ("file", "ansible.builtin.file"):
+        raise NotImplementedError(f"tmsetup_render has no {name} lookup")
+    return (ROLE / "files" / term).read_text(encoding="utf-8").rstrip()
+
+
 def render(template, **variables):
-    """Render a template given by its path relative to the repo root."""
-    return _environment().get_template(template).render(**variables)
+    """Render a template given by its path relative to the repo root.
+
+    Like Ansible's template module, the result ends with at least as many newlines as the template file does, even
+    where a block tag or a "-" stripped them: Ansible counts the file's own and adds back the difference."""
+    source = (REPO / template).read_text(encoding="utf-8")
+    result = _environment().get_template(template).render(**variables)
+    missing = _trailing_newlines(source) - _trailing_newlines(result)
+    return result + "\n" * missing if missing > 0 else result
+
+
+def _trailing_newlines(text):
+    return len(text) - len(text.rstrip("\n"))
 
 
 def evaluate(value, **variables):

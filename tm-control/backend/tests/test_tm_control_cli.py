@@ -30,8 +30,8 @@ def test_migrate_requires_a_config_option(capsys):
         main(["migrate"])
     assert exit_info.value.code == 2
     err = capsys.readouterr().err
-    for option in ("--frigate-config", "--node-red-config", "--node-red-headings", "--plate-recognizer-env",
-                   "--frigate-env"):
+    for option in ("--frigate-config", "--node-red-config", "--node-red-headings", "--node-red-cosine",
+                   "--plate-recognizer-env", "--frigate-env"):
         assert option in err
 
 
@@ -78,6 +78,48 @@ def test_migrate_node_red_headings_dry_run_writes_nothing(tmp_path, capsys):
     assert main(["migrate", "--node-red-headings", str(config), "--dry-run"]) == 0
     assert config.read_text() == "deployment:\n    bearing: 'e'\n"
     assert capsys.readouterr().out == f"tm-control migrate: {config}: would convert deployment.bearing to heading_deg\n"
+
+
+def test_migrate_node_red_cosine_alone_moves_an_angle_and_reads_no_secrets(tmp_path, monkeypatch, capsys):
+    """Node-RED's start runs it as the code owner, who can't read the secrets directory."""
+    monkeypatch.setenv("TM_CONTROL_SECRETS_DIR", str(tmp_path / "no-such-secrets"))
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("--node-red-cosine has no secrets to move")
+
+    monkeypatch.setattr(migrate, "_read_secret", refuse)
+    config = tmp_path / "config.yml"
+    config.write_text("sensors:\n    radars:\n        R0:\n            enabled: true\n"
+                      "            opt_api_commands_array: '[\"^/+12.5\\n\"]'\n")
+    assert main(["migrate", "--node-red-cosine", str(config)]) == 0
+    assert config.read_text() == ("sensors:\n    radars:\n        R0:\n            enabled: true\n"
+                                  "            cosine_inbound_deg: 12.5\n            opt_api_commands_array: '[]'\n")
+    assert "R0.opt_api_commands_array" in capsys.readouterr().out
+
+
+def test_migrate_node_red_cosine_dry_run_writes_nothing(tmp_path, capsys):
+    config = tmp_path / "config.yml"
+    text = "sensors:\n    radars:\n        R0:\n            opt_api_commands_array: '[\"^/+12.5\\n\"]'\n"
+    config.write_text(text)
+    assert main(["migrate", "--node-red-cosine", str(config), "--dry-run"]) == 0
+    assert config.read_text() == text
+    assert capsys.readouterr().out.startswith(f"tm-control migrate: {config}: would ")
+
+
+def test_migrate_node_red_cosine_calls_the_step_with_its_path_and_the_dry_run(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(migrate, "run_node_red_cosine", lambda path, dry_run=False: calls.append((path, dry_run)) or 0)
+    assert main(["migrate", "--node-red-cosine", str(tmp_path / "config.yml"), "--dry-run"]) == 0
+    assert calls == [(tmp_path / "config.yml", True)]
+
+
+def test_migrate_node_red_cosine_runs_after_the_headings_step_when_given_with_it(tmp_path, monkeypatch):
+    order = []
+    monkeypatch.setattr(migrate, "run_node_red_headings", lambda path, dry_run=False: order.append("headings") or 0)
+    monkeypatch.setattr(migrate, "run_node_red_cosine", lambda path, dry_run=False: order.append("cosine") or 0)
+    path = str(tmp_path / "config.yml")
+    assert main(["migrate", "--node-red-cosine", path, "--node-red-headings", path]) == 0
+    assert order == ["headings", "cosine"]
 
 
 def test_migrate_plate_recognizer_env_moves_the_values(tmp_path, monkeypatch):

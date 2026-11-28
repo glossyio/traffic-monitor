@@ -118,6 +118,7 @@ def completed(argv, rc=0, stdout=""):
 BOOT = "11111111-2222-3333-4444-555555555555"
 OTHER_BOOT = "99999999-8888-7777-6666-555555555555"
 SWITCH_USEC = 5_000_000
+SLICE_STOP = ["systemctl", "stop", "tm-update.slice"]
 
 
 class FakeClock:
@@ -211,7 +212,7 @@ class Device:
         self.stages.append("venv")
         return paths.venv_root / "ansible-test"
 
-    def _run_playbook(self, venv, tree, name, vars_file, handover, log, tags=None):
+    def _run_playbook(self, venv, tree, name, vars_file, handover, log, tags=None, *, timeout):
         self.stages.append((name, tuple(tags or ())))
         self.events.append(("playbook", name, tuple(tags or ())))
         assert (handover.work_dir / "reason").parent.is_dir()
@@ -220,6 +221,8 @@ class Device:
         key = tuple(tags or ())
         if key == ("stage",):
             (handover.work_dir / "facts.json").write_text(json.dumps({"tm_control_port": 8090, "images": []}))
+        if isinstance(self.playbook_rc.get(key), BaseException):
+            raise self.playbook_rc[key]
         if self.playbook_rc.get(key):
             reason = self.playbook_rc[key]
             if isinstance(reason, str):
@@ -258,3 +261,7 @@ class Device:
 
     def systemctl_calls(self, verb):
         return [argv for argv in self.run.argvs() if argv[:2] == ["systemctl", verb]]
+
+    def unit_stops(self):
+        """The stops of units, without the stop of the update's slice that every run begins with."""
+        return [argv for argv in self.systemctl_calls("stop") if argv != SLICE_STOP]

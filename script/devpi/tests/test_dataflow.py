@@ -10,8 +10,8 @@ import re
 from datetime import datetime
 
 import pytest
-from devpi_checks import (db_query, pi_now, places_state, read_root_file, require_pii_free, role_vars, session,
-                          tm_internal_answer, tm_internal_token)
+from devpi_checks import (db_query, pi_now, places_state, read_root_file, require_pii_free, role_vars,
+                          service_active_seconds, session, tm_internal_answer, tm_internal_token)
 
 MAX_RADAR_AGE_SECONDS = 15 * 60
 MAX_EVENT_AGE_SECONDS = 60 * 60
@@ -141,14 +141,6 @@ WATCH_MAX_AGE_SECONDS = 400
 # The first mark after a start writes nothing, so the first rows come at the second mark: up to ten minutes
 # after the start, plus the time to write them.
 WATCH_FIRST_ROWS_SECONDS = 11 * 60
-
-
-def service_active_seconds(host, unit):
-    """How long a service has been active, from systemd's monotonic stamp against the Pi's uptime,
-    so a jump of the wall clock since the start doesn't change it."""
-    entered = int(host.check_output(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}"))
-    uptime = float(host.check_output("cut -d' ' -f1 /proc/uptime"))
-    return uptime - entered / 1e6
 
 
 def node_red_active_seconds(host):
@@ -368,4 +360,27 @@ def test_the_setup_history_has_a_row_in_force(host, codedir, node_red_config, fr
             if not -5 <= age <= SETUP_MAX_AGE_SECONDS:
                 problems.append(f"setup.received_at is {age:.0f} seconds before now, not within "
                                 f"{SETUP_MAX_AGE_SECONDS}")
+    assert not problems, "; ".join(problems)
+
+
+def test_setup_radar_has_an_open_row_for_each_expected_radar(host, expect, codedir):
+    """The setup history has exactly one open setup_radar row for each radar the host expects, named by its key under
+    sensors.radars, with a part number, and none for another radar. Reads only; messages name the radars' keys, never
+    an answer."""
+    if not expect["radars"]:
+        pytest.skip("the host expects no radar")
+    active = service_active_seconds(host, "node-red-tm.service")
+    if active < SETUP_FIRST_ROWS_SECONDS:
+        pytest.skip(f"node-red-tm.service has been active for {active:.0f} seconds; a radar's first row comes after "
+                    f"its setup, so check again after {SETUP_FIRST_ROWS_SECONDS} seconds")
+    rows = {}
+    for radar, part_number in db_query(host, codedir, "SELECT radar, part_number FROM setup_radar WHERE ended IS NULL"):
+        rows.setdefault(radar, []).append(part_number)
+    expected = {radar["env_name"] for radar in expect["radars"]}
+    problems = [f"setup_radar has {len(rows.get(name, []))} rows with no ended for {name}, not 1"
+                for name in sorted(expected) if len(rows.get(name, [])) != 1]
+    problems += [f"setup_radar has an open row for {name}, which the host has no radar for"
+                 for name in sorted(set(rows) - expected)]
+    problems += [f"the open setup_radar row for {name} has no part number"
+                 for name in sorted(expected) if len(rows.get(name, [])) == 1 and not rows[name][0]]
     assert not problems, "; ".join(problems)

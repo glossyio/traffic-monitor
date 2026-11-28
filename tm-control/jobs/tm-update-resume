@@ -1,0 +1,105 @@
+#!/usr/bin/python3
+"""Carry on a software update that was cut off.
+
+tm-update-resume.service runs this as root (`/usr/bin/python3 -EP`) at boot, and tm-job-update runs it in its own
+place when a marker is left, so a switch that a restart, a power cut, or a kill stopped is finished before anything
+else. tm-update writes the marker {"contract": 1, "tree": <path>, "handover": <path>} just before the switch and
+removes it when the run ends.
+
+- No marker: one line, exit 0.
+- A usable marker (contract the number 1, the tree exactly /var/lib/traffic-monitor/src/<40 hex> holding
+  script/tm-update, the hand-over a file that really is under /var/lib/traffic-monitor/update/work/): this process
+  becomes that tree's `script/tm-update resume --handover <file>`, whose exit status is the unit's.
+- Any other marker: it is renamed to resume.json.unusable (an older one is replaced), the control app, the pod and the
+  proxy are started again, and the exit status is 2. The marker's contents are never printed.
+
+Standard library only, no tm_control or tm_update imports: this file stays as the release that installed it until an
+update replaces it. Only when not running as root, TM_UPDATE_ROOT (a folder every device path is moved under) and
+TM_UPDATE_SYSTEMCTL (the systemctl to run) are honoured, for tests.
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+
+UPDATE = "/var/lib/traffic-monitor/update"
+RESUME, WORK = UPDATE + "/resume.json", UPDATE + "/work"
+SRC = "/var/lib/traffic-monitor/src"
+SYSTEM_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
+UNITS = ("tm-control.service", "traffic-monitor.service", "revproxy.service")
+TREE = re.compile(re.escape(SRC) + r"/[0-9a-f]{40}")
+
+
+def say(text):
+    print(text, flush=True)
+
+
+def trusted(name, default):
+    """The setting `name` from the environment, but only when not root: root always uses the installed values."""
+    return default if os.geteuid() == 0 else os.environ.get(name) or default
+
+
+def rooted(path):
+    """A device path, under TM_UPDATE_ROOT for a test."""
+    return os.path.join(trusted("TM_UPDATE_ROOT", "/"), path.lstrip("/"))
+
+
+def command(marker):
+    """The tm-update command the marker names, or None when it is not a usable marker."""
+    if not isinstance(marker, dict) or type(marker.get("contract")) is not int or marker["contract"] != 1:
+        return None
+    tree, handover = marker.get("tree"), marker.get("handover")
+    if not isinstance(tree, str) or not TREE.fullmatch(tree) or not isinstance(handover, str):
+        return None
+    if "\0" in handover or not handover.startswith(WORK + "/") or os.path.normpath(handover) != handover:
+        return None
+    program = os.path.join(rooted(tree), "script/tm-update")
+    work, real = os.path.realpath(rooted(WORK)), os.path.realpath(rooted(handover))
+    if os.path.realpath(rooted(tree)) != os.path.join(os.path.realpath(rooted(SRC)), tree.rsplit("/", 1)[1]):
+        return None
+    if not os.path.isfile(program) or not os.access(program, os.X_OK):
+        return None
+    if not real.startswith(work + "/") or not os.path.isfile(real):
+        return None
+    return [program, "resume", "--handover", rooted(handover)]
+
+
+def set_aside(path):
+    try:
+        os.replace(path, path + ".unusable")
+    except OSError as error:
+        say(f"the marker could not be set aside ({error.strerror})")
+    argv = [trusted("TM_UPDATE_SYSTEMCTL", "systemctl"), "start", "--no-block", *UNITS]
+    try:
+        subprocess.run(argv, env={"PATH": SYSTEM_PATH}, timeout=60, check=False)
+    except (OSError, subprocess.SubprocessError) as error:
+        say(f"the services could not be started ({type(error).__name__})")
+
+
+def main():
+    path = rooted(RESUME)
+    if not os.path.lexists(path):
+        say("no update to carry on")
+        return 0
+    try:
+        with open(path, "rb") as file:
+            argv = command(json.loads(file.read(4096)))
+    except Exception:  # a nested marker raises RecursionError; whatever it is, the marker is not usable
+        argv = None
+    if argv is not None:
+        say("carrying on an update that was cut off")
+        try:
+            os.execv(argv[0], argv)
+        except OSError as error:
+            say(f"the update's tm-update can't start ({error.strerror})")
+    else:
+        say("the resume marker is not usable")
+    set_aside(path)
+    say("the marker is set aside and the services are started")
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
