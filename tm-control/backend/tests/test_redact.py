@@ -137,3 +137,45 @@ def test_a_database_copys_ticket_in_nginxs_log_is_hidden():
 def test_the_database_copys_own_file_names_are_not_taken_for_a_ticket():
     line = "tm_20261115_tmdb-exact-locations.tar.gz holds tmdb-exact-locations.sqlite"
     assert redact(line, []) == line
+
+
+PICTURE_ID = "0123456789abcdef"
+
+
+def test_a_stored_pictures_id_in_nginxs_log_is_hidden():
+    line = (
+        '10.42.0.23 - - [27/Nov/2026:08:11:15 +0000] '
+        f'"GET /api/v1/pictures/{PICTURE_ID}/clean.jpg HTTP/1.1" 200 98765'
+    )
+    out = redact(line, [])
+    assert PICTURE_ID not in out
+    assert f'"GET /api/v1/pictures/{REDACTED}/clean.jpg HTTP/1.1" 200 98765' in out
+    for request in (
+        f"DELETE /api/v1/pictures/{PICTURE_ID} HTTP/1.1",
+        f"POST /api/v1/pictures/{PICTURE_ID}/package HTTP/1.1",
+    ):
+        assert redact(f'"{request}" 204 0', []) == f'"{request.replace(PICTURE_ID, REDACTED)}" 204 0'
+
+
+def test_a_stored_pictures_id_is_hidden_in_any_letter_case_and_when_encoded():
+    upper = PICTURE_ID.upper()
+    for path in (
+        f"/api/v1/pictures/{upper}/zones.jpg",  # nginx logs the path as it was asked for
+        f"/login?next=%2Fapi%2Fv1%2Fpictures%2F{PICTURE_ID}%2Fclean.jpg",  # a login redirect's next=
+        f"/login?next=%2fapi%2fv1%2fpictures%2f{PICTURE_ID}%2fclean.jpg",
+        f"/login?next=%252Fapi%252Fv1%252Fpictures%252F{PICTURE_ID}",  # encoded once more
+    ):
+        out = redact(f'"GET {path} HTTP/1.1" 200 612', [])
+        assert PICTURE_ID not in out.lower() and out.count(REDACTED) == 1, path
+
+
+def test_other_pictures_paths_are_left_alone():
+    for line in (
+        "GET /api/v1/pictures HTTP/1.1",
+        "GET /api/v1/pictures?survey_id=3f9a1c2e-si HTTP/1.1",
+        f"GET /api/v1/pictures/{PICTURE_ID}0/clean.jpg HTTP/1.1",  # not an id: 17 characters
+        "GET /api/v1/pictures/0123456789abcde/clean.jpg HTTP/1.1",  # 15
+        f"GET /frigate/api/preview/{PICTURE_ID}/start HTTP/1.1",
+        f"GET /api/v1/cameras/picam_h265/reference/{PICTURE_ID} HTTP/1.1",
+    ):
+        assert redact(line, []) == line

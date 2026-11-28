@@ -85,7 +85,9 @@ from an existing lockfile without trouble, so the image still builds and tests t
 - `src/modules/<name>/` holds one feature's pages and an `index.ts` with its routes and menu entries. The `location`
   module is the Location page (`LocationPage.vue`), a place's panel (`PlaceDetails.vue`), and its dialogs: adding or
   editing a place (`PlaceForm.vue`), the deploy review (`DeployReview.vue`), corrections (`CorrectDialog.vue`), and
-  importing (`ImportPlaces.vue`). The Mounting page (`MountingPage.vue`) is the place in use's mounting, with the
+  importing (`ImportPlaces.vue`). A place's stored reference pictures are listed by `PlacePictures.vue` in its panel,
+  with the review step before a download in `PictureReview.vue` and their words and addresses in `pictures.ts`. The
+  Mounting page (`MountingPage.vue`) is the place in use's mounting, with the
   heading dial (`HeadingDial.vue`), the side view (`MountSideView.vue`), and the lengths in feet or metres
   (`lengths.ts`). Its `coordinates.ts` shows coordinates, names the precision choices,
   checks a pasted pair (`parsePair`) before the form sends it, and measures how far a correction moves a point
@@ -1566,6 +1568,42 @@ Defaults rejected for the page:
 - A select for the usual mounts: the titles are long and a person would have to open it to see the choices.
 - A tick that sets itself when the numbers happen to match: following the camera would then be the page's choice, and
   later changes to the camera would move the radar without the person deciding it.
+
+#### A place's reference pictures
+
+The pictures a place has kept are in its panel, under its deployments (`PlacePictures.vue`, with the review step in
+`PictureReview.vue` and the words and addresses in `pictures.ts`), because a picture belongs to a place and is deleted
+with it. Each row shows both views at a width where a person can be seen, one above the other at the column's width,
+never as a thumbnail, because the list is also where an administrator decides what to delete. A row says when the
+picture was taken, which camera, and why (`reasonWords`), then its mark: a `person` is a tonal warning and an
+`unchecked` picture tonal information (`markLine`), and a clear picture has no line. The note on the first picture after
+a restart (`restartNote`) is plain text under the reason, never an alert, and never changes the mark's line.
+
+A download is one picture, so the review step shows one pair and its tick, "I have looked at both views", starts off
+every time the dialog opens or its picture changes; Download stays off until it is ticked. The tick can't be set until
+both views have loaded (the box's hint says so), and a view that fails to load shows an alert and keeps the box and
+Download off, because the tick is the only step between a stored picture and its leaving the device; the two images
+load at once for that reason, where the list's are lazy. A `person` picture's
+warning sits above the views, where it is read first, and the restart note under them. The location box is the
+Cameras page's, started on when the place has a point and off, with a hint, when it has none. The dialog closes when
+the zip is saved, so the next download starts with a fresh look. PR 4 extends this dialog to many pictures.
+
+The list's images are plain `<img loading="lazy">` on the device's addresses (`/api/v1/pictures/{id}/clean.jpg` and
+`zones.jpg`), authorized by the session cookie, and the page keeps no copy. The Location page asks for a place's
+pictures when its panel opens, as it does the events, and reads them, the places, and so the counts again after a
+delete or a keep. The count above the places is the sum of the places' own counts. A delete shows the API's message
+beside the row it was for, and a load that fails says why in the section, so a place with a list that couldn't be read
+isn't called empty. Deleting a place deletes its pictures, so its confirmation says how many go with it. The place in
+use offers **Take a reference picture** for each enabled camera, which opens the Cameras page's dialog; its **Keep on
+this device** sits beside Save the zip after a take at a place, and a take with no place has no such button.
+
+The pictures were checked in fake mode at 375 px and 1280 px wide, with one picture of each mark (the fake Frigate
+tracks a person with `TM_CONTROL_FAKE_PERSON=1`, and a camera whose detection is off gives the unchecked mark; none
+makes a picture "after a restart", so that note is covered by tests only). The Keep line sits under the dialog's
+buttons, outside the part that scrolls, so it stays in view at 375 px with the buttons it explains. The location box
+in the review hides the empty space under it when the place has a point, so the two boxes sit together; the hint
+stays for a place with none. Looked at and kept: a row's two views stacked at the column's width make a long list, which
+is the point of the list (a person has to be seen); the browser loads a row's pictures only when it nears the screen.
 
 #### What the screenshot review changed
 

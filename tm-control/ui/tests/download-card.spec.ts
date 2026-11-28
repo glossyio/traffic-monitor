@@ -35,7 +35,7 @@ const answers = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 })
 
-function mountCard(facts: { database_bytes: number | null; exact_places: number } = DOWNLOAD_FACTS) {
+function mountCard(facts: { database_bytes: number | null; exact_places: number; pictures: number } = DOWNLOAD_FACTS) {
   return mountAlone(DownloadCard, { facts })
 }
 
@@ -71,10 +71,48 @@ describe('the Download your data card', () => {
 
   it('shows no size when the device has none', () => {
     signedIn(ADMIN, answers())
-    const wrapper = mountCard({ database_bytes: null, exact_places: 2 })
+    const wrapper = mountCard({ database_bytes: null, exact_places: 2, pictures: 0 })
     expect(wrapper.text()).not.toContain('Database size')
     expect(wrapper.text()).toContain(SUBTITLE)
     expect(wrapper.findAll('button').some((b) => b.text() === 'Download')).toBe(true)
+  })
+
+  describe('the stored reference pictures', () => {
+    const LINE =
+      "They aren't part of this download. Download or delete them under each place on the Location page."
+    const stored = (wrapper: VueWrapper) => {
+      const label = wrapper.findAll('.text-body-2').find((d) => d.text() === 'Reference pictures stored')
+      return label?.element.nextElementSibling?.textContent?.trim()
+    }
+
+    it('says how many there are, and that they are not in the download, when there are some', () => {
+      signedIn(ADMIN, answers())
+      const wrapper = mountCard({ ...DOWNLOAD_FACTS, pictures: 3 })
+      expect(stored(wrapper)).toBe('3')
+      expect(wrapper.text()).toContain(LINE)
+    })
+
+    it('says nothing when there are none', () => {
+      signedIn(ADMIN, answers())
+      const wrapper = mountCard({ ...DOWNLOAD_FACTS, pictures: 0 })
+      expect(wrapper.text()).not.toContain('Reference pictures stored')
+      expect(wrapper.text()).not.toContain(LINE)
+    })
+
+    it('still says it when the database has no size', () => {
+      signedIn(ADMIN, answers())
+      const wrapper = mountCard({ database_bytes: null, exact_places: 0, pictures: 1 })
+      expect(stored(wrapper)).toBe('1')
+      expect(wrapper.text()).toContain(LINE)
+    })
+
+    it('follows the facts the page reads again', async () => {
+      signedIn(ADMIN, answers())
+      const wrapper = mountCard({ ...DOWNLOAD_FACTS, pictures: 2 })
+      expect(stored(wrapper)).toBe('2')
+      await wrapper.setProps({ facts: { ...DOWNLOAD_FACTS, pictures: 0 } })
+      expect(stored(wrapper)).toBeUndefined()
+    })
   })
 
   it('starts with the box unticked', () => {
@@ -90,7 +128,7 @@ describe('the Download your data card', () => {
 
   it('turns the box off and says why when no place has an exact location', () => {
     signedIn(ADMIN, answers())
-    const wrapper = mountCard({ database_bytes: 734003200, exact_places: 0 })
+    const wrapper = mountCard({ database_bytes: 734003200, exact_places: 0, pictures: 0 })
     expect(field(wrapper, BOX).element.disabled).toBe(true)
     expect(wrapper.text()).toContain('No place this device has been at has an exact location yet.')
     expect(wrapper.text()).not.toContain('Without it, the file holds')
@@ -186,7 +224,7 @@ describe('the Download your data card', () => {
     const wrapper = mountCard()
     await press(wrapper, 'Download')
     await clickInDialog('Download')
-    await wrapper.setProps({ facts: { database_bytes: 1, exact_places: 2 } })
+    await wrapper.setProps({ facts: { database_bytes: 1, exact_places: 2, pictures: 0 } })
     expect(wrapper.text()).toContain(`${NOTE_START}tmdb.tar.gz.`)
     expect(downloadButton(wrapper).element.disabled).toBe(true)
     expect(field(wrapper, BOX).element.disabled).toBe(true)
@@ -198,7 +236,7 @@ describe('the Download your data card', () => {
     const wrapper = mountCard()
     await press(wrapper, 'Download')
     await clickInDialog('Download')
-    await wrapper.setProps({ facts: { database_bytes: 1, exact_places: 2 } })
+    await wrapper.setProps({ facts: { database_bytes: 1, exact_places: 2, pictures: 0 } })
     expect(wrapper.text()).toContain(NOT_STARTED)
   })
 
@@ -206,7 +244,7 @@ describe('the Download your data card', () => {
     const api = signedIn(ADMIN, answers())
     const wrapper = mountCard()
     await field(wrapper, BOX).setValue(true)
-    await wrapper.setProps({ facts: { database_bytes: 734003200, exact_places: 0 } })
+    await wrapper.setProps({ facts: { database_bytes: 734003200, exact_places: 0, pictures: 0 } })
     expect(field(wrapper, BOX).element.checked).toBe(true)
     expect(field(wrapper, BOX).element.disabled).toBe(false)
     expect(wrapper.text()).toContain('No place this device has been at has an exact location yet.')

@@ -1,5 +1,5 @@
 ---
-description: Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place's time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.
+description: Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place's time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, keep, look at, download, and delete a place's reference pictures, and find where to download a copy of the database with the exact locations.
 ---
 
 # Places and location
@@ -18,7 +18,7 @@ The exact location is kept in the control app and in Node-RED's settings file, [
 
 ## The Location page
 
-**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Then come the list of places, the [list of exact locations](#export-the-exact-locations), and, last, the [precision](#choose-the-precision). A copy of the database with the exact locations in it is on the [Sharing page](sharing.md#include-each-places-exact-location).
+**Location** is in the control app's menu, after **Cameras**. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device [shares](sharing.md), and the way each sensor faces. When the place has [mounting values from the last time the unit was there](#a-place-used-before), the card says so and has a **Mounting** button. Above the list, a line says how many pictures the device stores (**The device stores 3 reference pictures.**) once it stores any. Then come the list of places, the [list of exact locations](#export-the-exact-locations), and, last, the [precision](#choose-the-precision). A copy of the database with the exact locations in it is on the [Sharing page](sharing.md#include-each-places-exact-location).
 
 ![The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its Export button and a link to the Sharing page, and the Precision section at the end, with its choices closed](../assets/images/location-page.png){ width="300" }
 
@@ -27,6 +27,7 @@ Each place in the list shows its description, or **No description**, its mark (*
 * **Imported from your previous settings** for a place that came from an older version's data; see [Update the software](../build-your-own-device-diy/update.md#places-after-an-update).
 * When the place was first and last used, or **Not used yet**. A used place and the place in use also show their **Time zone**, or **Not set**; see [Set the place's time zone](#set-the-places-time-zone).
 * How many events were recorded there, and between which dates.
+* Its [reference pictures](#reference-pictures), with how many there are, or **No reference picture is stored for this place.**
 * Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with what it recorded, such as **Facing NE (40°) · 7.0 ft up · tilted 15°**. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when. A deployment that has ended has **Correct heading**. One that is running at the place in use has **Mounting** instead, because that is where it is changed.
 * The buttons for what you can do with the place: **Deploy here** for a planned place, **Re-deploy here** for a used one, or **Mounting** for the place in use; **Edit** for a planned place; **Correct location** for a used place or the place in use that has a location; **Time zone** for a used place or the place in use; and **Delete** for any place but the one in use.
 
@@ -216,9 +217,47 @@ Corner by the park,,,,e,e
 
 Choose **Preview** to see the places the file holds, each with its time zone when it has one, and, by line number, any lines with a problem. **Import** adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.
 
+## Reference pictures
+
+A reference picture is two still pictures of a camera's view, one plain and one with Frigate's zone outlines drawn on it, with a data file of the zones. A place's pictures are listed in its panel on this page, under **Reference pictures (n)**, which says how many it holds. They are the ones you chose to keep with **Keep on this device** in the dialog described under [Take a reference picture](cameras.md#take-a-reference-picture). The device takes no picture by itself: a picture is stored only when an administrator keeps it, and it stays until an administrator deletes it or deletes its place.
+
+!!! info "What is new: pictures kept on the device"
+    A kept picture is an ordinary file on the device's card. Anyone who takes the card can read it, as they can read Frigate's snapshots, and anyone with an administrator's login on the device can see it. Kept pictures are in no backup, and an [update's restore point](../development/software-update.md#restoring-by-hand) doesn't hold them, so a reflashed card loses them. Nothing uploads them, and they are in no database or download of the database.
+
+![A place's Reference pictures section on a phone: the Take a reference picture button, and a stored picture with its time, its camera, "Kept by an administrator", a warning that Frigate was tracking a person, both views one above the other, and Download and Delete](../assets/images/location-pictures.png){ width="300" }
+
+The newest picture is first. Each one shows its time and camera, why it was taken (a picture you kept from the dialog says **Kept by an administrator**), and both views, one above the other, each as wide as the panel so that you can see who is in them. They are never shrunk to thumbnails, because this list is where you decide what to delete.
+
+The mark under the reason tells you what Frigate was tracking when the pictures were taken:
+
+* **Frigate was tracking a person. Blur them before you share it, or leave it out.** A warning, shown above the views.
+* **The device couldn't check for people. Look closely before you share it.** Frigate's detection was off or didn't answer.
+* No mark when Frigate was tracking nobody. That is no promise that nobody is in either view, so look at both anyway.
+
+### Take a reference picture here
+
+The place in use has **Take a reference picture** for each enabled camera, with the camera's name beside it when the unit has more than one. It opens the same dialog as the [Cameras page](cameras.md#take-a-reference-picture), and **Keep on this device** in it stores the pictures under this place. The list updates once you keep one. A place that isn't in use has no such button, because the unit can only take a picture of what its cameras see now.
+
+### Download one picture
+
+**Download** on a picture first opens a review step, **Look at both views before this picture leaves the device**. It says that the picture shows your street and whoever was in view, that anyone who has it can tell where the unit is, and that you should look at both views before you download it. Then it shows both views, each at the full width of the dialog, with the warning for a person or an unchecked picture above them. It has two boxes:
+
+* **Include this place's exact location** puts the place's exact location, as it is now, in the data file. It is ticked when the place has a location and off, with the reason under it, when it has none.
+* **I have looked at both views** starts unticked for every picture, every time, and can't be ticked until both views have loaded. If a view doesn't load, close the dialog and open it again. **Download** stays off until you tick it.
+
+![The review step on a phone: the title, the line about the street, a warning that Frigate was tracking a person, both views one above the other, the two boxes, and Close and Download](../assets/images/location-picture-review.png){ width="300" }
+
+Both views have to be looked at because they are two separate pictures from the camera, taken a moment apart. Frigate's check for a person can miss someone far away, half hidden, or in poor light, and someone can walk into one view and not the other.
+
+A download is always one picture, never several. It is the same zip as the Cameras page gives for a take: the two pictures, the data file, and the drawing of the zones. A place keeps its history, so it can hold several pictures of one camera, and the newest is the one that shows the zones as they are now. The audit log records each download with the place and the camera, and whether the location was included, never the location itself.
+
+### Delete a picture
+
+**Delete** on a picture asks first: **Delete this picture?** Both views are removed from the device. This can't be undone. Deleting a place deletes its pictures with it.
+
 ## Delete a place
 
-Open the place and choose **Delete**, then confirm. A planned place is removed from the list. A used place's exact location is deleted with it, and the database keeps the rounded location stored with each of its records. Deleting can't be undone.
+Open the place and choose **Delete**, then confirm. The confirmation tells you how many reference pictures go with the place. A planned place is removed from the list. A used place's exact location is deleted with it, and the database keeps the rounded location stored with each of its records. The place's [reference pictures](#reference-pictures) are deleted from the device too, before the place is. Deleting can't be undone.
 
 The place in use can't be deleted. Deploy another place first.
 
@@ -254,6 +293,7 @@ The exact location is never stored in the database. It stays on this device, and
 * A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with [**Include each place's exact location**](sharing.md#include-each-places-exact-location) ticked under **Download your data** on the Sharing page, which adds each place's exact location in a table of its own.
 * Data you [share](sharing.md) carries the location as the database stores it. The exact location goes only if you tick **Share the exact location**, and only for the place in use. The file from [**Export exact locations**](#export-the-exact-locations), and the copy from [**Download your data**](sharing.md#include-each-places-exact-location) with the exact locations, go where you send them.
 * A camera's [reference picture](cameras.md#take-a-reference-picture) holds the exact location of the place in use unless you clear **Include this place's exact location**, and the pictures show the street. The zip goes where you send it.
+* A [reference picture kept on the device](#reference-pictures) stays on its card. It leaves only in a download you confirmed after looking at both views, and the zip goes where you send it.
 * A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.
 
 To change these values in `config.yml` by hand, see [Edit the location by hand](../configuration/node-red-config.md#edit-the-location-by-hand).

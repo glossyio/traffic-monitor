@@ -163,6 +163,27 @@ MIGRATIONS = [
     """
     ALTER TABLE surveys ADD COLUMN timezone TEXT;
     """,
+    # The reference pictures an admin keeps on the device (issue #387), one row per picture. Its two frames are files
+    # beside this database, in pictures/<id>/ (modules/pictures/store.py); the row holds what the data file needs. The
+    # place's point is never stored here: a download reads it from the place as it is then.
+    """
+    CREATE TABLE pictures (
+        id TEXT PRIMARY KEY,  -- 16 hex; also the directory's name
+        survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        camera TEXT NOT NULL,  -- the sensors.cameras key
+        reason TEXT NOT NULL CHECK (reason IN ('deployed', 'opted_in', 'mounting', 'setup', 'daylight', 'manual')),
+        mark TEXT NOT NULL CHECK (mark IN ('clear', 'person', 'unchecked')),
+        after_restart INTEGER NOT NULL DEFAULT 0 CHECK (after_restart IN (0, 1)),
+        boot_id TEXT NOT NULL,
+        clean_at REAL NOT NULL,  -- Unix seconds
+        zones_at REAL NOT NULL,
+        clean_bytes INTEGER NOT NULL,
+        zones_bytes INTEGER NOT NULL,
+        facts TEXT NOT NULL,  -- JSON: what the data file needs
+        kept_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+    );
+    CREATE INDEX pictures_survey ON pictures (survey_id, clean_at);
+    """,
 ]
 
 

@@ -66,6 +66,7 @@ from tm_control.modules.location.mounting import read as read_mounting
 from tm_control.modules.location.places import Places, SensorHeading, Survey
 from tm_control.modules.location.region import LatLon, region
 from tm_control.modules.location.zones import ZONE_MAX, read_zone
+from tm_control.modules.pictures.errors import storage_error
 from tm_control.modules.time.router import _clock, _timezones
 
 log = logging.getLogger(__name__)
@@ -98,6 +99,7 @@ class SurveyOut(Survey):
     open_count: int
     deployment_count: int
     imported: bool  # created from the pre-migration tmdb backup
+    pictures: int  # the reference pictures kept for the place
 
 
 class Unassigned(BaseModel):
@@ -318,7 +320,7 @@ def _usage(app_state) -> tuple[dict, dict | None, bool]:
     return by_id, unassigned, True
 
 
-def _survey_out(survey: Survey, precision: str, usage: dict) -> SurveyOut:
+def _survey_out(survey: Survey, precision: str, usage: dict, pictures: dict[str, int]) -> SurveyOut:
     group = usage.get(survey.id, {})
     stored_lat, stored_lon = stored(survey.lat, survey.lon, precision)
     return SurveyOut(
@@ -330,6 +332,7 @@ def _survey_out(survey: Survey, precision: str, usage: dict) -> SurveyOut:
         open_count=_int(group.get("open_count")) or 0,
         deployment_count=_int(group.get("deployment_count")) or 0,
         imported=survey.source == "imported_backup",
+        pictures=pictures.get(survey.id, 0),
     )
 
 
@@ -340,7 +343,7 @@ def _one(app_state, survey: Survey, ask_nodered: bool = True) -> SurveyOut:
     except ConfigError:
         precision = DEFAULT_PRECISION
     usage = _usage(app_state)[0] if ask_nodered else {}
-    return _survey_out(survey, precision, usage)
+    return _survey_out(survey, precision, usage, app_state.pictures.counts())
 
 
 def _deployment(row: dict) -> DeploymentOut | None:
@@ -411,6 +414,7 @@ def _state(request: Request, admin: User) -> PlacesState:
     usage, unassigned, answered = _usage(app_state)
     places = Places(app_state.state)
     current = places.in_use()
+    counts = app_state.pictures.counts()
     clock_zone = _clock_zone(app_state)
     sources = _map_sources(app_state.manifest.map)
     if sources.style_url:  # a region is of no use without a map
@@ -420,7 +424,7 @@ def _state(request: Request, admin: User) -> PlacesState:
         in_use=current.id if current else None,
         sensors=sensors,
         sharing=sharing,
-        surveys=[_survey_out(survey, precision, usage) for survey in places.list()],
+        surveys=[_survey_out(survey, precision, usage, counts) for survey in places.list()],
         unassigned=None if unassigned is None else Unassigned(
             deployment_count=_int(unassigned.get("deployment_count")) or 0,
             first_start=_int(unassigned.get("first_start")),
@@ -668,6 +672,10 @@ def delete_place(survey_id: str, request: Request, admin: User = Depends(require
         place = _place(app_state, survey_id)
         if place.status == "in_use":
             raise ApiError(409, "in_use", "The place in use can't be deleted. Deploy another place first.")
+        try:
+            app_state.pictures.delete_place(place.id)  # its files first, then the place (and with it the rows)
+        except OSError as error:  # the place stays; deleting it again finishes the job
+            raise storage_error(error) from None
         Places(app_state.state).delete(place.id)
     Audit(app_state.state).record(admin.id, "survey.delete", place.id)
     return Response(status_code=204)

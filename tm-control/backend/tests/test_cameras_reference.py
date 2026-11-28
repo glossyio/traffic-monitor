@@ -2,6 +2,7 @@
 names, and the data file."""
 
 import base64
+import dataclasses
 import io
 import json
 import logging
@@ -14,7 +15,7 @@ import pytest
 from tests.jpegs import jpeg
 from tests.test_cameras_zones import CAMERA
 from tm_control.modules.cameras.reference import (
-    HideTickets, Reference, References, caption, data_file, jpeg_size, package, pose_of, stem,
+    HideTickets, Reference, References, Shot, caption, data_file, jpeg_size, mark_of, package, pose_of, stem,
 )
 from tm_control.modules.cameras.svg import reference_svg
 from tm_control.modules.cameras.zones import ZoneFacts, zone_facts
@@ -43,12 +44,27 @@ def reference(**changes) -> Reference:
     return Reference(**values | changes)
 
 
-FIELDS = {key: value for key, value in vars(reference()).items() if key not in ("ticket", "expires")}
+SHOT = Shot(**{key: value for key, value in vars(reference()).items() if key not in ("ticket", "user_id", "expires")})
+USER = 1
+
+
+@pytest.mark.parametrize("person, mark", [(True, "person"), (False, "clear"), (None, "unchecked")])
+def test_mark_of(person, mark):
+    assert mark_of({"checked": person is not None, "before": [], "after": [], "person": person}) == mark
+
+
+def test_a_reference_is_a_shot_with_a_ticket_a_user_and_a_time():
+    held = reference()
+    assert isinstance(held, Shot)
+    names = [field.name for field in dataclasses.fields(Reference)]
+    shot_names = [field.name for field in dataclasses.fields(Shot)]
+    assert names == [*shot_names, "ticket", "user_id", "expires"]
+    assert shot_names[0] == "camera"
 
 
 def test_a_ticket_answers_its_user_until_it_expires():
     store = References()
-    kept = store.keep(100.0, **FIELDS)
+    kept = store.keep(100.0, USER, SHOT)
     assert store.get(kept.ticket, kept.user_id, 100.0 + 599.9) is kept
     assert store.get(kept.ticket, kept.user_id, 100.0 + 600.0) is None
     assert store.get(kept.ticket, kept.user_id + 1, 100.0) is None
@@ -57,24 +73,24 @@ def test_a_ticket_answers_its_user_until_it_expires():
 
 def test_a_new_take_drops_the_users_earlier_one_and_the_store_holds_two():
     store = References()
-    first = store.keep(0.0, **FIELDS)
-    second = store.keep(1.0, **FIELDS)
+    first = store.keep(0.0, USER, SHOT)
+    second = store.keep(1.0, USER, SHOT)
     assert store.get(first.ticket, first.user_id, 2.0) is None and len(store) == 1
     for user_id in (2, 3):
-        store.keep(3.0, **FIELDS | {"user_id": user_id})
+        store.keep(3.0, user_id, SHOT)
     assert len(store) == 2 and store.get(second.ticket, second.user_id, 4.0) is None
 
 
 def test_an_expired_ticket_is_dropped_by_the_next_take():
     store = References()
-    store.keep(0.0, **FIELDS)
-    store.keep(700.0, **FIELDS | {"user_id": 2})
+    store.keep(0.0, USER, SHOT)
+    store.keep(700.0, 2, SHOT)
     assert len(store) == 1
 
 
 def test_drop_forgets_only_the_owners_ticket():
     store = References()
-    kept = store.keep(0.0, **FIELDS)
+    kept = store.keep(0.0, USER, SHOT)
     store.drop(kept.ticket, kept.user_id + 1)
     assert len(store) == 1
     store.drop(kept.ticket, kept.user_id)
@@ -330,6 +346,21 @@ def test_the_access_log_shows_no_ticket(path, shown):
     assert HideTickets().filter(record) is True
     assert record.getMessage() == f'127.0.0.1:50000 - "GET {shown} HTTP/1.1" 200'
     assert "made-up-ticket" not in record.getMessage()
+
+
+@pytest.mark.parametrize(("path", "shown"), [
+    ("/api/v1/pictures/0123456789abcdef/clean.jpg", "/api/v1/pictures/-/clean.jpg"),
+    ("/api/v1/pictures/0123456789abcdef/zones.jpg?x=1", "/api/v1/pictures/-/zones.jpg?x=1"),
+    ("/api/v1/pictures/fedcba9876543210/package", "/api/v1/pictures/-/package"),
+    ("/api/v1/pictures/fedcba9876543210", "/api/v1/pictures/-"),
+    ("/api/v1/pictures", "/api/v1/pictures"),
+    ("/api/v1/pictures/not-an-id/clean.jpg", "/api/v1/pictures/not-an-id/clean.jpg"),
+])
+def test_the_access_log_shows_no_picture_id(path, shown):
+    record = access_record(path)
+    assert HideTickets().filter(record) is True
+    assert record.getMessage() == f'127.0.0.1:50000 - "GET {shown} HTTP/1.1" 200'
+    assert "0123456789abcdef" not in record.getMessage() and "fedcba9876543210" not in record.getMessage()
 
 
 def test_hiding_tickets_leaves_other_records_alone():

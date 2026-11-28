@@ -1017,6 +1017,145 @@ def test_a_reference_picture_is_a_zip_of_four_files(address, admin_session, expe
     assert gone.status == 404, f"{key}'s clean.jpg after DELETE answered HTTP {gone.status}"
 
 
+# The control app's state directory (systemd's StateDirectory=tm-control): a kept picture is pictures/<id>/ under it
+TM_CONTROL_STATE = "/var/lib/tm-control"
+PICTURE_MODES = {"dir": "700", "file": "600"}  # item 2: the directories 0700, the two files 0600
+NO_SESSION = (302, 401)  # an app path redirects to the login page; the API answers 401
+
+
+def picture_ids(address, cookie):
+    """The ids of the pictures the device holds now (a failure never shows them), or None if the list can't be read."""
+    answer = request_from_this_machine(address, f"{API}/pictures", cookie=cookie)
+    found = answer.json() if answer.status == 200 else None
+    pictures = found.get("pictures") if isinstance(found, dict) else None
+    if not isinstance(pictures, list):
+        return None
+    return {one.get("id") for one in pictures}
+
+
+def test_a_kept_picture_is_listed_downloaded_and_deleted(host, address, admin_session, expect, codeowner):
+    """For the first entry whose camera is on in Frigate, at the place in use: Keep on this device stores a take (201),
+    and the list then holds it with `bytes` equal to the two held frames' Content-Lengths; its directory is 0700 and
+    its two files 0600, all the service user's (read with `stat`, never opened); the package of that one picture is a
+    zip of four files whose JPEG entries are the stored sizes; and after DELETE the frame is a 404 and the directory is
+    gone. Whatever the test stored is deleted at the end, even when it fails.
+
+    pii_free units only, because this process receives the pictures' bytes. It reads statuses, sizes, modes, owners,
+    and counts, and never writes, prints, opens, or copies a picture off the device; a failure names those only. It
+    skips when there is no place in use, no camera to take, or less than the free space a keep needs."""
+    require_pii_free(expect)
+    answer = request_from_this_machine(address, f"{API}/cameras", cookie=admin_session)
+    state = answer.json() if answer.status == 200 else None
+    assert isinstance(state, dict), f"GET {API}/cameras with the admin session answered HTTP {answer.status}"
+    rows = [row for row in state.get("rows", []) if row.get("name") and row.get("in_frigate") == "on"
+            and row.get("duplicate_of") is None]
+    if not rows:
+        pytest.skip("no entry whose camera is on in Frigate")
+    before = picture_ids(address, admin_session)
+    assert before is not None, f"GET {API}/pictures with the admin session didn't list the pictures"
+    key = rows[0]["name"]
+    base = f"{API}/cameras/{urllib.parse.quote(key, safe='')}/reference"
+    taken = request_from_this_machine(address, base, "POST", admin_session, {})
+    found = taken.json() if taken.status == 200 else None
+    assert isinstance(found, dict), f"POST {base} answered HTTP {taken.status}"
+    held = f"{base}/{found['ticket']}"
+    picture_id = None
+    try:
+        if found.get("survey_id") is None:
+            pytest.skip("the take has no place, so it can't be kept: no place is in use")
+        held_sizes = []
+        for frame in ("clean.jpg", "zones.jpg"):
+            shown = request_from_this_machine(address, f"{held}/{frame}", cookie=admin_session)
+            length = shown.headers.get("Content-Length")
+            assert shown.status == 200 and length is not None and int(length) == len(shown.body), (
+                f"the held {frame}: HTTP {shown.status}, Content-Length {length}, {len(shown.body)} bytes")
+            held_sizes.append(int(length))
+        kept = request_from_this_machine(address, f"{held}/keep", "POST", admin_session, {})
+        refused = kept.json() if kept.status != 201 else None
+        code = refused.get("error", {}).get("code") if isinstance(refused, dict) else None
+        if kept.status == 409 and code in ("no_place", "no_space"):
+            pytest.skip(f"the device refused the keep ({code}): no place in use, or less than 500 MB free")
+        picture = kept.json() if kept.status == 201 else None
+        assert isinstance(picture, dict) and picture.get("id"), f"POST .../keep answered HTTP {kept.status} ({code})"
+        picture_id, place = picture["id"], picture["survey_id"]
+        sizes = sum(held_sizes)
+        assert picture.get("bytes") == sizes, (
+            f"the kept picture's bytes are {picture.get('bytes')}, the frames' {sizes}")
+
+        listing = request_from_this_machine(address, f"{API}/pictures?survey_id={urllib.parse.quote(place, safe='')}",
+                                            cookie=admin_session)
+        listed = listing.json() if listing.status == 200 else None
+        mine = [one for one in (listed or {}).get("pictures", []) if one.get("id") == picture_id]
+        assert len(mine) == 1, (
+            f"GET {API}/pictures for the place: HTTP {listing.status}, {len(mine)} rows for the picture")
+        assert (mine[0]["bytes"], mine[0]["camera"], mine[0]["reason"]) == (sizes, key, "manual"), (
+            f"the listed picture's (bytes, camera is the entry's key, reason): ({mine[0]['bytes']}, "
+            f"{mine[0]['camera'] == key}, {mine[0]['reason']}); the frames hold {sizes}")
+        assert listed["stored"] >= 1 and listed["stored_bytes"] >= sizes, (
+            f"the list's stored {listed['stored']}, stored_bytes {listed['stored_bytes']}; the picture's {sizes}")
+
+        # The directory and its files: mode and owner from stat, never opened
+        directory = f"{TM_CONTROL_STATE}/pictures/{picture_id}"
+        paths = [f"{TM_CONTROL_STATE}/pictures", directory, f"{directory}/clean.jpg", f"{directory}/zones.jpg"]
+        statted = host.run("sudo stat -c '%a %U %s' " + " ".join(paths))
+        rows_found = [line.split() for line in statted.stdout.strip().splitlines()]
+        assert statted.rc == 0 and len(rows_found) == 4, f"stat of the picture's directory: exit {statted.rc}"
+        modes = [row[0] for row in rows_found]
+        owners = {row[1] for row in rows_found}
+        stored_sizes = [int(row[2]) for row in rows_found[2:]]
+        assert modes == ["700", "700", "600", "600"] and owners == {codeowner} and stored_sizes == held_sizes, (
+            f"modes of (pictures, the picture's directory, clean.jpg, zones.jpg) {modes}, "
+            f"owned only by the service user: {owners == {codeowner}}, the files' sizes {stored_sizes} "
+            f"against the frames' {held_sizes}")
+
+        package = request_from_this_machine(address, f"{API}/pictures/{picture_id}/package", "POST", admin_session,
+                                            {"location": False, "looked": True})
+        assert (package.status, package.headers.get("Content-Type")) == (200, "application/zip"), (
+            f"POST .../package: HTTP {package.status}, {package.headers.get('Content-Type')}")
+        with zipfile.ZipFile(io.BytesIO(package.body)) as archive:
+            count = len(archive.namelist())
+            jpegs = sorted(entry.file_size for entry in archive.infolist() if entry.filename.endswith(".jpg"))
+        assert count == 4 and jpegs == sorted(held_sizes), (
+            f"the picture's zip holds {count} entries, with JPEG sizes {jpegs}; "
+            f"the stored sizes are {sorted(held_sizes)}")
+        unlooked = request_from_this_machine(address, f"{API}/pictures/{picture_id}/package", "POST", admin_session,
+                                             {"location": False, "looked": False})
+        assert unlooked.status == 422, f"POST .../package with looked false answered HTTP {unlooked.status}"
+    finally:
+        if picture_id:  # the one this test kept, whatever the list says
+            request_from_this_machine(address, f"{API}/pictures/{picture_id}", "DELETE", admin_session)
+        # and any the keep stored but didn't answer for
+        for stray in (picture_ids(address, admin_session) or set()) - before:
+            request_from_this_machine(address, f"{API}/pictures/{stray}", "DELETE", admin_session)
+        request_from_this_machine(address, held, "DELETE", admin_session)
+    gone = request_from_this_machine(address, f"{API}/pictures/{picture_id}/clean.jpg", cookie=admin_session)
+    still = host.run(f"sudo test -e {TM_CONTROL_STATE}/pictures/{picture_id}").rc == 0
+    assert (gone.status, still) == (404, False), (
+        f"after DELETE the frame answered HTTP {gone.status} and its directory is "
+        f"{'still there' if still else 'gone'}")
+    again = request_from_this_machine(address, f"{API}/pictures/{picture_id}", "DELETE", admin_session)
+    assert again.status == 204, f"a second DELETE answered HTTP {again.status}, not 204"
+
+
+def test_pictures_need_an_admin_on_the_pi(address, viewer_session):
+    """Kept pictures are for admins. Without a session the list and a frame are a redirect or a 401; a viewer gets
+    require_admin's 403 on the list, a frame, a delete, and a package, whatever the id (a made-up one, so nothing a
+    person kept is touched)."""
+    nobody = "0" * 16
+    for path in (f"{API}/pictures", f"{API}/pictures/{nobody}/clean.jpg"):
+        status = request_from_this_machine(address, path).status
+        assert status in NO_SESSION, f"GET {path.replace(nobody, '<id>')} with no session answered {status}"
+    for method, path, body in (
+        ("GET", f"{API}/pictures", None),
+        ("GET", f"{API}/pictures/{nobody}/zones.jpg", None),
+        ("DELETE", f"{API}/pictures/{nobody}", None),
+        ("POST", f"{API}/pictures/{nobody}/package", {"location": False, "looked": True}),
+    ):
+        refusal = admin_refusal(request_from_this_machine(address, path, method, viewer_session, body))
+        assert refusal == (403, ADMIN_ONLY), (
+            f"{method} {path.replace(nobody, '<id>')} with a viewer session (status, message) {refusal}")
+
+
 NETWORK_CHECKS = ["network.hotspot", "network.wifi", "network.internet", "network.wifi_country"]
 
 

@@ -362,6 +362,37 @@ def test_neutral_name_rekeys_moves_the_headings_and_starts_a_deployment(admin, t
         NEUTRAL, "picam_h265", True, "on")
 
 
+def test_a_neutral_name_takes_the_cameras_pictures_with_it(admin, token):
+    admin.get("/api/v1/surveys")  # the first read settles which place is in use
+
+    def keep():
+        found = admin.post("/api/v1/cameras/picam_h265/reference", headers=JSON_HEADERS).json()
+        r = admin.post(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/keep", headers=JSON_HEADERS)
+        assert r.status_code == 201, r.text
+
+    keep()
+    place = admin.post("/api/v1/surveys", json={"description": None, "lat": None, "lon": None, "headings": []},
+                       headers=ORIGIN).json()["id"]
+    assert admin.post(f"/api/v1/surveys/{place}/deploy", json={"headings": []}, headers=ORIGIN).status_code == 200
+    keep()
+    before = admin.get("/api/v1/pictures").json()
+    assert {one["camera"] for one in before["pictures"]} == {"picam_h265"} and len(before["pictures"]) == 2
+    assert admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS).status_code == 200
+    after = admin.get("/api/v1/pictures").json()
+    assert [one["camera"] for one in after["pictures"]] == [NEUTRAL, NEUTRAL]  # at every place
+    assert [one["id"] for one in after["pictures"]] == [one["id"] for one in before["pictures"]]
+
+
+def test_a_take_held_before_a_neutral_name_cannot_be_kept_after_it(admin, token):
+    admin.get("/api/v1/surveys")  # the first read settles which place is in use
+    found = admin.post("/api/v1/cameras/picam_h265/reference", headers=JSON_HEADERS).json()
+    assert admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS).status_code == 200
+    r = admin.post(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/keep", headers=JSON_HEADERS)
+    assert (r.status_code, error_code(r)) == (404, "reference_expired")  # not stored under the old key
+    assert admin.app.state.pictures.total() == (0, 0)
+    assert admin.get(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/clean.jpg").status_code == 404
+
+
 def test_neutral_name_refuses_a_neutral_name_and_a_missing_camera(admin, token):
     assert admin.post("/api/v1/cameras/picam_h265/neutral-name", headers=JSON_HEADERS).status_code == 200
     before = admin.app.state.config_path.read_text()

@@ -11,8 +11,9 @@ The reference picture (POST /cameras/{name}/reference) reads Frigate twice for t
 with its zone outlines, and holds both in memory under a ticket (app.state.references, reference.py) for the admin who
 took them: the pictures shown are the pictures saved. It writes nothing, so it holds no lock. GET
 .../{ticket}/clean.jpg and zones.jpg show them, GET .../{ticket}/package gives the zip (the pictures, the data file,
-and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches the disk, a log line, an
-audit row, or an error message.
+and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches a log line, an audit row,
+or an error message, and a take reaches the disk only when an admin keeps it (POST .../{ticket}/keep, which holds the
+lock and hands it to the pictures store, modules/pictures).
 
 The take asks Node-RED twice what Frigate is tracking on the camera (people.py): once before the first frame and once
 after the second, and says in its answer (`people`) and in the data file (`objects`) whether a person was listed. The
@@ -20,6 +21,7 @@ check blocks nothing: with no list (detection off, Frigate or Node-RED silent) t
 dialog's note makes looking at the pictures the admin's job in every case. No list is logged or audited.
 """
 
+import errno
 import time
 from typing import Literal
 
@@ -36,11 +38,14 @@ from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
 from tm_control.modules.cameras import people, reference
 from tm_control.modules.cameras.names import is_neutral, new_name
+from tm_control.modules.cameras.shoot import NoShot, shoot
 from tm_control.modules.cameras.state import CameraRadar, CameraRow, CamerasState, compare, frigate_now
-from tm_control.modules.cameras.zones import ZoneFacts, detect_size, distance_unit, zone_facts
+from tm_control.modules.cameras.zones import ZoneFacts
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
+from tm_control.modules.pictures.errors import storage_error
+from tm_control.modules.pictures.router import PictureOut, picture_out
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
@@ -249,6 +254,8 @@ def neutral_name(name: str, request: Request, admin: User = Depends(require_admi
         _edit(config.rename_camera, name, new)
         _save(app_state, config)
         Places(app_state.state).rename_sensor("cameras", name, new)  # config.yml first, the store second
+        app_state.pictures.rename_camera(name, new)
+        app_state.references.drop_camera(name)  # a take of the old key can't be kept or saved under it now
     Audit(app_state.state).record(admin.id, "camera.neutral_name", new)
     _snapshot_twice(app_state)
     return cameras_state(request)
@@ -335,92 +342,22 @@ def _expired() -> ApiError:
     return ApiError(404, "reference_expired", "These pictures are no longer held on the device. Take them again.")
 
 
-def _live(frame, size: tuple[int, int]) -> bytes:
-    """The frame's bytes when it is the camera's current frame at the detect size; Frigate's error picture comes with
-    a 200 and no header, so its size is what gives it away."""
-    if frame is None or frame.offline or reference.jpeg_size(frame.data) != size:
-        raise _no_picture()
-    return frame.data
-
-
-def _sending(stats, camera: str) -> bool:
-    fps = probes.mapping(probes.mapping(probes.mapping(stats).get("cameras")).get(camera)).get("camera_fps")
-    return isinstance(fps, (int, float)) and not isinstance(fps, bool) and fps > 0
-
-
-def _open_deployment(app_state, survey_id: str, name: str) -> str | None:
-    """The id of the camera's open deployment row at the place; None when Node-RED doesn't answer or has none."""
-    try:
-        rows = app_state.nodered.deployments(survey_id)
-    except NodeRedError:
-        return None
-    found = None
-    for row in rows:
-        if (row.get("sensorType"), row.get("sensorName")) == ("cameras", name) and not row.get("entryEndDateTime"):
-            found = row.get("id")
-    return found if isinstance(found, str) else None
+# What each of shoot's refusals answers: the same errors the other routes give for the same things
+NO_SHOT = {
+    "not_found": _not_found, "unavailable": _unavailable, "changed": _changed, "camera_off": _camera_off,
+    "no_picture": _no_picture,
+}
 
 
 @router.post("/{name}/reference", response_model=ReferenceOut)
 def take_reference(name: str, request: Request, admin: User = Depends(require_admin)) -> ReferenceOut:
     """Take the camera's current frame from Frigate, plain and with its zone outlines, and hold both in memory."""
     app_state = request.app.state
-    settings = app_state.settings
-    config = load_config(app_state)
-    _exists(config, name)
-    whole = fake.frigate_answer(settings)[0] if settings.fake else frigate.config()
-    if whole is None or probes.frigate_safe_mode(whole):
-        raise _unavailable()
-    cameras = probes.mapping(whole.get("cameras"))
-    row = _entry(compare(config.cameras(), cameras, config.radars()), name)
-    if row.in_frigate == "absent" or row.duplicate_of is not None:
-        raise _changed()
-    if row.in_frigate == "off":
-        raise _camera_off()
-    camera = probes.mapping(cameras.get(row.frigate_camera))
-    size = detect_size(camera)
-    if size is None:
-        raise _no_picture()
-    stats = fake.frigate_stats(settings) if settings.fake else frigate.stats()
-    if not _sending(stats, row.frigate_camera):
-        raise _no_picture()
-
-    def frame(zones: bool):
-        if settings.fake:
-            return fake.frigate_frame(settings, row.frigate_camera, zones)
-        return frigate.latest_frame(row.frigate_camera, zones=zones)
-
-    before = people.ask(app_state.nodered, name)
-    clean = _live(frame(False), size)
-    clean_at = time.time()
-    zones_picture = _live(frame(True), size)
-    zones_at = time.time()
-    after = people.ask(app_state.nodered, name) if before is not None else None
-    objects = people.facts(before, after)
-
-    mounting = next((m for m in config.mountings() if (m.sensor_type, m.sensor_name) == ("cameras", name)), None)
-    place = Places(app_state.state).in_use()
-    point = (place.lat, place.lon) if place and place.lat is not None and place.lon is not None else None
-    kept = app_state.references.keep(
-        time.monotonic(),
-        user_id=admin.id,
-        camera=name,
-        survey_id=place.id if place else None,
-        point=point,
-        deployment_id=_open_deployment(app_state, place.id, name) if place else None,
-        pose=reference.pose_of(mounting),
-        clean=clean,
-        zones_picture=zones_picture,
-        clean_at=clean_at,
-        zones_at=zones_at,
-        width=size[0],
-        height=size[1],
-        unit=distance_unit(whole),
-        zones=zone_facts(camera),
-        objects=objects,
-        tm_version=app_state.manifest.tm_version,
-        frigate_version=fake.FAKE_FRIGATE_VERSION if settings.fake else frigate.version(),
-    )
+    try:
+        shot = shoot(app_state, name)
+    except NoShot as refusal:
+        raise NO_SHOT[refusal.code]() from None
+    kept = app_state.references.keep(time.monotonic(), admin.id, shot)
     Audit(app_state.state).record(admin.id, "camera.reference", name)
     return ReferenceOut(
         ticket=kept.ticket,
@@ -433,8 +370,8 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         height=kept.height,
         unit=kept.unit,
         zones=kept.zones,
-        has_location=point is not None,
-        people=people.result(objects),
+        has_location=kept.point is not None,
+        people=people.result(kept.objects),
     )
 
 
@@ -443,6 +380,45 @@ def _held(request: Request, name: str, ticket: str, admin: User) -> reference.Re
     if held is None or held.camera != name:
         raise _expired()
     return held
+
+
+def _already_kept() -> ApiError:
+    return ApiError(409, "already_kept", "These pictures are already kept on this device.")
+
+
+def _no_place() -> ApiError:
+    return ApiError(
+        409, "no_place",
+        "These pictures weren't taken at the place in use now, so they can't be kept. Take them again.",
+    )
+
+
+def _no_space() -> ApiError:
+    return storage_error(OSError(errno.ENOSPC, ""), keeping=True)  # the one message, here and when the disk fills
+
+
+@router.post("/{name}/reference/{ticket}/keep", status_code=201, response_model=PictureOut)
+def keep_reference(name: str, ticket: str, request: Request, admin: User = Depends(require_admin)) -> PictureOut:
+    """Keep the held take on the device, for the place in use. No opt-in is needed or changed. The ticket stays good
+    for the zip."""
+    app_state = request.app.state
+    with app_state.reconcile_lock:  # a deploy, or a place's delete, can't come between the check and the store
+        held = _held(request, name, ticket, admin)
+        if app_state.references.kept(ticket):
+            raise _already_kept()
+        current = Places(app_state.state).in_use()
+        if held.survey_id is None or current is None or current.id != held.survey_id:
+            raise _no_place()
+        if not app_state.pictures.has_room():
+            raise _no_space()
+        boot_id = app_state.clock.boot_id()  # read before the store's try: its error isn't the disk's
+        try:
+            stored = app_state.pictures.add(held, "manual", boot_id, kept_by=admin.id)
+        except OSError as error:  # its text holds the file's path, which ends in the picture's id
+            raise storage_error(error, keeping=True) from None
+        app_state.references.mark_kept(ticket)
+    Audit(app_state.state).record(admin.id, "picture.keep", f"{stored.survey_id} {stored.camera}")
+    return picture_out(stored)
 
 
 @router.get("/{name}/reference/{ticket}/package", response_class=Response, responses=ZIP_BODY)

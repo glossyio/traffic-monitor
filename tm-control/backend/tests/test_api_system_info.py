@@ -734,6 +734,30 @@ def test_diagnostics_leave_out_a_change_to_frigates_settings_sent_to_the_login_p
     assert "GET /frigate/api/config/schema.json HTTP/1.1" in text
 
 
+def test_diagnostics_hide_a_stored_pictures_id(device_client, login, host):
+    """A kept reference picture's frames and package are asked for by id, and the proxy's access log keeps the request
+    line, as it does a camera's zone: the id is replaced, plainly, in a login redirect's next=, and in any letter case.
+    The rest of the line stays."""
+    picture = "0123456789abcdef"
+    page = f"/api/v1/pictures/{picture}/clean.jpg"
+    r = device_client.get("/api/v1/auth/verify", headers={"X-Original-URI": page, "X-TM-Required-Role": "viewer"})
+    assert r.status_code == 401
+    redirect = r.headers["X-TM-Redirect"]
+    assert redirect.startswith("/login?next=")
+    host.journal = lambda unit, lines: [
+        f'192.0.2.10 - - [27/Nov/2026:10:02:11 -0800] "GET {page} HTTP/1.1" 200 98765',
+        f'192.0.2.10 - - [27/Nov/2026:10:02:12 -0800] "GET {redirect} HTTP/1.1" 200 612',
+        '192.0.2.10 - - [27/Nov/2026:10:02:13 -0800] "GET /api/v1/pictures/0123456789ABCDEF/zones.jpg HTTP/1.1" 404 40',
+        '192.0.2.10 - - [27/Nov/2026:10:02:14 -0800] "GET /api/v1/pictures?survey_id=x HTTP/1.1" 200 512',
+    ]
+    login(device_client, *ADMIN)
+    text = diagnostics(device_client).text
+    assert '"GET /api/v1/pictures/<redacted>/clean.jpg HTTP/1.1" 200 98765' in text
+    assert '"GET /api/v1/pictures/<redacted>/zones.jpg HTTP/1.1" 404 40' in text
+    assert "next=" in text and picture not in text.lower()
+    assert '"GET /api/v1/pictures?survey_id=x HTTP/1.1" 200 512' in text
+
+
 def frigate_file(host, text):
     """Frigate's config file where the host keeps it, which is what Frigate reads when it starts."""
     path = Path(host.codedir) / "frigate" / "config" / "config.yml"

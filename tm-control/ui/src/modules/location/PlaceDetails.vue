@@ -13,6 +13,10 @@
   That fact comes from the control app, so it shows when Node-RED didn't answer too. Under the facts, only the place in
   use gets a line when its time zone is missing, or differs from the unit's clock (`clockTimeZone`, null when unknown);
   neither is an error, so both are plain text.
+  After the deployments comes the place's reference pictures, "Reference pictures (n)", which PlacePictures lists. The
+  page loads them (`pictures`, with `picturesError` and `retryPictures`) and passes the enabled cameras' keys for the
+  place in use (`cameras`); a delete or a keep emits `picturesChanged`. They don't depend on Node-RED, so they show
+  when it didn't answer.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -20,6 +24,8 @@ import type { components } from '../../api/schema'
 import { ago } from '../../components/relative-time'
 import { facing } from './heading'
 import { savedUnit, shown } from './lengths'
+import PlacePictures from './PlacePictures.vue'
+import type { PictureOut } from './pictures'
 
 type SurveyOut = components['schemas']['SurveyOut']
 type EventsOut = components['schemas']['EventsOut']
@@ -38,8 +44,16 @@ const props = defineProps<{
   nodered: boolean // whether Node-RED answered the usage counts
   clockTimeZone: string | null // the unit's clock's time zone; null when unknown
   mountingSensors?: SensorKey[] | null // the sensors the Mounting page has a section for; unknown when left out
+  pictures?: PictureOut[] // the place's stored reference pictures; undefined until loaded
+  picturesError?: string // why they couldn't be loaded
+  cameras?: string[] // the enabled cameras' keys at the place in use; none elsewhere
 }>()
-const emit = defineEmits<{ retry: []; correctHeading: [deployment: DeploymentOut] }>()
+const emit = defineEmits<{
+  retry: []
+  correctHeading: [deployment: DeploymentOut]
+  retryPictures: []
+  picturesChanged: []
+}>()
 
 // A time in ms as a date and time in the browser's words, such as "Oct 28, 2026, 2:32 PM"
 function dateTime(ms: number) {
@@ -71,6 +85,9 @@ const facts = computed(() => [
 ])
 
 const inUse = computed(() => props.place.status === 'in_use')
+
+// The heading's count: the loaded list's, else the place's own count from the list of places
+const pictureCount = computed(() => props.pictures?.length ?? props.place.pictures)
 
 // The place in use has none, or has another than the unit's clock; nothing is said when the clock's is unknown
 const clockDiffers = computed(
@@ -253,6 +270,17 @@ function attached(deployment: DeploymentOut, deploy: Deploy) {
         </template>
       </template>
     </template>
+
+    <h4 class="text-body-1 font-weight-medium mb-2" data-pictures>Reference pictures ({{ pictureCount }})</h4>
+    <PlacePictures
+      :place="place"
+      :pictures="pictures"
+      :error="picturesError ?? ''"
+      :cameras="cameras ?? []"
+      class="mb-4"
+      @changed="emit('picturesChanged')"
+      @retry="emit('retryPictures')"
+    />
   </div>
 </template>
 

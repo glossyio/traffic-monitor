@@ -369,6 +369,8 @@ Before the switch, `tm-update` saves what an earlier version needs to be restore
 
 Making one writes one line to the run's log: its folder's name, the number of files, and the paths it found missing. A restore point is built in a folder whose name ends in `.partial` and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. `restore.json` in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in `src/` when it is still there (`previous_tree`, which is `null` when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and `tmdb_backup`.
 
+The reference pictures an administrator kept are not in the restore point either. They are files beside `state.sqlite` (`/var/lib/tm-control/pictures/`), and the restore point holds only the database that lists them. Neither the installer nor an update touches them.
+
 The traffic database, `tmdb.sqlite`, is not in the restore point, because it can be several gigabytes. When the new version has a schema change, the migration runner copies the database to `db/backup/` in Node-RED's folder before it applies the change. After the health check, `tmdb_backup` in the state file and the restore point names the newest copy made since the switch began. It is `null` when none was made.
 
 The two newest restore points are kept. The one just made is always kept, whatever the clock said when it was named.
@@ -396,6 +398,10 @@ To put a device back on the version it had, as a person at a shell:
     ```
 
     Remove any `state.sqlite-wal` and `state.sqlite-shm` beside `/var/lib/tm-control/state.sqlite`, then run `sudo systemctl daemon-reload`.
+
+    The restored `state.sqlite` lists the pictures that were kept when the restore point was made. When the control app starts, it removes every picture folder the restored database doesn't list, so a picture kept since the restore point is deleted, and it drops the row for any listed picture whose files are gone, so a picture deleted since disappears from the Location page. The pictures kept before the restore point stay.
+
+    If you restore a version older than the pictures, that version doesn't know about them. It leaves `/var/lib/tm-control/pictures/` on the card, and nothing lists or removes it until an update brings the pictures back, which then sweeps it as above. To free the space at once, or to remove the pictures for good, delete the folder yourself: `sudo rm -r /var/lib/tm-control/pictures`.
 3. When `tmdb_backup` isn't `null`, copy that file over `tmdb.sqlite` in Node-RED's `db/` folder, as the code owner (`tmadmin` unless the install chose another). Rows written since the migration are lost. When it is `null`, the runner made no copy, so there is nothing to put back.
 4. Run the old tree's installer as the login that installed the device (`installing_user` in the manifest), from the tree `previous_tree` names: `bash script/tmsetup.sh -y -a "e tmsetup_source_commit=<old commit>"`. A tree made with `git archive` has no `.git`, so the commit has to be passed. This is a full install and needs the internet. If `previous_tree` is `null`, make the tree again with `git archive` from the commit under `from` in `restore.json`.
 5. The installer starts the services. If it asks for a restart, restart the device.

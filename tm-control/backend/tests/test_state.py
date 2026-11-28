@@ -24,7 +24,7 @@ def _add_user(con, username, role="admin"):
 def test_fresh_database_gets_every_migration(tmp_path):
     state = State(tmp_path / "state.sqlite")
     assert state.version() == 0
-    assert state.migrate() == len(MIGRATIONS) == state.version() == 8
+    assert state.migrate() == len(MIGRATIONS) == state.version() == 9
 
 
 def test_migrate_twice_changes_nothing(tmp_path):
@@ -258,7 +258,7 @@ def test_migration_seven_leaves_every_row_confirmed(tmp_path, monkeypatch):
     con.close()
 
     monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
-    assert state.migrate() == 8
+    assert state.migrate() == 9
     con = state.connect()
     columns = [row["name"] for row in con.execute("PRAGMA table_info(survey_sensors)")]
     assert columns[-1] == "unconfirmed"
@@ -282,10 +282,78 @@ def test_migration_8_adds_the_zone_and_keeps_every_place(tmp_path, monkeypatch):
     con.close()
 
     monkeypatch.setattr("tm_control.core.state.MIGRATIONS", MIGRATIONS)
-    assert state.migrate() == 8
+    assert state.migrate() == 9
     con = state.connect()
     assert [row["name"] for row in con.execute("PRAGMA table_info(surveys)")][-1] == "timezone"
     row = con.execute("SELECT * FROM surveys").fetchone()
     assert (row["id"], row["description"], row["lat"], row["lon"], row["status"]) == (
         "0123abcd-si", "a note", 45.0, -122.0, "used")
     assert row["timezone"] is None
+
+
+def test_migration_9_creates_the_pictures_table(tmp_path):
+    con = _migrated(tmp_path).connect()
+    columns = [row["name"] for row in con.execute("PRAGMA table_info(pictures)")]
+    assert columns == [
+        "id", "survey_id", "camera", "reason", "mark", "after_restart", "boot_id", "clean_at", "zones_at",
+        "clean_bytes", "zones_bytes", "facts", "kept_by",
+    ]
+    indexes = {row["name"] for row in con.execute("PRAGMA index_list(pictures)")}
+    assert "pictures_survey" in indexes
+
+
+def _picture(con, picture_id, survey_id, reason="manual", mark="clear"):
+    con.execute(
+        "INSERT INTO pictures (id, survey_id, camera, reason, mark, boot_id, clean_at, zones_at, clean_bytes, "
+        "zones_bytes, facts) VALUES (?, ?, 'camera_1', ?, ?, 'boot', 1.0, 2.0, 3, 4, '{}')",
+        (picture_id, survey_id, reason, mark),
+    )
+
+
+def test_deleting_a_place_takes_its_picture_rows(tmp_path):
+    con = _migrated(tmp_path).connect()
+    with con:
+        for survey_id in ("0123abcd-si", "4567cdef-si"):
+            con.execute(
+                "INSERT INTO surveys (id, status, source, created_at, updated_at) VALUES (?, 'used', 'ui', ?, ?)",
+                (survey_id, NOW, NOW),
+            )
+        _picture(con, "0123456789abcdef", "0123abcd-si")
+        _picture(con, "fedcba9876543210", "4567cdef-si")
+    with con:
+        con.execute("DELETE FROM surveys WHERE id = '0123abcd-si'")
+    assert [row["id"] for row in con.execute("SELECT id FROM pictures")] == ["fedcba9876543210"]
+
+
+def test_a_picture_needs_a_place_a_reason_and_a_mark_it_knows(tmp_path):
+    con = _migrated(tmp_path).connect()
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+    for picture_id, survey_id, reason, mark in [
+        ("0000000000000001", "missing-si", "manual", "clear"),
+        ("0000000000000002", "0123abcd-si", "later", "clear"),
+        ("0000000000000003", "0123abcd-si", "manual", "maybe"),
+    ]:
+        with pytest.raises(sqlite3.IntegrityError), con:
+            _picture(con, picture_id, survey_id, reason, mark)
+
+
+def test_deleting_the_keeping_admin_keeps_the_picture(tmp_path):
+    con = _migrated(tmp_path).connect()
+    _add_user(con, "admin")
+    user_id = con.execute("SELECT id FROM users").fetchone()[0]
+    with con:
+        con.execute(
+            "INSERT INTO surveys (id, status, source, created_at, updated_at) "
+            "VALUES ('0123abcd-si', 'used', 'ui', ?, ?)",
+            (NOW, NOW),
+        )
+        _picture(con, "0123456789abcdef", "0123abcd-si")
+        con.execute("UPDATE pictures SET kept_by = ?", (user_id,))
+    with con:
+        con.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    assert [tuple(row) for row in con.execute("SELECT id, kept_by FROM pictures")] == [("0123456789abcdef", None)]

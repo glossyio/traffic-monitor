@@ -2,7 +2,7 @@
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { components } from '../src/api/schema'
-import { ADMIN, VIEWER, apiError, json, signedIn } from './fake-api'
+import { ADMIN, VIEWER, apiError, json, pictureOut, referenceOut, signedIn } from './fake-api'
 import * as download from '../src/components/download'
 import CorrectDialog from '../src/modules/location/CorrectDialog.vue'
 import PlaceForm from '../src/modules/location/PlaceForm.vue'
@@ -33,6 +33,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     open_count: 0,
     deployment_count: 0,
     imported: false,
+    pictures: 0,
     ...changes,
   }
 }
@@ -352,6 +353,43 @@ describe('the Location page', () => {
     await clickInDialog('Delete')
     expect(api.sent.filter((r) => r.method === 'DELETE').map((r) => r.path)).toEqual(['/api/v1/surveys/c0ffee01-si'])
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2) // reloaded
+  })
+
+  describe('the delete confirmation names the pictures that go with the place', () => {
+    const USED_TEXT =
+      'Its exact location is deleted with it. The database keeps the rounded location stored with each of its records.'
+    const PLANNED_TEXT = "It's removed from the list of places."
+    const UNDONE = "This can't be undone."
+    const ONE = 'Its reference picture is deleted from the device with it.'
+    const THREE = 'Its 3 reference pictures are deleted from the device with it.'
+
+    async function confirmation(kind: 'used' | 'planned', pictures: number) {
+      const used = kind === 'used'
+      const places = {
+        ...PLACES,
+        surveys: [IN_USE, used ? PLANNED : { ...PLANNED, pictures }, used ? { ...USED, pictures } : USED],
+      }
+      signedIn(ADMIN, {
+        [SURVEYS]: places,
+        'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, used ? 'No description' : 'Corner by the park')
+      await click(wrapper, 'Delete')
+      return dialogText().replace(/\s+/g, ' ')
+    }
+
+    it.each([
+      ['used', 1, `${USED_TEXT} ${ONE} ${UNDONE}`],
+      ['used', 3, `${USED_TEXT} ${THREE} ${UNDONE}`],
+      ['used', 0, `${USED_TEXT} ${UNDONE}`],
+      ['planned', 1, `${PLANNED_TEXT} ${ONE} ${UNDONE}`],
+      ['planned', 3, `${PLANNED_TEXT} ${THREE} ${UNDONE}`],
+      ['planned', 0, `${PLANNED_TEXT} ${UNDONE}`],
+    ] as const)('a %s place with %d stored pictures', async (kind, pictures, expected) => {
+      expect(await confirmation(kind, pictures)).toContain(expected)
+    })
   })
 
   it('heads the precision like the places, says why under the header, and keeps the choices closed', async () => {
@@ -981,5 +1019,141 @@ describe('the Location page', () => {
     await clickInDialog('Import')
     expect(dialogText()).toContain('Added 1 place')
     expect(api.sent.filter((r) => r.method === 'GET' && r.path === '/api/v1/surveys')).toHaveLength(2)
+  })
+
+  describe('Reference pictures', () => {
+    const PICTURES = 'GET /api/v1/pictures'
+    const TAKE = 'POST /api/v1/cameras/picam_h265/reference'
+    const KEEP = 'POST /api/v1/cameras/picam_h265/reference/made-up-ticket/keep'
+    const withPictures = (surveys: SurveyOut[]): PlacesState => ({ ...PLACES, surveys })
+    const used = (count: number) => ({ ...USED, pictures: count })
+    const inUse = (count: number) => ({ ...IN_USE, pictures: count })
+
+    // Answers GET /pictures for any place with the pictures in `byPlace`, and remembers each query
+    function listing(byPlace: Record<string, ReturnType<typeof pictureOut>[]>) {
+      const queries: string[] = []
+      const answer = (request: Request) => {
+        const url = new URL(request.url)
+        queries.push(url.search)
+        const list = byPlace[url.searchParams.get('survey_id') ?? ''] ?? []
+        return json(200, { pictures: list, stored: list.length, stored_bytes: 0 })
+      }
+      return { answer, queries }
+    }
+
+    it("says how many pictures the device stores, above the places", async () => {
+      signedIn(ADMIN, { [SURVEYS]: withPictures([inUse(2), PLANNED, used(3)]) })
+      const { wrapper } = await mountApp('/location')
+      const line = wrapper.findAll('p').find((p) => p.text() === 'The device stores 5 reference pictures.')
+      expect(line).toBeDefined()
+      const list = wrapper.find('.v-expansion-panels')
+      expect(line!.element.compareDocumentPosition(list.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
+    it('says "picture" for one, and says nothing for none', async () => {
+      signedIn(ADMIN, { [SURVEYS]: withPictures([inUse(1), PLANNED, USED]) })
+      const one = await mountApp('/location')
+      expect(one.wrapper.text()).toContain('The device stores 1 reference picture.')
+      one.wrapper.unmount()
+      signedIn(ADMIN, { [SURVEYS]: PLACES })
+      const none = await mountApp('/location')
+      expect(none.wrapper.text()).not.toContain('The device stores')
+    })
+
+    it("loads a place's pictures when its panel opens, not before", async () => {
+      const { answer, queries } = listing({ 'c0ffee01-si': [pictureOut({ id: '00000000000000aa', survey_id: 'c0ffee01-si' })] })
+      signedIn(ADMIN, {
+        [SURVEYS]: withPictures([IN_USE, PLANNED, used(1)]),
+        'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+        [PICTURES]: answer,
+      })
+      const { wrapper } = await mountApp('/location')
+      expect(queries).toEqual([])
+      await expand(wrapper, 'No description')
+      expect(queries).toEqual(['?survey_id=c0ffee01-si'])
+      expect(wrapper.text()).toContain('Reference pictures (1)')
+      expect(wrapper.findAll('[data-picture]').map((row) => row.attributes('data-picture'))).toEqual(['00000000000000aa'])
+    })
+
+    it('says so when the place has none', async () => {
+      const { answer } = listing({})
+      signedIn(ADMIN, {
+        [SURVEYS]: PLACES,
+        'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+        [PICTURES]: answer,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      expect(wrapper.text()).toContain('Reference pictures (0)')
+      expect(wrapper.text()).toContain('No reference picture is stored for this place.')
+    })
+
+    it("shows why a place's pictures could not be loaded, without calling the place empty", async () => {
+      signedIn(ADMIN, {
+        [SURVEYS]: PLACES,
+        'GET /api/v1/surveys/c0ffee01-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/c0ffee01-si/deployments': { deployments: [] },
+        [PICTURES]: apiError(500, 'storage', 'The pictures could not be listed.'),
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'No description')
+      expect(wrapper.text()).toContain('The pictures could not be listed.')
+      expect(wrapper.text()).not.toContain('No reference picture is stored for this place.')
+    })
+
+    it('offers Take a reference picture at the place in use only, for its enabled cameras', async () => {
+      const { answer } = listing({})
+      signedIn(ADMIN, {
+        [SURVEYS]: PLACES,
+        'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/a1b2c3d4-si/deployments': { deployments: [] },
+        'GET /api/v1/surveys/0f0e0d0c-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/0f0e0d0c-si/deployments': { deployments: [] },
+        [PICTURES]: answer,
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'Front of the school')
+      await expand(wrapper, 'Corner by the park')
+      // The one camera sensor of PLACES; its radar is no camera
+      expect(wrapper.findAll('button').filter((b) => b.text().trim() === 'Take a reference picture')).toHaveLength(1)
+    })
+
+    it('loads the places, the count, and the open panel again after a keep or a delete', async () => {
+      const first = pictureOut({ id: '00000000000000aa', survey_id: IN_USE.id, camera: 'picam_h265' })
+      let state = withPictures([inUse(1), PLANNED, USED])
+      const { answer, queries } = listing({ [IN_USE.id]: [first] })
+      const api = signedIn(ADMIN, {
+        [SURVEYS]: () => json(200, state),
+        'GET /api/v1/surveys/a1b2c3d4-si/events': { event_count: 0, first_event: null, last_event: null },
+        'GET /api/v1/surveys/a1b2c3d4-si/deployments': { deployments: [] },
+        [PICTURES]: answer,
+        [`DELETE /api/v1/pictures/${first.id}`]: json(204, null),
+        [TAKE]: referenceOut({ camera: 'picam_h265', survey_id: IN_USE.id }),
+        [KEEP]: json(201, pictureOut({ id: '00000000000000bb', survey_id: IN_USE.id })),
+      })
+      const { wrapper } = await mountApp('/location')
+      await expand(wrapper, 'Front of the school')
+      expect(wrapper.text()).toContain('The device stores 1 reference picture.')
+      expect(queries).toHaveLength(1)
+
+      state = withPictures([inUse(2), PLANNED, USED])
+      await click(wrapper, 'Take a reference picture')
+      await clickInDialog('Take the pictures')
+      await clickInDialog('Keep on this device')
+      const gets = (path: string) => api.sent.filter((r) => r.method === 'GET' && r.path === path)
+      expect(gets('/api/v1/surveys')).toHaveLength(2)
+      expect(queries).toHaveLength(2)
+      expect(wrapper.text()).toContain('The device stores 2 reference pictures.')
+      await clickInDialog('Close')
+
+      state = withPictures([inUse(1), PLANNED, USED])
+      await click(wrapper, 'Delete')
+      await clickInDialog('Delete')
+      expect(gets('/api/v1/surveys')).toHaveLength(3)
+      expect(queries).toHaveLength(3)
+      expect(wrapper.text()).toContain('The device stores 1 reference picture.')
+    })
   })
 })

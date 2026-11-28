@@ -23,6 +23,8 @@ from tm_control.modules.detection.fetch import Fetches
 from tm_control.modules.detection.inventory import MODEL_FILE_MAX
 from tm_control.modules.location import reconcile
 from tm_control.modules.location.reconcile import backup_dir
+from tm_control.modules.pictures.clock import Clock
+from tm_control.modules.pictures.store import Pictures
 from tm_control.modules.setup.eula import load_eula
 from tm_control.modules.setup_history import snapshot
 from tm_control.modules.setup_history.poster import Poster
@@ -69,6 +71,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.claim_backoff = Backoff()  # wrong setup codes, per IP; kept apart so neither holds up the other
     app.state.download_grants = DownloadGrants()  # one-time /storefiles links for a browser that drops the cookie
     app.state.references = References()  # the Cameras page's reference pictures, in memory only
+    app.state.pictures = Pictures(state, settings.state_dir)  # the ones an admin kept, on the device
+    app.state.clock = Clock(fake=settings.fake)
     app.state.fetches = Fetches()  # the Frigate+ model Frigate downloads for a use by its ID, and how the last one ended
     app.state.fake_clock = fake.FakeClock() if settings.fake else None
     app.state.fake_network = fake.FakeNetwork() if settings.fake else None

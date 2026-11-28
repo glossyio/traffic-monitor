@@ -17,12 +17,20 @@ _KEY_VALUE = re.compile(
 # /surveys/database-copy): for ten minutes it names a list of exact locations in Node-RED's memory, and nginx's access
 # log holds it. The name before it stays, so the request can still be recognized.
 _COPY_TICKET = re.compile(r"tmdb-exact-(?P<value>[0-9a-f]{32})")
+# A stored reference picture's id in an address (/api/v1/pictures/<id>/clean.jpg, .../package, a DELETE): 16 hex
+# characters after `pictures/`. nginx's access log holds the request line, as asked, so the hex may be in either letter
+# case, and a login redirect's next= holds the slashes percent-encoded (%2F, in either case), or encoded once more
+# (%252F). The id opens nothing without an administrator's session; it is hidden because a picture's id, like its place
+# and its camera, is nothing a request for help needs. The word `pictures` and what follows the id stay.
+_PICTURE_ID = re.compile(r"(?i)pictures(?:/|%2F|%252F)(?P<value>[0-9a-f]{16})(?![0-9a-f])")
 
 
 def _spans(text: str, values: list[str]) -> list[tuple[int, int]]:
-    """Where text holds a secret: every occurrence of each value, the value after each secret-looking key, and a
-    database copy's ticket."""
-    spans = [match.span("value") for pattern in (_KEY_VALUE, _COPY_TICKET) for match in pattern.finditer(text)]
+    """Where text holds a secret: every occurrence of each value, the value after each secret-looking key, a database
+    copy's ticket, and a stored picture's id."""
+    spans = [
+        match.span("value") for pattern in (_KEY_VALUE, _COPY_TICKET, _PICTURE_ID) for match in pattern.finditer(text)
+    ]
     for value in sorted({value for value in values if value}):
         start = text.find(value)
         while start >= 0:
@@ -34,7 +42,8 @@ def _spans(text: str, values: list[str]) -> list[tuple[int, int]]:
 def redact(text: str, values: list[str]) -> str:
     """text with each secret replaced by REDACTED: every occurrence of each of `values`, the value after every
     secret-looking key (password=, token:, the setup code, ...), whose key and separator stay, and the ticket in the
-    file name of a database copy with exact locations (tmdb-exact-<ticket>).
+    file name of a database copy with exact locations (tmdb-exact-<ticket>), and the id of a stored picture in an
+    address (pictures/<id>).
 
     Every span is found in the original text, then overlapping and touching spans are merged and each merged
     span becomes one REDACTED. So a value that is also a key's word (frigate.env's default password is "password")

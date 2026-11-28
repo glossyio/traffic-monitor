@@ -846,6 +846,39 @@ def test_delete_refuses_the_place_in_use_and_removes_a_used_one(admin):
     assert ("survey.delete", old) in audit_rows(admin)
 
 
+def test_deleting_a_place_removes_its_pictures_files_first(admin, monkeypatch):
+    old = first_place(admin)
+    found = admin.post("/api/v1/cameras/picam_h265/reference", headers=JSON_HEADERS).json()
+    picture = admin.post(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/keep", headers=JSON_HEADERS).json()
+    directory = admin.app.state.pictures.root / picture["id"]
+    assert directory.is_dir()
+    deploy(admin, create(admin)["id"])
+    seen, real = [], Places.delete
+
+    def delete(self, survey_id):
+        seen.append(directory.exists())
+        return real(self, survey_id)
+
+    monkeypatch.setattr(Places, "delete", delete)
+    assert admin.delete(f"/api/v1/surveys/{old}", headers=JSON_HEADERS).status_code == 204
+    assert seen == [False]  # the files went before the place did
+    assert not directory.exists() and admin.app.state.pictures.total() == (0, 0)
+
+
+def test_a_place_says_how_many_pictures_it_has(admin):
+    old = first_place(admin)
+    for _ in range(2):
+        found = admin.post("/api/v1/cameras/picam_h265/reference", headers=JSON_HEADERS).json()
+        r = admin.post(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/keep", headers=JSON_HEADERS)
+        assert r.status_code == 201
+    other = create(admin)
+    assert other["pictures"] == 0
+    state = places(admin)
+    assert survey(state, old)["pictures"] == 2 and survey(state, other["id"])["pictures"] == 0
+    r = admin.post(f"/api/v1/surveys/{old}/location", json={"lat": 45.0, "lon": -122.0}, headers=ORIGIN)
+    assert r.json()["pictures"] == 2
+
+
 def test_deployments_and_events(admin):
     in_use = first_place(admin)
     assert len(rows(admin, in_use)) == 2
