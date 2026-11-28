@@ -24,6 +24,19 @@ from tm_control.core.settings import Settings  # noqa: E402
 from tm_control.modules.setup.eula import load_eula  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def no_network_to_github(monkeypatch):
+    """Fail a test that reaches GitHub without replacing the adapter: its opener refuses every request. A test that
+    answers from a table installs its own opener or replaces the adapter's functions."""
+    from tm_control.adapters import github
+
+    class Refusing:
+        def open(self, request, timeout=None):
+            raise AssertionError(f"a test asked GitHub for {request.full_url}")
+
+    monkeypatch.setattr(github, "_OPENER", Refusing())
+
+
 @pytest.fixture
 def prompt():
     """Fail a test that blocks for more than five seconds, as opening a FIFO without a writer would."""
@@ -65,6 +78,7 @@ def settings(tmp_path):
         eula_path=Path(tm_control.__file__).parent / "modules" / "setup" / "EULA.md",
         setup_code_file=tmp_path / "etc" / "setup-code",
         network_run_dir=tmp_path / "network-run",
+        update_dir=tmp_path / "update",
     )
 
 

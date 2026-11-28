@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "run_id": "20261126T101500Z",
+    "channel": "stable",
+    "from": {"version": "0.8.0", "commit": "1111111111111111111111111111111111111111"},
+    "to": {"version": "0.9.0", "commit": "2222222222222222222222222222222222222222", "tag": "v0.9.0"},
+    "phase": "somewhere-new",
+    "result": null
+}

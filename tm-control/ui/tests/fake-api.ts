@@ -412,3 +412,68 @@ export const SHARING_ON: SharingState = sharingState({
   notice_current: true,
   server: { state: 'waiting', at: null },
 })
+
+// GET /update: 0.8.0 installed from a clean copy on Stable, with nothing checked yet and no run. The offers are the two
+// a check can find, one per channel, and a run is the stable one in its Prepare stage.
+export type UpdateState = components['schemas']['UpdateState']
+export type UpdateOffer = components['schemas']['Offer']
+export type UpdateRun = components['schemas']['Run']
+export const INSTALLED_COMMIT = '2da617a1234567890abcdef1234567890abcdef1'
+export const STABLE_OFFER: UpdateOffer = {
+  channel: 'stable',
+  relation: 'ahead',
+  version: '0.8.1',
+  commit: '5'.repeat(40),
+  tag: 'v0.8.1',
+  released_at: '2026-11-20T10:00:00Z',
+  ahead_by: null,
+  checked_at: '2026-11-26T12:00:00Z',
+}
+export const DEVELOPMENT_OFFER: UpdateOffer = {
+  channel: 'development',
+  relation: 'ahead',
+  version: null,
+  commit: '6'.repeat(40),
+  tag: null,
+  released_at: null,
+  ahead_by: 12,
+  checked_at: '2026-11-26T12:00:00Z',
+}
+
+export function updateState(changes: Partial<UpdateState> = {}): UpdateState {
+  return {
+    installed: { version: '0.8.0', channel: 'stable', commit: INSTALLED_COMMIT, modified: false, source_known: true },
+    offer: null,
+    checks: [],
+    can_start: true,
+    run: null,
+    started: null,
+    retry: null,
+    ...changes,
+  }
+}
+
+export function updateRun(changes: Partial<UpdateRun> = {}): UpdateRun {
+  return {
+    status: 'running',
+    readable: true,
+    run_id: '20261126T120500Z',
+    channel: 'stable',
+    from_version: '0.8.0',
+    from_commit: INSTALLED_COMMIT,
+    to_version: '0.8.1',
+    to_commit: STABLE_OFFER.commit,
+    to_tag: 'v0.8.1',
+    stage: 'prepare',
+    stages: [
+      { id: 'fetch', started_at: '2026-11-26T12:05:00Z', finished_at: '2026-11-26T12:05:40Z' },
+      { id: 'verify', started_at: '2026-11-26T12:05:40Z', finished_at: '2026-11-26T12:05:41Z' },
+      { id: 'prepare', started_at: '2026-11-26T12:05:41Z', finished_at: null },
+    ],
+    reason: null,
+    detail: null,
+    restore_point: null,
+    finished_at: null,
+    ...changes,
+  }
+}

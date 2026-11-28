@@ -1,0 +1,25 @@
+# /etc/systemd/system/tm-update-resume.service, installed by tmsetup.sh (tm-control tag) and enabled
+# Starts at boot, and from tm-job-update.service when that run ends, and carries on an update's switch that was cut
+# off (a power cut, a kill, a reboot the switch itself began). It runs only when the marker
+# {{ tmsetup_update_dir }}/resume.json exists, and the update removes it when its run ends, ok or failed.
+# Ordered after the apps so the switch finds them as the last run left them, but it never requires them: an app that
+# will not start is what the switch has to deal with. The system's Python, as the job: the switch rewrites tm-control's
+# venv. The switch may take hours on a slow card, so TimeoutStartSec is 3h. It stops the build slice when it ends,
+# like the job, and never starts itself again.
+
+[Unit]
+Description=Traffic Monitor: carry on a cut-off software update
+ConditionPathExists={{ tmsetup_update_dir }}/resume.json
+After=tm-control.service traffic-monitor.service revproxy.service go2rtc_server.service
+# A start refused by the start limit would leave a cut-off switch undone
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+Environment=TM_CONTROL_MANIFEST={{ tmsetup_etc_dir }}/manifest.json
+ExecStart=/usr/bin/python3 -EP {{ tmsetup_libexec_dir }}/tm-update-resume
+ExecStopPost=-/usr/bin/systemctl stop {{ tmsetup_update_slice }}
+TimeoutStartSec=3h
+
+[Install]
+WantedBy=multi-user.target

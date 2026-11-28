@@ -80,6 +80,20 @@ describe('router', () => {
     expect(titles.indexOf('Sharing')).toBe(titles.indexOf('Location') + 1)
   })
 
+  it('keeps a viewer off the Software update page', async () => {
+    device(true, VIEWER)
+    expect(await landing('/update')).toBe('/')
+  })
+
+  it('lets an admin open the Software update page, listed for admins only after Date and time', async () => {
+    device(true, ADMIN)
+    expect(await landing('/update')).toBe('/update')
+    const nav = MODULES.flatMap((module) => module.nav)
+    const titles = nav.map((item) => item.title)
+    expect(titles.indexOf('Software update')).toBe(titles.indexOf('Date and time') + 1)
+    expect(nav.find((item) => item.to === '/update')?.adminOnly).toBe(true)
+  })
+
   it('lets a viewer open the About page, and lists it last in the menu', async () => {
     device(true, VIEWER)
     expect(await landing('/about')).toBe('/about')

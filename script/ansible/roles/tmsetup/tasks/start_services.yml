@@ -21,6 +21,16 @@
     name: "{{ item }}"
     state: started
 
+# Enabled and never started: at boot it carries on a cut-off update's switch when the marker exists, and with no marker
+# its condition leaves it inactive. A run of the installer must not start it, or a finished update's files could be
+# read as a cut-off one.
+- name: TMSetup - Start Services - Enable the update resume unit
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: tm-update-resume.service
+
 - name: TMSetup - Start Services - Start and enable sysstat.service
   become: true
   ansible.builtin.systemd_service:

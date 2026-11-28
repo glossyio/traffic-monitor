@@ -6,7 +6,7 @@ import pytest
 
 from tm_control.adapters.command import run
 from tm_control.app import create_app
-from tm_control.core.manifest import FrigateInfo, ManifestError, MapInfo, load_manifest
+from tm_control.core.manifest import FrigateInfo, ManifestError, MapInfo, UpdateInfo, load_manifest
 from tm_control.core.secrets import DEVICE_SECRETS, NAMES, NODE_RED_INTERNAL_TOKEN, FakeSecrets, MissingSecret, Secrets
 from tm_control.core.settings import Settings
 from tm_control.modules.apps import contracts
@@ -143,6 +143,16 @@ def test_an_older_manifest_without_update_loads_the_defaults(tmp_path):
     path.write_text(json.dumps(doc))
     update = load_manifest(path).update
     assert (update.repo, update.channel) == ("glossyio/traffic-monitor", "stable")
+
+
+@pytest.mark.parametrize("block", [None, 5, [], {"repo": 12}, {"repo": None, "channel": "stable"},
+                                   {"repo": "a/b", "channel": 3}])
+def test_a_manifest_with_an_unusable_update_block_still_loads(tmp_path, block):
+    doc = json.loads((FIXTURES / "manifest.json").read_text())
+    doc["update"] = block
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(doc))
+    assert load_manifest(path).update == UpdateInfo(repo="", channel="stable")
 
 
 def test_a_channel_this_version_does_not_know_still_loads(tmp_path):

@@ -1,5 +1,38 @@
 ---
 # TMSetup - Main tasks
+# An update started from the control app runs this role itself (tmsetup_update_mode), so only a run that is not one
+# looks, and it stops while an update's job or its resume unit is at work: two installers would undo each other.
+- name: TMSetup - Main - Read whether an update is running
+  tags:
+    - always
+  when: not (tmsetup_update_mode | bool)
+  loop:
+    - tm-job-update.service
+    - tm-update-resume.service
+  ansible.builtin.command:
+    argv:
+      - systemctl
+      - show
+      - --property=ActiveState
+      - --value
+      - '{{ item }}'
+  register: tmsetup_update_running_register
+  changed_when: false
+  failed_when: false
+
+- name: TMSetup - Main - Stop while an update is running
+  tags:
+    - always
+  when:
+    - not (tmsetup_update_mode | bool)
+    - >-
+      tmsetup_update_running_register.results | map(attribute='stdout', default='') | map('trim')
+      | select('in', ['active', 'activating', 'deactivating', 'reloading']) | list | length > 0
+  ansible.builtin.fail:
+    msg: >-
+      An update started from the control app is running on this device. Wait for it to end (the Software update
+      page shows it), then run the installer again.
+
 - name: TMSetup - Main - Set variables
   tags:
     - always

@@ -1,0 +1,20 @@
+{
+    "schema": 1,
+    "run_id": "20261126T101500Z",
+    "channel": "stable",
+    "from": {"version": "0.8.0", "commit": "1111111111111111111111111111111111111111"},
+    "to": {"version": "0.8.1", "commit": "2222222222222222222222222222222222222222", "tag": "v0.8.1"},
+    "stage": "images",
+    "stages": [
+        {"id": "prepare", "started_at": "2026-11-26T10:15:02Z", "finished_at": "2026-11-26T10:20:40Z"},
+        {"id": "images", "started_at": "2026-11-26T10:20:41Z", "finished_at": null}
+    ],
+    "result": null,
+    "reason": null,
+    "detail": null,
+    "reboot": null,
+    "boot_id": null,
+    "restore_point": null,
+    "tmdb_backup": null,
+    "switch_attempts": 0
+}

@@ -1,5 +1,6 @@
 """The diagnostics text (GET /system/diagnostics) that an admin sends with a request for help: the device's facts, its
-time state, the status report, the services, the manifest, and the last lines of each unit's journal.
+time state, the status report, the services, the manifest, the software update's state file and newest log, and the
+last lines of each unit's journal.
 
 The whole text is redacted before it leaves the device: every device secret's value, every secret-looking value in
 the apps' .env files (the broker password can show up inside a URL in a log line), the entered secrets' values
@@ -33,6 +34,8 @@ from tm_control.modules.services.units import read_units, service, units_for
 from tm_control.modules.system.info import SystemInfo
 
 JOURNAL_LINES = 50
+UPDATE_LOG_LINES = 200  # of the newest update run's log
+UPDATE_LOG_CAP = 512 * 1024  # bytes read from that log's end
 # Relative to the code directory; a missing or unreadable one is skipped.
 ENV_FILES = ("node-red-tm/node-red-tm.env", "frigate/frigate.env", "plate-recognizer/plate-recognizer.env")
 ENV_SECRET_KEY = re.compile(r"PASSWORD|PASSWD|SECRET|TOKEN|KEY", re.IGNORECASE)
@@ -147,6 +150,28 @@ def _services(app_state) -> str:
     return "\n".join(out)
 
 
+def redacted(app_state, lines: list[str]) -> list[str]:
+    """The lines with every secret and every Frigate camera name replaced, as the diagnostics text is: for the lines
+    other pages show (the Software update page's log)."""
+    if not lines:
+        return []
+    text = redact_words(redact("\n".join(lines), secret_values(app_state)), camera_names(app_state))
+    return text.split("\n")
+
+
+def _update(app_state) -> tuple[str | None, list[str] | None, list[str]]:
+    """The update's state file's text, the newest run's log's last lines (None when there is none), and the two update
+    units. Local imports: the update module imports this one."""
+    from tm_control.modules.update import logs
+    from tm_control.modules.update.run import JOB_UNIT, RESUME_UNIT
+
+    fake = app_state.fake_update
+    if fake is not None:
+        return fake.state_text(), fake.log_lines(), [JOB_UNIT, RESUME_UNIT]
+    folder = app_state.settings.update_dir
+    return logs.state_text(folder), logs.newest_log(folder, UPDATE_LOG_LINES, UPDATE_LOG_CAP), [JOB_UNIT, RESUME_UNIT]
+
+
 def build(app_state, info: SystemInfo, hostname: str, now: datetime) -> str:
     """The diagnostics text, redacted. hostname is already limited to [A-Za-z0-9.-]."""
     settings = app_state.settings
@@ -158,13 +183,18 @@ def build(app_state, info: SystemInfo, hostname: str, now: datetime) -> str:
         ("Services", _services(app_state)),
         ("Manifest", app_state.manifest.model_dump_json(indent=2)),
     ]
-    units = units_for(app_state.manifest)
+    update_state, update_log, update_units = _update(app_state)
+    sections.append(("Update state", update_state if update_state is not None else "(No update state file.)"))
+    sections.append(
+        (f"Update log (last {UPDATE_LOG_LINES} lines)", "\n".join(update_log) if update_log else "(No update log.)")
+    )
+    names = update_units + [unit.unit for unit in units_for(app_state.manifest)]
     tail = fake.journal_tail if settings.fake else systemd.journal_tail
     # All at once, so a slow journal costs one timeout rather than one per unit.
-    with ThreadPoolExecutor(max_workers=max(1, len(units)), thread_name_prefix="journal-tail") as pool:
-        tails = list(pool.map(lambda unit: tail(unit.unit, JOURNAL_LINES), units))
-    for unit, lines in zip(units, tails):
-        sections.append((f"Journal: {unit.unit} (last {JOURNAL_LINES} lines)", _lines(lines, "The journal")))
+    with ThreadPoolExecutor(max_workers=max(1, len(names)), thread_name_prefix="journal-tail") as pool:
+        tails = list(pool.map(lambda name: tail(name, JOURNAL_LINES), names))
+    for name, lines in zip(names, tails):
+        sections.append((f"Journal: {name} (last {JOURNAL_LINES} lines)", _lines(lines, "The journal")))
     header = [
         "Traffic Monitor diagnostics",
         f"Device: {hostname}",

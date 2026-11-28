@@ -1,0 +1,29 @@
+# /etc/systemd/system/tm-job-update.service, installed by tmsetup.sh (tm-control tag)
+# A static root job, never enabled: tm-control starts it through polkit
+# (/etc/polkit-1/rules.d/50-traffic-monitor.rules, which lets it start this unit and never stop or restart it) after
+# writing the request /run/tm-control/jobs/update.json. The script updates the software on the device, in steps it
+# records in {{ tmsetup_update_dir }}.
+# It runs on the system's Python, not tm-control's venv, because the update rewrites that venv while this runs.
+# A run may take hours on a slow card (images are built on the device), so TimeoutStartSec is 6h.
+# When the job exits, is stopped, or its main process is killed, the builds in {{ tmsetup_update_slice }} stop with it,
+# and a switch that had begun is carried on by tm-update-resume.service, which does nothing without its marker. A kill
+# of the whole control group (systemctl kill --signal=KILL) ends the ExecStopPost commands too: then
+# `systemctl start tm-update-resume.service`, or the next boot, carries a cut-off switch on.
+
+[Unit]
+Description=Traffic Monitor job: update the software
+After=network.target
+# A start refused by the start limit would leave the job queued in tm-control
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+Environment=TM_CONTROL_MANIFEST={{ tmsetup_etc_dir }}/manifest.json
+# The system's Python: the update rewrites tm-control's venv while this runs
+ExecStart=/usr/bin/python3 -EP {{ tmsetup_libexec_dir }}/tm-job-update
+# When the run ends (its own exit, a stop, a kill of its main process): no build goes on without it, and a switch that
+# had begun is carried on by the unit a restart would use. With no resume marker that unit does nothing. A kill of the
+# whole control group ends these two commands as well (see above).
+ExecStopPost=-/usr/bin/systemctl stop {{ tmsetup_update_slice }}
+ExecStopPost=-/usr/bin/systemctl start --no-block tm-update-resume.service
+TimeoutStartSec=6h

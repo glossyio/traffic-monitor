@@ -143,6 +143,55 @@ def test_tm_control_venv_holds_exactly_the_locked_packages(host):
     assert installed == package_pins(TM_CONTROL_LOCK.read_text()), "tm-control's venv differs from the lock"
 
 
+UPDATE_UNIT = "tm-job-update.service"
+
+
+def test_the_update_job_is_static_and_runs_the_systems_python(host):
+    """The update job's unit is static like the other jobs', runs the job's root-owned copy, and runs it with the
+    system's Python (/usr/bin/python3), not tm-control's venv, which the update rewrites while the job runs."""
+    check_job_unit_is_static(host, UPDATE_UNIT, "tm-job-update")
+    command = host.check_output(f"systemctl show -p ExecStart --value {UPDATE_UNIT}")
+    assert "path=/usr/bin/python3 ;" in command, f"{UPDATE_UNIT} doesn't run /usr/bin/python3: {command}"
+
+
+def test_the_control_app_may_start_the_update_job_but_not_stop_it(host, codeowner):
+    """Polkit lets the code owner start the update job and nothing more of it (start_only_units), so a stop is
+    refused, as test_polkit_keeps_tm_control_to_its_units checks for another unit. A start isn't tried: it would run
+    the job. Skipped while the job runs, in case polkit wrongly allowed the stop."""
+    if codeowner == "root":
+        pytest.skip("the code owner is root, which polkit doesn't limit")
+    assert UPDATE_UNIT in role_vars()["tmsetup_tm_control_polkit"]["start_only_units"]
+    assert UPDATE_UNIT not in role_vars()["tmsetup_tm_control_polkit"]["units"]
+    state = host.check_output(f"systemctl show -p ActiveState --value {UPDATE_UNIT}")
+    if state in ("active", "activating", "deactivating"):
+        pytest.skip(f"{UPDATE_UNIT} is {state}; the test would stop an update's job if polkit allowed it")
+    result = host.run(f"sudo -n -u {shlex.quote(codeowner)} systemctl --no-ask-password stop {UPDATE_UNIT}")
+    refused = result.rc != 0 and REFUSED.search(result.stderr) is not None
+    assert refused, f"as {codeowner}, stopping {UPDATE_UNIT} exited {result.rc}: {result.stderr.strip()[:200]}"
+
+
+RESUME_UNIT = "tm-update-resume.service"
+RESUME_MARKER = f"{role_vars()['tmsetup_update_dir']}/resume.json"
+
+
+def test_the_resume_unit_is_enabled_and_idle_without_a_marker(host):
+    """The launcher's unit is enabled, so it starts at boot. With no resume marker its condition fails: it is not
+    active, and starting it by hand does nothing (ConditionResult no). Skipped while a marker exists, because a
+    start would then carry on an update."""
+    state = host.check_output(f"systemctl show -p UnitFileState --value {RESUME_UNIT}")
+    assert state == "enabled", f"{RESUME_UNIT}'s UnitFileState is {state!r}"
+    with host.sudo():
+        if host.file(RESUME_MARKER).exists:
+            pytest.skip(f"{RESUME_MARKER} exists: an update was cut off, and a start would carry it on")
+        active = host.check_output(f"systemctl show -p ActiveState --value {RESUME_UNIT}")
+        assert active == "inactive", f"{RESUME_UNIT} is {active} with no resume marker"
+        started = host.run(f"systemctl start {RESUME_UNIT}")
+        assert started.rc == 0, f"starting {RESUME_UNIT} exited {started.rc}: {started.stderr.strip()[:200]}"
+        shown = host.check_output(f"systemctl show -p ConditionResult -p ActiveState {RESUME_UNIT}")
+    found = dict(line.split("=", 1) for line in shown.splitlines() if "=" in line)
+    assert found == {"ConditionResult": "no", "ActiveState": "inactive"}, f"{RESUME_UNIT} after a start: {found}"
+
+
 # tm-control runs as the code owner, and polkit lets that user start, stop, and restart only the units in
 # tmsetup_tm_control_polkit (vars/main.yml; templates/tm-control/50-traffic-monitor.rules.j2). The checks below try
 # two things off that list. Each is harmless if polkit wrongly allows it:

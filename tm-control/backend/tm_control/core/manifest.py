@@ -7,7 +7,7 @@ newer tmsetup can add fields.
 from dataclasses import dataclass
 from pathlib import Path
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 class GitInfo(BaseModel):
@@ -82,6 +82,15 @@ class Manifest(BaseModel):
     revproxy_locations: list[str]
     probes: Probes
     homepage: Homepage
+
+    @field_validator("update", mode="before")
+    @classmethod
+    def _usable_update(cls, value):
+        """A block that isn't an object, or whose repo or channel isn't text, becomes an unknown source (empty repo),
+        so the control app still starts and the Software update page says the source is unknown."""
+        if isinstance(value, dict) and all(isinstance(value.get(key, ""), str) for key in ("repo", "channel")):
+            return value
+        return {"repo": "", "channel": "stable"}
 
 
 class ManifestError(RuntimeError):

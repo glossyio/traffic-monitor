@@ -806,7 +806,42 @@ def test_the_job_units_are_installed():
     units = tm_control_service_tasks()["TMSetup - tm-control Service - Install the unit files"]
     assert units["loop"] == ["tm-control.service", "tm-job-system-password.service",
                              "tm-job-set-secret.service", "tm-job-network.service",
-                             "tm-job-network-join.service"]
+                             "tm-job-network-join.service", "tm-job-update.service", "tm-update-resume.service"]
+
+
+def test_the_installer_stops_while_an_update_runs():
+    read, stop = load_role_yaml("tasks/main.yml")[:2]
+    assert read["tags"] == stop["tags"] == ["always"]
+    for task in (read, stop):
+        conditions = task["when"] if isinstance(task["when"], list) else [task["when"]]
+        assert "not (tmsetup_update_mode | bool)" in conditions
+    assert read["loop"] == ["tm-job-update.service", "tm-update-resume.service"]
+    assert read["ansible.builtin.command"]["argv"] == [
+        "systemctl", "show", "--property=ActiveState", "--value", "{{ item }}"]
+    assert read["changed_when"] is False and read["failed_when"] is False
+    assert stop["ansible.builtin.fail"]["msg"] == (
+        "An update started from the control app is running on this device. Wait for it to end (the Software "
+        "update page shows it), then run the installer again.")
+    # The refusal's condition: either unit in a state that is not at rest, as systemd reports it
+    register = read["register"]
+    condition = next(c for c in stop["when"] if register in c)
+    expression = _environment().compile_expression(condition, undefined_to_none=False)
+
+    def refuses(*states):
+        return expression(**{register: {"results": [{"stdout": f"{state}\n"} for state in states]}})
+
+    for state in ("active", "activating", "deactivating", "reloading"):
+        assert refuses("inactive", state) and refuses(state, "inactive")
+    assert not refuses("inactive", "inactive")
+    assert not refuses("failed", "failed")
+
+
+def test_the_resume_unit_is_enabled_and_never_started_by_the_installer():
+    task = next(t for t in load_role_yaml("tasks/start_services.yml") if "tm-update-resume.service" in str(t))
+    systemd = task["ansible.builtin.systemd_service"]
+    assert systemd["name"] == "tm-update-resume.service"
+    assert systemd["enabled"] is True and systemd["daemon_reload"] is True
+    assert "state" not in systemd
 
 
 def test_configuration_directory_is_root_and_the_code_group_only():

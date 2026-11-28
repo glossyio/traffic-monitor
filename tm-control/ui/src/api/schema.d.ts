@@ -1573,6 +1573,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Update */
+        get: operations["get_update_api_v1_update_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/update/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check For Update
+         * @description Ask GitHub what the channel offers. A refusal to ask, and each of GitHub's troubles, is an answer with a code.
+         */
+        post: operations["check_for_update_api_v1_update_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/update/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Update
+         * @description Start the update job for the offer the last check made, or for the last run's target (Try again).
+         */
+        post: operations["start_update_api_v1_update_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/update/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Log
+         * @description The two units' last journal lines and the run's own log's last lines, redacted as the diagnostics are.
+         *
+         *     When the run names no id (no state file this version can read, or a unit running over an older run's file), the
+         *     log is the one written most recently, as in the diagnostics.
+         */
+        get: operations["get_log_api_v1_update_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1708,6 +1788,14 @@ export interface components {
             /** Detail */
             detail: string;
             fix?: components["schemas"]["Fix"] | null;
+        };
+        /** CheckRequest */
+        CheckRequest: {
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "stable" | "development";
         };
         /** Claim */
         Claim: {
@@ -1988,6 +2076,19 @@ export interface components {
             headings: components["schemas"]["SensorHeading"][];
             /** Timezone */
             timezone: string | null;
+        };
+        /** Installed */
+        Installed: {
+            /** Version */
+            version: string;
+            /** Channel */
+            channel: string;
+            /** Commit */
+            commit: string;
+            /** Modified */
+            modified: boolean;
+            /** Source Known */
+            source_known: boolean;
         };
         /** Job */
         Job: {
@@ -2270,6 +2371,31 @@ export interface components {
             /** Available */
             available: boolean;
         };
+        /** Offer */
+        Offer: {
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "stable" | "development";
+            /**
+             * Relation
+             * @enum {string}
+             */
+            relation: "ahead" | "identical" | "behind" | "diverged" | "unknown";
+            /** Version */
+            version: string | null;
+            /** Commit */
+            commit: string;
+            /** Tag */
+            tag: string | null;
+            /** Released At */
+            released_at: string | null;
+            /** Ahead By */
+            ahead_by: number | null;
+            /** Checked At */
+            checked_at: string;
+        };
         /** OrderRequest */
         OrderRequest: {
             /** Uuids */
@@ -2410,6 +2536,45 @@ export interface components {
         RestartQueued: {
             /** Unit */
             unit: string;
+        };
+        /** Run */
+        Run: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "ok" | "failed" | "interrupted" | "cut_off";
+            /** Readable */
+            readable: boolean;
+            /** Run Id */
+            run_id?: string | null;
+            /** Channel */
+            channel?: string | null;
+            /** From Version */
+            from_version?: string | null;
+            /** From Commit */
+            from_commit?: string | null;
+            /** To Version */
+            to_version?: string | null;
+            /** To Commit */
+            to_commit?: string | null;
+            /** To Tag */
+            to_tag?: string | null;
+            /** Stage */
+            stage?: string | null;
+            /**
+             * Stages
+             * @default []
+             */
+            stages: components["schemas"]["StageRow"][];
+            /** Reason */
+            reason?: string | null;
+            /** Detail */
+            detail?: string | null;
+            /** Restore Point */
+            restore_point?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
         };
         /** RunningOut */
         RunningOut: {
@@ -2656,6 +2821,37 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** StageRow */
+        StageRow: {
+            /** Id */
+            id: string;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+        };
+        /** StartRequest */
+        StartRequest: {
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "stable" | "development";
+            /** Commit */
+            commit: string;
+        };
+        /** Started */
+        Started: {
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "starting" | "failed";
+            /** Reason */
+            reason: string | null;
+        };
         /** SurveyIn */
         SurveyIn: {
             /** Description */
@@ -2736,6 +2932,13 @@ export interface components {
         SystemPassword: {
             /** Password */
             password: string;
+        };
+        /** Target */
+        Target: {
+            /** Channel */
+            channel: string;
+            /** Commit */
+            commit: string;
         };
         /** Throttled */
         Throttled: {
@@ -2823,6 +3026,27 @@ export interface components {
             first_start: number | null;
             /** Last End */
             last_end: number | null;
+        };
+        /** UpdateLog */
+        UpdateLog: {
+            /** Run Id */
+            run_id: string | null;
+            /** Job */
+            job: string[];
+            /** Log */
+            log: string[];
+        };
+        /** UpdateState */
+        UpdateState: {
+            installed: components["schemas"]["Installed"];
+            offer: components["schemas"]["Offer"] | null;
+            /** Checks */
+            checks: components["schemas"]["Check"][];
+            /** Can Start */
+            can_start: boolean;
+            run: components["schemas"]["Run"] | null;
+            started: components["schemas"]["Started"] | null;
+            retry: components["schemas"]["Target"] | null;
         };
         /** UseQueued */
         UseQueued: {
@@ -5266,6 +5490,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+        };
+    };
+    get_update_api_v1_update_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateState"];
+                };
+            };
+        };
+    };
+    check_for_update_api_v1_update_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_update_api_v1_update_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_log_api_v1_update_log_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateLog"];
                 };
             };
         };

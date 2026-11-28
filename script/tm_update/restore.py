@@ -1,8 +1,9 @@
 """The restore point: the device's settings, env files, secrets, unit files, the manifest, and a consistent copy of the
 control app's database, saved in a folder only root can open before an update switches, with a list of what is in it.
 
-Nothing here is logged or quoted: a secret's copy is the only place its value appears, and for a file under the
-secrets folder the list holds the path, the mode, and the owner, with no size and no checksum."""
+Nothing of a file is logged or quoted: a secret's copy is the only place its value appears, and for a file under the
+secrets folder the list holds the path, the mode, and the owner, with no size and no checksum. The run's log gets one
+line: the folder's name, how many files it holds, and the paths it found missing."""
 
 import hashlib
 import json
@@ -17,6 +18,7 @@ from urllib.parse import quote
 from .handover import Handover
 from .installed import Installed
 from .paths import Paths
+from .switch import say
 
 SCHEMA = 1
 KEEP = 2
@@ -151,9 +153,10 @@ def _clear_dead_runs(paths: Paths) -> None:
                 entry.unlink()
 
 
-def make(installed: Installed, handover: Handover, paths: Paths, previous_tree: "Path | None") -> Path:
+def make(installed: Installed, handover: Handover, paths: Paths, previous_tree: "Path | None", log) -> Path:
     """Save the restore point and return its folder. It is built under a name ending in .partial and renamed when
-    whole, so a folder with the final name is always complete. Anything that goes wrong removes the partial one."""
+    whole, so a folder with the final name is always complete. Anything that goes wrong removes the partial one.
+    Once it is whole, one line in the log names it, counts its files, and lists the paths it found missing."""
     now = datetime.now(timezone.utc)
     short = installed.commit[:7] if _COMMIT.fullmatch(installed.commit) else "0" * 7
     name = now.strftime("%Y%m%dT%H%M%SZ") + "-" + short
@@ -201,6 +204,8 @@ def make(installed: Installed, handover: Handover, paths: Paths, previous_tree: 
         shutil.rmtree(partial, ignore_errors=True)
         raise
     _sync_folder(paths.restore_root)
+    say(log, f"restore point {final.name}: {len(rows)} files; missing: "
+             + (", ".join(str(device) for device in missing) or "none"))
     return final
 
 
