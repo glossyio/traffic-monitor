@@ -205,9 +205,9 @@ def test_serve_hides_tickets_in_the_access_log(monkeypatch, settings):
     assert [type(f) for f in access.filters] == [HideTickets]
 
 
-def _serve_with(monkeypatch, settings):
-    """Run serve with uvicorn and the app's poster replaced; the list records the order of the poster's start and
-    the server's run."""
+def _serve_with(monkeypatch, settings, sweep=None):
+    """Run serve with uvicorn and the app's poster and pictures replaced; the list records the order of the
+    pictures' sweep, the poster's start, and the server's run. `sweep` replaces what the sweep does."""
     import uvicorn
 
     from tm_control import app as app_module
@@ -215,7 +215,8 @@ def _serve_with(monkeypatch, settings):
 
     started = []
     poster = SimpleNamespace(start=lambda: started.append("poster"))
-    fake_app = SimpleNamespace(state=SimpleNamespace(setup_poster=poster))
+    pictures = SimpleNamespace(sweep=sweep or (lambda: started.append("sweep") or (3, 2)))
+    fake_app = SimpleNamespace(state=SimpleNamespace(setup_poster=poster, pictures=pictures))
     monkeypatch.setattr(Settings, "from_env", classmethod(lambda cls: settings))
     monkeypatch.setattr(app_module, "create_app", lambda given: fake_app)
     monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: started.append("run"))
@@ -226,8 +227,32 @@ def _serve_with(monkeypatch, settings):
 def test_serve_starts_the_setup_poster_on_a_device_before_the_server_runs(monkeypatch, settings):
     import dataclasses
 
-    assert _serve_with(monkeypatch, dataclasses.replace(settings, fake=False)) == ["poster", "run"]
+    assert _serve_with(monkeypatch, dataclasses.replace(settings, fake=False)) == ["sweep", "poster", "run"]
 
 
 def test_serve_does_not_start_the_setup_poster_in_fake_mode(monkeypatch, settings):
-    assert _serve_with(monkeypatch, settings) == ["run"]
+    assert _serve_with(monkeypatch, settings) == ["sweep", "run"]
+
+
+@pytest.mark.parametrize("fake", [True, False])
+def test_serve_sweeps_the_pictures_and_logs_only_the_two_counts(monkeypatch, settings, caplog, fake):
+    import dataclasses
+
+    caplog.set_level("INFO", logger="tm_control")
+    _serve_with(monkeypatch, dataclasses.replace(settings, fake=fake))
+    assert [record.getMessage() for record in caplog.records if record.name == "tm_control.cli"] == [
+        "pictures sweep: 3 entries removed, 2 rows deleted"]
+
+
+def test_serve_starts_when_the_pictures_sweep_fails_and_logs_only_the_class(monkeypatch, settings, caplog):
+    import dataclasses
+
+    def sweep():
+        raise PermissionError(13, "Permission denied", "/var/lib/tm-control/pictures/0123456789abcdef")
+
+    caplog.set_level("INFO", logger="tm_control")
+    started = _serve_with(monkeypatch, dataclasses.replace(settings, fake=False), sweep=sweep)
+    assert started == ["poster", "run"]  # the web app and its login come up anyway
+    assert [record.getMessage() for record in caplog.records if record.name == "tm_control.cli"] == [
+        "pictures sweep failed: PermissionError"]
+    assert all(record.exc_info is None for record in caplog.records)

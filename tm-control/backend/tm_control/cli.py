@@ -22,6 +22,13 @@ def serve():
     logging.getLogger("uvicorn.access").addFilter(HideTickets())
     settings = Settings.from_env()
     app = create_app(settings)
+    log = logging.getLogger(__name__)
+    try:
+        removed, deleted = app.state.pictures.sweep()  # before anything is served
+    except Exception as e:  # whatever it was, the login must come up; the next start sweeps again
+        log.error("pictures sweep failed: %s", type(e).__name__)  # the class only: the text holds a path
+    else:
+        log.info("pictures sweep: %d entries removed, %d rows deleted", removed, deleted)
     if not settings.fake:
         app.state.setup_poster.start()  # a daemon thread, so it ends with the process
     uvicorn.run(
