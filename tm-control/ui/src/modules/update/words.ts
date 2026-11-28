@@ -26,6 +26,16 @@ export function stageTitle(id: string): string {
   return STAGE_TITLES[id] ?? id
 }
 
+// The two stages in which this page stops answering, with a note beside the row so the silence isn't a surprise
+const STAGE_NOTES: Record<string, string> = {
+  switch: '(the device stops answering for about 3 minutes)',
+  reboot: '(a few more minutes while it restarts)',
+}
+
+export function stageNote(id: string): string | null {
+  return STAGE_NOTES[id] ?? null
+}
+
 export const GENERIC_FAILURE = 'The update failed. The log below has the details.'
 
 const INSTALLER = 'Update it with the installer.'

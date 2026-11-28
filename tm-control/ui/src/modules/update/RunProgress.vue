@@ -1,7 +1,8 @@
 <!--
   An update's stages (the run's `stages`, in the state file's order), each with its title and a mark: done, running,
   failed, or stopped (an attempt a restart cut off). While the run goes on, the stages a run of this version still goes
-  through after the current one follow as not started, and the page says it can be closed. When the device stops
+  through after the current one follow as not started, and the page says it can be closed. The switch and restart rows
+  carry a note that the device stops answering, in every state, so the silence is no surprise. When the device stops
   answering (`lost`), an info notice says that is expected; the last stages stay.
 -->
 <script setup lang="ts">
@@ -9,7 +10,7 @@ import { mdiCircleOutline } from '@mdi/js'
 import { computed } from 'vue'
 import { MARKS } from '../../components/status'
 import type { Run } from './update'
-import { STAGE_ORDER, stageTitle } from './words'
+import { STAGE_ORDER, stageNote, stageTitle } from './words'
 
 const props = defineProps<{ run: Run; lost: boolean }>()
 
@@ -18,6 +19,7 @@ type RowState = 'done' | 'running' | 'failed' | 'stopped' | 'waiting'
 interface Row {
   key: string
   title: string
+  note: string | null
   state: RowState
 }
 
@@ -42,7 +44,7 @@ const rows = computed<Row[]>(() => {
       else if (running.value) state = 'running'
       else state = props.run.status === 'failed' ? 'failed' : 'stopped'
     }
-    return { key: `${index}-${stage.id}`, title: stageTitle(stage.id), state }
+    return { key: `${index}-${stage.id}`, title: stageTitle(stage.id), note: stageNote(stage.id), state }
   })
   if (!running.value) return drawn
 
@@ -52,7 +54,7 @@ const rows = computed<Row[]>(() => {
   const seen = new Set(stages.map((stage) => stage.id))
   const upcoming = STAGE_ORDER.slice(at + 1)
     .filter((id) => !seen.has(id))
-    .map((id): Row => ({ key: `next-${id}`, title: stageTitle(id), state: 'waiting' }))
+    .map((id): Row => ({ key: `next-${id}`, title: stageTitle(id), note: stageNote(id), state: 'waiting' }))
   return [...drawn, ...upcoming]
 })
 </script>
@@ -78,6 +80,7 @@ const rows = computed<Row[]>(() => {
           <v-icon v-else :icon="LOOK[row.state].icon!" :color="LOOK[row.state].color" class="flex-shrink-0" />
           <span class="text-body-1" :class="{ 'text-secondary': row.state === 'waiting' }">
             <span class="d-sr-only">{{ LOOK[row.state].label }}: </span>{{ row.title }}
+            <span v-if="row.note" class="text-secondary">{{ row.note }}</span>
           </span>
         </div>
       </v-list-item>

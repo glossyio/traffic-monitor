@@ -1,6 +1,6 @@
 // The Software update page's words for the run's stages and the reasons a run or a start failed (words.ts).
 import { describe, expect, it } from 'vitest'
-import { GENERIC_FAILURE, reasonLink, reasonWords, stageTitle } from '../src/modules/update/words'
+import { GENERIC_FAILURE, reasonLink, reasonWords, stageNote, stageTitle } from '../src/modules/update/words'
 
 // The stage ids and reason codes this version of tm-update and its job write (docs/development/software-update.md)
 const STAGES: [string, string][] = [
@@ -60,6 +60,13 @@ describe('the update words', () => {
     }
     const others = REASONS.filter((code) => !installer.includes(code) && !switching.includes(code))
     for (const code of others) expect(reasonLink(code), code).toBeNull()
+  })
+
+  it('adds a note to the switch and the restart, and to no other stage', () => {
+    expect(stageNote('switch')).toBe('(the device stops answering for about 3 minutes)')
+    expect(stageNote('reboot')).toBe('(a few more minutes while it restarts)')
+    for (const [id] of STAGES.filter(([id]) => id !== 'switch' && id !== 'reboot')) expect(stageNote(id), id).toBeNull()
+    expect(stageNote('calibrate_radar')).toBeNull()
   })
 
   it('shows an unknown stage by its id and an unknown reason as a generic failure', () => {

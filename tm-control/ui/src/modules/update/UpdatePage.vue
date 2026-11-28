@@ -20,8 +20,8 @@ type Channel = 'stable' | 'development'
 type UpdateLog = { run_id: string | null; job: string[]; log: string[] }
 
 const CONFIRM_TEXT =
-  'The device keeps counting while it downloads and builds the new version, which can take half an hour. It then ' +
-  'stops for a few minutes, and it may restart.'
+  'The device keeps counting while it downloads and builds the new version, which can take half an hour. Then it ' +
+  'stops counting, and this page stops answering, for about 3 minutes while it switches, and longer if it restarts.'
 const CHANNEL_NAMES: Record<string, string> = { stable: 'Stable', development: 'Development' }
 
 const { state, lost, loadError, refresh, show } = useUpdate()

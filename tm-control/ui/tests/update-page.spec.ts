@@ -23,8 +23,8 @@ const START = 'POST /api/v1/update/start'
 const LOG = 'GET /api/v1/update/log'
 const DOCS = 'https://docs.trafficmonitor.ai/latest/build-your-own-device-diy/update/'
 const CONFIRM_TEXT =
-  'The device keeps counting while it downloads and builds the new version, which can take half an hour. It then ' +
-  'stops for a few minutes, and it may restart.'
+  'The device keeps counting while it downloads and builds the new version, which can take half an hour. Then it ' +
+  'stops counting, and this page stops answering, for about 3 minutes while it switches, and longer if it restarts.'
 const AWAY =
   "The device isn't answering. That is expected for a few minutes while it switches or restarts. This page keeps trying."
 
@@ -246,11 +246,36 @@ describe('the Software update page', () => {
       'Running: Prepare',
       'Not started: Build',
       'Not started: Restore point',
-      'Not started: Switch',
+      'Not started: Switch (the device stops answering for about 3 minutes)',
       'Not started: Verify',
       'Not started: Clean up',
     ])
     expect(known.wrapper.text()).toContain('Updating to 0.8.1')
+  })
+
+  it('puts the switch and restart notes on those rows only, whatever state the row is in', async () => {
+    const note = '(the device stops answering for about 3 minutes)'
+    const restart = '(a few more minutes while it restarts)'
+    const done = { started_at: 'a', finished_at: 'b' }
+    const rowsOf = async (run: ReturnType<typeof updateRun>) => {
+      const { wrapper } = await page(updateState({ run }))
+      const rows = wrapper.findAll('[data-stage]').map((row) => row.text().replace(/\s+/g, ' ').trim())
+      wrapper.unmount()
+      return rows
+    }
+    const switching = await rowsOf(
+      updateRun({ stage: 'switch', stages: [{ id: 'prepare', ...done }, { id: 'switch', started_at: 'b', finished_at: null }] }),
+    )
+    expect(switching).toContain(`Running: Switch ${note}`)
+    expect(switching.filter((row) => row.includes('('))).toEqual([`Running: Switch ${note}`])
+    const restarting = await rowsOf(
+      updateRun({
+        stage: 'reboot',
+        stages: [{ id: 'switch', ...done }, { id: 'reboot', started_at: 'b', finished_at: null }],
+      }),
+    )
+    expect(restarting).toContain(`Done: Switch ${note}`)
+    expect(restarting).toContain(`Running: Restart ${restart}`)
   })
 
   it('draws a run read over an older run\'s final file as running, with no stages', async () => {

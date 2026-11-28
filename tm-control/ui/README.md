@@ -2212,13 +2212,16 @@ into words.
 - **One main button.** Check for updates is filled until another button is the one to press: Update to ..., the last
   run's Try again or Finish the update, or Reload. Then it is outlined.
 - **The start asks first** (`ConfirmDialog`, in the primary colour: it isn't a delete), with the time it takes and that
-  the unit stops for a few minutes and may restart. It posts the offer's channel and commit and nothing else. A refusal
+  it then stops counting, and the page stops answering, for about 3 minutes, and longer if it restarts. Try again asks
+  with the same words. It posts the offer's channel and commit and nothing else. A refusal
   (an old check, another update) shows the API's message under the button.
 - **While it runs** the controls for a new check and start are hidden, because the device would refuse a start anyway,
   and the run takes their place right under the installed line. `RunProgress` lists `run.stages` in the file's order:
   done (the Status page's tick), running (a small spinner), and, after the current stage, the stages a run still goes
   through as not started, in the secondary color. `reboot` isn't among those: the unit restarts only when the installer
-  asks, so listing it would say it will. A stage this version doesn't know shows by its id, and then nothing is listed
+  asks, so listing it would say it will. The Switch row carries "(the device stops answering for about 3 minutes)"
+  and the Restart row, when the run has one, "(a few more minutes while it restarts)", in the secondary color beside the
+  title, whether the row is still to come, running, or done. No other stage has a note. A stage this version doesn't know shows by its id, and then nothing is listed
   as to come. A run the device reads over an older run's final file has no stages; it shows "An update is running."
   with no list, and an unreadable one says the page can't read its stages and points at the log.
 - **Losing the unit is expected.** `useUpdate()` asks every 3 seconds while `run.status` is `running` or a start is
@@ -2265,6 +2268,9 @@ older run's final file, and one the page can't read.
   last update. It is under "Last update" now, and a refused start under "The update didn't start", above it.
 - With a run cut off or failed, Check for updates and Finish the update (or Try again) were both filled. Check is
   outlined whenever another button is the one to press.
+- On the bench the page went quiet in the switch and that surprised the person who pressed Update. The start's question
+  and the Switch and Restart rows now say the page stops answering, and for about how long, before and during it. No
+  extra confirmation step was added.
 - Looked at and kept: in fake mode, after a Stable run ends ok, the page still offers 0.8.1, because the fake unit's
   version doesn't change and the control app doesn't restart. On a unit the control app restarts in the switch and
   forgets the check, so the offer is gone.
