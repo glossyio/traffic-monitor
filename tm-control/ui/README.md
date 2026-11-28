@@ -2161,7 +2161,8 @@ into words.
 | (x) The new version's images     |
 |     didn't build, so nothing ... |
 |     Detail: ...                  |
-| (v) Download ... (x) Build       |  the stages as they ended
+| (v) Prepare (x) Build            |  the stages as they ended: a
+|                                  |  failed run's last one crossed
 | [Try again]                      |  or Finish the update, or Reload
 |                                  |
 |   when no run goes on:           |
@@ -2207,40 +2208,54 @@ into words.
   docs' update page. The update button names the target: "Update to 0.8.1", or "Update to commit 6666666".
 - **Before you start** shows only for an offer that is ahead: the API's `checks` drawn by the Status page's
   `CheckList` (its marks, title, detail, and hint), then the sentence about the restore point with a link to the
-  Sharing page (`/sharing`), whose Download your data card gives the database. With no checks the heading stands alone above that sentence. The
-  update button is disabled while `can_start` is false (any check is an error); a warning doesn't block it.
-- **One main button.** Check for updates is filled until another button is the one to press: Update to ..., the last
-  run's Try again or Finish the update, or Reload. Then it is outlined.
+  Sharing page (`/sharing`), whose Download your data card gives the database. With no checks the heading stands alone
+  above that sentence. The update button is disabled while `can_start` is false (any check is an error); a warning
+  doesn't block it.
+- **Check is outlined when another button is filled.** Check for updates is filled until another button is the one to
+  press: Update to ..., the last run's Try again or Finish the update, or Reload. Those are real choices, so each of
+  them is filled where it shows.
 - **The start asks first** (`ConfirmDialog`, in the primary colour: it isn't a delete), with the time it takes and that
   it then stops counting, and the page stops answering, for about 3 minutes, and longer if it restarts. Try again asks
-  with the same words. It posts the offer's channel and commit and nothing else. A refusal
-  (an old check, another update) shows the API's message under the button.
+  with the same words. It posts the offer's channel and commit and nothing else, once: a second press while the first
+  start is on its way does nothing. A refusal (an old check, another update) shows the API's message under the button,
+  and the page asks the device again, so a run another tab started is followed and a check the device forgot is gone.
 - **While it runs** the controls for a new check and start are hidden, because the device would refuse a start anyway,
   and the run takes their place right under the installed line. `RunProgress` lists `run.stages` in the file's order:
   done (the Status page's tick), running (a small spinner), and, after the current stage, the stages a run still goes
   through as not started, in the secondary color. `reboot` isn't among those: the unit restarts only when the installer
-  asks, so listing it would say it will. The Switch row carries "(the device stops answering for about 3 minutes)"
-  and the Restart row, when the run has one, "(a few more minutes while it restarts)", in the secondary color beside the
-  title, whether the row is still to come, running, or done. No other stage has a note. A stage this version doesn't know shows by its id, and then nothing is listed
-  as to come. A run the device reads over an older run's final file has no stages; it shows "An update is running."
-  with no list, and an unreadable one says the page can't read its stages and points at the log.
-- **Losing the unit is expected.** `useUpdate()` asks every 3 seconds while `run.status` is `running` or a start is
-  `starting` (fake mode answers a start with the run itself), and gives up on one ask after 8 seconds. An ask that
+  asks, so listing it would say it will. While it restarts, the stages after the switch still show as to come. The
+  Switch row carries "(the device stops answering for about 3 minutes)" and the Restart row, when the run has one, "(a
+  few more minutes while it restarts)", in the secondary color beside the title, whether the row is still to come,
+  running, or done. No other stage has a note. A stage this version doesn't know shows by its id, and then nothing is
+  listed as to come. A run the device reads over an older run's final file has no stages; it shows "An update is
+  running" with no list, and an unreadable one says the page can't read its stages and points at the log. The heading
+  names a Stable target by its version, or by its release tag (without the `v`) until the run's check has read the
+  version. While a start is pending (`started.status` `starting`) the section says only "Starting the update" and that
+  the page can be closed: the run in the same answer may still be an older one's. The away notice and "You can close
+  this page." are written once, in `UpdatePage.vue`; `RunProgress` is only the list.
+- **Losing the unit is expected.** `useUpdate()` asks every 3 seconds while `run.status` is `running` or `cut_off`, or
+  a start is `starting` (fake mode answers a start with the run itself), and gives up on one ask after 8 seconds. A
+  switch that was cut off is normally carried on by the device itself once it has started again, and it may answer
+  before it does, so the page keeps asking then too. An ask that
   fails, times out, or gets an error answer while it follows a run is not an error: the last stages stay, an info
   alert says the unit isn't answering and that this is expected, and the page keeps asking. The first answer that
   arrives clears it. Only a failed first load is an error (with Try again).
 - **The end replaces the progress in the same place,** under "Last update": a success alert "Updated to 0.8.1.", an
   error alert with the reason's words, the `detail` as "Detail: ...", and the docs or Status page link where the words
   call for one, or a warning for a run that a restart or power cut stopped ("Nothing was changed." when it stopped
-  before the switch) or cut off in the switch. The stages show as they ended, with the unfinished one marked failed
-  (a cross) or stopped (a triangle); after an update that ended ok they would only be a column of ticks, so they don't.
-  Try again (asks first, like the start) and Finish the update (doesn't ask: it carries on a switch that was already
-  confirmed) post the run's own target, `retry`, and show only when the device gives one. After an update that ended
-  ok while the page was open (the page saw it running), "This page is from the version before." and Reload. A start
-  the device refused (`started.status` `failed`) is newer than any run, so it comes first, under "The update didn't
-  start", and stays until the next start or a restart of the control app; the page has no Dismiss for it. It shows above
-  the last run's ending, never in its place: a refused Finish the update or Try again must leave that button (and the
-  run's stages) where they were, or the switch could no longer be finished from the page. With no run, it stands alone.
+  before the switch) or cut off in the switch. The stages show as they ended: a failed run's last row is the failed
+  one (a cross), whatever its finish time, because both writers give the failing stage one; an interrupted or cut-off
+  run's unfinished row is stopped (a triangle). After an update that ended ok they would only be a column of ticks, so
+  they don't show. Try again (asks first, like the start) and Finish the update (doesn't ask: it carries on a switch
+  that was already confirmed) post the run's own target, `retry`, and show only when the device gives one. After a
+  failure whose reason means the same start would be refused the same way (`SAME_AGAIN` in `words.ts`: the four that
+  need the installer, `stale_check`, `not_forward`, and `schema_newer`), there is no Try again. After an update that
+  ended ok while the page was open (the page saw it running), "This page is from the version before." and Reload. A
+  start the device refused (`started.status` `failed`) is newer than any run, so it comes first, under "The update
+  didn't start", and stays until the next start, the next check that works, or a restart of the control app; the page
+  has no Dismiss for it. It shows above the last run's ending, never in its place: a refused Finish the update or Try
+  again must leave that button (and the run's stages) where they were, or the switch could no longer be finished from
+  the page. With no run, it stands alone.
 - **The log** is one expansion panel at the end, its title inside the `h2` as on the Device page, folded on every visit
   and loaded each time it is opened (`GET /update/log`), with Refresh and a Copy button. The run's own log comes first,
   then the two units' journal lines after a blank line, in one bordered box in Vuetify's monospace class that scrolls
@@ -2248,7 +2263,8 @@ into words.
 - **Reason words** (`words.ts`) are one sentence and the next step where there is one, and never the code. The four
   that need the installer end "Update it with the installer." and link the docs' update page; `switch_failed` and
   `health_failed` say the unit may be on the new version and link the Status page. A code this version doesn't know
-  reads "The update failed. The log below has the details."
+  reads "The update failed. The log below has the details." The lookups take only the words' own entries
+  (`Object.hasOwn`), so an id such as `constructor` is unknown too.
 
 #### What the screenshot review changed
 
@@ -2274,11 +2290,28 @@ older run's final file, and one the page can't read.
 - Looked at and kept: in fake mode, after a Stable run ends ok, the page still offers 0.8.1, because the fake unit's
   version doesn't change and the control app doesn't restart. On a unit the control app restarts in the switch and
   forgets the check, so the offer is gone.
-- Looked at and kept: fake mode writes every stage of a failed run as finished, so its list is all ticks above the
-  error. A real run's failing stage has no finish time and shows the cross (checked with a stubbed answer).
-- Looked at and kept: the wait after a second check inside the minute reads "Wait a little before checking again. Wait
-  19 seconds before the next try." The first sentence is the API's, the second the client's (`messageOf`), which every
-  page shares.
+- Fake mode writes every stage of a failed run as finished, and so does a device: both writers stamp the failing
+  stage too. The page drew that as a column of ticks above the error. A failed run's last row is the failed one now,
+  whatever its finish time.
+- The wait after a second check inside the minute read "Wait a little before checking again. Wait 19 seconds before
+  the next try." The API's message is its first sentence alone now ("A check was made a moment ago."), and the
+  client's (`messageOf`, which every page shares) adds the wait.
+
+#### What changed after the page was first finished
+
+- A refused start, or one whose answer was lost, left the page on its old state: an idle layout under "An update is
+  already running.", or a dead offer with Update still enabled. The page asks the device again after any refusal.
+- The page stopped asking at a cut-off switch, which the device normally carries on by itself a moment later. It keeps
+  asking while a run is cut off.
+- In the seconds after a start, the answer can still hold an older run, so the heading named that run's target over
+  its stages. While a start is pending the section says only "Starting the update".
+- A Stable run read "Updating to commit 00c7737" until its check had read the version. It names the release tag's
+  version until then.
+- Try again sat under words that say to use the installer, and after other reasons the same start refuses the same
+  way. Those reasons have no Try again; every other one, and one this version doesn't know, keeps it.
+- While the device restarted, the rows for Verify and Clean up disappeared. They stay as to come.
+- The away notice and "You can close this page." were written in two places, and the ending's button chose what to do
+  by its own label. Each is written once now, and the ending says with a flag whether its button finishes a switch.
 
 #### Defaults rejected
 
@@ -2289,8 +2322,8 @@ older run's final file, and one the page can't read.
 - A red error while the unit is away: that is the switch working as it should.
 - A toast for "Update started" or the end: the run's own section says it, where the button was.
 - Checking for updates when the page opens: the person decides when the unit talks to GitHub.
-- A Dismiss for a refused start: the device keeps it until the next start, and a page that hid it would show it again on
-  the next visit.
+- A Dismiss for a refused start: the device keeps it until the next start or the next check that works, and a page that
+  hid it would show it again on the next visit.
 - A switch for the channel: a switch reads as taking effect at once, and the channel only says what the next check asks
   about.
 

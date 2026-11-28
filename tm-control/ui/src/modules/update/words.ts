@@ -16,14 +16,15 @@ const STAGE_TITLES: Record<string, string> = {
 }
 
 // The stages in the order a run goes through them. The page lists the ones after the current stage as not started yet.
-// `reboot` is left out of that list: a run restarts the device only when the installer asks for it.
+// `reboot` is left out of that list: a run restarts the device only when the installer asks for it. During a restart
+// the stages still to come are the ones after the switch.
 export const STAGE_ORDER = ['fetch', 'verify', 'prepare', 'images', 'restore_point', 'switch', 'health', 'cleanup']
 
 // Stages before the switch, when nothing in use has changed yet
 export const BEFORE_SWITCH = new Set(['fetch', 'verify', 'prepare', 'images', 'restore_point'])
 
 export function stageTitle(id: string): string {
-  return STAGE_TITLES[id] ?? id
+  return Object.hasOwn(STAGE_TITLES, id) ? STAGE_TITLES[id] : id
 }
 
 // The two stages in which this page stops answering, with a note beside the row so the silence isn't a surprise
@@ -33,7 +34,7 @@ const STAGE_NOTES: Record<string, string> = {
 }
 
 export function stageNote(id: string): string | null {
-  return STAGE_NOTES[id] ?? null
+  return Object.hasOwn(STAGE_NOTES, id) ? STAGE_NOTES[id] : null
 }
 
 export const GENERIC_FAILURE = 'The update failed. The log below has the details.'
@@ -63,7 +64,23 @@ const REASONS: Record<string, string> = {
 }
 
 export function reasonWords(code: string | null): string {
-  return (code !== null && REASONS[code]) || GENERIC_FAILURE
+  return code !== null && Object.hasOwn(REASONS, code) ? REASONS[code] : GENERIC_FAILURE
+}
+
+// The reasons for which the same start would be refused the same way, so a failed run with one gets no Try again. Any
+// other reason keeps it, a code this version doesn't know included.
+const SAME_AGAIN = new Set([
+  'needs_manual_update',
+  'target_not_updatable',
+  'addon_needs_installer',
+  'hardware_needs_installer',
+  'stale_check',
+  'not_forward',
+  'schema_newer',
+])
+
+export function retryCanHelp(code: string | null): boolean {
+  return code === null || !SAME_AGAIN.has(code)
 }
 
 // The link that goes with a reason's words: the docs on updating with the installer, or the Status page after a switch

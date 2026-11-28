@@ -1,6 +1,6 @@
 // The Software update page's words for the run's stages and the reasons a run or a start failed (words.ts).
 import { describe, expect, it } from 'vitest'
-import { GENERIC_FAILURE, reasonLink, reasonWords, stageNote, stageTitle } from '../src/modules/update/words'
+import { GENERIC_FAILURE, reasonLink, reasonWords, retryCanHelp, stageNote, stageTitle } from '../src/modules/update/words'
 
 // The stage ids and reason codes this version of tm-update and its job write (docs/development/software-update.md)
 const STAGES: [string, string][] = [
@@ -69,6 +69,15 @@ describe('the update words', () => {
     expect(stageNote('calibrate_radar')).toBeNull()
   })
 
+  it('says where trying the same start again would be refused the same way', () => {
+    const same = ['needs_manual_update', 'target_not_updatable', 'addon_needs_installer', 'hardware_needs_installer',
+      'stale_check', 'not_forward', 'schema_newer']
+    for (const code of same) expect(retryCanHelp(code), code).toBe(false)
+    for (const code of REASONS.filter((code) => !same.includes(code))) expect(retryCanHelp(code), code).toBe(true)
+    expect(retryCanHelp('flux_capacitor')).toBe(true)
+    expect(retryCanHelp(null)).toBe(true)
+  })
+
   it('shows an unknown stage by its id and an unknown reason as a generic failure', () => {
     expect(stageTitle('calibrate_radar')).toBe('calibrate_radar')
     expect(reasonWords('flux_capacitor')).toBe(GENERIC_FAILURE)
@@ -76,5 +85,9 @@ describe('the update words', () => {
     expect(GENERIC_FAILURE).toBe('The update failed. The log below has the details.')
     expect(reasonLink('flux_capacitor')).toBeNull()
     expect(reasonLink(null)).toBeNull()
+    // Only the words' own entries are looked up, not what every object has
+    expect(stageTitle('constructor')).toBe('constructor')
+    expect(stageNote('constructor')).toBeNull()
+    expect(reasonWords('constructor')).toBe(GENERIC_FAILURE)
   })
 })

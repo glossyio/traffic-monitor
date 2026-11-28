@@ -7,6 +7,7 @@ import type { components } from '../../api/schema'
 export type UpdateState = components['schemas']['UpdateState']
 export type Offer = components['schemas']['Offer']
 export type Run = components['schemas']['Run']
+export type UpdateLog = components['schemas']['UpdateLog']
 
 export const UPDATE_POLL_MS = 3000
 const UPDATE_ASK_TIMEOUT_MS = 8000 // one ask that gets no answer in this long fails like a network error
@@ -16,7 +17,13 @@ export function following(state: UpdateState | null): boolean {
   return state?.run?.status === 'running' || state?.started?.status === 'starting'
 }
 
-// refresh() asks now; while following() it asks again every UPDATE_POLL_MS. An ask that fails while the page follows a
+// Whether to ask again: while following(), and while a switch is cut off, which the device normally carries on by
+// itself once it has started again (it may answer before it does)
+function asking(state: UpdateState | null): boolean {
+  return following(state) || state?.run?.status === 'cut_off'
+}
+
+// refresh() asks now; while asking() it asks again every UPDATE_POLL_MS. An ask that fails while the page follows a
 // run (`lost`: the device stops answering while it switches or restarts) leaves the last state in place and keeps
 // asking. A failed first load is `loadError`. show() puts in an answer the page got itself (a check's, a start's) and
 // asks on from there. stop() ends the asking; leaving the page does too.
@@ -38,7 +45,7 @@ export function useUpdate(): {
   function next() {
     clearTimeout(poll)
     poll = undefined
-    if (!stopped && following(state.value)) poll = setTimeout(() => void refresh(), UPDATE_POLL_MS)
+    if (!stopped && asking(state.value)) poll = setTimeout(() => void refresh(), UPDATE_POLL_MS)
   }
 
   function show(answer: UpdateState) {

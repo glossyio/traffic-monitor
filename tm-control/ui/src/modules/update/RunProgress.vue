@@ -1,9 +1,9 @@
 <!--
   An update's stages (the run's `stages`, in the state file's order), each with its title and a mark: done, running,
-  failed, or stopped (an attempt a restart cut off). While the run goes on, the stages a run of this version still goes
-  through after the current one follow as not started, and the page says it can be closed. The switch and restart rows
-  carry a note that the device stops answering, in every state, so the silence is no surprise. When the device stops
-  answering (`lost`), an info notice says that is expected; the last stages stay.
+  failed, or stopped (an attempt a restart cut off). A failed run's last row is the failed one, whatever its finish
+  time: both writers give it one. While the run goes on, the stages a run of this version still goes through after the
+  current one follow as not started. The switch and restart rows carry a note that the device stops answering, in every
+  state, so the silence is no surprise. Only the list: the page around it says the rest.
 -->
 <script setup lang="ts">
 import { mdiCircleOutline } from '@mdi/js'
@@ -12,7 +12,7 @@ import { MARKS } from '../../components/status'
 import type { Run } from './update'
 import { STAGE_ORDER, stageNote, stageTitle } from './words'
 
-const props = defineProps<{ run: Run; lost: boolean }>()
+const props = defineProps<{ run: Run }>()
 
 type RowState = 'done' | 'running' | 'failed' | 'stopped' | 'waiting'
 
@@ -39,17 +39,18 @@ const rows = computed<Row[]>(() => {
   const last = stages.length - 1
   const drawn = stages.map((stage, index): Row => {
     let state: RowState = 'done'
-    if (!stage.finished_at) {
+    if (index === last && props.run.status === 'failed') state = 'failed'
+    else if (!stage.finished_at) {
       if (index < last) state = 'stopped' // a restart cut it off, and the stage began again
-      else if (running.value) state = 'running'
-      else state = props.run.status === 'failed' ? 'failed' : 'stopped'
+      else state = running.value ? 'running' : 'stopped' // stopped: interrupted, or cut off in the switch
     }
     return { key: `${index}-${stage.id}`, title: stageTitle(stage.id), note: stageNote(stage.id), state }
   })
   if (!running.value) return drawn
 
-  // The stages still to come, when this version knows the current one
-  const at = STAGE_ORDER.indexOf(props.run.stage ?? '')
+  // The stages still to come, when this version knows the current one (in a restart, the ones after the switch)
+  const current = props.run.stage === 'reboot' ? 'switch' : (props.run.stage ?? '')
+  const at = STAGE_ORDER.indexOf(current)
   if (at === -1) return drawn
   const seen = new Set(stages.map((stage) => stage.id))
   const upcoming = STAGE_ORDER.slice(at + 1)
@@ -60,32 +61,23 @@ const rows = computed<Row[]>(() => {
 </script>
 
 <template>
-  <div>
-    <v-alert v-if="lost" type="info" variant="tonal" class="mb-4">
-      The device isn't answering. That is expected for a few minutes while it switches or restarts. This page keeps
-      trying.
-    </v-alert>
-
-    <v-list v-if="rows.length" bg-color="transparent" class="py-0">
-      <v-list-item v-for="row in rows" :key="row.key" class="px-0" min-height="40" :data-stage="row.key">
-        <div class="d-flex align-center ga-3">
-          <v-progress-circular
-            v-if="row.state === 'running'"
-            indeterminate
-            size="24"
-            width="3"
-            :color="LOOK.running.color"
-            class="flex-shrink-0"
-          />
-          <v-icon v-else :icon="LOOK[row.state].icon!" :color="LOOK[row.state].color" class="flex-shrink-0" />
-          <span class="text-body-1" :class="{ 'text-secondary': row.state === 'waiting' }">
-            <span class="d-sr-only">{{ LOOK[row.state].label }}: </span>{{ row.title }}
-            <span v-if="row.note" class="text-secondary">{{ row.note }}</span>
-          </span>
-        </div>
-      </v-list-item>
-    </v-list>
-
-    <p v-if="running" class="text-body-1 mt-4">You can close this page. The update carries on.</p>
-  </div>
+  <v-list v-if="rows.length" bg-color="transparent" class="py-0">
+    <v-list-item v-for="row in rows" :key="row.key" class="px-0" min-height="40" :data-stage="row.key">
+      <div class="d-flex align-center ga-3">
+        <v-progress-circular
+          v-if="row.state === 'running'"
+          indeterminate
+          size="24"
+          width="3"
+          :color="LOOK.running.color"
+          class="flex-shrink-0"
+        />
+        <v-icon v-else :icon="LOOK[row.state].icon!" :color="LOOK[row.state].color" class="flex-shrink-0" />
+        <span class="text-body-1" :class="{ 'text-secondary': row.state === 'waiting' }">
+          <span class="d-sr-only">{{ LOOK[row.state].label }}: </span>{{ row.title }}
+          <span v-if="row.note" class="text-secondary">{{ row.note }}</span>
+        </span>
+      </div>
+    </v-list-item>
+  </v-list>
 </template>

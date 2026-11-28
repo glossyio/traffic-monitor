@@ -49,7 +49,7 @@ describe('following an update', () => {
     vi.restoreAllMocks()
   })
 
-  it('asks again every 3 s only while a run is running or a start is pending', async () => {
+  it('asks again every 3 s only while a run is running or cut off, or a start is pending', async () => {
     let answer: UpdateState = updateState()
     const api = fakeApi({ [UPDATE]: () => json(200, answer) })
     mountAlone(host(), {})
@@ -76,6 +76,22 @@ describe('following an update', () => {
     expect(asks(running.api)).toBe(1)
     await vi.advanceTimersByTimeAsync(1)
     expect(asks(running.api)).toBe(2)
+    running.wrapper.unmount()
+
+    // A switch cut off: at boot the device may answer before it carries the switch on by itself
+    const cut = useUpdateHost(() => json(200, updateState({ run: updateRun({ status: 'cut_off', stage: 'switch' }) })))
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(UPDATE_POLL_MS)
+    expect(asks(cut.api)).toBe(2)
+    cut.wrapper.unmount()
+
+    // Not after a run that ended or was interrupted
+    for (const status of ['ok', 'failed', 'interrupted'] as const) {
+      const ended = useUpdateHost(() => json(200, updateState({ run: updateRun({ status }) })))
+      await vi.advanceTimersByTimeAsync(10 * UPDATE_POLL_MS)
+      expect(asks(ended.api), status).toBe(1)
+      ended.wrapper.unmount()
+    }
   })
 
   it('keeps the last state and keeps asking when an ask fails, and says lost', async () => {

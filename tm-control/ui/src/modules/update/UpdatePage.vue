@@ -13,11 +13,10 @@ import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import CopyButton from '../../components/CopyButton.vue'
 import { agoAt } from '../../components/relative-time'
 import RunProgress from './RunProgress.vue'
-import { following, useUpdate, type Offer, type Run, type UpdateState } from './update'
-import { BEFORE_SWITCH, INSTALLER_DOCS, reasonLink, reasonWords, type ReasonLink } from './words'
+import { following, useUpdate, type Offer, type Run, type UpdateLog, type UpdateState } from './update'
+import { BEFORE_SWITCH, INSTALLER_DOCS, reasonLink, reasonWords, retryCanHelp, type ReasonLink } from './words'
 
 type Channel = 'stable' | 'development'
-type UpdateLog = { run_id: string | null; job: string[]; log: string[] }
 
 const CONFIRM_TEXT =
   'The device keeps counting while it downloads and builds the new version, which can take half an hour. Then it ' +
@@ -51,9 +50,15 @@ const offer = computed<Offer | null>(() => {
 })
 const ahead = computed(() => offer.value?.relation === 'ahead')
 
-// "0.8.1", or "commit 6666666" on Development
-function targetName(version: string | null | undefined, commit: string | null | undefined): string {
+// "0.8.1", or "commit 6666666" on Development. A Stable run's version is known only after its check, so until then it
+// is the release tag's (v0.8.1).
+function targetName(
+  version: string | null | undefined,
+  commit: string | null | undefined,
+  tag?: string | null,
+): string {
   if (version) return version
+  if (tag) return tag.replace(/^v/, '')
   return commit ? `commit ${commit.slice(0, 7)}` : ''
 }
 
@@ -132,6 +137,7 @@ function confirmed() {
 }
 
 async function start(target: Channel, commit: string, from: 'offer' | 'retry') {
+  if (starting.value) return // a second press while the first start is on its way
   starting.value = true
   startError.value = ''
   checkError.value = ''
@@ -141,6 +147,7 @@ async function start(target: Channel, commit: string, from: 'offer' | 'retry') {
     show(data as UpdateState)
   } catch (error) {
     startError.value = messageOf(error)
+    void refresh() // the device may have moved on: another start, a run going, or a check forgotten
   } finally {
     starting.value = false
   }
@@ -155,10 +162,15 @@ watch(going, (isGoing) => {
   if (isGoing) sawRun.value = true
 })
 
+// A start the device accepted, before the run's own file is there: the run read now may still be an older one's
+const startPending = computed(() => state.value?.started?.status === 'starting')
+const shownRun = computed(() => (startPending.value ? null : run.value))
+
 const runTitle = computed(() => {
-  if (!run.value) return 'Starting the update'
-  const name = targetName(run.value.to_version, run.value.to_commit)
-  return name ? `Updating to ${name}` : 'An update is running.'
+  const going = shownRun.value
+  if (!going) return 'Starting the update'
+  const name = targetName(going.to_version, going.to_commit, going.to_tag)
+  return name ? `Updating to ${name}` : 'An update is running'
 })
 
 // A start the device refused (the job found another install or update running, or failed before the run began). The
@@ -177,6 +189,7 @@ interface Ending {
   lines: string[]
   link: ReasonLink | null
   button: 'Try again' | 'Finish the update' | null
+  finish: boolean // the button carries a cut-off switch on, without asking first
   reload: boolean
 }
 
@@ -185,30 +198,33 @@ const ending = computed<Ending | null>(() => {
   if (!last || last.status === 'running') return null
   const canRetry = state.value?.retry != null
   if (last.status === 'ok') {
-    const words = `Updated to ${targetName(last.to_version, last.to_commit)}.`
-    return { type: 'success', lines: [words], link: null, button: null, reload: sawRun.value }
+    const words = `Updated to ${targetName(last.to_version, last.to_commit, last.to_tag)}.`
+    return { type: 'success', lines: [words], link: null, button: null, finish: false, reload: sawRun.value }
   }
   if (last.status === 'failed') {
-    const lines = [reasonWords(last.reason ?? null)]
+    const reason = last.reason ?? null
+    const lines = [reasonWords(reason)]
     if (last.detail) lines.push(`Detail: ${last.detail}`)
-    const button = canRetry ? 'Try again' : null
-    return { type: 'error', lines, link: reasonLink(last.reason ?? null), button, reload: false }
+    const button = canRetry && retryCanHelp(reason) ? 'Try again' : null
+    return { type: 'error', lines, link: reasonLink(reason), button, finish: false, reload: false }
   }
   if (last.status === 'interrupted') {
     const lines = ['The update stopped before it finished (a restart or a power cut).']
     if (!last.stage || BEFORE_SWITCH.has(last.stage)) lines.push('Nothing was changed.')
-    return { type: 'warning', lines, link: null, button: canRetry ? 'Try again' : null, reload: false }
+    const button = canRetry ? 'Try again' : null
+    return { type: 'warning', lines, link: null, button, finish: false, reload: false }
   }
   // cut_off: the switch had begun, and starting the same target again finishes it
   const lines = ['The update was cut off while it was switching.']
-  return { type: 'warning', lines, link: null, button: canRetry ? 'Finish the update' : null, reload: false }
+  const button = canRetry ? 'Finish the update' : null
+  return { type: 'warning', lines, link: null, button, finish: true, reload: false }
 })
 
 // Check for updates is the page's main (filled) button unless another one is: Update to ..., or the last run's button
 const checkIsMain = computed(() => !ahead.value && !ending.value?.button && !ending.value?.reload)
 
-function pressEnding(button: string) {
-  if (button === 'Finish the update') finish()
+function pressEnding(finishing: boolean) {
+  if (finishing) finish()
   else askToRetry()
 }
 
@@ -272,17 +288,15 @@ const beforeStart = computed(() => ({ id: 'update-checks', title: 'Before you st
       <!-- The run: its stages while it goes, and how it ended, in the same place -->
       <section v-if="going" class="mt-8">
         <h2 class="text-h6 mb-2">{{ runTitle }}</h2>
-        <p v-if="run && !run.readable" class="text-body-1 mb-2">
+        <p v-if="shownRun && !shownRun.readable" class="text-body-1 mb-2">
           This version of the page can't read its stages. The log below shows how it goes.
         </p>
-        <RunProgress v-if="run" :run="run" :lost="lost" />
-        <template v-else>
-          <v-alert v-if="lost" type="info" variant="tonal" class="mb-4">
-            The device isn't answering. That is expected for a few minutes while it switches or restarts. This page
-            keeps trying.
-          </v-alert>
-          <p class="text-body-1">You can close this page. The update carries on.</p>
-        </template>
+        <v-alert v-if="lost" type="info" variant="tonal" class="mb-4">
+          The device isn't answering. That is expected for a few minutes while it switches or restarts. This page keeps
+          trying.
+        </v-alert>
+        <RunProgress v-if="shownRun" :run="shownRun" class="mb-4" />
+        <p class="text-body-1">You can close this page. The update carries on.</p>
       </section>
 
       <section v-else-if="refusal || ending" class="mt-8">
@@ -299,7 +313,7 @@ const beforeStart = computed(() => ({ id: 'update-checks', title: 'Before you st
               <router-link v-else :to="ending.link.href" class="text-primary">{{ ending.link.text }}</router-link>
             </p>
           </v-alert>
-          <RunProgress v-if="run && run.status !== 'ok'" :run="run" :lost="false" class="mt-4" />
+          <RunProgress v-if="run && run.status !== 'ok'" :run="run" class="mt-4" />
           <template v-if="ending.reload">
             <p class="text-body-1 mt-4">This page is from the version before.</p>
             <v-btn color="primary" variant="flat" size="large" class="mt-4" @click="reload">Reload</v-btn>
@@ -311,7 +325,7 @@ const beforeStart = computed(() => ({ id: 'update-checks', title: 'Before you st
             size="large"
             class="mt-4"
             :loading="starting"
-            @click="pressEnding(ending.button)"
+            @click="pressEnding(ending.finish)"
           >
             {{ ending.button }}
           </v-btn>
