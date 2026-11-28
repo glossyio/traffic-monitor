@@ -6636,18 +6636,19 @@ DOV_PARAMS = "1acba66197b7b0fa"  # capture-radar: write params for radar_dov ins
 FRIGATE_MESSAGE = {"type": "end", "before": {"id": "1.0-abc"}, "after": {"id": "1.0-abc"}}
 
 
-def match(zone_direction, medians, counts=None, radar=True):
-    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+def match(zone_direction, medians, counts=None, radar=True, entered=None, **extra):
+    """The match node on one event; extra goes on the message as it is (msg.intersection, say)."""
+    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {}),
+             **({"entered_zones": entered} if entered is not None else {})}
     msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
-           "radar_reading_counts": counts or {}}
+           "radar_reading_counts": counts or {}, **extra}
     [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
     found = step["result"]["payload"]
     return (found.get("calc_event_direction"), found.get("calc_event_speed"), found["status_radarMatch"],
             found.get("calc_radar_readings"), found.get("calc_direction_source"))
 
 
-@needs_node
-@pytest.mark.parametrize("zones, medians, counts, expected", [
+MATCH_TABLE = [
     ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2},
      ("inbound", 22.5, True, 7, "zones_radar")),
     ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4, "zones_radar")),
@@ -6662,8 +6663,13 @@ def match(zone_direction, medians, counts=None, radar=True):
     # a reading with no direction is grouped under "null" by "calculate median per direction"
     ("outbound", {"inbound": 22.5, "null": 3.0}, {"inbound": 4, "null": 1},
      ("outbound", None, False, None, "zones_radar_opposite")),
-], ids=["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
-        "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"])
+]
+MATCH_IDS = ["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
+             "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"]
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, counts, expected", MATCH_TABLE, ids=MATCH_IDS)
 def test_direction_and_speed_with_a_radar(zones, medians, counts, expected):
     assert match(zones, medians, counts) == expected
 
@@ -6843,11 +6849,159 @@ def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
     (None, "zones", None), ("inbound", "frigate", None), ("inbound", "", None), ("inbound", None, None),
     ("inbound", MISSING, None), ("inbound", ["zones"], None),
 ], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
-def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
+def test_direction_source_is_one_of_its_words_or_empty(direction, source, expected):
     payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
     assert payload["direction_source"] == expected
     assert list(payload).index("direction_source") == EVENT_COLUMNS.index("direction_source")
     assert step["logged"] == []
+
+
+# Where a camera's view takes in an intersection (its own deployment.intersection ticked), the radar's readings may
+# belong to cross traffic: a radar speed needs an event that entered zone_radar going a way the radar saw. An event
+# that didn't enter zone_radar takes no radar reading, and its direction, the zones', is zones_intersection. Nothing
+# is taken from the radar alone. Unticked, nothing changes.
+CROSSING = ["zone_capture", "zone_near", "zone_far"]
+IN_RADAR_ZONE = ["zone_capture", "zone_radar", "zone_near", "zone_far"]
+
+
+def at_intersection(entered, zone_direction, medians, intersection=True, fields=FIELDS):
+    """The match node on an event of a camera with an enabled radar, then "event finalize output"; returns what the
+    match node found and the event's row."""
+    event = {**EVENT, "entered_zones": entered, "radarName": "TM_RADAR_SERIAL_PORT_00",
+             **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+    msg = {"frigate_event": event, "radarEnabled": True, "intersection": intersection, "payload": medians,
+           "radar_reading_counts": {direction: 3 for direction in medians}}
+    [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+    assert step["logged"] == []
+    found = step["result"]["payload"]
+    payload, step, _ = finalize({**step["result"], "event_direction_speed": found, "frigate_fields": fields})
+    assert step["logged"] == []
+    return found, payload
+
+
+@needs_node
+@pytest.mark.parametrize("intersection", [False, MISSING], ids=["unticked", "absent"])
+@pytest.mark.parametrize("zones, medians, counts, expected", MATCH_TABLE, ids=MATCH_IDS)
+def test_unticked_events_are_matched_as_before(zones, medians, counts, expected, intersection):
+    """Even for an event that didn't enter zone_radar."""
+    extra = {} if intersection is MISSING else {"intersection": intersection}
+    entered = CROSSING if zones else ["zone_capture"]
+    assert match(zones, medians, counts, entered=entered, **extra) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("entered, zones, medians, expected", [
+    (CROSSING, "inbound", {"inbound": 22.5}, ("inbound", "zones_intersection")),
+    (CROSSING, "outbound", {"outbound": -30.0, "inbound": 20.0}, ("outbound", "zones_intersection")),
+    (CROSSING, "inbound", {"inbound": 0}, ("inbound", "zones_intersection")),
+    (["zone_capture"], None, {"outbound": -30.0}, (None, None)),
+], ids=["one-way", "both-ways", "zero", "no-zone-direction"])
+def test_at_an_intersection_a_speed_needs_zone_radar(entered, zones, medians, expected):
+    found, payload = at_intersection(entered, zones, medians, fields=NO_FIELDS)
+    assert found["status_match_event_radar_direction"] == "intersection_no_zone_radar"
+    assert found["status_radarMatch"] is False and found.get("calc_event_speed") is None
+    assert "calc_radar_readings" not in found
+    assert (payload["direction_calc"], payload["direction_source"]) == expected
+    assert speed_of(payload) == NO_SPEED and payload["provenance"] == ["frigate"]
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, speed", [
+    ("inbound", {"inbound": 22.5}, 22.5),
+    ("outbound", {"outbound": -30.0, "inbound": 20.0}, -30.0),
+    ("inbound", {"inbound": 0}, 0),
+], ids=["one-way", "both-ways", "zero"])
+def test_at_an_intersection_a_matching_event_in_zone_radar_gets_its_speed(zones, medians, speed):
+    found, payload = at_intersection(IN_RADAR_ZONE, zones, medians)
+    assert found == at_intersection(IN_RADAR_ZONE, zones, medians, intersection=False)[0]
+    assert found["status_match_event_radar_direction"] == "radar_speed_direction_match"
+    assert (payload["direction_calc"], payload["direction_source"]) == (zones, "zones_radar")
+    assert speed_of(payload) == {"speed_calc": speed, "speed_unit": "mph", "speed_source": "radar",
+                                 "radar_readings": 3}
+    assert payload["provenance"] == ["frigate", "radar"]
+
+
+@needs_node
+@pytest.mark.parametrize("medians", [{"outbound": -30.0}, {"inbound": 0}, {"inbound": 22.5, "outbound": -30.0}, {}],
+                         ids=["outbound", "zero", "both-ways", "none"])
+def test_at_an_intersection_nothing_is_taken_from_the_radar_alone(medians):
+    found, payload = at_intersection(["zone_capture", "zone_radar"], None, medians, fields=NO_FIELDS)
+    assert found["status_match_event_radar_direction"] == "intersection_no_zone_direction"
+    assert found["status_radarMatch"] is False and found.get("calc_event_speed") is None
+    assert found.get("calc_event_direction") is None and found.get("calc_direction_source") is None
+    assert (payload["direction_calc"], payload["direction_source"]) == (None, None)
+    assert speed_of(payload) == NO_SPEED and payload["provenance"] == ["frigate"]
+
+
+@needs_node
+@pytest.mark.parametrize("medians", [{"outbound": -30.0}, {"outbound": -30.0, "null": 3.0}],
+                         ids=["other-way", "other-way-and-no-direction"])
+def test_at_an_intersection_the_radars_other_direction_is_as_today(medians):
+    found, payload = at_intersection(IN_RADAR_ZONE, "inbound", medians)
+    assert found == at_intersection(IN_RADAR_ZONE, "inbound", medians, intersection=False)[0]
+    assert (payload["direction_calc"], payload["direction_source"]) == ("inbound", "zones_radar_opposite")
+    assert speed_of(payload) == {"speed_calc": 23.98, "speed_unit": "mph", "speed_source": "frigate",
+                                 "radar_readings": None}
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, speed", [
+    ("inbound", {"inbound": 22.5}, 23.98), ("outbound", {"outbound": -30.0}, -23.98),
+], ids=["inbound", "outbound"])
+def test_frigates_speed_still_fills_in(zones, medians, speed):
+    _, payload = at_intersection(CROSSING, zones, medians)
+    assert speed_of(payload) == {"speed_calc": speed, "speed_unit": "mph", "speed_source": "frigate",
+                                 "radar_readings": None}
+    assert (payload["direction_calc"], payload["direction_source"]) == (zones, "zones_intersection")
+    assert payload["provenance"] == ["frigate"] and payload["frigate_speed"] == 38.6
+
+
+@needs_node
+@pytest.mark.parametrize("zones", ["inbound", "outbound", None])
+def test_at_an_intersection_a_camera_without_a_radar_is_as_today(zones):
+    """The rule withholds a radar's readings: a camera with no enabled radar has none to withhold, so its events keep
+    zones, which says there was no radar."""
+    entered = CROSSING if zones else ["zone_capture"]
+    assert match(zones, None, radar=False, entered=entered, intersection=True) == \
+        match(zones, None, radar=False, entered=entered) == (zones, None, False, None, "zones" if zones else None)
+
+
+@needs_node
+def test_the_event_keeps_its_radars_name():
+    step, _ = append_config(aim_config(camera={"heading_deg": 40, "intersection": True}), "picam_h265")
+    result = step["result"]
+    assert result["intersection"] is True and result["radarEnabled"] is True
+    assert result["frigate_event"]["radarName"] == "TM_RADAR_SERIAL_PORT_00"
+    _, payload = at_intersection(CROSSING, "inbound", {"inbound": 22.5})
+    assert payload["radarName"] == "TM_RADAR_SERIAL_PORT_00" and payload["direction_source"] == "zones_intersection"
+
+
+@needs_node
+@pytest.mark.parametrize("radar, camera, top, expected", [
+    (None, None, None, False),
+    ({"heading_deg": 180, "intersection": True}, None, None, False),
+    ({"heading_deg": 180, "intersection": True}, {"heading_deg": 40}, None, False),
+    (None, {"heading_deg": 40, "intersection": True}, None, True),
+    (None, None, {"intersection": True}, True),
+    (None, {"heading_deg": 40, "intersection": "yes"}, None, False),
+], ids=["none", "radar-alone", "radar-and-camera-block", "camera", "handed-down", "not-a-tick"])
+def test_the_tick_is_read_from_the_cameras_own_block(radar, camera, top, expected):
+    """A ticked radar alone doesn't turn the rule on for its camera; the top level's tick, handed down, is the
+    camera's own."""
+    step, _ = append_config(aim_config(radar, camera, top), "picam_h265")
+    assert step["result"]["intersection"] is expected
+    assert step["result"]["radarEnabled"] is True
+
+
+@needs_node
+@pytest.mark.parametrize("direction, source, expected", [
+    ("inbound", "zones_intersection", "zones_intersection"), ("outbound", "zones_intersection", "zones_intersection"),
+    (None, "zones_intersection", None), ("inbound", "intersection", None), ("inbound", "zones_crossing", None),
+    ("inbound", "Zones_Intersection", None),
+], ids=["inbound", "outbound", "no-direction", "intersection", "other-word", "letter-case"])
+def test_finalize_keeps_zones_intersection_and_still_drops_an_unknown_source(direction, source, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
+    assert payload["direction_source"] == expected and step["logged"] == []
 
 
 @needs_node
