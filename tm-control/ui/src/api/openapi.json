@@ -5681,6 +5681,15 @@
           "has_location": {
             "type": "boolean",
             "title": "Has Location"
+          },
+          "people": {
+            "type": "string",
+            "enum": [
+              "seen",
+              "none",
+              "unchecked"
+            ],
+            "title": "People"
           }
         },
         "type": "object",
@@ -5695,7 +5704,8 @@
           "height",
           "unit",
           "zones",
-          "has_location"
+          "has_location",
+          "people"
         ],
         "title": "ReferenceOut"
       },

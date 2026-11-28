@@ -12,8 +12,12 @@ with its zone outlines, and holds both in memory under a ticket (app.state.refer
 took them: the pictures shown are the pictures saved. It writes nothing, so it holds no lock. GET
 .../{ticket}/clean.jpg and zones.jpg show them, GET .../{ticket}/package gives the zip (the pictures, the data file,
 and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches the disk, a log line, an
-audit row, or an error message. The device doesn't check the pictures for people: the dialog's note makes that the
-admin's job.
+audit row, or an error message.
+
+The take asks Node-RED twice what Frigate is tracking on the camera (people.py): once before the first frame and once
+after the second, and says in its answer (`people`) and in the data file (`objects`) whether a person was listed. The
+check blocks nothing: with no list (detection off, Frigate or Node-RED silent) the answer is `unchecked`, and the
+dialog's note makes looking at the pictures the admin's job in every case. No list is logged or audited.
 """
 
 import time
@@ -30,7 +34,7 @@ from tm_control.core.errors import ApiError
 from tm_control.modules.apps import probes
 from tm_control.modules.apps.contracts import env_radar_names
 from tm_control.modules.auth.deps import require_admin
-from tm_control.modules.cameras import reference
+from tm_control.modules.cameras import people, reference
 from tm_control.modules.cameras.names import is_neutral, new_name
 from tm_control.modules.cameras.state import CameraRadar, CameraRow, CamerasState, compare, frigate_now
 from tm_control.modules.cameras.zones import ZoneFacts, detect_size, distance_unit, zone_facts
@@ -310,6 +314,7 @@ class ReferenceOut(BaseModel):
     unit: Literal["m", "ft"]
     zones: list[ZoneFacts]
     has_location: bool  # the place in use has a point, so the box can be ticked
+    people: people.Result  # what Frigate was tracking when the pictures were taken: a person, nobody, or unchecked
 
 
 PICTURE_BODY = {200: {"description": "The picture", "content": {"image/jpeg": {"schema": {"type": "string",
@@ -385,10 +390,13 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
             return fake.frigate_frame(settings, row.frigate_camera, zones)
         return frigate.latest_frame(row.frigate_camera, zones=zones)
 
+    before = people.ask(app_state.nodered, name)
     clean = _live(frame(False), size)
     clean_at = time.time()
     zones_picture = _live(frame(True), size)
     zones_at = time.time()
+    after = people.ask(app_state.nodered, name) if before is not None else None
+    objects = people.facts(before, after)
 
     mounting = next((m for m in config.mountings() if (m.sensor_type, m.sensor_name) == ("cameras", name)), None)
     place = Places(app_state.state).in_use()
@@ -409,6 +417,7 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         height=size[1],
         unit=distance_unit(whole),
         zones=zone_facts(camera),
+        objects=objects,
         tm_version=app_state.manifest.tm_version,
         frigate_version=fake.FAKE_FRIGATE_VERSION if settings.fake else frigate.version(),
     )
@@ -425,6 +434,7 @@ def take_reference(name: str, request: Request, admin: User = Depends(require_ad
         unit=kept.unit,
         zones=kept.zones,
         has_location=point is not None,
+        people=people.result(objects),
     )
 
 

@@ -104,7 +104,7 @@ def test_a_take_answers_the_legend_and_holds_the_pictures(admin):
     assert (found["camera"], found["survey_id"], found["width"], found["height"]) == (
         "picam_h265", place["id"], 1536, 864)
     assert found["expires_in"] == 600 and found["unit"] == "m"
-    assert "people" not in found  # the device doesn't check the pictures for people: the admin looks
+    assert found["people"] == "none"  # the fake Node-RED lists a car
     assert found["has_location"] is True
     assert found["stem"].startswith(f"tm-reference_{place['id']}_picam_h265_")
     assert [zone["key"] for zone in found["zones"]][:4] == ["zone_capture", "zone_far", "zone_near", "zone_radar"]
@@ -432,3 +432,122 @@ def test_a_camera_with_no_mounting_has_a_null_pose_and_no_facing(admin):
     assert written["pose"] is None and "pose" in written
     svg = next(content for name, content in zip_files.items() if name.endswith(".svg")).decode()
     assert "facing" not in svg
+
+
+# The people check: what Frigate was tracking, asked of Node-RED by the camera's key
+
+CAR = {"label": "car", "stationary": True}
+WALKER = {"label": "person", "stationary": False}
+
+
+def tracking(admin, monkeypatch, *answers):
+    """Make Node-RED answer each question in turn: a list, None, or an error to raise. Returns the keys it was asked."""
+    asked, remaining = [], list(answers)
+
+    def tracked(camera):
+        asked.append(camera)
+        answer = remaining.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(admin.app.state.nodered, "tracked", tracked)
+    return asked
+
+
+def test_a_take_with_nobody_tracked(admin, monkeypatch):
+    asked = tracking(admin, monkeypatch, [CAR], [CAR])
+    found = taken(admin)
+    assert found["people"] == "none" and asked == ["picam_h265", "picam_h265"]
+    assert data(admin, found, location=False)["objects"] == {
+        "checked": True, "before": [CAR], "after": [CAR], "person": False}
+
+
+@pytest.mark.parametrize("before, after", [([CAR, WALKER], [CAR]), ([CAR], [WALKER])])
+def test_a_person_in_either_list_is_seen(admin, monkeypatch, before, after):
+    tracking(admin, monkeypatch, before, after)
+    found = taken(admin)
+    assert found["people"] == "seen"
+    assert data(admin, found, location=False)["objects"] == {
+        "checked": True, "before": before, "after": after, "person": True}
+
+
+def test_no_list_is_unchecked_and_the_second_question_is_not_asked(admin, monkeypatch):
+    asked = tracking(admin, monkeypatch, None)
+    found = taken(admin)
+    assert found["people"] == "unchecked" and len(asked) == 1
+    assert data(admin, found, location=False)["objects"] == {
+        "checked": False, "before": None, "after": None, "person": None}
+
+
+@pytest.mark.parametrize("code", ["unreachable", "refused", "unexpected"])
+def test_node_red_failing_is_unchecked_and_the_take_still_works(admin, monkeypatch, code):
+    tracking(admin, monkeypatch, NodeRedError(code))
+    r = take(admin)
+    assert r.status_code == 200, r.text
+    found = r.json()
+    assert found["people"] == "unchecked"
+    assert admin.get(f"{base(found)}/clean.jpg").content == CLEAN
+    assert admin.get(f"{base(found)}/zones.jpg").content == ZONED
+
+
+def test_the_second_question_failing(admin, monkeypatch):
+    tracking(admin, monkeypatch, [CAR], NodeRedError("unreachable"))
+    found = taken(admin)
+    assert found["people"] == "unchecked"
+    assert data(admin, found, location=False)["objects"] == {
+        "checked": False, "before": [CAR], "after": None, "person": None}
+    tracking(admin, monkeypatch, [WALKER], NodeRedError("unreachable"))
+    found = taken(admin)
+    assert found["people"] == "seen"
+    assert data(admin, found, location=False)["objects"]["person"] is True
+
+
+def test_the_questions_come_before_the_first_frame_and_after_the_second(admin, monkeypatch):
+    order = []
+    real = fake.frigate_frame
+
+    def frigate_frame(settings, camera, zones):
+        order.append("zones" if zones else "clean")
+        return real(settings, camera, zones)
+
+    monkeypatch.setattr(fake, "frigate_frame", frigate_frame)
+    nodered = admin.app.state.nodered
+    monkeypatch.setattr(nodered, "tracked", lambda camera: order.append("ask") or [CAR])
+    taken(admin)
+    assert order == ["ask", "clean", "zones", "ask"]
+
+
+def test_node_red_is_asked_by_the_key(admin, monkeypatch, token):
+    assert add(admin).status_code == 200  # oak_ave_tele, under NEUTRAL
+    asked = tracking(admin, monkeypatch, [CAR], [CAR])
+    assert taken(admin, NEUTRAL)["people"] == "none"
+    assert asked == [NEUTRAL, NEUTRAL]
+
+
+def test_a_refused_take_asks_nothing(admin, monkeypatch):
+    asked = tracking(admin, monkeypatch)
+    real = fake.frigate_stats(admin.app.state.settings)
+    monkeypatch.setattr(fake, "frigate_stats", lambda settings: real | {"cameras": {}})
+    refused(admin, (409, "no_picture"))
+    assert asked == []
+
+
+def test_a_cameras_detection_switched_off_is_unchecked(admin):
+    assert fake.set_frigate_detect(admin.app.state.settings, "picam_h265", False)
+    assert taken(admin)["people"] == "unchecked"
+    assert fake.set_frigate_detect(admin.app.state.settings, "picam_h265", True)
+    assert taken(admin)["people"] == "none"
+
+
+def test_no_object_reaches_a_log_line_or_an_audit_row(admin, monkeypatch, caplog):
+    caplog.set_level(logging.DEBUG)
+    zebra = {"label": "zebra", "stationary": False}
+    admin.app.state.nodered.tracked_objects = [zebra]
+    caplog.clear()
+    found = taken(admin)
+    assert package(admin, found, location=False).status_code == 200
+    assert found["people"] == "none"
+    for record in caplog.records:
+        assert "zebra" not in record.getMessage() and "zebra" not in str(record.args)
+    assert audit_rows(admin) == [("camera.reference", "picam_h265"), ("camera.reference_saved", "picam_h265")]

@@ -193,6 +193,16 @@ def test_fake_correct_mounting_accepts_the_limits_themselves(fake):
         assert [row[key] for key in FIVE] == list(values.values())
 
 
+def test_the_fake_answers_the_people_check(fake):
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked("cam").append({"label": "person", "stationary": False})  # an answer is a copy
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked_objects = [{"label": "person", "stationary": True}]
+    assert fake.tracked("cam") == [{"label": "person", "stationary": True}]
+    fake.tracked_objects = None
+    assert fake.tracked("cam") is None
+
+
 def test_the_report_has_the_database_size(fake):
     report = fake.report()
     assert report["database_bytes"] == FakeNodeRed.DATABASE_BYTES == 734_003_200

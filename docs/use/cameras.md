@@ -109,18 +109,18 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 |---|---|
 | `<name>_clean.jpg` | The camera's current frame from Frigate, with nothing drawn on it |
 | `<name>_zones.jpg` | The same view a moment later, drawn by Frigate with the outline of each zone that is on, in the zone's colour |
-| `<name>.json` | The data file: the place, the camera, how it is mounted, when the pictures were taken, and every zone; see [The data file](#the-data-file) |
+| `<name>.json` | The data file: the place, the camera, how it is mounted, when the pictures were taken, every zone, and what Frigate was tracking; see [The data file](#the-data-file) |
 | `<name>_zones.svg` | A drawing made by the control app: the clean picture with each zone outlined and named, and a legend below it |
 
 The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z`: the ID of the place in use (`no-place` when there is none), the camera's name (the one in bold on its row), and when the clean picture was taken, in UTC.
 
 1. On the camera's row, choose **Reference picture**. The dialog says what the picture gives away before any picture is taken.
-2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows both pictures and the camera's zones with their colours and side lengths.
-3. Look at both pictures. The device doesn't check them for people, so this is up to you. If anyone is in them, wait, and choose **Take again**.
+2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows, above the pictures, whether Frigate was tracking a person, then both pictures and the camera's zones with their colours and side lengths.
+3. Look at both pictures, whatever the line says. If anyone is in them, or the line warns of a person, wait, and choose **Take again**.
 4. Leave **Include this place's exact location** ticked to put the place's location in the data file, or clear it.
 5. Choose **Save the zip**.
 
-![The reference picture dialog on a phone after the pictures are taken: a stand-in picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and never saves them, the zones listed with their colours, the box Include this place's exact location ticked, and Close, Take again, and Save the zip](../assets/images/cameras-reference.png){ width="300" }
+![The reference picture dialog on a phone after the pictures are taken: a line saying Frigate wasn't tracking a person, a stand-in picture of a road and the same picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and never saves them, the first zone with its colour, and Close, Take again, and Save the zip](../assets/images/cameras-reference.png){ width="300" }
 
 On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as **Download diagnostics**. Like it, the zip saves from a browser, on a computer or on the phone after the steps under [Phones](wifi-hotspot.md#phones).
 
@@ -128,11 +128,29 @@ On a phone joined to the unit's hotspot, the pictures show in Android's sign-in 
 
 The dialog opens with this note:
 
-> This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. The device doesn't check the pictures for people. You are responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
+> This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. When the pictures are taken, the device asks Frigate whether it is tracking a person on this camera, and says so above them. That works only while Frigate's detection is on for the camera. Frigate can miss a person who is far away, half hidden, or in poor light, or who walks in between the two pictures. You are still responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
 
 * The location in the data file is the place's exact location, as set on the [Location page](location.md), not the rounded one the database keeps. When the place in use has no location, the box is greyed and the data file holds none.
 * The device holds the pictures in memory for 10 minutes, for the administrator who took them, and never saves them. Closing the dialog, taking them again, or restarting the control app drops them sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads.
 * The audit log records each picture taken and each zip saved, with the camera's name and whether the location was included, never the location itself.
+
+### The people check
+
+When you choose **Take the pictures**, the device asks Frigate what it is tracking on the camera: once before the first picture, and once after the second. A line above the pictures says what Frigate answered.
+
+| Line | What it means |
+|---|---|
+| **Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, then take them again.** (a warning) | Frigate listed a person at one of the two questions or both. |
+| **Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both pictures yourself.** | Frigate answered both times and listed no person. |
+| **The device couldn't check for people, because Frigate's detection is off for this camera or Frigate didn't answer. Look at both pictures yourself.** | One of the two questions got no list, so nothing can be said. |
+
+The check has limits:
+
+* It works only while Frigate's detection is on for the camera. A unit as installed has detection off, so it always shows the third line until you turn on **Frigate detection** in the camera's [settings](#change-a-cameras-settings).
+* Frigate lists an object only once it is confident of it. A person far away, half hidden, or in poor light can be missed, and so can one who walks in between the two pictures and the two questions.
+* A person standing still is listed. The check doesn't need the person to move.
+
+The check never stops you from saving: **Save the zip** and **Take again** work the same with each line, and the line follows the newest pictures. It doesn't turn Frigate's detection on or off, and the audit log doesn't record what Frigate listed. The lists go into the zip's data file, as [`objects`](#the-data-file).
 
 ### When it can't take the pictures
 
@@ -148,7 +166,7 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 
 | Field | What it holds |
 |---|---|
-| `format`, `format_version` | `traffic-monitor-reference` and `1` |
+| `format`, `format_version` | `traffic-monitor-reference` and `2` |
 | `survey_id` | The ID of the place in use, or `null` |
 | `camera` | The camera's name (the one in bold on its row) |
 | `deployment_id` | The camera's open deployment at the place, or `null` |
@@ -159,6 +177,9 @@ The zones picture is Frigate's own drawing: outlines only, of the zones that are
 | `detect` | The `width` and `height` of Frigate's detect frame in pixels, which is the pictures' size |
 | `distance_unit` | The unit of the zones' side lengths: `ft` when Frigate's interface is set to imperial units, else `m` |
 | `zones` | Every zone of the camera, in Frigate's order, with the fields in the Zone field table below |
+| `objects` | What Frigate was tracking on the camera when the pictures were taken, with the fields in the Objects field table below; it is the last field |
+
+Version 2 added `objects` to version 1's fields. Every other field has the same name, meaning, and place, so a tool written for version 1 still reads the file.
 
 | Pose field | What it holds |
 |---|---|
@@ -182,6 +203,15 @@ The pose is for placing the recorded paths on a street plan. It holds no coordin
 | `sides` | The same lengths by side, in the order Frigate stores the corners, such as `{"start": "A", "end": "B", "length": 12}`; the last side ends at A. `[]` unless there is one length for each corner |
 | `inertia`, `loitering_time`, `speed_threshold`, `objects` | The zone's settings in Frigate |
 | `filters` | For each object with filters in the zone, the ones that are numbers among `min_area`, `max_area`, `min_ratio`, `max_ratio`, `threshold`, and `min_score`. Any other filter is left out |
+
+| Objects field | What it holds |
+|---|---|
+| `checked` | `true` when both questions gave a list, else `false` |
+| `before` | The objects Frigate listed at the first question, or `null` when it gave no list |
+| `after` | The objects it listed at the second question, or `null` when that gave no list or wasn't asked (it isn't asked when the first gave none) |
+| `person` | `true` when either list holds a person, `false` when both lists are there and hold none, else `null` |
+
+Each listed object has two fields: `label`, Frigate's label for it, such as `car` (a person Frigate has recognized by name is still `person`, and the name isn't kept), and `stationary`, `true` when Frigate says the object isn't moving. The lists hold no picture, position, or name.
 
 The names you typed for zones in Frigate's editor and the place's description are never in the data file or the drawing. Frigate's name for the camera isn't either, unless the camera's entry uses it as its own name, as the installer's `picam_h265` does: then it's in the files' names, the data file, and the drawing. To keep it out, [use a neutral camera name](#use-a-neutral-camera-name) first.
 
