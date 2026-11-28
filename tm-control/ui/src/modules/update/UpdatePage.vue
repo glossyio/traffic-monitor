@@ -167,9 +167,9 @@ const startPending = computed(() => state.value?.started?.status === 'starting')
 const shownRun = computed(() => (startPending.value ? null : run.value))
 
 const runTitle = computed(() => {
-  const going = shownRun.value
-  if (!going) return 'Starting the update'
-  const name = targetName(going.to_version, going.to_commit, going.to_tag)
+  const current = shownRun.value
+  if (!current) return 'Starting the update'
+  const name = targetName(current.to_version, current.to_commit, current.to_tag)
   return name ? `Updating to ${name}` : 'An update is running'
 })
 

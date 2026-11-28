@@ -393,6 +393,7 @@ def test_the_tidy_leaves_a_link_under_refs_alone(world):
     (world.src / "repo.git/refs/tags/linked").symlink_to(outside)
     (world.root / "tm-update-ran.json").unlink()
     world.run(world.request(run_id="20261126T000000Z"))
+    assert (world.src / "repo.git/refs/tags/linked").is_symlink()
     assert outside.read_text() == "not an id\n"
 
 
