@@ -13,6 +13,10 @@
   confirmation; the place in use can't. "Exact locations" saves the places' exact locations as a CSV (GET /surveys/export)
   after a confirmation. The download of a database copy that holds them is on the Sharing page (Download your data),
   which the "Exact locations" and Precision paragraphs link to.
+  A place's panel also lists its stored reference pictures (GET /pictures?survey_id=, asked for when the panel opens,
+  like the events), and the line above the places says how many the device stores: the sum of the places' own counts,
+  which the page reads again after a delete or a keep. The place in use offers Take a reference picture for each of its
+  enabled cameras, which PlacePictures opens.
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -36,6 +40,7 @@ import { facing } from './heading'
 import ImportPlaces from './ImportPlaces.vue'
 import PlaceDetails, { type Details } from './PlaceDetails.vue'
 import PlaceForm from './PlaceForm.vue'
+import type { PictureOut } from './pictures'
 import TimeZoneDialog from './TimeZoneDialog.vue'
 import { loadTimeZones } from './timezones'
 
@@ -44,6 +49,7 @@ type SurveyOut = components['schemas']['SurveyOut']
 type EventsOut = components['schemas']['EventsOut']
 type DeploymentOut = components['schemas']['DeploymentOut']
 type MountingState = components['schemas']['MountingState']
+type PicturesState = components['schemas']['PicturesState']
 
 const STATUS: Record<string, string> = { in_use: 'In use', planned: 'Planned', used: 'Used' }
 
@@ -215,12 +221,43 @@ async function loadDetails(id: string) {
   }
 }
 
+// A place's stored reference pictures, loaded with its other details. The list stays on show while it is read again.
+const pictures = reactive<Record<string, { list?: PictureOut[]; error: string }>>({})
+
+async function loadPictures(id: string) {
+  pictures[id] = { list: pictures[id]?.list, error: '' }
+  try {
+    const { data } = await api.GET('/api/v1/pictures', { params: { query: { survey_id: id } } })
+    pictures[id] = { list: (data as PicturesState).pictures, error: '' }
+  } catch (error) {
+    pictures[id] = { list: undefined, error: messageOf(error) }
+  }
+}
+
 watch(open, (ids) => {
-  for (const id of ids) if (id !== UNASSIGNED && !(id in details)) void loadDetails(id)
+  for (const id of ids) {
+    if (id === UNASSIGNED) continue
+    if (!(id in details)) void loadDetails(id)
+    if (!(id in pictures)) void loadPictures(id)
+  }
 })
 
+// How many pictures the device stores: every place's own count
+const pictureTotal = computed(() => state.value?.surveys.reduce((sum, place) => sum + place.pictures, 0) ?? 0)
+
+// The enabled cameras' keys, for the place in use only: those are the ones the unit can take a picture of now
+const cameras = computed(() =>
+  (state.value?.sensors ?? []).filter((sensor) => sensor.sensor_type === 'cameras').map((sensor) => sensor.sensor_name),
+)
+
+// A delete or a keep changed a place's pictures: the counts and that place's list are read again
+async function picturesChanged(id: string) {
+  void loadPictures(id)
+  await load()
+}
+
 // Deleting a place, after a confirmation. A used place's exact location goes with it; the database keeps the
-// rounded location stored with its rows.
+// rounded location stored with its rows. Its stored reference pictures go too, and the confirmation counts them.
 const deleting = ref<SurveyOut | null>(null)
 const deleteOpen = computed({
   get: () => deleting.value !== null,
@@ -234,13 +271,21 @@ const deleteTitle = computed(() => {
   return place.description ? `Delete "${place.description}"?` : `Delete place ${place.id}?`
 })
 const deleteText = computed(() => {
-  if (deleting.value?.status === 'used') {
+  const place = deleting.value
+  const count = place?.pictures ?? 0
+  const pictures =
+    count === 0
+      ? ''
+      : count === 1
+        ? ' Its reference picture is deleted from the device with it.'
+        : ` Its ${count} reference pictures are deleted from the device with it.`
+  if (place?.status === 'used') {
     return (
       'Its exact location is deleted with it. The database keeps the rounded location stored with each of its ' +
-      "records. This can't be undone."
+      `records.${pictures} This can't be undone.`
     )
   }
-  return "It's removed from the list of places. This can't be undone."
+  return `It's removed from the list of places.${pictures} This can't be undone.`
 })
 const working = ref<string | null>(null) // the id of the place being deleted
 const placeErrors = reactive<Record<string, string>>({})
@@ -319,7 +364,11 @@ function openImport() {
 async function refresh() {
   await load()
   for (const id of Object.keys(details)) delete details[id]
-  for (const id of open.value) if (id !== UNASSIGNED) void loadDetails(id)
+  for (const id of open.value) {
+    if (id === UNASSIGNED) continue
+    void loadDetails(id)
+    void loadPictures(id)
+  }
 }
 
 // The places, on opening the page and after a change. The precision's choice follows the device's; the open panels
@@ -398,6 +447,9 @@ onMounted(() => {
           <v-btn variant="outlined" color="primary" size="large" @click="openImport">Import places</v-btn>
         </div>
         <p v-if="listResult" class="text-body-1 mb-4">{{ listResult }}</p>
+        <p v-if="pictureTotal > 0" class="text-body-1 mb-4" data-picture-count>
+          The device stores {{ pictureTotal }} reference {{ pictureTotal === 1 ? 'picture' : 'pictures' }}.
+        </p>
 
         <!-- One panel per place, in the API's order: in use, then planned, then used. Each title, a button, goes inside
              an h3, so the headings stay headings for screen readers, as on the Detection page. -->
@@ -428,7 +480,12 @@ onMounted(() => {
                 :nodered="state.nodered"
                 :clock-time-zone="clockTimeZone"
                 :mounting-sensors="mounting?.sensors ?? null"
+                :pictures="pictures[place.id]?.list"
+                :pictures-error="pictures[place.id]?.error"
+                :cameras="place.status === 'in_use' ? cameras : []"
                 @retry="loadDetails(place.id)"
+                @retry-pictures="loadPictures(place.id)"
+                @pictures-changed="picturesChanged(place.id)"
                 @correct-heading="(deployment) => openCorrection('heading', place, deployment)"
               />
               <div class="d-flex flex-wrap ga-3">

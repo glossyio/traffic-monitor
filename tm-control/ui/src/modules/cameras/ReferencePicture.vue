@@ -4,13 +4,18 @@
   after Take the pictures (POST /cameras/{name}/reference), both pictures as the device holds them, the zones' legend,
   the location box, and Save the zip. The device asks Frigate whether it is tracking a person on the camera, at each of
   the two pictures, and the take's `people` answer becomes one line above them (a solid warning for a person, tonal
-  information for none or for no check); the note, shown on both steps, says what the line can't promise and leaves the looking to the
-  admin, so the line never disables a button.
+  information for none or for no check); the note, shown on both steps, says what the line can't promise and leaves
+  the looking to the admin, so the line never disables a button.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
   dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored),
   and a take that answers after the dialog closed drops its new pictures at once. The dialog starts over each time it
-  opens. A 404 from Save, or a picture that fails to load, means the device no longer holds them: the dialog goes back
-  to its first step and says so. Any other refusal shows the API's message.
+  opens. A 404 from Save or Keep, or a picture that fails to load, means the device no longer holds them: the dialog
+  goes back to its first step and says so. Any other refusal shows the API's message.
+  A take at a place (`survey_id` is not null) also offers Keep on this device, beside Save the zip: it stores both
+  pictures on the device under that place (POST .../keep) and emits `kept`, so a page that lists the place's pictures
+  loads them again. The line under the buttons says what Keep does, and once kept says where to find the picture; the
+  button stays off for that take (the device refuses a second keep of one ticket, `already_kept`, and the zip still
+  saves). Take again brings it back for the new pictures.
 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
@@ -30,16 +35,23 @@ const NOTE =
   "take them again. Share them only with people you would give the unit's exact location. The data file also holds " +
   'that location unless you clear the box below.'
 const EXPIRED = 'These pictures are no longer held on the device. Take them again.'
+const KEEP_LINE =
+  "Keep on this device stores both pictures on the device's card, under this place. They stay until you delete them " +
+  'or the place. Anyone who takes the card can read them.'
+const KEPT_LINE = 'Kept on this device. You can find it under this place on the Location page.'
 const CLEAN_ALT = "The camera's view"
 const ZONES_ALT = "The same view with Frigate's zone outlines"
 
 const open = defineModel<boolean>('open', { required: true })
 const props = defineProps<{ name: string }>()
+const emit = defineEmits<{ kept: [] }>()
 
 const reference = ref<ReferenceOut | null>(null)
 const withLocation = ref(true)
 const taking = ref(false)
 const saving = ref(false)
+const keeping = ref(false)
+const kept = ref(false) // whether the pictures on show are stored on the device
 const error = ref('')
 const expired = ref(false)
 
@@ -61,6 +73,7 @@ function forget(ticket: string) {
 function drop() {
   const held = reference.value
   reference.value = null
+  kept.value = false
   if (held) forget(held.ticket)
 }
 
@@ -71,6 +84,7 @@ watch(
     session += 1
     if (isOpen) {
       reference.value = null
+      kept.value = false
       error.value = ''
       expired.value = false
     } else {
@@ -83,6 +97,7 @@ watch(
 // Back to the first step, saying the pictures are gone
 function gone() {
   reference.value = null
+  kept.value = false
   error.value = ''
   expired.value = true
 }
@@ -100,6 +115,7 @@ async function take() {
       return
     }
     reference.value = data as ReferenceOut
+    kept.value = false
     withLocation.value = reference.value.has_location
   } catch (failure) {
     if (session === started) error.value = messageOf(failure)
@@ -124,6 +140,26 @@ async function save() {
     else error.value = messageOf(failure)
   } finally {
     saving.value = false
+  }
+}
+
+// Store both pictures on the device, under the place they were taken at; the zip still saves afterwards
+async function keep() {
+  const held = reference.value
+  if (!held) return
+  keeping.value = true
+  error.value = ''
+  try {
+    await api.POST('/api/v1/cameras/{name}/reference/{ticket}/keep', {
+      params: { path: { name: props.name, ticket: held.ticket } },
+    })
+    kept.value = true
+    emit('kept')
+  } catch (failure) {
+    if (failure instanceof ApiError && failure.status === 404) gone()
+    else error.value = messageOf(failure)
+  } finally {
+    keeping.value = false
   }
 }
 </script>
@@ -164,7 +200,8 @@ async function save() {
           </v-row>
           <p class="text-body-2 text-secondary mt-2">The two were taken a moment apart.</p>
           <p class="text-body-2 text-secondary mb-4">
-            The device holds these pictures in memory for 10 minutes and never saves them.
+            The device holds these pictures in memory for 10 minutes and saves them only if you choose Keep on this
+            device.
           </p>
 
           <h2 class="text-subtitle-1 font-weight-bold mb-2">Zones</h2>
@@ -193,10 +230,35 @@ async function save() {
         <v-spacer />
         <v-btn variant="text" min-height="44" @click="open = false">Close</v-btn>
         <template v-if="reference">
-          <v-btn variant="text" color="primary" min-height="44" :loading="taking" :disabled="saving" @click="take">
+          <v-btn
+            variant="text"
+            color="primary"
+            min-height="44"
+            :loading="taking"
+            :disabled="saving || keeping"
+            @click="take"
+          >
             Take again
           </v-btn>
-          <v-btn color="primary" variant="flat" min-height="44" :loading="saving" :disabled="taking" @click="save">
+          <v-btn
+            v-if="reference.survey_id !== null"
+            variant="outlined"
+            color="primary"
+            min-height="44"
+            :loading="keeping"
+            :disabled="kept || taking || saving"
+            @click="keep"
+          >
+            Keep on this device
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            min-height="44"
+            :loading="saving"
+            :disabled="taking || keeping"
+            @click="save"
+          >
             Save the zip
           </v-btn>
         </template>
@@ -204,6 +266,9 @@ async function save() {
           Take the pictures
         </v-btn>
       </v-card-actions>
+      <p v-if="reference && reference.survey_id !== null" class="text-body-2 text-secondary px-6 pb-4" data-keep-line>
+        {{ kept ? KEPT_LINE : KEEP_LINE }}
+      </p>
     </v-card>
   </v-dialog>
 </template>

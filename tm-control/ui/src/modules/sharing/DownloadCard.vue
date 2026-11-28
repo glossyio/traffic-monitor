@@ -7,6 +7,8 @@
   The tick, the error, and "started" are this card's own state: the page reads its state again after a save and after
   "I've reviewed this", and a new `facts` changes none of them. Once a download has started, Download and the box stay
   off until the page is reloaded, because each download makes a full copy of the database on the device.
+  When the device stores reference pictures, the card counts them and says they aren't part of this download (they are
+  downloaded or deleted one at a time, under each place on the Location page).
 -->
 <script setup lang="ts">
 import { computed, ref } from 'vue'
@@ -46,9 +48,18 @@ const error = ref('')
 const started = ref<'' | 'plain' | 'exact'>('') // set once the request is answered; stays set until the page is reloaded
 
 const canTick = computed(() => props.facts.exact_places > 0)
-const items = computed(() =>
-  props.facts.database_bytes === null ? [] : [{ label: 'Database size', value: sizeWords(props.facts.database_bytes) }],
-)
+// The stored reference pictures are counted here and said to be outside this download: they are downloaded or deleted,
+// one at a time, under each place on the Location page
+const PICTURES_NOTE =
+  "They aren't part of this download. Download or delete them under each place on the Location page."
+const items = computed(() => [
+  ...(props.facts.database_bytes === null
+    ? []
+    : [{ label: 'Database size', value: sizeWords(props.facts.database_bytes) }]),
+  ...(props.facts.pictures > 0
+    ? [{ label: 'Reference pictures stored', value: String(props.facts.pictures), note: PICTURES_NOTE }]
+    : []),
+])
 const fileName = computed(() => (started.value === 'exact' ? 'tmdb-exact-locations.tar.gz' : 'tmdb.tar.gz'))
 
 async function download() {

@@ -1,7 +1,8 @@
 <!--
   A card that names a thing and lists facts about it, label above value: the device card on the home page and the
   Device page. A fact with `progress` (the share used, 0 to 100, such as the storage's) gets a thin bar under its
-  value and a row of its own. Anything in the default slot goes at the bottom of the card.
+  value and a row of its own; a fact with a `note` gets a line under its value, and a row of its own too. Anything in
+  the default slot goes at the bottom of the card.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -9,7 +10,7 @@ import { computed } from 'vue'
 const props = defineProps<{
   title: string
   subtitle?: string | string[] // one line under the title, or several
-  items: { label: string; value: string; progress?: number }[]
+  items: { label: string; value: string; progress?: number; note?: string }[]
 }>()
 
 const subtitles = computed(() => (props.subtitle === undefined ? [] : [props.subtitle].flat()))
@@ -23,9 +24,15 @@ const subtitles = computed(() => (props.subtitle === undefined ? [] : [props.sub
     </v-card-item>
     <v-card-text>
       <v-row dense>
-        <v-col v-for="item in items" :key="item.label" cols="12" :sm="item.progress === undefined ? 6 : 12">
+        <v-col
+          v-for="item in items"
+          :key="item.label"
+          cols="12"
+          :sm="item.progress === undefined && item.note === undefined ? 6 : 12"
+        >
           <div class="text-body-2 text-secondary">{{ item.label }}</div>
           <div class="text-body-1 text-break">{{ item.value }}</div>
+          <div v-if="item.note !== undefined" class="text-body-2 text-secondary mt-1">{{ item.note }}</div>
           <v-progress-linear
             v-if="item.progress !== undefined"
             :model-value="item.progress"

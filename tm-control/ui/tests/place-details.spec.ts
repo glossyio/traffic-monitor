@@ -2,6 +2,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import type { components } from '../src/api/schema'
 import PlaceDetails from '../src/modules/location/PlaceDetails.vue'
+import { pictureOut } from './fake-api'
 import { mountAlone } from './mount'
 
 type DeploymentOut = components['schemas']['DeploymentOut']
@@ -355,5 +356,35 @@ describe("a place's time zone on its panel", () => {
     const wrapper = mountFacts({ timezone: 'Asia/Tokyo' }, { clockTimeZone: null })
     expect(wrapper.text()).not.toContain("The unit's clock is set to")
     expect(wrapper.text()).not.toContain(NO_TIME_ZONE)
+  })
+})
+
+describe('the reference pictures in a place panel', () => {
+  beforeEach(() => document.body.replaceChildren())
+
+  const mountPictures = (props: Record<string, unknown>) =>
+    mountAlone(PlaceDetails, { place: PLACE, nodered: true, clockTimeZone: null, details: undefined, ...props })
+
+  it('counts them in the heading and lists them', () => {
+    const wrapper = mountPictures({ pictures: [pictureOut(), pictureOut({ id: 'fedcba9876543210' })] })
+    expect(wrapper.find('[data-pictures]').text()).toBe('Reference pictures (2)')
+    expect(wrapper.findAll('[data-picture]')).toHaveLength(2)
+  })
+
+  it("counts the place's own number until its list is loaded", () => {
+    const wrapper = mountPictures({ place: { ...PLACE, pictures: 4 } })
+    expect(wrapper.find('[data-pictures]').text()).toBe('Reference pictures (4)')
+  })
+
+  it('says none is stored for a place with none, with no Node-RED answer', () => {
+    const wrapper = mountPictures({ nodered: false, pictures: [] })
+    expect(wrapper.find('[data-pictures]').text()).toBe('Reference pictures (0)')
+    expect(wrapper.text()).toContain('No reference picture is stored for this place.')
+  })
+
+  it('passes the page the changes and the retry', async () => {
+    const wrapper = mountPictures({ pictures: undefined, picturesError: 'Nope.' })
+    await wrapper.findAll('button').find((b) => b.text() === 'Try again')!.trigger('click')
+    expect(wrapper.emitted('retryPictures')).toHaveLength(1)
   })
 })

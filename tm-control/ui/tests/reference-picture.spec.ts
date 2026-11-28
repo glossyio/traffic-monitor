@@ -2,7 +2,7 @@
 // holds them, the legend, the location box, the zip, and starting over when the pictures are gone.
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ADMIN, apiError, camerasState, cameraRow, json, newRow, referenceOut, signedIn } from './fake-api'
+import { ADMIN, apiError, camerasState, cameraRow, json, newRow, pictureOut, referenceOut, signedIn } from './fake-api'
 import { buttonsIn, clickIn, dialogButtons, dialogText, fieldIn, mountApp } from './mount'
 
 const NAME = 'camera_1_3fa9c2'
@@ -127,7 +127,9 @@ describe('Reference picture', () => {
     ])
     const text = dialogText()
     expect(text).toContain('The two were taken a moment apart.')
-    expect(text).toContain('The device holds these pictures in memory for 10 minutes and never saves them.')
+    expect(text).toContain(
+      'The device holds these pictures in memory for 10 minutes and saves them only if you choose Keep on this device.',
+    )
     expect(text).toContain(NOTE)
     expect(dialog()?.querySelectorAll('[data-legend-row]')).toHaveLength(4)
     expect(text).toContain('A–B 12 m, B–C 7.3 m, C–D 12 m, D–A 7.3 m')
@@ -314,5 +316,111 @@ describe('Reference picture', () => {
     await openDialog(wrapper)
     expect(pictures()).toEqual([])
     expect(buttonsIn(dialog(), 'Take the pictures')).toHaveLength(1)
+  })
+
+  describe('Keep on this device', () => {
+    const KEEP = `POST ${BASE}/keep`
+    const KEEP_LINE =
+      "Keep on this device stores both pictures on the device's card, under this place. They stay until you delete them or the place. Anyone who takes the card can read them."
+    const KEPT_LINE = 'Kept on this device. You can find it under this place on the Location page.'
+
+    async function opened(answers: Record<string, unknown> = {}) {
+      const page = await openPage({ [KEEP]: json(201, pictureOut()), ...answers })
+      await openDialog(page.wrapper)
+      await takePictures()
+      return page
+    }
+
+    function keepButton() {
+      const found = buttonsIn(dialog(), 'Keep on this device')
+      expect(found).toHaveLength(1)
+      return found[0]
+    }
+
+    it('shows after a take at a place, beside Save the zip, with what it does under the buttons', async () => {
+      await opened()
+      expect(keepButton().disabled).toBe(false)
+      const actions = dialog()?.querySelector('.v-card-actions')
+      expect(buttonsIn(actions ?? null, 'Keep on this device')).toHaveLength(1)
+      expect(buttonsIn(actions ?? null, 'Save the zip')).toHaveLength(1)
+      expect(dialogText()).toContain(KEEP_LINE)
+      expect(dialogText()).not.toContain(KEPT_LINE)
+    })
+
+    it("isn't there before the take, nor for a take with no place", async () => {
+      const { wrapper } = await openPage({ [TAKE]: referenceOut({ survey_id: null, has_location: false }) })
+      await openDialog(wrapper)
+      expect(buttonsIn(dialog(), 'Keep on this device')).toHaveLength(0)
+      expect(dialogText()).not.toContain(KEEP_LINE)
+      await takePictures()
+      expect(buttonsIn(dialog(), 'Keep on this device')).toHaveLength(0)
+      expect(dialogText()).not.toContain(KEEP_LINE)
+      expect(buttonsIn(dialog(), 'Save the zip')).toHaveLength(1)
+    })
+
+    it('posts the keep, says it is kept, turns off, and tells the page', async () => {
+      const { api } = await opened()
+      await clickIn(dialog(), 'Keep on this device')
+      expect(api.sent.at(-1)).toMatchObject({ method: 'POST', path: `${BASE}/keep` })
+      expect(dialogText()).toContain(KEPT_LINE)
+      expect(dialogText()).not.toContain(KEEP_LINE)
+      expect(keepButton().disabled).toBe(true)
+    })
+
+    it('emits kept once', async () => {
+      const { wrapper } = await opened()
+      await clickIn(dialog(), 'Keep on this device')
+      const emitted = wrapper.findComponent({ name: 'ReferencePicture' }).emitted('kept')
+      expect(emitted).toHaveLength(1)
+    })
+
+    it.each([
+      ['already_kept', 409, 'These pictures are already kept on this device.'],
+      ['no_space', 409, "There isn't enough free space on the device to keep these pictures."],
+      ['no_place', 409, "These pictures weren't taken at the place in use now, so they can't be kept. Take them again."],
+    ])("shows the API's message for %s, and keeps the button", async (code, status, message) => {
+      const { wrapper } = await opened({ [KEEP]: apiError(status, code, message) })
+      await clickIn(dialog(), 'Keep on this device')
+      expect(dialog()?.querySelector('.v-alert[class*="error"]')?.textContent).toContain(message)
+      expect(dialogText()).not.toContain(KEPT_LINE)
+      expect(dialogText()).toContain(KEEP_LINE)
+      expect(wrapper.findComponent({ name: 'ReferencePicture' }).emitted('kept')).toBeUndefined()
+    })
+
+    it('starts over when the pictures are gone', async () => {
+      await opened({ [KEEP]: apiError(404, 'reference_expired', EXPIRED) })
+      await clickIn(dialog(), 'Keep on this device')
+      expect(dialogText()).toContain(EXPIRED)
+      expect(pictures()).toEqual([])
+      expect(buttonsIn(dialog(), 'Keep on this device')).toHaveLength(0)
+    })
+
+    it('still saves the zip after a keep', async () => {
+      const { saved } = saveSpies()
+      const { api } = await opened()
+      await clickIn(dialog(), 'Keep on this device')
+      await clickIn(dialog(), 'Save the zip')
+      expect(urls(api).at(-1)).toBe(`GET ${BASE}/package?location=true`)
+      expect(saved).toEqual(['tm-reference_3f9a1c2e-si_camera_1_3fa9c2_20261118T183005Z.zip'])
+    })
+
+    it('comes back with Take again, for the new pictures', async () => {
+      await opened()
+      await clickIn(dialog(), 'Keep on this device')
+      expect(keepButton().disabled).toBe(true)
+      await clickIn(dialog(), 'Take again')
+      expect(keepButton().disabled).toBe(false)
+      expect(dialogText()).toContain(KEEP_LINE)
+      expect(dialogText()).not.toContain(KEPT_LINE)
+    })
+
+    it('starts unkept each time the dialog opens', async () => {
+      const { wrapper } = await opened()
+      await clickIn(dialog(), 'Keep on this device')
+      await clickIn(dialog(), 'Close')
+      await openDialog(wrapper)
+      await takePictures()
+      expect(keepButton().disabled).toBe(false)
+    })
   })
 })
