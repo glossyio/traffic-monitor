@@ -691,6 +691,26 @@ def test_init_config_defaults_allows_a_blank_heading(top, sensor):
 
 
 @needs_node
+@pytest.mark.parametrize("block", [None, [], "text", 5], ids=["null", "list", "text", "number"])
+def test_a_sensors_deployment_that_isnt_a_mapping_takes_the_top_levels(block):
+    """A sensor's deployment: key with nothing under it reads as null (as when its last hand-set key is taken out).
+    That, or anything else that isn't a mapping, is no block: the sensor takes the top level's, as with no key, and
+    the load goes on."""
+    config = new_device_config()
+    sensors = [("cameras", "picam_h265"), ("radars", "TM_RADAR_SERIAL_PORT_00")]
+    assert all(config["sensors"][kind][name]["enabled"] is True and "deployment" not in config["sensors"][kind][name]
+               for kind, name in sensors)
+    without, _ = init_defaults(copy.deepcopy(config))
+    for kind, name in sensors:
+        config["sensors"][kind][name]["deployment"] = block
+    payload, logged = init_defaults(config)
+    assert logged == []
+    assert payload == without
+    assert all(payload["sensors"][kind][name]["deployment"]["lat"] == payload["deployment"]["lat"]
+               for kind, name in sensors)
+
+
+@needs_node
 @pytest.mark.parametrize("top, camera, expected", [
     ({"bearing": "NE"}, None, (45, 45, 45)),
     ({"heading_deg": 90}, {"bearing": " NE "}, (90, 45, 90)),
@@ -872,6 +892,121 @@ def test_init_config_defaults_limits_are_inclusive(key, value):
     assert logged == []
 
 
+# Where a radar points and what the street in its view looks like: the angle into the road, the street's six facts, and
+# the intersection tick, which a camera has too. Each is a value within its limits or None; a config error names the
+# key's path and never the value. A radar's key on another kind of sensor is None with no error.
+STREET_KEYS = ("lane_distance_m", "lane_width_m", "lanes_toward", "lanes_away", "turn_lane", "toward_side",
+               "intersection")
+AIM_KEYS = ("road_angle_deg", *STREET_KEYS)
+AIM_ERRORS = {
+    "road_angle_deg": "isn't a number from 0 to 89",
+    "lane_distance_m": "isn't a number from 0 to 100",
+    "lane_width_m": "isn't a number above 0 and at most 10",
+    "lanes_toward": "isn't a whole number from 0 to 3",
+    "lanes_away": "isn't a whole number from 0 to 3",
+    "turn_lane": "isn't true or false",
+    "toward_side": "isn't near or far",
+    "intersection": "isn't true or false",
+}
+RADAR_DEPLOYMENT_PATH = "sensors.radars.TM_RADAR_SERIAL_PORT_00.deployment"
+GIVEN_AIM = {"road_angle_deg": 20.04, "lane_distance_m": 2.7, "lane_width_m": 3.4, "lanes_toward": 1,
+             "lanes_away": 2, "turn_lane": True, "toward_side": "near", "intersection": True}
+KEPT_AIM = {**GIVEN_AIM, "road_angle_deg": 20.0}
+BAD_AIM = [("road_angle_deg", 90), ("road_angle_deg", -1), ("road_angle_deg", "20"), ("lane_distance_m", -1),
+           ("lane_distance_m", 101), ("lane_width_m", 0), ("lane_width_m", 10.01), ("lanes_toward", 4),
+           ("lanes_toward", 1.5), ("lanes_toward", "2"), ("turn_lane", "yes"), ("toward_side", "left"),
+           ("intersection", "yes please"), ("intersection", 1)]
+
+
+def aim_config(radar=None, camera=None, top=None):
+    """A new device's config.yml with these deployment blocks for the radar and the camera (None: no block of its own)
+    and this much more in the top-level block."""
+    config = heading_config({"heading_deg": 90, **(top or {})}, camera)
+    if radar is not None:
+        config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]["deployment"] = radar
+    return config
+
+
+def aim_of(payload, sensor_type, sensor_name):
+    deployment = payload["sensors"][sensor_type][sensor_name]["deployment"]
+    return {key: deployment[key] for key in AIM_KEYS}
+
+
+def radar_aim(payload):
+    return aim_of(payload, "radars", "TM_RADAR_SERIAL_PORT_00")
+
+
+def camera_aim(payload):
+    return aim_of(payload, "cameras", "picam_h265")
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, dict.fromkeys(AIM_KEYS), []),
+    (GIVEN_AIM, KEPT_AIM, []),
+    *[({**GIVEN_AIM, key: bad}, {**KEPT_AIM, key: None}, [key]) for key, bad in BAD_AIM],
+], ids=["no-key", "given", *[f"{key}-{bad!r}"[:40] for key, bad in BAD_AIM]])
+def test_init_config_defaults_aim_keys(given, expected, errors):
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, **given}))
+    assert radar_aim(payload) == expected
+    assert logged == [(f"{RADAR_DEPLOYMENT_PATH}.{key} {AIM_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+@pytest.mark.parametrize("key, value", [("road_angle_deg", 0), ("road_angle_deg", 89), ("lane_distance_m", 0),
+                                        ("lane_distance_m", 100), ("lane_width_m", 0.01), ("lane_width_m", 10),
+                                        ("lanes_toward", 0), ("lanes_toward", 3), ("lanes_away", 0),
+                                        ("lanes_away", 3), ("toward_side", "far")])
+def test_init_config_defaults_aim_limits_are_inclusive(key, value):
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, key: value}))
+    assert radar_aim(payload)[key] == value
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("value", [False, None, "", MISSING], ids=["false", "null", "empty", "missing"])
+def test_false_and_blank_ticks_are_empty(value):
+    ticks = {} if value is MISSING else {"turn_lane": value, "intersection": value}
+    payload, logged = init_defaults(aim_config({"heading_deg": 180, **ticks}, {"heading_deg": 40, **ticks}))
+    assert (radar_aim(payload)["turn_lane"], radar_aim(payload)["intersection"]) == (None, None)
+    assert camera_aim(payload)["intersection"] is None
+    assert logged == []
+
+
+@needs_node
+def test_a_radars_keys_on_a_camera_are_dropped_without_an_error():
+    """The camera's own block, or the top-level block handed down, may set a radar's keys, even wrong ones: on a
+    camera each is None, with no error, and the camera keeps its intersection."""
+    payload, logged = init_defaults(aim_config(camera={"heading_deg": 40, **GIVEN_AIM, "lanes_toward": 4}))
+    assert camera_aim(payload) == {**dict.fromkeys(STREET_KEYS[:-1]), "road_angle_deg": None, "intersection": True}
+    assert logged == []
+    payload, logged = init_defaults(aim_config(top={**GIVEN_AIM, "toward_side": "left"}))
+    assert camera_aim(payload) == {**dict.fromkeys(AIM_KEYS), "intersection": True}
+    assert radar_aim(payload) == {**KEPT_AIM, "toward_side": None}
+    assert logged == [(f"{RADAR_DEPLOYMENT_PATH}.toward_side {AIM_ERRORS['toward_side']}", True)]
+
+
+@needs_node
+@pytest.mark.parametrize("value, expected, errors", [
+    (True, True, []), ("yes", None, ["intersection"]), (1, None, ["intersection"]),
+], ids=["ticked", "yes", "one"])
+def test_a_camera_keeps_its_own_intersection(value, expected, errors):
+    payload, logged = init_defaults(aim_config(camera={"heading_deg": 40, "intersection": value}))
+    assert camera_aim(payload)["intersection"] is expected
+    assert radar_aim(payload)["intersection"] is None
+    assert logged == [(f"{CAMERA_PATH}.{key} {AIM_ERRORS[key]}", True) for key in errors]
+
+
+@needs_node
+def test_an_air_quality_monitor_has_none_of_the_eight():
+    config = aim_config()
+    config["sensors"]["airquality_monitors"]["sensorname01"]["enabled"] = True
+    config["sensors"]["airquality_monitors"]["sensorname01"]["deployment"] = {**GIVEN_AIM, "lanes_away": 9}
+    payload, logged = init_defaults(config)
+    assert aim_of(payload, "airquality_monitors", "sensorname01") == dict.fromkeys(AIM_KEYS)
+    assert logged == []
+
+
 # The rounding edges are chosen on the doubles' exact values: 90.05, 100.005 and 1000.005 are held a hair below the half
 # and round back inside, 0.005 and -0.005 a hair above it, and 0.004 rounds to 0, which a height refuses.
 LIMIT_EDGES = {
@@ -910,6 +1045,147 @@ def test_mounting_limits_match_the_control_apps():
             assert passed is None and refused["payload"] == bad_request(key), (key, value)
         else:
             assert refused is None and passed["params"][f"${key}"] == want, (key, value)
+
+
+# The radar's setup: the Traffic Monitor's own commands, then the extra commands from opt_api_commands_array, then the
+# two cosine angles from their typed keys, each with one decimal. A ^/ command reaches the radar only from the keys. A
+# config error names the key's path and never the value.
+RADAR_NAME = "TM_RADAR_SERIAL_PORT_00"
+RADAR_PATH = f"sensors.radars.{RADAR_NAME}"
+FIXED_RADAR_COMMANDS = ["OJ", "US", "F2", "S2", "K+", "IG", "ON", "OU", "OT", "Oh", "Oc", "@O", "@|300\n", "OM",
+                        "M>20\n", "OS", "R>5\n", "O3"]
+ZERO_COSINE = ["^/+0.0\n", "^/-0.0\n"]
+EXTRAS_NOT_A_LIST = (f"{RADAR_PATH}.opt_api_commands_array isn't a JSON list of text", True)
+EXTRAS_HOLD_A_COSINE = (f"{RADAR_PATH}.opt_api_commands_array holds a cosine command (^/), which is never sent from "
+                        "there. Set cosine_inbound_deg and cosine_outbound_deg, or use the Mounting page.", True)
+BAD_COSINE = ["20", True, -1, 90, 89.96, [20]]
+
+
+def cosine_error(key):
+    return (f"{RADAR_PATH}.{key} isn't a number from 0 to 89", True)
+
+
+def radar_config(**keys):
+    """A new device's config.yml with these keys set on its radar; MISSING takes a key out."""
+    config = new_device_config()
+    radar = config["sensors"]["radars"][RADAR_NAME]
+    for key, value in keys.items():
+        if value is MISSING:
+            radar.pop(key, None)
+        else:
+            radar[key] = value
+    return config
+
+
+def radar_setup(config):
+    """The radar's entry after init config defaults, and the node's errors."""
+    payload, errors = init_defaults(config)
+    return payload["sensors"]["radars"][RADAR_NAME], errors
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, (0, 0), []),
+    ({"cosine_inbound_deg": None, "cosine_outbound_deg": ""}, (0, 0), []),
+    ({"cosine_inbound_deg": 18.94, "cosine_outbound_deg": 18.56}, (18.9, 18.6), []),
+    ({"cosine_inbound_deg": 0, "cosine_outbound_deg": 89}, (0, 89), []),
+    *[({"cosine_inbound_deg": bad, "cosine_outbound_deg": 18.6}, (0, 18.6), ["cosine_inbound_deg"])
+      for bad in BAD_COSINE],
+    *[({"cosine_inbound_deg": 18.9, "cosine_outbound_deg": bad}, (18.9, 0), ["cosine_outbound_deg"])
+      for bad in BAD_COSINE],
+], ids=["missing", "blank", "rounded", "limits", *[f"inbound-{bad!r}" for bad in BAD_COSINE],
+        *[f"outbound-{bad!r}" for bad in BAD_COSINE]])
+def test_cosine_keys(given, expected, errors):
+    """A blank angle is 0. A number is rounded to one decimal, then must be 0 to 89; anything else is 0 for that key
+    and one config error, given with msg so the catch records it, that names the key's path and holds no value."""
+    radar, logged = radar_setup(radar_config(**given))
+    assert (radar["cosine_inbound_deg"], radar["cosine_outbound_deg"]) == expected
+    assert radar["api_commands"][-2:] == [f"^/+{expected[0]:.1f}\n", f"^/-{expected[1]:.1f}\n"]
+    assert logged == [cosine_error(key) for key in errors]
+
+
+@needs_node
+def test_the_cosine_commands_come_last():
+    radar, logged = radar_setup(radar_config(cosine_inbound_deg=18.9, cosine_outbound_deg=18.6,
+                                             opt_api_commands_array='["OL", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+18.9\n", "^/-18.6\n"]
+    assert logged == []
+
+
+@needs_node
+def test_a_new_devices_radar_is_sent_zero_as_before():
+    """The installer's file sends the radar the same 0 in both directions that its old extra commands did."""
+    radar, logged = radar_setup(new_device_config())
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *ZERO_COSINE]
+    assert logged == []
+
+
+@needs_node
+def test_a_cosine_command_in_the_extras_is_never_sent():
+    """Each entry whose trimmed text starts with ^/ is left out; the radar is sent the keys' angles, and the list gets
+    one error by its path."""
+    radar, logged = radar_setup(radar_config(
+        cosine_inbound_deg=12.5, opt_api_commands_array='["OL", "^/+20.0\\n", "  ^/-20.0\\n", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+12.5\n", "^/-0.0\n"]
+    assert logged == [EXTRAS_HOLD_A_COSINE]
+
+
+@needs_node
+def test_the_flows_drop_what_the_control_app_calls_a_cosine_command():
+    """The flows and tm-control migrate read a ^/ command the same way: the extras the flows keep are exactly the
+    strings for which mounting.cosine_command is None (ordinary ASCII whitespace; JS trim and Python strip agree)."""
+    texts = ["OL", "R>3\n", "", " ", "^", "^/", "^/+", "^/+20.0\n", "^/-0.00\n", "  ^/-20.0\n", "\t^/+5", "^/+abc",
+             "^/+95", "^/20", "^/x", "x^/+20", "R^/+5\n", "OL ^/+5", "^ /+5", "/^+5", "^/+12.34\r\n", "\n^/-1"]
+    radar, _ = radar_setup(radar_config(opt_api_commands_array=json.dumps(texts)))
+    kept = radar["api_commands"][len(FIXED_RADAR_COMMANDS):-2]
+    assert kept == [text for text in texts if mounting.cosine_command(text) is None]
+    assert [text for text in texts if text not in kept]  # something was dropped
+
+
+@needs_node
+@pytest.mark.parametrize("value, extras, errors", [
+    ("not json", [], [EXTRAS_NOT_A_LIST]),
+    ('{"a": 1}', [], [EXTRAS_NOT_A_LIST]),
+    ('"OL"', [], [EXTRAS_NOT_A_LIST]),
+    (5, [], [EXTRAS_NOT_A_LIST]),
+    (["OL"], [], [EXTRAS_NOT_A_LIST]),
+    ('["OL", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ('["^/+1.0\\n", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ("[]", [], []),
+    ("", [], []),
+    (None, [], []),
+    (MISSING, [], []),
+], ids=["not-json", "json-object", "json-text", "number", "yaml-list", "an-item-not-text", "an-item-not-text-beside-a-cosine", "empty-list",
+        "empty", "null", "missing"])
+def test_extra_commands_that_do_not_parse(value, extras, errors):
+    """A value that isn't a JSON list of text, even one item that isn't text, sends no extra command and is one error
+    for the radar; a blank value, or an empty list, is no extra commands and no error."""
+    radar, logged = radar_setup(radar_config(opt_api_commands_array=value))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *extras, *ZERO_COSINE]
+    assert logged == errors
+
+
+@needs_node
+def test_a_radar_that_is_off_gets_its_commands_too():
+    """A radar that is off has its list built as one that is on (it is sent when it's switched on); an entry with
+    nothing under it stays as it is."""
+    config = radar_config(enabled=False, cosine_inbound_deg=12.5, opt_api_commands_array='["OL"]')
+    config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_01"] = None
+    payload, logged = init_defaults(config)
+    radars = payload["sensors"]["radars"]
+    assert radars[RADAR_NAME]["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "^/+12.5\n", "^/-0.0\n"]
+    assert radars["TM_RADAR_SERIAL_PORT_01"] is None
+    assert logged == []
+
+
+def test_the_setup_node_sends_the_commands_between_the_clock_and_power_on():
+    """The radar's list goes after the clock and the time zone and before PA and A!, so the angles are the last
+    settings it is sent."""
+    func = named(json.loads(FLOWS.read_text()), "init: radar settings, ~4-sec each")["func"]
+    order = ['"PI"', '"C=" + ', '"CZ" + ', "...radarConfig.api_commands", '"PA"', '"A!"']
+    positions = [func.index(text) for text in order]
+    assert positions == sorted(positions)
+    assert all(func.count(text) == 1 for text in order)
 
 
 def test_config_template_has_the_survey_keys():
@@ -982,7 +1258,7 @@ def test_status_answers_before_the_first_config_load():
     assert body["schema_version"] is None
     assert body["database_bytes"] is None
     assert body["deployment"] is None
-    assert body["radars"] == {name: {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert body["radars"] == {name: {"enabled": False, "port_open": False, "last_reading_at": None, "info": None}
                               for name in RADAR_NAMES}
 
 
@@ -1056,9 +1332,11 @@ def test_radars_report_config_port_and_last_reading():
     assert radars["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
     assert radars["TM_RADAR_SERIAL_PORT_00"]["port_open"] is True
     assert radars["TM_RADAR_SERIAL_PORT_00"]["last_reading_at"].endswith("Z")
-    assert radars["TM_RADAR_SERIAL_PORT_01"] == {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert radars["TM_RADAR_SERIAL_PORT_01"] == {"enabled": False, "port_open": False, "last_reading_at": None,
+                                                 "info": None}
     assert radars["TM_RADAR_SERIAL_PORT_02"]["port_open"] is False
-    assert radars["TM_RADAR_SERIAL_PORT_03"] == {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert radars["TM_RADAR_SERIAL_PORT_03"] == {"enabled": False, "port_open": False, "last_reading_at": None,
+                                                 "info": None}
 
 
 RADAR_JUNCTION, RADAR_DIRECTOR = "05a58d9ee463c696", "e9bd400bfc06d988"  # where the hourly time sync goes
@@ -1225,37 +1503,49 @@ ENGINE_SQL = {
     "close deployment": "UPDATE deployment SET entryEndDateTime = $ended WHERE id = $id",
     "insert deployment": "INSERT INTO deployment (id, entryStartDateTime, lat, lon, heading_deg, sensorType, "
                          "sensorName, deviceName, survey_id, location_precision, pitch_deg, height_m, view_distance_m, "
-                         "mount, timezone) VALUES ($id, $started, $lat, $lon, $heading_deg, $sensorType, $sensorName, "
-                         "$deviceName, $survey_id, $location_precision, $pitch_deg, $height_m, $view_distance_m, "
-                         "$mount, $timezone)",
+                         "mount, timezone, road_angle_deg, lane_distance_m, lane_width_m, lanes_toward, lanes_away, "
+                         "turn_lane, toward_side, intersection) VALUES ($id, $started, $lat, $lon, $heading_deg, "
+                         "$sensorType, $sensorName, $deviceName, $survey_id, $location_precision, $pitch_deg, "
+                         "$height_m, $view_distance_m, $mount, $timezone, $road_angle_deg, $lane_distance_m, "
+                         "$lane_width_m, $lanes_toward, $lanes_away, $turn_lane, $toward_side, $intersection)",
     "rewrite deployment": "UPDATE deployment SET survey_id = $survey_id, lat = $lat, lon = $lon, "
                           "location_precision = $location_precision, heading_deg = $heading_deg, "
-                          "timezone = $timezone WHERE id = $id",
+                          "timezone = $timezone, lane_distance_m = $lane_distance_m, lane_width_m = $lane_width_m, "
+                          "lanes_toward = $lanes_toward, lanes_away = $lanes_away, turn_lane = $turn_lane, "
+                          "toward_side = $toward_side, intersection = $intersection WHERE id = $id",
 }
 OPEN_ROWS_SQL = ("SELECT id, entryStartDateTime, lat, lon, heading_deg, sensorType, sensorName, deviceName, "
-                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone "
-                 "FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
+                 "survey_id, location_precision, pitch_deg, height_m, view_distance_m, mount, timezone, "
+                 "road_angle_deg, lane_distance_m, lane_width_m, lanes_toward, lanes_away, turn_lane, toward_side, "
+                 "intersection FROM deployment WHERE entryEndDateTime IS NULL ORDER BY sensorType, sensorName, entryStartDateTime DESC;")
 ROW_KEYS = {"id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "heading_deg", "sensorType", "sensorName",
             "deviceName", "survey_id", "location_precision", "pitch_deg", "height_m", "view_distance_m", "mount",
-            "timezone"}
+            "timezone", *AIM_KEYS}
+# A rewrite that writes none of the street's facts
+NO_STREET_PARAMS = {f"${key}": None for key in STREET_KEYS}
 
 
-def engine_sensors(camera_deployment=None):
+def engine_sensors(camera_deployment=None, radar_deployment=None):
     camera_deployment = {"heading_deg": 0} if camera_deployment is None else camera_deployment
+    radar_deployment = {"heading_deg": 180} if radar_deployment is None else radar_deployment
     return {"cameras": {"picam_h265": {"enabled": True, "deployment": camera_deployment}},
-            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": {"heading_deg": 180}},
+            "radars": {"TM_RADAR_SERIAL_PORT_00": {"enabled": True, "deployment": radar_deployment},
                        "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}
 
 
 def open_row(sensor_type, sensor_name, heading, survey_id=ENGINE_SURVEY, lat=45.5, lon=-122.7, precision=1,
              started=10, row_id=None, pitch_deg=None, height_m=None, view_distance_m=None, mount=None,
-             timezone=None):
+             timezone=None, road_angle_deg=None, lane_distance_m=None, lane_width_m=None, lanes_toward=None,
+             lanes_away=None, turn_lane=None, toward_side=None, intersection=None):
     """An open deployment row as the open-rows SELECT returns it."""
     return {"id": row_id or f"{started}-{sensor_name}-d",
             "entryStartDateTime": started, "lat": lat, "lon": lon, "heading_deg": heading, "sensorType": sensor_type,
             "sensorName": sensor_name, "deviceName": "serial-1", "survey_id": survey_id,
             "location_precision": precision, "pitch_deg": pitch_deg, "height_m": height_m,
-            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone}
+            "view_distance_m": view_distance_m, "mount": mount, "timezone": timezone,
+            "road_angle_deg": road_angle_deg, "lane_distance_m": lane_distance_m, "lane_width_m": lane_width_m,
+            "lanes_toward": lanes_toward, "lanes_away": lanes_away, "turn_lane": turn_lane,
+            "toward_side": toward_side, "intersection": intersection}
 
 
 def camera_row(**kwargs):
@@ -1351,7 +1641,7 @@ def test_engine_adopts_an_open_row_without_a_survey():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": None}]
+         "$heading_deg": 0, "$timezone": None, **NO_STREET_PARAMS}]
     [current] = [row for row in run.payload["currentDeployment"] if row["id"] == camera["id"]]
     assert (current["survey_id"], current["lat"], current["lon"], current["location_precision"]) == (
         ENGINE_SURVEY, 45.5, -122.7, 1)
@@ -1491,6 +1781,167 @@ def test_engine_rows_for_thingsboard_carry_the_mounting():
     assert {key: started[key] for key in MOUNTED} == MOUNTED
 
 
+# Where the radar points and the street it faces, as config.yml says them (after init config defaults) and as a row
+# stores them (a tick as 1). The angle into the road starts a deployment as the mounting does; the other seven are
+# written into the open row in place.
+AIMED = {"road_angle_deg": 20.0, "lane_distance_m": 2.7, "lane_width_m": 3.4, "lanes_toward": 1, "lanes_away": 2,
+         "turn_lane": True, "toward_side": "near", "intersection": True}
+AIMED_ROW = {**AIMED, "turn_lane": 1, "intersection": 1}
+AIM_PARAMS = tuple(f"${key}" for key in AIM_KEYS)
+
+
+def aimed_radar_row(**values):
+    """An open radar row aimed as AIMED, but for values (as a row stores them)."""
+    return radar_row(**{**AIMED_ROW, **values})
+
+
+def aimed_sensors(**values):
+    """The sensors with the radar aimed as AIMED, but for values (as config.yml says them)."""
+    return engine_sensors(radar_deployment={"heading_deg": 180, **AIMED, **values})
+
+
+def as_row(key, value):
+    """A file's value as a row stores it: a tick is 1."""
+    return 1 if key in ("turn_lane", "intersection") and value is True else value
+
+
+@needs_node
+def test_engine_keeps_rows_from_before_the_aim_columns():
+    """An open row read before the eight columns existed has none of their keys; a sensor with none set matches it,
+    and the row passed on carries the eight, each None."""
+    rows = [{key: value for key, value in row.items() if key not in AIM_KEYS} for row in (camera_row(), radar_row())]
+    run = engine(engine_sensors(), rows, ENGINE_PLACE)
+    assert run.written() == []
+    current = run.payload["currentDeployment"]
+    assert len(current) == 2 and all(set(row) == ROW_KEYS for row in current)
+    assert all(row[key] is None for row in current for key in AIM_KEYS)
+
+
+@needs_node
+def test_engine_keeps_an_aimed_row_that_matches():
+    run = engine(aimed_sensors(), [camera_row(), aimed_radar_row()], ENGINE_PLACE)
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_value, file_value", [(20, 30), (20, None), (None, 20)],
+                         ids=["changed", "cleared", "set"])
+def test_engine_starts_a_deployment_when_the_road_angle_changes(row_value, file_value):
+    radar = aimed_radar_row(road_angle_deg=row_value)
+    sensors = aimed_sensors(road_angle_deg=file_value)
+    run = engine(sensors, [camera_row(), radar], ENGINE_PLACE)
+    assert [message["params"]["$id"] for message in run.close] == [radar["id"]]
+    [inserted] = run.insert
+    assert inserted["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"
+    assert tuple(inserted["params"][param] for param in AIM_PARAMS) == tuple(
+        as_row(key, value) for key, value in {**AIMED, "road_angle_deg": file_value}.items())
+    assert run.rewrite == []
+
+
+STREET_CHANGES = [
+    ("lane_distance_m", None, 2.7), ("lane_distance_m", 2.7, 3.0), ("lane_distance_m", 2.7, None),
+    ("lane_width_m", None, 3.4), ("lane_width_m", 3.4, 3.0), ("lane_width_m", 3.4, None),
+    ("lanes_toward", None, 1), ("lanes_toward", 1, 0), ("lanes_toward", 1, None),
+    ("lanes_away", None, 2), ("lanes_away", 2, 3), ("lanes_away", 2, None),
+    ("turn_lane", None, True), ("turn_lane", 1, None),
+    ("toward_side", None, "near"), ("toward_side", "near", "far"), ("toward_side", "near", None),
+    ("intersection", None, True), ("intersection", 1, None),
+]
+
+
+@needs_node
+@pytest.mark.parametrize("key, row_value, file_value", STREET_CHANGES)
+def test_engine_heals_the_streets_facts_in_place(key, row_value, file_value):
+    radar = aimed_radar_row(**{key: row_value})
+    run = engine(aimed_sensors(**{key: file_value}), [camera_row(), radar], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    [rewritten] = run.rewrite
+    assert rewritten["params"] == rewritten_params(radar, **{key: as_row(key, file_value)})
+    assert rewritten["params"]["$id"] == radar["id"]
+    assert deployment_ids(run)["TM_RADAR_SERIAL_PORT_00"] == radar["id"]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == radar["id"]]
+    assert current[key] == as_row(key, file_value)
+    assert run.payload["updatedDeployment"] == []
+
+
+@needs_node
+@pytest.mark.parametrize("row_value, file_value", [(None, True), (1, None)], ids=["set", "cleared"])
+def test_engine_heals_a_cameras_intersection_in_place(row_value, file_value):
+    camera = camera_row(intersection=row_value)
+    run = engine(engine_sensors({"heading_deg": 0, "intersection": file_value}), [camera, radar_row()],
+                 ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [rewritten_params(camera, intersection=as_row("intersection",
+                                                                                                 file_value))]
+
+
+@needs_node
+def test_a_rewrite_leaves_the_rows_road_angle():
+    """A rewrite never writes the angle into the road: a street's fact healed, or, with no survey in the file, a
+    coarser precision, leaves the row's own angle, also when the file's differs."""
+    radar = aimed_radar_row(lane_width_m=3.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    [rewritten] = run.rewrite
+    assert "$road_angle_deg" not in rewritten["params"]
+    radar = aimed_radar_row(lat=45.52, lon=-122.69, precision=2)
+    run = engine(aimed_sensors(road_angle_deg=30.0), [camera_row(), radar], {**ENGINE_PLACE, "survey_id": None})
+    assert run.close == [] and run.insert == []
+    [rewritten] = [m for m in run.rewrite if m["params"]["$id"] == radar["id"]]
+    assert "$road_angle_deg" not in rewritten["params"]
+    [current] = [row for row in run.payload["currentDeployment"] if row["id"] == radar["id"]]
+    assert current["road_angle_deg"] == 20.0
+
+
+@needs_node
+def test_engine_heals_nothing_without_a_survey_id():
+    """While the file names no survey a row is left as it is: no fact is healed, and a coarser precision's rewrite
+    carries the row's own seven."""
+    radar = aimed_radar_row(lanes_toward=3, toward_side="far", turn_lane=None)
+    place = {**ENGINE_PLACE, "survey_id": None}
+    assert engine(aimed_sensors(), [camera_row(), radar], place).written() == []
+    radar = aimed_radar_row(lanes_toward=3, lat=45.52, lon=-122.69, precision=2)
+    run = engine(aimed_sensors(), [camera_row(), radar], place)
+    [rewritten] = [m for m in run.rewrite if m["params"]["$id"] == radar["id"]]
+    assert rewritten["params"] == rewritten_params(radar, lat=45.5, lon=-122.7, location_precision=1)
+    assert rewritten["params"]["$lanes_toward"] == 3
+
+
+@needs_node
+def test_engine_adopts_an_aimed_row_and_takes_the_files_street():
+    """A row from before any survey is adopted only at the file's angle into the road, and takes the file's seven."""
+    radar = aimed_radar_row(survey_id=None, lanes_away=0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    assert run.close == [] and run.insert == []
+    assert [m["params"] for m in run.rewrite] == [rewritten_params(radar, survey_id=ENGINE_SURVEY, lanes_away=2)]
+    radar = aimed_radar_row(survey_id=None, road_angle_deg=25.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    assert [m["params"]["$id"] for m in run.close] == [radar["id"]]
+    assert [m["params"]["$road_angle_deg"] for m in run.insert] == [20.0]
+
+
+@needs_node
+def test_engine_rows_for_thingsboard_carry_the_eight():
+    radar = aimed_radar_row(road_angle_deg=30.0)
+    run = engine(aimed_sensors(), [camera_row(), radar], ENGINE_PLACE)
+    rows = run.payload["updatedDeployment"] + run.payload["currentDeployment"]
+    assert len(rows) == 3 and all(set(row) == ROW_KEYS for row in rows)
+    [ended] = run.payload["updatedDeployment"]
+    assert {key: ended[key] for key in AIM_KEYS} == {**AIMED_ROW, "road_angle_deg": 30.0}
+    [started] = [row for row in run.payload["currentDeployment"] if row["sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+    assert {key: started[key] for key in AIM_KEYS} == AIMED_ROW
+
+
+@needs_node
+def test_a_ticked_row_stores_one_and_an_unticked_one_nothing():
+    run = engine(aimed_sensors(), [], ENGINE_PLACE)
+    [radar] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+    assert (radar["$turn_lane"], radar["$intersection"]) == (1, 1)
+    for unticked in (None, False):
+        run = engine(aimed_sensors(turn_lane=unticked, intersection=unticked), [], ENGINE_PLACE)
+        [radar] = [m["params"] for m in run.insert if m["params"]["$sensorName"] == "TM_RADAR_SERIAL_PORT_00"]
+        assert (radar["$turn_lane"], radar["$intersection"]) == (None, None)
+
+
 # The place's time zone: each row that starts takes config.yml's, and an open row of the same place whose zone differs
 # is rewritten with it. The zone never starts or ends a deployment.
 
@@ -1498,7 +1949,7 @@ def rewritten_params(row, **values):
     """The parameters of the rewrite of this open row that changes only values (as $-less keys)."""
     params = {"$id": row["id"], "$survey_id": row["survey_id"], "$lat": row["lat"], "$lon": row["lon"],
               "$location_precision": row["location_precision"], "$heading_deg": row["heading_deg"],
-              "$timezone": row["timezone"]}
+              "$timezone": row["timezone"], **{f"${key}": row[key] for key in STREET_KEYS}}
     return {**params, **{f"${key}": value for key, value in values.items()}}
 
 
@@ -1553,7 +2004,7 @@ def test_engine_adopts_a_row_with_the_zone():
     assert run.close == [] and run.insert == []
     assert [message["params"] for message in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": "Asia/Tokyo"}]
+         "$heading_deg": 0, "$timezone": "Asia/Tokyo", **NO_STREET_PARAMS}]
 
 
 @needs_node
@@ -1595,7 +2046,8 @@ def test_engine_lowers_precision_in_place_and_ignores_a_raise():
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None, **NO_STREET_PARAMS} for row in rows),
+        key=lambda params: params["$id"])
     run = engine(engine_sensors(), [camera_row(), radar_row()], {**ENGINE_PLACE, "database_precision": "2"})
     assert run.written() == []
 
@@ -1610,13 +2062,14 @@ def test_engine_lowers_precision_from_the_rows_own_coordinates(survey_id):
     assert run.close == [] and run.insert == []
     assert [m["params"] for m in run.rewrite] == [
         {"$id": camera["id"], "$survey_id": ENGINE_SURVEY, "$lat": 45.5, "$lon": -122.7, "$location_precision": 1,
-         "$heading_deg": 0, "$timezone": None}]
+         "$heading_deg": 0, "$timezone": None, **NO_STREET_PARAMS}]
     rows = [camera_row(), radar_row()]
     run = engine(engine_sensors(), rows, {**place, "database_precision": "none"})
     assert run.close == [] and run.insert == []
     assert sorted((m["params"] for m in run.rewrite), key=lambda params: params["$id"]) == sorted(
         ({"$id": row["id"], "$survey_id": ENGINE_SURVEY, "$lat": None, "$lon": None, "$location_precision": None,
-          "$heading_deg": row["heading_deg"], "$timezone": None} for row in rows), key=lambda params: params["$id"])
+          "$heading_deg": row["heading_deg"], "$timezone": None, **NO_STREET_PARAMS} for row in rows),
+        key=lambda params: params["$id"])
 
 
 @needs_node
@@ -1867,7 +2320,9 @@ SURVEY_SQL = {
     "/tm-internal/deployments": ("read survey deployments",
                                  "SELECT id, entryStartDateTime, entryEndDateTime, lat, lon, heading_deg, "
                                  "sensorType, sensorName, survey_id, location_precision, pitch_deg, height_m, "
-                                 "view_distance_m, mount FROM deployment WHERE survey_id = $survey_id "
+                                 "view_distance_m, mount, road_angle_deg, lane_distance_m, lane_width_m, "
+                                 "lanes_toward, lanes_away, turn_lane, toward_side, intersection FROM deployment "
+                                 "WHERE survey_id = $survey_id "
                                  "ORDER BY entryStartDateTime"),
     "/tm-internal/surveys/usage": ("read survey usage",
                                    "SELECT survey_id, MIN(entryStartDateTime) AS first_start, MAX(entryEndDateTime) "
@@ -3086,7 +3541,11 @@ def test_setup_rows_reach_the_upload_through_the_telemetry_group():
     by_id = {node["id"]: node for node in flows}
     engine, out = named(flows, "setup engine"), named(flows, "setup rows")
     link_in, fmt = named(flows, "setup rows link in"), named(flows, "format setup telemetry")
-    assert engine["wires"][5] == [out["id"]] and out["links"] == [link_in["id"]] and link_in["links"] == [out["id"]]
+    radar_out = named(flows, "radar setup rows")
+    assert engine["wires"][5] == [out["id"]] and out["links"] == [link_in["id"]]
+    assert link_in["links"] == [out["id"], radar_out["id"]] and radar_out["links"] == [link_in["id"]]
+    assert (radar_out["type"], radar_out["z"], radar_out["g"]) == ("link out", tab_id(flows, "capture-radar"),
+                                                                   RADAR_INFO_GROUP)
     assert (out["type"], out["z"]) == ("link out", engine["z"])
     assert (link_in["type"], link_in["z"], fmt["z"]) == ("link in", tab_id(flows, "thingsboard"), link_in["z"])
     assert link_in["wires"] == [[fmt["id"]]] and fmt["wires"] == [["8c521232f464d27a"]]
@@ -3105,6 +3564,11 @@ def test_format_setup_telemetry():
         "results"]
     assert step["result"] == {"payload": {"ts": 1795000000000, "values": {"setup": {
         "device": payload["device"], "cameras": payload["cameras"]}}}}
+    # a message from the radar engine has only the radars: no key for the lists it doesn't carry
+    radars = {"ts": 1795000000000, "radars": [{"id": "1-cccccccc-sr", "radar": "TM_RADAR_SERIAL_PORT_00", "ended": None}]}
+    [step] = run_functions([(named(json.loads(FLOWS.read_text()), "format setup telemetry"), {"payload": radars})])[
+        "results"]
+    assert step["result"] == {"payload": {"ts": 1795000000000, "values": {"setup": {"radars": radars["radars"]}}}}
 
 
 # Prepared sqlite nodes with nothing to bind: an upstream function sets msg.params = {} for them ("tm-internal: usage
@@ -3324,13 +3788,15 @@ def test_setup_inserts_name_every_column():
     """The field rule's Node-RED half: each insert names the table's columns but ended, and the engine's parameters
     are those names with a dollar sign."""
     flows = json.loads(FLOWS.read_text())
-    for name, columns in (("insert setup_device", SETUP_DEVICE_COLUMNS), ("insert setup_camera", SETUP_CAMERA_COLUMNS)):
+    for name, columns in (("insert setup_device", SETUP_DEVICE_COLUMNS), ("insert setup_camera", SETUP_CAMERA_COLUMNS),
+                          ("insert setup_radar", SETUP_RADAR_COLUMNS)):
         expected = [column for column in columns if column != "ended"]
         match = re.fullmatch(r"INSERT INTO (\w+) \(([^)]*)\) VALUES \(([^)]*)\)", sql_text(named(flows, name)))
         assert match and match[1] == name.split()[1]
         assert match[2].split(", ") == expected
         assert match[3].split(", ") == ["$" + column for column in expected]
-    for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera")):
+    for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera"),
+                        ("close setup_radar", "setup_radar")):
         assert sql_text(named(flows, name)) == f"UPDATE {table} SET ended = $ended WHERE id = $id"
 
 
@@ -3367,10 +3833,19 @@ def test_setup_fields_agree():
     columns = lambda table: [row[1] for row in db.execute(f"PRAGMA table_info({table})")]
     assert columns("setup_device") == device_columns
     assert columns("setup_camera") == camera_columns
+    # the radar's: the engine's own fact list, what it inserts, and the table, in the table's order
+    radar_facts = engine_radar_facts()
+    assert radar_facts == RADAR_FACTS
+    radar_columns = ["id", "started", "ended", "radar", *[column for column, _ in radar_facts]]
+    assert radar_columns == SETUP_RADAR_COLUMNS
+    [insert] = radar_engine({RADAR: RADAR_ANSWERS}).insert
+    assert list(insert["params"]) == ["$" + column for column in radar_columns if column != "ended"]
+    assert columns("setup_radar") == radar_columns
     view = columns("events_with_setup")
     own = len(columns("events"))
     assert view[own:] == (["setup_device_id", *["setup_" + name for name in device_columns[3:]],
-                          "setup_camera_id", *["camera_" + name for name in camera_facts]])
+                          "setup_camera_id", *["camera_" + name for name in camera_facts],
+                          "setup_radar_id", *["radar_" + column for column in radar_columns[4:]]])
     db.close()
 
 
@@ -3390,6 +3865,902 @@ def test_status_reports_the_setup_history():
     seen = {"received_at": "2026-10-28T22:54:55.000Z", "complete": True, "changed_at": None}
     [step] = run_functions([status_step()], context={"tm_status": {"setup": seen}})["results"]
     assert step["result"]["payload"]["setup"] == seen
+
+
+# The radar setup engine: after "create radarInfo payload" (each radar's answers to its setup's queries, by name) and
+# a read of the open setup_radar rows, it compares the answers with the open rows and writes only what differs.
+
+RADAR = "TM_RADAR_SERIAL_PORT_00"
+# each column of setup_radar after radar, and the answer it comes from
+RADAR_FACTS = [("part_number", "Product"), ("firmware_version", "Version"),
+               ("cosine_inbound_deg", "InboundSensorAngleDegrees"),
+               ("cosine_outbound_deg", "OutboundSensorAngleDegrees"), ("speed_unit", "Units"),
+               ("sampling_rate", "SamplingRate"), ("speed_min", "RequiredMinSpeed"), ("magnitude_min", "MagnitudeMin")]
+SETUP_RADAR_COLUMNS = ["id", "started", "ended", "radar", *[column for column, _ in RADAR_FACTS]]
+# what an OPS243-A on firmware 1.2.1 answers, with a few of its other keys; the serial number is a placeholder
+RADAR_ANSWERS = {
+    "Product": "OPS243-A", "Version": "1.2.1", "Units": "mph", "SamplingRate": 20000, "RequiredMinSpeed": 5,
+    "MagnitudeMin": 20, "InboundSensorAngleDegrees": 0, "OutboundSensorAngleDegrees": 0, "SerialNumber": "0000",
+    "Build": "0123", "rev": "A", "RequiredMaxSpeed": 100, "RequiredDirection": "Both",
+    "INFO": "Saved settings restored", "UnknownCommand": "^?",
+}
+RADAR_ROW_FACTS = {"part_number": "OPS243-A", "firmware_version": "1.2.1", "cosine_inbound_deg": 0.0,
+                   "cosine_outbound_deg": 0.0, "speed_unit": "mph", "sampling_rate": 20000, "speed_min": 5.0,
+                   "magnitude_min": 20.0}
+RADAR_CONFIG = {"sensors": {"radars": {RADAR: {"enabled": True}, "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
+UPLOAD_RADAR_CONFIG = {**RADAR_CONFIG, "thingsboard": UPLOAD_ON}
+
+
+def engine_radar_facts():
+    """The engine's own list of (column, answer key), read from its code."""
+    func = named(json.loads(FLOWS.read_text()), "radar setup engine")["func"]
+    block = re.search(r"const FACTS = \[(.*?)\n\];", func, re.DOTALL)[1]
+    return re.findall(r'\["(\w+)", "(\w+)", "\w+"\]', block)
+
+
+def open_radar(radar=RADAR, started=100, row_id="100-cccccccc-sr", **changes):
+    """An open row as SELECT * returns it."""
+    return {"id": row_id, "started": started, "ended": None, "radar": radar, **RADAR_ROW_FACTS, **changes}
+
+
+class RadarRun:
+    """One run of the radar setup engine: its two outputs as lists of messages, the third (the upload's, or None),
+    the global and flow context, and the log."""
+
+    def __init__(self, out, before, after):
+        step = out["results"][0]
+        self.close, self.insert, upload = ([] if output is None else output if isinstance(output, list) else [output]
+                                           for output in step["result"])
+        self.upload = upload[0] if upload else None
+        self.global_context, self.flow_context, self.logged = out["global"], out["flow"], step["logged"]
+        self.results = out["results"]
+        self.before, self.after = before, after
+
+    def written(self):
+        return self.close + self.insert
+
+    def info(self, radar=RADAR):
+        return self.global_context.get("tm_status", {}).get("radars", {}).get(radar, {}).get("info")
+
+    def in_time(self, value):
+        return isinstance(value, int) and self.before <= value <= self.after
+
+
+def radar_engine(info, open_rows=(), config=MISSING, context=None, then=(), flow=None):
+    """Run the engine on one round's answers (msg.radarInfo: answers by radar name) and the open rows, then the steps
+    in then (with the same global context). With info MISSING the message has no radarInfo, as the hourly check's has."""
+    before = int(time.time() * 1000)
+    msg = {"payload": list(open_rows), "topic": ""}
+    if info is not MISSING:
+        msg["radarInfo"] = info
+    node = named(json.loads(FLOWS.read_text()), "radar setup engine")
+    store = copy.deepcopy(context) if context is not None else {}
+    if config is not MISSING:
+        store["config"] = config
+    elif "config" not in store:
+        store["config"] = RADAR_CONFIG
+    out = run_functions([(node, msg), *then], context=store, flow=flow)
+    return RadarRun(out, before, int(time.time() * 1000) + 1)
+
+
+@needs_node
+def test_a_first_round_starts_a_row():
+    run = radar_engine({RADAR: RADAR_ANSWERS})
+    assert run.close == []
+    [insert] = run.insert
+    assert set(insert) == {"params"}
+    params = insert["params"]
+    assert params == {**params, "$radar": RADAR, **{"$" + column: value for column, value in RADAR_ROW_FACTS.items()}}
+    assert set(params) == {"$" + column for column in SETUP_RADAR_COLUMNS if column != "ended"}
+    assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-sr", params["$id"])
+    assert run.in_time(params["$started"]) and params["$id"].startswith(str(params["$started"]) + "-")
+
+
+@needs_node
+def test_the_same_answers_write_nothing():
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()])
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("column, key, value", [
+    ("part_number", "Product", "OPS243-C"),
+    ("firmware_version", "Version", "1.2.2"),
+    ("cosine_inbound_deg", "InboundSensorAngleDegrees", 20.5),
+    ("cosine_outbound_deg", "OutboundSensorAngleDegrees", 12),
+    ("speed_unit", "Units", "kmh"),
+    ("sampling_rate", "SamplingRate", 10000),
+    ("speed_min", "RequiredMinSpeed", 2.5),
+    ("magnitude_min", "MagnitudeMin", 30),
+], ids=[column for column, _ in RADAR_FACTS])
+def test_each_fact_alone_starts_a_row(column, key, value):
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, key: value}}, [open_radar()])
+    [close], [insert] = run.close, run.insert
+    assert close == {"params": {"$ended": close["params"]["$ended"], "$id": "100-cccccccc-sr"}}
+    assert run.in_time(close["params"]["$ended"]) and close["params"]["$ended"] == insert["params"]["$started"]
+    assert insert["params"]["$" + column] == value and insert["params"]["$id"] != "100-cccccccc-sr"
+    others = {name: held for name, held in RADAR_ROW_FACTS.items() if name != column}
+    assert {name: insert["params"]["$" + name] for name in others} == others
+
+
+@needs_node
+@pytest.mark.parametrize("answers", [{}, {"INFO": "Saved settings restored"},
+                                     {key: value for key, value in RADAR_ANSWERS.items() if key != "Product"},
+                                     {**RADAR_ANSWERS, "Product": "  "}, {**RADAR_ANSWERS, "Product": 243}],
+                         ids=["nothing", "only INFO", "every key but Product", "a blank Product", "a number"])
+def test_a_round_without_a_part_number_changes_nothing(answers):
+    had = {**RADAR_ROW_FACTS, "answered_at": "2026-11-01T00:00:00.000Z"}
+    context = {"tm_status": {"radars": {RADAR: {"enabled": True, "info": had}}}}
+    for rows in ([], [open_radar()]):
+        run = radar_engine({RADAR: answers}, rows, context=context)
+        assert run.written() == []
+        assert run.info() == had
+
+
+@needs_node
+def test_an_answer_the_radar_did_not_give_is_empty():
+    answers = {key: value for key, value in RADAR_ANSWERS.items()
+               if key not in ("InboundSensorAngleDegrees", "OutboundSensorAngleDegrees")}
+    [insert] = radar_engine({RADAR: answers}).insert
+    assert insert["params"]["$cosine_inbound_deg"] is None and insert["params"]["$cosine_outbound_deg"] is None
+    row = open_radar(cosine_inbound_deg=None, cosine_outbound_deg=None)
+    assert radar_engine({RADAR: answers}, [row]).written() == []
+    # and an empty one stored is not a 0 answered
+    assert len(radar_engine({RADAR: RADAR_ANSWERS}, [row]).insert) == 1
+
+
+@needs_node
+@pytest.mark.parametrize("key, value, column, expected", [
+    ("RequiredMinSpeed", "5.000", "speed_min", 5),
+    ("RequiredMinSpeed", " 2.5 ", "speed_min", 2.5),
+    ("RequiredMinSpeed", "abc", "speed_min", None),
+    ("RequiredMinSpeed", "", "speed_min", None),
+    ("RequiredMinSpeed", True, "speed_min", None),
+    ("RequiredMinSpeed", "0x10", "speed_min", None),
+    ("RequiredMinSpeed", "Infinity", "speed_min", None),
+    ("RequiredMinSpeed", "1e400", "speed_min", None),
+    ("RequiredMinSpeed", [5], "speed_min", None),
+    ("InboundSensorAngleDegrees", "20.0", "cosine_inbound_deg", 20),
+    ("SamplingRate", 20000.5, "sampling_rate", None),
+    ("SamplingRate", "10000", "sampling_rate", 10000),
+    ("SamplingRate", "10000.5", "sampling_rate", None),
+    ("Version", " 1.2.1 ", "firmware_version", "1.2.1"),
+    ("Version", 1.2, "firmware_version", None),
+    ("Version", "x" * 33, "firmware_version", None),
+    ("Version", "x" * 32, "firmware_version", "x" * 32),
+    ("Version", "1.2é", "firmware_version", None),
+    ("Version", "1.2\t1", "firmware_version", None),
+])
+def test_a_number_sent_as_text_is_read(key, value, column, expected):
+    [insert] = radar_engine({RADAR: {**RADAR_ANSWERS, key: value}}).insert
+    assert insert["params"]["$" + column] == expected
+    assert type(insert["params"]["$" + column]) is type(expected)
+
+
+@needs_node
+def test_the_unit_falls_back_to_unit():
+    answers = {key: value for key, value in RADAR_ANSWERS.items() if key != "Units"}
+    [insert] = radar_engine({RADAR: {**answers, "Unit": "kmh"}}).insert
+    assert insert["params"]["$speed_unit"] == "kmh"
+    [insert] = radar_engine({RADAR: {**RADAR_ANSWERS, "Unit": "kmh"}}).insert
+    assert insert["params"]["$speed_unit"] == "mph"
+    [insert] = radar_engine({RADAR: answers}).insert
+    assert insert["params"]["$speed_unit"] is None
+
+
+@needs_node
+def test_a_radar_config_no_longer_lists_has_its_row_ended():
+    gone = open_radar("TM_RADAR_SERIAL_PORT_02", row_id="1-dddddddd-sr")
+    for info in ({RADAR: RADAR_ANSWERS}, {}, {"TM_RADAR_SERIAL_PORT_02": RADAR_ANSWERS}):
+        run = radar_engine(info, [open_radar(), gone])
+        [close] = run.close
+        assert close["params"]["$id"] == "1-dddddddd-sr" and run.in_time(close["params"]["$ended"])
+        assert run.insert == []
+        assert run.info("TM_RADAR_SERIAL_PORT_02") is None
+    # Without a sensors.radars mapping nothing ends for this reason
+    for config in ({}, {"sensors": {}}, {"sensors": {"radars": None}}, {"sensors": {"radars": [RADAR]}}, None):
+        assert radar_engine({}, [open_radar(), gone], config=config).written() == []
+
+
+@needs_node
+def test_a_radar_that_did_not_answer_keeps_its_row():
+    other = open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), other])
+    assert run.written() == []
+    assert radar_engine({}, [open_radar(), other]).written() == []
+
+
+@needs_node
+def test_two_open_rows_for_one_radar_leave_the_newest():
+    older, newer = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar()
+    for rows in ([older, newer], [newer, older]):
+        run = radar_engine({RADAR: RADAR_ANSWERS}, rows)
+        assert [m["params"]["$id"] for m in run.close] == ["50-cccccccc-sr"] and run.insert == []
+    # the newer row is the one compared: it differs, so it closes too and a row opens
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [older, newer])
+    assert sorted(m["params"]["$id"] for m in run.close) == ["100-cccccccc-sr", "50-cccccccc-sr"]
+    assert len(run.insert) == 1
+    # and a round with no part number still leaves one open row
+    run = radar_engine({RADAR: {}}, [older, newer])
+    assert [m["params"]["$id"] for m in run.close] == ["50-cccccccc-sr"] and run.insert == []
+
+
+def strings_in(value):
+    """Every text in value, keys included, at any depth."""
+    if isinstance(value, dict):
+        return [text for key, item in value.items() for text in [key, *strings_in(item)]]
+    if isinstance(value, list):
+        return [text for item in value for text in strings_in(item)]
+    return [value] if isinstance(value, str) else []
+
+
+@needs_node
+def test_the_serial_number_goes_nowhere():
+    func = named(json.loads(FLOWS.read_text()), "radar setup engine")["func"]
+    assert "serialnumber" not in func.lower().replace("_", "")
+    # the engine names no answer key but the eight and Unit
+    keys = set(re.findall(r'"([A-Z]\w*)"', func))
+    assert keys == {key for _, key in RADAR_FACTS} | {"Unit"}
+    for rows in ([], [open_radar(part_number="OPS243-C")]):
+        run = radar_engine({RADAR: RADAR_ANSWERS, "TM_RADAR_SERIAL_PORT_01": {**RADAR_ANSWERS, "Version": "9"}}, rows,
+                           then=[status_step()])
+        assert run.insert
+        for where in (run.written(), run.global_context["tm_status"], run.logged, run.results[1]["result"]):
+            texts = strings_in(where)
+            assert "0000" not in texts
+            assert not any("serialnumber" in text.lower().replace("_", "") for text in texts)
+
+
+@needs_node
+def test_the_radar_engine_logs_nothing():
+    for run in [radar_engine({RADAR: RADAR_ANSWERS}), radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()]),
+                radar_engine({RADAR: {**RADAR_ANSWERS, "Version": None}}, [open_radar()]),
+                radar_engine({RADAR: {}}, [open_radar()]), radar_engine({}, [open_radar("gone")]),
+                radar_engine({"__proto__": RADAR_ANSWERS, RADAR: "text"}, [{"id": 5}, None, "row"]),
+                radar_engine(None, [open_radar()])]:
+        assert run.logged == []
+
+
+@needs_node
+def test_the_radar_engine_without_answers_writes_nothing():
+    assert radar_engine(None, [open_radar("gone"), open_radar(started=50, row_id="50-x-sr")]).written() == []
+
+
+# The third output hands the radars' setup rows to the ThingsBoard upload, by the rule the setup history's engine
+# follows: each row that closed or opened in this round, and every open row when none was sent to this server yet or a
+# day has passed (the flow context's setup_radar_sent). The hourly check runs the engine with no answers: the day rule
+# only, and no write. It checks often so that open rows go again 24 to 25 hours after they last went: the start's own
+# round sets the mark about 11 s after the flows start, so a check once a day would always find it just short of a day.
+
+def radar_flow(**mark):
+    return {"setup_radar_sent": {"to": UPLOAD_URL, "at": int(time.time() * 1000) - 1000, **mark}}
+
+
+def radar_ids(rows):
+    return [row["id"] for row in rows]
+
+
+@needs_node
+def test_the_radar_engine_sends_the_rows_it_wrote():
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow())
+    assert set(run.upload) == {"payload"} and set(run.upload["payload"]) == {"ts", "radars"}
+    assert run.in_time(run.upload["payload"]["ts"])
+    closed, opened = run.upload["payload"]["radars"]
+    assert closed["id"] == "100-cccccccc-sr" and run.in_time(closed["ended"]) and closed["firmware_version"] == "1.2.1"
+    assert opened["id"] == run.insert[0]["params"]["$id"] and opened["ended"] is None
+    assert opened["firmware_version"] == "1.2.2" and opened["radar"] == RADAR
+    for row in (closed, opened):
+        assert list(row) == SETUP_RADAR_COLUMNS
+        assert {column: row[column] for column in RADAR_ROW_FACTS if column != "firmware_version"} == {
+            column: value for column, value in RADAR_ROW_FACTS.items() if column != "firmware_version"}
+    # the changes alone went out: the open rows weren't due, so the mark stays
+    assert run.flow_context == radar_flow(at=run.flow_context["setup_radar_sent"]["at"])
+    assert run.flow_context["setup_radar_sent"]["at"] < run.before
+    # a first row, a radar the config dropped, and an older duplicate go out too
+    older, gone = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar("gone", row_id="1-dddddddd-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), older, gone], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow())
+    sent = run.upload["payload"]["radars"]
+    assert sorted(radar_ids(sent)) == ["1-dddddddd-sr", "50-cccccccc-sr"] and all(run.in_time(r["ended"]) for r in sent)
+    run = radar_engine({RADAR: RADAR_ANSWERS}, config=UPLOAD_RADAR_CONFIG, flow=radar_flow())
+    [opened] = run.upload["payload"]["radars"]
+    assert opened["ended"] is None and opened["id"] == run.insert[0]["params"]["$id"]
+
+
+@needs_node
+def test_a_round_that_changes_nothing_sends_nothing_that_is_not_due():
+    flow = radar_flow()
+    for info in ({RADAR: RADAR_ANSWERS}, {RADAR: {}}, {}):
+        run = radar_engine(info, [open_radar()], config=UPLOAD_RADAR_CONFIG, flow=flow)
+        assert run.upload is None and run.written() == [] and run.flow_context == flow
+
+
+@needs_node
+@pytest.mark.parametrize("sent", [
+    None, lambda now: {"to": "https://other.example.org", "at": now - 1000},
+    lambda now: {"to": UPLOAD_URL, "at": now - DAY_MS}, lambda now: {"to": UPLOAD_URL, "at": now + 60_000},
+    lambda now: {"to": UPLOAD_URL, "at": "yesterday"}, "text",
+], ids=["absent", "another-server", "a-day-ago", "in-the-future", "not-a-number", "not-a-mapping"])
+def test_open_rows_go_again_after_a_day_and_not_before(sent):
+    now = int(time.time() * 1000)
+    flow = {} if sent is None else {"setup_radar_sent": sent(now) if callable(sent) else sent}
+    other = open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), other], config=UPLOAD_RADAR_CONFIG, flow=flow)
+    payload = run.upload["payload"]
+    assert run.written() == [] and run.in_time(payload["ts"])
+    assert sorted(radar_ids(payload["radars"])) == ["1-eeeeeeee-sr", "100-cccccccc-sr"]
+    assert all(row["ended"] is None and list(row) == SETUP_RADAR_COLUMNS for row in payload["radars"])
+    assert set(run.flow_context["setup_radar_sent"]) == {"to", "at"}
+    assert run.flow_context["setup_radar_sent"]["to"] == UPLOAD_URL and run.in_time(run.flow_context["setup_radar_sent"]["at"])
+
+
+@needs_node
+def test_a_row_that_is_due_and_changed_is_sent_once():
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}},
+                       [open_radar(), open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")],
+                       config=UPLOAD_RADAR_CONFIG)
+    sent = run.upload["payload"]["radars"]
+    assert sorted((row["radar"], row["ended"] is None) for row in sent) == [
+        ("TM_RADAR_SERIAL_PORT_00", False), ("TM_RADAR_SERIAL_PORT_00", True), ("TM_RADAR_SERIAL_PORT_01", True)]
+    assert len(set(radar_ids(sent))) == 3 and run.in_time(run.flow_context["setup_radar_sent"]["at"])
+
+
+@needs_node
+@pytest.mark.parametrize("thingsboard", [{"enabled": False, "url": UPLOAD_URL}, None, {"enabled": True},
+                                         {"enabled": True, "url": ""}, {"enabled": "true", "url": UPLOAD_URL}],
+                         ids=["off", "no-block", "no-url", "empty-url", "enabled-not-true"])
+def test_nothing_is_sent_with_the_upload_off(thingsboard):
+    config = {**RADAR_CONFIG, **({} if thingsboard is None else {"thingsboard": thingsboard})}
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [open_radar()], config=config,
+                       flow=radar_flow())
+    assert run.upload is None and len(run.written()) == 2 and "setup_radar_sent" not in run.flow_context
+    check = radar_engine(MISSING, [open_radar()], config=config, flow=radar_flow())
+    assert check.upload is None and "setup_radar_sent" not in check.flow_context
+    turned_on = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                             flow=run.flow_context)
+    assert radar_ids(turned_on.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+
+
+@needs_node
+def test_open_rows_are_not_due_a_little_short_of_a_day():
+    # the start's round set the mark 11 s after the start; a check a day after the start finds it 11 s short
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow(at=int(time.time() * 1000) - DAY_MS + 11_000))
+    assert run.upload is None and run.written() == []
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow(at=int(time.time() * 1000) - DAY_MS))
+    assert radar_ids(run.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+
+
+@needs_node
+def test_the_hourly_check_writes_no_row():
+    older, gone = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar("gone", row_id="1-dddddddd-sr")
+    for info in (MISSING, None, "text"):
+        run = radar_engine(info, [open_radar(), older, gone], config=UPLOAD_RADAR_CONFIG, flow=radar_flow(at=1))
+        assert run.written() == [] and run.logged == [] and run.global_context.get("tm_status") is None
+        # the day rule only: the open rows, one per radar, those the config lists
+        assert radar_ids(run.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+        assert run.upload["payload"]["radars"][0]["ended"] is None and run.in_time(run.upload["payload"]["ts"])
+        assert run.in_time(run.flow_context["setup_radar_sent"]["at"])
+    # not due: nothing, and the mark stays
+    flow = radar_flow()
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG, flow=flow)
+    assert run.upload is None and run.flow_context == flow and run.written() == []
+    # no rows: nothing to send, and the day isn't spent
+    run = radar_engine(MISSING, [], config=UPLOAD_RADAR_CONFIG, flow={})
+    assert run.upload is None
+
+
+@needs_node
+def test_the_radars_upload_rows_hold_no_serial_number():
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(part_number="OPS243-C")], config=UPLOAD_RADAR_CONFIG)
+    texts = strings_in(run.upload)
+    assert "0000" not in texts and not any("serialnumber" in text.lower().replace("_", "") for text in texts)
+    assert run.logged == []
+
+
+RADAR_ROWS_CHECK = "check hourly whether the radars' setup rows are due"
+
+
+def test_the_radars_setup_rows_reach_the_setup_link():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    engine, out = named(flows, "radar setup engine"), named(flows, "radar setup rows")
+    check, read = named(flows, RADAR_ROWS_CHECK), named(flows, "read open setup_radar")
+    link_in = named(flows, "setup rows link in")
+    assert engine["wires"][2] == [out["id"]] and out["links"] == [link_in["id"]] and out["id"] in link_in["links"]
+    assert (check["type"], check["once"], check["crontab"], check["wires"]) == ("inject", False, "", [[read["id"]]])
+    # checked every hour, so open rows go again at most an hour after they are due
+    assert check["repeat"] == "3600"
+    assert check["props"] == [] or all(prop["p"] == "payload" for prop in check["props"])
+    for node in (check, out):
+        assert (node["z"], node["g"]) == (engine["z"], engine["g"])
+        assert node["id"] in by_id[engine["g"]]["nodes"]
+
+
+@needs_node
+def test_status_carries_each_radars_answers():
+    [step] = run_functions([status_step()])["results"]
+    assert {name: radar["info"] for name, radar in step["result"]["payload"]["radars"].items()} == dict.fromkeys(
+        RADAR_NAMES)
+    run = radar_engine({RADAR: RADAR_ANSWERS}, then=[status_step()],
+                       context={"tm_status": {"radars": {RADAR: {"enabled": True, "port_open": True}}}})
+    radars = run.results[1]["result"]["payload"]["radars"]
+    info = radars[RADAR]["info"]
+    assert list(info) == [column for column, _ in RADAR_FACTS] + ["answered_at"]
+    assert {column: info[column] for column, _ in RADAR_FACTS} == RADAR_ROW_FACTS
+    assert info["answered_at"].endswith("Z") and run.before <= iso_ms(info["answered_at"]) <= run.after
+    assert (radars[RADAR]["enabled"], radars[RADAR]["port_open"]) == (True, True)
+    assert all(radars[name]["info"] is None for name in RADAR_NAMES if name != RADAR)
+    # the control app's fixture has the same shape
+    fixture = json.loads((REPO / "tm-control" / "backend" / "tests" / "fixtures" / "nodered_status.json").read_text())
+    assert {name: list(radar) for name, radar in fixture["radars"].items()} == {
+        name: list(radar) for name, radar in radars.items()}
+    assert list(fixture["radars"][RADAR]["info"]) == list(info)
+    # the same answers again: no write, and the time moves
+    seen = {"radars": {RADAR: {"enabled": True, "info": {**info, "answered_at": "2026-01-01T00:00:00.000Z"}}}}
+    again = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()], context={"tm_status": seen})
+    assert again.written() == [] and again.info()["answered_at"] != "2026-01-01T00:00:00.000Z"
+    assert again.global_context["tm_status"]["radars"][RADAR]["enabled"] is True
+
+
+RADAR_INFO_PAYLOAD = "59d61701c38da429"  # capture-radar: create radarInfo payload
+RADAR_INFO_GLOBAL, RADAR_INFO_LINK = "9e95f569494a21dc", "50c56047654010ea"
+RADAR_INFO_GROUP = "805c5feafbb3610b"  # collect radarInfo, initialize
+
+
+def test_the_radar_chain_is_wired():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tab = tab_id(flows, "capture-radar")
+    [targets] = by_id[RADAR_INFO_PAYLOAD]["wires"]
+    assert RADAR_INFO_GLOBAL in targets and RADAR_INFO_LINK in targets and len(targets) == 3
+    assert by_id[RADAR_INFO_GLOBAL]["rules"][0]["p"] == "deviceAttributes.radarInfo"
+    assert by_id[RADAR_INFO_LINK]["type"] == "link out" and by_id[RADAR_INFO_LINK]["links"]
+    [keep_id] = [target for target in targets if target not in (RADAR_INFO_GLOBAL, RADAR_INFO_LINK)]
+    keep = by_id[keep_id]
+    assert (keep["type"], keep["name"]) == ("change", "keep the radar's answers")
+    assert [(rule["t"], rule["p"], rule["pt"], rule["to"], rule["tot"]) for rule in keep["rules"]] == [
+        ("set", "radarInfo", "msg", "payload", "msg")]
+    [[read_id]] = keep["wires"]
+    read = by_id[read_id]
+    assert (read["type"], read["name"], read["sqlquery"], read["mydb"]) == (
+        "sqlite", "read open setup_radar", "fixed", TMDB)
+    assert sql_text(read) == "SELECT * FROM setup_radar WHERE ended IS NULL ORDER BY started DESC, id DESC"
+    [[engine_id]] = read["wires"]
+    engine = by_id[engine_id]
+    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "radar setup engine", 3)
+    [[close_id], [insert_id], [rows_id]] = engine["wires"]
+    assert by_id[rows_id]["name"] == "radar setup rows" and by_id[rows_id]["type"] == "link out"
+    close, insert = by_id[close_id], by_id[insert_id]
+    for node, name in ((close, "close setup_radar"), (insert, "insert setup_radar")):
+        assert (node["type"], node["name"], node["sqlquery"], node["mydb"]) == ("sqlite", name, "prepared", TMDB)
+        assert node["wires"] == [[]]
+    assert sql_text(close) == "UPDATE setup_radar SET ended = $ended WHERE id = $id"
+    expected = [column for column in SETUP_RADAR_COLUMNS if column != "ended"]
+    assert sql_text(insert) == (f"INSERT INTO setup_radar ({', '.join(expected)}) "
+                                f"VALUES ({', '.join('$' + column for column in expected)})")
+    chain = [keep, read, engine, close, insert]
+    assert all(node["z"] == tab and node.get("g") == RADAR_INFO_GROUP for node in chain)
+    assert {node["id"] for node in chain} <= set(by_id[RADAR_INFO_GROUP]["nodes"])
+    assert "-sr" in engine["func"]
+
+
+# One radar setup at a time: two config loads a few seconds apart started two setups whose question rounds
+# overlapped, and the second round's start dropped the first round's answers. A guard on capture-radar, between
+# "init-config link in" and "delete msg.payload", waits 2 s for the loads to settle, runs one setup at a time, and
+# starts the latest waiting load when the running setup's own round ends (or 30 s after a setup whose round never
+# says so). The message the guard sends comes back as its round's end, so the end carries the id the guard stamped
+# on it (radarSetupId). Not _msgid: Node-RED gives each message a function node sends the _msgid of the message the
+# node was handling, so a setup started when a round ends goes out with that round's id.
+
+INIT_CONFIG_LINK_IN = "a6b986e24a80c93b"  # capture-radar: init-config link in
+DELETE_PAYLOAD = "365eb222a89dd7bd"  # delete msg.payload
+RADAR_SETTINGS = "a0b880e68f9b7198"  # init: radar settings, ~4-sec each
+ROUND_START = "3e9d121913d7feae"  # the junction that starts the question round
+ROUND_COMPLETE = "7eb7b4b61d38b789"  # radar query complete?
+ROUND_END = "ae11d5c9948bf4e1"  # set flow.radarCollectInfo = false, complete
+RADAR_INFO_JOIN = "c113788ccfa879b4"
+MANUAL_SETTINGS, MANUAL_QUERY = "cca525a755c918da", "6a21bd2e9204bac0"
+GUARD_NAME, ROUND_ENDED_NAME = "one radar setup at a time", "radar round ended"
+GUARD_KEYS = ("radarSetupRunning", "radarSetupWaiting")
+GUARD_START = 1_800_000_000_000  # the fake clock's start, in ms
+
+# Runs one function node under a fake clock: Date and the timer functions are the harness's, so a test says when
+# each message arrives and reads when each one left. Messages and timers run in time order (at the same time, the
+# messages first, in the order given); what the node sends, with node.send or by returning it, is copied when sent.
+# The timers keep their own clock: an event {at, step} moves Date alone by step ms, as a change of the system clock
+# does, and every time a test reads (an event's, a send's) is on the timers' clock. As in Node-RED, each message the
+# node sends gets the _msgid of the message its run was handling (a timer's callback belongs to the run that set
+# it). An event {at, endOf: k} is the end of the k-th setup's round: what the node sent for it, less its payload,
+# with the tag's topic and complete set, as the round passes it back.
+GUARD_HARNESS = r"""
+const vm = require("vm");
+const util = require("util");
+const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
+const START = input.start;
+let now = START;
+let skew = 0;
+let seq = 0;
+const timers = new Map();
+const setTimeoutFake = (fn, ms, ...args) => {
+    seq += 1;
+    timers.set(seq, { at: now + Math.max(0, Number(ms) || 0), seq, fn: () => fn(...args) });
+    return seq;
+};
+class FakeDate extends Date {
+    constructor(...args) { if (args.length === 0) { super(now + skew); } else { super(...args); } }
+    static now() { return now + skew; }
+}
+const flowStore = input.flow;
+const flow = { get: (key) => flowStore[key], set: (key, value) => { flowStore[key] = value; } };
+const nodeStore = {};
+const sent = [];
+const logged = [];
+const capture = (msg) => { if (msg != null) sent.push({ at: now - START, msg: JSON.parse(JSON.stringify(msg)) }); };
+const stamped = (msgid) => (msg) => {
+    if (msg != null) capture({ ...msg, _msgid: msgid });
+};
+const log = (level) => (text) => logged.push([level, String(text)]);
+const nodeFor = (msgid) => ({ send: stamped(msgid), error: log("error"), warn: log("warn"), log: log("log"),
+                               status: () => {}, done: () => {}, on: () => {} });
+const node = nodeFor(undefined);
+const sandbox = {
+    console, util, Buffer, URL, URLSearchParams, Date: FakeDate, RED: { util: {} },
+    context: { get: (key) => nodeStore[key], set: (key, value) => { nodeStore[key] = value; } }, flow,
+    global: { get: () => undefined, set: () => {} }, env: { get: () => undefined },
+    setTimeout: setTimeoutFake, clearTimeout: (id) => { timers.delete(id); },
+    setInterval: () => { throw new Error("setInterval is not faked"); }, clearInterval: () => {},
+    promisify: util.promisify,
+};
+const context = vm.createContext(sandbox);
+const guarded = (run) => { try { run(); } catch (err) { logged.push(["error", String(err.message)]); } };
+if (input.initialize) {
+    guarded(() => new vm.Script("(function(node) {" + input.initialize + "\n})").runInContext(context)(node));
+}
+const body = new vm.Script("(function(msg, node) {" + input.func + "\n})").runInContext(context);
+const messages = input.events.map((event) => ({ at: START + event.at, msg: event.msg, step: event.step,
+                                                endOf: event.endOf }));
+const roundEnd = (k) => {
+    if (!sent[k - 1]) throw new Error("no setup " + k + " to end");
+    const { payload, ...rest } = sent[k - 1].msg;
+    return { ...rest, topic: input.endTopic, complete: true };
+};
+const run = (msg) => { const each = nodeFor(msg._msgid); stamped(msg._msgid)(body(msg, each)); };
+const end = START + input.until;
+for (let steps = 0; ; steps += 1) {
+    if (steps > 100000) throw new Error("the node keeps setting timers");
+    let timer = null;
+    for (const each of timers.values()) {
+        if (timer === null || each.at < timer.at || (each.at === timer.at && each.seq < timer.seq)) timer = each;
+    }
+    const messageAt = messages.length ? messages[0].at : Infinity;
+    const timerAt = timer ? timer.at : Infinity;
+    if (Math.min(messageAt, timerAt) > end) break;
+    if (messageAt <= timerAt) {
+        const { at, msg, step, endOf } = messages.shift();
+        now = at;
+        if (step !== undefined) {
+            skew += step;
+        } else if (endOf !== undefined) {
+            guarded(() => run(roundEnd(endOf)));
+        } else {
+            guarded(() => run(msg));
+        }
+    } else {
+        now = timer.at;
+        timers.delete(timer.seq);
+        guarded(timer.fn);
+    }
+}
+process.stdout.write(JSON.stringify({ sent, logged, flow: flowStore }), () => process.exit(0));
+"""
+
+
+def guard_nodes():
+    flows = json.loads(FLOWS.read_text())
+    return named(flows, GUARD_NAME), named(flows, ROUND_ENDED_NAME)
+
+
+def load(n):
+    """A config load as "init config defaults" passes it on: the config as payload; n tells the loads apart."""
+    return {"_msgid": f"load-{n}", "topic": "", "payload": {"sensors": {"radars": {RADAR: {"enabled": True}}}},
+            "load": n}
+
+
+def round_end(k=None):
+    """What reaches the guard when a question round ends: the round's message, tagged by "radar round ended". The
+    round of the k-th setup the guard started carries what the guard sent for it (the harness builds it then); with
+    no k, a round started by hand in the editor, which carries the inject's own message."""
+    if k is None:
+        return {"_msgid": "manual-round", "topic": ROUND_ENDED_NAME, "complete": True}
+    return ("endOf", k)
+
+
+def clock_step(ms):
+    """A change of the system clock by ms (Date moves; the timers don't)."""
+    return ("step", ms)
+
+
+def event(at, msg):
+    if isinstance(msg, tuple):
+        return {"at": at, msg[0]: msg[1]}
+    return {"at": at, "msg": msg}
+
+
+def run_guard(events, until, flow=None):
+    """Run the guard on (ms after the start, msg) events until the given ms; returns (sent, logged, flow): sent as
+    (ms, msg) pairs."""
+    guard, tag = guard_nodes()
+    [rule] = tag["rules"]
+    payload = {"start": GUARD_START, "until": until, "flow": flow or {}, "func": guard["func"],
+               "initialize": guard.get("initialize", ""), "endTopic": rule["to"],
+               "events": [event(at, msg) for at, msg in events]}
+    result = subprocess.run(["node", "-e", GUARD_HARNESS], input=json.dumps(payload), capture_output=True, text=True,
+                            timeout=30)
+    assert result.returncode == 0, result.stderr
+    out = json.loads(result.stdout)
+    return [(item["at"], item["msg"]) for item in out["sent"]], out["logged"], out["flow"]
+
+
+def started(sent):
+    """(ms, load) for each setup the guard started."""
+    return [(at, msg["load"]) for at, msg in sent]
+
+
+def running(msg, free_after=30_000):
+    """The guard's record of the setup it sent msg for."""
+    return {"id": msg["radarSetupId"], "freeAfterMs": free_after}
+
+
+def as_loaded(msg):
+    """A message the guard sent, less what the guard and Node-RED set on it: the load it started."""
+    return {key: value for key, value in msg.items() if key not in ("radarSetupId", "_msgid")}
+
+
+@needs_node
+def test_a_burst_of_loads_starts_one_setup():
+    loads = [(0, load(1)), (500, load(2)), (1000, load(3))]
+    sent, logged, flow = run_guard(loads, until=32_999)
+    assert started(sent) == [(3000, 3)]
+    assert as_loaded(sent[0][1]) == as_loaded(load(3))
+    assert logged == []
+    assert flow == {"radarSetupRunning": running(sent[0][1]), "radarSetupWaiting": None}
+    # its fallback, with no round's end, empties the record 30 s after the start
+    sent, _, flow = run_guard(loads, until=60_000)
+    assert started(sent) == [(3000, 3)] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_a_load_during_a_round_waits_for_its_end():
+    # the bench's case: a second save 3 s after the first, and a round that takes about 9 s
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (20_000, round_end(2))],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+
+
+@needs_node
+def test_a_setup_started_by_a_rounds_end_is_freed_by_its_own():
+    # setup 2 starts in the run that handles setup 1's end, so Node-RED gives it setup 1's _msgid; its own end must
+    # still free the way, and load 3 start then, not at the fallback
+    events = [(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (12_000, load(3)), (20_000, round_end(2))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 2), (20_000, 3)]
+    assert sent[1][1]["_msgid"] == sent[0][1]["_msgid"]
+    assert len({msg["radarSetupId"] for _, msg in sent}) == 3
+    # and so on, a setup after a setup, each freed by its own end
+    events = [(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (12_000, load(3)), (20_000, round_end(2)),
+              (21_000, load(4)), (29_000, round_end(3)), (38_000, round_end(4))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 2), (20_000, 3), (29_000, 4)]
+    assert logged == [] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_loads_waiting_on_a_round_collapse_to_the_latest():
+    events = [(0, load(1)), (4000, load(2)), (5000, load(3)), (6000, load(4)), (11_000, round_end(1)),
+              (20_000, round_end(2))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 4)]
+    assert as_loaded(sent[1][1]) == as_loaded(load(4))
+    assert logged == []
+    assert flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_a_load_just_after_a_round_ends_still_waits_its_2_s():
+    sent, _, _ = run_guard([(0, load(1)), (10_000, load(2)), (11_000, round_end(1))], until=60_000)
+    assert started(sent) == [(2000, 1), (12_000, 2)]
+
+
+@needs_node
+def test_a_round_that_never_ends_frees_the_way_after_30_s():
+    sent, logged, _ = run_guard([(0, load(1)), (5000, load(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
+    assert logged == []
+    # and a load that comes after the 30 s starts 2 s later
+    sent, _, _ = run_guard([(0, load(1)), (40_000, load(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (42_000, 2)]
+
+
+@needs_node
+def test_a_late_end_from_an_older_setup_starts_nothing():
+    # the fallback freed setup 1 at 32 s and started setup 2; setup 1's own end then arrives at 33 s
+    events = [(0, load(1)), (5000, load(2)), (33_000, round_end(1)), (34_000, load(3))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2), (62_000, 3)]
+    assert logged == []
+    # setup 2's own end still frees the way
+    sent, _, _ = run_guard(events + [(41_000, round_end(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2), (41_000, 3)]
+
+
+@needs_node
+def test_a_round_started_by_hand_frees_nothing():
+    # "query radar settings, manually" during a setup, with a load waiting: its end at 6 s starts nothing
+    sent, logged, flow = run_guard([(0, load(1)), (3000, load(2)), (6000, round_end())], until=10_000)
+    assert started(sent) == [(2000, 1)]
+    assert flow["radarSetupRunning"] == running(sent[0][1]) and flow["radarSetupWaiting"]["msg"] == load(2)
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (6000, round_end()), (11_000, round_end(1))],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("step", [60_000, -60_000, 3_600_000, -3_600_000], ids=["1-min-on", "1-min-back",
+                                                                                 "1-h-on", "1-h-back"])
+def test_a_change_of_the_clock_during_a_setup_starts_nothing(step):
+    # the Device page sets the clock, and a Pi with no clock battery steps its clock when NTP first answers
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (4000, clock_step(step)), (11_000, round_end(1))],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+    # with no end, the fallback still frees the way 30 s after the setup started, on the timers' clock
+    sent, _, _ = run_guard([(0, load(1)), (3000, load(2)), (4000, clock_step(step))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
+    # and a load that comes after the change still waits its 2 s
+    sent, _, _ = run_guard([(0, load(1)), (4000, clock_step(step)), (11_000, round_end(1)), (20_000, load(2))],
+                           until=120_000)
+    assert started(sent) == [(2000, 1), (22_000, 2)]
+
+
+def load_with_radars(n, radars):
+    """A config load whose sensors.radars is radars."""
+    return {**load(n), "payload": {"sensors": {"radars": radars}}}
+
+
+@needs_node
+@pytest.mark.parametrize("radars, free_after", [
+    ({name: {"enabled": True} for name in RADAR_NAMES}, 120_000),
+    ({RADAR_NAMES[0]: {"enabled": True}, RADAR_NAMES[1]: {"enabled": True}, RADAR_NAMES[2]: {"enabled": False},
+      RADAR_NAMES[3]: None}, 60_000),
+    ({name: {"enabled": False} for name in RADAR_NAMES}, 30_000),
+    ({}, 30_000),
+    (None, 30_000),
+], ids=["four enabled", "two of four enabled", "none enabled", "no radars", "no radars mapping"])
+def test_the_fallback_gives_30_s_for_each_enabled_radar(radars, free_after):
+    # a setup and its round take about 8 to 9 s for each radar, so four radars can take over 30 s
+    events = [(0, load_with_radars(1, radars)), (5000, load(2))]
+    sent, logged, _ = run_guard(events, until=2000 + free_after - 1)
+    assert started(sent) == [(2000, 1)]
+    sent, _, _ = run_guard(events, until=300_000)
+    assert started(sent) == [(2000, 1), (2000 + free_after, 2)]
+    assert logged == []
+    # counted from the config the running setup started with, not the waiting one's
+    sent, _, _ = run_guard([(0, load(1)), (5000, load_with_radars(2, radars))], until=300_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
+
+
+@needs_node
+def test_a_round_end_without_a_setup_changes_nothing():
+    # a round started by hand ends while no setup runs, or while a load is still settling
+    sent, logged, flow = run_guard([(0, round_end()), (1000, load(1)), (2000, round_end())], until=60_000)
+    assert started(sent) == [(3000, 1)]
+    assert logged == []
+    sent, _, flow = run_guard([(0, round_end())], until=60_000)
+    assert sent == [] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
+
+
+@needs_node
+def test_the_start_still_sets_up_the_radar():
+    # Node-RED's start (and a deploy) starts the guard empty, whatever an earlier run left
+    left = {"radarSetupRunning": {"id": "left-over", "freeAfterMs": 30_000},
+            "radarSetupWaiting": {"msg": load(0), "at": GUARD_START}}
+    for flow in ({}, left):
+        sent, logged, _ = run_guard([(0, load(1))], until=600_000, flow=flow)
+        assert started(sent) == [(2000, 1)]
+        assert logged == []
+    # and the start's message goes from the guard to "init: radar settings" through "delete msg.payload"
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, _ = guard_nodes()
+    assert by_id[INIT_CONFIG_LINK_IN]["wires"] == [[guard["id"]]]
+    assert guard["wires"] == [[DELETE_PAYLOAD]]
+    assert by_id[DELETE_PAYLOAD]["wires"] == [[RADAR_SETTINGS]]
+
+
+@needs_node
+def test_the_manual_injects_bypass_the_guard():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, tag = guard_nodes()
+    assert by_id[MANUAL_SETTINGS]["wires"] == [[RADAR_SETTINGS]]
+    assert by_id[MANUAL_QUERY]["wires"] == [[ROUND_START]]
+    # their messages reach the guard only as a round's end, through the tag
+    untagged = {**by_id, tag["id"]: {**tag, "wires": [[]]}}
+    for inject in (MANUAL_SETTINGS, MANUAL_QUERY):
+        assert by_id[inject]["type"] == "inject"
+        assert guard["id"] not in {node["id"] for node in reachable(untagged, [inject])}
+        assert guard["id"] in {node["id"] for node in reachable(by_id, [inject])}
+    # and that end carries the inject's own message, not a setup's, so it frees nothing: the guard neither starts
+    # a waiting load early nor forgets the setup that runs
+    sent, logged, flow = run_guard([(0, load(1)), (3000, load(2)), (5000, round_end())], until=31_999)
+    assert started(sent) == [(2000, 1)] and flow["radarSetupRunning"] == running(sent[0][1]) and logged == []
+
+
+# Every node from the guard to the tag passes on the message it got (a copy, where a wire splits, keeps every
+# property), so the round's end that reaches the guard carries the radarSetupId the guard stamped on it. A node that
+# sent a new message instead, or dropped the property, would leave every setup to the fallback.
+GUARD_TO_TAG = [DELETE_PAYLOAD, RADAR_SETTINGS, "09952039b0ab86aa", ROUND_START, "8c434de19f88fefc", ROUND_COMPLETE,
+                ROUND_END]
+
+
+def test_the_round_end_carries_the_setups_message():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, tag = guard_nodes()
+    chain = [guard["id"], *GUARD_TO_TAG, tag["id"]]
+    for here, there in zip(chain, chain[1:]):
+        assert there in by_id[here]["wires"][0], (here, there)
+    for node_id in GUARD_TO_TAG:
+        node = by_id[node_id]
+        assert node["type"] in ("change", "switch", "junction", "function"), node_id
+        if node["type"] == "function":
+            # the same msg, returned on its one output, and never replaced
+            assert node["outputs"] == 1 and re.search(r"\nreturn msg;\s*$", node["func"]), node_id
+            assert not re.search(r"(^|[^.\w])msg\s*=[^=]", node["func"]), node_id
+            assert "radarSetupId" not in node["func"] and "delete msg" not in node["func"], node_id
+        if node["type"] == "change":
+            assert all(rule["t"] in ("set", "delete") for rule in node["rules"]), node_id
+            assert all(rule["pt"] != "msg" or rule["p"] not in ("radarSetupId", "") for rule in node["rules"]), node_id
+        if node["type"] == "switch":
+            assert node.get("checkall", "true") == "true" and len(node["wires"]) == len(node["rules"])
+    assert all(rule["p"] != "radarSetupId" for rule in tag["rules"])
+    assert '"radarSetupId"' in guard["func"]
+
+
+def test_the_radar_setup_chain_is_wired():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tab = tab_id(flows, "capture-radar")
+    guard, tag = guard_nodes()
+    # the order: init-config link in, the guard, delete msg.payload, init: radar settings
+    assert (guard["type"], guard["outputs"], guard["z"]) == ("function", 1, tab)
+    assert by_id[INIT_CONFIG_LINK_IN]["wires"] == [[guard["id"]]]
+    assert guard["wires"] == [[DELETE_PAYLOAD]]
+    # the round's end: the answers still go to the join first, and a copy, tagged, goes back to the guard
+    assert by_id[ROUND_COMPLETE]["wires"] == [[ROUND_END]]
+    assert by_id[ROUND_END]["wires"] == [[RADAR_INFO_JOIN, tag["id"]]]
+    assert (tag["type"], tag["z"], tag["wires"]) == ("change", tab, [[guard["id"]]])
+    assert [(rule["t"], rule["p"], rule["pt"], rule["to"], rule["tot"]) for rule in tag["rules"]] == [
+        ("set", "topic", "msg", ROUND_ENDED_NAME, "str")]
+    assert f'"{ROUND_ENDED_NAME}"' in guard["func"]
+    # nothing else reaches the guard
+    assert sorted(node["id"] for node in flows for output in node.get("wires") or [] if guard["id"] in output) == \
+        sorted([INIT_CONFIG_LINK_IN, tag["id"]])
+    # each sits in the group of the nodes beside it: the guard with the link in (none), the tag with the round's end
+    assert guard.get("g") == by_id[INIT_CONFIG_LINK_IN].get("g") == by_id[DELETE_PAYLOAD].get("g")
+    assert tag["g"] == by_id[ROUND_END]["g"] == RADAR_INFO_GROUP
+    assert tag["id"] in by_id[RADAR_INFO_GROUP]["nodes"]
+    # its state: the two flow keys, set empty at each start, and it logs nothing
+    for key in GUARD_KEYS:
+        assert f'"{key}"' in guard["func"]
+        assert f'flow.set("{key}", null);' in guard["initialize"]
+    assert not re.search(r"node\.(warn|log|error|trace|debug)\(", guard["func"] + guard["initialize"])
+    assert "global." not in guard["func"] and "context." not in guard["func"]
 
 
 @needs_node
@@ -3583,8 +4954,9 @@ def test_heading_correction_validates_the_id_and_the_heading(deployment_id, body
     assert refused["statusCode"] == 400 and refused["payload"] == bad_request(detail)
 
 
-FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
-MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount")
+FULL_MOUNTING = {"heading_deg": 40, "pitch_deg": 15, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole",
+                 "road_angle_deg": 20.0}
+MOUNTING_PARAMS = ("$heading_deg", "$pitch_deg", "$height_m", "$view_distance_m", "$mount", "$road_angle_deg")
 
 
 def mounting_body(**changes):
@@ -3608,6 +4980,17 @@ def without(body, key):
     (DEPLOYMENT_ID, without(mounting_body(), "height_m"), "height_m"),
     (DEPLOYMENT_ID, without(mounting_body(), "view_distance_m"), "view_distance_m"),
     (DEPLOYMENT_ID, without(mounting_body(), "mount"), "mount"),
+    (DEPLOYMENT_ID, without(mounting_body(), "road_angle_deg"), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=0), None),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=89), None),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=90), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=89.06), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=-0.06), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=-1), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg="20"), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=True), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=[20]), "road_angle_deg"),
+    (DEPLOYMENT_ID, mounting_body(road_angle_deg=90, mount="Pole"), "mount"),
     (DEPLOYMENT_ID, {}, "heading_deg"),
     (DEPLOYMENT_ID, "heading_deg=40", "heading_deg"),
     (DEPLOYMENT_ID, mounting_body(heading_deg=360), "heading_deg"),
@@ -3658,13 +5041,14 @@ def test_mounting_correction_is_validated(deployment_id, body, detail):
 def test_mounting_correction_rounds_as_the_defaults_node_does():
     """The same limits, checked after rounding (one decimal for tilt, two for lengths), so the two never disagree."""
     validator = named(json.loads(FLOWS.read_text()), "tm-internal: validate mounting correction")
-    for given, stored in (((14.96, 3.665, 13.664), (15.0, 3.67, 13.66)),
-                          ((90.04, 100.004, 1000.004), (90.0, 100.0, 1000.0)),
-                          ((-0.04, 0.005, -0.004), (0, 0.01, 0))):
-        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2])
+    for given, stored in (((14.96, 3.665, 13.664, 20.04), (15.0, 3.67, 13.66, 20.0)),
+                          ((90.04, 100.004, 1000.004, 89.04), (90.0, 100.0, 1000.0, 89.0)),
+                          ((-0.04, 0.005, -0.004, -0.04), (0, 0.01, 0, 0))):
+        body = mounting_body(pitch_deg=given[0], height_m=given[1], view_distance_m=given[2], road_angle_deg=given[3])
         [step] = run_functions([(validator, {"req": {"params": {"id": DEPLOYMENT_ID}}, "payload": body})])["results"]
         params = step["result"][0]["params"]
-        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"]) == stored
+        assert (params["$pitch_deg"], params["$height_m"], params["$view_distance_m"],
+                params["$road_angle_deg"]) == stored
 
 
 def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
@@ -3673,8 +5057,8 @@ def test_mounting_correction_runs_one_prepared_statement_and_answers_204():
     assert (query["type"], query["name"], query["sqlquery"], query["mydb"]) == (
         "sqlite", "rewrite deployment mounting", "prepared", TMDB)
     assert sql_text(query) == ("UPDATE deployment SET heading_deg = $heading_deg, pitch_deg = $pitch_deg, "
-                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount "
-                               "WHERE id = $id")
+                               "height_m = $height_m, view_distance_m = $view_distance_m, mount = $mount, "
+                               "road_angle_deg = $road_angle_deg WHERE id = $id")
     assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
     assert answer["name"] == "tm-internal: answer mounting correction"
 
@@ -4311,7 +5695,10 @@ EVENT_COLUMNS = [
 ]
 DEPLOYMENT_COLUMNS = ["id", "entryStartDateTime", "entryEndDateTime", "lat", "lon", "sensorType", "sensorName",
                       "deviceName", "survey_id", "location_precision", "heading_deg", "pitch_deg", "height_m",
-                      "view_distance_m", "mount", "timezone"]
+                      "view_distance_m", "mount", "timezone", "road_angle_deg", "lane_distance_m", "lane_width_m",
+                      "lanes_toward", "lanes_away", "turn_lane", "toward_side", "intersection"]
+AIM = {"road_angle_deg": 20.0, "lane_distance_m": 2.5, "lane_width_m": 3.5, "lanes_toward": 1, "lanes_away": 1,
+       "turn_lane": 1, "toward_side": "near", "intersection": 1}
 MOUNTING = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
 KEPT_ON_THE_UNIT = set()  # event fields that are saved and never uploaded; adding one is a decision
 LISTS_WARNING = "ThingsBoard upload: the lists of what is shared didn't load, so nothing is sent."
@@ -4366,6 +5753,11 @@ SETUP_SENT_DEVICE = {**dict.fromkeys(sent_columns(SETUP_DEVICE_COLUMNS)),
 SETUP_SENT_CAMERA = {**dict.fromkeys(sent_columns(SETUP_CAMERA_COLUMNS)),
                      "id": "100-bbbbbbbb-sc", "started": 100, "ended": 200, "camera": "cam_a", "detect_width": 1536,
                      "labels_tracked": ["car"], "zones": [{"key": "zone_capture", "enabled": True}], "masks": {}}
+SETUP_SENT_RADAR = {**dict.fromkeys(sent_columns(SETUP_RADAR_COLUMNS)),
+                    "id": "100-cccccccc-sr", "started": 100, "ended": None, "radar": "TM_RADAR_SERIAL_PORT_00",
+                    "part_number": "OPS243-A", "firmware_version": "1.2.1", "cosine_inbound_deg": 0.0,
+                    "cosine_outbound_deg": 0.0, "speed_unit": "mph", "sampling_rate": 20000, "speed_min": 5.0,
+                    "magnitude_min": 20.0}
 SETUP_VALUE = {"device": [SETUP_SENT_DEVICE], "cameras": [SETUP_SENT_CAMERA]}
 GATE_TELEMETRY = {
     "event": {"id": "1761800000.0-abc", "label": "car", "camera": "picam_h265", "frame_time": 1761800000.0},
@@ -4810,7 +6202,7 @@ def test_everything_uploaded_passes_the_gate():
 def test_upload_lists_file():
     lists = upload_lists()
     assert list(lists) == ["telemetry", "attributes", "event", "deployment", "watch_camera", "watch_radar",
-                           "setup_device", "setup_camera"]
+                           "setup_device", "setup_camera", "setup_radar"]
     assert lists["telemetry"] == ["event", "radar", "airquality", "system_metrics", "deployments", "watch", "setup"]
     assert lists["attributes"] == ["deployments", "radarinfo", "sysinfo_tmVersion", "sysinfo_osHostname",
                                    "sysinfo_osRelease", "sysinfo_osTimeZone", "sysinfo_deviceName",
@@ -4820,6 +6212,7 @@ def test_upload_lists_file():
     assert lists["watch_camera"] == WATCH_CAMERA_COLUMNS and lists["watch_radar"] == WATCH_RADAR_COLUMNS
     assert lists["setup_device"] == sent_columns(SETUP_DEVICE_COLUMNS)
     assert lists["setup_camera"] == sent_columns(SETUP_CAMERA_COLUMNS)
+    assert lists["setup_radar"] == sent_columns(SETUP_RADAR_COLUMNS) == SETUP_RADAR_COLUMNS
     assert all(len(names) == len(set(names)) for names in lists.values())
     # one name per line, so two changes that each add a field merge without touching the same line
     assert all(line.count('"') <= 2 for line in UPLOAD_LISTS.read_text().splitlines())
@@ -4842,9 +6235,11 @@ def test_the_gate_holds_no_list_of_its_own():
     {**upload_lists(), "deployment": ["id", 7]},
     {key: names for key, names in upload_lists().items() if key != "setup_device"},
     {**upload_lists(), "setup_camera": ["id", 7]},
+    {key: names for key, names in upload_lists().items() if key != "setup_radar"},
+    {**upload_lists(), "setup_radar": ["id", 7]},
 ], ids=["missing", "empty", "list", "text", "no-event-list", "telemetry-not-a-list", "a-name-that-is-not-text",
         "no-watch-camera-list", "watch-radar-name-not-text", "no-deployment-list", "deployment-name-not-text",
-        "no-setup-device-list", "setup-camera-name-not-text"])
+        "no-setup-device-list", "setup-camera-name-not-text", "no-setup-radar-list", "setup-radar-name-not-text"])
 def test_gate_sends_nothing_without_readable_lists(lists):
     msgs = [{"type": "telemetry", "payload": {"ts": TS, "values": {"event": GATE_TELEMETRY["event"]}}},
             {"type": "attributes", "payload": {"sysinfo_tmVersion": "0.9.0"}}]
@@ -4887,9 +6282,9 @@ def watch_item(value):
 
 @needs_node
 def test_gate_keeps_only_the_listed_deployment_fields():
-    """A telemetry row goes out with the listed fields, the five among them, and a key that isn't listed is named
-    once as deployment.<key>, never with its value."""
-    row = {**GATE_ROW, **MOUNTING}
+    """A telemetry row goes out with the listed fields, the five and the eight of the radar's aim among them, and a
+    key that isn't listed is named once as deployment.<key>, never with its value."""
+    row = {**GATE_ROW, **MOUNTING, **AIM}
     unlisted = {**row, "note": "kept-on-the-unit"}
     payload = {"ts": TS, "values": {"deployments": {"updatedDeployment": [unlisted], "currentDeployment": [unlisted]}}}
     out, logged = gate({"type": "telemetry", "payload": payload})
@@ -5013,11 +6408,39 @@ def test_gate_cuts_a_kept_name_that_reaches_it():
 
 
 @needs_node
+def test_gate_cuts_setup_radar_rows_to_their_list():
+    value = {"radars": [{**SETUP_SENT_RADAR, "serial_number": "SN-PLACEHOLDER"}]}
+    run = gate_run([setup_item(value), setup_item(value)])
+    for step in run["results"]:
+        assert step["result"]["payload"] == {"ts": TS, "values": {"setup": {"radars": [SETUP_SENT_RADAR]}}}
+    warnings = [text for step in run["results"] for _, text, _ in step["logged"]]
+    assert warnings == ["ThingsBoard upload: left out setup_radar.serial_number, which isn't on the list of what is shared."]
+    assert "SN-PLACEHOLDER" not in json.dumps(run["results"]) + json.dumps(run["global"])
+    # beside the other lists, in one message
+    out, _ = gate(setup_item({**SETUP_VALUE, "radars": [SETUP_SENT_RADAR]}))
+    assert out["payload"]["values"]["setup"] == {**SETUP_VALUE, "radars": [SETUP_SENT_RADAR]}
+
+
+@needs_node
+def test_every_setup_radar_column_is_on_the_upload_list():
+    """The table's twelve columns are on the list, in the table's order, and the engine's row has no others."""
+    db = sqlite3.connect(":memory:")
+    db.executescript(SCHEMA_SQL.read_text())
+    table = [row[1] for row in db.execute("PRAGMA table_info(setup_radar)")]
+    db.close()
+    assert len(table) == 12 and upload_lists()["setup_radar"] == table
+    run = radar_engine({RADAR: RADAR_ANSWERS}, config=UPLOAD_RADAR_CONFIG)
+    [row] = run.upload["payload"]["radars"]
+    assert list(row) == table
+
+
+@needs_node
 @pytest.mark.parametrize("value", [
     "text", ["device"], None, 7, {}, {"extra": []}, {"device": "all", "cameras": 7}, {"device": [], "cameras": []},
-    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]},
+    {"device": ["text", None, 7]}, {"cameras": [{"surprise": 1}]}, {"radars": [{"surprise": 1}]},
+    {"radars": "all"}, {"radars": ["text", None]},
 ], ids=["text", "list", "null", "number", "empty", "no-listed-key", "not-lists", "no-rows", "rows-not-mappings",
-        "no-listed-field"])
+        "no-listed-field", "radar-no-listed-field", "radars-not-a-list", "radar-rows-not-mappings"])
 def test_gate_leaves_out_setup_rows_it_cannot_read(value):
     radar = GATE_TELEMETRY["radar"]
     out, _ = gate({"type": "telemetry", "payload": {"ts": TS, "values": {"setup": value, "radar": radar}}})
@@ -5640,18 +7063,19 @@ DOV_PARAMS = "1acba66197b7b0fa"  # capture-radar: write params for radar_dov ins
 FRIGATE_MESSAGE = {"type": "end", "before": {"id": "1.0-abc"}, "after": {"id": "1.0-abc"}}
 
 
-def match(zone_direction, medians, counts=None, radar=True):
-    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+def match(zone_direction, medians, counts=None, radar=True, entered=None, **extra):
+    """The match node on one event; extra goes on the message as it is (msg.intersection, say)."""
+    event = {"id": "1.0-abc", **({"calc_zone_direction": zone_direction} if zone_direction else {}),
+             **({"entered_zones": entered} if entered is not None else {})}
     msg = {"frigate_event": event, "radarEnabled": radar, "payload": medians if radar else FRIGATE_MESSAGE,
-           "radar_reading_counts": counts or {}}
+           "radar_reading_counts": counts or {}, **extra}
     [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
     found = step["result"]["payload"]
     return (found.get("calc_event_direction"), found.get("calc_event_speed"), found["status_radarMatch"],
             found.get("calc_radar_readings"), found.get("calc_direction_source"))
 
 
-@needs_node
-@pytest.mark.parametrize("zones, medians, counts, expected", [
+MATCH_TABLE = [
     ("inbound", {"inbound": 22.5, "outbound": -30.0}, {"inbound": 7, "outbound": 2},
      ("inbound", 22.5, True, 7, "zones_radar")),
     ("inbound", {"inbound": 22.5}, {"inbound": 4}, ("inbound", 22.5, True, 4, "zones_radar")),
@@ -5666,8 +7090,13 @@ def match(zone_direction, medians, counts=None, radar=True):
     # a reading with no direction is grouped under "null" by "calculate median per direction"
     ("outbound", {"inbound": 22.5, "null": 3.0}, {"inbound": 4, "null": 1},
      ("outbound", None, False, None, "zones_radar_opposite")),
-], ids=["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
-        "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"])
+]
+MATCH_IDS = ["match-of-two", "match", "other-direction-only", "radars-direction", "two-and-no-zones", "none", "nothing",
+             "zero-match", "zero-assigned", "zero-of-two", "other-direction-and-no-direction"]
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, counts, expected", MATCH_TABLE, ids=MATCH_IDS)
 def test_direction_and_speed_with_a_radar(zones, medians, counts, expected):
     assert match(zones, medians, counts) == expected
 
@@ -5847,11 +7276,159 @@ def test_a_camera_without_a_radar_uses_the_units_of_the_devices_radar():
     (None, "zones", None), ("inbound", "frigate", None), ("inbound", "", None), ("inbound", None, None),
     ("inbound", MISSING, None), ("inbound", ["zones"], None),
 ], ids=["zones-radar", "zones", "opposite", "radar", "no-direction", "other-word", "empty", "null", "missing", "list"])
-def test_direction_source_is_one_of_four_words_or_empty(direction, source, expected):
+def test_direction_source_is_one_of_its_words_or_empty(direction, source, expected):
     payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
     assert payload["direction_source"] == expected
     assert list(payload).index("direction_source") == EVENT_COLUMNS.index("direction_source")
     assert step["logged"] == []
+
+
+# Where a camera's view takes in an intersection (its own deployment.intersection ticked), the radar's readings may
+# belong to cross traffic: a radar speed needs an event that entered zone_radar going a way the radar saw. An event
+# that didn't enter zone_radar takes no radar reading, and its direction, the zones', is zones_intersection. Nothing
+# is taken from the radar alone. Unticked, nothing changes.
+CROSSING = ["zone_capture", "zone_near", "zone_far"]
+IN_RADAR_ZONE = ["zone_capture", "zone_radar", "zone_near", "zone_far"]
+
+
+def at_intersection(entered, zone_direction, medians, intersection=True, fields=FIELDS):
+    """The match node on an event of a camera with an enabled radar, then "event finalize output"; returns what the
+    match node found and the event's row."""
+    event = {**EVENT, "entered_zones": entered, "radarName": "TM_RADAR_SERIAL_PORT_00",
+             **({"calc_zone_direction": zone_direction} if zone_direction else {})}
+    msg = {"frigate_event": event, "radarEnabled": True, "intersection": intersection, "payload": medians,
+           "radar_reading_counts": {direction: 3 for direction in medians}}
+    [step] = run_functions([(node_by_id(MATCH), msg)])["results"]
+    assert step["logged"] == []
+    found = step["result"]["payload"]
+    payload, step, _ = finalize({**step["result"], "event_direction_speed": found, "frigate_fields": fields})
+    assert step["logged"] == []
+    return found, payload
+
+
+@needs_node
+@pytest.mark.parametrize("intersection", [False, MISSING], ids=["unticked", "absent"])
+@pytest.mark.parametrize("zones, medians, counts, expected", MATCH_TABLE, ids=MATCH_IDS)
+def test_unticked_events_are_matched_as_before(zones, medians, counts, expected, intersection):
+    """Even for an event that didn't enter zone_radar."""
+    extra = {} if intersection is MISSING else {"intersection": intersection}
+    entered = CROSSING if zones else ["zone_capture"]
+    assert match(zones, medians, counts, entered=entered, **extra) == expected
+
+
+@needs_node
+@pytest.mark.parametrize("entered, zones, medians, expected", [
+    (CROSSING, "inbound", {"inbound": 22.5}, ("inbound", "zones_intersection")),
+    (CROSSING, "outbound", {"outbound": -30.0, "inbound": 20.0}, ("outbound", "zones_intersection")),
+    (CROSSING, "inbound", {"inbound": 0}, ("inbound", "zones_intersection")),
+    (["zone_capture"], None, {"outbound": -30.0}, (None, None)),
+], ids=["one-way", "both-ways", "zero", "no-zone-direction"])
+def test_at_an_intersection_a_speed_needs_zone_radar(entered, zones, medians, expected):
+    found, payload = at_intersection(entered, zones, medians, fields=NO_FIELDS)
+    assert found["status_match_event_radar_direction"] == "intersection_no_zone_radar"
+    assert found["status_radarMatch"] is False and found.get("calc_event_speed") is None
+    assert "calc_radar_readings" not in found
+    assert (payload["direction_calc"], payload["direction_source"]) == expected
+    assert speed_of(payload) == NO_SPEED and payload["provenance"] == ["frigate"]
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, speed", [
+    ("inbound", {"inbound": 22.5}, 22.5),
+    ("outbound", {"outbound": -30.0, "inbound": 20.0}, -30.0),
+    ("inbound", {"inbound": 0}, 0),
+], ids=["one-way", "both-ways", "zero"])
+def test_at_an_intersection_a_matching_event_in_zone_radar_gets_its_speed(zones, medians, speed):
+    found, payload = at_intersection(IN_RADAR_ZONE, zones, medians)
+    assert found == at_intersection(IN_RADAR_ZONE, zones, medians, intersection=False)[0]
+    assert found["status_match_event_radar_direction"] == "radar_speed_direction_match"
+    assert (payload["direction_calc"], payload["direction_source"]) == (zones, "zones_radar")
+    assert speed_of(payload) == {"speed_calc": speed, "speed_unit": "mph", "speed_source": "radar",
+                                 "radar_readings": 3}
+    assert payload["provenance"] == ["frigate", "radar"]
+
+
+@needs_node
+@pytest.mark.parametrize("medians", [{"outbound": -30.0}, {"inbound": 0}, {"inbound": 22.5, "outbound": -30.0}, {}],
+                         ids=["outbound", "zero", "both-ways", "none"])
+def test_at_an_intersection_nothing_is_taken_from_the_radar_alone(medians):
+    found, payload = at_intersection(["zone_capture", "zone_radar"], None, medians, fields=NO_FIELDS)
+    assert found["status_match_event_radar_direction"] == "intersection_no_zone_direction"
+    assert found["status_radarMatch"] is False and found.get("calc_event_speed") is None
+    assert found.get("calc_event_direction") is None and found.get("calc_direction_source") is None
+    assert (payload["direction_calc"], payload["direction_source"]) == (None, None)
+    assert speed_of(payload) == NO_SPEED and payload["provenance"] == ["frigate"]
+
+
+@needs_node
+@pytest.mark.parametrize("medians", [{"outbound": -30.0}, {"outbound": -30.0, "null": 3.0}],
+                         ids=["other-way", "other-way-and-no-direction"])
+def test_at_an_intersection_the_radars_other_direction_is_as_today(medians):
+    found, payload = at_intersection(IN_RADAR_ZONE, "inbound", medians)
+    assert found == at_intersection(IN_RADAR_ZONE, "inbound", medians, intersection=False)[0]
+    assert (payload["direction_calc"], payload["direction_source"]) == ("inbound", "zones_radar_opposite")
+    assert speed_of(payload) == {"speed_calc": 23.98, "speed_unit": "mph", "speed_source": "frigate",
+                                 "radar_readings": None}
+
+
+@needs_node
+@pytest.mark.parametrize("zones, medians, speed", [
+    ("inbound", {"inbound": 22.5}, 23.98), ("outbound", {"outbound": -30.0}, -23.98),
+], ids=["inbound", "outbound"])
+def test_frigates_speed_still_fills_in(zones, medians, speed):
+    _, payload = at_intersection(CROSSING, zones, medians)
+    assert speed_of(payload) == {"speed_calc": speed, "speed_unit": "mph", "speed_source": "frigate",
+                                 "radar_readings": None}
+    assert (payload["direction_calc"], payload["direction_source"]) == (zones, "zones_intersection")
+    assert payload["provenance"] == ["frigate"] and payload["frigate_speed"] == 38.6
+
+
+@needs_node
+@pytest.mark.parametrize("zones", ["inbound", "outbound", None])
+def test_at_an_intersection_a_camera_without_a_radar_is_as_today(zones):
+    """The rule withholds a radar's readings: a camera with no enabled radar has none to withhold, so its events keep
+    zones, which says there was no radar."""
+    entered = CROSSING if zones else ["zone_capture"]
+    assert match(zones, None, radar=False, entered=entered, intersection=True) == \
+        match(zones, None, radar=False, entered=entered) == (zones, None, False, None, "zones" if zones else None)
+
+
+@needs_node
+def test_the_event_keeps_its_radars_name():
+    step, _ = append_config(aim_config(camera={"heading_deg": 40, "intersection": True}), "picam_h265")
+    result = step["result"]
+    assert result["intersection"] is True and result["radarEnabled"] is True
+    assert result["frigate_event"]["radarName"] == "TM_RADAR_SERIAL_PORT_00"
+    _, payload = at_intersection(CROSSING, "inbound", {"inbound": 22.5})
+    assert payload["radarName"] == "TM_RADAR_SERIAL_PORT_00" and payload["direction_source"] == "zones_intersection"
+
+
+@needs_node
+@pytest.mark.parametrize("radar, camera, top, expected", [
+    (None, None, None, False),
+    ({"heading_deg": 180, "intersection": True}, None, None, False),
+    ({"heading_deg": 180, "intersection": True}, {"heading_deg": 40}, None, False),
+    (None, {"heading_deg": 40, "intersection": True}, None, True),
+    (None, None, {"intersection": True}, True),
+    (None, {"heading_deg": 40, "intersection": "yes"}, None, False),
+], ids=["none", "radar-alone", "radar-and-camera-block", "camera", "handed-down", "not-a-tick"])
+def test_the_tick_is_read_from_the_cameras_own_block(radar, camera, top, expected):
+    """A ticked radar alone doesn't turn the rule on for its camera; the top level's tick, handed down, is the
+    camera's own."""
+    step, _ = append_config(aim_config(radar, camera, top), "picam_h265")
+    assert step["result"]["intersection"] is expected
+    assert step["result"]["radarEnabled"] is True
+
+
+@needs_node
+@pytest.mark.parametrize("direction, source, expected", [
+    ("inbound", "zones_intersection", "zones_intersection"), ("outbound", "zones_intersection", "zones_intersection"),
+    (None, "zones_intersection", None), ("inbound", "intersection", None), ("inbound", "zones_crossing", None),
+    ("inbound", "Zones_Intersection", None),
+], ids=["inbound", "outbound", "no-direction", "intersection", "other-word", "letter-case"])
+def test_finalize_keeps_zones_intersection_and_still_drops_an_unknown_source(direction, source, expected):
+    payload, step, _ = finalize(finalize_msg(direction, None, None, fields=FIELDS, source=source))
+    assert payload["direction_source"] == expected and step["logged"] == []
 
 
 @needs_node
@@ -7199,3 +8776,27 @@ def test_a_copy_that_ends_early_drops_its_claimed_list(name, msg):
                            modules=("fs", "path"))
     assert result["flow"]["exactCopyPlaces"] == {"/db/snapshot/x2": [PLACE]}
     assert "45.52252" not in json.dumps(result["results"])
+
+
+SERIAL_TYPES = ("serial-port", "serial in", "serial out")
+
+
+def test_no_node_is_switched_off_in_the_repo():
+    """The installer switches off the serial nodes of a radar whose port isn't there (flows.json.j2); the repo's
+    file keeps every one on, so a device with all four radars gets this file as it is."""
+    flows = json.loads(FLOWS.read_text())
+    assert [node["id"] for node in flows if node["type"] in SERIAL_TYPES and "d" in node] == []
+
+
+def test_each_radar_has_one_port_one_receive_and_one_send():
+    """What flows.json.j2 relies on: each radar name is one serial-port node's ${name}, read by one serial in and
+    written by one serial out, and no other node uses the port."""
+    flows = json.loads(FLOWS.read_text())
+    ports = [node for node in flows if node["type"] == "serial-port"]
+    assert sorted(node["serialport"] for node in ports) == [f"${{{name}}}" for name in RADAR_NAMES]
+    for port in ports:
+        users = sorted(node["type"] for node in flows if node.get("serial") == port["id"])
+        assert users == ["serial in", "serial out"], port["serialport"]
+        [receive] = [node for node in flows if node["type"] == "serial in" and node["serial"] == port["id"]]
+        assert SERIAL_IN[receive["id"]] == port["serialport"][2:-1]
+    assert sum(node["type"] in ("serial in", "serial out") for node in flows) == 8

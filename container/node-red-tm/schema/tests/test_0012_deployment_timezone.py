@@ -33,12 +33,12 @@ def test_0012_adds_the_column_and_rewrites_no_row(tmp_path):
     assert user_version(db_path) == 11
     assert migrate("--db", db_path, "--backup-dir", tmp_path / "backup") == 0
     assert user_version(db_path) == LATEST_VERSION
-    assert columns(db_path, "deployment")[-1] == "timezone"
+    assert columns(db_path, "deployment")[len(before[0])] == "timezone"
     types = {row[1]: row[2] for row in query(db_path, "PRAGMA table_info(deployment)")}
     assert types["timezone"] == "TEXT"
     after = query(db_path, "SELECT * FROM deployment ORDER BY id")
     assert len(before) == 2
-    assert after == [row + (None,) for row in before]
+    assert [row[:len(before[0]) + 1] for row in after] == [row + (None,) for row in before]
 
 
 def test_0012_applies_to_a_legacy_shaped_deployment_table(tmp_path):

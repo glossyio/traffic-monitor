@@ -152,8 +152,8 @@ def test_cameras_is_empty_without_a_cameras_mapping(path, block):
 
 def test_radars_reads_each_radars_enabled(path):
     write(path, lambda text: text.replace(
-        "            opt_api_commands_array: '[\"^/+0.00\\n\", \"^/-0.00\\n\"]'\n",
-        "            opt_api_commands_array: '[\"^/+0.00\\n\", \"^/-0.00\\n\"]'\n"
+        "            opt_api_commands_array: '[]'\n",
+        "            opt_api_commands_array: '[]'\n"
         "        TM_RADAR_SERIAL_PORT_01:\n            enabled: false\n        TM_RADAR_SERIAL_PORT_02:\n",
     ))
     assert NodeRedConfig(path).radars() == {

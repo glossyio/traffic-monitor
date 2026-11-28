@@ -1881,6 +1881,8 @@ export interface components {
             view_distance_m: number | null;
             /** Mount */
             mount: string | null;
+            /** Road Angle Deg */
+            road_angle_deg: number | null;
             /** Sensor Type */
             sensor_type: string;
             /** Sensor Name */

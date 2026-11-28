@@ -16,6 +16,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from tm_control.core.migrate import COSINE_MAX_DEG, cosine_command  # noqa: F401  (the one definition; see migrate)
 from tm_control.modules.location.coordinates import read_heading, round_half_away, valid_heading
 
 FIELDS = ("heading_deg", "pitch_deg", "height_m", "view_distance_m", "mount")

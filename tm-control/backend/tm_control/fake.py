@@ -661,7 +661,7 @@ class FakeNodeRed(NodeRed):
             row = {
                 "id": f"{now}-{secrets.token_hex(4)}-d", "entryStartDateTime": now, "entryEndDateTime": None,
                 **stored, "sensorType": sensor.sensor_type, "sensorName": sensor.sensor_name, "survey_id": survey_id,
-                **{key: getattr(sensor, key) for key in FIELDS}, "timezone": place.timezone,
+                **{key: getattr(sensor, key) for key in FIELDS}, "road_angle_deg": None, "timezone": place.timezone,
             }
             self.rows.append(row)
 
@@ -853,20 +853,29 @@ class FakeNodeRed(NodeRed):
                     row["heading_deg"] = heading
 
     def correct_mounting(self, deployment_id: str, values: Mapping) -> None:
-        """What the flows' validator refuses is refused: a body without all five keys, a heading that isn't a whole
-        number from 0 to 359, a number outside its limits once rounded (the limits are mounting.py's), a mount that
-        isn't a key. A number is stored rounded."""
-        from tm_control.modules.location.coordinates import DEPLOYMENT_ID
+        """What the flows' validator refuses is refused: a body without all six keys (the five and road_angle_deg), a
+        heading that isn't a whole number from 0 to 359, a number outside its limits once rounded (the limits are
+        mounting.py's; the angle's are one decimal, 0 to 89, a number and not a string), a mount that isn't a key. A
+        number is stored rounded."""
+        from tm_control.modules.location.coordinates import DEPLOYMENT_ID, round_half_away
         from tm_control.modules.location.mounting import FIELDS, read
 
         if not isinstance(deployment_id, str) or not DEPLOYMENT_ID.fullmatch(deployment_id) \
-                or not isinstance(values, Mapping) or any(key not in values for key in FIELDS):
+                or not isinstance(values, Mapping) or any(key not in values for key in (*FIELDS, "road_angle_deg")):
             raise NodeRedError("bad_request", 400)
         settled = read("", "", values)
         found = {"heading_deg": _heading_of(values["heading_deg"])}
         found.update({key: getattr(settled, key) for key in FIELDS[1:]})
         if any(values[key] is not None and found[key] is None for key in FIELDS):
             raise NodeRedError("bad_request", 400)
+        angle = values["road_angle_deg"]  # one decimal, then 0 to 89; a number only, never a string
+        if angle is not None:
+            if isinstance(angle, bool) or not isinstance(angle, (int, float)) or not math.isfinite(angle):
+                raise NodeRedError("bad_request", 400)
+            angle = round_half_away(angle, 1) + 0.0  # + 0.0 turns a -0.0 into 0.0
+            if not 0 <= angle <= 89:
+                raise NodeRedError("bad_request", 400)
+        found["road_angle_deg"] = angle
         self._watch()
         with self._lock:
             for row in self.rows:

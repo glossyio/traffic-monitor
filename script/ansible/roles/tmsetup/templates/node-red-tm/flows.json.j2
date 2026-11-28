@@ -1,0 +1,20 @@
+{#-
+  The device's flows.json: the repo's file, read on the controller, with "d": true (Node-RED's "disabled") added to
+  the serial nodes of each radar name in tmsetup_radars_missing, so Node-RED doesn't keep trying to open a port that
+  isn't there: the serial-port node whose serialport is ${<name>}, and the serial in and serial out nodes that use it.
+  Written as Node-RED writes it (indent 4, key order kept, non-ASCII kept, no trailing newline), so with nothing
+  missing it is the repo's file byte for byte. This file must not end with a newline either: Ansible adds back the
+  template's own trailing newlines, whatever the "-" below strips.
+-#}
+{%- set flows = lookup('ansible.builtin.file', 'container/node-red-tm/data/flows.json') | from_json -%}
+{%- set off = namespace(ports=[], nodes=[]) -%}
+{%- for name in tmsetup_radars_missing -%}
+{%-   set off.ports = off.ports + (flows | selectattr('type', 'equalto', 'serial-port')
+        | selectattr('serialport', 'equalto', '${' ~ name ~ '}') | map(attribute='id') | list) -%}
+{%- endfor -%}
+{%- for node in flows -%}
+{%-   set switch_off = node['id'] in off.ports
+        or (node['type'] in ['serial in', 'serial out'] and node['serial'] in off.ports) -%}
+{%-   set off.nodes = off.nodes + [node | combine({'d': true}) if switch_off else node] -%}
+{%- endfor -%}
+{{ off.nodes | to_json(indent=4, ensure_ascii=False) -}}

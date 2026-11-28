@@ -146,7 +146,11 @@ The camera detects objects anywhere in the frame, so cover the whole area of int
 
 The radar has a narrower field of view than the camera and measures speed accurately only at a shallow angle to the direction of travel.
 
-* Aim the device so that traffic moves toward or away from it at **45 degrees or less**. The [OmniPreSense field-of-view calculator](https://omnipresense.com/ops243-field-of-view-calculator/) shows how the angle affects the reading.
+* Aim the device so that traffic moves toward or away from it at **45 degrees or less**, and as shallow as the site allows. The [OmniPreSense field-of-view calculator](https://omnipresense.com/ops243-field-of-view-calculator/) shows how the angle affects the reading. A shallower angle is better for three reasons, which you can check with the calculator:
+    * At 45 degrees a vehicle spends about a fifth of the time in the beam that it does at 20 degrees, so the radar takes far fewer readings of each pass.
+    * The readings of one pass spread about three times as far, because the speed the radar reports changes faster as the vehicle moves across the beam.
+    * Each 5 degrees you misjudge the angle changes the corrected speed by about 9 percent at 45 degrees, and by about 3 percent at 20.
+* The radar can't tell one street from the other where two streets cross. A vehicle on the crossing street can send readings that fall in the time window of an event on the street you count, and a vehicle that turns changes its angle to the beam as it goes, so no one correction suits it. Point the unit along one street, and see [At an intersection](setup-guide.md#at-an-intersection) for how to draw the zones.
 * The radar labels movement **inbound** (toward the device) and **outbound** (away from it), and the camera uses the same words. Place the device so those directions make sense for your roadway, for example inbound for downhill traffic.
 * To find the radar's coverage, have someone hold the radar outside the case and watch the red and blue LEDs on its front as people and vehicles pass. Where the LEDs blink is where to draw `zone_radar`.
 

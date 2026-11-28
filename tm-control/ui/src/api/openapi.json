@@ -3851,6 +3851,17 @@
             ],
             "title": "Mount"
           },
+          "road_angle_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Road Angle Deg"
+          },
           "sensor_type": {
             "type": "string",
             "title": "Sensor Type"
@@ -3883,6 +3894,7 @@
           "height_m",
           "view_distance_m",
           "mount",
+          "road_angle_deg",
           "sensor_type",
           "sensor_name",
           "location_precision"
