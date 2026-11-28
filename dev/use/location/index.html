@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place's time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.">
+        <meta name="description" content="Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place's time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, keep, look at, download, and delete a place's reference pictures, and find where to download a copy of the database with the exact locations.">
       
       
       
@@ -1261,6 +1261,56 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference-pictures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference pictures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference pictures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#take-a-reference-picture-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Take a reference picture here
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#download-one-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download one picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delete a picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2737,6 +2787,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reference-pictures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference pictures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference pictures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#take-a-reference-picture-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Take a reference picture here
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#download-one-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Download one picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-a-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delete a picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#delete-a-place" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2822,7 +2922,7 @@
   
   
   <h1 id="places-and-location">Places and location<a class="headerlink" href="#places-and-location" title="Permanent link">&para;</a></h1>
-<p class="tm-description">Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place&#39;s time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, and find where to download a copy of the database with the exact locations.</p>
+<p class="tm-description">Record where a Traffic Monitor is and how each sensor is mounted, choose how precisely the database stores its location, plan places, set a place&#39;s time zone, move or turn the device, correct a wrong location or heading, import places from a CSV file, export the exact locations as a list, keep, look at, download, and delete a place&#39;s reference pictures, and find where to download a copy of the database with the exact locations.</p>
 <p>The control app's <strong>Location</strong> page records where the device is and which way its sensors face, and its <strong>Mounting</strong> page records how each sensor is mounted. The Location page also sets how precisely the database stores the location. Only the administrator sees the page, because it shows exact coordinates. A device that stays in one place works without it, so use it when you move the device, turn it, or plan to share its data.</p>
 <h2 id="places-and-deployments">Places and deployments<a class="headerlink" href="#places-and-deployments" title="Permanent link">&para;</a></h2>
 <p>A <em>place</em> is somewhere the device has been, is, or will be. Each place has an id such as <code>3f9a1c2e-si</code>, an optional description that only you see, and an optional location, its latitude and longitude. A place doesn't need a location: a device with none still counts and records its data, only without saying where. One place can hold sensors that face different ways, such as a corner with a radar looking down each street.</p>
@@ -2830,13 +2930,14 @@
 <p>Each sensor at a place, facing one way, for one stretch of time, is a <em>deployment</em>. Every count and reading is stored with its deployment, so you can tell where it was taken after the device moves. Moving to another place, or moving or turning a sensor, starts a new deployment, and the earlier ones keep what they recorded.</p>
 <p>The exact location is kept in the control app and in Node-RED's settings file, <a href="../../configuration/node-red-config/#deployment"><code>config.yml</code></a>. The database stores the place's id and the location rounded to the <a href="#choose-the-precision">precision</a> you choose.</p>
 <h2 id="the-location-page">The Location page<a class="headerlink" href="#the-location-page" title="Permanent link">&para;</a></h2>
-<p><strong>Location</strong> is in the control app's menu, after <strong>Cameras</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device <a href="../sharing/">shares</a>, and the way each sensor faces. When the place has <a href="#a-place-used-before">mounting values from the last time the unit was there</a>, the card says so and has a <strong>Mounting</strong> button. Then come the list of places, the <a href="#export-the-exact-locations">list of exact locations</a>, and, last, the <a href="#choose-the-precision">precision</a>. A copy of the database with the exact locations in it is on the <a href="../sharing/#include-each-places-exact-location">Sharing page</a>.</p>
+<p><strong>Location</strong> is in the control app's menu, after <strong>Cameras</strong>. The card at the top shows the place in use: its description, its id, the location as the database stores it, the exact location, what the device <a href="../sharing/">shares</a>, and the way each sensor faces. When the place has <a href="#a-place-used-before">mounting values from the last time the unit was there</a>, the card says so and has a <strong>Mounting</strong> button. Above the list, a line says how many pictures the device stores (<strong>The device stores 3 reference pictures.</strong>) once it stores any. Then come the list of places, the <a href="#export-the-exact-locations">list of exact locations</a>, and, last, the <a href="#choose-the-precision">precision</a>. A copy of the database with the exact locations in it is on the <a href="../sharing/#include-each-places-exact-location">Sharing page</a>.</p>
 <p><img alt="The Location page on a phone: the place in use with its stored and exact location, the list of places, the Exact locations section with its Export button and a link to the Sharing page, and the Precision section at the end, with its choices closed" src="../../assets/images/location-page.png" width="300" /></p>
 <p>Each place in the list shows its description, or <strong>No description</strong>, its mark (<strong>In use</strong>, <strong>Planned</strong>, or <strong>Used</strong>), its id, and its location as the database stores it. Select a place to open it. An open place shows:</p>
 <ul>
 <li><strong>Imported from your previous settings</strong> for a place that came from an older version's data; see <a href="../../build-your-own-device-diy/update/#places-after-an-update">Update the software</a>.</li>
 <li>When the place was first and last used, or <strong>Not used yet</strong>. A used place and the place in use also show their <strong>Time zone</strong>, or <strong>Not set</strong>; see <a href="#set-the-places-time-zone">Set the place's time zone</a>.</li>
 <li>How many events were recorded there, and between which dates.</li>
+<li>Its <a href="#reference-pictures">reference pictures</a>, with how many there are, or <strong>No reference picture is stored for this place.</strong></li>
 <li>Its deployments, newest first, grouped by when they were deployed: the sensors started together sit under one date, each with what it recorded, such as <strong>Facing NE (40°) · 7.0 ft up · tilted 15°</strong>. A radar deployed with a camera is indented under it. A sensor that ended before the rest of its group says when. A deployment that has ended has <strong>Correct heading</strong>. One that is running at the place in use has <strong>Mounting</strong> instead, because that is where it is changed.</li>
 <li>The buttons for what you can do with the place: <strong>Deploy here</strong> for a planned place, <strong>Re-deploy here</strong> for a used one, or <strong>Mounting</strong> for the place in use; <strong>Edit</strong> for a planned place; <strong>Correct location</strong> for a used place or the place in use that has a location; <strong>Time zone</strong> for a used place or the place in use; and <strong>Delete</strong> for any place but the one in use.</li>
 </ul>
@@ -2988,8 +3089,35 @@ Front of the school,45.52252,-122.69120,America/Los_Angeles,n,n
 Corner by the park,,,,e,e
 </code></pre></div>
 <p>Choose <strong>Preview</strong> to see the places the file holds, each with its time zone when it has one, and, by line number, any lines with a problem. <strong>Import</strong> adds the places as planned. It's offered only when every line can be read, and it adds all of them or none.</p>
+<h2 id="reference-pictures">Reference pictures<a class="headerlink" href="#reference-pictures" title="Permanent link">&para;</a></h2>
+<p>A reference picture is two still pictures of a camera's view, one plain and one with Frigate's zone outlines drawn on it, with a data file of the zones. A place's pictures are listed in its panel on this page, under <strong>Reference pictures (n)</strong>, which says how many it holds. They are the ones you chose to keep with <strong>Keep on this device</strong> in the dialog described under <a href="../cameras/#take-a-reference-picture">Take a reference picture</a>. The device takes no picture by itself: a picture is stored only when an administrator keeps it, and it stays until an administrator deletes it or deletes its place.</p>
+<div class="admonition info">
+<p class="admonition-title">What is new: pictures kept on the device</p>
+<p>A kept picture is an ordinary file on the device's card. Anyone who takes the card can read it, as they can read Frigate's snapshots, and anyone with an administrator's login on the device can see it. Kept pictures are in no backup, and an <a href="../../development/software-update/#restoring-by-hand">update's restore point</a> doesn't hold them, so a reflashed card loses them. Nothing uploads them, and they are in no database or download of the database.</p>
+</div>
+<p><img alt="A place's Reference pictures section on a phone: the Take a reference picture button, and a stored picture with its time, its camera, &quot;Kept by an administrator&quot;, a warning that Frigate was tracking a person, both views one above the other, and Download and Delete" src="../../assets/images/location-pictures.png" width="300" /></p>
+<p>The newest picture is first. Each one shows its time and camera, why it was taken (a picture you kept from the dialog says <strong>Kept by an administrator</strong>), and both views, one above the other, each as wide as the panel so that you can see who is in them. They are never shrunk to thumbnails, because this list is where you decide what to delete.</p>
+<p>The mark under the reason tells you what Frigate was tracking when the pictures were taken:</p>
+<ul>
+<li><strong>Frigate was tracking a person. Blur them before you share it, or leave it out.</strong> A warning, shown above the views.</li>
+<li><strong>The device couldn't check for people. Look closely before you share it.</strong> Frigate's detection was off or didn't answer.</li>
+<li>No mark when Frigate was tracking nobody. That is no promise that nobody is in either view, so look at both anyway.</li>
+</ul>
+<h3 id="take-a-reference-picture-here">Take a reference picture here<a class="headerlink" href="#take-a-reference-picture-here" title="Permanent link">&para;</a></h3>
+<p>The place in use has <strong>Take a reference picture</strong> for each enabled camera, with the camera's name beside it when the unit has more than one. It opens the same dialog as the <a href="../cameras/#take-a-reference-picture">Cameras page</a>, and <strong>Keep on this device</strong> in it stores the pictures under this place. The list updates once you keep one. A place that isn't in use has no such button, because the unit can only take a picture of what its cameras see now.</p>
+<h3 id="download-one-picture">Download one picture<a class="headerlink" href="#download-one-picture" title="Permanent link">&para;</a></h3>
+<p><strong>Download</strong> on a picture first opens a review step, <strong>Look at both views before this picture leaves the device</strong>. It says that the picture shows your street and whoever was in view, that anyone who has it can tell where the unit is, and that you should look at both views before you download it. Then it shows both views, each at the full width of the dialog, with the warning for a person or an unchecked picture above them. It has two boxes:</p>
+<ul>
+<li><strong>Include this place's exact location</strong> puts the place's exact location, as it is now, in the data file. It is ticked when the place has a location and off, with the reason under it, when it has none.</li>
+<li><strong>I have looked at both views</strong> starts unticked for every picture, every time, and can't be ticked until both views have loaded. If a view doesn't load, close the dialog and open it again. <strong>Download</strong> stays off until you tick it.</li>
+</ul>
+<p><img alt="The review step on a phone: the title, the line about the street, a warning that Frigate was tracking a person, both views one above the other, the two boxes, and Close and Download" src="../../assets/images/location-picture-review.png" width="300" /></p>
+<p>Both views have to be looked at because they are two separate pictures from the camera, taken a moment apart. Frigate's check for a person can miss someone far away, half hidden, or in poor light, and someone can walk into one view and not the other.</p>
+<p>A download is always one picture, never several. It is the same zip as the Cameras page gives for a take: the two pictures, the data file, and the drawing of the zones. A place keeps its history, so it can hold several pictures of one camera, and the newest is the one that shows the zones as they are now. The audit log records each download with the place and the camera, and whether the location was included, never the location itself.</p>
+<h3 id="delete-a-picture">Delete a picture<a class="headerlink" href="#delete-a-picture" title="Permanent link">&para;</a></h3>
+<p><strong>Delete</strong> on a picture asks first: <strong>Delete this picture?</strong> Both views are removed from the device. This can't be undone. Deleting a place deletes its pictures with it.</p>
 <h2 id="delete-a-place">Delete a place<a class="headerlink" href="#delete-a-place" title="Permanent link">&para;</a></h2>
-<p>Open the place and choose <strong>Delete</strong>, then confirm. A planned place is removed from the list. A used place's exact location is deleted with it, and the database keeps the rounded location stored with each of its records. Deleting can't be undone.</p>
+<p>Open the place and choose <strong>Delete</strong>, then confirm. The confirmation tells you how many reference pictures go with the place. A planned place is removed from the list. A used place's exact location is deleted with it, and the database keeps the rounded location stored with each of its records. The place's <a href="#reference-pictures">reference pictures</a> are deleted from the device too, before the place is. Deleting can't be undone.</p>
 <p>The place in use can't be deleted. Deploy another place first.</p>
 <h2 id="export-the-exact-locations">Export the exact locations<a class="headerlink" href="#export-the-exact-locations" title="Permanent link">&para;</a></h2>
 <p><strong>Export exact locations</strong>, above the precision, saves a CSV file with one line for each place: its id, its exact latitude and longitude (empty for a place with no location), its time zone (empty for a place with none), its mark, and when it was added and last changed. It has no descriptions. Use it to match a copy of the database, which holds each place's id and rounded location, with where the device really was, for analysis and mapping.</p>
@@ -3032,6 +3160,7 @@ Corner by the park,,,,e,e
 <li>A copy of the database holds the place's id and its location at the stored precision: about a neighborhood at about 1 km, or about a city at about 10 km. The exact location isn't in it, unless you made the copy with <a href="../sharing/#include-each-places-exact-location"><strong>Include each place's exact location</strong></a> ticked under <strong>Download your data</strong> on the Sharing page, which adds each place's exact location in a table of its own.</li>
 <li>Data you <a href="../sharing/">share</a> carries the location as the database stores it. The exact location goes only if you tick <strong>Share the exact location</strong>, and only for the place in use. The file from <a href="#export-the-exact-locations"><strong>Export exact locations</strong></a>, and the copy from <a href="../sharing/#include-each-places-exact-location"><strong>Download your data</strong></a> with the exact locations, go where you send them.</li>
 <li>A camera's <a href="../cameras/#take-a-reference-picture">reference picture</a> holds the exact location of the place in use unless you clear <strong>Include this place's exact location</strong>, and the pictures show the street. The zip goes where you send it.</li>
+<li>A <a href="#reference-pictures">reference picture kept on the device</a> stays on its card. It leaves only in a download you confirmed after looking at both views, and the zip goes where you send it.</li>
 <li>A correction or a coarser precision changes the device's own records only. Copies of the database already downloaded, and data already uploaded, keep the values they had.</li>
 </ul>
 <p>To change these values in <code>config.yml</code> by hand, see <a href="../../configuration/node-red-config/#edit-the-location-by-hand">Edit the location by hand</a>.</p>
