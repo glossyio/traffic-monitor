@@ -2423,6 +2423,16 @@
 <td>Frigate's status report, about once a minute. The Traffic Monitor adds each camera's frame rates and whether detection was on up into the <a href="../watch-log/">watch log</a>. Each report also prompts it to read from Frigate's settings whether each camera is on.</td>
 </tr>
 <tr>
+<td><code>frigate/onConnect</code></td>
+<td>The Traffic Monitor to Frigate</td>
+<td>An empty message, sent when a <a href="../../use/cameras/#the-people-check">reference picture</a> is taken, to ask what Frigate is tracking.</td>
+</tr>
+<tr>
+<td><code>frigate/camera_activity</code></td>
+<td>Frigate to the Traffic Monitor</td>
+<td>Frigate's answer to <code>frigate/onConnect</code>: each camera's tracked objects. The Traffic Monitor keeps each object's label and whether it is standing still, for the picture's data file, and nothing else. Like <code>frigate/events</code>, the message itself can hold a recognized name when Frigate's face recognition is on, and a client that holds the broker's login can read it.</td>
+</tr>
+<tr>
 <td><code>aq/&lt;sensor&gt;/readings</code></td>
 <td><a href="../../add-ons/air-quality/">Air quality sensor</a> to the Traffic Monitor</td>
 <td>One JSON reading. See <a href="../air-quality-aq-payload/">Air quality</a>.</td>
