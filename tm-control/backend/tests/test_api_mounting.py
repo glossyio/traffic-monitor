@@ -9,6 +9,7 @@ import logging
 import math
 
 import pytest
+from ruamel.yaml import YAML
 
 from tm_control.adapters.nodered import NodeRedError
 from tm_control.core.auth import Users
@@ -412,6 +413,61 @@ def test_a_change_without_traffic_is_corrected_in_place(admin, not_recorded):
     assert five(open_row(admin, in_use, CAMERA))[:3] == [180, 15.0, 5.0]
     assert block(admin, CAMERA)["heading_deg"] == 180
     assert corrections(admin) == [(in_use, open_row(admin, in_use, CAMERA)["id"], "heading_deg", "0", "180", None)]
+
+
+def test_a_correction_leaves_the_rows_road_angle(admin, not_recorded, monkeypatch):
+    """The form has no field for the angle into the road: a radar's row and file hold 20 by a hand edit, and a
+    "measured it better" save of its height keeps 20 in both."""
+    in_use = first_place(admin)
+    radar = open_row(admin, in_use, RADAR)
+    next(row for row in admin.app.state.nodered.rows if row["id"] == radar["id"])["road_angle_deg"] = 20.0
+    path = admin.app.state.config_path
+    yaml = YAML()
+    data = yaml.load(path.read_text())
+    data["sensors"]["radars"][RADAR[1]].setdefault("deployment", {})["road_angle_deg"] = 20
+    with path.open("w") as out:
+        yaml.dump(data, out)
+    assert block(admin, RADAR)["road_angle_deg"] == 20
+    assert open_row(admin, in_use, RADAR)["road_angle_deg"] == 20.0  # the row's own, as GET lists it
+    nodered = admin.app.state.nodered
+    real = nodered.correct_mounting
+    sent = []
+
+    def watching(deployment_id, values):
+        sent.append((deployment_id, values["road_angle_deg"]))
+        real(deployment_id, values)
+
+    monkeypatch.setattr(nodered, "correct_mounting", watching)
+    saved(admin, in_use, [item(RADAR, heading_deg=0, height_m=2.13, pitch_deg=15.0, measured="pitch")])
+    assert sent == [(radar["id"], 20.0)]  # the row's own angle, never a new one
+    after = open_row(admin, in_use, RADAR)
+    assert after["id"] == radar["id"] and after["height_m"] == 2.13 and after["road_angle_deg"] == 20.0
+    found = block(admin, RADAR)
+    assert found["height_m"] == 2.13 and found["road_angle_deg"] == 20
+
+
+def test_a_row_put_back_keeps_its_road_angle(admin, not_recorded, monkeypatch):
+    """A save that fails after a row was corrected sends the row back with the five it had and the angle it holds."""
+    in_use = first_place(admin)
+    radar = open_row(admin, in_use, RADAR)
+    next(row for row in admin.app.state.nodered.rows if row["id"] == radar["id"])["road_angle_deg"] = 20.0
+    nodered = admin.app.state.nodered
+    real = nodered.correct_mounting
+    sent = []
+
+    def second_fails(deployment_id, values):
+        sent.append((deployment_id, values["road_angle_deg"]))
+        if len(sent) == 2:
+            raise NodeRedError("database_error", 500)
+        real(deployment_id, values)
+
+    monkeypatch.setattr(nodered, "correct_mounting", second_fails)
+    radar_values = {"heading_deg": 0, "height_m": 2.13, "pitch_deg": 15.0, "measured": "pitch"}
+    r = put(admin, in_use, [item(CAMERA, **POLE), item(RADAR, **radar_values)])
+    monkeypatch.undo()
+    assert r.status_code == 502
+    assert [angle for deployment_id, angle in sent if deployment_id == radar["id"]] == [20.0, 20.0]
+    assert open_row(admin, in_use, RADAR)["road_angle_deg"] == 20.0
 
 
 def test_moved_starts_a_new_deployment(admin, recorded):

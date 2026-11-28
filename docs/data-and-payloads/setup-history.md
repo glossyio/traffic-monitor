@@ -6,7 +6,7 @@ description: The three setup history tables and the events_with_setup view, whic
 
 The detection model decides what the device counts. A different model, a moved zone, or a lower frame rate changes the numbers without the road changing, so a count means little unless you know the setup it was made with. The setup history records the setup over time, and a view ties each event to the setup in force when it started.
 
-The device keeps three tables, `setup_device` for the whole unit, `setup_camera` for each camera, and `setup_radar` for each radar, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export. With [Share data](../use/sharing.md) on, the rows of `setup_device` and `setup_camera` are also [uploaded](#what-the-device-uploads); the rows of `setup_radar` stay on the device.
+The device keeps three tables, `setup_device` for the whole unit, `setup_camera` for each camera, and `setup_radar` for each radar, and one view, `events_with_setup`. They are in the database, in the [Data export](../ui/database.md) page's database download. They are not in the JSON export. With [Share data](../use/sharing.md) on, the rows of all three tables are also [uploaded](#what-the-device-uploads).
 
 ## How the rows work
 
@@ -211,14 +211,15 @@ To compare two models, compare their counts over periods of similar traffic, and
 
 ## What the device uploads
 
-With **Share data** on, the device sends the setup history to the server as one `setup` telemetry value, `{"device": [...], "cameras": [...]}`: the rows of `setup_device` and `setup_camera`. A list with no rows is left out, so a value can hold `device` only or `cameras` only. There is no separate choice for it. [MQTT and ThingsBoard](integrations.md#thingsboard) lists the fields sent and the three that never leave the device.
+With **Share data** on, the device sends the setup history to the server as one `setup` telemetry value, `{"device": [...], "cameras": [...], "radars": [...]}`: the rows of `setup_device`, `setup_camera`, and `setup_radar`. A list with no rows is left out, so a value can hold any of the three alone. There is no separate choice for it. [MQTT and ThingsBoard](integrations.md#thingsboard) lists the fields sent and the three that never leave the device.
 
 * **When a row opens or closes,** the device sends it. A change to the model sends the row that ended and the new one.
 * **Zones that are off are not sent.** A camera row's `zones` holds only the zones that are on. When you turn a zone on, the device starts a new row for the camera, and that row is sent with the zone.
 * **A camera that isn't captured is sent without its zones.** If a camera's **Database capture** is off on the [Cameras](../use/cameras.md) page, its row still goes out, with its detection settings and masks, but without `zones`. When the cameras that are captured change, the open rows are sent again, so the same row can arrive with `zones` at one time and without them at another. A row without `zones` says nothing about the camera's zones.
-* **Every open row is sent again** after the cameras that are captured change, on the first complete snapshot after Node-RED starts, after the upload is turned on or its server changes, and once a day. A unit that starts sharing months after its rows opened still tells the server its setup, and an open row the server missed arrives again within a day at most.
+* **Every open row is sent again** after the cameras that are captured change, on the first complete snapshot after Node-RED starts, after the upload is turned on or its server changes, and once a day. A unit that starts sharing months after its rows opened still tells the server its setup, and an open row the server missed arrives again within a day at most. The radars' open rows are sent again after the radars' first setup when Node-RED starts, after the upload is turned on or its server changes, and once a day. The device checks every hour whether the radars' rows are due, so they arrive again within 25 hours.
 * **A row can arrive more than once.** A server should keep one row for each `id`. A row that closed while sharing was off, or while the server couldn't be reached, is never sent after the fact. The server learns the setup from the open rows, and a close it missed shows as the start of the next row.
-* **A sent row** has the table's columns in order, less the three names that stay on the device, with the JSON columns as lists and objects, `zones` as described above, and `ended` empty while the row is in force.
+* **A radar's row** is sent with all twelve columns of `setup_radar`: the radar's key, model, firmware version, and the settings it runs with, among them the two angles that correct its speeds. It has no serial number, because the table has none.
+* **A sent row** has the table's columns in order, less the three names that stay on the device (a radar's row has none), with the JSON columns as lists and objects, `zones` as described above, and `ended` empty while the row is in force.
 
 ## What an operator typed
 

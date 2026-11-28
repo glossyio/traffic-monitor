@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" width="600" role="img" aria-labelledby="iz-title iz-desc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#1b1f24">
+  <title id="iz-title">Where to draw the zones at an intersection</title>
+  <desc id="iz-desc">Two views of one site. From above: the unit stands on the sidewalk of one street, set back from the crossing, and is aimed about 20 degrees into that street. The radar's narrow beam falls across the road, and zone_radar is drawn curb to curb where the beam meets the lanes. zone_near and zone_far follow one after the other up the street, away from the unit, and zone_capture covers both; all of them stop short of the crossing. Dashed, as an extra, is one zone on each leg of the crossing, named zone_north, zone_south, zone_east, and zone_west, for turning counts. Below, the same zones as the camera sees them: the street narrows toward the horizon, zone_near fills the bottom of the picture, zone_radar and zone_far lie further up the street, and the crossing with its four small leg zones is a thin band near the top.</desc>
+
+  <defs>
+    <!-- zone_radar: hatched, so it reads without colour -->
+    <pattern id="iz-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#cc79a7" fill-opacity="0.35"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#8a3d6a" stroke-width="2.5"/>
+    </pattern>
+    <clipPath id="iz-map-clip"><rect width="576" height="400" rx="8"/></clipPath>
+    <clipPath id="iz-pic-clip"><rect width="560" height="315" rx="8"/></clipPath>
+    <style>
+      .halo { paint-order: stroke; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+      .title { font-size: 17px; font-weight: 700; }
+      .zone { font-weight: 600; }
+      .lead { stroke: #1b1f24; stroke-width: 1.2; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Own light background, so the picture reads on a dark page too -->
+  <rect width="600" height="840" rx="12" fill="#f8f6f1"/>
+
+  <!-- ============ Panel 1: from above ============ -->
+  <text class="title" x="16" y="30">From above</text>
+  <g transform="translate(12,44)">
+    <g clip-path="url(#iz-map-clip)">
+      <!-- blocks, sidewalks, roads (10 px = 1 m) -->
+      <rect width="576" height="400" fill="#e6e2d6"/>
+      <rect x="0" y="145" width="576" height="150" fill="#d2cdc1"/>
+      <rect x="355" y="0" width="150" height="400" fill="#d2cdc1"/>
+      <rect x="0" y="170" width="576" height="100" fill="#a5a5a5"/>
+      <rect x="380" y="0" width="100" height="400" fill="#a5a5a5"/>
+      <g stroke="#ffffff" stroke-width="2" stroke-dasharray="12 10">
+        <line x1="0" y1="220" x2="380" y2="220"/>
+        <line x1="480" y1="220" x2="576" y2="220"/>
+        <line x1="430" y1="0" x2="430" y2="170"/>
+        <line x1="430" y1="270" x2="430" y2="400"/>
+      </g>
+
+      <!-- camera's view (about 66 degrees), dotted -->
+      <g stroke="#55595f" stroke-width="1.5" stroke-dasharray="2 4">
+        <line x1="60" y1="280" x2="271" y2="0"/>
+        <line x1="60" y1="280" x2="576" y2="399"/>
+      </g>
+
+      <!-- radar beam: 20 degrees wide, aimed 20 degrees into the street -->
+      <path d="M60,280 L326,233 A270,270 0 0 0 294,145 Z" fill="#f0e442" fill-opacity="0.55" stroke="#9c8f00" stroke-width="1.5"/>
+
+      <!-- the four zones the flows read -->
+      <rect x="100" y="170" width="120" height="100" fill="#e69f00" fill-opacity="0.5"/>  <!-- zone_near -->
+      <rect x="220" y="170" width="110" height="100" fill="#56b4e9" fill-opacity="0.55"/> <!-- zone_far -->
+      <rect x="180" y="170" width="80" height="100" fill="url(#iz-hatch)" stroke="#8a3d6a" stroke-width="2.5"/> <!-- zone_radar -->
+      <rect x="100" y="170" width="230" height="100" fill="none" stroke="#0072b2" stroke-width="4"/> <!-- zone_capture -->
+
+      <path d="M60,280 L326,233 A270,270 0 0 0 294,145 Z" fill="none" stroke="#7a6f00" stroke-width="1.5" stroke-dasharray="6 3"/> <!-- beam edges, over the zones -->
+
+      <!-- extra zones, one on each leg: dashed -->
+      <g fill="#ffffff" fill-opacity="0.45" stroke="#2f3337" stroke-width="2" stroke-dasharray="7 4">
+        <rect x="335" y="172" width="40" height="96"/>  <!-- zone_west -->
+        <rect x="382" y="50" width="96" height="95"/>   <!-- zone_north -->
+        <rect x="382" y="295" width="96" height="95"/>  <!-- zone_south -->
+        <rect x="505" y="172" width="65" height="96"/>  <!-- zone_east -->
+      </g>
+
+      <!-- the unit, turned 20 degrees toward the street -->
+      <g transform="translate(60,280) rotate(-20)">
+        <rect x="-11" y="-7" width="22" height="14" rx="2" fill="#1b1f24"/>
+        <circle cx="7" cy="0" r="3" fill="#f0e442"/>
+      </g>
+
+      <!-- labels -->
+      <text class="halo" x="60" y="316" text-anchor="middle">unit</text>
+      <text class="zone halo" x="104" y="204">zone_near</text>
+      <text class="zone halo" x="220" y="252" text-anchor="middle">zone_radar</text>
+      <text class="zone halo" x="326" y="204" text-anchor="end">zone_far</text>
+      <path class="lead" d="M215,326 V272"/>
+      <text class="zone halo" x="215" y="341" text-anchor="middle">zone_capture</text>
+      <text class="zone halo" transform="translate(360,220) rotate(-90)" text-anchor="middle">zone_west</text>
+      <text class="zone halo" x="430" y="102" text-anchor="middle">zone_north</text>
+      <text class="zone halo" x="430" y="347" text-anchor="middle">zone_south</text>
+      <text class="zone halo" transform="translate(542,220) rotate(-90)" text-anchor="middle">zone_east</text>
+      <path class="lead" d="M300,124 L292,152"/>
+      <text class="halo" x="296" y="118">radar beam</text>
+      <text class="halo" x="234" y="40" text-anchor="end">camera's view</text>
+
+      <!-- north arrow -->
+      <g transform="translate(540,70)">
+        <path d="M0,-30 L7,-14 H2 V20 H-2 V-14 H-7 Z" fill="#1b1f24"/>
+        <text x="0" y="36" text-anchor="middle" font-weight="700">N</text>
+      </g>
+
+      <!-- key for the dashed zones -->
+      <rect x="16" y="372" width="22" height="14" fill="#ffffff" fill-opacity="0.6" stroke="#2f3337" stroke-width="2" stroke-dasharray="7 4"/>
+      <text x="46" y="384">dashed: optional, one per leg, for turning counts</text>
+    </g>
+    <rect width="576" height="400" rx="8" fill="none" stroke="#8a8f96" stroke-width="1"/>
+  </g>
+
+  <!-- ============ Panel 2: the camera's picture ============ -->
+  <text class="title" x="16" y="482">In the camera's picture</text>
+  <g transform="translate(20,500)">
+    <g clip-path="url(#iz-pic-clip)">
+      <!-- sky and ground; the camera is 4.5 m up, tilted down 12 degrees -->
+      <rect width="560" height="315" fill="#e6e2d6"/>
+      <rect width="560" height="66" fill="#dce8f1"/>
+      <!-- sidewalks, then roads -->
+      <g fill="#d2cdc1">
+        <polygon points="677,939 458,132 421,131 245,704"/>
+        <polygon points="-365,373 288,124 258,123 -430,338"/>
+        <polygon points="454,117 442,71 439,71 425,116"/>
+        <polygon points="320,112 426,71 423,71 296,111"/>
+      </g>
+      <g fill="#a5a5a5">
+        <polygon points="2978,253 1800,166 -255,91 -346,94"/>  <!-- the crossing street -->
+        <polygon points="245,704 421,131 288,124 -365,373"/>   <!-- the counted street -->
+        <polygon points="425,116 439,71 426,71 320,112"/>     <!-- east leg, toward the horizon -->
+      </g>
+      <g stroke="#ffffff" stroke-width="2" stroke-dasharray="14 10">
+        <line x1="-167" y1="481" x2="351" y2="127"/>
+        <line x1="371" y1="114" x2="425" y2="77" stroke-dasharray="5 5"/>
+        <line x1="280" y1="116" x2="-298" y2="92"/>
+        <line x1="456" y1="123" x2="2211" y2="196"/>
+      </g>
+
+      <!-- the four zones -->
+      <polygon points="317,467 402,190 171,169 -186,305" fill="#e69f00" fill-opacity="0.5"/>   <!-- zone_near -->
+      <polygon points="402,190 417,142 264,133 171,169" fill="#56b4e9" fill-opacity="0.55"/>   <!-- zone_far -->
+      <polygon points="391,227 409,167 214,152 108,193" fill="url(#iz-hatch)" stroke="#8a3d6a" stroke-width="2.5"/> <!-- zone_radar -->
+      <polygon points="317,467 417,142 264,133 -186,305" fill="none" stroke="#0072b2" stroke-width="4" stroke-linejoin="round"/> <!-- zone_capture -->
+
+      <!-- extra leg zones, dashed -->
+      <g fill="#ffffff" fill-opacity="0.45" stroke="#2f3337" stroke-width="1.5" stroke-dasharray="5 3" stroke-linejoin="round">
+        <polygon points="417,141 420,131 286,125 267,132"/>  <!-- zone_west -->
+        <polygon points="258,123 296,111 214,108 159,118"/>  <!-- zone_north -->
+        <polygon points="624,140 577,121 454,117 458,132"/>  <!-- zone_south -->
+        <polygon points="426,113 428,107 340,104 326,109"/>  <!-- zone_east -->
+      </g>
+
+      <!-- labels: big zones inside, the small far ones with a leader -->
+      <text class="zone halo" x="150" y="262">zone_near</text>
+      <text class="zone halo" x="282" y="190" text-anchor="middle">zone_radar</text>
+      <text class="zone halo" x="340" y="152" text-anchor="middle">zone_far</text>
+      <path class="lead" d="M70,172 L110,196"/>
+      <text class="zone halo" x="16" y="166">zone_capture</text>
+
+      <path class="lead" d="M150,40 L208,115"/>
+      <text class="zone halo" x="150" y="34" text-anchor="middle">zone_north</text>
+      <path class="lead" d="M330,40 L372,107"/>
+      <text class="zone halo" x="330" y="34" text-anchor="middle">zone_east</text>
+      <path class="lead" d="M505,40 L505,123"/>
+      <text class="zone halo" x="505" y="34" text-anchor="middle">zone_south</text>
+      <path class="lead" d="M470,186 L416,138"/>
+      <text class="zone halo" x="472" y="200">zone_west</text>
+    </g>
+    <rect width="560" height="315" rx="8" fill="none" stroke="#8a8f96" stroke-width="1"/>
+  </g>
+</svg>

@@ -121,6 +121,7 @@ def test_fake_correct_mounting_then_the_file_starts_none(path, fake):
     row = open_rows(fake)[0]
     fake.correct_mounting(row["id"], {
         "heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole",
+        "road_angle_deg": None,
     })
     assert [row[key] for key in FIVE] == [40, 15.0, 3.66, 13.66, "pole"]
     count = len(fake.rows)
@@ -132,10 +133,11 @@ def test_fake_correct_mounting_clears_and_rounds_like_the_flows(fake):
     row = open_rows(fake)[0]
     fake.correct_mounting(row["id"], {
         "heading_deg": 40.0, "pitch_deg": 15.04, "height_m": 3.666, "view_distance_m": 90.04, "mount": None,
+        "road_angle_deg": 20.04,
     })
-    assert [row[key] for key in FIVE] == [40, 15.0, 3.67, 90.04, None]
-    fake.correct_mounting(row["id"], dict.fromkeys(FIVE))
-    assert [row[key] for key in FIVE] == [None] * 5
+    assert [row[key] for key in FIVE] == [40, 15.0, 3.67, 90.04, None] and row["road_angle_deg"] == 20.0
+    fake.correct_mounting(row["id"], dict.fromkeys((*FIVE, "road_angle_deg")))
+    assert [row[key] for key in FIVE] == [None] * 5 and row["road_angle_deg"] is None
 
 
 def test_fake_recorded_follows_the_rows_age(fake):
@@ -155,7 +157,8 @@ def test_fake_recorded_follows_the_rows_age(fake):
     assert raised.value.code == "bad_request"
 
 
-GOOD = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole"}
+GOOD = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m": 13.66, "mount": "pole",
+        "road_angle_deg": 20.0}
 
 
 @pytest.mark.parametrize("key, value", [
@@ -164,6 +167,8 @@ GOOD = {"heading_deg": 40, "pitch_deg": 15.0, "height_m": 3.66, "view_distance_m
     ("height_m", 0), ("height_m", 0.004), ("height_m", 100.01), ("height_m", "3"), ("height_m", False),
     ("view_distance_m", -1), ("view_distance_m", 1000.01), ("view_distance_m", "12"),
     ("mount", "Pole"), ("mount", " pole"), ("mount", ""), ("mount", "a" * 33), ("mount", 5), ("mount", ["pole"]),
+    ("road_angle_deg", 90), ("road_angle_deg", 89.06), ("road_angle_deg", -0.06), ("road_angle_deg", "20"),
+    ("road_angle_deg", True), ("road_angle_deg", [20]),
 ])
 def test_fake_correct_mounting_refuses_what_the_flows_refuse(fake, key, value):
     row = open_rows(fake)[0]
@@ -171,11 +176,13 @@ def test_fake_correct_mounting_refuses_what_the_flows_refuse(fake, key, value):
         fake.correct_mounting(row["id"], {**GOOD, key: value})
     assert (raised.value.code, raised.value.status) == ("bad_request", 400)
     assert [row[key] for key in FIVE] == [0, None, None, None, None]  # nothing was changed
+    assert row["road_angle_deg"] is None
 
 
 def test_fake_correct_mounting_refuses_a_missing_key_a_bad_id_and_a_body_that_is_not_a_mapping(fake):
     row = open_rows(fake)[0]
-    for body in ({key: value for key, value in GOOD.items() if key != "mount"}, None, [], "x"):
+    for body in ({key: value for key, value in GOOD.items() if key != "mount"},
+                 {key: value for key, value in GOOD.items() if key != "road_angle_deg"}, None, [], "x"):
         with pytest.raises(NodeRedError):
             fake.correct_mounting(row["id"], body)
     for deployment_id in ("", "nope", None, 7):
@@ -186,11 +193,27 @@ def test_fake_correct_mounting_refuses_a_missing_key_a_bad_id_and_a_body_that_is
 def test_fake_correct_mounting_accepts_the_limits_themselves(fake):
     row = open_rows(fake)[0]
     for values in (
-        {"heading_deg": 0, "pitch_deg": 0, "height_m": 0.01, "view_distance_m": 0, "mount": "a"},
-        {"heading_deg": 359, "pitch_deg": 90, "height_m": 100, "view_distance_m": 1000, "mount": "a" * 32},
+        {"heading_deg": 0, "pitch_deg": 0, "height_m": 0.01, "view_distance_m": 0, "mount": "a",
+         "road_angle_deg": 0},
+        {"heading_deg": 359, "pitch_deg": 90, "height_m": 100, "view_distance_m": 1000, "mount": "a" * 32,
+         "road_angle_deg": 89},
     ):
         fake.correct_mounting(row["id"], values)
-        assert [row[key] for key in FIVE] == list(values.values())
+        assert [row[key] for key in FIVE] == list(values.values())[:5]
+        assert row["road_angle_deg"] == values["road_angle_deg"]
+
+
+def test_fake_correct_mounting_takes_the_six(fake):
+    """The angle into the road is the sixth key: a body without it is refused, and a row from the engine has one."""
+    row = open_rows(fake)[0]
+    assert row["road_angle_deg"] is None  # the fake's rows carry the key, as the real rows do
+    fake.correct_mounting(row["id"], {**GOOD, "road_angle_deg": 20.04})
+    assert row["road_angle_deg"] == 20.0  # one decimal
+    with pytest.raises(NodeRedError) as raised:
+        fake.correct_mounting(row["id"], {key: value for key, value in GOOD.items() if key != "road_angle_deg"})
+    assert (raised.value.code, raised.value.status) == ("bad_request", 400)
+    assert row["road_angle_deg"] == 20.0
+    assert next(each for each in fake.deployments(SURVEY) if each["id"] == row["id"])["road_angle_deg"] == 20.0
 
 
 def test_the_fake_answers_the_people_check(fake):
