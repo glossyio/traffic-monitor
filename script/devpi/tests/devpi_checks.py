@@ -353,6 +353,83 @@ def ask_frigate_on_pi(host, login, wait=5):
     return cameras
 
 
+PI_FRAME_SIZES = r"""import json, sys, urllib.error, urllib.parse, urllib.request
+
+BASE = "http://127.0.0.1:%s/api" % (sys.argv[1] if len(sys.argv) > 1 else "5000")
+
+def get(url, timeout):
+    # Past Frigate's 5 s cache, as the control app asks
+    request = urllib.request.Request(url, headers={"X-Cache-Bypass": "1"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as answer:
+            return answer.status, answer.headers, answer.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.headers, error.read()
+    except Exception:
+        return 0, {}, b""
+
+def size_of(body):
+    # The size is in the first frame header (SOF0-SOF15, except DHT 0xC4, JPG 0xC8, and DAC 0xCC)
+    if body[:2] != b"\xff\xd8":
+        return None
+    at = 2
+    while at + 4 <= len(body):
+        if body[at] != 0xFF:
+            return None
+        marker = body[at + 1]
+        if marker == 0xFF:
+            at += 1
+            continue
+        if marker in (0x01, 0xD8) or 0xD0 <= marker <= 0xD7:
+            at += 2
+            continue
+        if marker == 0xD9:
+            return None
+        length = int.from_bytes(body[at + 2:at + 4], "big")
+        if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+            if at + 9 > len(body):
+                return None
+            return [int.from_bytes(body[at + 7:at + 9], "big"), int.from_bytes(body[at + 5:at + 7], "big")]
+        at += 2 + length
+    return None
+
+def frame(name, query):
+    url = BASE + "/" + urllib.parse.quote(name, safe="") + "/latest.jpg?" + query
+    status, headers, body = get(url, 10)
+    return {"status": status, "type": headers.get("Content-Type", ""), "bytes": len(body), "size": size_of(body),
+            "offline": headers.get("X-Frigate-Offline", "").lower() == "true"}
+
+status, _, body = get(BASE + "/config", 20)
+cameras = json.loads(body)["cameras"]
+out = []
+for name, camera in cameras.items():
+    detect = camera.get("detect") or {}
+    out.append({"detect": [detect.get("width"), detect.get("height")],
+                "clean": frame(name, "quality=95"), "zones": frame(name, "quality=95&zones=1")})
+print(json.dumps(out))
+"""
+
+
+def frame_sizes_on_pi(host):
+    """Measure the two frames Frigate gives for each camera (the control app's reference picture asks for the same two:
+    latest.jpg at quality 95, plain and with zones=1), on the Pi, into memory. Returns one dict for each camera in the
+    config's order: {"detect": [w, h], "clean": {...}, "zones": {...}}, each answer with status, type, bytes, size (from
+    the JPEG's frame header, or None) and offline. No camera name and no byte of a picture comes back, and nothing is
+    written on the Pi. Raises with numbers only."""
+    result = host.run(f"python3 -c {shlex.quote(PI_FRAME_SIZES)} 5000")
+    stdout, stderr, rc = result.stdout, result.stderr, result.rc
+    del result
+    try:
+        frames = json.loads(stdout.strip())
+        if not isinstance(frames, list):
+            raise ValueError
+    except ValueError:
+        # The last line's exception class only: its text could carry a URL, and a URL holds a camera's name
+        last = (stderr.strip().splitlines() or ["no output"])[-1].split(":")[0][:80]
+        raise AssertionError(f"measuring Frigate's frames failed with exit {rc}: {last}") from None
+    return frames
+
+
 PODMAN_EVENT_FIELDS = ("_CMDLINE", "_SYSTEMD_UNIT", "_PID")
 
 

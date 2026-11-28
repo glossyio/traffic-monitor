@@ -3,8 +3,8 @@
 import re
 
 import pytest
-from devpi_checks import (ask_frigate_on_pi, broker_login, find_hevc_decoder, frigate_host_devices, pi_json,
-                          require_pii_free, role_vars)
+from devpi_checks import (ask_frigate_on_pi, broker_login, find_hevc_decoder, frame_sizes_on_pi, frigate_host_devices,
+                          pi_json, require_pii_free, role_vars)
 
 HEVC_SYMLINK = role_vars()["tmsetup_hevc_device"]
 # Kernel names of the V4L2 sub-devices, sensors among them (e.g. imx708_wide). Readable without
@@ -117,3 +117,34 @@ def test_frigate_answers_on_connect(host, expect, codedir, cameras, frigate_conf
     assert missing == 0, f"{missing} of {len(configured)} cameras in Frigate's config are not in its answer"
     assert no_boolean == 0, f"{no_boolean} cameras in the answer have no boolean detect"
     assert off_with_objects == 0, f"{off_with_objects} cameras with detection off list objects"
+
+
+def test_reference_frames_are_whole_jpegs_at_the_detect_size(host, cameras, frigate_config, frigate_stats):
+    """For each camera that is on and sending, Frigate's two reference frames (latest.jpg at quality 95, plain and with
+    the zones' outlines) are 200 image/jpeg, not an older frame, and at the camera's detect size. Prints each camera's
+    four numbers (the two byte counts, the width, the height), one line each, to size the kept pictures' ceiling; run
+    with -s. Reads sizes and headers only: no picture is kept, opened, or described, and no camera name is printed."""
+    configured = frigate_config.get("cameras", {})
+    stats = frigate_stats.get("cameras", {})
+    frames = frame_sizes_on_pi(host)
+    assert len(frames) == len(configured), f"Frigate's config lists {len(configured)} cameras, the frames {len(frames)}"
+    problems = []
+    measured = 0
+    for number, (name, frame) in enumerate(zip(configured, frames), start=1):
+        if not configured[name].get("enabled", True) or not (stats.get(name) or {}).get("camera_fps", 0) > 0:
+            print(f"camera {number}: skipped (off or not sending)")
+            continue  # Frigate has no current frame to send
+        measured += 1
+        detect = frame["detect"]
+        for kind in ("clean", "zones"):
+            answer = frame[kind]
+            if answer["status"] != 200 or not answer["type"].startswith("image/jpeg"):
+                problems.append(f"camera {number}: {kind} answered {answer['status']} {answer['type'] or 'with no type'}")
+            elif answer["offline"]:
+                problems.append(f"camera {number}: {kind} is an older frame")
+            elif answer["size"] != detect:
+                problems.append(f"camera {number}: {kind} is {answer['size']}, the detect size is {detect}")
+        print(f"camera {number}: clean {frame['clean']['bytes']} bytes, zones {frame['zones']['bytes']} bytes, "
+              f"{detect[0]}x{detect[1]}")
+    assert measured, "no camera is on and sending, so there is no frame to measure"
+    assert not problems, "; ".join(problems)
