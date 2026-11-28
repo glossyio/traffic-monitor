@@ -1296,6 +1296,33 @@ def test_tm_internal_status_has_each_radars_answers(host, expect):
     assert not problems, "Node-RED's radar answers: " + "; ".join(problems)
 
 
+# The eight facts a deployment row records about where a radar points and what the street looks like (migration 0014).
+# Node-RED's list of a place's deployments carries all of them, empty (null) where nothing was recorded.
+DEPLOYMENT_AIM_KEYS = ["road_angle_deg", "lane_distance_m", "lane_width_m", "lanes_toward", "lanes_away", "turn_lane",
+                       "toward_side", "intersection"]
+
+
+def test_the_open_deployments_carry_the_aim_keys(host, expect, node_red_config):
+    """With the token, Node-RED's list of the place in use's deployments (GET /tm-internal/deployments?survey_id=)
+    gives every open row the eight aim keys, null or not. Only the key names are checked, so no value, coordinate, or
+    place id is printed or kept."""
+    require_pii_free(expect, "a device secret and config.yml")
+    survey_id = str((node_red_config.get("deployment") or {}).get("survey_id") or "").lower()
+    if not re.fullmatch(r"[0-9a-f]{8}-si", survey_id):
+        pytest.skip("config.yml names no place in use (deployment.survey_id)")
+    status, body = tm_internal_answer(host, tm_internal_token(host),
+                                      f"http://127.0.0.1:1880/tm-internal/deployments?survey_id={survey_id}")
+    rows = body.get("deployments") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, GET /tm-internal/deployments?survey_id= answered {status}"
+    assert isinstance(rows, list), f"the deployments answer has no list (it is {type(rows).__name__})"
+    open_rows = [row for row in rows if isinstance(row, dict) and row.get("entryEndDateTime") is None]
+    if not open_rows:
+        pytest.skip("the place in use has no open deployment row")
+    missing = sorted({key for row in open_rows for key in DEPLOYMENT_AIM_KEYS if key not in row})
+    assert not missing, f"an open deployment row lacks the keys {missing}"
+
+
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body
 # holds no coordinate (an empty body on the copy's route, which would refuse it), so a request that got past the token
 # check would change nothing.
