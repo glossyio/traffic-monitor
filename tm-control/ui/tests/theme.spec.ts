@@ -24,6 +24,16 @@ describe('buildTheme', () => {
     expect(contrast(colors.error!, colors['on-error']!)).toBeGreaterThanOrEqual(4.5)
   })
 
+  it('gives a solid warning, such as the reference picture\'s "tracking a person" line, text that passes WCAG AA', () => {
+    // White on Vuetify's orange is about 2.4:1; the navy is about 7.9:1
+    const colors = buildTheme(undefined).colors!
+    expect(colors.warning).toBe('#FB8C00')
+    expect(colors['on-warning']).toBe('#0C1120')
+    expect(contrast(colors.warning!, colors['on-warning']!)).toBeGreaterThanOrEqual(4.5)
+    const light = buildTheme({ background: '#ffffff', header_text: '#1a237e', body_text: '#111111' })
+    expect(light.colors!['on-warning']).toBe('#111111')
+  })
+
   it('ignores a color that is not #rrggbb', () => {
     expect(buildTheme({ header_text: 'red; background: url(x)' }).colors!.primary).toBe('#3a82ff')
   })

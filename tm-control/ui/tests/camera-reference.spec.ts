@@ -1,7 +1,7 @@
 // The reference picture's rules on the Cameras page: which rows offer it, the pictures' addresses, and the legend.
 // Pure functions of the API's answers.
 import { describe, expect, it } from 'vitest'
-import { canTake, legendRows, pictureUrl } from '../src/modules/cameras/reference'
+import { canTake, legendRows, peopleLine, pictureUrl } from '../src/modules/cameras/reference'
 import { cameraRow, newRow, referenceOut, zoneFacts } from './fake-api'
 
 describe('canTake', () => {
@@ -48,5 +48,34 @@ describe('legendRows', () => {
   it('says a zone that is off is off, even with side lengths', () => {
     const off = zoneFacts({ enabled: false, drawn: false })
     expect(legendRows(referenceOut({ zones: [off] }))[0].detail).toBe('off in Frigate, not drawn')
+  })
+})
+
+describe('peopleLine', () => {
+  it('warns, in a solid alert, when Frigate was tracking a person', () => {
+    expect(peopleLine('seen')).toEqual({
+      type: 'warning',
+      variant: 'flat',
+      text:
+        'Frigate was tracking a person on this camera when the pictures were taken. Wait until nobody is in view, ' +
+        'then take them again.',
+    })
+  })
+
+  it("informs, in a tonal alert, when Frigate wasn't tracking a person, and when the device couldn't check", () => {
+    expect(peopleLine('none')).toEqual({
+      type: 'info',
+      variant: 'tonal',
+      text:
+        "Frigate wasn't tracking a person when the pictures were taken. It can miss people, so look at both " +
+        'pictures yourself.',
+    })
+    expect(peopleLine('unchecked')).toEqual({
+      type: 'info',
+      variant: 'tonal',
+      text:
+        "The device couldn't check for people, because Frigate's detection is off for this camera or Frigate " +
+        "didn't answer. Look at both pictures yourself.",
+    })
   })
 })

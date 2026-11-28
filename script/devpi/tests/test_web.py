@@ -951,6 +951,7 @@ def test_cameras_page_agrees_with_the_status_check(address, admin_session):
 
 
 JPEG_START = b"\xff\xd8\xff"
+PEOPLE_RESULTS = ("seen", "none", "unchecked")  # the take's `people`
 
 
 def test_a_reference_picture_is_a_zip_of_four_files(address, admin_session, expect):
@@ -975,6 +976,7 @@ def test_a_reference_picture_is_a_zip_of_four_files(address, admin_session, expe
     assert isinstance(found, dict), f"POST {base} answered HTTP {taken.status}"
     held = f"{base}/{found['ticket']}"
     try:
+        assert found.get("people") in PEOPLE_RESULTS, f"the take's people is not one of {PEOPLE_RESULTS}"
         for picture in ("clean.jpg", "zones.jpg"):
             shown = request_from_this_machine(address, f"{held}/{picture}", cookie=admin_session)
             facts = (shown.status, shown.headers.get("Content-Type"), shown.headers.get("Cache-Control"),
@@ -997,6 +999,17 @@ def test_a_reference_picture_is_a_zip_of_four_files(address, admin_session, expe
         names_frigates_camera = frigate_name != key and frigate_name in text
         del text
         assert not names_frigates_camera, f"{key}'s data file holds Frigate's name for the camera"
+        # Version 2's `objects`: its four keys; only the counts and the booleans are kept, never a label
+        objects = data.get("objects")
+        found_keys = sorted(objects) if isinstance(objects, dict) else None
+        assert (data.get("format_version"), found_keys) == (2, ["after", "before", "checked", "person"]), (
+            f"the data file: format_version {data.get('format_version')}, objects' keys {found_keys}")
+        if rows[0].get("detect") is False:
+            # (people, before is null, after is null, checked, person): booleans and a word, never a list
+            facts = (found["people"], objects["before"] is None, objects["after"] is None, objects["checked"],
+                     objects["person"])
+            assert facts == ("unchecked", True, True, False, None), (
+                f"detection is off for the camera: (people, before is null, after is null, checked, person) {facts}")
     finally:
         dropped = request_from_this_machine(address, held, "DELETE", admin_session)
     assert dropped.status == 204, f"DELETE {base}/<ticket> answered HTTP {dropped.status}"
@@ -1195,7 +1208,8 @@ def test_a_viewer_cannot_read_the_hotspot_password(address, viewer_session):
     assert "password" not in (answer.json() or {}), "a viewer's refusal has a password key"
 
 
-@pytest.mark.parametrize("path", ["/nr/tm-internal/status", "/nr/tm-internal", "/nr/TM-Internal/status"])
+@pytest.mark.parametrize("path", ["/nr/tm-internal/status", "/nr/tm-internal", "/nr/TM-Internal/status",
+                                  "/nr/tm-internal/cameras/x/objects"])
 def test_tm_internal_is_hidden_behind_the_proxy(address, admin_session, path):
     """Node-RED's internal status endpoint is for tm-control on the Pi only: nginx itself answers 404 for it, even to
     the admin, whose requests to /nr/ carry the editor token."""
@@ -1257,6 +1271,76 @@ def test_tm_internal_status_has_the_upload_section(host, expect):
     if upload["last_failure"] not in (None, "unreachable", "refused", "rejected", "server_error"):
         problems.append("last_failure is none of null, unreachable, refused, rejected, server_error")
     assert not problems, "Node-RED's upload section: " + "; ".join(problems)
+
+
+OBJECTS_URL = "http://127.0.0.1:1880/tm-internal/cameras/{key}/objects"
+
+
+def camera_keys(node_red_config):
+    """The keys under sensors.cameras in config.yml, with each entry's Frigate camera (its frigate_camera, else the
+    key)."""
+    entries = ((node_red_config or {}).get("sensors") or {}).get("cameras") or {}
+    return [(key, (entry or {}).get("frigate_camera") or key) for key, entry in entries.items()]
+
+
+def test_tm_internal_objects_needs_the_token_on_the_pi(host, expect, node_red_config):
+    """On the Pi, the people check's question (what Frigate is tracking on a camera) answers 401 without the token or
+    with a wrong one, for the first sensors.cameras key. Nothing is published to Frigate: the token is checked first.
+    A failure names the two statuses only."""
+    require_pii_free(expect)
+    keys = camera_keys(node_red_config)
+    if not keys:
+        pytest.skip("no entry under sensors.cameras")
+    url = OBJECTS_URL.format(key=urllib.parse.quote(keys[0][0], safe=""))
+    refused = (tm_internal_answer(host, url=url)[0], tm_internal_answer(host, "tmdev-wrong-token", url)[0])
+    assert refused == ("401", "401"), f"without a token and with a wrong one, the objects route answered {refused}"
+
+
+def test_tm_internal_objects_answers_for_each_camera(host, expect, node_red_config, frigate_config):
+    """On a pii_free Pi with the token: an unknown key answers 404; each sensors.cameras key whose camera is in Frigate
+    answers 200 with answered true; where Frigate's config has detection off (or the camera off) for it, objects is
+    null, and where detection is on, objects is a list whose elements have the keys label and stationary and no
+    others. Asking publishes frigate/onConnect on the broker and changes nothing in Frigate.
+
+    Nothing from an answer is kept but statuses, booleans, and the list's length: a failure names the camera by its
+    position and says which of those was wrong, never its key, Frigate's name for it, or an object."""
+    require_pii_free(expect)
+    keys = camera_keys(node_red_config)
+    if not keys:
+        pytest.skip("no entry under sensors.cameras")
+    token = tm_internal_token(host)
+    status, body = tm_internal_answer(host, token, OBJECTS_URL.format(key="tmdev-no-such-camera"))
+    unknown = (status, body.get("error") if isinstance(body, dict) else None)
+    assert unknown == ("404", "unknown_camera"), f"an unknown key answered (status, error) {unknown}"
+    in_frigate = frigate_config.get("cameras") or {}
+    problems = []
+    checked = 0
+    for position, (key, frigate_name) in enumerate(keys):
+        camera = in_frigate.get(frigate_name)
+        if not isinstance(camera, dict):
+            continue
+        checked += 1
+        status, body = tm_internal_answer(host, token, OBJECTS_URL.format(key=urllib.parse.quote(key, safe="")))
+        answered = body.get("answered") if isinstance(body, dict) else None
+        objects = body.get("objects") if isinstance(body, dict) else None
+        del body
+        if status != "200" or answered is not True:
+            problems.append(f"camera {position}: status {status}, answered {answered}")
+            continue
+        detecting = (camera.get("detect") or {}).get("enabled") is True and camera.get("enabled") is not False
+        if not detecting:
+            if objects is not None:
+                problems.append(f"camera {position}: detection is off, but objects is a {type(objects).__name__}")
+        elif not isinstance(objects, list):
+            problems.append(f"camera {position}: detection is on, but objects is {type(objects).__name__}")
+        else:
+            shapes = sum(1 for one in objects if not isinstance(one, dict) or sorted(one) != ["label", "stationary"])
+            if shapes:
+                problems.append(f"camera {position}: {shapes} of {len(objects)} objects lack exactly label and stationary")
+        del objects
+    if not checked:
+        pytest.skip("no sensors.cameras entry whose camera is in Frigate")
+    assert len(problems) == 0, "the objects route: " + "; ".join(problems)
 
 
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body

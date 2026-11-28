@@ -2387,6 +2387,11 @@ export interface components {
             zones: components["schemas"]["ZoneFacts"][];
             /** Has Location */
             has_location: boolean;
+            /**
+             * People
+             * @enum {string}
+             */
+            people: "seen" | "none" | "unchecked";
         };
         /** Report */
         Report: {

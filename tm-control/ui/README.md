@@ -31,6 +31,10 @@ PYTHONPATH=tm-control/backend python -m tm_control dump-openapi > tm-control/ui/
 cd tm-control/ui && npm run api:generate
 ```
 
+In fake mode the fake Frigate tracks a car, so a reference picture's people check says nobody was tracked; start the
+backend with `TM_CONTROL_FAKE_PERSON=1` to have it track a person too, and turn a camera's detection off on the Cameras
+page to reach the line that says the device couldn't check.
+
 To try the home button that nginx adds to each app's page, open `http://localhost:5173/home-button-demo.html` while
 `npm run dev` runs. It's a stand-in app page with the button on it; add `?app=nr` (or `dashboard`, `ui`, `feeds`) to
 try another app's spot. Drag it to either side, drop it at an edge to tuck it, and reload to see that it stays where
@@ -129,15 +133,26 @@ from an existing lockfile without trouble, so the image still builds and tests t
   (`canTake` in `reference.ts`, which also holds the pictures' addresses and the legend's rows). It
   opens `ReferencePicture.vue`, one dialog the page keeps, in two steps. The first has the intro and the note on what
   the picture gives away, and only Take the pictures: the note comes before any picture, because what it asks (make
-  sure nobody is in either picture, which the device doesn't check and the admin answers for; share them as you would
-  the exact location) is decided before the take, not after, and it stays above the pictures on the second step. The
-  second shows the two pictures side by side on a desktop and stacked on a phone (`v-col cols="12" md="6"`), the
+  sure nobody is in either picture, which the admin answers for; share them as you would the exact location) is
+  decided before the take, not after, and it stays above the pictures on the second step. The device asks Frigate
+  whether it is tracking a person on the camera when the pictures are taken, so the note says what that check can and
+  can't promise. The second step opens with one line, between the note and the pictures, because it is about these
+  pictures and is read before them (`peopleLine` in `reference.ts`, an alert marked `data-people`): a warning when
+  Frigate was tracking a person, and plain information for the other two, "Frigate wasn't tracking a person" and "the
+  device couldn't check", because neither of them is a finding. The `seen` warning is solid (`variant="flat"`), so it
+  doesn't read as part of the note above it, which is a tonal warning. Its text is the navy, not white (`on-warning`
+  in `theme.ts`; see Color below). The line never disables a button: Save the zip and
+  Take again work the same for all three, because the admin answers for the pictures. It follows the newest take and
+  goes with the pictures when they are dropped. Below it the second step shows the two pictures side by side on a
+  desktop and stacked on a phone (`v-col cols="12" md="6"`), the
   zones' legend with a `v-sheet` swatch in each zone's colour, the location box, and Save the zip, Take again, and
   Close. The pictures are plain `<img>` elements pointing at the device: the session cookie authorizes them, and the
   page keeps no copy of them, so nothing is left once the dialog closes; closing it, or taking again, tells the device
   to drop them. A picture that fails to load, or a 404 from Save, means
   the device no longer holds them, so the dialog goes back to its first step and says so rather than showing a broken
-  picture with a working Save button.
+  picture with a working Save button. In fake mode the three lines are reached without changing code: the line for
+  "wasn't tracking" is the default, `TM_CONTROL_FAKE_PERSON=1` gives the warning, and a camera whose detection switch
+  on the Cameras page is off gives the "couldn't check" line.
 - `src/components/` holds what several pages share: the device card, the confirmation dialog, the list of checks and
   their status marks (`status.ts`), "20 seconds ago" in words (`relative-time.ts`), waiting for a root job
   (`jobs.ts`, used by setup's system password and the entered secrets), one entered secret's form
@@ -194,7 +209,9 @@ the red about 3.5:1, so filled buttons use the navy as their text color (5.2:1 o
 of the background and body text colors reads better on each button color, so a device with other colors keeps
 readable buttons. Warning, info, and success colors stay Vuetify's dark-theme defaults. They appear only as alert
 text and as the status marks on the Status page, which against the navy are 5.2:1 (error) to 7.9:1 (warning); the
-alert's faint tint lowers that a little.
+alert's faint tint lowers that a little. The one solid warning, the reference picture's "tracking a person" line,
+turns that around: its text is the navy on the orange (7.9:1), chosen by `theme.ts` the same way as a button's,
+because white on the orange would be about 2.4:1.
 
 ### Type
 

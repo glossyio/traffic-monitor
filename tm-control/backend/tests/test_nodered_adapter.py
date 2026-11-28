@@ -20,14 +20,16 @@ BASE = "http://127.0.0.1:1880/tm-internal"
 def wire(monkeypatch):
     """Record every request and answer the canned (status, body) set in wire.answer."""
     calls = []
-    state = SimpleNamespace(answer=(200, b"{}"), calls=calls)
+    state = SimpleNamespace(answer=(200, b"{}"), calls=calls, timeouts=[])
 
     def get(url, headers=None, timeout=None):
         calls.append(("GET", url, dict(headers or {}), None, None))
+        state.timeouts.append(timeout)
         return state.answer
 
     def post(url, body, content_type, headers=None, timeout=None):
         calls.append(("POST", url, dict(headers or {}), body, content_type))
+        state.timeouts.append(timeout)
         return state.answer
 
     monkeypatch.setattr(httpjson, "get", get)
@@ -265,3 +267,47 @@ def test_post_setup_raises_on_a_503(wire):
     with pytest.raises(NodeRedError) as raised:
         NodeRed(TOKEN).post_setup({"complete": False})
     assert (raised.value.code, raised.value.status) == ("unexpected", 503)
+
+
+# What Frigate is tracking on a camera
+
+
+def test_tracked_asks_by_the_key_and_keeps_two_fields(wire):
+    wire.answer = answer({"answered": True, "objects": [{"label": "car", "stationary": True, "score": 0.9}]})
+    assert NodeRed(TOKEN).tracked("camera 1/a") == [{"label": "car", "stationary": True}]
+    [(method, url, headers, sent, _)] = wire.calls
+    assert (method, sent) == ("GET", None)
+    assert url == f"{BASE}/cameras/camera%201%2Fa/objects"
+    assert headers == {"X-TM-Internal-Token": TOKEN}
+    assert wire.timeouts == [5] and nodered.OBJECTS_TIMEOUT == 5.0
+
+
+@pytest.mark.parametrize("body", [{"answered": True, "objects": None}, {"answered": False, "objects": None}])
+def test_tracked_is_none_without_a_list(wire, body):
+    wire.answer = answer(body)
+    assert NodeRed(TOKEN).tracked("cam") is None
+
+
+@pytest.mark.parametrize("body", [
+    [],
+    {},
+    {"answered": "yes", "objects": []},
+    {"answered": True, "objects": {}},
+    {"answered": True, "objects": [{"stationary": True}]},
+    {"answered": True, "objects": [{"label": 5, "stationary": True}]},
+    {"answered": True, "objects": [{"label": "car", "stationary": "true"}]},
+    {"answered": True, "objects": ["car"]},
+])
+def test_tracked_refuses_another_shape(wire, body):
+    wire.answer = answer(body)
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).tracked("cam")
+    assert raised.value.code == "unexpected"
+
+
+@pytest.mark.parametrize("status, body, code", [(401, b"{}", "refused"), (404, b"{}", "unexpected"), (None, None, "unreachable")])
+def test_tracked_raises_when_node_red_refuses_or_is_silent(wire, status, body, code):
+    wire.answer = (status, body)
+    with pytest.raises(NodeRedError) as raised:
+        NodeRed(TOKEN).tracked("cam")
+    assert raised.value.code == code

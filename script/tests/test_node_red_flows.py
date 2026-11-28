@@ -1850,14 +1850,14 @@ TM_INTERNAL_PATHS = {"/tm-internal/status", "/tm-internal/deployments", "/tm-int
                      "/tm-internal/surveys/:id/location", "/tm-internal/deployments/:id/heading",
                      "/tm-internal/deployments/:id/mounting", "/tm-internal/surveys/:id/recorded",
                      "/tm-internal/surveys/:id/timezone", "/tm-internal/database/exact-copy",
-                     "/tm-internal/setup"}
+                     "/tm-internal/setup", "/tm-internal/cameras/:key/objects"}
 TM_INTERNAL_METHODS = {"/tm-internal/status": "get", "/tm-internal/deployments": "get",
                        "/tm-internal/surveys/usage": "get", "/tm-internal/surveys/:id/events": "get",
                        "/tm-internal/deployments/precision": "post",
                        "/tm-internal/surveys/:id/location": "post", "/tm-internal/deployments/:id/heading": "post",
                        "/tm-internal/deployments/:id/mounting": "post", "/tm-internal/surveys/:id/recorded": "get",
                        "/tm-internal/surveys/:id/timezone": "post", "/tm-internal/database/exact-copy": "post",
-                       "/tm-internal/setup": "post"}
+                       "/tm-internal/setup": "post", "/tm-internal/cameras/:key/objects": "get"}
 RECORDED_SQL = (
     "SELECT d.id AS id, CASE d.sensorType WHEN 'cameras' THEN EXISTS (SELECT 1 FROM events WHERE deployment_id = d.id) "
     "WHEN 'radars' THEN EXISTS (SELECT 1 FROM radar_dov WHERE time >= d.entryStartDateTime / 1000.0 - 86400 "
@@ -1894,9 +1894,10 @@ VALIDATORS = {"/tm-internal/deployments": "tm-internal: validate survey query",
               "/tm-internal/surveys/:id/events": "tm-internal: validate survey path",
               "/tm-internal/deployments/precision": "tm-internal: validate precision",
               "/tm-internal/database/exact-copy": "tm-internal: validate exact copy",
-              "/tm-internal/setup": "tm-internal: validate setup"}
+              "/tm-internal/setup": "tm-internal: validate setup",
+              "/tm-internal/cameras/:key/objects": "tm-internal: validate objects path"}
 # A refusal's status: the response node's own, or "" where the validator sets msg.statusCode (setup answers 400 or 503)
-REFUSAL_STATUS = {"/tm-internal/setup": ""}
+REFUSAL_STATUS = {"/tm-internal/setup": "", "/tm-internal/cameras/:key/objects": "404"}
 
 
 def tm_internal_endpoints():
@@ -1993,7 +1994,8 @@ def test_precision_rewrite_uses_two_statements():
 def test_survey_endpoints_sit_with_the_status_endpoint():
     flows, by_id, endpoints = tm_internal_endpoints()
     status_group = by_id[endpoints["/tm-internal/status"]["g"]]
-    for urls in (TM_INTERNAL_PATHS - {"/tm-internal/status", "/tm-internal/setup"}, {"/tm-internal/setup"}):
+    own_groups = {"/tm-internal/setup", OBJECTS_URL}
+    for urls in (TM_INTERNAL_PATHS - {"/tm-internal/status"} - own_groups, *({url} for url in sorted(own_groups))):
         new = reachable(by_id, [endpoints[url]["id"] for url in urls])
         groups = {node["g"] for node in new}
         assert len(groups) == 1
@@ -2001,6 +2003,7 @@ def test_survey_endpoints_sit_with_the_status_endpoint():
         assert by_id[group_id]["g"] == status_group["id"] and group_id in status_group["nodes"]
         assert set(by_id[group_id]["nodes"]) >= {node["id"] for node in new}
     assert by_id[endpoints["/tm-internal/setup"]["g"]]["name"] == "tm-control setup history: POST /tm-internal/setup"
+    assert by_id[endpoints[OBJECTS_URL]["g"]]["name"] == OBJECTS_GROUP
 
 
 SURVEY_ID = "3f9a1c2e-si"
@@ -2150,6 +2153,243 @@ def test_tm_internal_correction_endpoints_exist():
         assert endpoints[url]["method"] == "post", url
         [[check_id]] = endpoints[url]["wires"]
         assert by_id[check_id]["name"] == "tm-internal: check token", url
+
+
+# GET /tm-internal/cameras/:key/objects: tm-control's people check asks Node-RED what Frigate is tracking on one
+# camera. Node-RED publishes frigate/onConnect, Frigate answers on frigate/camera_activity, and only each object's
+# label and stationary leave Node-RED. A question Frigate leaves unanswered is answered after 3 seconds.
+
+OBJECTS_URL = "/tm-internal/cameras/:key/objects"
+OBJECTS_GROUP = "tm-control people check: GET /tm-internal/cameras/:key/objects"
+STATUS_GROUP = "d9d94c0d493873b9"
+BROKER = "a5d65dd0e3566daa"
+OBJECTS_FUNCTIONS = ("tm-internal: validate objects path", "tm-internal: start objects ask",
+                     "tm-internal: answer objects asks")
+OBJECTS_CAMERAS = {"picam_h265": "camera_1_3fa9c2"}
+OBJECT_ID = "1764000000.123456-k3x9q2"
+TRACKED_PERSON = {"id": OBJECT_ID, "label": "person", "stationary": True, "area": 5120, "ratio": 0.42, "score": 0.87,
+                  "sub_label": "A Name", "current_zones": ["zone_capture"]}
+DETECTING = {"detect": True, "enabled": True, "snapshots": False, "record": False}
+NO_LIST = {"answered": True, "objects": None}
+
+
+def objects_functions():
+    flows = json.loads(FLOWS.read_text())
+    return tuple(named(flows, name) for name in OBJECTS_FUNCTIONS)
+
+
+def objects_request(key):
+    """The message http in hands on, after the token check and the validator."""
+    return {"req": {"params": {"key": key}, "headers": {}}, "res": {"held": key}, "payload": {}, "cameraKey": key}
+
+
+def camera_activity(cameras):
+    return {"topic": "frigate/camera_activity", "payload": cameras}
+
+
+def camera_entry(objects, config=DETECTING):
+    return {"motion": False, "objects": objects, "config": config}
+
+
+def ask_and_answer(answer_msg, cameras=OBJECTS_CAMERAS):
+    """One question for camera_1_3fa9c2, then one message to the answering function; returns the answer's step."""
+    _, start, answer = objects_functions()
+    run = run_functions([(start, objects_request("camera_1_3fa9c2")), (answer, answer_msg)],
+                        context={"frigate_cameras": cameras}, flow={})
+    assert [step["logged"] for step in run["results"]] == [[], []]
+    assert run["flow"]["objects_asks"] == {}
+    return run["results"][1]
+
+
+def the_reply(step):
+    [[reply]] = step["result"]
+    assert reply["statusCode"] == 200
+    return reply
+
+
+def test_the_objects_route_is_wired():
+    flows, by_id, endpoints = tm_internal_endpoints()
+    endpoint = endpoints[OBJECTS_URL]
+    assert endpoint["method"] == "get"
+    [[check_id]] = endpoint["wires"]
+    check = by_id[check_id]
+    assert (check["type"], check["name"], check["outputs"]) == ("function", "tm-internal: check token", 2)
+    assert check["func"] == by_id[STATUS_TOKEN_CHECK]["func"]
+    [[validate_id], [refused_id]] = check["wires"]
+    assert (by_id[refused_id]["type"], by_id[refused_id]["statusCode"]) == ("http response", "401")
+    validate = by_id[validate_id]
+    assert (validate["type"], validate["name"], validate["outputs"]) == ("function", OBJECTS_FUNCTIONS[0], 2)
+    [[start_id], [unknown_id]] = validate["wires"]
+    assert (by_id[unknown_id]["type"], by_id[unknown_id]["statusCode"]) == ("http response", "404")
+    start = by_id[start_id]
+    assert (start["type"], start["name"], start["outputs"]) == ("function", OBJECTS_FUNCTIONS[1], 2)
+    [[publish_id], [timer_id]] = start["wires"]
+    publish = by_id[publish_id]
+    assert (publish["type"], publish["name"], publish["topic"], publish["qos"], publish["retain"], publish["broker"]) \
+        == ("mqtt out", "ask frigate what it is tracking", "frigate/onConnect", "0", "false", BROKER)
+    timer = by_id[timer_id]
+    assert (timer["type"], timer["name"], timer["pauseType"], timer["timeout"], timer["timeoutUnits"]) \
+        == ("delay", "no answer after 3 s", "delay", "3", "seconds")
+    [[answer_id]] = timer["wires"]
+    [listen] = [node for node in flows if node["type"] == "mqtt in" and node["topic"] == "frigate/camera_activity"]
+    assert (listen["qos"], listen["datatype"], listen["broker"]) == ("0", "auto-detect", BROKER)
+    assert listen["wires"] == [[answer_id]]
+    answer = by_id[answer_id]
+    assert (answer["type"], answer["name"], answer["outputs"]) == ("function", OBJECTS_FUNCTIONS[2], 1)
+    [[response_id]] = answer["wires"]
+    assert (by_id[response_id]["type"], by_id[response_id]["statusCode"]) == ("http response", "")
+    route = [endpoint["id"], check_id, refused_id, validate_id, unknown_id, start_id, publish_id, timer_id,
+             listen["id"], answer_id, response_id]
+    group = by_id[endpoint["g"]]
+    assert (group["type"], group["name"], group["g"], group["z"]) == ("group", OBJECTS_GROUP, STATUS_GROUP,
+                                                                      tab_id(flows, "init-config"))
+    assert sorted(group["nodes"]) == sorted(route)
+    assert group["id"] in by_id[STATUS_GROUP]["nodes"]
+    for node_id in route:
+        assert (by_id[node_id]["z"], by_id[node_id]["g"]) == (tab_id(flows, "init-config"), group["id"]), node_id
+    # The new group sits inside the status group, below the setup history group
+    status, setup = by_id[STATUS_GROUP], by_id[endpoints["/tm-internal/setup"]["g"]]
+    assert group["y"] > setup["y"] + setup["h"]
+    assert status["y"] + status["h"] > group["y"] + group["h"] and status["x"] < group["x"]
+    assert group["x"] + group["w"] < status["x"] + status["w"]
+
+
+@needs_node
+@pytest.mark.parametrize("key, cameras, known", [
+    ("camera_1_3fa9c2", OBJECTS_CAMERAS, True),
+    ("picam_h265", OBJECTS_CAMERAS, False),
+    ("", OBJECTS_CAMERAS, False),
+    (None, OBJECTS_CAMERAS, False),
+    ("__proto__", OBJECTS_CAMERAS, False),
+    ("camera_1_3fa9c2", None, False),
+    ("camera_1_3fa9c2", ["camera_1_3fa9c2"], False),
+], ids=["key", "frigate-name", "empty", "missing", "proto", "global-unset", "global-a-list"])
+def test_objects_validator(key, cameras, known):
+    validate, _, _ = objects_functions()
+    msg = {"req": {"params": {} if key is None else {"key": key}, "headers": {}}}
+    [step] = run_functions([(validate, msg)], context={} if cameras is None else {"frigate_cameras": cameras})["results"]
+    assert step["logged"] == []
+    passed, refused = step["result"]
+    if known:
+        assert refused is None and passed["cameraKey"] == key
+    else:
+        assert passed is None and refused["payload"] == {"error": "unknown_camera"}
+
+
+@needs_node
+def test_a_question_publishes_on_connect_and_starts_the_timer():
+    _, start, _ = objects_functions()
+    first, second = objects_request("camera_1_3fa9c2"), objects_request("camera_2_8d41e0")
+    run = run_functions([(start, first), (start, second)], context={"frigate_cameras": OBJECTS_CAMERAS}, flow={})
+    assert run["results"][0]["result"] == [{"topic": "frigate/onConnect", "payload": ""}, {"ask": 1}]
+    assert run["results"][1]["result"] == [{"topic": "frigate/onConnect", "payload": ""}, {"ask": 2}]
+    assert run["flow"]["objects_asks"] == {"1": {"key": "camera_1_3fa9c2", "msg": first},
+                                           "2": {"key": "camera_2_8d41e0", "msg": second}}
+    assert run["flow"]["objects_ask_seq"] == 2
+    assert [step["logged"] for step in run["results"]] == [[], []]
+
+
+@needs_node
+def test_an_answer_lists_label_and_stationary_only():
+    step = ask_and_answer(camera_activity({"picam_h265": camera_entry([TRACKED_PERSON])}))
+    reply = the_reply(step)
+    assert reply["payload"] == {"answered": True, "objects": [{"label": "person", "stationary": True}]}
+    # The kept request message itself is answered: its res is what the http response node writes to
+    assert reply["res"] == {"held": "camera_1_3fa9c2"}
+    text = json.dumps(reply)
+    for kept_in_node_red in ("A Name", OBJECT_ID, "zone_capture", "picam_h265", "0.87"):
+        assert kept_in_node_red not in text
+
+
+@needs_node
+def test_person_verified_is_person():
+    labels = [{"label": label, "stationary": False} for label in ("person-verified", "car-verified", "-verified")]
+    reply = the_reply(ask_and_answer(camera_activity({"picam_h265": camera_entry(labels)})))
+    assert [item["label"] for item in reply["payload"]["objects"]] == ["person", "car", "unknown"]
+
+
+@needs_node
+@pytest.mark.parametrize("payload", [
+    {"picam_h265": camera_entry([], {**DETECTING, "detect": False})},
+    {"picam_h265": camera_entry([TRACKED_PERSON], {**DETECTING, "detect": False})},
+    {"picam_h265": {"motion": False, "objects": [TRACKED_PERSON]}},
+    {"picam_h265": camera_entry([TRACKED_PERSON], {**DETECTING, "detect": "true"})},
+    {"picam_h265": camera_entry([TRACKED_PERSON], {**DETECTING, "enabled": False})},
+    {"picam_h265": {**camera_entry([TRACKED_PERSON]), "enabled": False}},
+    {"picam_h265": {"motion": False, "config": DETECTING}},
+    {"picam_h265": camera_entry({"0": TRACKED_PERSON})},
+    {},
+    {"camera_1_3fa9c2": camera_entry([TRACKED_PERSON])},
+    "{\"picam_h265\": {}}",
+    None,
+    7,
+    [camera_entry([TRACKED_PERSON])],
+], ids=["detect-off-empty", "detect-off-person", "config-missing", "detect-a-string", "config-disabled",
+        "entry-disabled", "objects-missing", "objects-an-object", "camera-missing", "camera-under-its-key", "a-string",
+        "null", "a-number", "a-list"])
+def test_no_list_when_frigate_has_none_to_trust(payload):
+    """Detection off is how every unit is installed: Frigate still answers, with no objects, and that is no list."""
+    reply = the_reply(ask_and_answer(camera_activity(payload)))
+    assert reply["payload"] == NO_LIST
+
+
+@needs_node
+def test_an_odd_object_is_listed_as_unknown():
+    odd = [7, None, {}, {"label": 5}, {"label": "a" * 65}, {"label": "car", "stationary": "true"},
+           {"label": "car", "stationary": 1}, {"label": "a" * 64, "stationary": True}]
+    reply = the_reply(ask_and_answer(camera_activity({"picam_h265": camera_entry(odd)})))
+    unknown = {"label": "unknown", "stationary": False}
+    assert reply["payload"] == {"answered": True, "objects": [unknown] * 5 + [
+        {"label": "car", "stationary": False}, {"label": "car", "stationary": False},
+        {"label": "a" * 64, "stationary": True}]}
+
+
+@needs_node
+def test_one_answer_serves_every_waiting_question():
+    _, start, answer = objects_functions()
+    cameras = {"picam_h265": "camera_1_3fa9c2", "usb_cam": "camera_2_8d41e0"}
+    car = {**TRACKED_PERSON, "label": "car", "stationary": False}
+    message = camera_activity({"picam_h265": camera_entry([TRACKED_PERSON]), "usb_cam": camera_entry([car, car])})
+    run = run_functions([(start, objects_request("camera_1_3fa9c2")), (start, objects_request("camera_2_8d41e0")),
+                         (answer, message)], context={"frigate_cameras": cameras}, flow={})
+    [replies] = run["results"][2]["result"]
+    assert [(reply["res"], reply["statusCode"], reply["payload"]) for reply in replies] == [
+        ({"held": "camera_1_3fa9c2"}, 200, {"answered": True, "objects": [{"label": "person", "stationary": True}]}),
+        ({"held": "camera_2_8d41e0"}, 200, {"answered": True, "objects": [{"label": "car", "stationary": False}] * 2}),
+    ]
+    assert run["flow"]["objects_asks"] == {}
+
+
+@needs_node
+def test_the_timer_answers_a_question_frigate_left_unanswered():
+    reply = the_reply(ask_and_answer({"ask": 1}))
+    assert reply["payload"] == {"answered": False, "objects": None}
+    assert reply["res"] == {"held": "camera_1_3fa9c2"}
+
+
+@needs_node
+def test_a_late_timer_or_a_stray_answer_does_nothing():
+    _, start, answer = objects_functions()
+    activity = camera_activity({"picam_h265": camera_entry([TRACKED_PERSON])})
+    run = run_functions([(answer, activity), (answer, {"ask": 1}), (start, objects_request("camera_1_3fa9c2")),
+                         (answer, activity), (answer, {"ask": 1}), (answer, activity), (answer, {"ask": 2})],
+                        context={"frigate_cameras": OBJECTS_CAMERAS}, flow={})
+    results = [step["result"] for step in run["results"]]
+    assert results[0] is None and results[1] is None
+    assert results[3] is not None
+    assert results[4:] == [None, None, None]
+    assert all(step["logged"] == [] for step in run["results"])
+    assert run["flow"]["objects_asks"] == {}
+
+
+def test_the_objects_functions_log_nothing():
+    for node in objects_functions():
+        for call in ("node.warn", "node.error", "node.log", "console."):
+            assert call not in node["func"], (node["name"], call)
+        # Each says what it is for, that only label and stationary leave, and why detection off is no list
+        opening = node["func"].split("\n\n")[0]
+        assert opening.startswith("//") and "label" in opening and "stationary" in opening, node["name"]
+        assert "detection" in opening.lower(), node["name"]
 
 
 TICKET = "0123456789abcdef0123456789abcdef"
