@@ -105,6 +105,8 @@ An entry whose Frigate camera is gone, because you deleted the camera or renamed
 
 **Reference picture** gives you one zip for a tool that places recorded paths on a street: a still picture of what the camera sees, the same view with its zones marked, and the zones' shapes and sizes. Both pictures are the size of Frigate's detect frame, so paths and boxes recorded as fractions of that frame line up with them.
 
+You can also take one from the place in use on the [Location page](location.md#reference-pictures).
+
 | File | What it holds |
 |---|---|
 | `<name>_clean.jpg` | The camera's current frame from Frigate, with nothing drawn on it |
@@ -118,11 +120,20 @@ The four files share one name, such as `tm-reference_3f9a1c2e-si_camera_1_3fa9c2
 2. Wait until nobody is in view, and choose **Take the pictures**. The dialog shows, above the pictures, whether Frigate was tracking a person, then both pictures and the camera's zones with their colours and side lengths.
 3. Look at both pictures, whatever the line says. If anyone is in them, or the line warns of a person, wait, and choose **Take again**.
 4. Leave **Include this place's exact location** ticked to put the place's location in the data file, or clear it.
-5. Choose **Save the zip**.
+5. Choose **Save the zip**, or choose [**Keep on this device**](#keep-the-pictures-on-the-device) as well to store both pictures under the place.
 
-![The reference picture dialog on a phone after the pictures are taken: a line saying Frigate wasn't tracking a person, a stand-in picture of a road and the same picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and never saves them, the first zone with its colour, and Close, Take again, and Save the zip](../assets/images/cameras-reference.png){ width="300" }
+![The reference picture dialog on a phone after the pictures are taken, scrolled to the end: the bottom of a stand-in picture of a road, the same picture with Frigate's zone outlines, a line saying the device holds the pictures in memory for 10 minutes and saves them only if you choose Keep on this device, the two zones with their colours, the buttons Close, Take again, Keep on this device, and Save the zip, and under them the line about what Keep on this device stores](../assets/images/cameras-reference.png){ width="300" }
 
 On a phone joined to the unit's hotspot, the pictures show in Android's sign-in window but the zip doesn't save there, the same as **Download diagnostics**. Like it, the zip saves from a browser, on a computer or on the phone after the steps under [Phones](wifi-hotspot.md#phones).
+
+### Keep the pictures on the device
+
+After a take at a place, **Keep on this device** sits beside **Save the zip**. A line under the buttons says what it does: it stores both pictures on the device's card, under this place, until you delete them or the place, and anyone who takes the card can read them. Choose it when you want the device to hold the pictures of this camera at this place, to look at or download later from the [Location page](location.md#reference-pictures). Once kept, the line says so and where to find the picture, and the button is off for that take. The zip still saves.
+
+* The pictures are stored on the device only, as two files in the control app's own folder, `/var/lib/tm-control/pictures/<id>/`, readable by the control app alone. The device never uploads them, and they are never in the database, the database downloads, or the diagnostics file.
+* A picture is kept for the place in use. A take that had no place, or whose place is no longer the one in use, can't be kept: take the pictures again.
+* Keeping needs at least 500 MB free on the card. It needs no setting, and changes none.
+* Keep is for an administrator, like the rest of the page. Each place's pictures are listed, downloaded, and deleted on the Location page.
 
 ### What the picture gives away
 
@@ -131,8 +142,8 @@ The dialog opens with this note:
 > This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. When the pictures are taken, the device asks Frigate whether it is tracking a person on this camera, and says so above them. That works only while Frigate's detection is on for the camera. Frigate can miss a person who is far away, half hidden, or in poor light, or who walks in between the two pictures. You are still responsible for making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only with people you would give the unit's exact location. The data file also holds that location unless you clear the box below.
 
 * The location in the data file is the place's exact location, as set on the [Location page](location.md), not the rounded one the database keeps. When the place in use has no location, the box is greyed and the data file holds none.
-* The device holds the pictures in memory for 10 minutes, for the administrator who took them, and never saves them. Closing the dialog, taking them again, or restarting the control app drops them sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads.
-* The audit log records each picture taken and each zip saved, with the camera's name and whether the location was included, never the location itself.
+* The device holds the pictures in memory for 10 minutes, for the administrator who took them, and saves them only if you choose **Keep on this device**. Closing the dialog, taking them again, or restarting the control app drops what is held sooner. They're never in the database, the exports, the diagnostics file, or anything the device uploads, whether they are held or kept.
+* The audit log records each picture taken, each zip saved, and each picture kept, with the camera's name and whether the location was included, never the location itself.
 
 ### The people check
 
@@ -157,6 +168,13 @@ The check never stops you from saving: **Save the zip** and **Take again** work 
 * **This camera is turned off in Frigate.** Turn it on in Frigate first.
 * **Frigate has no live picture from this camera right now.** The camera isn't sending, or Frigate has only an older frame. Check the camera on the [Status page](device-health.md#the-status-page), then try again.
 * **These pictures are no longer held on the device.** Ten minutes have passed, you took another picture, or the control app restarted. Take them again.
+
+**Keep on this device** can also be refused:
+
+* **These pictures weren't taken at the place in use now, so they can't be kept.** The take had no place, or the unit was deployed to another place after it. Take them again.
+* **There isn't enough free space on the device to keep these pictures.** Free space on the card, or delete pictures on the [Location page](location.md#reference-pictures).
+* **These pictures are already kept on this device.** Look for them under the place on the Location page.
+* **The device couldn't read or write its stored pictures.** Try again, and check the device's storage if it keeps happening.
 
 ### The two drawings
 
