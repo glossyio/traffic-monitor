@@ -1540,3 +1540,112 @@ def test_a_normal_run_is_unchanged():
         assert holds(role_tasks(file)[name], False), name
     defaults = load_role_yaml("defaults/main.yml")
     assert defaults["tmsetup_update_mode"] is False and defaults["tmsetup_update_stage_dir"] == ""
+
+
+# --- The device's flows.json: the serial nodes of a radar whose port isn't there are switched off -------------------
+
+NODE_RED_SETUP = "tasks/node-red-tm_setup.yml"
+RADAR_PATHS = ["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyACM2", "/dev/ttyACM3"]
+
+
+def node_red_setup_tasks():
+    return {task["name"]: task for task in load_role_yaml(NODE_RED_SETUP)}
+
+
+def radar_port_facts(env_text=None, confirmed=None, radar_paths=RADAR_PATHS):
+    """tmsetup_radar_env_ports and tmsetup_radars_missing as the two set_fact tasks build them, from the env file's
+    text (None: no file, so its read is skipped) and the confirmed paths (None: no radar found)."""
+    tasks = node_red_setup_tasks()
+    ports_task = tasks["TMSetup - Node-RED-TM Setup - Find the port of each radar name"]
+    missing_task = tasks["TMSetup - Node-RED-TM Setup - List the radar names whose port isn't there"]
+    exists = env_text is not None
+    slurp = ({"content": base64.b64encode(env_text.encode()).decode()} if exists
+             else {"skipped": True, "changed": False})
+    variables = {"tmsetup_node_red_env_stat_register": {"stat": {"exists": exists}},
+                 "tmsetup_node_red_env_slurp_register": slurp, "tmsetup_radar_paths": radar_paths}
+    if confirmed is not None:
+        variables["tmsetup_radars_confirmed"] = confirmed
+    for key, value in ports_task["vars"].items():
+        variables[key] = evaluate(value, **variables)
+    ports = evaluate(ports_task["ansible.builtin.set_fact"]["tmsetup_radar_env_ports"], **variables)
+    missing = evaluate(missing_task["ansible.builtin.set_fact"]["tmsetup_radars_missing"],
+                       **{**variables, "tmsetup_radar_env_ports": ports})
+    return ports, missing
+
+
+def test_the_ports_come_from_the_devices_env_file():
+    env = ("TM_NR_TOKEN_KEY=placeholder\nTM_RADAR_SERIAL_PORT_00=/dev/ttyACM1\nTM_RADAR_SERIAL_PORT_01=/dev/ttyACM0\n"
+           "TM_RADAR_SERIAL_PORT_02=/dev/ttyACM2\nTM_RADAR_SERIAL_PORT_03=/dev/ttyACM3\n")
+    ports, missing = radar_port_facts(env, confirmed=["/dev/ttyACM1"])
+    assert ports == {"TM_RADAR_SERIAL_PORT_00": "/dev/ttyACM1", "TM_RADAR_SERIAL_PORT_01": "/dev/ttyACM0",
+                     "TM_RADAR_SERIAL_PORT_02": "/dev/ttyACM2", "TM_RADAR_SERIAL_PORT_03": "/dev/ttyACM3"}
+    assert missing == ["TM_RADAR_SERIAL_PORT_01", "TM_RADAR_SERIAL_PORT_02", "TM_RADAR_SERIAL_PORT_03"]
+
+    # No env file yet (a first install's check run): the role's paths, in order
+    ports, missing = radar_port_facts(None, confirmed=["/dev/ttyACM1"])
+    assert ports == dict(zip([f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(4)], RADAR_PATHS))
+    assert missing == ["TM_RADAR_SERIAL_PORT_00", "TM_RADAR_SERIAL_PORT_02", "TM_RADAR_SERIAL_PORT_03"]
+
+
+def test_a_name_the_env_file_does_not_give_takes_the_roles_path():
+    """A file without a name's line, or with spaces or a CR around the value, and a shorter tmsetup_radar_paths."""
+    ports, missing = radar_port_facts("TM_RADAR_SERIAL_PORT_02= /dev/ttyACM0 \r\nOTHER=x\n",
+                                      confirmed=["/dev/ttyACM0", "/dev/ttyACM1"])
+    assert ports == {"TM_RADAR_SERIAL_PORT_00": "/dev/ttyACM0", "TM_RADAR_SERIAL_PORT_01": "/dev/ttyACM1",
+                     "TM_RADAR_SERIAL_PORT_02": "/dev/ttyACM0", "TM_RADAR_SERIAL_PORT_03": "/dev/ttyACM3"}
+    assert missing == ["TM_RADAR_SERIAL_PORT_03"]
+
+    ports, missing = radar_port_facts("TM_RADAR_SERIAL_PORT_01=\n", radar_paths=["/dev/ttyACM0"])
+    assert ports == {"TM_RADAR_SERIAL_PORT_00": "/dev/ttyACM0", "TM_RADAR_SERIAL_PORT_01": "",
+                     "TM_RADAR_SERIAL_PORT_02": "", "TM_RADAR_SERIAL_PORT_03": ""}
+    assert missing == [f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(4)]  # no radar found at all
+
+
+def test_the_env_file_is_read_after_it_is_written_and_never_printed():
+    """It holds secrets: only its TM_RADAR_SERIAL_PORT_ lines are used, and neither the read nor the fact built
+    from its text shows in the output (tmsetup.sh copies all of it into ~/tmsetup-*.log)."""
+    tasks = load_role_yaml(NODE_RED_SETUP)
+    names = [task["name"] for task in tasks]
+    by_name = dict(zip(names, tasks))
+    read = by_name["TMSetup - Node-RED-TM Setup - Read node-red-tm.env for the radar ports"]
+    ports = by_name["TMSetup - Node-RED-TM Setup - Find the port of each radar name"]
+    assert read["ansible.builtin.slurp"]["src"] == "{{ tmsetup_codedir }}/node-red-tm/node-red-tm.env"
+    assert read["register"] == "tmsetup_node_red_env_slurp_register"
+    assert read["when"] == "tmsetup_node_red_env_stat_register.stat.exists"
+    assert (read["no_log"], read["become"]) == (True, True)
+    assert ports["no_log"] is True
+    order = [names.index(name) for name in (
+        "TMSetup Node-RED-TM Setup - Add existing radars to list",  # sic: the task's name has no dash
+        "TMSetup - Node-RED-TM Setup - Create Node-RED-TM Configs",
+        "TMSetup - Node-RED-TM Setup - Check for node-red-tm.env",
+        read["name"], ports["name"],
+        "TMSetup - Node-RED-TM Setup - List the radar names whose port isn't there",
+        "TMSetup - Node-RED-TM Setup - Write flows.json with the serial nodes of missing radars off",
+        "TMSetup - Node-RED-TM Setup - Create Podman container and build Quadlets for tm-node-red",
+    )]
+    assert order == sorted(order)
+
+
+def test_the_flows_task_keeps_the_path_owner_and_mode_and_restarts_node_red():
+    task = node_red_setup_tasks()[
+        "TMSetup - Node-RED-TM Setup - Write flows.json with the serial nodes of missing radars off"]
+    assert task["become"] is True
+    assert task["notify"] == "Restart node-red-tm.service"
+    assert task["ansible.builtin.template"] == {
+        "dest": "{{ tmsetup_codedir }}/node-red-tm/data/flows.json",
+        "group": "{{ tmsetup_codegroup }}",
+        "mode": "0644",
+        "owner": "{{ tmsetup_codeowner }}",
+        "src": "node-red-tm/flows.json.j2",
+    }
+    assert (ROLE / "templates" / "node-red-tm" / "flows.json.j2").is_file()
+    template = (ROLE / "templates" / "node-red-tm" / "flows.json.j2").read_text()
+    assert "lookup('ansible.builtin.file', 'container/node-red-tm/data/flows.json')" in template
+
+
+def test_flows_json_is_no_longer_in_the_static_copy_loop():
+    copy = node_red_setup_tasks()["TMSetup - Node-RED-TM Setup - Copy relevant static files for node red deployment"]
+    assert "node-red-tm/data/flows.json" not in copy["loop"]
+    assert "node-red-tm/data/flows_cred.json" in copy["loop"]
+    writers = [task["name"] for task in load_role_yaml(NODE_RED_SETUP) if "flows.json" in str(task)]
+    assert writers == ["TMSetup - Node-RED-TM Setup - Write flows.json with the serial nodes of missing radars off"]

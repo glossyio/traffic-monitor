@@ -14,7 +14,7 @@ LEGACY_SCHEMA = Path(__file__).resolve().parent / "fixtures" / "legacy_v0_schema
 FLOWS_JSON = SCHEMA_DIR.parent / "data" / "flows.json"
 
 # The newest migration's number, which a fully migrated database has as its user_version.
-LATEST_VERSION = 12
+LATEST_VERSION = 13
 
 # The tables 0001_baseline.sql defines, listed by hand.
 BASELINE_TABLES = {
@@ -31,7 +31,7 @@ BASELINE_TABLES = {
 }
 
 # Every table a fully migrated database has: the baseline's, and the ones later migrations add.
-ALL_TABLES = BASELINE_TABLES | {"watch_camera", "watch_radar", "setup_device", "setup_camera"}
+ALL_TABLES = BASELINE_TABLES | {"watch_camera", "watch_radar", "setup_device", "setup_camera", "setup_radar"}
 
 
 def migrate(*args):

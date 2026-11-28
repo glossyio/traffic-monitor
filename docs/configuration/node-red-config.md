@@ -132,8 +132,21 @@ One entry per radar. A radar's name is the name of the variable that holds its s
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `enabled` | `true` or `false` | `true` for `TM_RADAR_SERIAL_PORT_00` | Read this radar. Set it to `false` on a device without a radar. |
-| `opt_api_commands_array` | a JSON array in a string | `'["^/+0.00\n", "^/-0.00\n"]'` | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands. The default sets the cosine correction to 0 degrees in both directions. |
+| `cosine_inbound_deg` | a number from 0 to 89 | blank, which is `0` | The angle, in degrees, between the radar's beam and traffic coming toward the unit. The radar divides every inbound speed by the cosine of this angle, so it corrects the speed of a vehicle that crosses the beam at an angle. One decimal is kept. See [The radar's cosine angles](#the-radars-cosine-angles). |
+| `cosine_outbound_deg` | a number from 0 to 89 | blank, which is `0` | The same for traffic going away from the unit. |
+| `opt_api_commands_array` | a JSON array in a string | `'[]'` | Extra [OPS243 API](https://omnipresense.com/wp-content/uploads/2023/06/AN-010-Y_API_Interface.pdf) commands sent to the radar when the service starts and whenever you save this file, after the Traffic Monitor's own setup commands and before the two cosine angles. A command that starts with `^/` is not sent from here: it is a cosine command, and the two keys above set the angles. The [Status](../use/device-health.md) page's **Node-RED configuration** check reports it as a problem and names the key. |
 | `deployment` | block | inherited | Per-radar `heading_deg`, and how it is [mounted](#how-a-sensor-is-mounted). |
+
+### The radar's cosine angles
+
+A radar measures the speed along its beam. A vehicle that crosses the beam at an angle is moving faster than the radar reports, by the cosine of that angle, and the radar corrects for it when you tell it the angle. The two keys give the angle for each direction because a radar can face the road at a different angle for traffic coming and going. A blank key is `0`, which leaves the speed as measured.
+
+* A key that is a number below 0 or above 89, a number in quotes, or anything else that isn't a number is treated as `0`. The [Status](../use/device-health.md) page's **Node-RED configuration** check reports the key's path, and never its value.
+* The Traffic Monitor sends the angles after the extra commands, so that no extra command can change them. A blank key is sent as `0`, which replaces an angle set in the radar some other way.
+* The speeds in the [radar tables](../data-and-payloads/radar-payload.md) are as the radar reported them, with the correction in force already applied. The [setup history](../data-and-payloads/setup-history.md#setup_radar) records which angles the radar reported, and when.
+* No page of the control app sets these keys. Set them by editing this file.
+
+An angle in `opt_api_commands_array`, such as `^/+20.0` or `^/-20.0`, belongs in its key. When Node-RED starts, it moves each one into its key, unless the key already has a value or the angle is 0, and removes it from the list. It saves the file, with a backup beside it, only when something changed. A `^/` entry it can't read is left in the list, and Node-RED's start-up log names the key it is in.
 
 ## sensors.airquality_monitors
 

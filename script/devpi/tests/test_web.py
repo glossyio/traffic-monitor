@@ -27,7 +27,7 @@ import yaml
 from devpi_checks import (API, TM_INTERNAL_STATUS, UNCLAIMED, NoRedirect, Redacted, broker_login, db_query,
                           detector_name, entered_secret_states, is_claimed, mounting_state, places_state,
                           read_root_file, request_from_this_machine, require_pii_free, retry_after, role_vars,
-                          session, set_secret_table, status_checks, tm_internal_answer, tm_internal_token,
+                          service_active_seconds, session, set_secret_table, status_checks, tm_internal_answer, tm_internal_token,
                           tm_login_or_none)
 
 TM_CONTROL_PORT = role_vars()["tmsetup_tm_control_port"]
@@ -1341,6 +1341,43 @@ def test_tm_internal_objects_answers_for_each_camera(host, expect, node_red_conf
     if not checked:
         pytest.skip("no sensors.cameras entry whose camera is in Frigate")
     assert len(problems) == 0, "the objects route: " + "; ".join(problems)
+
+
+# info is set after the radar's setup, which runs when the flows start; the same wait as for the radar's first
+# setup_radar row (test_dataflow.py's SETUP_FIRST_ROWS_SECONDS)
+RADAR_INFO_SECONDS = 2 * 60
+RADAR_INFO_KEYS = ["answered_at", "cosine_inbound_deg", "cosine_outbound_deg", "firmware_version", "magnitude_min",
+                   "part_number", "sampling_rate", "speed_min", "speed_unit"]
+
+
+def test_tm_internal_status_has_each_radars_answers(host, expect):
+    """With the token, Node-RED's internal status gives each radar the host expects an `info` with the eight answers
+    the radar's setup history keeps and `answered_at`, and the part number and firmware version are text. Only the
+    shape is kept, not even a radar's name or answer is printed, and the status's `info` has no serial number."""
+    if not expect["radars"]:
+        pytest.skip("the host expects no radar")
+    require_pii_free(expect, "a device secret")
+    active = service_active_seconds(host, "node-red-tm.service")
+    if active < RADAR_INFO_SECONDS:
+        pytest.skip(f"node-red-tm.service has been active for {active:.0f} seconds; a radar's info comes after its "
+                    f"setup, so check again after {RADAR_INFO_SECONDS} seconds")
+    status, body = tm_internal_answer(host, tm_internal_token(host))
+    radars = body.get("radars") if isinstance(body, dict) else None
+    del body
+    assert status == "200", f"with the token, {TM_INTERNAL_STATUS} answered {status}"
+    assert isinstance(radars, dict), f"Node-RED's status has no radars section (it is {type(radars).__name__})"
+    problems = []
+    for radar in expect["radars"]:
+        info = radars.get(radar["env_name"])
+        info = info.get("info") if isinstance(info, dict) else None
+        if not isinstance(info, dict):
+            problems.append(f"{radar['env_name']} has no info, though Node-RED has been up {active:.0f} seconds")
+        elif sorted(info) != RADAR_INFO_KEYS:
+            problems.append(f"{radar['env_name']}'s info has the keys {sorted(info)}, not {RADAR_INFO_KEYS}")
+        else:
+            problems += [f"{radar['env_name']}'s info.{key} isn't text"
+                         for key in ("part_number", "firmware_version") if not isinstance(info[key], str)]
+    assert not problems, "Node-RED's radar answers: " + "; ".join(problems)
 
 
 # The writes the Location page makes through tm-control. The ids are well formed but belong to nothing, and the body

@@ -912,6 +912,147 @@ def test_mounting_limits_match_the_control_apps():
             assert refused is None and passed["params"][f"${key}"] == want, (key, value)
 
 
+# The radar's setup: the Traffic Monitor's own commands, then the extra commands from opt_api_commands_array, then the
+# two cosine angles from their typed keys, each with one decimal. A ^/ command reaches the radar only from the keys. A
+# config error names the key's path and never the value.
+RADAR_NAME = "TM_RADAR_SERIAL_PORT_00"
+RADAR_PATH = f"sensors.radars.{RADAR_NAME}"
+FIXED_RADAR_COMMANDS = ["OJ", "US", "F2", "S2", "K+", "IG", "ON", "OU", "OT", "Oh", "Oc", "@O", "@|300\n", "OM",
+                        "M>20\n", "OS", "R>5\n", "O3"]
+ZERO_COSINE = ["^/+0.0\n", "^/-0.0\n"]
+EXTRAS_NOT_A_LIST = (f"{RADAR_PATH}.opt_api_commands_array isn't a JSON list of text", True)
+EXTRAS_HOLD_A_COSINE = (f"{RADAR_PATH}.opt_api_commands_array holds a cosine command (^/), which is never sent from "
+                        "there. Set cosine_inbound_deg and cosine_outbound_deg, or use the Mounting page.", True)
+BAD_COSINE = ["20", True, -1, 90, 89.96, [20]]
+
+
+def cosine_error(key):
+    return (f"{RADAR_PATH}.{key} isn't a number from 0 to 89", True)
+
+
+def radar_config(**keys):
+    """A new device's config.yml with these keys set on its radar; MISSING takes a key out."""
+    config = new_device_config()
+    radar = config["sensors"]["radars"][RADAR_NAME]
+    for key, value in keys.items():
+        if value is MISSING:
+            radar.pop(key, None)
+        else:
+            radar[key] = value
+    return config
+
+
+def radar_setup(config):
+    """The radar's entry after init config defaults, and the node's errors."""
+    payload, errors = init_defaults(config)
+    return payload["sensors"]["radars"][RADAR_NAME], errors
+
+
+@needs_node
+@pytest.mark.parametrize("given, expected, errors", [
+    ({}, (0, 0), []),
+    ({"cosine_inbound_deg": None, "cosine_outbound_deg": ""}, (0, 0), []),
+    ({"cosine_inbound_deg": 18.94, "cosine_outbound_deg": 18.56}, (18.9, 18.6), []),
+    ({"cosine_inbound_deg": 0, "cosine_outbound_deg": 89}, (0, 89), []),
+    *[({"cosine_inbound_deg": bad, "cosine_outbound_deg": 18.6}, (0, 18.6), ["cosine_inbound_deg"])
+      for bad in BAD_COSINE],
+    *[({"cosine_inbound_deg": 18.9, "cosine_outbound_deg": bad}, (18.9, 0), ["cosine_outbound_deg"])
+      for bad in BAD_COSINE],
+], ids=["missing", "blank", "rounded", "limits", *[f"inbound-{bad!r}" for bad in BAD_COSINE],
+        *[f"outbound-{bad!r}" for bad in BAD_COSINE]])
+def test_cosine_keys(given, expected, errors):
+    """A blank angle is 0. A number is rounded to one decimal, then must be 0 to 89; anything else is 0 for that key
+    and one config error, given with msg so the catch records it, that names the key's path and holds no value."""
+    radar, logged = radar_setup(radar_config(**given))
+    assert (radar["cosine_inbound_deg"], radar["cosine_outbound_deg"]) == expected
+    assert radar["api_commands"][-2:] == [f"^/+{expected[0]:.1f}\n", f"^/-{expected[1]:.1f}\n"]
+    assert logged == [cosine_error(key) for key in errors]
+
+
+@needs_node
+def test_the_cosine_commands_come_last():
+    radar, logged = radar_setup(radar_config(cosine_inbound_deg=18.9, cosine_outbound_deg=18.6,
+                                             opt_api_commands_array='["OL", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+18.9\n", "^/-18.6\n"]
+    assert logged == []
+
+
+@needs_node
+def test_a_new_devices_radar_is_sent_zero_as_before():
+    """The installer's file sends the radar the same 0 in both directions that its old extra commands did."""
+    radar, logged = radar_setup(new_device_config())
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *ZERO_COSINE]
+    assert logged == []
+
+
+@needs_node
+def test_a_cosine_command_in_the_extras_is_never_sent():
+    """Each entry whose trimmed text starts with ^/ is left out; the radar is sent the keys' angles, and the list gets
+    one error by its path."""
+    radar, logged = radar_setup(radar_config(
+        cosine_inbound_deg=12.5, opt_api_commands_array='["OL", "^/+20.0\\n", "  ^/-20.0\\n", "R>3\\n"]'))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "R>3\n", "^/+12.5\n", "^/-0.0\n"]
+    assert logged == [EXTRAS_HOLD_A_COSINE]
+
+
+@needs_node
+def test_the_flows_drop_what_the_control_app_calls_a_cosine_command():
+    """The flows and tm-control migrate read a ^/ command the same way: the extras the flows keep are exactly the
+    strings for which mounting.cosine_command is None (ordinary ASCII whitespace; JS trim and Python strip agree)."""
+    texts = ["OL", "R>3\n", "", " ", "^", "^/", "^/+", "^/+20.0\n", "^/-0.00\n", "  ^/-20.0\n", "\t^/+5", "^/+abc",
+             "^/+95", "^/20", "^/x", "x^/+20", "R^/+5\n", "OL ^/+5", "^ /+5", "/^+5", "^/+12.34\r\n", "\n^/-1"]
+    radar, _ = radar_setup(radar_config(opt_api_commands_array=json.dumps(texts)))
+    kept = radar["api_commands"][len(FIXED_RADAR_COMMANDS):-2]
+    assert kept == [text for text in texts if mounting.cosine_command(text) is None]
+    assert [text for text in texts if text not in kept]  # something was dropped
+
+
+@needs_node
+@pytest.mark.parametrize("value, extras, errors", [
+    ("not json", [], [EXTRAS_NOT_A_LIST]),
+    ('{"a": 1}', [], [EXTRAS_NOT_A_LIST]),
+    ('"OL"', [], [EXTRAS_NOT_A_LIST]),
+    (5, [], [EXTRAS_NOT_A_LIST]),
+    (["OL"], [], [EXTRAS_NOT_A_LIST]),
+    ('["OL", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ('["^/+1.0\\n", 5]', [], [EXTRAS_NOT_A_LIST]),
+    ("[]", [], []),
+    ("", [], []),
+    (None, [], []),
+    (MISSING, [], []),
+], ids=["not-json", "json-object", "json-text", "number", "yaml-list", "an-item-not-text", "an-item-not-text-beside-a-cosine", "empty-list",
+        "empty", "null", "missing"])
+def test_extra_commands_that_do_not_parse(value, extras, errors):
+    """A value that isn't a JSON list of text, even one item that isn't text, sends no extra command and is one error
+    for the radar; a blank value, or an empty list, is no extra commands and no error."""
+    radar, logged = radar_setup(radar_config(opt_api_commands_array=value))
+    assert radar["api_commands"] == [*FIXED_RADAR_COMMANDS, *extras, *ZERO_COSINE]
+    assert logged == errors
+
+
+@needs_node
+def test_a_radar_that_is_off_gets_its_commands_too():
+    """A radar that is off has its list built as one that is on (it is sent when it's switched on); an entry with
+    nothing under it stays as it is."""
+    config = radar_config(enabled=False, cosine_inbound_deg=12.5, opt_api_commands_array='["OL"]')
+    config["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_01"] = None
+    payload, logged = init_defaults(config)
+    radars = payload["sensors"]["radars"]
+    assert radars[RADAR_NAME]["api_commands"] == [*FIXED_RADAR_COMMANDS, "OL", "^/+12.5\n", "^/-0.0\n"]
+    assert radars["TM_RADAR_SERIAL_PORT_01"] is None
+    assert logged == []
+
+
+def test_the_setup_node_sends_the_commands_between_the_clock_and_power_on():
+    """The radar's list goes after the clock and the time zone and before PA and A!, so the angles are the last
+    settings it is sent."""
+    func = named(json.loads(FLOWS.read_text()), "init: radar settings, ~4-sec each")["func"]
+    order = ['"PI"', '"C=" + ', '"CZ" + ', "...radarConfig.api_commands", '"PA"', '"A!"']
+    positions = [func.index(text) for text in order]
+    assert positions == sorted(positions)
+    assert all(func.count(text) == 1 for text in order)
+
+
 def test_config_template_has_the_survey_keys():
     """A new device starts with no survey and two decimal places stored; the Location page sets survey_id later."""
     deployment = new_device_config()["deployment"]
@@ -982,7 +1123,7 @@ def test_status_answers_before_the_first_config_load():
     assert body["schema_version"] is None
     assert body["database_bytes"] is None
     assert body["deployment"] is None
-    assert body["radars"] == {name: {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert body["radars"] == {name: {"enabled": False, "port_open": False, "last_reading_at": None, "info": None}
                               for name in RADAR_NAMES}
 
 
@@ -1056,9 +1197,11 @@ def test_radars_report_config_port_and_last_reading():
     assert radars["TM_RADAR_SERIAL_PORT_00"]["enabled"] is True
     assert radars["TM_RADAR_SERIAL_PORT_00"]["port_open"] is True
     assert radars["TM_RADAR_SERIAL_PORT_00"]["last_reading_at"].endswith("Z")
-    assert radars["TM_RADAR_SERIAL_PORT_01"] == {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert radars["TM_RADAR_SERIAL_PORT_01"] == {"enabled": False, "port_open": False, "last_reading_at": None,
+                                                 "info": None}
     assert radars["TM_RADAR_SERIAL_PORT_02"]["port_open"] is False
-    assert radars["TM_RADAR_SERIAL_PORT_03"] == {"enabled": False, "port_open": False, "last_reading_at": None}
+    assert radars["TM_RADAR_SERIAL_PORT_03"] == {"enabled": False, "port_open": False, "last_reading_at": None,
+                                                 "info": None}
 
 
 RADAR_JUNCTION, RADAR_DIRECTOR = "05a58d9ee463c696", "e9bd400bfc06d988"  # where the hourly time sync goes
@@ -3324,13 +3467,15 @@ def test_setup_inserts_name_every_column():
     """The field rule's Node-RED half: each insert names the table's columns but ended, and the engine's parameters
     are those names with a dollar sign."""
     flows = json.loads(FLOWS.read_text())
-    for name, columns in (("insert setup_device", SETUP_DEVICE_COLUMNS), ("insert setup_camera", SETUP_CAMERA_COLUMNS)):
+    for name, columns in (("insert setup_device", SETUP_DEVICE_COLUMNS), ("insert setup_camera", SETUP_CAMERA_COLUMNS),
+                          ("insert setup_radar", SETUP_RADAR_COLUMNS)):
         expected = [column for column in columns if column != "ended"]
         match = re.fullmatch(r"INSERT INTO (\w+) \(([^)]*)\) VALUES \(([^)]*)\)", sql_text(named(flows, name)))
         assert match and match[1] == name.split()[1]
         assert match[2].split(", ") == expected
         assert match[3].split(", ") == ["$" + column for column in expected]
-    for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera")):
+    for name, table in (("close setup_device", "setup_device"), ("close setup_camera", "setup_camera"),
+                        ("close setup_radar", "setup_radar")):
         assert sql_text(named(flows, name)) == f"UPDATE {table} SET ended = $ended WHERE id = $id"
 
 
@@ -3367,10 +3512,19 @@ def test_setup_fields_agree():
     columns = lambda table: [row[1] for row in db.execute(f"PRAGMA table_info({table})")]
     assert columns("setup_device") == device_columns
     assert columns("setup_camera") == camera_columns
+    # the radar's: the engine's own fact list, what it inserts, and the table, in the table's order
+    radar_facts = engine_radar_facts()
+    assert radar_facts == RADAR_FACTS
+    radar_columns = ["id", "started", "ended", "radar", *[column for column, _ in radar_facts]]
+    assert radar_columns == SETUP_RADAR_COLUMNS
+    [insert] = radar_engine({RADAR: RADAR_ANSWERS}).insert
+    assert list(insert["params"]) == ["$" + column for column in radar_columns if column != "ended"]
+    assert columns("setup_radar") == radar_columns
     view = columns("events_with_setup")
     own = len(columns("events"))
     assert view[own:] == (["setup_device_id", *["setup_" + name for name in device_columns[3:]],
-                          "setup_camera_id", *["camera_" + name for name in camera_facts]])
+                          "setup_camera_id", *["camera_" + name for name in camera_facts],
+                          "setup_radar_id", *["radar_" + column for column in radar_columns[4:]]])
     db.close()
 
 
@@ -3390,6 +3544,327 @@ def test_status_reports_the_setup_history():
     seen = {"received_at": "2026-10-28T22:54:55.000Z", "complete": True, "changed_at": None}
     [step] = run_functions([status_step()], context={"tm_status": {"setup": seen}})["results"]
     assert step["result"]["payload"]["setup"] == seen
+
+
+# The radar setup engine: after "create radarInfo payload" (each radar's answers to its setup's queries, by name) and
+# a read of the open setup_radar rows, it compares the answers with the open rows and writes only what differs.
+
+RADAR = "TM_RADAR_SERIAL_PORT_00"
+# each column of setup_radar after radar, and the answer it comes from
+RADAR_FACTS = [("part_number", "Product"), ("firmware_version", "Version"),
+               ("cosine_inbound_deg", "InboundSensorAngleDegrees"),
+               ("cosine_outbound_deg", "OutboundSensorAngleDegrees"), ("speed_unit", "Units"),
+               ("sampling_rate", "SamplingRate"), ("speed_min", "RequiredMinSpeed"), ("magnitude_min", "MagnitudeMin")]
+SETUP_RADAR_COLUMNS = ["id", "started", "ended", "radar", *[column for column, _ in RADAR_FACTS]]
+# what an OPS243-A on firmware 1.2.1 answers, with a few of its other keys; the serial number is a placeholder
+RADAR_ANSWERS = {
+    "Product": "OPS243-A", "Version": "1.2.1", "Units": "mph", "SamplingRate": 20000, "RequiredMinSpeed": 5,
+    "MagnitudeMin": 20, "InboundSensorAngleDegrees": 0, "OutboundSensorAngleDegrees": 0, "SerialNumber": "0000",
+    "Build": "0123", "rev": "A", "RequiredMaxSpeed": 100, "RequiredDirection": "Both",
+    "INFO": "Saved settings restored", "UnknownCommand": "^?",
+}
+RADAR_ROW_FACTS = {"part_number": "OPS243-A", "firmware_version": "1.2.1", "cosine_inbound_deg": 0.0,
+                   "cosine_outbound_deg": 0.0, "speed_unit": "mph", "sampling_rate": 20000, "speed_min": 5.0,
+                   "magnitude_min": 20.0}
+RADAR_CONFIG = {"sensors": {"radars": {RADAR: {"enabled": True}, "TM_RADAR_SERIAL_PORT_01": {"enabled": False}}}}
+
+
+def engine_radar_facts():
+    """The engine's own list of (column, answer key), read from its code."""
+    func = named(json.loads(FLOWS.read_text()), "radar setup engine")["func"]
+    block = re.search(r"const FACTS = \[(.*?)\n\];", func, re.DOTALL)[1]
+    return re.findall(r'\["(\w+)", "(\w+)", "\w+"\]', block)
+
+
+def open_radar(radar=RADAR, started=100, row_id="100-cccccccc-sr", **changes):
+    """An open row as SELECT * returns it."""
+    return {"id": row_id, "started": started, "ended": None, "radar": radar, **RADAR_ROW_FACTS, **changes}
+
+
+class RadarRun:
+    """One run of the radar setup engine: its two outputs as lists of messages, the global context, and the log."""
+
+    def __init__(self, out, before, after):
+        step = out["results"][0]
+        self.close, self.insert = ([] if output is None else output if isinstance(output, list) else [output]
+                                   for output in step["result"])
+        self.global_context, self.logged = out["global"], step["logged"]
+        self.results = out["results"]
+        self.before, self.after = before, after
+
+    def written(self):
+        return self.close + self.insert
+
+    def info(self, radar=RADAR):
+        return self.global_context.get("tm_status", {}).get("radars", {}).get(radar, {}).get("info")
+
+    def in_time(self, value):
+        return isinstance(value, int) and self.before <= value <= self.after
+
+
+def radar_engine(info, open_rows=(), config=MISSING, context=None, then=()):
+    """Run the engine on one round's answers (msg.radarInfo: answers by radar name) and the open rows, then the steps
+    in then (with the same global context)."""
+    before = int(time.time() * 1000)
+    msg = {"radarInfo": info, "payload": list(open_rows), "topic": ""}
+    node = named(json.loads(FLOWS.read_text()), "radar setup engine")
+    store = copy.deepcopy(context) if context is not None else {}
+    if config is not MISSING:
+        store["config"] = config
+    elif "config" not in store:
+        store["config"] = RADAR_CONFIG
+    out = run_functions([(node, msg), *then], context=store)
+    return RadarRun(out, before, int(time.time() * 1000) + 1)
+
+
+@needs_node
+def test_a_first_round_starts_a_row():
+    run = radar_engine({RADAR: RADAR_ANSWERS})
+    assert run.close == []
+    [insert] = run.insert
+    assert set(insert) == {"params"}
+    params = insert["params"]
+    assert params == {**params, "$radar": RADAR, **{"$" + column: value for column, value in RADAR_ROW_FACTS.items()}}
+    assert set(params) == {"$" + column for column in SETUP_RADAR_COLUMNS if column != "ended"}
+    assert re.fullmatch(r"\d{13}-[0-9a-f]{8}-sr", params["$id"])
+    assert run.in_time(params["$started"]) and params["$id"].startswith(str(params["$started"]) + "-")
+
+
+@needs_node
+def test_the_same_answers_write_nothing():
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()])
+    assert run.written() == []
+
+
+@needs_node
+@pytest.mark.parametrize("column, key, value", [
+    ("part_number", "Product", "OPS243-C"),
+    ("firmware_version", "Version", "1.2.2"),
+    ("cosine_inbound_deg", "InboundSensorAngleDegrees", 20.5),
+    ("cosine_outbound_deg", "OutboundSensorAngleDegrees", 12),
+    ("speed_unit", "Units", "kmh"),
+    ("sampling_rate", "SamplingRate", 10000),
+    ("speed_min", "RequiredMinSpeed", 2.5),
+    ("magnitude_min", "MagnitudeMin", 30),
+], ids=[column for column, _ in RADAR_FACTS])
+def test_each_fact_alone_starts_a_row(column, key, value):
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, key: value}}, [open_radar()])
+    [close], [insert] = run.close, run.insert
+    assert close == {"params": {"$ended": close["params"]["$ended"], "$id": "100-cccccccc-sr"}}
+    assert run.in_time(close["params"]["$ended"]) and close["params"]["$ended"] == insert["params"]["$started"]
+    assert insert["params"]["$" + column] == value and insert["params"]["$id"] != "100-cccccccc-sr"
+    others = {name: held for name, held in RADAR_ROW_FACTS.items() if name != column}
+    assert {name: insert["params"]["$" + name] for name in others} == others
+
+
+@needs_node
+@pytest.mark.parametrize("answers", [{}, {"INFO": "Saved settings restored"},
+                                     {key: value for key, value in RADAR_ANSWERS.items() if key != "Product"},
+                                     {**RADAR_ANSWERS, "Product": "  "}, {**RADAR_ANSWERS, "Product": 243}],
+                         ids=["nothing", "only INFO", "every key but Product", "a blank Product", "a number"])
+def test_a_round_without_a_part_number_changes_nothing(answers):
+    had = {**RADAR_ROW_FACTS, "answered_at": "2026-11-01T00:00:00.000Z"}
+    context = {"tm_status": {"radars": {RADAR: {"enabled": True, "info": had}}}}
+    for rows in ([], [open_radar()]):
+        run = radar_engine({RADAR: answers}, rows, context=context)
+        assert run.written() == []
+        assert run.info() == had
+
+
+@needs_node
+def test_an_answer_the_radar_did_not_give_is_empty():
+    answers = {key: value for key, value in RADAR_ANSWERS.items()
+               if key not in ("InboundSensorAngleDegrees", "OutboundSensorAngleDegrees")}
+    [insert] = radar_engine({RADAR: answers}).insert
+    assert insert["params"]["$cosine_inbound_deg"] is None and insert["params"]["$cosine_outbound_deg"] is None
+    row = open_radar(cosine_inbound_deg=None, cosine_outbound_deg=None)
+    assert radar_engine({RADAR: answers}, [row]).written() == []
+    # and an empty one stored is not a 0 answered
+    assert len(radar_engine({RADAR: RADAR_ANSWERS}, [row]).insert) == 1
+
+
+@needs_node
+@pytest.mark.parametrize("key, value, column, expected", [
+    ("RequiredMinSpeed", "5.000", "speed_min", 5),
+    ("RequiredMinSpeed", " 2.5 ", "speed_min", 2.5),
+    ("RequiredMinSpeed", "abc", "speed_min", None),
+    ("RequiredMinSpeed", "", "speed_min", None),
+    ("RequiredMinSpeed", True, "speed_min", None),
+    ("RequiredMinSpeed", "0x10", "speed_min", None),
+    ("RequiredMinSpeed", "Infinity", "speed_min", None),
+    ("RequiredMinSpeed", "1e400", "speed_min", None),
+    ("RequiredMinSpeed", [5], "speed_min", None),
+    ("InboundSensorAngleDegrees", "20.0", "cosine_inbound_deg", 20),
+    ("SamplingRate", 20000.5, "sampling_rate", None),
+    ("SamplingRate", "10000", "sampling_rate", 10000),
+    ("SamplingRate", "10000.5", "sampling_rate", None),
+    ("Version", " 1.2.1 ", "firmware_version", "1.2.1"),
+    ("Version", 1.2, "firmware_version", None),
+    ("Version", "x" * 33, "firmware_version", None),
+    ("Version", "x" * 32, "firmware_version", "x" * 32),
+    ("Version", "1.2é", "firmware_version", None),
+    ("Version", "1.2\t1", "firmware_version", None),
+])
+def test_a_number_sent_as_text_is_read(key, value, column, expected):
+    [insert] = radar_engine({RADAR: {**RADAR_ANSWERS, key: value}}).insert
+    assert insert["params"]["$" + column] == expected
+    assert type(insert["params"]["$" + column]) is type(expected)
+
+
+@needs_node
+def test_the_unit_falls_back_to_unit():
+    answers = {key: value for key, value in RADAR_ANSWERS.items() if key != "Units"}
+    [insert] = radar_engine({RADAR: {**answers, "Unit": "kmh"}}).insert
+    assert insert["params"]["$speed_unit"] == "kmh"
+    [insert] = radar_engine({RADAR: {**RADAR_ANSWERS, "Unit": "kmh"}}).insert
+    assert insert["params"]["$speed_unit"] == "mph"
+    [insert] = radar_engine({RADAR: answers}).insert
+    assert insert["params"]["$speed_unit"] is None
+
+
+@needs_node
+def test_a_radar_config_no_longer_lists_has_its_row_ended():
+    gone = open_radar("TM_RADAR_SERIAL_PORT_02", row_id="1-dddddddd-sr")
+    for info in ({RADAR: RADAR_ANSWERS}, {}, {"TM_RADAR_SERIAL_PORT_02": RADAR_ANSWERS}):
+        run = radar_engine(info, [open_radar(), gone])
+        [close] = run.close
+        assert close["params"]["$id"] == "1-dddddddd-sr" and run.in_time(close["params"]["$ended"])
+        assert run.insert == []
+        assert run.info("TM_RADAR_SERIAL_PORT_02") is None
+    # Without a sensors.radars mapping nothing ends for this reason
+    for config in ({}, {"sensors": {}}, {"sensors": {"radars": None}}, {"sensors": {"radars": [RADAR]}}, None):
+        assert radar_engine({}, [open_radar(), gone], config=config).written() == []
+
+
+@needs_node
+def test_a_radar_that_did_not_answer_keeps_its_row():
+    other = open_radar("TM_RADAR_SERIAL_PORT_01", row_id="1-eeeeeeee-sr")
+    run = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar(), other])
+    assert run.written() == []
+    assert radar_engine({}, [open_radar(), other]).written() == []
+
+
+@needs_node
+def test_two_open_rows_for_one_radar_leave_the_newest():
+    older, newer = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar()
+    for rows in ([older, newer], [newer, older]):
+        run = radar_engine({RADAR: RADAR_ANSWERS}, rows)
+        assert [m["params"]["$id"] for m in run.close] == ["50-cccccccc-sr"] and run.insert == []
+    # the newer row is the one compared: it differs, so it closes too and a row opens
+    run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [older, newer])
+    assert sorted(m["params"]["$id"] for m in run.close) == ["100-cccccccc-sr", "50-cccccccc-sr"]
+    assert len(run.insert) == 1
+    # and a round with no part number still leaves one open row
+    run = radar_engine({RADAR: {}}, [older, newer])
+    assert [m["params"]["$id"] for m in run.close] == ["50-cccccccc-sr"] and run.insert == []
+
+
+def strings_in(value):
+    """Every text in value, keys included, at any depth."""
+    if isinstance(value, dict):
+        return [text for key, item in value.items() for text in [key, *strings_in(item)]]
+    if isinstance(value, list):
+        return [text for item in value for text in strings_in(item)]
+    return [value] if isinstance(value, str) else []
+
+
+@needs_node
+def test_the_serial_number_goes_nowhere():
+    func = named(json.loads(FLOWS.read_text()), "radar setup engine")["func"]
+    assert "serialnumber" not in func.lower().replace("_", "")
+    # the engine names no answer key but the eight and Unit
+    keys = set(re.findall(r'"([A-Z]\w*)"', func))
+    assert keys == {key for _, key in RADAR_FACTS} | {"Unit"}
+    for rows in ([], [open_radar(part_number="OPS243-C")]):
+        run = radar_engine({RADAR: RADAR_ANSWERS, "TM_RADAR_SERIAL_PORT_01": {**RADAR_ANSWERS, "Version": "9"}}, rows,
+                           then=[status_step()])
+        assert run.insert
+        for where in (run.written(), run.global_context["tm_status"], run.logged, run.results[1]["result"]):
+            texts = strings_in(where)
+            assert "0000" not in texts
+            assert not any("serialnumber" in text.lower().replace("_", "") for text in texts)
+
+
+@needs_node
+def test_the_radar_engine_logs_nothing():
+    for run in [radar_engine({RADAR: RADAR_ANSWERS}), radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()]),
+                radar_engine({RADAR: {**RADAR_ANSWERS, "Version": None}}, [open_radar()]),
+                radar_engine({RADAR: {}}, [open_radar()]), radar_engine({}, [open_radar("gone")]),
+                radar_engine({"__proto__": RADAR_ANSWERS, RADAR: "text"}, [{"id": 5}, None, "row"]),
+                radar_engine(None, [open_radar()])]:
+        assert run.logged == []
+
+
+@needs_node
+def test_the_radar_engine_without_answers_writes_nothing():
+    assert radar_engine(None, [open_radar("gone"), open_radar(started=50, row_id="50-x-sr")]).written() == []
+
+
+@needs_node
+def test_status_carries_each_radars_answers():
+    [step] = run_functions([status_step()])["results"]
+    assert {name: radar["info"] for name, radar in step["result"]["payload"]["radars"].items()} == dict.fromkeys(
+        RADAR_NAMES)
+    run = radar_engine({RADAR: RADAR_ANSWERS}, then=[status_step()],
+                       context={"tm_status": {"radars": {RADAR: {"enabled": True, "port_open": True}}}})
+    radars = run.results[1]["result"]["payload"]["radars"]
+    info = radars[RADAR]["info"]
+    assert list(info) == [column for column, _ in RADAR_FACTS] + ["answered_at"]
+    assert {column: info[column] for column, _ in RADAR_FACTS} == RADAR_ROW_FACTS
+    assert info["answered_at"].endswith("Z") and run.before <= iso_ms(info["answered_at"]) <= run.after
+    assert (radars[RADAR]["enabled"], radars[RADAR]["port_open"]) == (True, True)
+    assert all(radars[name]["info"] is None for name in RADAR_NAMES if name != RADAR)
+    # the control app's fixture has the same shape
+    fixture = json.loads((REPO / "tm-control" / "backend" / "tests" / "fixtures" / "nodered_status.json").read_text())
+    assert {name: list(radar) for name, radar in fixture["radars"].items()} == {
+        name: list(radar) for name, radar in radars.items()}
+    assert list(fixture["radars"][RADAR]["info"]) == list(info)
+    # the same answers again: no write, and the time moves
+    seen = {"radars": {RADAR: {"enabled": True, "info": {**info, "answered_at": "2026-01-01T00:00:00.000Z"}}}}
+    again = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()], context={"tm_status": seen})
+    assert again.written() == [] and again.info()["answered_at"] != "2026-01-01T00:00:00.000Z"
+    assert again.global_context["tm_status"]["radars"][RADAR]["enabled"] is True
+
+
+RADAR_INFO_PAYLOAD = "59d61701c38da429"  # capture-radar: create radarInfo payload
+RADAR_INFO_GLOBAL, RADAR_INFO_LINK = "9e95f569494a21dc", "50c56047654010ea"
+RADAR_INFO_GROUP = "805c5feafbb3610b"  # collect radarInfo, initialize
+
+
+def test_the_radar_chain_is_wired():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    tab = tab_id(flows, "capture-radar")
+    [targets] = by_id[RADAR_INFO_PAYLOAD]["wires"]
+    assert RADAR_INFO_GLOBAL in targets and RADAR_INFO_LINK in targets and len(targets) == 3
+    assert by_id[RADAR_INFO_GLOBAL]["rules"][0]["p"] == "deviceAttributes.radarInfo"
+    assert by_id[RADAR_INFO_LINK]["type"] == "link out" and by_id[RADAR_INFO_LINK]["links"]
+    [keep_id] = [target for target in targets if target not in (RADAR_INFO_GLOBAL, RADAR_INFO_LINK)]
+    keep = by_id[keep_id]
+    assert (keep["type"], keep["name"]) == ("change", "keep the radar's answers")
+    assert [(rule["t"], rule["p"], rule["pt"], rule["to"], rule["tot"]) for rule in keep["rules"]] == [
+        ("set", "radarInfo", "msg", "payload", "msg")]
+    [[read_id]] = keep["wires"]
+    read = by_id[read_id]
+    assert (read["type"], read["name"], read["sqlquery"], read["mydb"]) == (
+        "sqlite", "read open setup_radar", "fixed", TMDB)
+    assert sql_text(read) == "SELECT * FROM setup_radar WHERE ended IS NULL ORDER BY started DESC, id DESC"
+    [[engine_id]] = read["wires"]
+    engine = by_id[engine_id]
+    assert (engine["type"], engine["name"], engine["outputs"]) == ("function", "radar setup engine", 2)
+    [[close_id], [insert_id]] = engine["wires"]
+    close, insert = by_id[close_id], by_id[insert_id]
+    for node, name in ((close, "close setup_radar"), (insert, "insert setup_radar")):
+        assert (node["type"], node["name"], node["sqlquery"], node["mydb"]) == ("sqlite", name, "prepared", TMDB)
+        assert node["wires"] == [[]]
+    assert sql_text(close) == "UPDATE setup_radar SET ended = $ended WHERE id = $id"
+    expected = [column for column in SETUP_RADAR_COLUMNS if column != "ended"]
+    assert sql_text(insert) == (f"INSERT INTO setup_radar ({', '.join(expected)}) "
+                                f"VALUES ({', '.join('$' + column for column in expected)})")
+    chain = [keep, read, engine, close, insert]
+    assert all(node["z"] == tab and node.get("g") == RADAR_INFO_GROUP for node in chain)
+    assert {node["id"] for node in chain} <= set(by_id[RADAR_INFO_GROUP]["nodes"])
+    assert "-sr" in engine["func"]
 
 
 @needs_node
@@ -7199,3 +7674,27 @@ def test_a_copy_that_ends_early_drops_its_claimed_list(name, msg):
                            modules=("fs", "path"))
     assert result["flow"]["exactCopyPlaces"] == {"/db/snapshot/x2": [PLACE]}
     assert "45.52252" not in json.dumps(result["results"])
+
+
+SERIAL_TYPES = ("serial-port", "serial in", "serial out")
+
+
+def test_no_node_is_switched_off_in_the_repo():
+    """The installer switches off the serial nodes of a radar whose port isn't there (flows.json.j2); the repo's
+    file keeps every one on, so a device with all four radars gets this file as it is."""
+    flows = json.loads(FLOWS.read_text())
+    assert [node["id"] for node in flows if node["type"] in SERIAL_TYPES and "d" in node] == []
+
+
+def test_each_radar_has_one_port_one_receive_and_one_send():
+    """What flows.json.j2 relies on: each radar name is one serial-port node's ${name}, read by one serial in and
+    written by one serial out, and no other node uses the port."""
+    flows = json.loads(FLOWS.read_text())
+    ports = [node for node in flows if node["type"] == "serial-port"]
+    assert sorted(node["serialport"] for node in ports) == [f"${{{name}}}" for name in RADAR_NAMES]
+    for port in ports:
+        users = sorted(node["type"] for node in flows if node.get("serial") == port["id"])
+        assert users == ["serial in", "serial out"], port["serialport"]
+        [receive] = [node for node in flows if node["type"] == "serial in" and node["serial"] == port["id"]]
+        assert SERIAL_IN[receive["id"]] == port["serialport"][2:-1]
+    assert sum(node["type"] in ("serial in", "serial out") for node in flows) == 8

@@ -2,6 +2,7 @@
 
 import ast
 import configparser
+import json
 import re
 from pathlib import Path
 
@@ -62,13 +63,33 @@ def test_node_red_converts_a_bearing_at_its_start_after_the_schema():
     and its config watch would start a deployment. So the start converts config.yml's bearing, before any flow runs,
     as the code owner (who owns config.yml), and a failure never keeps Node-RED down: the flows read a bearing too."""
     starts = [line for line in node_red_unit() if line.startswith("ExecStartPre=")]
-    assert len(starts) == 2
+    assert len(starts) == 3
     assert all(line.startswith("ExecStartPre=-") for line in starts)
     assert "tmdb_migrate.py" in starts[0]
     assert starts[1] == (
         "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
         "--node-red-headings /opt/traffic-monitor/node-red-tm/config/config.yml"
     )
+
+
+def test_node_red_moves_a_hand_set_cosine_angle_at_its_start_after_the_headings():
+    """Every start of Node-RED converts an old file, after the headings' line and before any flow runs, rather than
+    the installer's pass once, so a config.yml put back from an old backup is converted too."""
+    unit = node_red_unit()
+    starts = [line for line in unit if line.startswith("ExecStartPre=")]
+    assert starts[2] == (
+        "ExecStartPre=-/usr/sbin/runuser -u tmowner -- /usr/bin/timeout 60 /usr/local/bin/tm-control migrate "
+        "--node-red-cosine /opt/traffic-monitor/node-red-tm/config/config.yml"
+    )
+    assert unit.index(starts[1]) < unit.index(starts[2])
+    above = []
+    for line in reversed(unit[:unit.index(starts[2])]):
+        if not line.startswith("#"):
+            break
+        above.append(line)
+    comment = " ".join(above)
+    assert "installer" in comment and "backup" in comment
+    assert "config watch" not in comment
 
 
 def revproxy_unit():
@@ -884,6 +905,16 @@ def test_node_red_config_template_points_the_token_and_choices_at_the_sharing_pa
     assert not any("Device page" in line for line in text.splitlines())
 
 
+def test_node_red_config_template_gives_the_radar_no_extra_commands():
+    """The radar's angles are its two typed keys, 0 while blank, so a new device's file sets neither and sends no extra
+    command."""
+    text = render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml"))
+    radar = yaml.safe_load(text)["sensors"]["radars"]["TM_RADAR_SERIAL_PORT_00"]
+    assert radar == {"enabled": True, "opt_api_commands_array": "[]"}
+    assert "            opt_api_commands_array: '[]'\n" in text
+    assert "cosine" not in text and "^/" not in text
+
+
 def test_node_red_config_template_has_no_time_section():
     """Nothing reads time:; the time zone is set in the control app, or at install only with -z (tmsetup_timezone)."""
     config = yaml.safe_load(render("container/node-red-tm/config/config.yml.j2", **load_role_yaml("defaults/main.yml")))
@@ -1332,3 +1363,58 @@ def test_the_api_learns_from_nginx_whether_the_request_came_over_the_hotspot():
     for name in LOCATIONS:
         if name != "tm-control-api.conf":
             assert "X-TM-Hotspot" not in location(name), name
+
+
+# --- The device's flows.json: the serial nodes of a radar whose port isn't there are switched off -------------------
+
+FLOWS_TEMPLATE = "script/ansible/roles/tmsetup/templates/node-red-tm/flows.json.j2"
+REPO_FLOWS = REPO / "container" / "node-red-tm" / "data" / "flows.json"
+RADAR_NAMES = [f"TM_RADAR_SERIAL_PORT_{index:02d}" for index in range(4)]
+
+
+def device_flows(missing):
+    return render(FLOWS_TEMPLATE, tmsetup_radars_missing=missing)
+
+
+def switched_off(text):
+    """The ids of the nodes that differ from the repo's file, each checked to differ only by "d": true."""
+    repo = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    device = json.loads(text)
+    assert [node["id"] for node in device] == list(repo)
+    changed = []
+    for node in device:
+        if node != repo[node["id"]]:
+            assert node == {**repo[node["id"]], "d": True}, node["id"]
+            changed.append(node["id"])
+    return changed
+
+
+def test_flows_template_with_every_port_there_is_the_repos_file():
+    """Read at test time, so a later edit to flows.json is compared as it is: indent 4, key order, non-ASCII,
+    and no trailing newline, as Node-RED writes it."""
+    assert device_flows([]).encode("utf-8") == REPO_FLOWS.read_bytes()
+
+
+def test_flows_template_switches_off_a_missing_radars_three_nodes():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(["TM_RADAR_SERIAL_PORT_03"]))
+    assert sorted(changed) == sorted(["9436149d39191450", "e221212a505a78ac", "1ad62db35274c50d"])
+    assert flows["9436149d39191450"]["serialport"] == "${TM_RADAR_SERIAL_PORT_03}"
+    assert {flows[node_id]["name"] for node_id in changed} == {"", "receive RADAR_03", "send to RADAR_03"}
+
+
+def test_flows_template_with_no_radar_switches_off_all_twelve():
+    flows = {node["id"]: node for node in json.loads(REPO_FLOWS.read_text(encoding="utf-8"))}
+    changed = switched_off(device_flows(RADAR_NAMES))
+    assert len(changed) == 12
+    assert {flows[node_id]["type"] for node_id in changed} == {"serial-port", "serial in", "serial out"}
+    assert [flows[node_id]["type"] for node_id in changed].count("serial-port") == 4
+
+
+def test_flows_template_ends_without_a_newline_whatever_is_off():
+    """Ansible's template module gives the output as many trailing newlines as the template file has, so the file
+    itself ends without one (an editor that adds it breaks the byte-for-byte copy)."""
+    assert not (REPO / FLOWS_TEMPLATE).read_text().endswith("\n")
+    for missing in ([], ["TM_RADAR_SERIAL_PORT_01"]):
+        text = device_flows(missing)
+        assert not text.endswith("\n") and text.endswith("]")

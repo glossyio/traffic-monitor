@@ -213,7 +213,8 @@ def _radar(context: Context, path: str, name: str | None, radars: dict | None) -
                               "tmsetup.sh -t node-red-tm.")
     if name is None:
         return check("warn", "A radar is plugged in, but no TM_RADAR_SERIAL_PORT_ line in node-red-tm.env names "
-                             "this port, so Node-RED doesn't read it. Name it there, then restart Node-RED.")
+                             "this port, so Node-RED doesn't read it. Name it there, then re-run the installer with "
+                             "tmsetup.sh -t node-red-tm.")
     if configured is None:
         return check("unknown", f"config.yml couldn't be read, so it's unknown whether {name} is enabled.")
     if not configured:
@@ -226,8 +227,10 @@ def _radar(context: Context, path: str, name: str | None, radars: dict | None) -
                                 "port.")
     radar = apps.mapping(apps.mapping(report.get("radars")).get(name))
     if radar.get("port_open") is not True:
-        return check("error", f"Node-RED hasn't opened {name}'s port. Restart Node-RED; if that doesn't help, "
-                              "unplug the radar and plug it back in.", restart_fix("node-red-tm.service"))
+        return check("error", f"Node-RED hasn't opened {name}'s port. If its line in node-red-tm.env changed since "
+                              "the install, re-run the installer with tmsetup.sh -t node-red-tm. Otherwise restart "
+                              "Node-RED; if that doesn't help, unplug the radar and plug it back in.",
+                     restart_fix("node-red-tm.service"))
     return check("ok", f"{name}, open in Node-RED. {_last_reading(radar.get('last_reading_at'))}")
 
 

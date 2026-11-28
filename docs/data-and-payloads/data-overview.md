@@ -54,7 +54,8 @@ Tables for sensors the device doesn't have stay empty.
 | `watch_radar` | Whether each radar was working, every five minutes. See [Watch log](watch-log.md). | No |
 | `setup_device` | Which detection model, software versions, and unit settings were in force, and when. See [Setup history](setup-history.md). | Only text a person chose: a model's title and file name |
 | `setup_camera` | Each camera's detect size, zones, masks, and filters, and when they were in force. See [Setup history](setup-history.md). | Only text a person chose: a zone's key and the key of a profile |
-| `events_with_setup` (a view) | Every column of `events`, with the setup in force when the event started. See [Setup history](setup-history.md). | The same as `events` and the two tables above |
+| `setup_radar` | What each radar answered about its model, firmware, and settings, such as the cosine angles it corrects by, and when. See [Setup history](setup-history.md#setup_radar). | No |
+| `events_with_setup` (a view) | Every column of `events`, with the setup in force when the event started. See [Setup history](setup-history.md). | The same as `events` and the setup tables above |
 | `comments` | Notes typed on the [Data export](../ui/database.md) page | Possibly, if the operator types names |
 | `plate_recognizer` | Plate reads from the [Plate Recognizer](../add-ons/plate-recognizer.md) add-on | Yes |
 

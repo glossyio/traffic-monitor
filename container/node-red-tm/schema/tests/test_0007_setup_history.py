@@ -76,7 +76,8 @@ def test_view_columns(tmp_path):
     expected = columns(db_path, "events") + ["setup_device_id"]
     expected += [f"setup_{name}" for name in list(SETUP_DEVICE)[3:]]
     expected += ["setup_camera_id"] + [f"camera_{name}" for name in list(SETUP_CAMERA)[4:]]
-    assert columns(db_path, "events_with_setup") == expected
+    # 0013 adds the radar's columns after these; its own test checks them.
+    assert columns(db_path, "events_with_setup")[:len(expected)] == expected
 
 
 def test_view_joins_the_rows_in_force(tmp_path):

@@ -41,7 +41,7 @@ sudo systemctl restart node-red-tm.service
 | `TM_MQTT_BROKER_PORT` | `1883` | The broker's port. |
 | `TM_MQTT_BROKER_USERNAME` | empty | The broker's login username. When it and the password are both set, the broker requires the login from every client, and port 1883 opens to the network. Letters, digits, `.`, `_`, and `-` only, with no quotes and no comment after the value. See [Connect from other devices](../data-and-payloads/integrations.md#connect-from-other-devices). |
 | `TM_MQTT_BROKER_PASSWORD` | empty | The broker's login password, with the same rules as the username. |
-| `TM_RADAR_SERIAL_PORT_00` to `TM_RADAR_SERIAL_PORT_03` | `/dev/ttyACM0` to `/dev/ttyACM3` | The serial port of each radar. The variable's name is the radar's name in [config.yml](node-red-config.md#sensorsradars). The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. |
+| `TM_RADAR_SERIAL_PORT_00` to `TM_RADAR_SERIAL_PORT_03` | `/dev/ttyACM0` to `/dev/ttyACM3` | The serial port of each radar. The variable's name is the radar's name in [config.yml](node-red-config.md#sensorsradars). The installer passes only the ports that exist at install time into the container, so after plugging in a radar rerun `bash traffic-monitor/script/tmsetup.sh -t node-red-tm`. Changing one of these lines also needs that run; a restart of Node-RED isn't enough. |
 
 ## frigate.env
 
