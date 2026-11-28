@@ -350,6 +350,15 @@ def test_a_killed_fetchs_lock_files_are_cleared(world):
     assert outside.exists()
 
 
+def test_a_tm_update_that_cannot_be_started_ends_the_run_prepare_failed(tmp_path):
+    broken = World(tmp_path, changes={"dev": {"script/tm-update": "#!/nonexistent/interpreter\n"}})
+    result = broken.run()
+    state = failed_with(broken, result, "prepare_failed")
+    assert state["detail"].startswith("tm-update can't start (")
+    assert broken.ran() is None
+    assert "Traceback" not in result.stderr
+
+
 @pytest.mark.skipif(os.geteuid() == 0, reason="root writes into a read-only folder")
 def test_a_state_file_that_cannot_be_written_ends_1_with_one_line(world):
     world.update_dir.mkdir(parents=True)

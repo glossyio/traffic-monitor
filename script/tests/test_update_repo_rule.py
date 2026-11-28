@@ -39,7 +39,11 @@ def the_jobs_reader(value):
     loader = importlib.machinery.SourceFileLoader("tm_job_update_under_test", str(JOB))
     spec = importlib.util.spec_from_loader(loader.name, loader)
     module = importlib.util.module_from_spec(spec)
-    loader.exec_module(module)
+    was, sys.dont_write_bytecode = sys.dont_write_bytecode, True  # no __pycache__ beside the job
+    try:
+        loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = was
     try:
         return module.repo_of({"update": {"repo": value, "channel": "stable"}}) == value
     except module.Refused:

@@ -998,6 +998,8 @@ def test_the_update_job_is_a_root_oneshot_on_the_systems_python():
     # The update rewrites tm-control's venv while this runs, so the job must not run from it
     assert "ExecStart=/usr/bin/python3 -EP /usr/local/libexec/traffic-monitor/tm-job-update" in lines
     assert "venv" not in "\n".join(line for line in lines if not line.startswith("#"))
+    # Never in tm-update.slice: the slice stop in ExecStopPost would stop the job itself
+    assert not any(line.startswith("Slice=") for line in lines)
 
 
 def test_the_update_job_stops_its_builds_and_carries_a_cut_off_switch_on_when_it_ends():
@@ -1027,6 +1029,7 @@ def test_the_resume_unit_runs_only_with_a_marker_and_at_boot():
     assert "TimeoutStartSec=3h" in lines
     stops = [line for line in lines if line.startswith("ExecStopPost=")]
     assert stops == ["ExecStopPost=-/usr/bin/systemctl stop tm-update.slice"]  # and never a start of itself
+    assert not any(line.startswith("Slice=") for line in lines)
 
 
 @pytest.mark.parametrize(("name", "starters", "limit"), [

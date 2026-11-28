@@ -200,6 +200,7 @@ def test_a_tm_update_that_cannot_start_counts_as_unusable(device):
 
 
 def test_root_ignores_the_test_seams(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)  # no __pycache__ beside the launcher, which tmsetup installs
     loader = importlib.machinery.SourceFileLoader("tm_update_resume_under_test", str(LAUNCHER))
     module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
     loader.exec_module(module)
@@ -214,6 +215,7 @@ def test_root_ignores_the_test_seams(monkeypatch, tmp_path):
 
 
 def test_an_error_while_reading_the_marker_still_ends_unusable(monkeypatch, device):
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
     loader = importlib.machinery.SourceFileLoader("tm_update_resume_reading", str(LAUNCHER))
     module = importlib.util.module_from_spec(importlib.util.spec_from_loader(loader.name, loader))
     loader.exec_module(module)

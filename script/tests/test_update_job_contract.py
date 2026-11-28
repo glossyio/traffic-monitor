@@ -9,7 +9,7 @@ import json
 import sys
 
 import pytest
-from tmsetup_render import REPO
+from tmsetup_render import REPO, load_role_yaml
 
 sys.path.insert(0, str(REPO / "script"))
 
@@ -23,10 +23,15 @@ LAUNCHER = JOBS / "tm-update-resume"
 
 
 def load(path, name):
+    """The script as a module, with no bytecode left beside it: tmsetup installs the whole jobs folder."""
     loader = importlib.machinery.SourceFileLoader(name, str(path))
     spec = importlib.util.spec_from_loader(name, loader)
     module = importlib.util.module_from_spec(spec)
-    loader.exec_module(module)
+    was, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = was
     return module
 
 
@@ -47,6 +52,21 @@ def test_the_jobs_paths_are_tm_updates():
     assert job.SRC == str(paths.src_root)
     assert job.TM_CONTROL_STATE == str(paths.tm_control_state)
     assert job.MANIFEST == str(paths.manifest)
+
+
+def test_the_launchers_paths_are_tm_updates():
+    launcher = load(LAUNCHER, "tm_update_resume_paths")
+    paths = Paths()
+    assert launcher.UPDATE == str(paths.update_dir)
+    assert launcher.RESUME == str(paths.resume)
+    assert launcher.WORK == str(paths.work_root)
+    assert launcher.SRC == str(paths.src_root)
+
+
+def test_the_job_starts_the_launcher_the_role_installs():
+    job = load(JOB, "tm_job_update_launcher")
+    libexec = load_role_yaml("vars/main.yml")["tmsetup_libexec_dir"]
+    assert job.LAUNCHER == f"{libexec}/tm-update-resume"
 
 
 def test_tm_update_accepts_the_hand_over_the_job_writes(world):

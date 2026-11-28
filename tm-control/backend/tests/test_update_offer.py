@@ -113,7 +113,8 @@ def test_a_commit_that_is_not_an_id_is_never_asked_about(github, installed):
     assert not any(call[0] == "compare" for call in fake.calls)
 
 
-def test_the_unknown_commit_stable_rule_is_the_jobs(github):
+# The same order as the job's (script/tests/test_update_job_control_app.py)
+def test_an_unknown_commit_on_stable_is_judged_by_version(github):
     github(compares={"any": GithubError("not_found")})
     assert check(REPO, INSTALLED, "1.2.3-dev", "stable", NOW).relation == "ahead"  # -dev comes first
     assert check(REPO, INSTALLED, "1.2.3", "stable", NOW).relation == "identical"
