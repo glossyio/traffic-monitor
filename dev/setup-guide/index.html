@@ -806,6 +806,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="3. Adjust the zones">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#at-an-intersection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        At an intersection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2347,6 +2364,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="3. Adjust the zones">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#at-an-intersection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        At an intersection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2468,6 +2502,20 @@
 <figcaption>The four zones drawn over a residential street</figcaption>
 </figure>
 <p>Zones you draw for your own analysis, such as a stop-sign zone or a crosswalk, can have any other name. <a href="../help-and-faq/use-cases-and-scenarios/">Ideas and use cases</a> has examples. A zone's name is saved with every event that enters it and shared with the data, so name it for a direction or a lane, such as <code>zone_north</code> or <code>zone_lane_bus</code>, not for a street, an address, or a person; see <a href="../use/cameras/#zone-names-are-saved-with-your-data">Zone names are saved with your data</a>.</p>
+<h3 id="at-an-intersection">At an intersection<a class="headerlink" href="#at-an-intersection" title="Permanent link">&para;</a></h3>
+<p>Where the camera's view takes in a crossing, the radar can't tell one street from the other. A vehicle on the crossing street, or one that turns, can send readings that land on an event on the street you count. Draw the zones so that the radar's speeds belong to that street:</p>
+<ul>
+<li>Point the unit along one street, the one your zones count. Draw <code>zone_near</code>, <code>zone_far</code>, and <code>zone_radar</code> on that street, one after the other and all short of the crossing, where no cross traffic or turning vehicle passes.</li>
+<li>Keep <code>zone_capture</code> on that street too when speeds matter more to you than a count of the whole intersection.</li>
+<li>Give <code>zone_radar</code> the lengths of its sides, so that Frigate's own speed is recorded beside the radar's; see <a href="../configuration/frigate-config/#speed-without-a-radar">Speed without a radar</a>. Where the two disagree widely, the radar's reading was probably another vehicle's.</li>
+<li>For turning counts, add a zone on each leg of the crossing, named for its compass direction: <code>zone_north</code>, <code>zone_south</code>, <code>zone_east</code>, and <code>zone_west</code>. The <a href="../ui/movements/">Movements</a> page counts vehicles by the zones they passed through.</li>
+</ul>
+<figure>
+  <img alt="Two views of one intersection. From above, the unit stands on one street, set back from the crossing and aimed about 20 degrees into that street; zone_near, zone_radar, and zone_far follow one another up the street inside zone_capture, all short of the crossing, and a dashed zone sits on each leg of the crossing. Below, the same zones as the camera sees them, with the crossing as a thin band near the horizon." src="../assets/images/intersection-zones.svg" />
+<br />
+<figcaption>Zones for a unit that looks along one street toward a crossing. The dashed leg zones are optional.</figcaption>
+</figure>
+<p>Then record that the camera's view takes in an intersection. The control app has no tick box for it yet, so set it by hand: add <code>intersection: true</code> to the camera's <code>deployment:</code> block in <code>config.yml</code>, as in <a href="../configuration/node-red-config/#how-a-sensor-is-mounted">How a sensor is mounted</a>. On a camera with an enabled radar, a radar speed then goes only to an event that entered <code>zone_radar</code> and moved the way the radar saw. An event that never entered <code>zone_radar</code>, such as a vehicle seen only in a leg zone, gets no radar speed, and its <code>direction_source</code> is <code>zones_intersection</code>. Frigate's own speed still fills in where Frigate measured one, but Frigate measures a speed only in a zone whose side lengths you entered, usually <code>zone_radar</code>, so such an event usually has no speed at all. <a href="../data-and-payloads/events-payload/#direction-and-speed">Direction and speed</a> has the details.</p>
 <h2 id="4-record-the-location-and-sensors">4. Record the location and sensors<a class="headerlink" href="#4-record-the-location-and-sensors" title="Permanent link">&para;</a></h2>
 <p>The installer leaves the device's time zone as Raspberry Pi OS or Raspberry Pi Imager set it, and the dashboards show times in that zone. Whether or not you record a location, open <strong>Date and time</strong> in the control app as the administrator and check that the zone is the one where the device stands; <a href="../use/device-health/#the-date-and-time-page">the Date and time page</a> explains how to change it.</p>
 <p>The location is optional. If the device stays in one place and you never share its data, it can count without one. To record where the device is and which way it faces:</p>
