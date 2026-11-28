@@ -691,6 +691,26 @@ def test_init_config_defaults_allows_a_blank_heading(top, sensor):
 
 
 @needs_node
+@pytest.mark.parametrize("block", [None, [], "text", 5], ids=["null", "list", "text", "number"])
+def test_a_sensors_deployment_that_isnt_a_mapping_takes_the_top_levels(block):
+    """A sensor's deployment: key with nothing under it reads as null (as when its last hand-set key is taken out).
+    That, or anything else that isn't a mapping, is no block: the sensor takes the top level's, as with no key, and
+    the load goes on."""
+    config = new_device_config()
+    sensors = [("cameras", "picam_h265"), ("radars", "TM_RADAR_SERIAL_PORT_00")]
+    assert all(config["sensors"][kind][name]["enabled"] is True and "deployment" not in config["sensors"][kind][name]
+               for kind, name in sensors)
+    without, _ = init_defaults(copy.deepcopy(config))
+    for kind, name in sensors:
+        config["sensors"][kind][name]["deployment"] = block
+    payload, logged = init_defaults(config)
+    assert logged == []
+    assert payload == without
+    assert all(payload["sensors"][kind][name]["deployment"]["lat"] == payload["deployment"]["lat"]
+               for kind, name in sensors)
+
+
+@needs_node
 @pytest.mark.parametrize("top, camera, expected", [
     ({"bearing": "NE"}, None, (45, 45, 45)),
     ({"heading_deg": 90}, {"bearing": " NE "}, (90, 45, 90)),
