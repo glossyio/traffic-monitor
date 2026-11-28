@@ -4090,7 +4090,10 @@ def test_the_radar_chain_is_wired():
 # One radar setup at a time: two config loads a few seconds apart started two setups whose question rounds
 # overlapped, and the second round's start dropped the first round's answers. A guard on capture-radar, between
 # "init-config link in" and "delete msg.payload", waits 2 s for the loads to settle, runs one setup at a time, and
-# starts the latest waiting load when the round ends (or 30 s after a setup whose round never says so).
+# starts the latest waiting load when the running setup's own round ends (or 30 s after a setup whose round never
+# says so). The message the guard sends comes back as its round's end, so the end carries the id the guard stamped
+# on it (radarSetupId). Not _msgid: Node-RED gives each message a function node sends the _msgid of the message the
+# node was handling, so a setup started when a round ends goes out with that round's id.
 
 INIT_CONFIG_LINK_IN = "a6b986e24a80c93b"  # capture-radar: init-config link in
 DELETE_PAYLOAD = "365eb222a89dd7bd"  # delete msg.payload
@@ -4101,18 +4104,24 @@ ROUND_END = "ae11d5c9948bf4e1"  # set flow.radarCollectInfo = false, complete
 RADAR_INFO_JOIN = "c113788ccfa879b4"
 MANUAL_SETTINGS, MANUAL_QUERY = "cca525a755c918da", "6a21bd2e9204bac0"
 GUARD_NAME, ROUND_ENDED_NAME = "one radar setup at a time", "radar round ended"
-GUARD_KEYS = ("radarSetupRunningSince", "radarSetupWaiting")
+GUARD_KEYS = ("radarSetupRunning", "radarSetupWaiting")
 GUARD_START = 1_800_000_000_000  # the fake clock's start, in ms
 
 # Runs one function node under a fake clock: Date and the timer functions are the harness's, so a test says when
 # each message arrives and reads when each one left. Messages and timers run in time order (at the same time, the
 # messages first, in the order given); what the node sends, with node.send or by returning it, is copied when sent.
+# The timers keep their own clock: an event {at, step} moves Date alone by step ms, as a change of the system clock
+# does, and every time a test reads (an event's, a send's) is on the timers' clock. As in Node-RED, each message the
+# node sends gets the _msgid of the message its run was handling (a timer's callback belongs to the run that set
+# it). An event {at, endOf: k} is the end of the k-th setup's round: what the node sent for it, less its payload,
+# with the tag's topic and complete set, as the round passes it back.
 GUARD_HARNESS = r"""
 const vm = require("vm");
 const util = require("util");
 const input = JSON.parse(require("fs").readFileSync(0, "utf8"));
 const START = input.start;
 let now = START;
+let skew = 0;
 let seq = 0;
 const timers = new Map();
 const setTimeoutFake = (fn, ms, ...args) => {
@@ -4121,8 +4130,8 @@ const setTimeoutFake = (fn, ms, ...args) => {
     return seq;
 };
 class FakeDate extends Date {
-    constructor(...args) { if (args.length === 0) { super(now); } else { super(...args); } }
-    static now() { return now; }
+    constructor(...args) { if (args.length === 0) { super(now + skew); } else { super(...args); } }
+    static now() { return now + skew; }
 }
 const flowStore = input.flow;
 const flow = { get: (key) => flowStore[key], set: (key, value) => { flowStore[key] = value; } };
@@ -4130,9 +4139,13 @@ const nodeStore = {};
 const sent = [];
 const logged = [];
 const capture = (msg) => { if (msg != null) sent.push({ at: now - START, msg: JSON.parse(JSON.stringify(msg)) }); };
+const stamped = (msgid) => (msg) => {
+    if (msg != null) capture({ ...msg, _msgid: msgid });
+};
 const log = (level) => (text) => logged.push([level, String(text)]);
-const node = { send: capture, error: log("error"), warn: log("warn"), log: log("log"), status: () => {},
-               done: () => {}, on: () => {} };
+const nodeFor = (msgid) => ({ send: stamped(msgid), error: log("error"), warn: log("warn"), log: log("log"),
+                               status: () => {}, done: () => {}, on: () => {} });
+const node = nodeFor(undefined);
 const sandbox = {
     console, util, Buffer, URL, URLSearchParams, Date: FakeDate, RED: { util: {} },
     context: { get: (key) => nodeStore[key], set: (key, value) => { nodeStore[key] = value; } }, flow,
@@ -4147,7 +4160,14 @@ if (input.initialize) {
     guarded(() => new vm.Script("(function(node) {" + input.initialize + "\n})").runInContext(context)(node));
 }
 const body = new vm.Script("(function(msg, node) {" + input.func + "\n})").runInContext(context);
-const messages = input.events.map((event) => ({ at: START + event.at, msg: event.msg }));
+const messages = input.events.map((event) => ({ at: START + event.at, msg: event.msg, step: event.step,
+                                                endOf: event.endOf }));
+const roundEnd = (k) => {
+    if (!sent[k - 1]) throw new Error("no setup " + k + " to end");
+    const { payload, ...rest } = sent[k - 1].msg;
+    return { ...rest, topic: input.endTopic, complete: true };
+};
+const run = (msg) => { const each = nodeFor(msg._msgid); stamped(msg._msgid)(body(msg, each)); };
 const end = START + input.until;
 for (let steps = 0; ; steps += 1) {
     if (steps > 100000) throw new Error("the node keeps setting timers");
@@ -4159,9 +4179,15 @@ for (let steps = 0; ; steps += 1) {
     const timerAt = timer ? timer.at : Infinity;
     if (Math.min(messageAt, timerAt) > end) break;
     if (messageAt <= timerAt) {
-        const { at, msg } = messages.shift();
+        const { at, msg, step, endOf } = messages.shift();
         now = at;
-        guarded(() => capture(body(msg, node)));
+        if (step !== undefined) {
+            skew += step;
+        } else if (endOf !== undefined) {
+            guarded(() => run(roundEnd(endOf)));
+        } else {
+            guarded(() => run(msg));
+        }
     } else {
         now = timer.at;
         timers.delete(timer.seq);
@@ -4183,19 +4209,34 @@ def load(n):
             "load": n}
 
 
-def round_end():
-    """What reaches the guard when a question round ends: the round's message, tagged by "radar round ended"."""
-    _, tag = guard_nodes()
-    [rule] = tag["rules"]
-    return {"_msgid": "round", "topic": rule["to"], "complete": True}
+def round_end(k=None):
+    """What reaches the guard when a question round ends: the round's message, tagged by "radar round ended". The
+    round of the k-th setup the guard started carries what the guard sent for it (the harness builds it then); with
+    no k, a round started by hand in the editor, which carries the inject's own message."""
+    if k is None:
+        return {"_msgid": "manual-round", "topic": ROUND_ENDED_NAME, "complete": True}
+    return ("endOf", k)
+
+
+def clock_step(ms):
+    """A change of the system clock by ms (Date moves; the timers don't)."""
+    return ("step", ms)
+
+
+def event(at, msg):
+    if isinstance(msg, tuple):
+        return {"at": at, msg[0]: msg[1]}
+    return {"at": at, "msg": msg}
 
 
 def run_guard(events, until, flow=None):
     """Run the guard on (ms after the start, msg) events until the given ms; returns (sent, logged, flow): sent as
     (ms, msg) pairs."""
-    guard, _ = guard_nodes()
+    guard, tag = guard_nodes()
+    [rule] = tag["rules"]
     payload = {"start": GUARD_START, "until": until, "flow": flow or {}, "func": guard["func"],
-               "initialize": guard.get("initialize", ""), "events": [{"at": at, "msg": msg} for at, msg in events]}
+               "initialize": guard.get("initialize", ""), "endTopic": rule["to"],
+               "events": [event(at, msg) for at, msg in events]}
     result = subprocess.run(["node", "-e", GUARD_HARNESS], input=json.dumps(payload), capture_output=True, text=True,
                             timeout=30)
     assert result.returncode == 0, result.stderr
@@ -4208,39 +4249,69 @@ def started(sent):
     return [(at, msg["load"]) for at, msg in sent]
 
 
+def running(msg, free_after=30_000):
+    """The guard's record of the setup it sent msg for."""
+    return {"id": msg["radarSetupId"], "freeAfterMs": free_after}
+
+
+def as_loaded(msg):
+    """A message the guard sent, less what the guard and Node-RED set on it: the load it started."""
+    return {key: value for key, value in msg.items() if key not in ("radarSetupId", "_msgid")}
+
+
 @needs_node
 def test_a_burst_of_loads_starts_one_setup():
-    sent, logged, flow = run_guard([(0, load(1)), (500, load(2)), (1000, load(3))], until=60_000)
+    loads = [(0, load(1)), (500, load(2)), (1000, load(3))]
+    sent, logged, flow = run_guard(loads, until=32_999)
     assert started(sent) == [(3000, 3)]
-    assert sent[0][1] == load(3)
+    assert as_loaded(sent[0][1]) == as_loaded(load(3))
     assert logged == []
-    assert flow == {"radarSetupRunningSince": {"since": GUARD_START + 3000, "freeAfterMs": 30_000},
-                    "radarSetupWaiting": None}
+    assert flow == {"radarSetupRunning": running(sent[0][1]), "radarSetupWaiting": None}
+    # its fallback, with no round's end, empties the record 30 s after the start
+    sent, _, flow = run_guard(loads, until=60_000)
+    assert started(sent) == [(3000, 3)] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
 
 
 @needs_node
 def test_a_load_during_a_round_waits_for_its_end():
     # the bench's case: a second save 3 s after the first, and a round that takes about 9 s
-    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (11_000, round_end()), (20_000, round_end())],
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (20_000, round_end(2))],
                                 until=60_000)
     assert started(sent) == [(2000, 1), (11_000, 2)]
     assert logged == []
 
 
 @needs_node
+def test_a_setup_started_by_a_rounds_end_is_freed_by_its_own():
+    # setup 2 starts in the run that handles setup 1's end, so Node-RED gives it setup 1's _msgid; its own end must
+    # still free the way, and load 3 start then, not at the fallback
+    events = [(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (12_000, load(3)), (20_000, round_end(2))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 2), (20_000, 3)]
+    assert sent[1][1]["_msgid"] == sent[0][1]["_msgid"]
+    assert len({msg["radarSetupId"] for _, msg in sent}) == 3
+    # and so on, a setup after a setup, each freed by its own end
+    events = [(0, load(1)), (3000, load(2)), (11_000, round_end(1)), (12_000, load(3)), (20_000, round_end(2)),
+              (21_000, load(4)), (29_000, round_end(3)), (38_000, round_end(4))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (11_000, 2), (20_000, 3), (29_000, 4)]
+    assert logged == [] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
+
+
+@needs_node
 def test_loads_waiting_on_a_round_collapse_to_the_latest():
-    events = [(0, load(1)), (4000, load(2)), (5000, load(3)), (6000, load(4)), (11_000, round_end()),
-              (20_000, round_end())]
+    events = [(0, load(1)), (4000, load(2)), (5000, load(3)), (6000, load(4)), (11_000, round_end(1)),
+              (20_000, round_end(2))]
     sent, logged, flow = run_guard(events, until=120_000)
     assert started(sent) == [(2000, 1), (11_000, 4)]
-    assert sent[1][1] == load(4)
+    assert as_loaded(sent[1][1]) == as_loaded(load(4))
     assert logged == []
-    assert flow == {"radarSetupRunningSince": None, "radarSetupWaiting": None}
+    assert flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
 
 
 @needs_node
 def test_a_load_just_after_a_round_ends_still_waits_its_2_s():
-    sent, _, _ = run_guard([(0, load(1)), (10_000, load(2)), (11_000, round_end())], until=60_000)
+    sent, _, _ = run_guard([(0, load(1)), (10_000, load(2)), (11_000, round_end(1))], until=60_000)
     assert started(sent) == [(2000, 1), (12_000, 2)]
 
 
@@ -4252,6 +4323,48 @@ def test_a_round_that_never_ends_frees_the_way_after_30_s():
     # and a load that comes after the 30 s starts 2 s later
     sent, _, _ = run_guard([(0, load(1)), (40_000, load(2))], until=120_000)
     assert started(sent) == [(2000, 1), (42_000, 2)]
+
+
+@needs_node
+def test_a_late_end_from_an_older_setup_starts_nothing():
+    # the fallback freed setup 1 at 32 s and started setup 2; setup 1's own end then arrives at 33 s
+    events = [(0, load(1)), (5000, load(2)), (33_000, round_end(1)), (34_000, load(3))]
+    sent, logged, flow = run_guard(events, until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2), (62_000, 3)]
+    assert logged == []
+    # setup 2's own end still frees the way
+    sent, _, _ = run_guard(events + [(41_000, round_end(2))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2), (41_000, 3)]
+
+
+@needs_node
+def test_a_round_started_by_hand_frees_nothing():
+    # "query radar settings, manually" during a setup, with a load waiting: its end at 6 s starts nothing
+    sent, logged, flow = run_guard([(0, load(1)), (3000, load(2)), (6000, round_end())], until=10_000)
+    assert started(sent) == [(2000, 1)]
+    assert flow["radarSetupRunning"] == running(sent[0][1]) and flow["radarSetupWaiting"]["msg"] == load(2)
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (6000, round_end()), (11_000, round_end(1))],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+
+
+@needs_node
+@pytest.mark.parametrize("step", [60_000, -60_000, 3_600_000, -3_600_000], ids=["1-min-on", "1-min-back",
+                                                                                 "1-h-on", "1-h-back"])
+def test_a_change_of_the_clock_during_a_setup_starts_nothing(step):
+    # the Device page sets the clock, and a Pi with no clock battery steps its clock when NTP first answers
+    sent, logged, _ = run_guard([(0, load(1)), (3000, load(2)), (4000, clock_step(step)), (11_000, round_end(1))],
+                                until=60_000)
+    assert started(sent) == [(2000, 1), (11_000, 2)]
+    assert logged == []
+    # with no end, the fallback still frees the way 30 s after the setup started, on the timers' clock
+    sent, _, _ = run_guard([(0, load(1)), (3000, load(2)), (4000, clock_step(step))], until=120_000)
+    assert started(sent) == [(2000, 1), (32_000, 2)]
+    # and a load that comes after the change still waits its 2 s
+    sent, _, _ = run_guard([(0, load(1)), (4000, clock_step(step)), (11_000, round_end(1)), (20_000, load(2))],
+                           until=120_000)
+    assert started(sent) == [(2000, 1), (22_000, 2)]
 
 
 def load_with_radars(n, radars):
@@ -4288,13 +4401,14 @@ def test_a_round_end_without_a_setup_changes_nothing():
     assert started(sent) == [(3000, 1)]
     assert logged == []
     sent, _, flow = run_guard([(0, round_end())], until=60_000)
-    assert sent == [] and flow == {"radarSetupRunningSince": None, "radarSetupWaiting": None}
+    assert sent == [] and flow == {"radarSetupRunning": None, "radarSetupWaiting": None}
 
 
 @needs_node
 def test_the_start_still_sets_up_the_radar():
     # Node-RED's start (and a deploy) starts the guard empty, whatever an earlier run left
-    left = {"radarSetupRunningSince": GUARD_START - 1000, "radarSetupWaiting": {"msg": load(0), "at": GUARD_START}}
+    left = {"radarSetupRunning": {"id": "left-over", "freeAfterMs": 30_000},
+            "radarSetupWaiting": {"msg": load(0), "at": GUARD_START}}
     for flow in ({}, left):
         sent, logged, _ = run_guard([(0, load(1))], until=600_000, flow=flow)
         assert started(sent) == [(2000, 1)]
@@ -4308,6 +4422,7 @@ def test_the_start_still_sets_up_the_radar():
     assert by_id[DELETE_PAYLOAD]["wires"] == [[RADAR_SETTINGS]]
 
 
+@needs_node
 def test_the_manual_injects_bypass_the_guard():
     flows = json.loads(FLOWS.read_text())
     by_id = {node["id"]: node for node in flows}
@@ -4320,6 +4435,41 @@ def test_the_manual_injects_bypass_the_guard():
         assert by_id[inject]["type"] == "inject"
         assert guard["id"] not in {node["id"] for node in reachable(untagged, [inject])}
         assert guard["id"] in {node["id"] for node in reachable(by_id, [inject])}
+    # and that end carries the inject's own message, not a setup's, so it frees nothing: the guard neither starts
+    # a waiting load early nor forgets the setup that runs
+    sent, logged, flow = run_guard([(0, load(1)), (3000, load(2)), (5000, round_end())], until=31_999)
+    assert started(sent) == [(2000, 1)] and flow["radarSetupRunning"] == running(sent[0][1]) and logged == []
+
+
+# Every node from the guard to the tag passes on the message it got (a copy, where a wire splits, keeps every
+# property), so the round's end that reaches the guard carries the radarSetupId the guard stamped on it. A node that
+# sent a new message instead, or dropped the property, would leave every setup to the fallback.
+GUARD_TO_TAG = [DELETE_PAYLOAD, RADAR_SETTINGS, "09952039b0ab86aa", ROUND_START, "8c434de19f88fefc", ROUND_COMPLETE,
+                ROUND_END]
+
+
+def test_the_round_end_carries_the_setups_message():
+    flows = json.loads(FLOWS.read_text())
+    by_id = {node["id"]: node for node in flows}
+    guard, tag = guard_nodes()
+    chain = [guard["id"], *GUARD_TO_TAG, tag["id"]]
+    for here, there in zip(chain, chain[1:]):
+        assert there in by_id[here]["wires"][0], (here, there)
+    for node_id in GUARD_TO_TAG:
+        node = by_id[node_id]
+        assert node["type"] in ("change", "switch", "junction", "function"), node_id
+        if node["type"] == "function":
+            # the same msg, returned on its one output, and never replaced
+            assert node["outputs"] == 1 and re.search(r"\nreturn msg;\s*$", node["func"]), node_id
+            assert not re.search(r"(^|[^.\w])msg\s*=[^=]", node["func"]), node_id
+            assert "radarSetupId" not in node["func"] and "delete msg" not in node["func"], node_id
+        if node["type"] == "change":
+            assert all(rule["t"] in ("set", "delete") for rule in node["rules"]), node_id
+            assert all(rule["pt"] != "msg" or rule["p"] not in ("radarSetupId", "") for rule in node["rules"]), node_id
+        if node["type"] == "switch":
+            assert node.get("checkall", "true") == "true" and len(node["wires"]) == len(node["rules"])
+    assert all(rule["p"] != "radarSetupId" for rule in tag["rules"])
+    assert '"radarSetupId"' in guard["func"]
 
 
 def test_the_radar_setup_chain_is_wired():
