@@ -76,7 +76,22 @@ Beside its heading, each sensor can record how it is mounted. The four settings 
 
 A number is rounded first, and the limit applies to the rounded value. A value outside its limit, or one that isn't a number, is ignored, and the Status page lists a config error that names the setting's path but not its value. `mount` is case-sensitive: `Pole` is an error. Tilt and distance describe the same thing from two sides: with the height and one of them, the other follows. The control app's [Mounting page](../use/location.md#record-how-the-unit-is-mounted) writes whichever you measured and works out the other; you can also write the values by hand.
 
-A hand edit of any of the five starts a new deployment, just as a change of heading does. The control app's own save asks first whether the unit moved or turned, and corrects the open deployment in place when it was only measured better; a hand edit has no such question. The control app only records the mounting of cameras and radars: an air quality monitor keeps its heading.
+A hand edit of any of the five starts a new deployment, just as a change of heading does.
+
+A radar's `deployment:` block can also say which way it points at the road and what the road looks like. These are optional and empty by default, and they take the same rounding rule and the same handling of a bad value as the five above.
+
+| Setting | Type | Meaning |
+|---|---|---|
+| `road_angle_deg` | a number from 0 to 89 | The angle between the radar's beam and the road, in degrees, rounded to one decimal. 0 is straight along the road, and 89 is almost straight across it. |
+| `lane_distance_m` | a number from 0 to 100 | How far across the road from the radar the near edge of the first lane that carries traffic is, in metres, rounded to two decimals. |
+| `lane_width_m` | a number above 0, at most 10 | The width of one lane, in metres, rounded to two decimals. |
+| `lanes_toward` | a whole number from 0 to 3 | How many lanes carry traffic toward the radar. |
+| `lanes_away` | a whole number from 0 to 3 | How many lanes carry traffic away from the radar. |
+| `turn_lane` | `true` | There is a turning lane in the middle of the road. Leave it out, or set `false`, for none. |
+| `toward_side` | `near` or `far` | The side of the radar's view the traffic toward it is on. |
+| `intersection` | `true` | The sensor's view takes in an intersection. This one also works on a camera, and for a camera with an enabled radar it changes how the radar's speeds are matched to events; see [Direction and speed](../data-and-payloads/events-payload.md#direction-and-speed). Leave it out, or set `false`, otherwise. |
+
+On a camera only `intersection` is read, and the other seven are ignored. An air quality monitor takes none of them. A hand edit of `road_angle_deg` starts a new deployment, as a change of the mounting does; a change of any of the other seven corrects the deployment that is running, and starts no new one. The control app's Mounting page has no fields for these yet, so write them in this file. A reset of this file loses them, and for a radar that had an angle, putting the file right again starts a new deployment. The control app's own save asks first whether the unit moved or turned, and corrects the open deployment in place when it was only measured better; a hand edit has no such question. The control app only records the mounting of cameras and radars: an air quality monitor keeps its heading.
 
 ### If your file still says `bearing`
 
@@ -145,6 +160,7 @@ A radar measures the speed along its beam. A vehicle that crosses the beam at an
 * The Traffic Monitor sends the angles after the extra commands, so that no extra command can change them. A blank key is sent as `0`, which replaces an angle set in the radar some other way.
 * The speeds in the [radar tables](../data-and-payloads/radar-payload.md) are as the radar reported them, with the correction in force already applied. The [setup history](../data-and-payloads/setup-history.md#setup_radar) records which angles the radar reported, and when.
 * No page of the control app sets these keys. Set them by editing this file.
+* Each time you save this file the radar is set up again, one setup at a time. A save waits until two seconds pass with no newer save, so several quick edits set the radar up once. A save made while a setup is running waits for it to finish, and only the latest of those is used. If a radar never reports that its setup is done, the next one goes ahead after 30 seconds.
 
 An angle in `opt_api_commands_array`, such as `^/+20.0` or `^/-20.0`, belongs in its key. When Node-RED starts, it moves each one into its key, unless the key already has a value or the angle is 0, and removes it from the list. It saves the file, with a backup beside it, only when something changed. A `^/` entry it can't read is left in the list, and Node-RED's start-up log names the key it is in.
 
