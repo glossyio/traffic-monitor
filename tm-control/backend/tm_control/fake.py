@@ -501,9 +501,11 @@ class FakeNodeRed(NodeRed):
     DATABASE_BYTES = 734_003_200  # 700 MiB: what the status says of the database file
     RECORDS_AFTER = 30.0  # seconds after which a camera's or a radar's open row counts as having recorded traffic
 
-    def __init__(self, config_path: Path):
+    def __init__(self, config_path: Path, settings: Settings | None = None):
         super().__init__("fake")
         self.config_path = Path(config_path)
+        self.settings = settings  # for the fake Frigate's detection switches; None: every camera's detection is on
+        self.tracked_objects: list[dict] | None = [{"label": "car", "stationary": True}]  # what the fake Frigate tracks
         self.rows: list[dict] = []
         self.exact_copies: dict[str, list[dict]] = {}  # ticket -> the places a database copy was asked for
         self.setup: dict | None = None  # the last setup snapshot posted
@@ -613,6 +615,21 @@ class FakeNodeRed(NodeRed):
 
         if not isinstance(survey_id, str) or not SURVEY_ID.fullmatch(survey_id):
             raise NodeRedError("bad_request", 400)
+
+    def tracked(self, camera: str) -> list[dict] | None:
+        """What the fake Frigate is tracking: tracked_objects (a copy), or None, as Node-RED answers a camera whose
+        detection is off, when the fake detection switch of the entry's Frigate camera is off."""
+        if self.settings is not None:
+            from tm_control.modules.location.config import ConfigError, NodeRedConfig
+
+            try:
+                entries = NodeRedConfig(self.config_path).cameras()
+            except ConfigError:
+                entries = []
+            entry = next((one for one in entries if one.name == camera), None)
+            if entry is not None and _detect_switches(self.settings).get(entry.frigate_camera) is False:
+                return None
+        return None if self.tracked_objects is None else copy.deepcopy(self.tracked_objects)
 
     def post_setup(self, body: dict) -> None:
         with self._lock:

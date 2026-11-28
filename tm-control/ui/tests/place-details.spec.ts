@@ -56,6 +56,7 @@ function panel(deployments: DeploymentOut[]) {
   return mountAlone(PlaceDetails, {
     place: PLACE,
     nodered: true,
+    clockTimeZone: null,
     details: { events: { event_count: 0, first_event: null, last_event: null }, deployments, error: '' },
   })
 }
@@ -207,6 +208,7 @@ describe('the deployments in a place panel', () => {
     const wrapper = mountAlone(PlaceDetails, {
       place: PLACE,
       nodered: true,
+      clockTimeZone: null,
       details: { events: { event_count: 0, first_event: null, last_event: null }, deployments: FOUR, error: '' },
       mountingSensors: [{ sensor_type: 'cameras', sensor_name: 'picam_h265' }], // the radar was disabled since
     })
@@ -248,5 +250,110 @@ describe('the deployments in a place panel', () => {
     expect(wrapper.find('[data-deployment="measured"]').text()).toContain('Facing NE (40°)')
     expect(wrapper.find('[data-deployment="north"]').text()).toContain('Facing N (0°)')
     expect(wrapper.text()).not.toMatch(/bearing/i)
+  })
+})
+
+// The place's time zone: a fact beside First used and Last used, and two lines that only the place in use gets
+describe("a place's time zone on its panel", () => {
+  beforeEach(() => document.body.replaceChildren())
+
+  const CLOCK = 'America/New_York'
+  const NO_TIME_ZONE = 'This place has no time zone. Set one so its data can be read in local time.'
+
+  function mountFacts(changes: Partial<SurveyOut>, props: Record<string, unknown> = {}) {
+    return mountAlone(PlaceDetails, {
+      place: { ...PLACE, ...changes },
+      nodered: true,
+      clockTimeZone: CLOCK,
+      details: undefined,
+      ...props,
+    })
+  }
+
+  function fact(wrapper: ReturnType<typeof mountFacts>, label: string) {
+    return wrapper
+      .findAll('.v-row > div')
+      .find((col) => col.find('.text-secondary').text() === label)
+      ?.find('.text-body-1')
+      .text()
+  }
+
+  it('shows the time zone', () => {
+    const wrapper = mountFacts({ timezone: 'Asia/Tokyo' })
+    expect(fact(wrapper, 'Time zone')).toBe('Asia/Tokyo')
+    expect(fact(wrapper, 'First used')).toBeDefined() // in the same row
+  })
+
+  it('gives the time zone the full width on a phone, and keeps First used and Last used side by side', () => {
+    const wrapper = mountFacts({ timezone: 'America/Argentina/Buenos_Aires' })
+    const col = (label: string) =>
+      wrapper.findAll('.v-row > div').find((c) => c.find('.text-secondary').text() === label)!
+    expect(col('Time zone').classes()).toContain('v-col-12')
+    expect(col('Time zone').classes()).toContain('v-col-sm-4')
+    expect(col('Time zone').classes()).not.toContain('v-col-6')
+    expect(col('First used').classes()).toContain('v-col-6')
+    expect(col('Last used').classes()).toContain('v-col-6')
+  })
+
+  it('shows Not set', () => {
+    expect(fact(mountFacts({ timezone: null }), 'Time zone')).toBe('Not set')
+  })
+
+  it("shows the time zone when Node-RED didn't answer", () => {
+    const wrapper = mountFacts({ timezone: 'Asia/Tokyo' }, { nodered: false })
+    expect(fact(wrapper, 'Time zone')).toBe('Asia/Tokyo')
+    expect(fact(wrapper, 'First used')).toBeUndefined()
+  })
+
+  it('shows it in a row of its own when nothing is counted', () => {
+    const wrapper = mountFacts({ timezone: 'Asia/Tokyo', deployment_count: 0 })
+    expect(wrapper.text()).toContain('Not used yet.')
+    expect(fact(wrapper, 'Time zone')).toBe('Asia/Tokyo')
+  })
+
+  it('shows it for a used place too', () => {
+    expect(fact(mountFacts({ status: 'used', timezone: 'Asia/Tokyo' }), 'Time zone')).toBe('Asia/Tokyo')
+  })
+
+  it('a planned place shows no time zone', () => {
+    const wrapper = mountFacts({ status: 'planned', timezone: 'Asia/Tokyo', deployment_count: 0 })
+    expect(wrapper.text()).not.toContain('Time zone')
+    expect(wrapper.text()).not.toContain('Asia/Tokyo')
+  })
+
+  it('the place in use with no time zone is asked for one', () => {
+    expect(mountFacts({ timezone: null }).text()).toContain(NO_TIME_ZONE)
+  })
+
+  it("a place that isn't in use is not", () => {
+    const wrapper = mountFacts({ status: 'used', timezone: null })
+    expect(wrapper.text()).not.toContain(NO_TIME_ZONE)
+  })
+
+  it("says when the clock's time zone differs, with a link to Date and time", () => {
+    const wrapper = mountFacts({ timezone: 'Asia/Tokyo' })
+    expect(wrapper.text()).toContain("The unit's clock is set to America/New_York. Change it on Date and time.")
+    const link = wrapper.find('a[href="/time"]')
+    expect(link.text()).toBe('Date and time')
+    expect(link.classes()).toContain('text-primary')
+    expect(wrapper.text()).not.toContain(NO_TIME_ZONE)
+  })
+
+  it("says that only for the place in use", () => {
+    const wrapper = mountFacts({ status: 'used', timezone: 'Asia/Tokyo' })
+    expect(wrapper.text()).not.toContain("The unit's clock is set to")
+    expect(wrapper.find('a[href="/time"]').exists()).toBe(false)
+  })
+
+  it('says nothing when they are the same', () => {
+    const wrapper = mountFacts({ timezone: CLOCK })
+    expect(wrapper.text()).not.toContain("The unit's clock is set to")
+    expect(wrapper.text()).not.toContain(NO_TIME_ZONE)
+  })
+
+  it("says nothing when the clock's time zone is unknown", () => {
+    const wrapper = mountFacts({ timezone: 'Asia/Tokyo' }, { clockTimeZone: null })
+    expect(wrapper.text()).not.toContain("The unit's clock is set to")
+    expect(wrapper.text()).not.toContain(NO_TIME_ZONE)
   })
 })

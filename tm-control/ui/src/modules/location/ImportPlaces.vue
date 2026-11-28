@@ -22,8 +22,8 @@ const MAX_LENGTH = 65536
 const props = defineProps<{ sensors: SensorHeading[] }>()
 const emit = defineEmits<{ imported: []; close: [] }>()
 
-// The header's columns for this unit: the three place columns, then one per enabled sensor, named as in the settings
-const columns = computed(() => ['description', 'lat', 'lon', ...props.sensors.map((s) => s.sensor_name)])
+// The header's columns for this unit: the four place columns, then one per enabled sensor, named as in the settings
+const columns = computed(() => ['description', 'lat', 'lon', 'timezone', ...props.sensors.map((s) => s.sensor_name)])
 
 const text = ref('')
 const fileError = ref('')
@@ -85,10 +85,11 @@ function places(count: number) {
 
       <template v-else>
         <p class="text-body-1 mb-2">
-          One place per line, after a header line. The columns are description, lat, and lon, then one per sensor,
-          named as in the settings, with the way it faces: a compass point (n, ne, e, se, s, sw, w, nw), whole
-          degrees from north (0 to 359), or blank. Leave lat and lon blank for a place with no location. The places are
-          added as planned.
+          One place per line, after a header line. The columns are description, lat, lon, and timezone, then one per
+          sensor, named as in the settings, with the way it faces: a compass point (n, ne, e, se, s, sw, w, nw), whole
+          degrees from north (0 to 359), or blank. Leave lat and lon blank for a place with no location. The timezone
+          column is a time zone such as America/New_York, or blank to use the unit's clock's time zone when the place
+          is deployed. The places are added as planned.
         </p>
         <!-- A narrow screen breaks the header after a comma (<wbr>), not inside a sensor's name -->
         <p class="text-body-1 mb-6">
@@ -144,6 +145,7 @@ function places(count: number) {
                 <div class="text-body-2 text-secondary">Line {{ row.line }}</div>
                 <div class="text-body-1 text-break">{{ row.description ?? 'No description' }}</div>
                 <div class="text-body-2 text-no-wrap">{{ formatExact(row.lat, row.lon) }}</div>
+                <div v-if="row.timezone" class="text-body-2 text-break">Time zone: {{ row.timezone }}</div>
                 <div v-for="sensor in row.headings" :key="sensor.sensor_name" class="text-body-2 text-break">
                   {{ sensor.sensor_name }} faces {{ facing(sensor.heading_deg) }}
                 </div>

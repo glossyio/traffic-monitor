@@ -7,8 +7,9 @@ import { colorOf, DEFAULT_COLORS, type ColorName } from './colors'
 
 export { DEFAULT_COLORS }
 
-// Vuetify's dark-theme error color, set here so its button text can be chosen to match
+// Vuetify's dark-theme error and warning colors, set here so the text on each can be chosen to match
 const ERROR = '#CF6679'
+const WARNING = '#FB8C00'
 
 function channels(hex: string): number[] {
   return [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))
@@ -41,7 +42,7 @@ export function buildTheme(colors: Partial<Record<string, string>> | undefined):
   const background = color('background')
   const primary = color('header_text')
   const text = color('body_text')
-  // Text on a filled button: whichever of the page's two colors reads better on the button's color
+  // Text on a filled button or a solid alert: whichever of the page's two colors reads better on its color
   const textOn = (fill: string) => (contrast(fill, background) >= contrast(fill, text) ? background : text)
   return {
     dark: true,
@@ -51,11 +52,13 @@ export function buildTheme(colors: Partial<Record<string, string>> | undefined):
       primary,
       secondary: color('link_hover_text'),
       error: ERROR,
+      warning: WARNING,
       'on-background': text,
       'on-surface': text,
       'on-primary': textOn(primary),
       'on-secondary': background,
       'on-error': textOn(ERROR),
+      'on-warning': textOn(WARNING),
     },
   }
 }

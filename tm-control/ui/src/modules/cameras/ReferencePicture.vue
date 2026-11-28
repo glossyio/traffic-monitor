@@ -2,8 +2,10 @@
   The reference picture of one camera (its sensors.cameras key, `name`), for a tool that places recorded paths on a
   street. Two steps: first the intro and the note on what the picture gives away, before any picture is taken; then,
   after Take the pictures (POST /cameras/{name}/reference), both pictures as the device holds them, the zones' legend,
-  the location box, and Save the zip. The device doesn't check the pictures for people; the note, shown on both steps,
-  makes that the admin's job.
+  the location box, and Save the zip. The device asks Frigate whether it is tracking a person on the camera, at each of
+  the two pictures, and the take's `people` answer becomes one line above them (a solid warning for a person, tonal
+  information for none or for no check); the note, shown on both steps, says what the line can't promise and leaves the looking to the
+  admin, so the line never disables a button.
   The pictures are plain <img> elements: the session cookie authorizes them, and the page keeps nothing once the
   dialog closes. Closing the dialog, or taking again, drops the pictures the device holds (DELETE, answer ignored),
   and a take that answers after the dialog closed drops its new pictures at once. The dialog starts over each time it
@@ -14,17 +16,19 @@
 import { computed, ref, watch } from 'vue'
 import { ApiError, api, messageOf } from '../../api/client'
 import { saveBlob } from '../../components/download'
-import { legendRows, pictureUrl, type ReferenceOut } from './reference'
+import { legendRows, peopleLine, pictureUrl, type ReferenceOut } from './reference'
 
 const INTRO =
   'A still picture of what this camera sees, and the same view with its zones marked, for a tool that places ' +
   'recorded paths on a street. You get one zip with both pictures, a data file with the zones, and a labelled drawing.'
 const NOTE =
   'This picture shows your street. Anyone who has it can tell where the unit is, and it shows whoever was in view. ' +
-  "The device doesn't check the pictures for people. You are responsible for making sure nobody is in either " +
-  'picture before you save them: look at both, and if anyone is in them, wait and take them again. Share them only ' +
-  "with people you would give the unit's exact location. The data file also holds that location unless you clear " +
-  'the box below.'
+  'When the pictures are taken, the device asks Frigate whether it is tracking a person on this camera, and says so ' +
+  "above them. That works only while Frigate's detection is on for the camera. Frigate can miss a person who is far " +
+  'away, half hidden, or in poor light, or who walks in between the two pictures. You are still responsible for ' +
+  'making sure nobody is in either picture before you save them: look at both, and if anyone is in them, wait and ' +
+  "take them again. Share them only with people you would give the unit's exact location. The data file also holds " +
+  'that location unless you clear the box below.'
 const EXPIRED = 'These pictures are no longer held on the device. Take them again.'
 const CLEAN_ALT = "The camera's view"
 const ZONES_ALT = "The same view with Frigate's zone outlines"
@@ -41,6 +45,7 @@ const expired = ref(false)
 
 const title = computed(() => `Reference picture of ${props.name}`)
 const legend = computed(() => (reference.value ? legendRows(reference.value) : []))
+const people = computed(() => (reference.value ? peopleLine(reference.value.people) : null))
 
 // Counts each opening and closing, so a take that answers after either knows it is stale
 let session = 0
@@ -134,6 +139,9 @@ async function save() {
         <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
         <template v-if="reference">
+          <v-alert v-if="people" :type="people.type" :variant="people.variant" class="mb-4 text-body-2" data-people>
+            {{ people.text }}
+          </v-alert>
           <v-row dense>
             <v-col cols="12" md="6">
               <img

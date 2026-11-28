@@ -216,6 +216,16 @@ def test_fake_correct_mounting_takes_the_six(fake):
     assert next(each for each in fake.deployments(SURVEY) if each["id"] == row["id"])["road_angle_deg"] == 20.0
 
 
+def test_the_fake_answers_the_people_check(fake):
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked("cam").append({"label": "person", "stationary": False})  # an answer is a copy
+    assert fake.tracked("cam") == [{"label": "car", "stationary": True}]
+    fake.tracked_objects = [{"label": "person", "stationary": True}]
+    assert fake.tracked("cam") == [{"label": "person", "stationary": True}]
+    fake.tracked_objects = None
+    assert fake.tracked("cam") is None
+
+
 def test_the_report_has_the_database_size(fake):
     report = fake.report()
     assert report["database_bytes"] == FakeNodeRed.DATABASE_BYTES == 734_003_200

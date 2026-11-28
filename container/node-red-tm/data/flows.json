@@ -1696,12 +1696,13 @@
             "e813005490ef2e46",
             "2b50b0bfb900ff09",
             "3da2c0e89c06736d",
-            "fc8558ca801e2e70"
+            "fc8558ca801e2e70",
+            "84a83f7efd9a8e45"
         ],
         "x": 74,
         "y": 1099,
         "w": 1836,
-        "h": 1882
+        "h": 2082
     },
     {
         "id": "484071aff09e5ec2",
@@ -17310,5 +17311,246 @@
                 "c84e1a6d07b2f395"
             ]
         ]
+    },
+    {
+        "id": "84a83f7efd9a8e45",
+        "type": "group",
+        "z": "3dae026ab340962a",
+        "g": "d9d94c0d493873b9",
+        "name": "tm-control people check: GET /tm-internal/cameras/:key/objects",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "969b8b5120b7e87b",
+            "7b59c1b92c0c6cb6",
+            "68333edaabc5064f",
+            "53992660181dd7d9",
+            "c6ff13ce34c4714d",
+            "2281542cb441d61c",
+            "4e60c2599c2da813",
+            "1bde3531c63931aa",
+            "96980e66c68fe282",
+            "8bf2df3d3181c2e3",
+            "39ff6f00770ddc9e"
+        ],
+        "x": 94,
+        "y": 2981,
+        "w": 1786,
+        "h": 180
+    },
+    {
+        "id": "969b8b5120b7e87b",
+        "type": "http in",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "",
+        "url": "/tm-internal/cameras/:key/objects",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 3020,
+        "wires": [
+            [
+                "7b59c1b92c0c6cb6"
+            ]
+        ]
+    },
+    {
+        "id": "7b59c1b92c0c6cb6",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "tm-internal: check token",
+        "func": "// tm-control reads this endpoint on loopback: the pod publishes port 1880 on 127.0.0.1 only, and nginx answers 404\n// for /nr/tm-internal/. The token is a 32-character device secret, so a plain compare is enough. Without a token in\n// node-red-tm.env, every request is refused.\nconst expected = env.get(\"TM_INTERNAL_TOKEN\");\nconst given = msg.req.headers[\"x-tm-internal-token\"];\nif (typeof expected === \"string\" && expected !== \"\" && given === expected) {\n    return [msg, null];\n}\nmsg.payload = { error: \"unauthorized\" };\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 3020,
+        "wires": [
+            [
+                "53992660181dd7d9"
+            ],
+            [
+                "68333edaabc5064f"
+            ]
+        ]
+    },
+    {
+        "id": "68333edaabc5064f",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "",
+        "statusCode": "401",
+        "headers": {},
+        "x": 820,
+        "y": 3060,
+        "wires": []
+    },
+    {
+        "id": "53992660181dd7d9",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "tm-internal: validate objects path",
+        "func": "// tm-control's people check asks what Frigate is tracking on one camera, named by its config.yml key: a value\n// of the frigate_cameras global (Frigate's name to the key). Frigate's own name for a camera is not a key here. An\n// unknown key answers 404, and nothing is published.\n// Only each object's label and stationary leave Node-RED: Frigate's camera name, object ids, sub-labels, scores,\n// areas, ratios, and zones stay here, and nothing is logged. With Frigate's detection off for a camera, Frigate still\n// answers, with an empty list (its tracker is fed no detections), so detection off is \"no list\", never \"nobody in\n// view\": only a camera whose detection is on has a list to trust.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst key = (msg.req && msg.req.params || {}).key;\nconst keys = global.get(\"frigate_cameras\");\nif (typeof key === \"string\" && key !== \"\" && isMapping(keys) && Object.values(keys).includes(key)) {\n    msg.cameraKey = key;\n    return [msg, null];\n}\nmsg.statusCode = 404;\nmsg.payload = { error: \"unknown_camera\" };\nreturn [null, msg];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
+        "y": 3020,
+        "wires": [
+            [
+                "2281542cb441d61c"
+            ],
+            [
+                "c6ff13ce34c4714d"
+            ]
+        ]
+    },
+    {
+        "id": "c6ff13ce34c4714d",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "",
+        "statusCode": "404",
+        "headers": {},
+        "x": 1080,
+        "y": 3060,
+        "wires": []
+    },
+    {
+        "id": "2281542cb441d61c",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "tm-internal: start objects ask",
+        "func": "// Starts one people check question: asks Frigate for its camera activity (frigate/onConnect, which Frigate\n// answers on frigate/camera_activity) and starts the 3-second timer. The request message is kept, by reference, in\n// flow.objects_asks under the question's number with the camera's key. It waits there until Frigate's answer or the\n// timer comes, and only then goes on to the response node. The two messages sent on from here are new ones.\n// Only each object's label and stationary leave Node-RED: Frigate's camera name, object ids, sub-labels, scores,\n// areas, ratios, and zones stay here, and nothing is logged. With Frigate's detection off for a camera, Frigate still\n// answers, with an empty list (its tracker is fed no detections), so detection off is \"no list\", never \"nobody in\n// view\": only a camera whose detection is on has a list to trust.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nconst last = flow.get(\"objects_ask_seq\");\nconst ask = (Number.isSafeInteger(last) && last > 0 ? last : 0) + 1;\nflow.set(\"objects_ask_seq\", ask);\nconst asks = flow.get(\"objects_asks\");\nconst waiting = isMapping(asks) ? asks : {};\nwaiting[ask] = { key: msg.cameraKey, msg };\nflow.set(\"objects_asks\", waiting);\nreturn [{ topic: \"frigate/onConnect\", payload: \"\" }, { ask }];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 3020,
+        "wires": [
+            [
+                "4e60c2599c2da813"
+            ],
+            [
+                "1bde3531c63931aa"
+            ]
+        ]
+    },
+    {
+        "id": "4e60c2599c2da813",
+        "type": "mqtt out",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "ask frigate what it is tracking",
+        "topic": "frigate/onConnect",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "a5d65dd0e3566daa",
+        "x": 1370,
+        "y": 3020,
+        "wires": []
+    },
+    {
+        "id": "1bde3531c63931aa",
+        "type": "delay",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "no answer after 3 s",
+        "pauseType": "delay",
+        "timeout": "3",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1350,
+        "y": 3060,
+        "wires": [
+            [
+                "8bf2df3d3181c2e3"
+            ]
+        ]
+    },
+    {
+        "id": "96980e66c68fe282",
+        "type": "mqtt in",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "",
+        "topic": "frigate/camera_activity",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "a5d65dd0e3566daa",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 1350,
+        "y": 3100,
+        "wires": [
+            [
+                "8bf2df3d3181c2e3"
+            ]
+        ]
+    },
+    {
+        "id": "8bf2df3d3181c2e3",
+        "type": "function",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "tm-internal: answer objects asks",
+        "func": "// Answers people check questions. A frigate/camera_activity message answers every waiting question, each with its\n// own camera's list; a timer message ({ask}) answers its question with answered: false when Frigate didn't answer\n// within 3 seconds. A late timer, or an answer with nobody waiting, does nothing. A camera's list is trusted only when\n// its entry is an object, its config says detect true and isn't disabled, the entry isn't disabled, and its objects\n// is an array; anything else, a message that can't be read included, is no list. Never throws.\n// Only each object's label and stationary leave Node-RED: Frigate's camera name, object ids, sub-labels, scores,\n// areas, ratios, and zones stay here, and nothing is logged. With Frigate's detection off for a camera, Frigate still\n// answers, with an empty list (its tracker is fed no detections), so detection off is \"no list\", never \"nobody in\n// view\": only a camera whose detection is on has a list to trust.\n\nfunction isMapping(value) {\n    return value !== null && typeof value === \"object\" && !Array.isArray(value);\n}\n\nfunction has(mapping, key) {\n    return Object.prototype.hasOwnProperty.call(mapping, key);\n}\n\nfunction item(object) {\n    if (!isMapping(object)) {\n        return { label: \"unknown\", stationary: false };\n    }\n    let label = \"unknown\";\n    if (typeof object.label === \"string\" && object.label.length >= 1 && object.label.length <= 64) {\n        const plain = object.label.endsWith(\"-verified\") ? object.label.slice(0, -\"-verified\".length) : object.label;\n        if (plain !== \"\") {\n            label = plain;\n        }\n    }\n    return { label, stationary: object.stationary === true };\n}\n\nfunction listFor(activity, key) {\n    const keys = global.get(\"frigate_cameras\");\n    if (!isMapping(activity) || !isMapping(keys)) {\n        return null;\n    }\n    const name = Object.keys(keys).find((frigateName) => keys[frigateName] === key);\n    if (name === undefined || !has(activity, name)) {\n        return null;\n    }\n    const entry = activity[name];\n    if (!isMapping(entry) || !isMapping(entry.config) || entry.config.detect !== true\n        || entry.config.enabled === false || entry.enabled === false || !Array.isArray(entry.objects)) {\n        return null;\n    }\n    return entry.objects.map(item);\n}\n\nfunction answer(ask, payload) {\n    const reply = ask.msg;\n    delete reply.cameraKey;\n    reply.payload = payload;\n    reply.statusCode = 200;\n    return reply;\n}\n\ntry {\n    const asks = flow.get(\"objects_asks\");\n    if (!isMapping(asks)) {\n        return null;\n    }\n    const replies = [];\n    if (msg.topic === \"frigate/camera_activity\") {\n        for (const number of Object.keys(asks)) {\n            const ask = asks[number];\n            delete asks[number];\n            if (!isMapping(ask) || !isMapping(ask.msg)) {\n                continue;\n            }\n            let objects = null;\n            try {\n                objects = listFor(msg.payload, ask.key);\n            } catch (err) {\n                objects = null;\n            }\n            replies.push(answer(ask, { answered: true, objects }));\n        }\n    } else if ((typeof msg.ask === \"number\" || typeof msg.ask === \"string\") && has(asks, String(msg.ask))) {\n        const ask = asks[String(msg.ask)];\n        delete asks[String(msg.ask)];\n        if (isMapping(ask) && isMapping(ask.msg)) {\n            replies.push(answer(ask, { answered: false, objects: null }));\n        }\n    } else {\n        return null;\n    }\n    flow.set(\"objects_asks\", asks);\n    return replies.length > 0 ? [replies] : null;\n} catch (err) {\n    return null;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1600,
+        "y": 3060,
+        "wires": [
+            [
+                "39ff6f00770ddc9e"
+            ]
+        ]
+    },
+    {
+        "id": "39ff6f00770ddc9e",
+        "type": "http response",
+        "z": "3dae026ab340962a",
+        "g": "84a83f7efd9a8e45",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1800,
+        "y": 3060,
+        "wires": []
     }
 ]

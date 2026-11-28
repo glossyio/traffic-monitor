@@ -2,6 +2,7 @@
 a ticket for a few minutes so that the pictures an admin looks at are the pictures saved, and the files they are saved
 in.
 
+The data file also says what Frigate was tracking when the pictures were taken (`objects`, built by people.py).
 Nothing here touches the disk or logs: the pictures, the ticket, and the place's point stay in memory and in answers to
 the admin who took them. The picture and zip addresses carry the ticket, so `HideTickets` takes it out of uvicorn's
 access log (`cli.serve` installs it). nginx's own access log still holds it, as it holds a download link's token.
@@ -25,7 +26,7 @@ from tm_control.modules.location.mounting import Mounting
 
 NO_PLACE = "no-place"  # the stem's survey part when no place is in use
 FORMAT = "traffic-monitor-reference"
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2  # 2 adds `objects`; version 1's keys keep their names, meanings, and order
 _UNSAFE = re.compile(r"[^A-Za-z0-9_-]")
 # A held picture's address: the camera's name, then the ticket. A camera's name never holds a slash (it is URL-encoded).
 _TICKET_IN_PATH = re.compile(r"(/api/v1/cameras/[^/?\s]+/reference/)[^/?\s]+")
@@ -59,6 +60,7 @@ class Reference:
     height: int
     unit: Literal["m", "ft"]  # Frigate's unit system: metric or imperial
     zones: list[ZoneFacts]
+    objects: dict  # what Frigate was tracking around the two pictures, as people.facts gives it
     tm_version: str
     frigate_version: str | None
     expires: float  # on time.monotonic()'s clock
@@ -164,7 +166,11 @@ def stem(reference: Reference) -> str:
 
 
 def data_file(reference: Reference, with_location: bool) -> dict:
-    """The data file: the place, the camera, the pictures, the versions, the detect size, and every zone."""
+    """The data file: the place, the camera, the pictures, the versions, the detect size, every zone, and last what
+    Frigate was tracking on the camera when the pictures were taken: `objects` holds whether both questions were
+    answered (`checked`), the objects listed before the first picture and after the second (`before` and `after`: each
+    object's label and whether it was stationary, or null when that question gave no list), and `person`, whether
+    either list holds a person (null when nothing can be said)."""
     name = stem(reference)
     location = None
     if with_location and reference.point is not None:
@@ -187,6 +193,7 @@ def data_file(reference: Reference, with_location: bool) -> dict:
         "detect": {"width": reference.width, "height": reference.height},
         "distance_unit": reference.unit,
         "zones": [zone.model_dump() for zone in reference.zones],
+        "objects": reference.objects,
     }
 
 
