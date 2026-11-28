@@ -22,21 +22,22 @@ One run, in order:
 4. The state file that is there (for step 8), then the rest of the manifest, each value type-checked. This run's
    state file starts; from here every refusal ends it `failed` with a reason code and exits 1.
 5. Stage `fetch`: main, dev, and the v* tags into the mirror src/repo.git. git reads no config but the mirror's,
-   asks nothing, follows no redirect, and speaks only https. Lock files that a killed fetch left in the mirror are
-   removed first (only this job touches the mirror, under the run lock), or every later fetch would fail.
+   asks nothing, follows no redirect, and speaks only https. The mirror is tidied first (only this job touches it,
+   under the run lock): lock files a killed fetch left, ref files a power cut left without an id, and partial packs
+   a failed fetch left, or every later fetch would fail.
 6. Stage `verify`: development needs no tag and the commit on dev; stable needs a vX.Y.Z tag that names the commit,
    on main. Otherwise `stale_check`.
 7. Forward only: when the mirror has the installed commit, it must be an ancestor of the target and not the target;
    when it hasn't (or the manifest says `unknown`), stable compares versions and development is refused. Otherwise
    `not_forward`.
-8. The installed commit again only when the state file of step 4 names it as the target of a run that didn't end ok
-   and that tm-update ran for (a stage other than fetch and verify). This job's own refusals write a state file
-   too, and they must never make a repeat allowed.
+8. The installed commit again only when the state file of step 4 names it as the target of a run that failed or
+   has no result, and that tm-update ran for (a stage other than fetch and verify). This job's own refusals write a
+   state file too, and they must never make a repeat allowed.
 9. The tree's own word, read from the mirror: no script/tm-update or no readable script/update.json, or on stable a
    version that isn't the tag's, is `target_not_updatable`; a tree that doesn't accept contract 1 is
    `needs_manual_update`. Keys of update.json that this doesn't read are ignored.
-10. Neither database (tmdb.sqlite, tm-control's state.sqlite, both opened read-only) may be newer than the tree
-    knows: `schema_newer`.
+10. Neither database (tmdb.sqlite, tm-control's state.sqlite, both opened read-only, and only as regular files) may
+    be newer than the tree knows: `schema_newer`.
 11. The tree is unpacked into src/<commit>.partial and renamed; the hand-over goes in a fresh work/<run_id>/.
 12. The lock is released, and the process becomes the tree's `script/tm-update run --contract 1 --handover <file>`,
     whose exit status (0, 1, 2) is the unit's from then on.
@@ -78,12 +79,12 @@ SRC = "/var/lib/traffic-monitor/src"
 MIRROR = SRC + "/repo.git"
 TM_CONTROL_STATE = "/var/lib/tm-control/state.sqlite"
 SYSTEM_PATH = "/usr/sbin:/usr/bin:/sbin:/bin"
-FETCH_LIMIT, GIT_LIMIT, UNPACK_LIMIT = 900, 120, 600  # seconds
+FETCH_LIMIT, GIT_LIMIT, UNPACK_LIMIT = 3600, 120, 600  # seconds
 NO_REQUEST, HELD = 64, 75  # exit statuses beside tm-update's 0, 1, and 2
 MAX_REQUEST = 4096  # bytes
 GIT_SETTINGS = ("protocol.allow=never", "protocol.https.allow=always", "http.followRedirects=false",
                 "http.lowSpeedLimit=1000", "http.lowSpeedTime=60", "transfer.fsckObjects=true",
-                "core.hooksPath=/dev/null", "gc.auto=0")
+                "core.hooksPath=/dev/null", "gc.auto=0", "core.bare=true")
 REFSPECS = ("+refs/heads/main:refs/heads/main", "+refs/heads/dev:refs/heads/dev", "+refs/tags/v*:refs/tags/v*")
 BRANCHES = {"stable": "refs/heads/main", "development": "refs/heads/dev"}
 RUN_ID = re.compile(r"[0-9]{8}T[0-9]{6}Z")
@@ -94,6 +95,7 @@ VERSION = re.compile(r"([0-9]{1,9})\.([0-9]{1,9})\.([0-9]{1,9})(-dev)?")
 USERNAME = re.compile(r"[a-z_][a-z0-9_-]{0,31}")
 CODEDIR = re.compile(r"/[A-Za-z0-9._-][A-Za-z0-9._/-]*")
 REPO = re.compile(r"[A-Za-z0-9._-]{1,100}/[A-Za-z0-9._-]{1,100}")
+REF_ID = re.compile(rb"[0-9a-f]{40}\n")
 
 
 class Refused(Exception):
@@ -122,7 +124,7 @@ def read_json(path):
     try:
         with open(path, "rb") as file:
             return json.load(file)
-    except (OSError, ValueError):
+    except Exception:  # a damaged or hostile file, whatever it raises (a RecursionError, say), is no file
         return None
 
 
@@ -319,13 +321,29 @@ def address(repo):
     return trusted("TM_UPDATE_REMOTE", None) or f"https://github.com/{repo}.git"
 
 
-def clear_locks():
-    """The lock files a fetch killed mid-way leaves in the mirror. Links are removed, never followed."""
+def holds_no_id(path):
+    """A regular file that isn't one commit id and a newline: a ref a power cut left empty or broken."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    except OSError:
+        return False
+    with os.fdopen(fd, "rb") as file:
+        return stat.S_ISREG(os.fstat(file.fileno()).st_mode) and not REF_ID.fullmatch(file.read(42))
+
+
+def tidy_mirror():
+    """What git fails every later fetch on: the lock files a fetch killed mid-way leaves, a ref file that holds no
+    commit id (the fetch makes the ref again), and the partial packs (tmp_pack_*) of a fetch that failed part-way.
+    Links are removed, never followed; a link under refs/ is left."""
     mirror = rooted(MIRROR)
     found = [os.path.join(mirror, name) for name in ("packed-refs.lock", "HEAD.lock", "config.lock", "shallow.lock")]
     if not os.path.islink(os.path.join(mirror, "refs")):
         for top, _folders, files in os.walk(os.path.join(mirror, "refs")):
-            found += [os.path.join(top, name) for name in files if name.endswith(".lock")]
+            found += [os.path.join(top, name) for name in files
+                      if name.endswith(".lock") or holds_no_id(os.path.join(top, name))]
+    packs = os.path.join(mirror, "objects", "pack")
+    if not os.path.islink(os.path.join(mirror, "objects")) and not os.path.islink(packs) and os.path.isdir(packs):
+        found += [os.path.join(packs, name) for name in os.listdir(packs) if name.startswith("tmp_pack_")]
     for path in found:
         if os.path.islink(path) or os.path.isfile(path):
             os.unlink(path)
@@ -337,7 +355,7 @@ def fetch(repo):
         os.makedirs(rooted(SRC), exist_ok=True)
         if git(["init", "--bare", "--initial-branch=main", rooted(MIRROR)], mirror=False)[0] != 0:
             raise Refused("prepare_failed", "git init")
-    clear_locks()
+    tidy_mirror()
     status = git(["fetch", "--no-tags", "--prune", "--force", address(repo), *REFSPECS], timeout=FETCH_LIMIT,
                  reason="fetch_failed")[0]
     if status != 0:
@@ -389,7 +407,7 @@ def repeatable(commit, last):
         return False
     ran = any(isinstance(row, dict) and isinstance(row.get("id"), str) and row["id"] not in ("fetch", "verify")
               for row in last["stages"])
-    return ran and last["to"].get("commit") == commit and last.get("result") != "ok"
+    return ran and last["to"].get("commit") == commit and last.get("result") in ("failed", None)
 
 
 def check_forward(commit, channel, tag, version, installed_commit, last):
@@ -430,8 +448,12 @@ def tree_word(commit, channel, tag):
 
 
 def user_version(path):
-    """PRAGMA user_version of a database, opened read-only; 0 for one that isn't there."""
-    if not os.path.exists(path):
+    """PRAGMA user_version of a database, opened read-only; 0 for one that isn't there. Only a regular file is opened:
+    a named pipe, say, would hold the run here."""
+    try:
+        if not stat.S_ISREG(os.stat(path).st_mode):
+            raise Refused("prepare_failed", "a database is not a regular file")
+    except FileNotFoundError:
         return 0
     connection = sqlite3.connect(f"file:{urllib.parse.quote(path)}?mode=ro", uri=True, timeout=10)
     try:
@@ -538,16 +560,22 @@ def prepare(request, manifest):
         handover = write_handover(request, version)
         state.finish()
     except Refused as refused:
-        state.end(refused)
-        return 1
+        return ended(state, refused)
     except Exception as error:  # nothing in use has changed
-        refused = Refused("prepare_failed", f"unexpected {type(error).__name__}")
-        if state is None:  # the state file itself can't be written
-            say(f"failed: {refused.code} ({refused.detail})")
-        else:
-            state.end(refused)
-        return 1
+        return ended(state, Refused("prepare_failed", f"unexpected {type(error).__name__}"))
     return state, program, handover
+
+
+def ended(state, refused):
+    """End a refused run's state; one line, not a traceback, when it can't be written. The exit status 1."""
+    if state is None:  # the state file itself can't be written
+        say(f"failed: {refused.code} ({refused.detail})")
+        return 1
+    try:
+        state.end(refused)
+    except Exception as error:
+        say(f"the state can't be written ({type(error).__name__})")
+    return 1
 
 
 def main(argv):
@@ -574,7 +602,11 @@ def main(argv):
         except OSError as error:
             say(f"failed: the launcher can't start ({error.strerror})")
             return 1
-    lock = take_lock()
+    try:
+        lock = take_lock()
+    except OSError as error:
+        say(f"failed: the run lock can't be taken ({error.strerror})")
+        return 1
     if lock is None:
         say("busy: another install or update holds the lock")
         return HELD
@@ -588,9 +620,12 @@ def main(argv):
         os.execv(program, [program, "run", "--contract", "1", "--handover", handover])
     except OSError as error:
         # The lock was free a moment ago; the state is this run's to end only while no one else holds it
-        lock = take_lock()
+        try:
+            lock = take_lock()
+        except OSError:
+            lock = None
         if lock is not None:
-            state.end(Refused("prepare_failed", f"tm-update can't start ({error.strerror})"))
+            return ended(state, Refused("prepare_failed", f"tm-update can't start ({error.strerror})"))
         return 1
 
 

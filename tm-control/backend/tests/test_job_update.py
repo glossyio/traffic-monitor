@@ -359,6 +359,82 @@ def test_a_tm_update_that_cannot_be_started_ends_the_run_prepare_failed(tmp_path
     assert "Traceback" not in result.stderr
 
 
+@pytest.mark.parametrize("damage", [
+    "empty refs/heads/dev", "garbage refs/heads/main", "empty refs/tags/v0.8.1", "empty config", "a leftover tmp_pack"])
+def test_a_mirror_a_power_cut_or_a_failed_fetch_left_is_tidied_and_fetched_into(world, damage):
+    first = world.run()
+    assert first.returncode == 0, first.stdout + first.stderr
+    mirror = world.src / "repo.git"
+    leftover = mirror / "objects/pack/tmp_pack_AbCdEf"
+    if damage == "empty refs/heads/dev":
+        (mirror / "refs/heads/dev").write_bytes(b"")
+    elif damage == "garbage refs/heads/main":
+        (mirror / "refs/heads/main").write_text("garbage\n")
+    elif damage == "empty refs/tags/v0.8.1":
+        (mirror / "refs/tags/v0.8.1").write_bytes(b"")
+    elif damage == "empty config":
+        (mirror / "config").write_bytes(b"")
+    else:
+        leftover.parent.mkdir(parents=True, exist_ok=True)
+        leftover.write_bytes(b"x" * 1000)
+    (world.root / "tm-update-ran.json").unlink()
+    again = world.run(world.request(run_id="20261126T000000Z"))
+    assert again.returncode == 0, again.stdout + again.stderr
+    assert world.ran() is not None
+    assert world.state()["result"] is None  # handed over
+    assert not leftover.exists()
+
+
+def test_the_tidy_leaves_a_link_under_refs_alone(world):
+    first = world.run()
+    assert first.returncode == 0, first.stdout + first.stderr
+    outside = world.tmp / "outside"
+    outside.write_text("not an id\n")
+    (world.src / "repo.git/refs/tags/linked").symlink_to(outside)
+    (world.root / "tm-update-ran.json").unlink()
+    world.run(world.request(run_id="20261126T000000Z"))
+    assert outside.read_text() == "not an id\n"
+
+
+def test_a_database_that_is_not_a_regular_file_is_refused_not_waited_on(world):
+    os.mkfifo(world.codedir / "node-red-tm/db/tmdb.sqlite")
+    try:
+        result = world.run()
+    except subprocess.TimeoutExpired:
+        pytest.fail("the job waited on a named pipe")
+    state = failed_with(world, result, "prepare_failed")
+    assert state["detail"] == "a database is not a regular file"
+    nothing_unpacked(world, world.ids["dev"])
+
+
+def test_a_last_state_too_deep_to_read_is_no_last_state(world):
+    world.update_dir.mkdir(parents=True)
+    world.state_path.write_text("[" * 100000 + "]" * 100000)
+    result = world.run()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_a_lock_that_cannot_be_taken_ends_1_with_one_line(world):
+    world.update_dir.parent.mkdir(parents=True, exist_ok=True)
+    world.update_dir.write_text("")  # a file where the update folder should be
+    result = world.run()
+    assert result.returncode == 1
+    assert result.stdout.strip().splitlines()[-1].startswith("failed: the run lock can't be taken (")
+    assert "Traceback" not in result.stderr
+
+
+def test_a_last_result_this_job_does_not_know_allows_no_repeat(world):
+    world.install("dev", "0.8.2-dev")
+    last_run(world, world.ids["dev"], 5)
+    failed_with(world, world.run(), "not_forward")
+    assert world.ran() is None
+
+
+def test_the_fetch_has_an_hour_and_other_git_commands_two_minutes(monkeypatch):
+    job = load_job_module(monkeypatch)
+    assert (job.FETCH_LIMIT, job.GIT_LIMIT, job.UNPACK_LIMIT) == (3600, 120, 600)
+
 @pytest.mark.skipif(os.geteuid() == 0, reason="root writes into a read-only folder")
 def test_a_state_file_that_cannot_be_written_ends_1_with_one_line(world):
     world.update_dir.mkdir(parents=True)
@@ -414,7 +490,7 @@ def git_options(argv):
 
 SETTINGS = ["protocol.allow=never", "protocol.https.allow=always", "http.followRedirects=false",
             "http.lowSpeedLimit=1000", "http.lowSpeedTime=60", "transfer.fsckObjects=true", "core.hooksPath=/dev/null",
-            "gc.auto=0"]
+            "gc.auto=0", "core.bare=true"]
 
 
 def test_git_never_follows_a_redirect_reads_no_config_and_uses_only_https(world):
