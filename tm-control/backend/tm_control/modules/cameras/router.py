@@ -11,8 +11,9 @@ The reference picture (POST /cameras/{name}/reference) reads Frigate twice for t
 with its zone outlines, and holds both in memory under a ticket (app.state.references, reference.py) for the admin who
 took them: the pictures shown are the pictures saved. It writes nothing, so it holds no lock. GET
 .../{ticket}/clean.jpg and zones.jpg show them, GET .../{ticket}/package gives the zip (the pictures, the data file,
-and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches the disk, a log line, an
-audit row, or an error message.
+and the drawing, built in memory), and DELETE drops them. No picture, ticket, or point reaches a log line, an audit row,
+or an error message, and a take reaches the disk only when an admin keeps it (POST .../{ticket}/keep, which holds the
+lock and hands it to the pictures store, modules/pictures).
 
 The take asks Node-RED twice what Frigate is tracking on the camera (people.py): once before the first frame and once
 after the second, and says in its answer (`people`) and in the data file (`objects`) whether a person was listed. The
@@ -20,6 +21,7 @@ check blocks nothing: with no list (detection off, Frigate or Node-RED silent) t
 dialog's note makes looking at the pictures the admin's job in every case. No list is logged or audited.
 """
 
+import errno
 import time
 from typing import Literal
 
@@ -42,6 +44,8 @@ from tm_control.modules.cameras.zones import ZoneFacts
 from tm_control.modules.location.access import config_error, load_config, save_config
 from tm_control.modules.location.config import ConfigError, NodeRedConfig
 from tm_control.modules.location.places import Places
+from tm_control.modules.pictures.errors import storage_error
+from tm_control.modules.pictures.router import PictureOut, picture_out
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
@@ -250,6 +254,8 @@ def neutral_name(name: str, request: Request, admin: User = Depends(require_admi
         _edit(config.rename_camera, name, new)
         _save(app_state, config)
         Places(app_state.state).rename_sensor("cameras", name, new)  # config.yml first, the store second
+        app_state.pictures.rename_camera(name, new)
+        app_state.references.drop_camera(name)  # a take of the old key can't be kept or saved under it now
     Audit(app_state.state).record(admin.id, "camera.neutral_name", new)
     _snapshot_twice(app_state)
     return cameras_state(request)
@@ -374,6 +380,45 @@ def _held(request: Request, name: str, ticket: str, admin: User) -> reference.Re
     if held is None or held.camera != name:
         raise _expired()
     return held
+
+
+def _already_kept() -> ApiError:
+    return ApiError(409, "already_kept", "These pictures are already kept on this device.")
+
+
+def _no_place() -> ApiError:
+    return ApiError(
+        409, "no_place",
+        "These pictures weren't taken at the place in use now, so they can't be kept. Take them again.",
+    )
+
+
+def _no_space() -> ApiError:
+    return storage_error(OSError(errno.ENOSPC, ""), keeping=True)  # the one message, here and when the disk fills
+
+
+@router.post("/{name}/reference/{ticket}/keep", status_code=201, response_model=PictureOut)
+def keep_reference(name: str, ticket: str, request: Request, admin: User = Depends(require_admin)) -> PictureOut:
+    """Keep the held take on the device, for the place in use. No opt-in is needed or changed. The ticket stays good
+    for the zip."""
+    app_state = request.app.state
+    with app_state.reconcile_lock:  # a deploy, or a place's delete, can't come between the check and the store
+        held = _held(request, name, ticket, admin)
+        if app_state.references.kept(ticket):
+            raise _already_kept()
+        current = Places(app_state.state).in_use()
+        if held.survey_id is None or current is None or current.id != held.survey_id:
+            raise _no_place()
+        if not app_state.pictures.has_room():
+            raise _no_space()
+        boot_id = app_state.clock.boot_id()  # read before the store's try: its error isn't the disk's
+        try:
+            stored = app_state.pictures.add(held, "manual", boot_id, kept_by=admin.id)
+        except OSError as error:  # its text holds the file's path, which ends in the picture's id
+            raise storage_error(error, keeping=True) from None
+        app_state.references.mark_kept(ticket)
+    Audit(app_state.state).record(admin.id, "picture.keep", f"{stored.survey_id} {stored.camera}")
+    return picture_out(stored)
 
 
 @router.get("/{name}/reference/{ticket}/package", response_class=Response, responses=ZIP_BODY)

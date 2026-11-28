@@ -2134,6 +2134,58 @@
         }
       }
     },
+    "/api/v1/cameras/{name}/reference/{ticket}/keep": {
+      "post": {
+        "tags": [
+          "cameras"
+        ],
+        "summary": "Keep Reference",
+        "description": "Keep the held take on the device, for the place in use. No opt-in is needed or changed. The ticket stays good\nfor the zip.",
+        "operationId": "keep_reference_api_v1_cameras__name__reference__ticket__keep_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PictureOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/cameras/{name}/reference/{ticket}/package": {
       "get": {
         "tags": [
@@ -2293,6 +2345,199 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pictures": {
+      "get": {
+        "tags": [
+          "pictures"
+        ],
+        "summary": "List Pictures",
+        "description": "The kept pictures, newest first: the whole device's, or one place's with `survey_id`.",
+        "operationId": "list_pictures_api_v1_pictures_get",
+        "parameters": [
+          {
+            "name": "survey_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Survey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PicturesState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pictures/{picture_id}/{picture}": {
+      "get": {
+        "tags": [
+          "pictures"
+        ],
+        "summary": "Picture Frame",
+        "description": "One of a picture's two frames, as Frigate sent it.",
+        "operationId": "picture_frame_api_v1_pictures__picture_id___picture__get",
+        "parameters": [
+          {
+            "name": "picture_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Picture Id"
+            }
+          },
+          {
+            "name": "picture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Picture"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pictures/{picture_id}": {
+      "delete": {
+        "tags": [
+          "pictures"
+        ],
+        "summary": "Delete Picture",
+        "description": "Delete a picture: its files, then its row. 204 whether or not there was one.",
+        "operationId": "delete_picture_api_v1_pictures__picture_id__delete",
+        "parameters": [
+          {
+            "name": "picture_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Picture Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pictures/{picture_id}/package": {
+      "post": {
+        "tags": [
+          "pictures"
+        ],
+        "summary": "Picture Package",
+        "description": "The zip of one picture, as the Cameras page's is: the two frames, the data file (with the place's point as it is\nnow, when `location` is true and the place has one), and the drawing.",
+        "operationId": "picture_package_api_v1_pictures__picture_id__package_post",
+        "parameters": [
+          {
+            "name": "picture_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Picture Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackageIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The zip",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3805,12 +4050,17 @@
           "exact_places": {
             "type": "integer",
             "title": "Exact Places"
+          },
+          "pictures": {
+            "type": "integer",
+            "title": "Pictures"
           }
         },
         "type": "object",
         "required": [
           "database_bytes",
-          "exact_places"
+          "exact_places",
+          "pictures"
         ],
         "title": "DownloadFacts"
       },
@@ -5361,6 +5611,25 @@
         ],
         "title": "OrderRequest"
       },
+      "PackageIn": {
+        "properties": {
+          "location": {
+            "type": "boolean",
+            "title": "Location"
+          },
+          "looked": {
+            "type": "boolean",
+            "const": true,
+            "title": "Looked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location",
+          "looked"
+        ],
+        "title": "PackageIn"
+      },
       "PasswordChange": {
         "properties": {
           "current_password": {
@@ -5380,6 +5649,93 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "PictureOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "survey_id": {
+            "type": "string",
+            "title": "Survey Id"
+          },
+          "camera": {
+            "type": "string",
+            "title": "Camera"
+          },
+          "taken_at": {
+            "type": "string",
+            "title": "Taken At"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "deployed",
+              "opted_in",
+              "mounting",
+              "setup",
+              "daylight",
+              "manual"
+            ],
+            "title": "Reason"
+          },
+          "mark": {
+            "type": "string",
+            "enum": [
+              "clear",
+              "person",
+              "unchecked"
+            ],
+            "title": "Mark"
+          },
+          "after_restart": {
+            "type": "boolean",
+            "title": "After Restart"
+          },
+          "bytes": {
+            "type": "integer",
+            "title": "Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "survey_id",
+          "camera",
+          "taken_at",
+          "reason",
+          "mark",
+          "after_restart",
+          "bytes"
+        ],
+        "title": "PictureOut"
+      },
+      "PicturesState": {
+        "properties": {
+          "pictures": {
+            "items": {
+              "$ref": "#/components/schemas/PictureOut"
+            },
+            "type": "array",
+            "title": "Pictures"
+          },
+          "stored": {
+            "type": "integer",
+            "title": "Stored"
+          },
+          "stored_bytes": {
+            "type": "integer",
+            "title": "Stored Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pictures",
+          "stored",
+          "stored_bytes"
+        ],
+        "title": "PicturesState"
       },
       "PlacesState": {
         "properties": {
@@ -6823,6 +7179,10 @@
           "imported": {
             "type": "boolean",
             "title": "Imported"
+          },
+          "pictures": {
+            "type": "integer",
+            "title": "Pictures"
           }
         },
         "type": "object",
@@ -6843,7 +7203,8 @@
           "last_used",
           "open_count",
           "deployment_count",
-          "imported"
+          "imported",
+          "pictures"
         ],
         "title": "SurveyOut"
       },

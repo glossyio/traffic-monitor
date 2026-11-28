@@ -31,16 +31,19 @@ FORMAT_VERSION = 2  # 2 adds `objects`; version 1's keys keep their names, meani
 _UNSAFE = re.compile(r"[^A-Za-z0-9_-]")
 # A held picture's address: the camera's name, then the ticket. A camera's name never holds a slash (it is URL-encoded).
 _TICKET_IN_PATH = re.compile(r"(/api/v1/cameras/[^/?\s]+/reference/)[^/?\s]+")
+# A stored picture's address: its id, which is nothing a log needs.
+_PICTURE_IN_PATH = re.compile(r"(/api/v1/pictures/)[0-9a-f]{16}")
 
 
 class HideTickets(logging.Filter):
-    """Replaces the ticket in a uvicorn access record's path (its third argument) with "-". Other records pass as they
-    are."""
+    """Replaces the ticket, or a stored picture's id, in a uvicorn access record's path (its third argument) with "-".
+    Other records pass as they are."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args
         if isinstance(args, tuple) and len(args) >= 3 and isinstance(args[2], str):
-            record.args = (*args[:2], _TICKET_IN_PATH.sub(r"\1-", args[2]), *args[3:])
+            path = _PICTURE_IN_PATH.sub(r"\1-", _TICKET_IN_PATH.sub(r"\1-", args[2]))
+            record.args = (*args[:2], path, *args[3:])
         return True
 
 
@@ -95,6 +98,7 @@ class References:
 
     def __init__(self):
         self._held: dict[str, Reference] = {}  # ticket -> reference, oldest first
+        self._kept: set[str] = set()  # the held tickets whose pictures were kept on the device
         self._lock = threading.Lock()
 
     def __len__(self) -> int:
@@ -110,6 +114,7 @@ class References:
             while len(self._held) >= self.LIMIT:
                 del self._held[next(iter(self._held))]
             self._held[kept.ticket] = kept
+            self._kept.intersection_update(self._held)
         return kept
 
     def get(self, ticket: str, user_id: int, now: float) -> Reference | None:
@@ -124,6 +129,25 @@ class References:
             held = self._held.get(ticket)
             if held is not None and held.user_id == user_id:
                 del self._held[ticket]
+                self._kept.discard(ticket)
+
+    def drop_camera(self, camera: str) -> None:
+        """Forget every held take of a camera, whoever took it: a rename or a removal ends its old key."""
+        with self._lock:
+            for ticket in [t for t, held in self._held.items() if held.camera == camera]:
+                del self._held[ticket]
+            self._kept.intersection_update(self._held)
+
+    def kept(self, ticket: str) -> bool:
+        """Whether the held take's pictures were kept on the device."""
+        with self._lock:
+            return ticket in self._kept
+
+    def mark_kept(self, ticket: str) -> None:
+        """Remember that a held take's pictures were kept, so a second keep is refused. The ticket stays good."""
+        with self._lock:
+            if ticket in self._held:
+                self._kept.add(ticket)
 
 
 def pose_of(mounting: Mounting | None) -> dict | None:

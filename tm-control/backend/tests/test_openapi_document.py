@@ -92,3 +92,17 @@ def test_reference_paths_are_declared_with_their_answers(settings):
     package = paths[prefix + "/{ticket}/package"]["get"]["responses"]["200"]["content"]
     assert package["application/zip"]["schema"] == binary
     assert "204" in paths[prefix + "/{ticket}"]["delete"]["responses"]
+
+
+def test_pictures_paths_are_declared_with_their_answers(settings):
+    """The pictures an admin keeps: the keep and the list answer their models, the frames and the zip are binary."""
+    paths = create_app(settings).openapi()["paths"]
+    keep = paths["/api/v1/cameras/{name}/reference/{ticket}/keep"]["post"]["responses"]
+    assert "$ref" in str(keep["201"]["content"]["application/json"]["schema"])
+    assert "$ref" in str(paths["/api/v1/pictures"]["get"]["responses"]["200"]["content"]["application/json"]["schema"])
+    binary = {"type": "string", "format": "binary"}
+    frame = paths["/api/v1/pictures/{picture_id}/{picture}"]["get"]["responses"]["200"]["content"]
+    assert frame["image/jpeg"]["schema"] == binary
+    package = paths["/api/v1/pictures/{picture_id}/package"]["post"]["responses"]["200"]["content"]
+    assert package["application/zip"]["schema"] == binary
+    assert "204" in paths["/api/v1/pictures/{picture_id}"]["delete"]["responses"]

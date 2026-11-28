@@ -56,6 +56,7 @@ const PLANNED: SurveyOut = {
   open_count: 0,
   deployment_count: 0,
   imported: false,
+  pictures: 0,
 }
 
 const FEW_WARNING =

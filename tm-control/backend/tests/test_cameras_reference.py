@@ -348,6 +348,21 @@ def test_the_access_log_shows_no_ticket(path, shown):
     assert "made-up-ticket" not in record.getMessage()
 
 
+@pytest.mark.parametrize(("path", "shown"), [
+    ("/api/v1/pictures/0123456789abcdef/clean.jpg", "/api/v1/pictures/-/clean.jpg"),
+    ("/api/v1/pictures/0123456789abcdef/zones.jpg?x=1", "/api/v1/pictures/-/zones.jpg?x=1"),
+    ("/api/v1/pictures/fedcba9876543210/package", "/api/v1/pictures/-/package"),
+    ("/api/v1/pictures/fedcba9876543210", "/api/v1/pictures/-"),
+    ("/api/v1/pictures", "/api/v1/pictures"),
+    ("/api/v1/pictures/not-an-id/clean.jpg", "/api/v1/pictures/not-an-id/clean.jpg"),
+])
+def test_the_access_log_shows_no_picture_id(path, shown):
+    record = access_record(path)
+    assert HideTickets().filter(record) is True
+    assert record.getMessage() == f'127.0.0.1:50000 - "GET {shown} HTTP/1.1" 200'
+    assert "0123456789abcdef" not in record.getMessage() and "fedcba9876543210" not in record.getMessage()
+
+
 def test_hiding_tickets_leaves_other_records_alone():
     record = logging.LogRecord("x", logging.INFO, __file__, 0, "plain %s", ("words",), None)
     assert HideTickets().filter(record) is True and record.getMessage() == "plain words"

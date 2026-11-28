@@ -1087,6 +1087,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras/{name}/reference/{ticket}/keep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep Reference
+         * @description Keep the held take on the device, for the place in use. No opt-in is needed or changed. The ticket stays good
+         *     for the zip.
+         */
+        post: operations["keep_reference_api_v1_cameras__name__reference__ticket__keep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cameras/{name}/reference/{ticket}/package": {
         parameters: {
             query?: never;
@@ -1143,6 +1164,87 @@ export interface paths {
          * @description Forget the pictures before their time is up, whether or not they were still held.
          */
         delete: operations["drop_reference_api_v1_cameras__name__reference__ticket__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pictures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Pictures
+         * @description The kept pictures, newest first: the whole device's, or one place's with `survey_id`.
+         */
+        get: operations["list_pictures_api_v1_pictures_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pictures/{picture_id}/{picture}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Picture Frame
+         * @description One of a picture's two frames, as Frigate sent it.
+         */
+        get: operations["picture_frame_api_v1_pictures__picture_id___picture__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pictures/{picture_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Picture
+         * @description Delete a picture: its files, then its row. 204 whether or not there was one.
+         */
+        delete: operations["delete_picture_api_v1_pictures__picture_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pictures/{picture_id}/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Picture Package
+         * @description The zip of one picture, as the Cameras page's is: the two frames, the data file (with the place's point as it is
+         *     now, when `location` is true and the place has one), and the drawing.
+         */
+        post: operations["picture_package_api_v1_pictures__picture_id__package_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1822,6 +1924,8 @@ export interface components {
             database_bytes: number | null;
             /** Exact Places */
             exact_places: number;
+            /** Pictures */
+            pictures: number;
         };
         /** DownloadLink */
         DownloadLink: {
@@ -2273,12 +2377,56 @@ export interface components {
             /** Uuids */
             uuids: string[];
         };
+        /** PackageIn */
+        PackageIn: {
+            /** Location */
+            location: boolean;
+            /**
+             * Looked
+             * @constant
+             */
+            looked: true;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PictureOut */
+        PictureOut: {
+            /** Id */
+            id: string;
+            /** Survey Id */
+            survey_id: string;
+            /** Camera */
+            camera: string;
+            /** Taken At */
+            taken_at: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "deployed" | "opted_in" | "mounting" | "setup" | "daylight" | "manual";
+            /**
+             * Mark
+             * @enum {string}
+             */
+            mark: "clear" | "person" | "unchecked";
+            /** After Restart */
+            after_restart: boolean;
+            /** Bytes */
+            bytes: number;
+        };
+        /** PicturesState */
+        PicturesState: {
+            /** Pictures */
+            pictures: components["schemas"]["PictureOut"][];
+            /** Stored */
+            stored: number;
+            /** Stored Bytes */
+            stored_bytes: number;
         };
         /** PlacesState */
         PlacesState: {
@@ -2703,6 +2851,8 @@ export interface components {
             deployment_count: number;
             /** Imported */
             imported: boolean;
+            /** Pictures */
+            pictures: number;
         };
         /** SystemInfo */
         SystemInfo: {
@@ -4602,6 +4752,38 @@ export interface operations {
             };
         };
     };
+    keep_reference_api_v1_cameras__name__reference__ticket__keep_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                ticket: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PictureOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reference_package_api_v1_cameras__name__reference__ticket__package_get: {
         parameters: {
             query: {
@@ -4687,6 +4869,133 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pictures_api_v1_pictures_get: {
+        parameters: {
+            query?: {
+                survey_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PicturesState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    picture_frame_api_v1_pictures__picture_id___picture__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                picture_id: string;
+                picture: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The picture */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_picture_api_v1_pictures__picture_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                picture_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    picture_package_api_v1_pictures__picture_id__package_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                picture_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackageIn"];
+            };
+        };
+        responses: {
+            /** @description The zip */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
             };
             /** @description Validation Error */
             422: {

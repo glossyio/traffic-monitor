@@ -29,6 +29,7 @@ const PLACE: SurveyOut = {
   open_count: 2,
   deployment_count: 4,
   imported: false,
+  pictures: 0,
 }
 
 function row(id: string, started: number | null, ended: number | null, type: string, name: string): DeploymentOut {

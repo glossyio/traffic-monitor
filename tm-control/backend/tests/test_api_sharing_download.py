@@ -79,7 +79,8 @@ def test_a_viewer_gets_no_download_facts(viewer):
 def test_an_admin_gets_the_size_and_the_count(admin):
     locate_in_use(admin)
     Places(admin.app.state.state).create("aaaaaaaa-si", None, None, None, [], "ui", "used", None)  # no location
-    assert sharing(admin)["download"] == {"database_bytes": FakeNodeRed.DATABASE_BYTES, "exact_places": 1}
+    assert sharing(admin)["download"] == {
+        "database_bytes": FakeNodeRed.DATABASE_BYTES, "exact_places": 1, "pictures": 0}
 
 
 def test_an_admin_on_a_unit_with_no_located_place_gets_a_count_of_zero(admin):
@@ -96,6 +97,15 @@ def test_an_admin_on_a_unit_with_no_located_place_gets_a_count_of_zero(admin):
     assert sharing(admin)["download"]["exact_places"] == 0
 
 
+def test_the_facts_hold_the_pictures_on_the_device(admin):
+    admin.get("/api/v1/surveys")  # the first read settles which place is in use
+    for _ in range(2):
+        found = admin.post("/api/v1/cameras/picam_h265/reference", headers=JSON_HEADERS).json()
+        r = admin.post(f"/api/v1/cameras/picam_h265/reference/{found['ticket']}/keep", headers=JSON_HEADERS)
+        assert r.status_code == 201, r.text
+    assert sharing(admin)["download"]["pictures"] == 2
+
+
 def test_the_put_answers_with_the_facts_too(admin):
     locate_in_use(admin)
     body = {
@@ -104,14 +114,14 @@ def test_the_put_answers_with_the_facts_too(admin):
     }
     r = admin.put("/api/v1/sharing", json=body, headers=ORIGIN)
     assert r.status_code == 200, r.text
-    assert r.json()["download"] == {"database_bytes": FakeNodeRed.DATABASE_BYTES, "exact_places": 1}
+    assert r.json()["download"] == {"database_bytes": FakeNodeRed.DATABASE_BYTES, "exact_places": 1, "pictures": 0}
 
 
 def test_the_size_is_none_when_node_red_does_not_answer(admin, monkeypatch):
     locate_in_use(admin)
     monkeypatch.setattr(admin.app.state.nodered, "report", unreachable)
     body = sharing(admin)
-    assert body["download"] == {"database_bytes": None, "exact_places": 1}
+    assert body["download"] == {"database_bytes": None, "exact_places": 1, "pictures": 0}
     assert body["server"]["state"] == "unknown"
 
 

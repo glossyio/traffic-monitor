@@ -20,6 +20,7 @@ from tm_control.modules import (  # noqa: E402
     account, apps, auth, cameras, detection, hardware, jobs, location, network, secrets, services, setup, status,
     system, time,
 )
+from tm_control.modules.pictures.router import module as pictures_module  # noqa: E402  (see pictures/__init__.py)
 from tm_control.modules.sharing.router import module as sharing_module  # noqa: E402  (see sharing/__init__.py)
 
 MODULES: list[Module] = [
@@ -32,6 +33,7 @@ MODULES: list[Module] = [
     location.module,
     sharing_module,
     cameras.module,
+    pictures_module,
     status.module,
     services.module,
     apps.module,

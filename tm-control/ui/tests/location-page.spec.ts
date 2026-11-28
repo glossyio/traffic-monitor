@@ -33,6 +33,7 @@ function place(changes: Partial<SurveyOut>): SurveyOut {
     open_count: 0,
     deployment_count: 0,
     imported: false,
+    pictures: 0,
     ...changes,
   }
 }

@@ -233,6 +233,8 @@ export function camerasState(changes: Partial<CamerasState> = {}): CamerasState 
 // POST /cameras/{name}/reference: a take of the first camera's pictures, at a place with a point. Its zones are one
 // with side lengths, one with none, one that is off in Frigate, and one with no outline.
 export type ReferenceOut = components['schemas']['ReferenceOut']
+type PictureOut = components['schemas']['PictureOut']
+type PicturesState = components['schemas']['PicturesState']
 export type ZoneFacts = components['schemas']['ZoneFacts']
 
 export function zoneFacts(changes: Partial<ZoneFacts> = {}): ZoneFacts {
@@ -284,6 +286,27 @@ export function referenceOut(changes: Partial<ReferenceOut> = {}): ReferenceOut 
     people: 'none',
     ...changes,
   }
+}
+
+// A reference picture kept on the device, as POST .../keep and GET /pictures answer it
+export function pictureOut(changes: Partial<PictureOut> = {}): PictureOut {
+  return {
+    id: '0123456789abcdef',
+    survey_id: '3f9a1c2e-si',
+    camera: 'camera_1_3fa9c2',
+    taken_at: '2026-11-18T18:30:05Z',
+    reason: 'manual',
+    mark: 'clear',
+    after_restart: false,
+    bytes: 412000,
+    ...changes,
+  }
+}
+
+// GET /pictures: this many pictures, newest first, and the device's totals
+export function picturesState(pictures: number): PicturesState {
+  const list = Array.from({ length: pictures }, (_, at) => pictureOut({ id: (at + 1).toString(16).padStart(16, '0') }))
+  return { pictures: list, stored: pictures, stored_bytes: list.reduce((sum, one) => sum + one.bytes, 0) }
 }
 
 // GET /network: Ethernet connected, and the Wi-Fi radio on the unit's own hotspot
@@ -400,7 +423,7 @@ export function sharingState(changes: Partial<SharingState> = {}): SharingState 
 
 // What an admin's Sharing state says about the download card: the database's size in bytes (700 MB) and the places with
 // an exact location
-export const DOWNLOAD_FACTS: NonNullable<SharingState['download']> = { database_bytes: 734003200, exact_places: 2 }
+export const DOWNLOAD_FACTS: NonNullable<SharingState['download']> = { database_bytes: 734003200, exact_places: 2, pictures: 0 }
 
 // A device sharing data with the maintainer's server under the current notice, with the token set
 export const SHARING_ON: SharingState = sharingState({

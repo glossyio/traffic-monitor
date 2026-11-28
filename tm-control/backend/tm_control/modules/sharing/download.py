@@ -22,6 +22,7 @@ DATABASE_FILES = "/db/tmdb.sqlite"
 class DownloadFacts(BaseModel):
     database_bytes: int | None  # None when Node-RED didn't answer or gave anything but a whole number from 0
     exact_places: int  # the places in use or used that have both coordinates
+    pictures: int  # the reference pictures kept on the device; not part of any download here
 
 
 def database_bytes(report: dict | None) -> int | None:
@@ -38,7 +39,9 @@ def database_bytes(report: dict | None) -> int | None:
 def facts(app_state, report: dict | None) -> DownloadFacts:
     # The store as it is, without the reconcile GET /surveys runs: the copy's own route runs it before it reads them.
     return DownloadFacts(
-        database_bytes=database_bytes(report), exact_places=len(Places(app_state.state).located())
+        database_bytes=database_bytes(report),
+        exact_places=len(Places(app_state.state).located()),
+        pictures=app_state.pictures.total()[0],
     )
 
 

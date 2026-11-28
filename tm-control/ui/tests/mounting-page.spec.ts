@@ -31,6 +31,7 @@ const IN_USE: SurveyOut = {
   open_count: 2,
   deployment_count: 2,
   imported: false,
+  pictures: 0,
   timezone: null,
 }
 
