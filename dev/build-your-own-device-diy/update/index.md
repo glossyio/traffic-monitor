@@ -2,6 +2,10 @@
 
 An update reruns the installer from a newer copy of the repository. Your data and your settings stay; the containers are rebuilt.
 
+Update from the control app
+
+An administrator can also update from the control app's **Software update** page: **Check for updates** asks GitHub for the newest version of the device's channel, and the update button, **Update to** that version, downloads, builds, and installs it, with the device keeping the old version running until the switch. The update saves the settings as a restore point, but not the counted data, so [download a copy of the database](https://docs.trafficmonitor.ai/dev/use/sharing/#download-your-data) first. It can't install a version that needs the installer, and it can't update a device with the Plate Recognizer add-on or one with a detector that needs a driver; for those it says so and points here. The steps below always work, except while such an update is running: the installer then stops and asks you to wait.
+
 ## Before you update
 
 - Read the [release notes](https://github.com/glossyio/traffic-monitor/releases). A release that needs a fresh image says so.

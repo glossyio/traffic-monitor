@@ -2439,6 +2439,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-update-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2868,6 +2879,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-update-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-the-sandbox-allows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2951,7 +2973,7 @@
   <hr />
 <h2 id="description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check">description: How the control app (tm-control) is built: its backend modules, the login check nginx runs for every app, the status checks, root jobs and polkit, fake mode, and how to add a module or a check.<a class="headerlink" href="#description-how-the-control-app-tm-control-is-built-its-backend-modules-the-login-check-nginx-runs-for-every-app-the-status-checks-root-jobs-and-polkit-fake-mode-and-how-to-add-a-module-or-a-check" title="Permanent link">&para;</a></h2>
 <h1 id="tm-control">tm-control<a class="headerlink" href="#tm-control" title="Permanent link">&para;</a></h1>
-<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, and About pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, <a href="../../use/cameras/">Cameras</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. This page is for changing it.</p>
+<p><code>tm-control</code> is the device's control app: the home page, setup, the login in front of every app, the device's accounts, and the Status, Device, Date and time, Network, Detection, Cameras, Location, Software update, and About pages. <a href="../../use/control-app/">Control app and login</a>, <a href="../../use/device-health/">Check and fix the device</a>, <a href="../../use/wifi-hotspot/">Wi-Fi and the hotspot</a>, <a href="../../use/detection/">Choose the detection model</a>, <a href="../../use/cameras/">Cameras</a>, and <a href="../../use/location/">Places and location</a> describe it from the operator's side. <a href="../software-update/">Software update</a> describes the update page's job and files. This page is for changing it.</p>
 <p>It has three parts, all in the repository's <a href="https://github.com/glossyio/traffic-monitor/tree/main/tm-control"><code>tm-control/</code></a> folder:</p>
 <table>
 <thead>
@@ -3069,19 +3091,20 @@
                  card (the device's card), manifest, migrate (config updates for older installs), secrets, settings, state
   adapters/      the outside world: command (runs an argv list with a timeout and an output cap, never a shell),
                  systemd, timedate, sysinfo, hardware, network (nmcli and iw, read-only), the apps' HTTP APIs (frigate,
-                 nodered, go2rtc), mqtt,
+                 nodered, go2rtc), github (the one way to the internet), mqtt,
                  redact, yamlfile
   modules/       one folder per feature, each with a router: auth, setup, account, jobs, status, services, apps,
-                 hardware, network, secrets, system, time, detection, cameras, location, sharing
+                 hardware, network, secrets, system, time, detection, cameras, location, sharing, update
 </code></pre></div>
 <p>Rules live in the backend; the UI shows what the API returns and posts what the operator types. <code>tm-control/ui/README.md</code> describes the UI's layout and design.</p>
 <h3 id="root-jobs-and-polkit">Root jobs and polkit<a class="headerlink" href="#root-jobs-and-polkit" title="Permanent link">&para;</a></h3>
-<p>tm-control never runs as root and never uses sudo. polkit lets its user do two things, both listed in <code>tmsetup_tm_control_polkit</code> in the role's <code>vars/main.yml</code>, and nothing else:</p>
+<p>tm-control never runs as root and never uses sudo. polkit lets its user do three things, all listed in <code>tmsetup_tm_control_polkit</code> in the role's <code>vars/main.yml</code>, and nothing else:</p>
 <ul>
 <li>Start, stop, and restart a fixed list of units. tm-control itself isn't on it; restart it with Cockpit or SSH. <code>tm-job-network.service</code> is on it for the Network page's changes, <code>tm-job-network-join.service</code> for a Wi-Fi join, <code>tm-network-retry.service</code> is on it for the Hotspot check's fix, and <code>FIX_UNITS</code> in <code>modules/services/units.py</code> lists the units like it, which a check's fix may start but the Services list doesn't show; <code>POST /services/{unit}/restart</code> accepts them.</li>
+<li>Start, and only start, the units in <code>start_only_units</code>: <code>tm-job-update.service</code>. It can't be stopped or restarted from the control app, because a stop in the middle of an update's switch would leave the device half installed.</li>
 <li>Seven actions: <code>org.freedesktop.timedate1.set-time</code>, <code>set-timezone</code>, and <code>set-ntp</code> for the Date and time page, and <code>org.freedesktop.login1.reboot</code>, <code>reboot-multiple-sessions</code>, <code>power-off</code>, and <code>power-off-multiple-sessions</code> for the Device page. The <code>-ignore-inhibit</code> variants aren't granted, so tm-control asks logind (<code>CanReboot</code>, <code>CanPowerOff</code>) first and answers 409 while an inhibitor, such as an update, holds the device up.</li>
 </ul>
-<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are four jobs:</p>
+<p>A time zone change restarts <code>traffic-monitor.service</code> and <code>revproxy.service</code> after the response, because the containers bind-mount <code>/etc/localtime</code> and keep the old zone until they restart. A time change that moved the clock ahead by more than 20 seconds (<code>FRIGATE_JUMP_SECONDS</code> in <code>modules/time/router.py</code>), by <code>set-time</code> or by NTP while the request watched, restarts <code>frigate.service</code> the same way, or at once when a later step of the request fails. Frigate's capture stops on such a step and, from a few minutes, may not recover by itself. A time zone change in the same request restarts the pod instead, which covers Frigate. Each admin action records an audit row. For work that needs root, tm-control writes a request to <code>/run/tm-control/jobs/&lt;name&gt;.json</code> and starts <code>tm-job-&lt;name&gt;.service</code>, a fixed root-owned oneshot unit. Its script in <code>tm-control/jobs/</code> checks the request strictly, does one thing, and deletes the request. tm-control follows the run through the unit and the journal, and <code>GET /api/v1/jobs/{id}</code> reports its status and log lines. There are five jobs:</p>
 <table>
 <thead>
 <tr>
@@ -3105,6 +3128,10 @@
 <tr>
 <td><code>network-join</code></td>
 <td>Tests a Wi-Fi network under a NetworkManager checkpoint, comes back, counts down, and switches to it. See <a href="#the-wi-fi-join">The Wi-Fi join</a>.</td>
+</tr>
+<tr>
+<td><code>update</code></td>
+<td>Fetches a version from GitHub into a mirror, checks it, and hands over to that version's <code>tm-update</code>. It is the only job that is started, never stopped, from the control app. See <a href="../software-update/#the-update-job">Software update</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3711,6 +3738,37 @@
 <p><code>tm-hotspot-firewall.service</code> loads the <code>inet tm_hotspot</code> nftables table before NetworkManager can start the hotspot. The table drops forwarded traffic into and out of the hotspot's subnet, so phones on it reach the unit and nothing behind it.</p>
 <p>nginx's sign-in rule is in <code>container/revproxy/nginx.conf.j2</code>. On the hotspot dnsmasq answers every name with the unit's address, so a phone's connection test arrives with a foreign <code>Host</code>. A request that arrived on the hotspot's address with any name but that address or the unit's own is redirected to <code>http://10.42.0.1/</code>, which makes the phone open its sign-in window. The rule must never answer such a test with success: on Android 17 no browser reaches the unit until its user allows the Nearby devices permission for it, so the sign-in window is the only way in that needs no setup. nginx also sets <code>X-TM-Hotspot: 1</code> from the address a request arrived on, replacing any value the client sent, and <code>GET /api/v1/setup/status</code> then returns <code>hotspot.local_name</code>, which the login and setup pages show in a note: the address to copy, and the steps from a phone's sign-in window to a browser. The same answer carries <code>hostname</code> for everyone, with no login, and the control app's tab and bar take the unit's name from it, so the pages before login name the unit too. The name is no secret: mDNS announces it on the network.</p>
 <p><code>sudo tm-control card</code> (<code>core/card.py</code>) prints the device's addresses, the hotspot's name and password, and the setup code. It refuses to run without root, reads the password and setup-code files and nmcli's answer first, and only then opens the state database. <code>--json</code> prints the same values, and <code>--unclaimed-only</code>, which the installer passes, prints nothing and exits 3 once the device is claimed.</p>
+<h3 id="the-update-module">The update module<a class="headerlink" href="#the-update-module" title="Permanent link">&para;</a></h3>
+<p>The <code>update</code> module is the Software update page's backend (<code>modules/update/</code>), for admins only. Its one way to the internet is <code>adapters/github.py</code>, which asks <code>api.github.com</code> for the latest release, a commit's id, and how two commits compare. The host is fixed, no proxy from the environment is used, no redirect is followed, a connection and each read time out after 10 seconds, an answer over 1 MiB is refused, and a repository name is accepted only in the one <code>owner/name</code> form that <code>core/repository.py</code> holds. Every failure is a <code>GithubError</code> with a kind (<code>offline</code>, <code>rate_limited</code>, <code>not_found</code>, or <code>refused</code>) that the router turns into a code. <a href="../software-update/#what-check-sends-to-github">Software update</a> lists what a check sends.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /update</code></td>
+<td>What is installed, the last check's offer, the checks before a start, the run, and the start this app made. It never goes online and never fails because systemd or GitHub can't be asked.</td>
+</tr>
+<tr>
+<td><code>POST /update/check</code></td>
+<td>Takes a <code>channel</code> and asks GitHub what it offers, at most once a minute. A second check inside the minute is 429 <code>rate_limited</code>, and so is GitHub's own rate limit; both carry <code>Retry-After</code>. The answer is an offer with a relation to the installed commit: <code>ahead</code>, <code>identical</code>, <code>behind</code>, <code>diverged</code>, or <code>unknown</code>. A device with no recorded repository is 409 <code>no_source</code>; an unreachable GitHub is 502 <code>github_unreachable</code>, and an answer this version doesn't understand 502 <code>github_answer</code>. When GitHub doesn't know the installed commit, <code>stable</code> falls back to comparing versions. The offer is kept in memory only. A check that works also drops a start the job refused, whose words were about then.</td>
+</tr>
+<tr>
+<td><code>POST /update/start</code></td>
+<td>Takes a <code>channel</code> and a <code>commit</code>, and starts the job for the last check's offer when it is ahead, or for the last run's target (<strong>Try again</strong> and <strong>Finish the update</strong>). In order: it writes <code>update.finished</code> for the run it read if that run ended and no request has written it yet, because the job is about to replace its state file; a run that is going is 409 <code>update_running</code>; another target is 409 <code>stale_check</code>; and a failed check before a start is 409 <code>not_ready</code>. The request it writes holds the four keys the job reads, and the answer is 202.</td>
+</tr>
+<tr>
+<td><code>GET /update/log</code></td>
+<td>The two units' last 50 journal lines and the last 400 lines of the run's log, redacted as the diagnostics are. When the state file names no run (a later version's file, or a unit running over an older run's file), the log is the newest one in <code>log/</code> whose name is a run id, and <code>run_id</code> is that name.</td>
+</tr>
+</tbody>
+</table>
+<p><code>GET /update</code> works the run's status out of the state file, the two units, the resume marker, and this boot's id (<code>modules/update/run.py</code>), never from a line of anyone's output: <code>running</code> while a unit runs or the restart the run asked for is still to come, then <code>ok</code> or <code>failed</code>, <code>cut_off</code> when the run stopped with the marker still there (the page offers <strong>Finish the update</strong>), and <code>interrupted</code> when it stopped without one. A state file of a schema or shape it doesn't know isn't shown: with a unit running, the run is <code>running</code> with <code>readable</code> false. No state file at all with a unit running is a device's first run before the job writes one, so it is <code>running</code> and readable. The checks before a start are the Plate Recognizer add-on (an error, the add-on isn't rebuilt), a missing repository (an error), a run in progress (an error), and an installed tree that was changed by hand (a warning).</p>
+<p>Audit rows are <code>update.check</code>, <code>update.start</code>, and, once when a request first sees a run ended (a page load, a check, or a start), <code>update.finished</code>. None holds a log line. An audit that can't be written is logged by the kind of error and doesn't fail the request; the next request tries again.</p>
+<p><a href="../software-update/#what-check-sends-to-github">What Check sends to GitHub</a> also says where the page's check and the job's checks can disagree.</p>
 <h3 id="what-the-sandbox-allows">What the sandbox allows<a class="headerlink" href="#what-the-sandbox-allows" title="Permanent link">&para;</a></h3>
 <p><code>tm-control.service</code> runs with <code>ProtectSystem=strict</code>, <code>RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK</code>, and <code>SupplementaryGroups=systemd-journal video</code>. It writes its state and runtime directories and two config directories under the code directory (<code>ReadWritePaths</code>): Frigate's, <code>frigate/config</code>, for the models the Detection page manages, and Node-RED's, <code>node-red-tm/config</code>, for the <code>config.yml</code> the Location page writes. The rest of the system is read-only to it. The sandbox also shaped the probes:</p>
 <ul>
@@ -3746,7 +3804,7 @@
 <span class="nv">TM_CONTROL_FAKE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>serve<span class="w">        </span><span class="c1"># the backend on 127.0.0.1:8090</span>
 <span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                                         </span><span class="c1"># the UI on http://localhost:5173</span>
 </code></pre></div>
-<p>Fake mode seeds <code>.tm-control-fake/node-red-tm/config/config.yml</code> from <code>tests/fixtures/node_red_config_ok.yml</code> (a camera and a radar, and a <code>deployment</code> block at 45.0, -122.0 with no survey id), and keeps it, with whatever the app wrote to it, until the next <code>fake-reset</code>. Its Node-RED (<code>FakeNodeRed</code> in <code>fake.py</code>) keeps deployment rows in memory and runs the deployment engine's rules on them whenever that file changes, so deploys, corrections, and hand edits of the file behave as on a device; after a restart of <code>serve</code>, only the place in use has deployments. It has no traffic to count, so an open camera or radar row counts as having recorded traffic 30 seconds after it starts (<code>RECORDS_AFTER</code>), which is what lets the Mounting save's question come up on a laptop. It also answers the reference picture's people check: its fake Frigate tracks a car, so a take says <code>none</code>; starting the backend with <code>TM_CONTROL_FAKE_PERSON=1</code> adds a person to what it tracks, so a take says <code>seen</code>; and a camera whose detection switch on the Cameras page is off gets no list, so a take says <code>unchecked</code>. Its backup directory is empty, so there's nothing to import. Fake mode also seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. The fake Frigate can download one Frigate+ model ID, <code>fedcba9876543210fedcba9876543210</code> (<code>fake.FAKE_FETCHABLE_ID</code>); any other ID is refused after 5 seconds (<code>FAKE_FETCH_SECONDS</code>), as a device would show a refusal. The Frigate+ key has to be set first, or the route answers 409 <code>no_key</code>. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
+<p>Fake mode seeds <code>.tm-control-fake/node-red-tm/config/config.yml</code> from <code>tests/fixtures/node_red_config_ok.yml</code> (a camera and a radar, and a <code>deployment</code> block at 45.0, -122.0 with no survey id), and keeps it, with whatever the app wrote to it, until the next <code>fake-reset</code>. Its Node-RED (<code>FakeNodeRed</code> in <code>fake.py</code>) keeps deployment rows in memory and runs the deployment engine's rules on them whenever that file changes, so deploys, corrections, and hand edits of the file behave as on a device; after a restart of <code>serve</code>, only the place in use has deployments. It has no traffic to count, so an open camera or radar row counts as having recorded traffic 30 seconds after it starts (<code>RECORDS_AFTER</code>), which is what lets the Mounting save's question come up on a laptop. It also answers the reference picture's people check: its fake Frigate tracks a car, so a take says <code>none</code>; starting the backend with <code>TM_CONTROL_FAKE_PERSON=1</code> adds a person to what it tracks, so a take says <code>seen</code>; and a camera whose detection switch on the Cameras page is off gets no list, so a take says <code>unchecked</code>. Its backup directory is empty, so there's nothing to import. Fake mode also seeds <code>.tm-control-fake/model_cache</code> with two synthetic model pairs and the installer's model file, and keeps the model its fake Frigate runs in <code>.tm-control-fake/running-model</code>; Use there changes that file and restarts nothing. The fake Frigate can download one Frigate+ model ID, <code>fedcba9876543210fedcba9876543210</code> (<code>fake.FAKE_FETCHABLE_ID</code>); any other ID is refused after 5 seconds (<code>FAKE_FETCH_SECONDS</code>), as a device would show a refusal. The Frigate+ key has to be set first, or the route answers 409 <code>no_key</code>. The Software update page's fake (<code>FakeUpdate</code> in <code>fake.py</code>) asks GitHub nothing: a check offers 0.8.1 on Stable and a commit 12 changes ahead on Development, and a run moves one stage every 2 seconds. A Stable run ends ok; a Development run fails in Build with <code>build_failed</code>, which is the way to see a failed run and <strong>Try again</strong> on a laptop. In fake mode the API's interactive docs are at <code>/api/v1/docs</code>. <code>tm-control/ui/README.md</code> has the commands for building and testing the UI in the same Node image the device uses.</p>
 <p>Every change to the API regenerates the UI's typed client in the same commit, so each commit's tests pass:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">PYTHONPATH</span><span class="o">=</span>tm-control/backend<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>tm_control<span class="w"> </span>dump-openapi<span class="w"> </span>&gt;<span class="w"> </span>tm-control/ui/src/api/openapi.json
 <span class="o">(</span><span class="nb">cd</span><span class="w"> </span>tm-control/ui<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>api:generate<span class="o">)</span><span class="w">   </span><span class="c1"># writes src/api/schema.d.ts</span>

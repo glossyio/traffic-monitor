@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-skip">
+        <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-the-update-job-that-fetches-and-checks-a-version-tm-updates-two-phases-the-stages-and-reason-codes-the-files-and-units-involved-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-skip">
           Skip to content
         </a>
       
@@ -2188,10 +2188,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
+  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-the-update-job-that-fetches-and-checks-a-version-tm-updates-two-phases-the-stages-and-reason-codes-the-files-and-units-involved-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.
+        description: How a device installs a new version without anyone at a keyboard: the update job that fetches and checks a version, tm-update's two phases, the stages and reason codes, the files and units involved, the contract a later version must honor, restoring by hand, and running an update on a bench device.
       
     </span>
   </a>
@@ -2209,6 +2209,111 @@
   
     <nav class="md-nav" aria-label="Software update">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-update-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update job
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The update job">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-starts-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What starts it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-checks-in-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The checks, in order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The mirror
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-run-that-was-cut-off-comes-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A run that was cut off comes first
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-the-same-version-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the same version again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-a-release-says-it-cant-be-installed-this-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a release says it can't be installed this way
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-check-sends-to-github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Check sends to GitHub
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#the-commands" class="md-nav__link">
@@ -2500,10 +2605,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
+  <a href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-the-update-job-that-fetches-and-checks-a-version-tm-updates-two-phases-the-stages-and-reason-codes-the-files-and-units-involved-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" class="md-nav__link">
     <span class="md-ellipsis">
       
-        description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.
+        description: How a device installs a new version without anyone at a keyboard: the update job that fetches and checks a version, tm-update's two phases, the stages and reason codes, the files and units involved, the contract a later version must honor, restoring by hand, and running an update on a bench device.
       
     </span>
   </a>
@@ -2521,6 +2626,111 @@
   
     <nav class="md-nav" aria-label="Software update">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-update-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The update job
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The update job">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-starts-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What starts it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-checks-in-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The checks, in order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The mirror
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-run-that-was-cut-off-comes-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A run that was cut off comes first
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-the-same-version-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the same version again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-a-release-says-it-cant-be-installed-this-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a release says it can't be installed this way
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-check-sends-to-github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Check sends to GitHub
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#the-commands" class="md-nav__link">
@@ -2771,11 +2981,171 @@
   
   
   <hr />
-<h2 id="description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device">description: How a device installs a new version without anyone at a keyboard: tm-update's two phases, its stages and reason codes, the files it keeps, the contract a later version must honor, restoring by hand, and running an update on a bench device.<a class="headerlink" href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-tm-updates-two-phases-its-stages-and-reason-codes-the-files-it-keeps-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" title="Permanent link">&para;</a></h2>
+<h2 id="description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-the-update-job-that-fetches-and-checks-a-version-tm-updates-two-phases-the-stages-and-reason-codes-the-files-and-units-involved-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device">description: How a device installs a new version without anyone at a keyboard: the update job that fetches and checks a version, tm-update's two phases, the stages and reason codes, the files and units involved, the contract a later version must honor, restoring by hand, and running an update on a bench device.<a class="headerlink" href="#description-how-a-device-installs-a-new-version-without-anyone-at-a-keyboard-the-update-job-that-fetches-and-checks-a-version-tm-updates-two-phases-the-stages-and-reason-codes-the-files-and-units-involved-the-contract-a-later-version-must-honor-restoring-by-hand-and-running-an-update-on-a-bench-device" title="Permanent link">&para;</a></h2>
 <h1 id="software-update">Software update<a class="headerlink" href="#software-update" title="Permanent link">&para;</a></h1>
-<p><code>tm-update</code> installs the version it ships with onto the device it runs on. It runs as root with no terminal, and it keeps the old version running while it downloads and builds everything the new one needs. A page in the control app that starts it, and the job that fetches and checks a new version, are planned. This page covers the installer side: what <code>tm-update</code> does, what it leaves on a device, and the files a later version must keep reading.</p>
+<p><code>tm-update</code> installs the version it ships with onto the device it runs on. It runs as root with no terminal, and it keeps the old version running while it downloads and builds everything the new one needs. An administrator starts an update from the <strong>Software update</strong> page of the control app. The page asks GitHub what a channel offers, and when the administrator confirms, the control app starts the update job, a small root program that fetches that version, checks it, and hands over to the version's own <code>tm-update</code>. This page covers the whole chain: the job, what <code>tm-update</code> does, what both leave on a device, and the files a later version must keep reading. The page and the API behind it are described in <a href="../tm-control/#the-update-module">tm-control</a>.</p>
 <p>The command is <a href="https://github.com/glossyio/traffic-monitor/blob/main/script/tm-update"><code>script/tm-update</code></a>, and its code is the <a href="https://github.com/glossyio/traffic-monitor/tree/main/script/tm_update"><code>tm_update</code> package</a> beside it. The package imports only Python's standard library, because the device runs it with <code>/usr/bin/python3 -EP</code> before anything of the new version is installed. It never opens <code>tmdb.sqlite</code>, and it opens the control app's database only read-only, to copy it into the restore point.</p>
 <p><code>tm-update</code> doesn't go through <code>tmsetup.sh</code>. It runs the same Ansible role itself, from the new version's own tree, with a variables file it writes. The <code>tmsetup_update_mode</code> variable switches the role into update mode. The two share one lock, so an install and an update never run at once.</p>
+<h2 id="the-update-job">The update job<a class="headerlink" href="#the-update-job" title="Permanent link">&para;</a></h2>
+<p>The job is <a href="https://github.com/glossyio/traffic-monitor/blob/main/tm-control/jobs/tm-job-update"><code>tm-control/jobs/tm-job-update</code></a>. It runs as root, as the unit <code>tm-job-update.service</code>, on the system's Python (<code>/usr/bin/python3 -EP</code>), because an update rewrites the control app's virtual environment while it runs. It imports only Python's standard library and nothing from the control app or from <code>tm-update</code>, so the job stays the release that installed it until an update replaces it. Every outside command is an argument list, never a shell string, and each step prints one plain line. The text git prints goes to the journal, and no rule reads it.</p>
+<h3 id="what-starts-it">What starts it<a class="headerlink" href="#what-starts-it" title="Permanent link">&para;</a></h3>
+<p>The control app starts the job when an administrator confirms an update, after it writes the request <code>/run/tm-control/jobs/update.json</code>. The control app runs as the code owner, so the job treats the request as hostile, as every job does: the jobs folder must be the code owner's and writable by no one else, the request a small plain file of the code owner's with one link, opened without following a symlink, and it is deleted once read. The request holds exactly four keys:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run_id</code></td>
+<td>A UTC time, <code>YYYYMMDDTHHMMSSZ</code>, which the control app makes.</td>
+</tr>
+<tr>
+<td><code>channel</code></td>
+<td><code>stable</code> or <code>development</code>.</td>
+</tr>
+<tr>
+<td><code>commit</code></td>
+<td>The full 40-character commit id of the version to install.</td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td>A release tag such as <code>v0.8.1</code>, or <code>null</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The request never names an address or a ref. The one place the job fetches from is <code>https://github.com/&lt;repo&gt;.git</code>, where <code>&lt;repo&gt;</code> is <code>update.repo</code> in the manifest (<code>owner/name</code>, the rule the installer, <code>tm-update</code>, the control app, and the job all share). Everything the request says is checked against what the job fetched itself.</p>
+<h3 id="the-checks-in-order">The checks, in order<a class="headerlink" href="#the-checks-in-order" title="Permanent link">&para;</a></h3>
+<p>Each refusal ends the run <code>failed</code> with a <a href="#the-reason-codes">reason code</a> and exits 1, except the first three, which write no state file.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What the job does</th>
+<th>If it refuses</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Reads the manifest's code owner and the request.</td>
+<td>Prints one line and exits 64.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Looks for a <a href="#a-run-that-was-cut-off-comes-first">resume marker</a>.</td>
+<td>Not a refusal: the job becomes the launcher and finishes that run first.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Takes the run lock that <code>tm-update</code> and <code>tmsetup.sh</code> take.</td>
+<td>Prints <code>busy</code> and exits 75.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reads the rest of the manifest, each value type-checked, then starts this run's state file.</td>
+<td><code>needs_manual_update</code>. The state file is started anyway, with <code>version</code> and <code>commit</code> under <code>from</code> both <code>null</code>, because the manifest couldn't be read.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Stage <code>fetch</code>: fetches into <a href="#the-mirror">the mirror</a>.</td>
+<td><code>fetch_failed</code>, or <code>prepare_failed</code> when the mirror can't be made.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Stage <code>verify</code>: the commit is in the mirror, on the channel's branch, and for <code>stable</code> a <code>vX.Y.Z</code> tag names it; <code>development</code> takes no tag.</td>
+<td><code>stale_check</code>.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Forward only. When the mirror holds the installed commit, it must be an ancestor of the target and not the target. When it doesn't (or the manifest says <code>unknown</code>), <code>stable</code> compares versions and <code>development</code> is refused.</td>
+<td><code>not_forward</code>. The same commit again is allowed only after <a href="#running-the-same-version-again">a failed run that <code>tm-update</code> ran for</a>.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Reads the tree's own <code>script/tm-update</code> and <code>script/update.json</code> from the mirror.</td>
+<td><code>target_not_updatable</code> for no <code>script/tm-update</code>, no readable <code>update.json</code>, or on <code>stable</code> a version that isn't the tag's. <code>needs_manual_update</code> for a tree that <a href="#how-a-release-says-it-cant-be-installed-this-way">doesn't accept contract 1</a>. Keys of <code>update.json</code> the job doesn't read are ignored.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Opens <code>tmdb.sqlite</code> and the control app's <code>state.sqlite</code> read-only. Neither may be newer than the tree knows (<code>tmdb_schema</code> and <code>state_schema</code> in its <code>update.json</code>).</td>
+<td><code>schema_newer</code>.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Unpacks the tree into <code>src/&lt;commit&gt;.partial</code>, renames it, and writes the <a href="#the-hand-over-file">hand-over</a> in a fresh <code>work/&lt;run_id&gt;/</code>.</td>
+<td><code>prepare_failed</code>, or <code>target_not_updatable</code> when the tree has no runnable <code>script/tm-update</code>.</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Lets go of the lock and becomes the tree's <code>script/tm-update run --contract 1 --handover &lt;file&gt;</code>.</td>
+<td>Its exit status is the unit's from then on.</td>
+</tr>
+</tbody>
+</table>
+<p>An error the job didn't expect ends the run <code>prepare_failed</code>. Before step 10 nothing on the device changes but the mirror and the state file, and nothing in use changes before the switch.</p>
+<p>The job's exit statuses stand beside <code>tm-update</code>'s 0, 1, and 2:</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0, 1, 2</td>
+<td><code>tm-update</code>'s, once the job has handed over; or 1 when the job's own check refused. 0 and 2 are also the launcher's, when a marker came first.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Also, with no state written for the run: the launcher couldn't be started, the lock file or the state file couldn't be made or written, or <code>tm-update</code> couldn't be started after the job let go of the lock and another run then held it. The job prints one line saying which.</td>
+</tr>
+<tr>
+<td>64</td>
+<td>No usable request or manifest owner. The job writes none of its files.</td>
+</tr>
+<tr>
+<td>75</td>
+<td>Another install or update holds the lock. The job writes none of its files.</td>
+</tr>
+</tbody>
+</table>
+<p>For 64 and 75 the unit still runs its <code>ExecStopPost</code> commands as it ends, so it stops <code>tm-update.slice</code> (see <a href="#the-units">the units</a>). That matters only for a run started by hand, which <a href="#run-an-update-by-hand-on-a-bench-device">the page can't see</a>.</p>
+<p>The limits are 3600 seconds for the fetch, 120 for any other git command, and 600 for the unpack. A first full fetch of the repository, about 82 MB today, needs roughly 0.18 Mbit/s to finish inside its hour, so a slower connection never completes the first update. git also gives up on a transfer that stays under 1 kB/s for a minute.</p>
+<h3 id="the-mirror">The mirror<a class="headerlink" href="#the-mirror" title="Permanent link">&para;</a></h3>
+<p>The mirror is a bare repository, <code>/var/lib/traffic-monitor/src/repo.git</code>, that holds <code>main</code>, <code>dev</code>, and the <code>v*</code> tags of the one repository. It is root's, and only the job touches it, under the run lock. The job gives git no configuration but the mirror's own and asks nothing: it speaks only https, follows no redirect, checks every object it receives (<code>transfer.fsckObjects</code>), and never runs a hook.</p>
+<p>Before each fetch the job tidies the mirror, because each of these makes git fail every later fetch:</p>
+<ul>
+<li>the lock files a killed fetch leaves (<code>packed-refs.lock</code>, <code>HEAD.lock</code>, <code>config.lock</code>, <code>shallow.lock</code>, and <code>refs/**/*.lock</code>);</li>
+<li>a file under <code>refs/</code> that doesn't hold exactly one commit id (40 lowercase hex characters and a newline), as a power cut just after a fetch can leave one empty; the fetch makes the ref again;</li>
+<li>the <code>tmp_pack_*</code> files in <code>objects/pack/</code> that a fetch that failed part-way leaves, which would otherwise stay and take space.</li>
+</ul>
+<p>It is safe to do so, because the run lock means no other fetch is running. git also reads the mirror as bare (<code>core.bare=true</code>) whatever its <code>config</code> says, so an empty <code>config</code> doesn't stop a fetch either.</p>
+<p>The trees the job unpacks, <code>src/&lt;commit&gt;/</code>, are root's too. <code>tm-update</code> installs from one, and the <a href="#the-clean-up">clean-up</a> keeps the running version's and the one before it.</p>
+<h3 id="a-run-that-was-cut-off-comes-first">A run that was cut off comes first<a class="headerlink" href="#a-run-that-was-cut-off-comes-first" title="Permanent link">&para;</a></h3>
+<p><code>tm-update</code> writes the <a href="#the-resume-marker">resume marker</a> just before the switch stops anything, and removes it when the run ends. A marker the job finds means a run that a restart, a power cut, or a stop cut off. The job then does not start the request's run. It becomes the launcher, <code>tm-update-resume</code>, and finishes the cut-off run first, whatever the request names. The page shows that run as cut off and offers <strong>Finish the update</strong>.</p>
+<h3 id="running-the-same-version-again">Running the same version again<a class="headerlink" href="#running-the-same-version-again" title="Permanent link">&para;</a></h3>
+<p><code>tm-update</code> doesn't compare versions or commits, but the job does, and it normally refuses the commit that is installed. It allows the same commit again only when the last state file names that commit as its target, the run ended <code>failed</code> or has no result (it was cut off), and its <code>stages</code> include one other than <code>fetch</code> and <code>verify</code>, which shows that <code>tm-update</code> ran for it. That is the case after a switch that failed late, which leaves the manifest naming the new commit. The job's own refusals write a state file too, and they never make a repeat allowed.</p>
+<p>This has a cost. If a late switch failure is followed by a retry that fails at <code>fetch</code>, for example because the device is offline, the new state file holds only <code>fetch</code>, and the next try ends <code>not_forward</code>. Wait for the next version, or use the installer.</p>
+<h3 id="how-a-release-says-it-cant-be-installed-this-way">How a release says it can't be installed this way<a class="headerlink" href="#how-a-release-says-it-cant-be-installed-this-way" title="Permanent link">&para;</a></h3>
+<p>A tree's <code>script/update.json</code> lists the hand-over contracts it accepts. A release that must not be installed by an update, because it needs steps only a person at the installer can take, leaves <code>1</code> out of <code>contracts</code>. The job reads that from the mirror before it unpacks anything, ends the run <code>needs_manual_update</code>, and the page says to use the installer. A tree with no <code>script/tm-update</code> or no readable <code>update.json</code>, as every release before this one, is <code>target_not_updatable</code>, with the same advice.</p>
+<h2 id="the-units">The units<a class="headerlink" href="#the-units" title="Permanent link">&para;</a></h2>
+<p>Two units start the chain, both made by the installer's control app tag, and both stop the update's <code>tm-update.slice</code> when they end, so no build goes on without the run that started it (except after a kill of the whole unit, as the warning below says). Neither is in that slice themselves.</p>
+<p><code>tm-job-update.service</code> is static, so it is never enabled and runs only when it is started. The polkit rule lets the control app start it and nothing else: it is in <code>start_only_units</code>, not in the <code>units</code> that the control app may stop and restart, because stopping the job in the middle of a switch would leave a device half installed. It is a oneshot with <code>TimeoutStartSec=6h</code>, because a slow card builds images for hours, and no start limit. When it ends, by its own exit, a stop, a crash, or a kill of its main process, its <code>ExecStopPost</code> commands stop the slice and start <code>tm-update-resume.service</code>, which does nothing without a marker.</p>
+<div class="admonition warning">
+<p class="admonition-title">A kill of the whole unit</p>
+<p><code>systemctl kill --signal=KILL tm-job-update.service</code> kills every process in the unit's control group, and that ends the <code>ExecStopPost</code> commands too. Then neither the slice stop nor the resume start runs. A switch cut off that way waits for the next boot, or for <code>sudo systemctl start tm-update-resume.service</code>, which carries it on at once. To stop the job by hand, use <code>sudo systemctl stop tm-job-update.service</code>.</p>
+</div>
+<p><code>tm-update-resume.service</code> is enabled, so it starts at boot, after the apps' units but without requiring them: an app that won't start is what a switch has to deal with. It runs only when <code>resume.json</code> exists (<code>ConditionPathExists</code>), has <code>TimeoutStartSec=3h</code>, and never starts itself again. It runs <a href="https://github.com/glossyio/traffic-monitor/blob/main/tm-control/jobs/tm-update-resume"><code>tm-update-resume</code></a>, the launcher, on the system's Python.</p>
+<p>The launcher reads the marker and uses it only when it is usable: the contract is the number 1, the tree is exactly <code>/var/lib/traffic-monitor/src/&lt;40-hex commit&gt;</code> and holds <code>script/tm-update</code>, and the hand-over is a file under <code>/var/lib/traffic-monitor/update/work/</code>. A usable marker makes the launcher become that tree's <code>tm-update resume --handover &lt;file&gt;</code>, whose exit status is the unit's. Any other marker is renamed to <code>resume.json.unusable</code> (an older one is replaced), the control app, the pod, and the revproxy are started again, and the exit status is 2. The launcher never prints the marker. With no marker it prints one line and exits 0.</p>
+<p>While either unit is active, the installer stops at its first step and says that an update from the control app is running, because two installers would undo each other. A run from another computer connects first and is stopped by the role's first task; a local run is stopped even earlier, by the run lock. An update's own run of the installer isn't refused.</p>
+<h2 id="what-check-sends-to-github">What Check sends to GitHub<a class="headerlink" href="#what-check-sends-to-github" title="Permanent link">&para;</a></h2>
+<p>The control app asks GitHub only when an administrator presses <strong>Check for updates</strong>, and no more than once a minute. It sends requests to <code>api.github.com</code> over https, to one repository, <code>update.repo</code> in the manifest. The address holds that repository's name and, for the comparison, the installed commit's id. The device's public address reaches GitHub as it does with any request. Besides the address, each request carries a <code>User-Agent</code> that names the program (<code>traffic-monitor-update</code>), the GitHub API version it was written for, and, when it asks again for something GitHub answered before, the <code>ETag</code> of that answer, so GitHub can reply that nothing changed. The control app sends no cookie, token, device name, serial number, or location, and it follows no redirect, and it uses no proxy from the environment. An answer over 1 MiB is refused.</p>
+<p>Check asks for the channel's newest version (the latest release for <code>stable</code>, the <code>dev</code> branch for <code>development</code>) and how it stands to the installed commit. When GitHub doesn't know the installed commit, for example a tree built by hand, <code>stable</code> falls back to comparing versions, and <code>development</code> can't tell, so it offers nothing.</p>
+<p>The page's check and the job's checks use the same rules, but they look at different copies of the history. GitHub compares the installed commit with any commit it holds, and the job's mirror holds only <code>main</code>, <code>dev</code>, and the release tags. A device whose installed commit is on none of them, such as one built from a feature branch, can be offered an update that the job then refuses as <code>not_forward</code>, or on <code>stable</code> judges by version.</p>
 <h2 id="the-commands">The commands<a class="headerlink" href="#the-commands" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2791,7 +3161,7 @@
 </tr>
 <tr>
 <td><code>tm-update resume --handover &lt;file&gt;</code></td>
-<td>Carries a run on after the device restarted in the middle of it.</td>
+<td>Carries a run on after the device restarted in the middle of it. At boot, <code>tm-update-resume.service</code> starts it.</td>
 </tr>
 </tbody>
 </table>
@@ -2904,6 +3274,16 @@
 </thead>
 <tbody>
 <tr>
+<td><code>fetch</code></td>
+<td>The update job fetches the version into <a href="#the-mirror">the mirror</a>. <code>tm-update</code> never writes it.</td>
+<td><code>fetch_failed</code></td>
+</tr>
+<tr>
+<td><code>verify</code></td>
+<td>The update job checks the version against the request, the installed one, and the databases, then unpacks it. <code>tm-update</code> never writes it.</td>
+<td><code>stale_check</code>, <code>not_forward</code>, <code>target_not_updatable</code>, <code>needs_manual_update</code>, <code>schema_newer</code>, or <code>prepare_failed</code></td>
+</tr>
+<tr>
 <td><code>prepare</code></td>
 <td>Downloads and stages the files, and tries the settings changes.</td>
 <td><code>prepare_failed</code>, or the code the role's refusal names</td>
@@ -2940,6 +3320,34 @@
 </tr>
 </tbody>
 </table>
+<p>A step that runs out of time ends the run with its stage's code and the detail <code>timed out after &lt;n&gt; min</code>. The limits are:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Making the Ansible environment, and installing its packages</td>
+<td>15 min each</td>
+</tr>
+<tr>
+<td>Prepare's playbook run (stage <code>prepare</code>)</td>
+<td>30 min</td>
+</tr>
+<tr>
+<td>The image builds (stage <code>images</code>)</td>
+<td>2 h</td>
+</tr>
+<tr>
+<td>The switch's installer run</td>
+<td>45 min</td>
+</tr>
+</tbody>
+</table>
+<p>Every outside command runs in a session of its own, so a command that runs out of time is ended with everything it started: its process group gets <code>TERM</code>, then <code>KILL</code> after 10 seconds. The image builds run in <code>tm-update.slice</code>, outside the playbook's process group, so a timeout there stops the slice as well.</p>
 <p>An error <code>tm-update</code> didn't expect ends the run with the code of the stage it was in. A run that a restart cut off before the switch can't know what it was doing, so <code>resume</code> ends it the same way.</p>
 <h2 id="the-reason-codes">The reason codes<a class="headerlink" href="#the-reason-codes" title="Permanent link">&para;</a></h2>
 <p>A failed run has a <code>reason</code>, always one of these codes and never a sentence. <code>detail</code> is a short text <code>tm-update</code> made itself, such as a step's name or a pair of numbers, never a line from Ansible, Podman, apt, or pip. The log holds their output.</p>
@@ -2958,8 +3366,33 @@
 <td>Wait for it. This is the one code that isn't in the state file, because that file belongs to the run that holds the lock. <code>tm-update</code> writes <code>busy</code> to its log and to stderr, and exits 1.</td>
 </tr>
 <tr>
+<td><code>fetch_failed</code></td>
+<td>The job's <code>git fetch</code> failed or ran out of its 3600 seconds.</td>
+<td>Connect the device and try again.</td>
+</tr>
+<tr>
+<td><code>stale_check</code></td>
+<td>The commit isn't in the mirror, isn't on the channel's branch, or a release tag doesn't name it.</td>
+<td>Check again.</td>
+</tr>
+<tr>
+<td><code>not_forward</code></td>
+<td>The version isn't ahead of the installed one, or it is the installed commit and <a href="#running-the-same-version-again">isn't a repeat the job allows</a>.</td>
+<td>Check again.</td>
+</tr>
+<tr>
+<td><code>target_not_updatable</code></td>
+<td>The version has no <code>script/tm-update</code> or no readable <code>script/update.json</code>, or on <code>stable</code> its version isn't its tag's.</td>
+<td>Run the full installer by hand.</td>
+</tr>
+<tr>
+<td><code>schema_newer</code></td>
+<td><code>tmdb.sqlite</code> or the control app's database is newer than the version knows. The detail gives both numbers.</td>
+<td>Install a newer version, or use the installer.</td>
+</tr>
+<tr>
 <td><code>needs_manual_update</code></td>
-<td>The manifest is missing, unreadable, or names root as the installing user, or a value in it is unusable.</td>
+<td>The manifest is missing, unreadable, or names root as the installing user, or a value in it is unusable, or the version doesn't accept contract 1 (see <a href="#how-a-release-says-it-cant-be-installed-this-way">how a release says it can't be installed this way</a>).</td>
 <td>Run the full installer by hand.</td>
 </tr>
 <tr>
@@ -2994,7 +3427,7 @@
 </tr>
 <tr>
 <td><code>prepare_failed</code></td>
-<td>Anything else that fails in <code>prepare</code> or <code>restore_point</code>, including an unexpected error. Nothing in use has changed.</td>
+<td>Anything else that fails in the job or in <code>prepare</code> or <code>restore_point</code>, including an unexpected error. Nothing in use has changed.</td>
 <td>Look at the log.</td>
 </tr>
 <tr>
@@ -3014,7 +3447,7 @@
 </tr>
 </tbody>
 </table>
-<p>The codes down to <code>build_failed</code> end the run before anything in use has changed, <code>low_space</code> at the switch included, because it is checked before the stop. <code>switch_failed</code> and <code>health_failed</code> come with the switch, which stops the services.</p>
+<p>The job's five codes, and the codes down to <code>build_failed</code>, end the run before anything in use has changed, <code>low_space</code> at the switch included, because it is checked before the stop. <code>switch_failed</code> and <code>health_failed</code> come with the switch, which stops the services.</p>
 <h2 id="the-files">The files<a class="headerlink" href="#the-files" title="Permanent link">&para;</a></h2>
 <p>The update's files are under <code>/var/lib/traffic-monitor/</code>. Paths come from one <code>Paths</code> object in the code, whose root a test can move.</p>
 <table>
@@ -3043,7 +3476,7 @@
 </tr>
 <tr>
 <td><code>update/work/&lt;run&gt;/</code></td>
-<td>The run's work folder: <code>vars.json</code>, <code>facts.json</code>, <code>stage/</code> (the downloads), <code>build/</code> (a folder for each image), <code>check-venv/</code>, <code>reason</code>, and the installer's restart flag.</td>
+<td>The run's work folder: <code>handover.json</code> when the job made it, <code>vars.json</code>, <code>facts.json</code>, <code>stage/</code> (the downloads), <code>build/</code> (a folder for each image), <code>check-venv/</code>, <code>reason</code>, and the installer's restart flag.</td>
 <td>Removed after the run has ended</td>
 </tr>
 <tr>
@@ -3057,8 +3490,13 @@
 <td>The two newest</td>
 </tr>
 <tr>
+<td><code>src/repo.git</code></td>
+<td><a href="#the-mirror">The mirror</a>.</td>
+<td>Always</td>
+</tr>
+<tr>
 <td><code>src/&lt;commit&gt;/</code></td>
-<td>A version's source tree. The caller makes it.</td>
+<td>A version's source tree. The update job makes it, or the caller by hand.</td>
 <td>The running version and the one before it</td>
 </tr>
 <tr>
@@ -3068,7 +3506,7 @@
 </tr>
 </tbody>
 </table>
-<p>At the start of every <code>run</code>, <code>tm-update</code> removes what a run that died left behind: other runs' work folders and any throwaway image tag.</p>
+<p>At the start of every <code>run</code>, <code>tm-update</code> first stops <code>tm-update.slice</code>, so a dead run's builds can't go on beside the new one. It then removes what that run left behind: other runs' work folders and any throwaway image tag.</p>
 <h2 id="the-contract">The contract<a class="headerlink" href="#the-contract" title="Permanent link">&para;</a></h2>
 <p>A later version of <code>tm-update</code> reads the files an earlier version wrote, and an earlier one reads what a later caller writes. These must stay readable. Add keys; don't remove one, rename it, or change what it means. When that can't be done, raise the contract number.</p>
 <p>Every value read from one of these files is checked for its type before use: a number, <code>null</code>, or a list where text is expected is refused, never turned into text. An error names the key and never quotes the value.</p>
@@ -3141,7 +3579,7 @@
 </tr>
 <tr>
 <td><code>from</code></td>
-<td><code>version</code> and <code>commit</code> of what was installed, from the manifest (both <code>null</code> when the manifest couldn't be read).</td>
+<td><code>version</code> and <code>commit</code> of what was installed, from the manifest. When <code>tm-update</code> can't read the manifest, <code>version</code> is the hand-over's <code>from_version</code> and <code>commit</code> is <code>null</code>. A run the job refused because of the manifest has both <code>null</code>.</td>
 </tr>
 <tr>
 <td><code>to</code></td>
@@ -3186,7 +3624,7 @@
 </tbody>
 </table>
 <h3 id="the-resume-marker">The resume marker<a class="headerlink" href="#the-resume-marker" title="Permanent link">&para;</a></h3>
-<p><code>update/resume.json</code> is <code>{"contract": 1, "tree": &lt;path&gt;, "handover": &lt;path&gt;}</code>. <code>tm-update</code> writes it just before the switch stops anything and removes it when the run ends, ok or failed. A unit that runs after a restart, which is planned, reads it to know which tree's <code>tm-update resume</code> to start and with which hand-over. <code>resume</code> takes the lock like <code>run</code>, and then:</p>
+<p><code>update/resume.json</code> is <code>{"contract": 1, "tree": &lt;path&gt;, "handover": &lt;path&gt;}</code>. <code>tm-update</code> writes it just before the switch stops anything and removes it when the run ends, ok or failed. <code>tm-update-resume.service</code> reads it after a restart to know which tree's <code>tm-update resume</code> to start and with which hand-over, and the update job reads it to know that a cut-off run comes first (see <a href="#the-units">the units</a>). <code>resume</code> takes the lock like <code>run</code>, and then:</p>
 <ul>
 <li>with no marker, it does nothing and exits 0;</li>
 <li>with a marker it can't read, it removes it and exits 2, and with one that names another tree or hand-over, it exits 2 and leaves it for that run;</li>
@@ -3256,7 +3694,7 @@
 <li>the Quadlet units in <code>/etc/containers/systemd/</code> and the <code>tm-*</code> units in <code>/etc/systemd/system/</code>;</li>
 <li>a consistent copy of the control app's <code>state.sqlite</code>, made with SQLite's backup API, so it is whole while the control app keeps writing.</li>
 </ul>
-<p>It is built in a folder whose name ends in <code>.partial</code> and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. <code>restore.json</code> in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in <code>src/</code> when it is still there (<code>previous_tree</code>, which is <code>null</code> when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and <code>tmdb_backup</code>.</p>
+<p>Making one writes one line to the run's log: its folder's name, the number of files, and the paths it found missing. A restore point is built in a folder whose name ends in <code>.partial</code> and renamed when it is whole, so a folder with its final name is always complete. The folder, and each restore point in it, is mode 0700 and root's. <code>restore.json</code> in a restore point is mode 0600 and lists every copied file with its path, mode, and owner, and for a file that isn't a secret, its size and SHA-256 too. For a secret it records no size and no checksum. It also records the old and new commit, the old tree's folder in <code>src/</code> when it is still there (<code>previous_tree</code>, which is <code>null</code> when the manifest already named the new commit, as it does after a switch that failed late, because that folder is the new tree), the files it found missing, and <code>tmdb_backup</code>.</p>
 <p>The traffic database, <code>tmdb.sqlite</code>, is not in the restore point, because it can be several gigabytes. When the new version has a schema change, the migration runner copies the database to <code>db/backup/</code> in Node-RED's folder before it applies the change. After the health check, <code>tmdb_backup</code> in the state file and the restore point names the newest copy made since the switch began. It is <code>null</code> when none was made.</p>
 <p>The two newest restore points are kept. The one just made is always kept, whatever the clock said when it was named.</p>
 <h3 id="restoring-by-hand">Restoring by hand<a class="headerlink" href="#restoring-by-hand" title="Permanent link">&para;</a></h3>
@@ -3283,7 +3721,11 @@
 </li>
 </ol>
 <h2 id="run-an-update-by-hand-on-a-bench-device">Run an update by hand on a bench device<a class="headerlink" href="#run-an-update-by-hand-on-a-bench-device" title="Permanent link">&para;</a></h2>
-<p>Use this on a bench device only. It runs the real installer, which restarts the pod and the control app and may restart the device, so never run it on a device in the field. Run the commands through <code>tmdev.py run &lt;host&gt; -- ...</code> to keep them in the run log (see <a href="../dev-environment/#testing-on-a-dev-pi">Testing on a dev Pi</a>).</p>
+<p>Use this on a bench device only. It runs the real installer, which restarts the pod and the control app and may restart the device, so never run it on a device in the field. To try the whole chain instead, start the update from the Software update page. These steps skip the update job and run <code>tm-update</code> directly, as the job would after its checks. Run the commands through <code>tmdev.py run &lt;host&gt; -- ...</code> to keep them in the run log (see <a href="../dev-environment/#testing-on-a-dev-pi">Testing on a dev Pi</a>).</p>
+<div class="admonition warning">
+<p class="admonition-title">The Software update page can't see a run started by hand</p>
+<p>Neither of the two units runs it, so while it goes on the page shows it as stopped (or cut off, once the switch has begun), and offers <strong>Try again</strong> or <strong>Finish the update</strong>. Don't press <strong>Update</strong> or <strong>Try again</strong> while a run started by hand goes on: the job is refused as <code>busy</code>, and as its unit ends it stops <code>tm-update.slice</code>, which stops that run's image builds.</p>
+</div>
 <ol>
 <li>
 <p>Put the tree on the device, as <code>git archive</code> makes it, as root. The folder is named for the commit, which is where the clean-up looks for it:</p>
@@ -3293,7 +3735,7 @@ git<span class="w"> </span>archive<span class="w"> </span>--format<span class="o
 </code></pre></div>
 </li>
 <li>
-<p>Write a <a href="#the-hand-over-file">hand-over file</a> on the device. The work folder, state file, and log are under <code>/var/lib/traffic-monitor/update/</code>:</p>
+<p>Write a <a href="#the-hand-over-file">hand-over file</a> on the device, inside the run's own work folder, as the job does. Then the resume marker names a hand-over the launcher accepts, and a restart in the middle of the run is carried on at boot. The work folder, state file, and log are under <code>/var/lib/traffic-monitor/update/</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">"contract"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"20261125T101500Z"</span><span class="p">,</span>
@@ -3306,13 +3748,13 @@ git<span class="w"> </span>archive<span class="w"> </span>--format<span class="o
 <span class="w">  </span><span class="nt">"log_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/var/lib/traffic-monitor/update/log/20261125T101500Z.log"</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>Save it as root, in the update folder (for example <code>/var/lib/traffic-monitor/update/handover.json</code>).</p>
+<p>Make the work folder (<code>sudo install -d -m 755 /var/lib/traffic-monitor/update/work/20261125T101500Z</code>) and save the file in it as root, as <code>handover.json</code>.</p>
 </li>
 <li>
-<p>Start it as a transient service, so that stopping the control app or closing your session doesn't end it:</p>
+<p>Start it as a transient service, and only that way. Every command <code>tm-update</code> runs has a session of its own, so a dropped SSH session would leave Ansible running without the lock, and a second run could start beside it. Under <code>systemd-run</code>, stopping the control app or closing your session doesn't end it:</p>
 <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemd-run<span class="w"> </span>--unit<span class="o">=</span>tm-update-bench<span class="w"> </span>--collect<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>/var/lib/traffic-monitor/src/&lt;commit&gt;/script/tm-update<span class="w"> </span>run<span class="w"> </span>--contract<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--handover<span class="w"> </span>/var/lib/traffic-monitor/update/handover.json
+<span class="w">  </span>--handover<span class="w"> </span>/var/lib/traffic-monitor/update/work/20261125T101500Z/handover.json
 </code></pre></div>
 </li>
 <li>
@@ -3322,11 +3764,13 @@ sudo<span class="w"> </span>tail<span class="w"> </span>-f<span class="w"> </spa
 </code></pre></div>
 </li>
 <li>
-<p>When the state's <code>stage</code> is <code>reboot</code>, the device restarts. Nothing starts <code>resume</code> for you yet, so after the restart run the same command with <code>resume --handover ...</code> in place of <code>run --contract 1 --handover ...</code>.</p>
+<p>When the state's <code>stage</code> is <code>reboot</code>, the device restarts, and <code>tm-update-resume.service</code> carries the run on at boot, because the marker is there. If the hand-over isn't under the work folder, the launcher sets the marker aside as <code>resume.json.unusable</code>, and you carry the run on yourself. Put the marker back first, because <code>resume</code> with no marker has nothing to carry on, then run the same command with <code>resume --handover ...</code> in place of <code>run --contract 1 --handover ...</code>:</p>
+<p><div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>mv<span class="w"> </span>/var/lib/traffic-monitor/update/resume.json.unusable<span class="w"> </span>/var/lib/traffic-monitor/update/resume.json
+</code></pre></div>
+6. The run is over when <code>result</code> is <code>ok</code> or <code>failed</code>. Then run the device tests that check what an update leaves behind: <code>tmdev.py test &lt;host&gt; -- -k test_update</code>.</p>
 </li>
-<li>The run is over when <code>result</code> is <code>ok</code> or <code>failed</code>. Then run the device tests that check what an update leaves behind: <code>tmdev.py test &lt;host&gt; -- -k test_update</code>.</li>
 </ol>
-<p><code>tm-update</code> doesn't compare versions or commits: it installs the tree you give it, so the same commit can be installed again.</p>
+<p><code>tm-update</code> doesn't compare versions or commits: it installs the tree you give it, so the same commit can be installed again. The update job does compare them; see <a href="#running-the-same-version-again">Running the same version again</a>.</p>
   
 
 
