@@ -3668,7 +3668,7 @@ class RadarRun:
 
 def radar_engine(info, open_rows=(), config=MISSING, context=None, then=(), flow=None):
     """Run the engine on one round's answers (msg.radarInfo: answers by radar name) and the open rows, then the steps
-    in then (with the same global context). With info MISSING the message has no radarInfo, as the daily tick's has."""
+    in then (with the same global context). With info MISSING the message has no radarInfo, as the hourly check's has."""
     before = int(time.time() * 1000)
     msg = {"payload": list(open_rows), "topic": ""}
     if info is not MISSING:
@@ -3868,8 +3868,9 @@ def test_the_radar_engine_without_answers_writes_nothing():
 
 # The third output hands the radars' setup rows to the ThingsBoard upload, by the rule the setup history's engine
 # follows: each row that closed or opened in this round, and every open row when none was sent to this server yet or a
-# day has passed (the flow context's setup_radar_sent). The daily tick runs the engine with no answers: the day rule
-# only, and no write.
+# day has passed (the flow context's setup_radar_sent). The hourly check runs the engine with no answers: the day rule
+# only, and no write. It checks often so that open rows go again 24 to 25 hours after they last went: the start's own
+# round sets the mark about 11 s after the flows start, so a check once a day would always find it just short of a day.
 
 def radar_flow(**mark):
     return {"setup_radar_sent": {"to": UPLOAD_URL, "at": int(time.time() * 1000) - 1000, **mark}}
@@ -3954,15 +3955,26 @@ def test_nothing_is_sent_with_the_upload_off(thingsboard):
     run = radar_engine({RADAR: {**RADAR_ANSWERS, "Version": "1.2.2"}}, [open_radar()], config=config,
                        flow=radar_flow())
     assert run.upload is None and len(run.written()) == 2 and "setup_radar_sent" not in run.flow_context
-    tick = radar_engine(MISSING, [open_radar()], config=config, flow=radar_flow())
-    assert tick.upload is None and "setup_radar_sent" not in tick.flow_context
+    check = radar_engine(MISSING, [open_radar()], config=config, flow=radar_flow())
+    assert check.upload is None and "setup_radar_sent" not in check.flow_context
     turned_on = radar_engine({RADAR: RADAR_ANSWERS}, [open_radar()], config=UPLOAD_RADAR_CONFIG,
                              flow=run.flow_context)
     assert radar_ids(turned_on.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
 
 
 @needs_node
-def test_the_daily_tick_writes_no_row():
+def test_open_rows_are_not_due_a_little_short_of_a_day():
+    # the start's round set the mark 11 s after the start; a check a day after the start finds it 11 s short
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow(at=int(time.time() * 1000) - DAY_MS + 11_000))
+    assert run.upload is None and run.written() == []
+    run = radar_engine(MISSING, [open_radar()], config=UPLOAD_RADAR_CONFIG,
+                       flow=radar_flow(at=int(time.time() * 1000) - DAY_MS))
+    assert radar_ids(run.upload["payload"]["radars"]) == ["100-cccccccc-sr"]
+
+
+@needs_node
+def test_the_hourly_check_writes_no_row():
     older, gone = open_radar(started=50, row_id="50-cccccccc-sr"), open_radar("gone", row_id="1-dddddddd-sr")
     for info in (MISSING, None, "text"):
         run = radar_engine(info, [open_radar(), older, gone], config=UPLOAD_RADAR_CONFIG, flow=radar_flow(at=1))
@@ -3988,16 +4000,21 @@ def test_the_radars_upload_rows_hold_no_serial_number():
     assert run.logged == []
 
 
+RADAR_ROWS_CHECK = "check hourly whether the radars' setup rows are due"
+
+
 def test_the_radars_setup_rows_reach_the_setup_link():
     flows = json.loads(FLOWS.read_text())
     by_id = {node["id"]: node for node in flows}
     engine, out = named(flows, "radar setup engine"), named(flows, "radar setup rows")
-    tick, read = named(flows, "send the radars' setup rows, daily"), named(flows, "read open setup_radar")
+    check, read = named(flows, RADAR_ROWS_CHECK), named(flows, "read open setup_radar")
     link_in = named(flows, "setup rows link in")
     assert engine["wires"][2] == [out["id"]] and out["links"] == [link_in["id"]] and out["id"] in link_in["links"]
-    assert (tick["type"], tick["repeat"], tick["once"], tick["wires"]) == ("inject", "86400", False, [[read["id"]]])
-    assert tick["props"] == [] or all(prop["p"] == "payload" for prop in tick["props"])
-    for node in (tick, out):
+    assert (check["type"], check["once"], check["crontab"], check["wires"]) == ("inject", False, "", [[read["id"]]])
+    # checked every hour, so open rows go again at most an hour after they are due
+    assert check["repeat"] == "3600"
+    assert check["props"] == [] or all(prop["p"] == "payload" for prop in check["props"])
+    for node in (check, out):
         assert (node["z"], node["g"]) == (engine["z"], engine["g"])
         assert node["id"] in by_id[engine["g"]]["nodes"]
 
